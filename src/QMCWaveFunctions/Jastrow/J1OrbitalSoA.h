@@ -109,7 +109,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     F[source_type] = afunc;
   }
 
-  void recompute(ParticleSet& P)
+  void recompute(const ParticleSet& P)
   {
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
@@ -120,10 +120,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    evaluateGL(P, G, L, true);
-    return LogValue;
+    return evaluateGL(P, G, L, true);
   }
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
@@ -217,10 +216,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       ratios[i] = std::exp(Vat[i] - curAt);
   }
 
-  inline void evaluateGL(ParticleSet& P,
-                         ParticleSet::ParticleGradient_t& G,
-                         ParticleSet::ParticleLaplacian_t& L,
-                         bool fromscratch = false)
+  inline LogValueType evaluateGL(const ParticleSet& P,
+                                 ParticleSet::ParticleGradient_t& G,
+                                 ParticleSet::ParticleLaplacian_t& L,
+                                 bool fromscratch = false)
   {
     if (fromscratch)
       recompute(P);
@@ -229,7 +228,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       G[iat] += Grad[iat];
     for (size_t iat = 0; iat < Nelec; ++iat)
       L[iat] -= Lap[iat];
-    LogValue = -simd::accumulate_n(Vat.data(), Nelec, valT());
+    return LogValue = -simd::accumulate_n(Vat.data(), Nelec, valT());
   }
 
   /** compute gradient and lap
@@ -259,7 +258,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
    * @param iat the moving particle
    * @param dist starting address of the distances of the ions wrt the iat-th particle
    */
-  inline void computeU3(ParticleSet& P, int iat, const DistRow& dist)
+  inline void computeU3(const ParticleSet& P, int iat, const DistRow& dist)
   {
     if (NumGroups > 0)
     { //ions are grouped

@@ -30,9 +30,6 @@ namespace qmcplusplus
 {
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions_;
   ParticleSet elec_;
 
@@ -95,7 +92,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
+  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
   SimulationCell->print(app_log(), 0);
@@ -112,8 +109,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   root = doc.getRoot();
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
-  bool is_manager=false;
-  auto jas = std::make_unique<RPAJastrow>(elec_, is_manager);
+  auto jas = std::make_unique<RPAJastrow>(elec_);
   jas->put(root);
 
   // update all distance tables

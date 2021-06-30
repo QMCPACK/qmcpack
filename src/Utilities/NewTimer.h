@@ -28,6 +28,10 @@
 #include <ittnotify.h>
 #endif
 
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
+
 #define USE_STACK_TIMERS
 
 namespace qmcplusplus
@@ -237,20 +241,23 @@ template<class TIMER = NewTimer>
 class ScopeGuard
 {
 public:
-  ScopeGuard(TIMER* t) : timer(t)
+  ScopeGuard(TIMER& t) : timer(t)
   {
-    if (timer)
-      timer->start();
+    timer.start();
   }
+
+  ScopeGuard(const ScopeGuard&) = delete;
+  ScopeGuard& operator=(const ScopeGuard&) = delete;
+  ScopeGuard(ScopeGuard&&) = default;
+  ScopeGuard& operator=(ScopeGuard&&) = default;
 
   ~ScopeGuard()
   {
-    if (timer)
-      timer->stop();
+    timer.stop();
   }
 
 private:
-  TIMER* timer;
+  TIMER& timer;
 };
 
 using ScopedTimer     = ScopeGuard<NewTimer>;

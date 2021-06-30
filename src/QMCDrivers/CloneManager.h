@@ -75,8 +75,8 @@ protected:
   static std::vector<std::vector<QMCHamiltonian*>> HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 
-  ///Walkers per node
-  std::vector<int> wPerNode;
+  ///Walkers per MPI rank
+  std::vector<int> wPerRank;
 };
 } // namespace qmcplusplus
 #endif

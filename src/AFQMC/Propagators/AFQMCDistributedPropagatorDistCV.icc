@@ -41,7 +41,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   using ma::axpy;
   using std::copy_n;
   using std::fill_n;
-  AFQMCTimers[setup_timer]->start();
+  AFQMCTimers[setup_timer].get().start();
   const SPComplexType one(1.), zero(0.);
   auto walker_type        = wset.getWalkerType();
   int nsteps              = nsteps_;
@@ -67,13 +67,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     G_ext = iextensions<2u>{nwalk, Gsize};
 
   if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
-    MFfactor = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    MFfactor = CMatrix({long(nsteps), long(nwalk)});
   if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
-    hybrid_weight = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
-    new_energies = std::move(CMatrix({long(nwalk), 3}));
+    new_energies = CMatrix({long(nwalk), 3});
 
   //  Temporary memory usage summary:
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
@@ -92,12 +92,14 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space
 
-    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
+                                 buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
+                                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all (local) walkers
-    AFQMCTimers[G_for_vbias_timer]->start();
+    AFQMCTimers[G_for_vbias_timer].get().start();
 #if defined(MIXED_PRECISION)
     { // control scope of Gc
       int Gak0, GakN;
@@ -110,12 +112,14 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 #else
     wfn.MixedDensityMatrix_for_vbias(wset, Gwork);
 #endif
-    AFQMCTimers[G_for_vbias_timer]->stop();
+    AFQMCTimers[G_for_vbias_timer].get().stop();
 
 
     StaticSPMatrix Grecv(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #if defined(MIXED_PRECISION)
     // in MIXED_PRECISION, use second half of vrecv_buff for vsend
     SPCMatrix_ref vsend(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
@@ -130,13 +134,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(Gwork.num_elements()), TG.getNCoresPerTG());
     std::tie(vak0, vakN) = FairDivideBoundary(TG.getLocalTGRank(), int(vHS.num_elements()), TG.getNCoresPerTG());
     MPI_Send_init(to_address(Gwork.origin()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                  3456, &TG.TG(), &req_Gsend);
+                  3456, TG.TG().get(), &req_Gsend);
     MPI_Recv_init(to_address(Grecv.origin()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                  3456, &TG.TG(), &req_Grecv);
+                  3456, TG.TG().get(), &req_Grecv);
     MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                  5678, &TG.TG(), &req_vsend);
+                  5678, TG.TG().get(), &req_vsend);
     MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                  5678, &TG.TG(), &req_vrecv);
+                  5678, TG.TG().get(), &req_vrecv);
 
     fill_n(make_device_ptr(vsend.origin()) + vak0, (vakN - vak0), zero);
 
@@ -151,7 +155,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       if (bpX.num_elements() < m_)
       {
         realloc = true;
-        bpX     = std::move(mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()}));
+        bpX     = mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -167,21 +171,21 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     if (bp_step >= 0 && bp_step < bp_max)
     {
-      MPI_Send_init(Xsend.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 3456, &TG.TG(),
+      MPI_Send_init(Xsend.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 3456, TG.TG().get(),
                     &req_X2send);
-      MPI_Recv_init(Xrecv.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 3456, &TG.TG(),
+      MPI_Recv_init(Xrecv.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 3456, TG.TG().get(),
                     &req_X2recv);
     }
 
     TG.local_barrier();
-    AFQMCTimers[setup_timer]->stop();
+    AFQMCTimers[setup_timer].get().stop();
 
     MPI_Status st;
 
     for (int k = 0; k < nnodes; ++k)
     {
       // 2. wait for communication of previous step
-      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      AFQMCTimers[vHS_comm_overhead_timer].get().start();
       if (k > 0)
       {
         MPI_Wait(&req_Grecv, &st);
@@ -196,23 +200,23 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
         MPI_Start(&req_Gsend);
         MPI_Start(&req_Grecv);
       }
-      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+      AFQMCTimers[vHS_comm_overhead_timer].get().stop();
 
       // calculate vHS contribution from this node
       // 4a. Calculate vbias for initial configuration
-      AFQMCTimers[vbias_timer]->start();
+      AFQMCTimers[vbias_timer].get().start();
       wfn.vbias(Gwork, vbias, sqrtdt);
-      AFQMCTimers[vbias_timer]->stop();
+      AFQMCTimers[vbias_timer].get().stop();
 
       // 4b. Assemble X(nCV,nsteps,nwalk)
-      AFQMCTimers[assemble_X_timer]->start();
+      AFQMCTimers[assemble_X_timer].get().start();
       int q = (node_number + k) % nnodes;
       assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
       copy_n(make_device_ptr(MFfactor.origin()), MFfactor.num_elements(), make_device_ptr(globalMFfactor[q].origin()));
       copy_n(make_device_ptr(hybrid_weight.origin()), hybrid_weight.num_elements(),
              make_device_ptr(globalhybrid_weight[q].origin()));
       TG.local_barrier();
-      AFQMCTimers[assemble_X_timer]->stop();
+      AFQMCTimers[assemble_X_timer].get().stop();
       if (bp_step >= 0 && bp_step < bp_max)
       {
         // receive X
@@ -232,12 +236,12 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       }
 
       // 4c. Calculate vHS(M*M,nsteps,nwalk)
-      AFQMCTimers[vHS_timer]->start();
+      AFQMCTimers[vHS_timer].get().start();
       wfn.vHS(X, vHS, sqrtdt);
       TG.local_barrier();
-      AFQMCTimers[vHS_timer]->stop();
+      AFQMCTimers[vHS_timer].get().stop();
 
-      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      AFQMCTimers[vHS_comm_overhead_timer].get().start();
       // 5. receive v
       if (k > 0)
       {
@@ -253,11 +257,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       MPI_Start(&req_vsend);
       MPI_Start(&req_vrecv);
       TG.local_barrier();
-      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+      AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
 
     // after the wait, vrecv ( and by extention vHS3D ) has the final vHS for the local walkers
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
+    AFQMCTimers[vHS_comm_overhead_timer].get().start();
     MPI_Wait(&req_vrecv, &st);
     MPI_Wait(&req_vsend, &st);
     MPI_Wait(&req_X2recv, &st);
@@ -311,7 +315,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
            make_device_ptr(hybrid_weight.origin()));
 
     TG.local_barrier();
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
+    AFQMCTimers[vHS_comm_overhead_timer].get().stop();
   }
 
 #if defined(MIXED_PRECISION)
@@ -344,7 +348,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   for (int ni = 0; ni < nsteps_; ni++)
   {
     // 5. Propagate walkers
-    AFQMCTimers[propagate_timer]->start();
+    AFQMCTimers[propagate_timer].get().start();
     if (nbatched_propagation != 0)
     {
       apply_propagators_batched('N', wset, ni, vHS3D);
@@ -353,10 +357,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     {
       apply_propagators('N', wset, ni, tk0, tkN, ntasks_total_serial, vHS3D);
     }
-    AFQMCTimers[propagate_timer]->stop();
+    AFQMCTimers[propagate_timer].get().stop();
 
     // 6. Calculate local energy/overlap
-    AFQMCTimers[pseudo_energy_timer]->start();
+    AFQMCTimers[pseudo_energy_timer].get().start();
     if (hybrid)
     {
       wfn.Overlap(wset, new_overlaps);
@@ -366,10 +370,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       wfn.Energy(wset, new_energies, new_overlaps);
     }
     TG.local_barrier();
-    AFQMCTimers[pseudo_energy_timer]->stop();
+    AFQMCTimers[pseudo_energy_timer].get().stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc
-    AFQMCTimers[extra_timer]->start();
+    AFQMCTimers[extra_timer].get().start();
     if (TG.TG_local().root())
     {
       if (free_projection)
@@ -392,7 +396,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
         wset.advanceHistoryPos();
     }
     TG.local_barrier();
-    AFQMCTimers[extra_timer]->stop();
+    AFQMCTimers[extra_timer].get().stop();
   }
 }
 
@@ -407,7 +411,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   using ma::axpy;
   using std::copy_n;
   using std::fill_n;
-  AFQMCTimers[setup_timer]->start();
+  AFQMCTimers[setup_timer].get().start();
   const SPComplexType one(1.), zero(0.);
   auto walker_type        = wset.getWalkerType();
   int nsteps              = nsteps_;
@@ -434,13 +438,13 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     G_ext = iextensions<2u>{nwalk, Gsize};
 
   if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
-    MFfactor = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    MFfactor = CMatrix({long(nsteps), long(nwalk)});
   if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
-    hybrid_weight = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
-    new_energies = std::move(CMatrix({long(nwalk), 3}));
+    new_energies = CMatrix({long(nwalk), 3});
 
   //  Temporary memory usage summary:
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
@@ -460,15 +464,17 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
   // scope controlling lifetime of temporary arrays
   {
-    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
+                                 buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
+                                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     StaticSPMatrix Gstore(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     int Gak0, GakN;
     std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(Gstore.num_elements()), TG.getNCoresPerTG());
 
     // 1. Calculate Green function for all (local) walkers
-    AFQMCTimers[G_for_vbias_timer]->start();
+    AFQMCTimers[G_for_vbias_timer].get().start();
 #if defined(MIXED_PRECISION)
     {
       StaticMatrix Gstore_(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -479,11 +485,13 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     wfn.MixedDensityMatrix_for_vbias(wset, Gstore);
 #endif
     TG.local_barrier();
-    AFQMCTimers[G_for_vbias_timer]->stop();
+    AFQMCTimers[G_for_vbias_timer].get().stop();
 
     StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
 // reusing second half of vrecv buffer reinterpreted as a SPComplex Array
 #if defined(MIXED_PRECISION)
     SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
@@ -506,7 +514,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       if (bpX.num_elements() < m_)
       {
         realloc = true;
-        bpX     = std::move(mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()}));
+        bpX     = mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -537,14 +545,14 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     }
 
     TG.local_barrier();
-    AFQMCTimers[setup_timer]->stop();
+    AFQMCTimers[setup_timer].get().stop();
 
     MPI_Status st;
 
     for (int k = 0; k < nnodes; ++k)
     {
       // 2. bcast G
-      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      AFQMCTimers[vHS_comm_overhead_timer].get().start();
       if (k == node_number)
         copy_n(make_device_ptr(Gstore.origin()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.origin()) + Gak0);
 #ifdef BUILD_AFQMC_WITH_NCCL
@@ -564,22 +572,22 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       TG.TG_Cores().broadcast_n(to_address(Gwork.origin()) + Gak0, GakN - Gak0, k);
 #endif
       TG.local_barrier();
-      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+      AFQMCTimers[vHS_comm_overhead_timer].get().stop();
 
       // calculate vHS contribution from this node
       // 3a. Calculate vbias for initial configuration
-      AFQMCTimers[vbias_timer]->start();
+      AFQMCTimers[vbias_timer].get().start();
       wfn.vbias(Gwork, vbias, sqrtdt);
-      AFQMCTimers[vbias_timer]->stop();
+      AFQMCTimers[vbias_timer].get().stop();
 
       // 3b. Assemble X(nCV,nsteps,nwalk)
-      AFQMCTimers[assemble_X_timer]->start();
+      AFQMCTimers[assemble_X_timer].get().start();
       assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
       copy_n(make_device_ptr(MFfactor.origin()), MFfactor.num_elements(), make_device_ptr(globalMFfactor[k].origin()));
       copy_n(make_device_ptr(hybrid_weight.origin()), hybrid_weight.num_elements(),
              make_device_ptr(globalhybrid_weight[k].origin()));
       TG.local_barrier();
-      AFQMCTimers[assemble_X_timer]->stop();
+      AFQMCTimers[assemble_X_timer].get().stop();
       if (bp_step >= 0 && bp_step < bp_max)
       {
         APP_ABORT("Finish");
@@ -594,12 +602,12 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       }
 
       // 3c. Calculate vHS(M*M,nsteps,nwalk)
-      AFQMCTimers[vHS_timer]->start();
+      AFQMCTimers[vHS_timer].get().start();
       wfn.vHS(X, vHS, sqrtdt);
       TG.local_barrier();
-      AFQMCTimers[vHS_timer]->stop();
+      AFQMCTimers[vHS_timer].get().stop();
 
-      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      AFQMCTimers[vHS_comm_overhead_timer].get().start();
       // 4. Reduce vHS
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
@@ -620,11 +628,11 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 #endif
 
       TG.local_barrier();
-      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+      AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
 
     // after the wait, vrecv ( and by extention vHS3D ) has the final vHS for the local walkers
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
+    AFQMCTimers[vHS_comm_overhead_timer].get().start();
 
     // store fields in walker
     if (bp_step >= 0 && bp_step < bp_max)
@@ -680,7 +688,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     copy_n(make_device_ptr(globalhybrid_weight[node_number].origin()), hybrid_weight.num_elements(),
            make_device_ptr(hybrid_weight.origin()));
 
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
+    AFQMCTimers[vHS_comm_overhead_timer].get().stop();
   } // scope controlling lifetime of temporary arrays
 
 #if defined(MIXED_PRECISION)
@@ -711,7 +719,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   for (int ni = 0; ni < nsteps_; ni++)
   {
     // 5. Propagate walkers
-    AFQMCTimers[propagate_timer]->start();
+    AFQMCTimers[propagate_timer].get().start();
     if (nbatched_propagation != 0)
     {
       apply_propagators_batched('N', wset, ni, vHS3D);
@@ -720,10 +728,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     {
       apply_propagators('N', wset, ni, tk0, tkN, ntasks_total_serial, vHS3D);
     }
-    AFQMCTimers[propagate_timer]->stop();
+    AFQMCTimers[propagate_timer].get().stop();
 
     // 6. Calculate local energy/overlap
-    AFQMCTimers[pseudo_energy_timer]->start();
+    AFQMCTimers[pseudo_energy_timer].get().start();
     if (hybrid)
     {
       wfn.Overlap(wset, new_overlaps);
@@ -733,10 +741,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       wfn.Energy(wset, new_energies, new_overlaps);
     }
     TG.local_barrier();
-    AFQMCTimers[pseudo_energy_timer]->stop();
+    AFQMCTimers[pseudo_energy_timer].get().stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc
-    AFQMCTimers[extra_timer]->start();
+    AFQMCTimers[extra_timer].get().start();
     if (TG.TG_local().root())
     {
       if (free_projection)
@@ -759,7 +767,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
         wset.advanceHistoryPos();
     }
     TG.local_barrier();
-    AFQMCTimers[extra_timer]->stop();
+    AFQMCTimers[extra_timer].get().stop();
   }
 }
 
@@ -796,9 +804,12 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   //  vHS:             [ NMO*NMO * nwalk ] (3 copies)
   // memory_needs: nwalk * ( localnCV + NMO*NMO )
 
-  StaticSPMatrix X({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticSPMatrix Xsend({long(globalnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticSPMatrix Xrecv({long(globalnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix X({long(localnCV), long(nwalk)},
+                   buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix Xsend({long(globalnCV), long(nwalk)},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix Xrecv({long(globalnCV), long(nwalk)},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
   StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
   SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
 #if defined(MIXED_PRECISION)
@@ -814,13 +825,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   std::tie(X0, XN)     = FairDivideBoundary(TG.getLocalTGRank(), int(Xsend.num_elements()), TG.getNCoresPerTG());
   std::tie(vak0, vakN) = FairDivideBoundary(TG.getLocalTGRank(), int(vHS.num_elements()), TG.getNCoresPerTG());
   MPI_Send_init(to_address(Xsend.origin()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 2345,
-                &TG.TG(), &req_Xsend);
+                TG.TG().get(), &req_Xsend);
   MPI_Recv_init(to_address(Xrecv.origin()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 2345,
-                &TG.TG(), &req_Xrecv);
+                TG.TG().get(), &req_Xrecv);
   MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                6789, &TG.TG(), &req_bpvsend);
+                6789, TG.TG().get(), &req_bpvsend);
   MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                6789, &TG.TG(), &req_bpvrecv);
+                6789, TG.TG().get(), &req_bpvrecv);
   TG.local_barrier();
 
   auto&& Fields(*wset.getFields());

@@ -32,8 +32,7 @@ PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPool
     : WaveFunctionComponentBuilder(comm, els),
       ptclPool(psets),
       hfileID(-1),
-      rootNode(NULL),
-      myBasisSet(nullptr)
+      rootNode(NULL)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -58,7 +57,6 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
   //no file, check the root
   if (hfileID < 0)
     hfileID = getH5(rootNode, "href");
-  bool success = true;
   //Move through the XML tree and read basis information
   cur = cur->children;
   while (cur != NULL)
@@ -85,7 +83,7 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
         APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
         OHMMS::Controller->abort();
       }
-      success = createPWBasis(cur);
+      createPWBasis(cur);
       slater_det = putSlaterDet(cur);
     }
     cur = cur->next;
@@ -124,14 +122,15 @@ WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
-        SPOSetPtr psi(createPW(cur, spin_group));
-        spomap[ref] = psi;
-        adet        = new Det_t(psi, firstIndex);
+        std::unique_ptr<SPOSet> psi(createPW(cur, spin_group));
+        spomap[ref] = psi.get();
+        adet        = new Det_t(std::move(psi), firstIndex);
       }
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
-        adet = new Det_t((*lit).second, firstIndex);
+        std::unique_ptr<SPOSet> psi((*lit).second->makeClone());
+        adet = new Det_t(std::move(psi), firstIndex);
       }
       app_log() << "    spin=" << spin_group << " id=" << id << " ref=" << ref << std::endl;
       if (adet)
@@ -191,9 +190,9 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.read(hfileID, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;
-  if (myBasisSet == nullptr)
+  if (!myBasisSet)
   {
-    myBasisSet = new PWBasis(TwistAngle);
+    myBasisSet = std::make_unique<PWBasis>(TwistAngle);
   }
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
@@ -284,7 +283,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
       occBand[i] = i;
   }
   //going to take care of occ
-  psi->resize(myBasisSet, nb, true);
+  psi->resize(new PWBasis(*myBasisSet), nb, true);
   if (myParam->hasComplexData(hfileID)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;

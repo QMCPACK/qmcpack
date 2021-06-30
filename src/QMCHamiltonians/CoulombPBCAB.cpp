@@ -26,14 +26,10 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       PtclA(ions),
       myTableIndex(elns.addTable(ions)),
       myConst(0.0),
-      myGrid(nullptr),
-      V0(nullptr),
-      fV0(nullptr),
-      dfV0(nullptr),
       ComputeForces(computeForces),
       MaxGridPoints(10000),
-      Peln(elns),
-      Pion(ions)
+      Pion(ions),
+      Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
   set_energy_domain(potential);
@@ -47,73 +43,12 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-OperatorBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCAB* myclone    = new CoulombPBCAB(PtclA, qp, ComputeForces);
-  myclone->FirstForceIndex = FirstForceIndex;
-  if (myGrid)
-    myclone->myGrid = new GridType(*myGrid);
-  for (int ig = 0; ig < Vspec.size(); ++ig)
-  {
-    if (Vspec[ig])
-    {
-      RadFunctorType* apot = Vspec[ig]->makeClone();
-      myclone->Vspec[ig]   = apot;
-      for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
-      {
-        if (PtclA.GroupID[iat] == ig)
-          myclone->Vat[iat] = apot;
-      }
-    }
-  }
-  //If forces exist, force arrays will have been allocated.  Iterate over one
-  //such array to clone.
-  for (int ig = 0; ig < fVspec.size(); ig++)
-  {
-    if (fVspec[ig])
-    {
-      RadFunctorType* apot  = fVspec[ig]->makeClone();
-      RadFunctorType* dapot = fdVspec[ig]->makeClone();
-      myclone->fVspec[ig]   = apot;
-      myclone->fdVspec[ig]  = dapot;
-      for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
-      {
-        if (PtclA.GroupID[iat] == ig)
-        {
-          myclone->fVat[iat]  = apot;
-          myclone->fdVat[iat] = dapot;
-        }
-      }
-    }
-  }
-  return myclone;
+  return std::make_unique<CoulombPBCAB>(*this);
 }
 
-CoulombPBCAB::~CoulombPBCAB()
-{
-  delete V0;
-  delete fV0;
-  delete dfV0;
-
-  V0   = nullptr;
-  fV0  = nullptr;
-  dfV0 = nullptr;
-
-  //This takes care of species dependent terms.
-  for (int ig = 0; ig < Vspec.size(); ig++)
-  {
-    delete Vspec[ig];
-    Vspec[ig] = nullptr;
-  }
-  //If forces were initialized, fVspec.size()!=0.  This cleans up.
-  for (int ig = 0; ig < fVspec.size(); ig++)
-  {
-    delete fVspec[ig];
-    delete fdVspec[ig];
-    fVspec[ig]  = nullptr;
-    fdVspec[ig] = nullptr;
-  }
-}
+CoulombPBCAB::~CoulombPBCAB() = default;
 
 void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 {
@@ -319,7 +254,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
  * \f$V_{bg}^{AB}=-\sum_{\alpha}\sum_{\beta} N^{\alpha} N^{\beta} q^{\alpha} q^{\beta} v_s(k=0) \f$
  * @todo Here is where the charge system has to be handled.
  */
-CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(bool report)
+CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(const ParticleSet& Peln, bool report)
 {
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
@@ -447,11 +382,10 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
     NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB, spec));
   }
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
   //    if(totQ>std::numeric_limits<RealType>::epsilon())
   //    {
   //      LOGMSG("PBCs not yet finished for non-neutral cells");
@@ -464,18 +398,18 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   //initBreakup is called only once
   //AB = LRCoulombSingleton::getHandler(*PtclB);
   AB      = LRCoulombSingleton::getHandler(P);
-  myConst = evalConsts();
+  myConst = evalConsts(P);
   myRcut  = AB->get_rc(); //Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
   if (V0 == nullptr)
   {
-    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid);
+    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid.get());
     if (Vat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
-    Vat.resize(NptclA, V0);
-    Vspec.resize(NumSpeciesA, nullptr); //prepare for PP to overwrite it
+    Vat.resize(NptclA, V0.get());
+    Vspec.resize(NumSpeciesA); //prepare for PP to overwrite it
   }
 
   //If ComputeForces is true, then we allocate space for the radial derivative functors.
@@ -483,17 +417,17 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
     if (fV0 == nullptr)
-      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid);
+      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid.get());
     if (dfV0 == nullptr)
-      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid);
+      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid.get());
     if (fVat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
-    fVat.resize(NptclA, fV0);
-    fdVat.resize(NptclA, dfV0);
-    fVspec.resize(NumSpeciesA, nullptr);
-    fdVspec.resize(NumSpeciesA, nullptr);
+    fVat.resize(NptclA, fV0.get());
+    fdVat.resize(NptclA, dfV0.get());
+    fVspec.resize(NumSpeciesA);
+    fdVspec.resize(NumSpeciesA);
   }
 }
 
@@ -501,11 +435,11 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
  * @param groupID species index
  * @param ppot radial functor for \f$rV_{loc}\f$ on a grid
  */
-void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
+void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
   if (myGrid == nullptr)
   {
-    myGrid = new LinearGrid<RealType>;
+    myGrid = std::make_shared<LinearGrid<RealType>>();
     int ng = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
     app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0," << myRcut << ") number of grid =" << ng
               << std::endl;
@@ -513,8 +447,7 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
   }
   if (Vspec[groupID] == nullptr)
   {
-    delete V0;
-    V0 = nullptr;
+    V0.reset();
 
     app_log() << "    Creating the short-range pseudopotential for species " << groupID << std::endl;
     int ng = myGrid->size();
@@ -527,17 +460,17 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     }
     v[0] = 2.0 * v[1] - v[2];
     //by construction, v has to go to zero at the boundary
-    v[ng - 2]             = 0.0;
-    v[ng - 1]             = 0.0;
-    RadFunctorType* rfunc = new RadFunctorType(myGrid, v);
-    RealType deriv        = (v[1] - v[0]) / ((*myGrid)[1] - (*myGrid)[0]);
+    v[ng - 2]      = 0.0;
+    v[ng - 1]      = 0.0;
+    RealType deriv = (v[1] - v[0]) / ((*myGrid)[1] - (*myGrid)[0]);
+    auto rfunc     = std::make_unique<RadFunctorType>(myGrid->makeClone(), v);
     rfunc->spline(0, deriv, ng - 1, 0.0);
-    Vspec[groupID] = rfunc;
     for (int iat = 0; iat < NptclA; iat++)
     {
       if (PtclA.GroupID[iat] == groupID)
-        Vat[iat] = rfunc;
+        Vat[iat] = rfunc.get();
     }
+    Vspec[groupID] = std::move(rfunc);
   }
 
   if (ComputeForces && fVspec[groupID] == nullptr)
@@ -570,24 +503,24 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     dv[ng - 2] = 0;
     dv[ng - 1] = 0;
 
-    RadFunctorType* ffunc  = new RadFunctorType(myGrid, v);
-    RadFunctorType* fdfunc = new RadFunctorType(myGrid, dv);
+    auto ffunc  = std::make_unique<RadFunctorType>(myGrid->makeClone(), v);
+    auto fdfunc = std::make_unique<RadFunctorType>(myGrid->makeClone(), dv);
 
     RealType fderiv = (dv[1] - dv[0]) / ((*myGrid)[1] - (*myGrid)[0]);
 
     ffunc->spline(0, dv[0], ng - 1, 0.0);
     fdfunc->spline(0, fderiv, ng - 1, 0.0);
 
-    fVspec[groupID]  = ffunc;
-    fdVspec[groupID] = fdfunc;
     for (int iat = 0; iat < NptclA; iat++)
     {
       if (PtclA.GroupID[iat] == groupID)
       {
-        fVat[iat]  = ffunc;
-        fdVat[iat] = fdfunc;
+        fVat[iat]  = ffunc.get();
+        fdVat[iat] = fdfunc.get();
       }
     }
+    fVspec[groupID]  = std::move(ffunc);
+    fdVspec[groupID] = std::move(fdfunc);
     //Done
   }
 

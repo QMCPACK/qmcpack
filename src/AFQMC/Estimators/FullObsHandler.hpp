@@ -66,8 +66,8 @@ class FullObsHandler : public AFQMCInfo
   using stdCVector_ref = boost::multi::array_ref<ComplexType, 1>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticSHMVector       = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
-  using StaticSHM4Tensor      = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
+  using StaticSHMVector      = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
+  using StaticSHM4Tensor     = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
 
 public:
   FullObsHandler(afqmc::TaskGroup_& tg_,
@@ -93,8 +93,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(nave, "naverages", "int");
-      m_param.add(block_size, "block_size", "int");
+      m_param.add(nave, "naverages");
+      m_param.add(block_size, "block_size");
       m_param.put(cur);
     }
 
@@ -108,53 +108,51 @@ public:
       std::transform(cname.begin(), cname.end(), cname.begin(), (int (*)(int))tolower);
       if (cname == "onerdm")
       {
-        properties.emplace_back(Observable(std::move(full1rdm(TG, info, cur, walker_type, nave, block_size))));
+        properties.emplace_back(Observable(full1rdm(TG, info, cur, walker_type, nave, block_size)));
       }
       else if (cname == "gfock" || cname == "genfock" || cname == "ekt")
       {
-        properties.emplace_back(Observable(std::move(
-            generalizedFockMatrix(TG, info, cur, walker_type, wfn0.getHamiltonianOperations(), nave, block_size))));
+        properties.emplace_back(Observable(
+            generalizedFockMatrix(TG, info, cur, walker_type, wfn0.getHamiltonianOperations(), nave, block_size)));
       }
       else if (cname == "diag2rdm")
       {
-        properties.emplace_back(Observable(std::move(diagonal2rdm(TG, info, cur, walker_type, nave, block_size))));
+        properties.emplace_back(Observable(diagonal2rdm(TG, info, cur, walker_type, nave, block_size)));
       }
       else if (cname == "twordm")
       {
-        properties.emplace_back(Observable(std::move(full2rdm(TG, info, cur, walker_type, nave, block_size))));
+        properties.emplace_back(Observable(full2rdm(TG, info, cur, walker_type, nave, block_size)));
       }
       else if (cname == "n2r" || cname == "ontop2rdm")
       {
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         std::string str("false");
         ParameterSet m_param;
-        m_param.add(str, "use_host_memory", "std::string");
+        m_param.add(str, "use_host_memory");
         m_param.put(cur);
         std::transform(str.begin(), str.end(), str.begin(), (int (*)(int))tolower);
         if (str == "false" || str == "no")
         {
-          properties.emplace_back(Observable(std::move(
+          properties.emplace_back(Observable(
               n2r<device_allocator<ComplexType>>(TG, info, cur, walker_type, false, device_allocator<ComplexType>{},
-                                                 device_allocator<ComplexType>{}, nave, block_size))));
+                                                 device_allocator<ComplexType>{}, nave, block_size)));
         }
         else
 #endif
         {
-          properties.emplace_back(Observable(std::move(
+          properties.emplace_back(Observable(
               n2r<shared_allocator<ComplexType>>(TG, info, cur, walker_type, true,
                                                  shared_allocator<ComplexType>{TG.TG_local()},
-                                                 shared_allocator<ComplexType>{TG.Node()}, nave, block_size))));
+                                                 shared_allocator<ComplexType>{TG.Node()}, nave, block_size)));
         }
       }
       else if (cname == "realspace_correlators")
       {
-        properties.emplace_back(
-            Observable(std::move(realspace_correlators(TG, info, cur, walker_type, nave, block_size))));
+        properties.emplace_back(Observable(realspace_correlators(TG, info, cur, walker_type, nave, block_size)));
       }
       else if (cname == "correlators")
       {
-        properties.emplace_back(
-            Observable(std::move(atomcentered_correlators(TG, info, cur, walker_type, nave, block_size))));
+        properties.emplace_back(Observable(atomcentered_correlators(TG, info, cur, walker_type, nave, block_size)));
       }
       cur = cur->next;
     }
@@ -169,7 +167,7 @@ public:
 
     writer = (TG.getGlobalRank() == 0);
 
-    denominator = std::move(stdCVector(iextensions<1u>{nave}));
+    denominator = stdCVector(iextensions<1u>{nave});
     fill_n(denominator.begin(), denominator.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -199,14 +197,14 @@ public:
     double LogOverlapFactor(wset.getLogOverlapFactor());
     LocalTGBufferManager shm_buffer_manager;
     StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims), std::get<1>(Gdims)},
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticSHMVector DevOv(iextensions<1u>{2 * nw}, 
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+                         shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticSHMVector DevOv(iextensions<1u>{2 * nw},
+                          shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     sharedCMatrix_ref G2D(G4D.origin(), {nw, dm_size});
 
     if (G4D_host.num_elements() != G4D.num_elements())
     {
-      G4D_host = std::move(mpi3C4Tensor(G4D.extensions(), shared_allocator<ComplexType>{TG.TG_local()}));
+      G4D_host = mpi3C4Tensor(G4D.extensions(), shared_allocator<ComplexType>{TG.TG_local()});
       TG.TG_local().barrier();
     }
 

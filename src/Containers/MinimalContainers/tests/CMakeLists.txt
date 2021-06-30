@@ -9,15 +9,15 @@
 #// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-SET(SRC_DIR MinimalContainers)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR MinimalContainers)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_ConstantSizeMatrix.cpp test_RecordArray.cpp)
+set(SRCS test_ConstantSizeMatrix.cpp test_RecordArray.cpp)
 
-ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
+add_executable(${UTEST_EXE} ${SRCS})
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main containers)
+target_link_libraries(${UTEST_EXE} catch_main containers)
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

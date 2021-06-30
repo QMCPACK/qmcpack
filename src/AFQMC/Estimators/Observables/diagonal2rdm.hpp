@@ -75,7 +75,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(hdf_walker_output, "walker_output", "std::string");
+      m_param.add(hdf_walker_output, "walker_output");
       m_param.put(cur);
     }
 
@@ -106,7 +106,7 @@ public:
     if (walker_type == CLOSED)
       dm_size -= NMO * (NMO - 1) / 2;
 
-    DMAverage = std::move(mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -138,11 +138,11 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
       {
-        DMWork = std::move(mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));

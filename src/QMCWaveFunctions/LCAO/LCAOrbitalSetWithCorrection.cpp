@@ -11,15 +11,14 @@
 
 
 #include "LCAOrbitalSetWithCorrection.h"
-#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
 LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions,
                                                          ParticleSet& els,
-                                                         basis_type* bs,
+                                                         std::unique_ptr<basis_type>&& bs,
                                                          bool optimize)
-    : LCAOrbitalSet(bs, optimize), cusp(ions, els)
+    : LCAOrbitalSet(std::move(bs), optimize), cusp(ions, els)
 {}
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
@@ -29,12 +28,7 @@ void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 }
 
 
-SPOSet* LCAOrbitalSetWithCorrection::makeClone() const
-{
-  LCAOrbitalSetWithCorrection* myclone = new LCAOrbitalSetWithCorrection(*this);
-  myclone->myBasisSet                  = myBasisSet->makeClone();
-  return myclone;
-}
+SPOSet* LCAOrbitalSetWithCorrection::makeClone() const { return new LCAOrbitalSetWithCorrection(*this); }
 
 void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
@@ -70,9 +64,7 @@ void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
 {
   LCAOrbitalSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   for (size_t i = 0, iat = first; iat < last; i++, iat++)
-  {
     cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
-  }
 }
 
 void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,

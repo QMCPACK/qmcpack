@@ -68,7 +68,7 @@ class full1rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -102,11 +102,11 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(hdf_walker_output, "walker_output", "std::string");
-      m_param.add(nskip_walker_output, "nskip_output", "int");
-      m_param.add(rot_file, "rotation", "std::string");
-      m_param.add(path, "path", "std::string");
-      m_param.add(str, "with_index_list", "std::string");
+      m_param.add(hdf_walker_output, "walker_output");
+      m_param.add(nskip_walker_output, "nskip_output");
+      m_param.add(rot_file, "rotation");
+      m_param.add(path, "path");
+      m_param.add(str, "with_index_list");
       m_param.put(cur);
     }
 
@@ -148,13 +148,13 @@ public:
           dim[1] = I.size(0);
         }
         TG.Node().broadcast_n(dim, 2, 0);
-        XRot = std::move(sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG)));
+        XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         copy_n(R.origin(), R.num_elements(), make_device_ptr(XRot.origin()));
         if (TG.Node().root())
           TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
         if (print_from_list)
         {
-          index_list = std::move(mpi3IMatrix({dim[1], 2}, shared_allocator<int>{TG.Node()}));
+          index_list = mpi3IMatrix({dim[1], 2}, shared_allocator<int>{TG.Node()});
           copy_n(I.origin(), I.num_elements(), make_device_ptr(index_list.origin()));
           if (TG.Node().root())
             TG.Cores().broadcast_n(to_address(index_list.origin()), index_list.num_elements(), 0);
@@ -166,12 +166,12 @@ public:
       else
       {
         TG.Node().broadcast_n(dim, 2, 0);
-        XRot = std::move(sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG)));
+        XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         if (TG.Node().root())
           TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
         if (print_from_list)
         {
-          index_list = std::move(mpi3IMatrix({dim[1], 2}, shared_allocator<int>{TG.Node()}));
+          index_list = mpi3IMatrix({dim[1], 2}, shared_allocator<int>{TG.Node()});
           if (TG.Node().root())
             TG.Cores().broadcast_n(to_address(index_list.origin()), index_list.num_elements(), 0);
         }
@@ -218,7 +218,7 @@ public:
     using std::fill_n;
     writer = (TG.getGlobalRank() == 0);
 
-    DMAverage = std::move(mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -249,11 +249,11 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
       {
-        DMWork = std::move(mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
@@ -442,12 +442,10 @@ private:
     int nX   = XRot.size(0);
     int npts = (iN - i0) * nX;
     DeviceBufferManager buffer_manager;
-    StaticMatrix T1({(iN - i0), NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticMatrix T2({(iN - i0), nX}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix T2({(iN - i0), nX}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     if (Grot.size() != npts)
-      Grot = std::move(stdCVector(iextensions<1u>(npts)));
+      Grot = stdCVector(iextensions<1u>(npts));
 
     // round-robin for now
     int cnt = 0;

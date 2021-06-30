@@ -18,7 +18,6 @@
 #include "QMCGaussianParserBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
@@ -75,6 +74,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       ci_neb(0),
       ci_nstates(0),
       NbKpts(0),
+      nbexcitedstates(0),
       ci_threshold(1e-20),
       Title("sample"),
       basisType("Gaussian"),
@@ -137,6 +137,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       ci_neb(0),
       ci_nstates(0),
       NbKpts(0),
+      nbexcitedstates(0),
       ci_threshold(1e-20),
       Title("sample"),
       basisType("Gaussian"),
@@ -967,6 +968,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   hout.write(ci_nstates, "nstate");
   hout.write(CIcoeff, "Coeff");
   hout.write(N_int, "Nbits");
+  hout.write(nbexcitedstates, "nexcitedstate");
 
   Matrix<int64_t> tempAlpha(ci_size, N_int);
   Matrix<int64_t> tempBeta(ci_size, N_int);
@@ -2408,6 +2410,14 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
   xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
+  if (nbexcitedstates >= 1)
+  {
+    app_log() << "WARNING!! THE HDF5 Contains CI coefficients for " << nbexcitedstates
+              << ". By default, the ground state coefficients will be loaded ( ext_level=0). If you want to evaluate "
+                 "an excited for which the coefficients are stored in the HDF5 file, modify the value of ext_level "
+                 "Using [1," << nbexcitedstates<< "]" <<std::endl;
+    xmlNewProp(detlist, (const xmlChar*)"ext_level", (const xmlChar*)"0");
+  }
   if (!debug)
     xmlNewProp(detlist, (const xmlChar*)"href", (const xmlChar*)multih5file.c_str());
   if (CIcoeff.size() == 0)

@@ -69,16 +69,11 @@ struct hyperslab_proxy
                          const std::array<IT, RANK>& offsets_in)
       : ref_(a)
   {
+    static_assert(std::is_unsigned<IT>::value, "only accept unsigned integer types like size_t");
     for (int i = 0; i < slab_rank; ++i)
     {
-      if (dims_in[i] < 0)
-        throw std::runtime_error("Negative size detected in some dimensions of filespace input\n");
       file_space.dims[i] = static_cast<hsize_t>(dims_in[i]);
-      if (selected_in[i] < 0)
-        throw std::runtime_error("Negative size detected in some dimensions of selected space input\n");
       selected_space.dims[i] = static_cast<hsize_t>(selected_in[i]);
-      if (offsets_in[i] < 0)
-        throw std::runtime_error("Negative value detected in some dimensions of offset input\n");
       slab_offset[i] = static_cast<hsize_t>(offsets_in[i]);
     }
 

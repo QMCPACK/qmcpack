@@ -18,6 +18,7 @@
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "HamiltonianRef.h"
 
 namespace qmcplusplus
 {
@@ -36,21 +37,21 @@ public:
   ///Destructor
   ~QMCCostFunction();
 
-  void getConfigurations(const std::string& aroot);
-  void checkConfigurations();
+  void getConfigurations(const std::string& aroot) override;
+  void checkConfigurations() override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod);
+                                  const std::string& MinMethod) override;
 #endif
 
 
-  void resetPsi(bool final_reset = false);
-  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff = 0);
-  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
+  void resetPsi(bool final_reset = false) override;
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
-  std::vector<QMCHamiltonian*> H_KE_Node;
+  std::vector<std::unique_ptr<HamiltonianRef>> H_KE_Node;
   std::vector<Matrix<Return_rt>*> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
@@ -59,11 +60,11 @@ protected:
   std::vector<Matrix<Return_rt>*> HDerivRecords;
   Return_rt CSWeight;
 
-  Return_rt correlatedSampling(bool needGrad = true);
+  Return_rt correlatedSampling(bool needGrad = true) override;
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj);
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
 };
 } // namespace qmcplusplus

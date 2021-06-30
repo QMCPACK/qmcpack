@@ -27,32 +27,35 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
-      Nrule(4),
+      Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
       Zeff(0),
       RcutMax(-1),
-      Species(aname),
-      grid_global(0),
-      pp_loc(0),
-      pp_nonloc(0),
-      pp_so(0),
-      pp_L2(0)
+      Species(aname)
 {
   angMon["s"] = 0;
   angMon["p"] = 1;
   angMon["d"] = 2;
   angMon["f"] = 3;
   angMon["g"] = 4;
+  angMon["h"] = 5;
+  angMon["i"] = 6;
+  angMon["j"] = 7;
+  angMon["k"] = 8;
   angMon["0"] = 0;
   angMon["1"] = 1;
   angMon["2"] = 2;
   angMon["3"] = 3;
   angMon["4"] = 4;
+  angMon["5"] = 5;
+  angMon["6"] = 6;
+  angMon["7"] = 7;
+  angMon["8"] = 8;
 }
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
@@ -133,29 +136,25 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-  {
-    APP_ABORT("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
 
   okay = buf.read_contents();
   if (!okay)
-  {
-    APP_ABORT("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("Empty document");
+    myComm->barrier_and_abort("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);
@@ -197,10 +196,10 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if (semiPtr.size())
   {
-    if (pp_nonloc == 0)
-      pp_nonloc = new NonLocalECPComponent;
+    if (!pp_nonloc)
+      pp_nonloc = std::make_unique<NonLocalECPComponent>();
     if (pp_so == 0)
-      pp_so = new SOECPComponent;
+      pp_so = std::make_unique<SOECPComponent>();
     if (pp_loc)
     {
       for (int i = 0; i < semiPtr.size(); i++)
@@ -261,6 +260,7 @@ void ECPComponentBuilder::printECPTable()
 
 void ECPComponentBuilder::SetQuadratureRule(int rule)
 {
+  app_log() << "  Quadrature Nrule: " << rule << std::endl;
   Quadrature3D<RealType> myRule(rule);
   pp_nonloc->sgridxyz_m    = myRule.xyz_m;
   pp_nonloc->sgridweight_m = myRule.weight_m;

@@ -15,8 +15,8 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/LCAO/SoaCuspCorrectionBasisSet.h"
+#include "LCAOrbitalSet.h"
+#include "SoaCuspCorrection.h"
 
 
 namespace qmcplusplus
@@ -24,17 +24,16 @@ namespace qmcplusplus
 /** class to add cusp correction to LCAOrbitalSet.
    *
    */
-struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
+class LCAOrbitalSetWithCorrection : public LCAOrbitalSet
 {
-  SoaCuspCorrection cusp;
-
+public:
   /** constructor
      * @param ions
      * @param els
      * @param bs pointer to the BasisSet
      * @param rl report level
      */
-  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs, bool optimize);
+  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, std::unique_ptr<basis_type>&& bs, bool optimize);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 
@@ -79,6 +78,8 @@ struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
                             GGGMatrix_t& grad_grad_grad_logdet) override;
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet) override;
+
+  SoaCuspCorrection cusp;
 };
 } // namespace qmcplusplus
 #endif

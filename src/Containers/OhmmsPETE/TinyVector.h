@@ -146,9 +146,6 @@ struct TinyVector
       X[i] = base[i * offset];
   }
 
-  // Destructor
-  ~TinyVector() {}
-
   inline int size() const { return D; }
 
   inline int byteSize() const { return D * sizeof(T); }

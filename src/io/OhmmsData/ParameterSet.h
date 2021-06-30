@@ -111,23 +111,22 @@ struct ParameterSet : public OhmmsElementBase
 
   /** add a new parameter corresponding to an xmlNode <parameter/>
    *@param aparam reference the object which this parameter is assigned to.
-   *@param aname the value of the name attribute
-   *@param uname the value of the condition attribute
-   *
-   *The attributes of a parameter are
-   * - name, the name of the parameter
-   * - condition, the unit of the parameter
-   *The condition will be used to convert the external unit to the internal unit.
+   *@param aname_in the value of the name attribute
+   *@param candidate_values candidate values to be checked against, the first element is the default value
+   *@param status Tag status, See OhmmsParameter.h for more details
    */
   template<class PDT>
-  inline void add(PDT& aparam, const char* aname_in, const char* uname)
+  inline void add(PDT& aparam,
+                  const std::string& aname_in,
+                  std::vector<PDT>&& candidate_values = {},
+                  TagStatus status                    = TagStatus::OPTIONAL)
   {
     std::string aname(aname_in);
     tolower(aname);
     iterator it = m_param.find(aname);
     if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), uname);
+      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname, std::move(candidate_values), status);
     }
   }
 

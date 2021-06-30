@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x -lboost_unit_test_framework `pkg-config --libs blas` \
+$CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework `pkg-config --libs blas` \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5` \
 -lboost_timer &&$0x&&rm $0x; exit
 #endif
@@ -27,49 +27,55 @@ namespace boost{
 namespace multi{namespace blas{
 
 template<class A, std::enable_if_t<not is_conjugated<A>{}, int> =0> 
-auto base_aux(A&& a){return base(a);}
+auto base_aux(A&& a)
+->decltype(base(a)){
+	return base(a);}
 
 template<class A, std::enable_if_t<    is_conjugated<A>{}, int> =0>
-auto base_aux(A&& a){return underlying(base(a));}
+auto base_aux(A&& a)
+->decltype(underlying(base(a))){
+	return underlying(base(a));}
 
 using core::herk;
 
-template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<is_complex<C2D>{}, int> =0>
-auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
-->decltype(herk('\0', '\0', size(c), size(         a), alpha, base_aux(a), stride(rotated(a)), beta, base_aux(c), stride(c)), std::forward<C2D>(c))
+template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<is_complex_array<C2D>{}, int> =0>
+C2D&& herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
+//->decltype(herk('\0', '\0', c.size(), a.size(), &alpha, base_aux(a), stride(a.rotated()), &beta, base_aux(c), stride(c)), std::forward<C2D>(c))
 {
-	assert( size(a) == size(c) );
-	assert( size(c) == size(rotated(c)) );
-	if( is_conjugated<C2D>{} ){ herk(flip(c_side), alpha, a, beta, hermitized(c)); return std::forward<C2D>(c);}
-	if(size(c)==0) return std::forward<C2D>(c);
+	assert( a.size() == c.size() );
+	assert( c.size() == rotated(c).size() );
+	if(c.size()==0) return std::forward<C2D>(c);
+	if constexpr(is_conjugated<C2D>{}){herk(flip(c_side), alpha, a, beta, hermitized(c)); return std::forward<C2D>(c);}
 	{
 		auto base_a = base_aux(a);
 		auto base_c = base_aux(c); //  static_assert( not is_conjugated<C2D>{}, "!" );
-		if(is_conjugated<A2D>{}){
+		if constexpr(is_conjugated<A2D>{}){
+		//	auto& ctxt = *blas::default_context_of(underlying(a.base()));
 			// if you get an error here might be due to lack of inclusion of a header file with the backend appropriate for your type of iterator
-				 if(stride(a)==1 and stride(c)!=1) core::herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
+				 if(stride(a)==1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));
 			else if(stride(a)==1 and stride(c)==1){
-				if(size(a)==1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
+				if(size(a)==1)                     herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));
 				else assert(0);
 			}
-			else if(stride(a)!=1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'C', size(c), size(rotated(a)), alpha, base_a, stride(        a ), beta, base_c, stride(rotated(c)));
-			else if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), alpha, base_a, stride(        a ), beta, base_c, stride(        c ));
+			else if(stride(a)!=1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(rotated(c)));
+			else if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(        c ));
 			else assert(0);
 		}else{
-				 if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), alpha, base_a, stride(        a ), beta, base_c, stride(c));
+		//	auto& ctxt = *blas::default_context_of(           a.base() );
+			;;;; if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(c));
 			else if(stride(a)!=1 and stride(c)==1){
-				if(size(a)==1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(rotated(c)));
+				if(size(a)==1)                     herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));
 				else assert(0);
 			}
 			else if(stride(a)==1 and stride(c)!=1) assert(0);//case not implemented, herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base(c), stride(c)); 
-			else if(stride(a)==1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(rotated(c)));
+			else if(stride(a)==1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));
 			else assert(0);
 		}
 	}
 	return std::forward<C2D>(c);
 }
 
-template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<not is_complex<C2D>{}, int> =0>
+template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<not is_complex_array<C2D>{}, int> =0>
 auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
 ->decltype(syrk(c_side, alpha, a, beta, std::forward<C2D>(c))){
 	return syrk(c_side, alpha, a, beta, std::forward<C2D>(c));}
@@ -94,17 +100,19 @@ auto herk(A2D const& a, C2D&& c)
 ->decltype(herk(1., a, std::forward<C2D>(c))){
 	return herk(1., a, std::forward<C2D>(c));}
 
+/*
 template<class A2D, class C2D>
 NODISCARD("when last argument is const")
 auto herk(A2D const& a, C2D const& c)
 ->decltype(herk(1., a, decay(c))){
 	return herk(1., a, decay(c));}
+*/
 
 template<class AA, class A2D, class Ret = typename A2D::decay_type>
-NODISCARD("when second argument is const")
-auto herk(AA alpha, A2D const& a)
-{//->std::decay_t<decltype(herk(alpha, a, Ret({size(a), size(a)}, get_allocator(a))))>{
-	return herk(alpha, a, Ret({size(a), size(a)}, get_allocator(a)));
+NODISCARD("when argument is read-only")
+auto herk(AA alpha, A2D const& a)//->std::decay_t<decltype(herk(alpha, a, Ret({size(a), size(a)}, get_allocator(a))))>{
+{
+	return herk(alpha, a, Ret({size(a), size(a)}));//Ret({size(a), size(a)}));//, get_allocator(a)));
 }
 
 template<class T> struct numeric_limits : std::numeric_limits<T>{};
@@ -165,9 +173,6 @@ template<class M> decltype(auto) print(M const& C){
 	return cout << std::endl;
 }
 
-using complex = std::complex<double>; 
-constexpr complex I(0, 1);
-
 BOOST_AUTO_TEST_CASE(inq_case){
 	using namespace multi::blas;
 	multi::array<double, 2> const a = {
@@ -191,6 +196,23 @@ BOOST_AUTO_TEST_CASE(inq_case){
 	}
 	{
 		BOOST_REQUIRE( herk(2.0, a) == gemm(2.0, a, T(a)) );
+	}
+}
+
+BOOST_AUTO_TEST_CASE(multi_blas_herk_real){
+	namespace blas = multi::blas;
+	multi::array<double, 2> const a = {
+		{ 1., 3., 4.},
+		{ 9., 7., 1.}
+	};
+	{
+		multi::array<double, 2> c({2, 2}, 9999);
+		blas::herk(1., a, c);
+		BOOST_REQUIRE( c[1][0] == 34 );
+		BOOST_REQUIRE( c[0][1] == 34 );
+
+		multi::array<double, 2> const c_copy = blas::herk(1., a);
+		BOOST_REQUIRE( c == c_copy );
 	}
 }
 

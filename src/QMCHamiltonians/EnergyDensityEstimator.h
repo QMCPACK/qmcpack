@@ -35,13 +35,13 @@ public:
   Return_t evaluate(ParticleSet& P);
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void write_description(std::ostream& os);
 

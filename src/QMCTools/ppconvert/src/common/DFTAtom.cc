@@ -126,61 +126,61 @@ void DFTAtom::SetBarePot(Potential *newPot)
 }
 
 
-void
-DFTAtom::SolveInit()
-{
-  int N = grid->NumPoints; 
-  // Just rename temp and temp2 for clarity
-  Array<double,1> &oldCharge = temp;
-  Array<double,1> &newCharge = temp2;
+//void
+//DFTAtom::SolveInit()
+//{
+//  int N = grid->NumPoints; 
+//  // Just rename temp and temp2 for clarity
+//  Array<double,1> &oldCharge = temp;
+//  Array<double,1> &newCharge = temp2;
 
-  // First, zero out screening
-  for (int i=0; i<N; i++)
-    V.HXC(i) = 0.0;
+//  // First, zero out screening
+//  for (int i=0; i<N; i++)
+//    V.HXC(i) = 0.0;
 
-  OldEnergies.resize(RadialWFs.size());  
-  // Now solve radial equations
-  for (int i=0; i<RadialWFs.size(); i++) {
-    RadialWFs(i).Solve();
-    //fprintf (stderr, "Energy(%d) = %1.16f\n", i, RadialWFs(i).Energy);
-    OldEnergies(i) = RadialWFs(i).Energy;
-  }
+//  OldEnergies.resize(RadialWFs.size());  
+//  // Now solve radial equations
+//  for (int i=0; i<RadialWFs.size(); i++) {
+//    RadialWFs(i).Solve();
+//    //fprintf (stderr, "Energy(%d) = %1.16f\n", i, RadialWFs(i).Energy);
+//    OldEnergies(i) = RadialWFs(i).Energy;
+//  }
 
-  if (NewMix < 1.0e-8) // We don't want to do self-consistent
-    return;
+//  if (NewMix < 1.0e-8) // We don't want to do self-consistent
+//    return;
 
-  UpdateChargeDensity();
-  oldCharge = 0.0;
-  newCharge = ChargeDensity.Data();
-}
+//  UpdateChargeDensity();
+//  oldCharge = 0.0;
+//  newCharge = ChargeDensity.Data();
+//}
 
-double
-DFTAtom::SolveIter()
-{
-  int N = grid->NumPoints; 
-  // Just rename temp and temp2 for clarity
-  Array<double,1> &oldCharge = temp;
-  Array<double,1> &newCharge = temp2;
+//double
+//DFTAtom::SolveIter()
+//{
+//  int N = grid->NumPoints; 
+//  // Just rename temp and temp2 for clarity
+//  Array<double,1> &oldCharge = temp;
+//  Array<double,1> &newCharge = temp2;
 
-  for (int i=0; i<N; i++)
-    ChargeDensity(i) = NewMix*(newCharge(i)) + (1.0-NewMix)*oldCharge(i);
-  UpdateHartree();
-  UpdateExCorr();
-  for (int i=0; i < grid->NumPoints; i++)
-    V.HXC(i) = Hartree(i) + ExCorr(i);
-  
-  double maxDiff = 0.0;
-  for (int i=0; i<RadialWFs.size(); i++) {
-    RadialWFs(i).Solve();
-    maxDiff = max(fabs(OldEnergies(i)-RadialWFs(i).Energy), maxDiff);
-    OldEnergies(i) = RadialWFs(i).Energy;
-    // fprintf (stderr, "Energy(%d) = %1.16f\n", i, RadialWFs(i).Energy);
-  }
-  oldCharge = ChargeDensity.Data();
-  UpdateChargeDensity();
-  newCharge = ChargeDensity.Data();
-  return (maxDiff);
-}
+//  for (int i=0; i<N; i++)
+//    ChargeDensity(i) = NewMix*(newCharge(i)) + (1.0-NewMix)*oldCharge(i);
+//  UpdateHartree();
+//  UpdateExCorr();
+//  for (int i=0; i < grid->NumPoints; i++)
+//    V.HXC(i) = Hartree(i) + ExCorr(i);
+//  
+//  double maxDiff = 0.0;
+//  for (int i=0; i<RadialWFs.size(); i++) {
+//    RadialWFs(i).Solve();
+//    maxDiff = std::max(fabs(OldEnergies(i)-RadialWFs(i).Energy), maxDiff);
+//    OldEnergies(i) = RadialWFs(i).Energy;
+//    // fprintf (stderr, "Energy(%d) = %1.16f\n", i, RadialWFs(i).Energy);
+//  }
+//  oldCharge = ChargeDensity.Data();
+//  UpdateChargeDensity();
+//  newCharge = ChargeDensity.Data();
+//  return (maxDiff);
+//}
 
 
 void DFTAtom::Solve()
@@ -293,9 +293,3 @@ void DFTAtom::Read(IOSectionClass &in)
   assert (in.ReadVar("NewMix", NewMix));
 }
 
-
-void DFTAtom::CalcEnergies(double &kinetic, double &potential,
-			   double &hartree, double &XC)
-{
-
-}

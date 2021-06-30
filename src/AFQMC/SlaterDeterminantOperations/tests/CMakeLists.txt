@@ -9,18 +9,20 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-MESSAGE_VERBOSE("Adding AFQMC Slater Determinant Operations unit tests")
+message_verbose("Adding AFQMC Slater Determinant Operations unit tests")
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR afqmc_slaterdeterminantoperations)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR afqmc_slaterdeterminantoperations)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
+add_executable(${UTEST_EXE} test_sdet_ops.cpp)
+target_link_libraries(${UTEST_EXE} catch_main afqmc)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_sdet_ops.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main afqmc)
-
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set_property(
+  TEST ${UTEST_NAME}
+  APPEND
+  PROPERTY LABELS "afqmc")

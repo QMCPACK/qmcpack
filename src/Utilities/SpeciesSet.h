@@ -18,8 +18,15 @@
 #include <string>
 #include <vector>
 
-/*! \class SpeciesSet
- *  \brief A class containing a set of attributes for a set of species.
+/** \class SpeciesSet
+ *  \brief Custom container for set of attributes for a set of species.
+ *
+ *  A confusingly equivalent of std::map<std::string, <std::map<std::string, Scalar>>
+ *  implemented as two sets of key vectors and a single vector of Scalars. It leaks it implementation
+ *  details i.e. the indexing to the vectors. Reduces readability and increases semantic load.
+ *  Looks like premature optimization.
+ *
+ *  \todo prove this helps overall performance, if not remove it. Else document it and it's use
 */
 class SpeciesSet
 {
@@ -66,10 +73,9 @@ public:
    */
   int addSpecies(const std::string& aname);
 
-  /**
+  /** for a new attribute, allocate the data, !More often used to get the index of a species
    * @param aname a unique name of an attribute
    * @return the index of a new attribute
-   * @brief for a new attribute, allocate the data
    */
   int addAttribute(const std::string& aname);
 
@@ -117,6 +123,8 @@ public:
     return i;
   }
 
+  /** almost all code ignores this and just uses addAttribute for the same purpose.
+   */
   inline int findAttribute(const std::string& name) const { return findIndex(name, attribName); }
 
   inline int findIndex(const std::string& name, const std::vector<std::string>& alist) const

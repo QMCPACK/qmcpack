@@ -83,20 +83,16 @@ void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
 
 void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  if (OrbitalSetSize == 3)
-  {
-    for (int i = 0; i < 3; i++)
-    {
-      psi[i] = a(iat, i);
-    }
-  }
-  else if (OrbitalSetSize == 4)
-  {
-    for (int i = 0; i < 4; i++)
-    {
-      psi[i] = a2(iat, i);
-    }
-  }
+  if (iat < 0)
+    for (int i = 0; i < psi.size(); i++)
+      psi[i] = 1.2 * i - i*i;
+  else
+    if (OrbitalSetSize == 3)
+      for (int i = 0; i < 3; i++)
+        psi[i] = a(iat, i);
+    else if (OrbitalSetSize == 4)
+      for (int i = 0; i < 4; i++)
+        psi[i] = a2(iat, i);
 }
 
 void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
@@ -129,22 +125,20 @@ void FakeSPO::evaluate_notranspose(const ParticleSet& P,
   if (OrbitalSetSize == 3)
   {
     for (int i = 0; i < 3; i++)
-    {
       for (int j = 0; j < 3; j++)
       {
         logdet(j, i) = a(i, j);
+        dlogdet[i][j] = gv[j] + GradType(i);
       }
-    }
   }
   else if (OrbitalSetSize == 4)
   {
     for (int i = 0; i < 4; i++)
-    {
       for (int j = 0; j < 4; j++)
       {
         logdet(j, i) = a2(i, j);
+        dlogdet[i][j] = gv[j] + GradType(i);
       }
-    }
   }
 }
 

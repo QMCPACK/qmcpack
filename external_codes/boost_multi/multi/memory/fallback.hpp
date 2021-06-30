@@ -8,11 +8,11 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 #include<memory_resource>
 #endif
 
-#include<stdlib.h> // aligned_alloc in c++17 this will be <cstdlib
-
 #include "../memory/block.hpp"
 #include "../memory/allocator.hpp"
 
+#include<stdlib.h> // aligned_alloc, in c++17 this will be <cstdlib>
+#include <cstddef> // std::max_align_t
 
 namespace boost{
 namespace multi{
@@ -55,7 +55,7 @@ public:
 #endif
 	) : MemoryResource1{mr}, back_{back}{}
 	typename fallback::void_pointer 
-	allocate(size_type required_bytes, typename fallback::size_type align) try{
+	allocate(size_type required_bytes, typename fallback::size_type align = alignof(std::max_align_t)) try{
 		return MemoryResource1::allocate(required_bytes, align);
 	}catch(...){
 		++fallbacks_;

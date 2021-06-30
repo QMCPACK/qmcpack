@@ -10,41 +10,41 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SET(HOST_SRCS
-    sysutil.cpp
-    Host/InfoStream.cpp
-    Host/OutputManager.cpp
-)
+# Too much burden has been put on platform_device. It will be deprecated.
+# We will move to functionality based targets
+# platform_runtime handles device management, memory management
+# add_library(platform_runtime INTERFACE)
+# platform_lapack handles BLAS/LAPACK
+# add_library(platform_lapack INTERFACE)
 
-SET(DEVICE_SRCS
-    dummy_function_for_cmake.cpp
-)
+set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
 
-ADD_LIBRARY(platform_host ${HOST_SRCS})
+set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp)
 
-IF(USE_OBJECT_TARGET)
-  ADD_LIBRARY(platform_device OBJECT ${DEVICE_SRCS})
-ELSE(USE_OBJECT_TARGET)
-  ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-ENDIF(USE_OBJECT_TARGET)
+add_library(platform_host ${HOST_SRCS})
 
-TARGET_INCLUDE_DIRECTORIES(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
+if(USE_OBJECT_TARGET)
+  add_library(platform_device OBJECT ${DEVICE_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(platform_device ${DEVICE_SRCS})
+endif(USE_OBJECT_TARGET)
 
-SUBDIRS(CPU)
-TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cpu)
+target_include_directories(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-SUBDIRS(OpenMP)
-TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omp)
+add_subdirectory(CPU)
+target_link_libraries(platform_device PUBLIC platform_cpu)
 
-IF(QMC_CUDA)
-  SUBDIRS(CUDA_legacy)
-  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda_legacy)
-ENDIF(QMC_CUDA)
+add_subdirectory(OMPTarget)
+target_link_libraries(platform_device PUBLIC platform_omptarget)
 
-IF(ENABLE_CUDA)
-  SUBDIRS(CUDA)
-  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
-ENDIF(ENABLE_CUDA)
+if(QMC_CUDA)
+  add_subdirectory(CUDA_legacy)
+  target_link_libraries(platform_device PUBLIC platform_cuda_legacy)
+endif(QMC_CUDA)
 
-SUBDIRS(tests)
+if(ENABLE_CUDA)
+  add_subdirectory(CUDA)
+  target_link_libraries(platform_device PUBLIC platform_cuda)
+endif(ENABLE_CUDA)
+
+add_subdirectory(tests)

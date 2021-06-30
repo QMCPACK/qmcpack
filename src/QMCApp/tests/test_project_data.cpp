@@ -35,16 +35,16 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   ProjectData proj1;
   // If no name given, it gets set to time and date
   //   and the title is set equal to the name
-  REQUIRE(std::string(proj1.m_title).size() > 0);
-  REQUIRE(std::string(proj1.m_title) == proj1.getName());
+  REQUIRE(proj1.getTitle().size() > 0);
+  REQUIRE(proj1.getTitle() == proj1.getName());
 
 
   ProjectData proj2("test");
-  REQUIRE(proj2.m_series == 0);
+  REQUIRE(proj2.getSeriesIndex() == 0);
   proj2.advance();
-  REQUIRE(proj2.m_series == 1);
+  REQUIRE(proj2.getSeriesIndex() == 1);
 
-  REQUIRE(proj2.m_title == std::string("asample"));
+  REQUIRE(proj2.getTitle() == std::string("asample"));
   REQUIRE(proj2.getName() == std::string("test"));
 
   proj2.setCommunicator(c);
@@ -54,9 +54,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ProjectData proj("test");
 
   const char* xml_input = "<project id='test1'></project>";
@@ -67,14 +64,11 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
   xmlNodePtr root = doc.getRoot();
 
   proj.put(root);
-  REQUIRE(proj.m_series == 0);
+  REQUIRE(proj.getSeriesIndex() == 0);
 }
 
 TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ProjectData proj("test");
 
   const char* xml_input = "<project id='test1' series='1'></project>";
@@ -85,7 +79,7 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
   xmlNodePtr root = doc.getRoot();
 
   proj.put(root);
-  REQUIRE(proj.m_series == 1);
+  REQUIRE(proj.getSeriesIndex() == 1);
 
   // host and date nodes get added for output to the .cont.xml file
 }

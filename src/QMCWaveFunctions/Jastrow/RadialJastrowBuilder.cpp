@@ -156,8 +156,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   XMLAttrString input_name(cur, "name");
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int taskid = is_manager() ? getGroupID() : -1;
-  auto* J2   = new J2OrbitalType(j2name, targetPtcl, taskid);
+  auto* J2   = new J2OrbitalType(j2name, targetPtcl);
   auto* dJ2  = new DiffJ2OrbitalType(targetPtcl);
 
   std::string init_mode("0");
@@ -199,6 +198,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       int ia        = species.findSpecies(spA);
       int ib        = species.findSpecies(spB);
       int chargeInd = species.addAttribute("charge");
+      int massInd   = species.addAttribute("mass");
       std::string illegal_species;
       if (ia == species.size())
         illegal_species = spA;
@@ -218,8 +218,14 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
                   true);
       if (cusp < -1e6)
       {
-        RealType qq = species(chargeInd, ia) * species(chargeInd, ib);
-        cusp        = (ia == ib) ? -0.25 * qq : -0.5 * qq;
+        RealType qq       = species(chargeInd, ia) * species(chargeInd, ib);
+        RealType red_mass = species(massInd, ia) * species(massInd, ib) / (species(massInd, ia) + species(massInd, ib));
+#if OHMMS_DIM == 1
+        RealType dim_factor = 1.0 / (OHMMS_DIM + 1);
+#else
+        RealType dim_factor = (ia == ib) ? 1.0 / (OHMMS_DIM + 1) : 1.0 / (OHMMS_DIM - 1);
+#endif
+        cusp = -2 * qq * red_mass * dim_factor;
       }
       app_summary() << "    Radial function for species: " << spA << " - " << spB << std::endl;
       app_debug() << "    RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
@@ -257,7 +263,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 
   // Ye: actually don't know what uk.dat is used for
   if (targetPtcl.Lattice.SuperCellEnum)
-    computeJ2uk(J2->F);
+    computeJ2uk(J2->getPairFunctions());
 
   return J2;
 }
@@ -317,7 +323,7 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
 template<>
 WaveFunctionComponent* RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 {
-  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl, is_manager());
+  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl);
   rpajastrow->put(cur);
   return rpajastrow;
 }
@@ -437,8 +443,8 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   ParameterSet params;
   RealType Rs(-1.0);
   RealType Kc(-1.0);
-  params.add(Rs, "rs", "double");
-  params.add(Kc, "kc", "double");
+  params.add(Rs, "rs");
+  params.add(Kc, "kc");
   params.put(cur);
   bool Opt(true);
 

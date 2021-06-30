@@ -34,7 +34,7 @@ public:
   std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositions>(*this); }
 
   void resize(size_t n) override { RSoA.resize(n); }
-  size_t size() override { return RSoA.size(); }
+  size_t size() const override { return RSoA.size(); }
 
   void setAllParticlePos(const ParticlePos_t& R) override
   {
@@ -42,6 +42,17 @@ public:
     RSoA.copyIn(R);
   }
   void setOneParticlePos(const PosType& pos, size_t iat) override { RSoA(iat) = pos; }
+
+  void mw_acceptParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
+                            size_t iat,
+                            const std::vector<PosType>& new_positions,
+                            const std::vector<bool>& isAccepted) const override
+  {
+    assert(this == &coords_list.getLeader());
+    for (size_t iw = 0; iw < isAccepted.size(); iw++)
+      if (isAccepted[iw])
+        coords_list[iw].setOneParticlePos(new_positions[iw], iat);
+  }
 
   const PosVectorSoa& getAllParticlePos() const override { return RSoA; }
   PosType getOneParticlePos(size_t iat) const override { return RSoA[iat]; }

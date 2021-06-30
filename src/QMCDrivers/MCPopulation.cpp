@@ -15,37 +15,39 @@
 #include "Configuration.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation()
-    : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0)
-{}
-
 MCPopulation::MCPopulation(int num_ranks,
-                           MCWalkerConfiguration& mcwc,
+                           int this_rank,
+                           WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
+                           QMCHamiltonian* hamiltonian)
+    : trial_wf_(trial_wf),
+      elec_particle_set_(elecs),
+      hamiltonian_(hamiltonian),
+      num_ranks_(num_ranks),
+      rank_(this_rank),
+      walker_configs_ref_(mcwc)
 {
-  num_global_walkers_ = mcwc.GlobalNumWalkers;
-  num_local_walkers_  = mcwc.LocalNumWalkers;
-  num_particles_      = mcwc.getParticleNum();
+  num_global_walkers_ = mcwc.getGlobalNumWalkers();
+  num_local_walkers_  = mcwc.getActiveWalkers();
+  num_particles_      = elecs->getTotalNum();
 
   // MCWalkerConfiguration doesn't give actual number of groups
-  num_groups_ = mcwc.groups();
+  num_groups_ = elecs->groups();
   particle_group_indexes_.resize(num_groups_);
   for (int i = 0; i < num_groups_; ++i)
   {
-    particle_group_indexes_[i].first  = mcwc.first(i);
-    particle_group_indexes_[i].second = mcwc.last(i);
+    particle_group_indexes_[i].first  = elecs->first(i);
+    particle_group_indexes_[i].second = elecs->last(i);
   }
   ptclgrp_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
-    ptclgrp_mass_[ig] = mcwc.Mass[ig];
+    ptclgrp_mass_[ig] = elecs->Mass[ig];
   ptclgrp_inv_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
@@ -57,31 +59,11 @@ MCPopulation::MCPopulation(int num_ranks,
   }
 }
 
-MCPopulation::MCPopulation(int num_ranks,
-                           ParticleSet* elecs,
-                           TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : num_particles_(elecs->R.size()),
-      trial_wf_(trial_wf),
-      elec_particle_set_(elecs),
-      hamiltonian_(hamiltonian),
-      num_ranks_(num_ranks),
-      rank_(this_rank)
-{}
-
-
-/** Default creates walkers equal to num_local_walkers_ and zeroed positions
- */
-//void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
-
-/** we could also search for walker_ptr
- */
-void MCPopulation::allocateWalkerStuffInplace(int walker_index)
+MCPopulation::~MCPopulation()
 {
-  walker_trial_wavefunctions_[walker_index]->registerData(*(walker_elec_particle_sets_[walker_index]),
-                                                          walkers_[walker_index]->DataSet);
-  walkers_[walker_index]->DataSet.allocate();
+  // if there are active walkers, save them to lightweight walker configuration list.
+  if (walkers_.size())
+    saveWalkerConfigurations();
 }
 
 void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
@@ -98,18 +80,33 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   // This pattern is begging for a micro benchmark, is this really better
   // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers_plus_reserve);
-  auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
-    walker_ptr        = std::make_unique<MCPWalker>(num_particles_);
-    walker_ptr->R     = elec_particle_set_->R;
-    walker_ptr->spins = elec_particle_set_->spins;
-    // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
-    // a bad buffer.
-    walker_ptr->Properties = elec_particle_set_->Properties;
-    walker_ptr->registerData();
+  walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
+  walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
+  walker_hamiltonians_.resize(num_walkers_plus_reserve);
+
+  outputManager.pause();
+
+  //this part is time consuming, it must be threaded and calls should be thread-safe.
+#pragma omp parallel for
+  for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
+  {
+    walkers_[iw]             = std::make_unique<MCPWalker>(num_particles_);
+    walkers_[iw]->R          = elec_particle_set_->R;
+    walkers_[iw]->spins      = elec_particle_set_->spins;
+    walkers_[iw]->Properties = elec_particle_set_->Properties;
+    walkers_[iw]->registerData();
+    walkers_[iw]->DataSet.allocate();
+
+    if (iw < walker_configs_ref_.WalkerList.size())
+      *walkers_[iw]       = *walker_configs_ref_[iw];
+
+    walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
+    walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
+    walker_hamiltonians_[iw].reset(
+        hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
   };
 
-  for (auto& walker_ptr : walkers_)
-    createWalker(walker_ptr);
+  outputManager.resume();
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -122,45 +119,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
       walker_ptr->ParentID = walker_ptr->ID;
     }
   }
-
-  outputManager.pause();
-
-  // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
-  // of what different wave function components depend on. I'm going to try and create a hollow elec PS
-  // with an eye toward removing the ParticleSet dependency of WFC components in the future.
-  walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
-  std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
-                [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
-                  elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
-                });
-
-  auto it_weps = walker_elec_particle_sets_.begin();
-  walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
-  auto it_wtw = walker_trial_wavefunctions_.begin();
-  walker_hamiltonians_.resize(num_walkers_plus_reserve);
-  auto it_ham = walker_hamiltonians_.begin();
-  while (it_wtw != walker_trial_wavefunctions_.end())
-  {
-    it_wtw->reset(trial_wf_->makeClone(**it_weps));
-    it_ham->reset(hamiltonian_->makeClone(**it_weps, **it_wtw));
-    ++it_weps;
-    ++it_wtw;
-    ++it_ham;
-  }
-
-  outputManager.resume();
-
-  RefVector<WFBuffer> mcp_wfbuffers;
-  mcp_wfbuffers.reserve(num_walkers_plus_reserve);
-  std::for_each(walkers_.begin(), walkers_.end(),
-                [&mcp_wfbuffers](auto& walker) { mcp_wfbuffers.push_back((*walker).DataSet); });
-
-  TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_, walker_elec_particle_sets_, mcp_wfbuffers);
-
-  std::for_each(walkers_.begin(), walkers_.end(), [](auto& walker) {
-    MCPWalker& this_walker = *walker;
-    this_walker.DataSet.allocate();
-  });
 
   // kill and spawn walkers update the state variable num_local_walkers_
   // so it must start at the number of reserved walkers
@@ -180,7 +138,7 @@ WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 {
   std::vector<WalkerElementsRef> walker_elements;
-  for(int iw = 0; iw < walkers_.size(); ++iw)
+  for (int iw = 0; iw < walkers_.size(); ++iw)
   {
     walker_elements.emplace_back(*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
   }
@@ -222,27 +180,17 @@ WalkerElementsRef MCPopulation::spawnWalker()
   {
     app_warning() << "Spawning walker number " << walkers_.size() + 1
                   << " outside of reserves, this ideally should never happend." << std::endl;
-    MCPWalker last_walker = *(walkers_.back());
-    walkers_.push_back(std::make_unique<MCPWalker>(last_walker));
+    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back())));
 
     // There is no value in doing this here because its going to be wiped out
     // When we load from the receive buffer. It also won't necessarily be correct
     // Because the buffer is changed by Hamiltonians and wavefunctions that
     // Add to the dataSet.
 
-    //walkers_.back()->R          = elec_particle_set_->R;
-    //walkers_.back()->Properties = elec_particle_set_->Properties;
-    //walkers_.back()->registerData();
-
-    walker_elec_particle_sets_.emplace_back(new ParticleSet(*elec_particle_set_));
-    walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
-    walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
-    walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
-    walker_hamiltonians_.back().reset(
-        hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
-    // Dito
-    //walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
-    //walkers_.back()->DataSet.allocate();
+    walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
+    walker_trial_wavefunctions_.emplace_back(trial_wf_->makeClone(*walker_elec_particle_sets_.back()));
+    walker_hamiltonians_.emplace_back(
+        hamiltonian_->makeClone(*walker_elec_particle_sets_.back(), *walker_trial_wavefunctions_.back()));
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
   }
@@ -283,7 +231,6 @@ void MCPopulation::killWalker(MCPWalker& walker)
   {
     if (&walker == (*it_walkers).get())
     {
-      (*it_walkers)->DataSet.zero();
       dead_walkers_.push_back(std::move(*it_walkers));
       walkers_.erase(it_walkers);
       dead_walker_elec_particle_sets_.push_back(std::move(*it_psets));
@@ -303,17 +250,32 @@ void MCPopulation::killWalker(MCPWalker& walker)
   throw std::runtime_error("Attempt to kill nonexistent walker in MCPopulation!");
 }
 
-void MCPopulation::syncWalkersPerNode(Communicate* comm)
+void MCPopulation::syncWalkersPerRank(Communicate* comm)
 {
-  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0);
-  ;
+  std::vector<IndexType> num_local_walkers_per_rank(comm->size(), 0);
 
-  num_local_walkers_per_node[comm->rank()] = num_local_walkers_;
-  comm->allreduce(num_local_walkers_per_node);
+  num_local_walkers_per_rank[comm->rank()] = num_local_walkers_;
+  comm->allreduce(num_local_walkers_per_rank);
 
-  num_global_walkers_ = std::accumulate(num_local_walkers_per_node.begin(), num_local_walkers_per_node.end(), 0);
+  num_global_walkers_ = std::accumulate(num_local_walkers_per_rank.begin(), num_local_walkers_per_rank.end(), 0);
 }
 
+void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const
+{
+  std::vector<FullPrecRealType> weight_energy_variance(3, 0.0);
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+  {
+    auto w = walkers_[iw]->Weight;
+    auto e = walker_hamiltonians_[iw]->getLocalEnergy();
+    weight_energy_variance[0] += w;
+    weight_energy_variance[1] += w * e;
+    weight_energy_variance[2] += w * e * e;
+  }
+
+  comm.allreduce(weight_energy_variance);
+  ener = weight_energy_variance[1] / weight_energy_variance[0];
+  variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;
+}
 
 void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 {
@@ -323,50 +285,39 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
   }
 }
 
-/** Creates walkers doing their first touch in their crowd (thread) context
- *
- *  This is basically premature optimization but I wanted to check if this sort of thing
- *  would work.  It seems to. This sort of structure not an #omp parallel section must be used in the driver.
- *  No new bare openmp directives should be added to code with updated design.
- */
-// void MCPopulation::createWalkers(int num_crowds,
-//                                  int walkers_per_crowd,
-//                                  IndexType num_walkers,
-//                                  const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
-// {
-//   walkers_.resize(num_walkers);
+void MCPopulation::checkIntegrity() const
+{
+  // check active walkers
+  const size_t num_local_walkers_active = num_local_walkers_;
+  if (walkers_.size() != num_local_walkers_active)
+    throw std::runtime_error("walkers_ has inconsistent size");
+  if (walker_elec_particle_sets_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_elec_particle_sets_ has inconsistent size");
+  if (walker_trial_wavefunctions_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_trial_wavefunctions_ has inconsistent size");
+  if (walker_trial_wavefunctions_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_trial_wavefunctions_ has inconsistent size");
+  if (walker_hamiltonians_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_hamiltonians_ has inconsistent size");
 
-//   ParallelExecutor<> do_per_crowd(num_crowds);
+  // check dead walkers
+  const size_t num_local_walkers_dead = dead_walkers_.size();
+  if (dead_walker_elec_particle_sets_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_elec_particle_sets_ has inconsistent size");
+  if (dead_walker_trial_wavefunctions_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_trial_wavefunctions_ has inconsistent size");
+  if (dead_walker_trial_wavefunctions_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_trial_wavefunctions_ has inconsistent size");
+  if (dead_walker_hamiltonians_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_hamiltonians_ has inconsistent size");
+}
 
-//   std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>> walkers_per_crowd_per_slot;
-//   walkers_per_crowd_per_slot.resize(num_crowds);
-//   auto first_touch_create_walkers =
-//       [this, &walkers_per_crowd,
-//        &positions](int crowd_index, std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>>& wpcps) {
-//         wpcps[crowd_index] = std::make_unique<std::vector<std::unique_ptr<MCPWalker>>>(walkers_per_crowd);
-//         std::vector<std::unique_ptr<MCPWalker>>& this_crowds_walkers = *(wpcps[crowd_index]);
-//         this_crowds_walkers.resize(walkers_per_crowd);
-//         for (int i = 0; i < walkers_per_crowd; ++i)
-//         {
-//           std::unique_ptr<MCPWalker>& walker_uptr = this_crowds_walkers[i];
-//           walker_uptr.reset(new MCPWalker(num_particles_));
-//           walker_uptr->R.resize(num_particles_);
-//           walker_uptr->R = positions;
-//         }
-//       };
-//   do_per_crowd(first_touch_create_walkers, walkers_per_crowd_per_slot);
-
-//   auto walkers_it = walkers_.begin();
-//   std::for_each(walkers_per_crowd_per_slot.begin(), walkers_per_crowd_per_slot.end(),
-//                 [&walkers_it](std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>& per_crowd_ptr) {
-//                   std::vector<std::unique_ptr<MCPWalker>>& walkers_per_crowd = *per_crowd_ptr;
-//                   for (int i = 0; i < walkers_per_crowd.size(); ++i)
-//                   {
-//                     *walkers_it = std::move(walkers_per_crowd[i]);
-//                     ++walkers_it;
-//                   }
-//                 });
-// }
+void MCPopulation::saveWalkerConfigurations()
+{
+  walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+    walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+}
 
 
 } // namespace qmcplusplus

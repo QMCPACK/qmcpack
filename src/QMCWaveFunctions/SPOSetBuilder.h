@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_SPOSET_BUILDER_H
 #define QMCPLUSPLUS_SPOSET_BUILDER_H
 
+#include <memory>
 #include <vector>
 #include <string>
 #include "Message/MPIObjectBase.h"
@@ -54,15 +55,13 @@ public:
   bool legacy;
 
   /// state info of all possible states available in the basis
-  std::vector<SPOSetInfo*> states;
+  std::vector<std::unique_ptr<SPOSetInfo>> states;
 
   /// list of all sposets created by this builder
-  std::vector<SPOSet*> sposets;
+  std::vector<std::unique_ptr<SPOSet>> sposets;
 
   SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm);
   virtual ~SPOSetBuilder() {}
-  /// load from XML if there is a basisset
-  virtual void loadBasisSetFromXML(xmlNodePtr cur) {}
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
   void reserve_states(int nsets = 1);
@@ -78,10 +77,10 @@ public:
 
 protected:
   /// create an sposet from xml (legacy)
-  virtual SPOSet* createSPOSetFromXML(xmlNodePtr cur) = 0;
+  virtual std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) = 0;
 
   /// create an sposet from a general xml request
-  virtual SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
+  virtual std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /// type name of the SPO objects built by this builder.
   const std::string SPO_type_name;

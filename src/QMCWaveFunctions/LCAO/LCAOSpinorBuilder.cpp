@@ -24,35 +24,39 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
   ClassName = "LCAOSpinorBuilder";
 
   if (h5_path == "")
-  {
     myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
-  }
 }
 
-SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
+  std::string basisset_name("LCAOBSet");
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
   spoAttrib.add(optimize, "optimize");
+  spoAttrib.add(basisset_name, "basisset");
   spoAttrib.put(cur);
 
-  if (myBasisSet == nullptr)
-    PRE.error("Missing basisset.", true);
+  BasisSet_t* myBasisSet = nullptr;
+  if (basisset_map_.find(basisset_name) == basisset_map_.end())
+    myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+  else
+    myBasisSet = basisset_map_[basisset_name].get();
 
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
-  std::unique_ptr<LCAOrbitalSet> upspo = std::make_unique<LCAOrbitalSet>(myBasisSet, optimize == "yes");
-  std::unique_ptr<LCAOrbitalSet> dnspo = std::make_unique<LCAOrbitalSet>(myBasisSet, optimize == "yes");
+  std::unique_ptr<LCAOrbitalSet> upspo =
+      std::make_unique<LCAOrbitalSet>(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
+  std::unique_ptr<LCAOrbitalSet> dnspo =
+      std::make_unique<LCAOrbitalSet>(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
 
   loadMO(*upspo, *dnspo, cur);
 
   //create spinor and register up/dn
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(upspo), std::move(dnspo));
-
   return spinor_set;
 }
 
@@ -119,10 +123,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     myComm->barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
     return false;
   }
-  up.setIdentity(false);
-  dn.setIdentity(false);
-
-  int norbs = up.getOrbitalSetSize();
 
   bool success = true;
   hdf_archive hin(myComm);
@@ -174,7 +174,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     assert(upReal.cols() == dnReal.cols());
 
     Occ.resize(upReal.rows());
-    success = putOccupation(norbs, occ_ptr);
+    success = putOccupation(up, occ_ptr);
+
+    int norbs = up.getOrbitalSetSize();
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -205,41 +207,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 #endif
 
   return success;
-}
-
-bool LCAOSpinorBuilder::putOccupation(int norbs, xmlNodePtr occ_ptr)
-{
-  Occ = 0.0;
-  for (int i = 0; i < norbs; i++)
-    Occ[i] = 1.0;
-  std::vector<int> occ_in;
-  std::string occ_mode("table");
-  if (occ_ptr == nullptr)
-  {
-    occ_mode = "ground";
-  }
-  else
-  {
-    const XMLAttrString o(occ_ptr, "mode");
-    if (!o.empty())
-      occ_mode = o;
-  }
-  if (occ_mode == "excited")
-  {
-    putContent(occ_in, occ_ptr);
-    for (int k = 0; k < occ_in.size(); k++)
-    {
-      if (occ_in[k] < 0)
-        Occ[-occ_in[k] - 1] = 0.0;
-      else
-        Occ[occ_in[k] - 1] = 1.0;
-    }
-  }
-  else if (occ_mode == "table")
-  {
-    putContent(Occ, occ_ptr);
-  }
-  return true;
 }
 
 } // namespace qmcplusplus

@@ -34,7 +34,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
 // distribution:  size,  global,  offset
 //   - rotMuv:    {rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0}
 //   - rotPiu:    {size_t(NMO),grotnmu},{size_t(NMO),grotnmu},{0,0}
@@ -53,13 +52,13 @@ class THCOps
   // node_allocator for fixed arrays, e.g. Luv, Piu, ...
 
   template<class T>
-  using device_alloc_type     = DeviceBufferManager::template allocator_t<T>;
+  using device_alloc_type = DeviceBufferManager::template allocator_t<T>;
   template<class T>
-  using shm_alloc_type        = LocalTGBufferManager::template allocator_t<T>;
+  using shm_alloc_type = LocalTGBufferManager::template allocator_t<T>;
 
   // pointers
-  using pointer          = typename device_alloc_type<ComplexType>::pointer;
-  using sp_pointer       = typename device_alloc_type<SPComplexType>::pointer;
+  using pointer    = typename device_alloc_type<ComplexType>::pointer;
+  using sp_pointer = typename device_alloc_type<SPComplexType>::pointer;
 
   using const_pointer    = typename device_allocator<ComplexType>::const_pointer;
   using const_sp_pointer = typename device_allocator<SPComplexType>::const_pointer;
@@ -127,10 +126,10 @@ public:
         haj(std::move(h1)),
         rotMuv(std::move(rotmuv_)),
         rotPiu(std::move(rotpiu_)),
-        rotcPua(std::move(move_vector<nodeArray<SPComplexType, 2>>(std::move(rotpau_)))),
+        rotcPua(move_vector<nodeArray<SPComplexType, 2>>(std::move(rotpau_))),
         Luv(std::move(luv_)),
         Piu(std::move(piu_)),
-        cPua(std::move(move_vector<nodeArray<SPComplexType, 2>>(std::move(pau_)))),
+        cPua(move_vector<nodeArray<SPComplexType, 2>>(std::move(pau_))),
         vn0(std::move(v0_)),
         E0(e0_)
   {
@@ -191,10 +190,9 @@ public:
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
 
-    ShmArray<ComplexType, 1> vMF_(vMF, 
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    ShmArray<ComplexType, 1> vMF_(vMF, shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     ShmArray<ComplexType, 1> P1D(iextensions<1u>{NMO * NMO}, ComplexType(0),
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+                                 shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     vHS(vMF_, P1D);
     if (TG.TG_Cores().size() > 1 && TG.TG_local().root())
@@ -213,7 +211,7 @@ public:
       {
         H1[i][j] += hij[i][j] + vn0[i][j];
         H1[j][i] += hij[j][i] + vn0[j][i];
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if (std::abs(H1[i][j] - ma::conj(H1[j][i])) > 1e-5)
         {
 #else
@@ -304,7 +302,7 @@ public:
     Bytes /= long((nu * nv + nv + nv * nup) * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     ShmArray<SPComplexType, 1> Gbuff(iextensions<1u>{mem_needs},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                     shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     const_sp_pointer Gptr(nullptr);
     // setup origin of Gsp and copy_n_cast if necessary
@@ -322,14 +320,14 @@ public:
     Array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
 
     // Guv[nspin][nu][nv]
-    ShmArray<SPComplexType, 3> Guv({nwmax, nu, nv}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 3> Guv({nwmax, nu, nv},
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // Guu[u]: summed over spin
-    ShmArray<SPComplexType, 2> Guu({nwmax, nv}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 2> Guu({nwmax, nv},
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
-    ShmArray<SPComplexType, 3> Tav({nwmax, nup, nv}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    ShmArray<SPComplexType, 3> Tav({nwmax, nup, nv},
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     SPRealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
     int iw(0);
@@ -390,7 +388,7 @@ public:
         else
         {
           Array<SPComplexType, 3> Twkb({nw, (kN - k0), nelec[ispin]},
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
           std::vector<decltype(&(Twkb[0]))> vTwkb;
           vTwkb.reserve(nw);
           for (int w = 0; w < nw; ++w)
@@ -414,16 +412,16 @@ public:
       comm->barrier();
       if (addEJ)
       {
-        Array<SPComplexType, 2> Twu({nw, (uN - u0)}, 
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+        Array<SPComplexType, 2> Twu({nw, (uN - u0)},
+                                    device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #if defined(QMC_COMPLEX)
         ma::product(Guu.sliced(0, nw), ma::T(rotMuv.sliced(u0, uN)), Twu);
 #else
         // need to keep rotMuv on the left hand side in real build
-        Array<SPComplexType, 2> Tuw({(uN - u0), nw}, 
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-        ShmArray<SPComplexType, 2> Gvw({nv, nw}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+        Array<SPComplexType, 2> Tuw({(uN - u0), nw},
+                                    device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+        ShmArray<SPComplexType, 2> Gvw({nv, nw},
+                                       shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
         ma::transpose(Guu({0, nw}, {v0, vN}), Gvw.sliced(v0, vN));
         comm->barrier();
         ma::product(rotMuv.sliced(u0, uN), Gvw, Tuw);
@@ -710,7 +708,7 @@ public:
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     memory_needs += nwmax * nmo_ * nu;
     ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                        shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     size_t cnt(0);
     const_sp_pointer Xptr(nullptr);
@@ -862,7 +860,7 @@ public:
     if (not std::is_same<vType, SPComplexType>::value)
       memory_needs += v.num_elements();
     ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                        shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     size_t cnt(0);
     const_sp_pointer Gptr(nullptr);
     sp_pointer vptr(nullptr);
@@ -979,7 +977,7 @@ protected:
 
     ComplexType a = (walker_type == CLOSED) ? ComplexType(2.0) : ComplexType(1.0);
     Array<SPComplexType, 2> T1({(uN - u0), nw * nel_},
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                               device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     Array_cref<SPComplexType, 2> Gw(make_device_ptr(G.origin()), {nw * nel_, nmo_});
     comm->barrier();
 
@@ -990,8 +988,8 @@ protected:
     {
       int k0, kN;
       std::tie(k0, kN) = FairDivideBoundary(comm->rank(), nmo_, comm->size());
-      ShmArray<SPComplexType, 2> TGw({nmo_, nw * nel_}, 
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      ShmArray<SPComplexType, 2> TGw({nmo_, nw * nel_},
+                                     shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       ma::transpose(Gw(Gw.extension(0), {k0, kN}), TGw.sliced(k0, kN));
       comm->barrier();
       ma::product(ma::T(Piu({0, nmo_}, {u0, uN})), TGw, T1);
@@ -1026,7 +1024,7 @@ protected:
 
     ComplexType a = (walker_type == CLOSED) ? ComplexType(2.0) : ComplexType(1.0);
     Array<SPComplexType, 2> T1({nwmax * nmo_, (uN - u0)},
-                device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                               device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     comm->barrier();
     fill_n(Guu[u0].origin(), nwalk * (uN - u0), ComplexType(0.0));
 
@@ -1104,7 +1102,7 @@ protected:
     ma::BatchedProduct('N', 'N', Gwaj, Pjv, Twav);
 #else
     ShmArray<SPComplexType, 3> Gja({nw, nmo_, nelec[ispin]},
-                shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+                                   shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     Array_ref<SPComplexType, 3> Tva(make_device_ptr(Guv.origin()), {nw, nv, nelec[ispin]});
     std::vector<array_ptr> Gwja;
     std::vector<decltype(&(Tva[0]({0, 1}, {0, 1})))> Twva;

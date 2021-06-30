@@ -22,7 +22,7 @@ class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotatedSPOs(SPOSet* spos);
+  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
   //destructor
   ~RotatedSPOs();
 
@@ -36,7 +36,7 @@ public:
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
   //A particular SPOSet used for Orbitals
-  SPOSet* Phi;
+  std::unique_ptr<SPOSet> Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
@@ -208,12 +208,9 @@ public:
 
   //  void setBasisSet(basis_type* bs);
 
-  int getBasisSetSize() { return Phi->getBasisSetSize(); }
+  int getBasisSetSize() const override { return Phi->getBasisSetSize(); }
 
-  //  bool setIdentity(bool useIdentity)
-  //  {return Phi->setIdentity(useIdentity); }
-
-  void checkObject() { Phi->checkObject(); }
+  void checkObject() const override { Phi->checkObject(); }
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
   {

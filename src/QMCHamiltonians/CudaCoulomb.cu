@@ -15,6 +15,13 @@
 
 #include "CudaCoulomb.h"
 
+__device__ inline void sincos_t(float x, float *sin, float *cos) {
+  sincosf(x, sin, cos);
+}
+
+__device__ inline void sincos_t(double x, double *sin, double *cos) {
+  sincos(x, sin, cos);
+}
 
 const int MAX_TEXTURES = 10;
 __constant__ float Acuda[16];
@@ -284,6 +291,7 @@ __global__ void coulomb_AA_PBC_kernel(TR** R,
     for (int i = 0; i < 3; i++)
       if ((3 * b + i) * BS + tid < 3 * N)
         r1[0][i * BS + tid] = myR[(3 * b + i) * BS + tid];
+    __syncthreads();
     int ptcl1 = b * BS + tid;
     if (ptcl1 < N)
     {
@@ -308,12 +316,14 @@ __global__ void coulomb_AA_PBC_kernel(TR** R,
   }
   // Avoid double-counting on the diagonal blocks
   mysum *= 0.5;
+  __syncthreads();
   // Now do off-diagonal blocks
   for (int b1 = 0; b1 < NB; b1++)
   {
     for (int i = 0; i < 3; i++)
       if ((3 * b1 + i) * BS + tid < 3 * N)
         r1[0][i * BS + tid] = myR[(3 * b1 + i) * BS + tid];
+    __syncthreads();
     int ptcl1 = b1 * BS + tid;
     if (ptcl1 < N)
     {
@@ -322,6 +332,7 @@ __global__ void coulomb_AA_PBC_kernel(TR** R,
         for (int i = 0; i < 3; i++)
           if ((3 * b2 + i) * BS + tid < 3 * N)
             r2[0][i * BS + tid] = myR[(3 * b2 + i) * BS + tid];
+        __syncthreads();
         int end = ((b2 + 1) * BS < N) ? BS : (N - b2 * BS);
         for (int j = 0; j < end; j++)
         {
@@ -368,6 +379,7 @@ __global__ void coulomb_AA_kernel(T** R, int N, T* sum)
     for (int i = 0; i < 3; i++)
       if ((3 * b + i) * BS + tid < 3 * N)
         r1[0][i * BS + tid] = myR[(3 * b + i) * BS + tid];
+    __syncthreads();
     int ptcl1 = b * BS + tid;
     if (ptcl1 < N)
     {
@@ -388,12 +400,14 @@ __global__ void coulomb_AA_kernel(T** R, int N, T* sum)
   }
   // Avoid double-counting on the diagonal blocks
   mysum *= 0.5;
+  __syncthreads();
   // Now do off-diagonal blocks
   for (int b1 = 0; b1 < NB; b1++)
   {
     for (int i = 0; i < 3; i++)
       if ((3 * b1 + i) * BS + tid < 3 * N)
         r1[0][i * BS + tid] = myR[(3 * b1 + i) * BS + tid];
+    __syncthreads();
     int ptcl1 = b1 * BS + tid;
     if (ptcl1 < N)
     {
@@ -402,6 +416,7 @@ __global__ void coulomb_AA_kernel(T** R, int N, T* sum)
         for (int i = 0; i < 3; i++)
           if ((3 * b2 + i) * BS + tid < 3 * N)
             r2[0][i * BS + tid] = myR[(3 * b2 + i) * BS + tid];
+        __syncthreads();
         int end = ((b2 + 1) * BS < N) ? BS : (N - b2 * BS);
         for (int j = 0; j < end; j++)
         {
@@ -544,6 +559,7 @@ __global__ void MPC_SR_kernel(T** R, int N, T* lattice, T* latticeInv, T* sum)
   }
   // Avoid double-counting on the diagonal blocks
   mysum *= 0.5;
+  __syncthreads();
   // Now do off-diagonal blocks
   for (int b1 = 0; b1 < NB; b1++)
   {
@@ -559,6 +575,7 @@ __global__ void MPC_SR_kernel(T** R, int N, T* lattice, T* latticeInv, T* sum)
         for (int i = 0; i < 3; i++)
           if ((3 * b2 + i) * BS + tid < 3 * N)
             r2[0][i * BS + tid] = myR[(3 * b2 + i) * BS + tid];
+        __syncthreads();
         int end = ((b2 + 1) * BS < N) ? BS : (N - b2 * BS);
         for (int j = 0; j < end; j++)
         {
@@ -1074,11 +1091,12 @@ __global__ void eval_rhok_kernel(T** R, int numr, T* kpoints, int numk, T** rhok
         if ((i + 3 * rBlock) * BS + tid < 3 * numr)
           r[0][BS * i + tid] = myR[(i + 3 * rBlock) * BS + tid];
       int end = ((rBlock + 1) * BS < numr) ? BS : (numr - rBlock * BS);
+      __syncthreads();
       for (int j = 0; j < end; j++)
       {
         T phase = (k[tid][0] * r[j][0] + k[tid][1] * r[j][1] + k[tid][2] * r[j][2]);
         T s, c;
-        sincos(phase, &s, &c);
+        sincos_t(phase, &s, &c);
         rhok_im[tid] += s;
         rhok_re[tid] += c;
       }
@@ -1122,12 +1140,13 @@ __global__ void eval_rhok_kernel(TR** R, int first, int last, T* kpoints, int nu
       for (int i = 0; i < 3; i++)
         if ((i + 3 * rBlock) * BS + tid < 3 * numr)
           r[0][BS * i + tid] = myR[3 * first + (i + 3 * rBlock) * BS + tid];
+      __syncthreads();
       int end = ((rBlock + 1) * BS < numr) ? BS : (numr - rBlock * BS);
       for (int j = 0; j < end; j++)
       {
         T phase = (k[tid][0] * r[j][0] + k[tid][1] * r[j][1] + k[tid][2] * r[j][2]);
         T s, c;
-        sincos(phase, &s, &c);
+        sincos_t(phase, &s, &c);
         rhok_im[tid] += s;
         rhok_re[tid] += c;
       }
@@ -1234,18 +1253,19 @@ __global__ void vk_sum_kernel2(T** rhok1, T** rhok2, T* vk, int numk, T* sum)
     myrhok1 = rhok1[blockIdx.x];
     myrhok2 = rhok2[blockIdx.x];
   }
-  __syncthreads();
   // Used to do coalesced global loads
   __shared__ T rhok_s1[2 * BS], rhok_s2[2 * BS];
   int NB  = numk / BS + ((numk % BS) ? 1 : 0);
   T mysum = 0.0f;
   for (int b = 0; b < NB; b++)
   {
+    __syncthreads();
     if (2 * b * BS + tid < 2 * numk)
     {
       rhok_s1[tid] = myrhok1[2 * b * BS + tid];
       rhok_s2[tid] = myrhok2[2 * b * BS + tid];
     }
+    __syncthreads();
     if ((2 * b + 1) * BS + tid < 2 * numk)
     {
       rhok_s1[BS + tid] = myrhok1[(2 * b + 1) * BS + tid];
@@ -1313,18 +1333,19 @@ __global__ void vk_sum_kernel2(T** rhok1, T* rhok2, T* vk, int numk, T* sum)
   __shared__ T* myrhok1;
   if (tid == 0)
     myrhok1 = rhok1[blockIdx.x];
-  __syncthreads();
   // Used to do coalesced global loads
   __shared__ T rhok_s1[2 * BS], rhok_s2[2 * BS];
   int NB  = numk / BS + ((numk % BS) ? 1 : 0);
   T mysum = 0.0f;
   for (int b = 0; b < NB; b++)
   {
+    __syncthreads();
     if (2 * b * BS + tid < 2 * numk)
     {
       rhok_s1[tid] = myrhok1[2 * b * BS + tid];
       rhok_s2[tid] = rhok2[2 * b * BS + tid];
     }
+    __syncthreads();
     if ((2 * b + 1) * BS + tid < 2 * numk)
     {
       rhok_s1[BS + tid] = myrhok1[(2 * b + 1) * BS + tid];

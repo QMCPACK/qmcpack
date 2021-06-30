@@ -4,22 +4,21 @@
 #//
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory 
+#// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
-#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign 
+#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR particleio)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR particleio)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+add_executable(${UTEST_EXE} test_xml_io.cpp test_lattice_parser.cpp test_xml_mass.cpp)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} qmcutil containers platform_omptarget)
+endif()
 
-ADD_EXECUTABLE(${UTEST_EXE} test_xml_io.cpp test_lattice_parser.cpp test_xml_mass.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcparticle)
-IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil containers)
-ENDIF()
-
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

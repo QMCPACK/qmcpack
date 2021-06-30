@@ -113,6 +113,7 @@ public:
 
   /// Trivial constructor
   CubSpline()
+    : StartDeriv(0.)
   {
     UpToDate    = false;
     Initialized = false;

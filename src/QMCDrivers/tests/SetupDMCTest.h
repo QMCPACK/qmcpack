@@ -19,6 +19,7 @@
 #include "Concurrency/UtilityFunctions.hpp"
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/SetupPools.h"
+#include "OhmmsApp/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -27,14 +28,7 @@ namespace testing
 class SetupDMCTest : public SetupPools
 {
 public:
-  SetupDMCTest(int nranks = 4)
-      : population(comm->size(),
-                   particle_pool->getParticleSet("e"),
-                   wavefunction_pool->getPrimary(),
-                   hamiltonian_pool->getPrimary(),
-                   comm->rank()),
-        num_ranks(nranks),
-        qmcdrv_input(3)
+  SetupDMCTest(int nranks = 4) : num_ranks(nranks), qmcdrv_input()
   {
     if (Concurrency::maxCapacity<>() < 8)
       num_crowds = Concurrency::maxCapacity<>();
@@ -51,16 +45,16 @@ public:
 
     QMCDriverInput qmc_input_copy(qmcdrv_input);
     DMCDriverInput dmc_input_copy(dmcdrv_input);
-    return {std::move(qmc_input_copy),
-            std::move(dmc_input_copy),
-            population,
-            *(wavefunction_pool->getPrimary()),
-            *(hamiltonian_pool->getPrimary()),
-            comm};
+    return {test_project, std::move(qmc_input_copy), std::move(dmc_input_copy),
+            MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool->getParticleSet("e"),
+                         wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()), comm};
   }
 
+private:
+  ProjectData test_project;
+
 public:
-  MCPopulation population;
+  WalkerConfigurations walker_confs;
 
   Libxml2Document doc;
   xmlNodePtr node;

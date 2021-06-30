@@ -16,7 +16,9 @@
 #define CUDA_INVERSE_H
 
 #include <complex>
+#ifndef QMC_CUDA2HIP
 #include <cublas_v2.h>
+#endif
 
 //////////////////////////////
 // Single / mixed precision //

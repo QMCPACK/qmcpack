@@ -20,7 +20,12 @@
 #include "Utilities/SimpleParser.h"
 //#include "Utilities/IteratorUtility.h"
 #ifdef QMC_CUDA
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 #endif
 
 namespace qmcplusplus
@@ -30,15 +35,14 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
 {
   app_log() << "    ECPComponentBuilder::buildSemiLocalAndLocal " << std::endl;
   if (grid_global == 0)
-  {
-    app_error() << "    Global grid needs to be defined." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal. Global grid needs to be defined.\n");
   // There should only be one semilocal tag
   if (semiPtr.size() > 1)
   {
-    app_error() << "    We have more than one semilocal sections in the PP xml file." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+    std::stringstream err_msg;
+    err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
+            << "We have more than one semilocal sections in the PP xml file";
+    myComm->barrier_and_abort(err_msg.str());
   }
   RealType rmax = -1;
   //attributes: initailize by defaults
@@ -50,17 +54,67 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   int nso   = 0;
   Llocal    = -1;
   OhmmsAttributeSet aAttrib;
+  int quadRule = -1;
   aAttrib.add(eunits, "units");
   aAttrib.add(format, "format");
   aAttrib.add(ndown, "npots-down");
   aAttrib.add(nup, "npots-up");
   aAttrib.add(Llocal, "l-local");
-  aAttrib.add(Nrule, "nrule");
+  aAttrib.add(quadRule, "nrule");
   aAttrib.add(Srule, "srule");
   aAttrib.add(nso, "npots-so");
 
   xmlNodePtr cur_semilocal = semiPtr[0];
   aAttrib.put(cur_semilocal);
+
+  if (quadRule > -1 && Nrule > -1)
+  {
+    app_warning() << " Nrule setting found in both qmcpack input (Nrule = " << Nrule
+                  << ") and pseudopotential file (Nrule = " << quadRule << ")."
+                  << " Using nrule setting in qmcpack input file." << std::endl;
+  }
+  else if (quadRule > -1 && Nrule == -1)
+  {
+    app_log() << " Nrule setting found in pseudopotential file and used." << std::endl;
+    Nrule = quadRule;
+  }
+  else if (quadRule == -1 && Nrule > -1)
+    app_log() << " Nrule setting found in qmcpack input file and used." << std::endl;
+  else
+  {
+    //Sperical quadrature rules set by exact integration up to lmax of
+    //nonlocal channels.
+    //From J. Chem. Phys. 95 (3467) (1991)
+    //Keeping Nrule = 4 as default for lmax <= 5.
+    switch (pp_nonloc->lmax)
+    {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+      Nrule = 4;
+      break;
+    case 6:
+    case 7:
+      Nrule = 6;
+      break;
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+      Nrule = 7;
+      break;
+    default:
+      myComm->barrier_and_abort("Default value for pseudopotential nrule not determined.");
+      break;
+    }
+    app_warning() << "Nrule was not determined from qmcpack input or pseudopotential file. Setting sensible default."
+                  << std::endl;
+  }
+
+
   RealType Vprefactor = 1.0;
   if (eunits.find("ydberg") < eunits.size())
   {
@@ -78,8 +132,10 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     is_r_times_V = false;
   else
   {
-    app_error() << "Unrecognized format \"" << format << "\" in PP file." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+    std::stringstream err_msg;
+    err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal."
+            << "Unrecognized format \"" << format << "\" in PP file.\n";
+    myComm->barrier_and_abort(err_msg.str());
   }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
@@ -103,7 +159,14 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       aAttrib.add(lstr, "l");
       aAttrib.add(rc, "cutoff");
       aAttrib.put(cur_vps);
-      rmax  = std::max(rmax, rc);
+      rmax = std::max(rmax, rc);
+      if (angMon.find(lstr) == angMon.end())
+      {
+        std::stringstream err_msg;
+        err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
+                << "Requested angular momentum " << lstr << " not available.\n";
+        myComm->barrier_and_abort(err_msg.str());
+      }
       int l = angMon[lstr];
       angList.push_back(l);
       vpsPtr.push_back(cur_vps);
@@ -117,7 +180,14 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       aAttrib.add(lstr, "l");
       aAttrib.add(rc, "cutoff");
       aAttrib.put(cur_vps);
-      rmax  = std::max(rmax, rc);
+      rmax = std::max(rmax, rc);
+      if (angMon.find(lstr) == angMon.end())
+      {
+        std::stringstream err_msg;
+        err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
+                << "Requested angular momentum " << lstr << " not available for SO.\n";
+        myComm->barrier_and_abort(err_msg.str());
+      }
       int l = angMon[lstr];
       angListSO.push_back(l);
       vpsoPtr.push_back(cur_vps);
@@ -140,7 +210,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     std::string outstring("");
     outstring = ssout.str();
 
-    APP_ABORT(outstring.c_str());
+    myComm->barrier_and_abort(outstring.c_str());
   }
   int npts = grid_global->size();
   Matrix<mRealType> vnn(angList.size(), npts);
@@ -217,8 +287,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   else
   {
     //No SO channels found. Delete pp_so
-    delete pp_so;
-    pp_so = 0;
+    pp_so.reset();
   }
 }
 
@@ -233,8 +302,8 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
   const int max_points = 100000;
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  mRealType d                 = 1e-4;
-  LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
+  mRealType d = 1e-4;
+  auto agrid  = std::make_unique<LinearGrid<RealType>>();
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
@@ -266,7 +335,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     for (int i = 0; i < ngIn; i++)
       newPin[i] = Vprefactor * vp[i];
 
-    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, 0.0, ngIn - 1, 0.0);
     for (int i = 1; i < ng - 1; i++)
     {
@@ -275,7 +344,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     }
     newP[0]                  = newP[1];
     newP[ng - 1]             = 0.0;
-    RadialPotentialType* app = new RadialPotentialType(agrid, newP);
+    RadialPotentialType* app = new RadialPotentialType(agrid->makeClone(), newP);
     app->spline();
     pp_so->add(angList[l], app);
   }
@@ -300,10 +369,10 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   if (!fin)
   {
     app_error() << "Could not open file " << fname << std::endl;
-    APP_ABORT("ECPComponentBuilder::parseCasino");
+    myComm->barrier_and_abort("ECPComponentBuilder::parseCasino");
   }
-  if (pp_nonloc == 0)
-    pp_nonloc = new NonLocalECPComponent;
+  if (!pp_nonloc)
+    pp_nonloc = std::make_unique<NonLocalECPComponent>();
   OhmmsAsciiParser aParser;
   int npts = 0, idummy;
   std::string eunits("rydberg");
@@ -329,7 +398,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aParser.skiplines(fin, 1); //R(i) in atomic units
   aParser.getValues(fin, temp.begin(), temp.end());
   //create a global grid of numerical type
-  grid_global = new NumericalGrid<mRealType>(temp);
+  grid_global = std::make_unique<NumericalGrid<mRealType>>(temp);
   Matrix<mRealType> vnn(Lmax + 1, npts);
   for (int l = 0; l <= Lmax; l++)
   {
@@ -391,8 +460,8 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 #endif
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  mRealType d                 = 1e-4;
-  LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
+  mRealType d = 1e-4;
+  auto agrid  = std::make_unique<LinearGrid<RealType>>();
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
@@ -420,7 +489,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   {
     app_error() << "The local channel is not specified in the pseudopotential file.\n"
                 << "Please add \'l-local=\"n\"\' attribute the semilocal section of the fsatom XML file.\n";
-    APP_ABORT("ECPComponentBuilder::doBreakUp");
+    myComm->barrier_and_abort("ECPComponentBuilder::doBreakUp");
     // Llocal = Lmax;
   }
   //find the index of local
@@ -439,16 +508,16 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     int ll                          = angList[l];
     for (int i = 0; i < ngIn; i++)
       newPin[i] = Vprefactor * (vp[i] - vpLoc[i]);
-    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, 0.0, ngIn - 1, 0.0);
     for (int i = 1; i < ng - 1; i++)
     {
       mRealType r = d * i;
       newP[i]     = infunc.splint(r) / r;
     }
-    newP[0]                  = newP[1];
-    newP[ng - 1]             = 0.0;
-    RadialPotentialType* app = new RadialPotentialType(agrid, newP);
+    newP[0]      = newP[1];
+    newP[ng - 1] = 0.0;
+    auto app     = new RadialPotentialType(agrid->makeClone(), newP);
     app->spline();
     pp_nonloc->add(angList[l], app);
   }
@@ -463,8 +532,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   else
   {
     //only one component, remove non-local potentials
-    delete pp_nonloc;
-    pp_nonloc = 0;
+    pp_nonloc.reset();
   }
   {
     // Spline local potential on original grid
@@ -474,13 +542,13 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     for (int i = 0; i < ngIn; i++)
       newPin[i] = vfac * vpLoc[i];
     double dy0 = (newPin[1] - newPin[0]) / ((*grid_global)[1] - (*grid_global)[0]);
-    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, dy0, ngIn - 1, 0.0);
-    int m                          = grid_global->size();
-    double loc_max                 = grid_global->r(m - 1);
-    int nloc                       = (int)std::floor(loc_max / d);
-    loc_max                        = (nloc - 1) * d;
-    LinearGrid<RealType>* grid_loc = new LinearGrid<RealType>;
+    int m          = grid_global->size();
+    double loc_max = grid_global->r(m - 1);
+    int nloc       = (int)std::floor(loc_max / d);
+    loc_max        = (nloc - 1) * d;
+    auto grid_loc  = std::make_unique<LinearGrid<RealType>>();
     grid_loc->set(0.0, loc_max, nloc);
     app_log() << "   Making L=" << Llocal << " a local potential with a radial cutoff of " << loc_max << std::endl;
     std::vector<RealType> newPloc(nloc);
@@ -491,7 +559,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     }
     newPloc[0]        = 0.0;
     newPloc[nloc - 1] = 1.0;
-    pp_loc            = new RadialPotentialType(grid_loc, newPloc);
+    pp_loc            = std::make_unique<RadialPotentialType>(std::move(grid_loc), newPloc);
     pp_loc->spline(0, dy0, nloc - 1, 0.0);
     // for (double r=0.0; r<3.50001; r+=0.001)
     //   fprintf (stderr, "%10.5f %10.5f\n", r, pp_loc->splint(r));

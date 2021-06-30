@@ -25,10 +25,12 @@ TEST_CASE("InfoStream basic", "[utilities]")
   InfoStream info(&out);
   info.getStream() << "test";
   REQUIRE(out.str() == "test");
+  REQUIRE(info.isActive());
 
   info.pause();
   info.getStream() << "empty";
   REQUIRE(out.str() == "test");
+  REQUIRE(!info.isActive());
 
   info.resume();
   info.getStream() << "second";

@@ -12,11 +12,18 @@
 
 namespace qmcplusplus
 {
+Crowd::Crowd(EstimatorManagerNew& emb,
+             const DriverWalkerResourceCollection& driverwalker_res,
+             const MultiWalkerDispatchers& dispatchers)
+    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+{}
+
+Crowd::~Crowd() = default;
+
 void Crowd::clearWalkers()
 {
   // We're clearing the refs to the objects not the referred to objects.
   mcp_walkers_.clear();
-  mcp_wfbuffers_.clear();
   walker_elecs_.clear();
   walker_twfs_.clear();
   walker_hamiltonians_.clear();
@@ -34,17 +41,10 @@ void Crowd::reserve(int crowd_size)
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)
 {
   mcp_walkers_.push_back(walker);
-  mcp_wfbuffers_.push_back(walker.DataSet);
   walker_elecs_.push_back(elecs);
   walker_twfs_.push_back(twf);
   walker_hamiltonians_.push_back(hamiltonian);
 };
-
-void Crowd::loadWalkers()
-{
-  for (int i = 0; i < mcp_walkers_.size(); ++i)
-    walker_elecs_[i].get().loadWalker(mcp_walkers_[i], true);
-}
 
 void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
@@ -54,8 +54,6 @@ void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 
 void Crowd::startBlock(int num_steps)
 {
-  if (this->size() == 0)
-    return;
   n_accept_ = 0;
   n_reject_ = 0;
   // VMCBatched does no nonlocal moves
@@ -65,8 +63,6 @@ void Crowd::startBlock(int num_steps)
 
 void Crowd::stopBlock()
 {
-  if (this->size() == 0)
-    return;
   estimator_manager_crowd_.stopBlock();
 }
 

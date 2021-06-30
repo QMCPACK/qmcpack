@@ -40,15 +40,15 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   RealType Zeff;
   RealType RcutMax;
   std::string Species;
-  mGridType* grid_global;
-  std::map<std::string, mGridType*> grid_inp;
-  RadialPotentialType* pp_loc;
-  NonLocalECPComponent* pp_nonloc;
-  SOECPComponent* pp_so; //Spin-orbit potential component.
-  L2RadialPotential* pp_L2;
+  std::unique_ptr<mGridType> grid_global;
+  std::map<std::string, std::unique_ptr<mGridType>> grid_inp;
+  std::unique_ptr<RadialPotentialType> pp_loc;
+  std::unique_ptr<NonLocalECPComponent> pp_nonloc;
+  std::unique_ptr<SOECPComponent> pp_so; //Spin-orbit potential component.
+  std::unique_ptr<L2RadialPotential> pp_L2;
   std::map<std::string, int> angMon;
 
-  ECPComponentBuilder(const std::string& aname, Communicate* c);
+  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);
@@ -72,7 +72,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   //  7          50         11
   void SetQuadratureRule(int rule);
 
-  mGridType* createGrid(xmlNodePtr cur, bool useLinear = false);
+  std::unique_ptr<mGridType> createGrid(xmlNodePtr cur, bool useLinear = false);
   RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid);
   RadialPotentialType* createVrWithData(xmlNodePtr cur, mGridType* agrid, int rCorrection = 0);
 

@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int numOrbs = 0;
   int sortBands(1);
@@ -38,18 +38,17 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   //There have to be two "spin states"...  one for the up channel and one for the down channel.
   // We force this for spinors and manually resize states and FullBands.
-  delete_iter(states.begin(), states.end());
   states.clear();
-  states.resize(2, 0);
+  states.resize(2);
 
-  FullBands.resize(2, 0);
+  FullBands.resize(2);
 
   SPOSet* UpOrbitalSet;
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
-  ScopedTimer spo_timer_scope(timer_manager.createTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
@@ -137,14 +136,14 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
               << "cloning EinsplineSet object.\n";
-    return iter->second->makeClone();
+    return std::unique_ptr<SPOSet>{iter->second->makeClone()};
   }
 
   if (FullBands[spinSet] == 0)
-    FullBands[spinSet] = new std::vector<BandInfo>;
+    FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
 
   if (FullBands[spinSet2] == 0)
-    FullBands[spinSet2] = new std::vector<BandInfo>;
+    FullBands[spinSet2] = std::make_unique<std::vector<BandInfo>>();
 
   //This is to skip checks on ion-ID's, spin types, etc.  If we've made it here, we assume we know better
   //than Einspline on what the data means...
@@ -197,17 +196,16 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   //Make the up spin set.
   HasCoreOrbs = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
-  std::unique_ptr<SPOSet> bspline_zd_u(MixedSplineReader->create_spline_set(spinSet, spo_cur));
+  auto bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
   HasCoreOrbs = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
-  std::unique_ptr<SPOSet> bspline_zd_d(MixedSplineReader->create_spline_set(spinSet2, spo_cur));
+  auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
 
   //register with spin set and we're off to the races.
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(bspline_zd_u), std::move(bspline_zd_d));
   return spinor_set;
-  // return nullptr;
 };
 } // namespace qmcplusplus

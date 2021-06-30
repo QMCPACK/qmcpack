@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
 #include <map>
 #include "NewTimer.h"
 #include "config.h"
@@ -42,9 +43,11 @@ namespace qmcplusplus
 template<class TIMER>
 class TimerManager
 {
-protected:
+private:
   /// All the timers created by this manager
   std::vector<std::unique_ptr<TIMER>> TimerList;
+  /// mutex for TimerList
+  std::mutex timer_list_lock_;
   /// The stack of nested active timers
   std::vector<TIMER*> CurrentTimerStack;
   /// The threshold for active timers
@@ -68,7 +71,10 @@ public:
   __itt_domain* task_domain;
 #endif
 
-  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
+  TimerManager()
+      : timer_threshold(timer_level_coarse),
+        max_timer_id(1),
+        max_timers_exceeded(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");
@@ -78,9 +84,9 @@ public:
   /// Create a new timer object registred in this manager. This call is thread-safe.
   TIMER* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
-  void push_timer(TIMER* t) { CurrentTimerStack.push_back(t); }
+  void push_timer(TIMER* t);
 
-  void pop_timer() { CurrentTimerStack.pop_back(); }
+  void pop_timer(TIMER* t);
 
   TIMER* current_timer()
   {
@@ -138,7 +144,7 @@ extern TimerManager<NewTimer> timer_manager;
 // Helpers to make it easier to define a set of timers
 // See tests/test_timer.cpp for an example
 
-typedef std::vector<NewTimer*> TimerList_t;
+using TimerList_t = std::vector<std::reference_wrapper<NewTimer>>;
 
 template<class T>
 struct TimerIDName_t
@@ -151,14 +157,14 @@ template<class T>
 using TimerNameList_t = std::vector<TimerIDName_t<T>>;
 
 template<class T, class TIMER>
-void setup_timers(std::vector<TIMER*>& timers,
+void setup_timers(std::vector<std::reference_wrapper<TIMER>>& timers,
                   TimerNameList_t<T> timer_list,
                   timer_levels timer_level     = timer_level_fine,
                   TimerManager<TIMER>* manager = &timer_manager)
 {
-  timers.resize(timer_list.size());
+  timers.reserve(timer_list.size());
   for (int i = 0; i < timer_list.size(); i++)
-    timers[timer_list[i].id] = manager->createTimer(timer_list[i].name, timer_level);
+    timers.push_back(*manager->createTimer(timer_list[i].name, timer_level));
 }
 
 } // namespace qmcplusplus

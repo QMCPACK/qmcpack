@@ -38,8 +38,10 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(2);
@@ -82,8 +84,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 
   ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);
@@ -102,12 +104,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
+  auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto* det_up = new DiracDet(spo);
+  auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_up->set(0, 2);
-  auto* det_dn = new DiracDet(spo);
+  auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_dn->set(2, 2);
 
   auto* slater_det = new SlaterDet(elec_);
@@ -210,11 +212,11 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
-  RefVector<ParticleSet> p_ref_list{elec_, elec_clone};
-  RefVector<TrialWaveFunction> wf_ref_list{psi, *psi_clone};
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
-  elec_.flex_update(p_ref_list);
-  psi.flex_evaluateLog(wf_ref_list, p_ref_list);
+  ParticleSet::mw_update(p_ref_list);
+  TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
@@ -236,7 +238,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   std::cout << "evalGrad " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2]
             << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
 
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
+  TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
   REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
@@ -254,12 +256,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[1].makeMove(moved_elec_id, delta_sign_changed);
 
-  ValueType r_0 = wf_ref_list[0].get().calcRatio(p_ref_list[0].get(), moved_elec_id);
+  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].get().calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
+  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
 #if defined(QMC_COMPLEX)
   REQUIRE(r_0 == ComplexApprox(ValueType(-0.045474407700114, -0.59956233350555)));
   REQUIRE(r_1 == ComplexApprox(ValueType(-0.44602867091608, -1.8105588403509)));
@@ -275,11 +277,11 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   PosType delta_zero(0, 0, 0);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta);
+  p_ref_list[0].makeMove(moved_elec_id, delta_zero);
+  p_ref_list[1].makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
-  psi.flex_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
+  TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
   std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
@@ -302,7 +304,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
 
-  psi.flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
+  TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)));
   REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
@@ -324,7 +326,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   std::vector<bool> isAccepted(2, true);
-  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
+  TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
@@ -337,7 +339,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
           LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
 #endif
 
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
+  TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
   REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));

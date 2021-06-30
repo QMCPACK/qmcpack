@@ -4,8 +4,86 @@ Notable changes to QMCPACK are documented in this file.
 
 ## [Unreleased]
 
+* To aid coexistence of real and complex builds, the qmcpack executable is now named qmcpack_complex for builds with QMC_COMPLEX=1
+
+## [3.11.0] - 2021-04-09
+
+### Notes
+
+This release includes a large number of refinements to QMCPACK and the supporting ecosystem. These include support for the latest version of
+Quantum ESPRESSO, new capabilities in AFQMC, space-warp transformation for forces, numerous bug fixes, user-requested feature improvements,
+and further upgrades to the test system.
+
+* Quantum ESPRESSO (QE) v6.7 support. [\#2927](https://github.com/QMCPACK/qmcpack/pull/2927).
+* Detect and automatically use patched version of QE found on the PATH. [\#2974](https://github.com/QMCPACK/qmcpack/pull/2974).
+* Support for global max\_seconds and STOP file to cleanly halt QMCPACK during a run. [\#3028](https://github.com/QMCPACK/qmcpack/pull/3028).
+* Freezing of two-body Jastrow parameters in optimization works. [\#2814](https://github.com/QMCPACK/qmcpack/issues/2814).
+* Multideterminant code now works with only alpha determinants \(no down electrons\). [\#2698](https://github.com/QMCPACK/qmcpack/issues/2698).
+* High l-momentum channels as local channels in ECPs work. [\#2920](https://github.com/QMCPACK/qmcpack/pull/2920).
+* Space Warp Transformation for ZVZB Forces. [\#2828](https://github.com/QMCPACK/qmcpack/pull/2828).
+* Important bug fixes in legacy CUDA implementation causing incorrect energies. [\#2883](https://github.com/QMCPACK/qmcpack/pull/2883).
+* Implemented DLA in legacy CUDA. [\#2887](https://github.com/QMCPACK/qmcpack/pull/2887).
+* Updates to support CUDA 11.2.1 e.g. [\#2950](https://github.com/QMCPACK/qmcpack/pull/2950).
+* AFQMC supports energy estimator with different Hamiltonian \(from propagation\). [\#2795](https://github.com/QMCPACK/qmcpack/pull/2795).
+* Trial wavefunction optimization with spin-orbit supported. [\#3034](https://github.com/QMCPACK/qmcpack/pull/3034).
+* ppconvert executable automatically built when configured. [\#2904](https://github.com/QMCPACK/qmcpack/pull/2904).
+* Tests added for ppconvert. [\#2929](https://github.com/QMCPACK/qmcpack/issues/2929).
+* Fixed SIMD alignment for AVX512 on some systems. [\#2981](https://github.com/QMCPACK/qmcpack/pull/2981).
+* Improved wavefunction restart logic in AFQMC. [\#2942](https://github.com/QMCPACK/qmcpack/pull/2942).
+* Spin-density supported in batched code. [\#2840](https://github.com/QMCPACK/qmcpack/pull/2840).
+* Reduced I/O operations during cmake. [\#2808](https://github.com/QMCPACK/qmcpack/pull/2808).
+* Improved detection of unsupported-by-Intel combinations of Intel compilers and libstdc++. [\#2794](https://github.com/QMCPACK/qmcpack/pull/2794).
+* Initial support for Andes at OLCF. [\#3073](https://github.com/QMCPACK/qmcpack/pull/3073).
+* Deterministic tests expanded in scope and made reliable for more build types and compilers.
+* Various minor bug fixes and feature improvements based on user requests for both real-space and AFQMC.
+* Improved error handling throughout.
+* Numerous performance improvements, expansion of tests, and bug fixes to the batched VMC and DMC codes. Reasonable but not optimal GPU acceleration can now be achieved for spline-based wavefunctions.
+
+### NEXUS
+
+* Support AMD nodes on Cori. [\#2809](https://github.com/QMCPACK/qmcpack/pull/2809).
+* Interface for RMG code. [\#2932](https://github.com/QMCPACK/qmcpack/pull/2932).
+* Added h-channel to list of possible local channels in pseudopotential. [\#2915](https://github.com/QMCPACK/qmcpack/pull/2915).
+* Allow non spin-specific occupations in case of noncollinear. [\#2957](https://github.com/QMCPACK/qmcpack/pull/2957).
+* More robust handling of QE output when printed eigenvalues touch. [\#3042](https://github.com/QMCPACK/qmcpack/pull/3042).
+* Fixed type check for reblock\_factors in qmc-fit. [\#2830](https://github.com/QMCPACK/qmcpack/pull/2830).
+* Fixed a Jastrow read error/warning, add several QE inputs. [\#2819](https://github.com/QMCPACK/qmcpack/pull/2819).
+* Fixed tests on Summit. [\#2983](https://github.com/QMCPACK/qmcpack/pull/2983).
+* Fixed module overwrite bug in qmca. [\#2802](https://github.com/QMCPACK/qmcpack/pull/2802).
+
+## [3.10.0] - 2020-11-10
+
+### Notes
+
+This release contains multiple feature improvements and bug fixes. The AFQMC implementation has been significantly enhanced, and
+an important wavefunction optimization bug fixed in real space QMC.
+
+* The QMCPACK manual is now available at https://qmcpack.readthedocs.io, having been converted to use reStructuredText and the sphinx
+  documentation system.
+* Significant improvements to the AFQMC code including HIP support for AMD GPUs, updated documentation, and support for non-collinear calculations and spin-orbit k-point Hamiltonians
+  [\#2734](https://github.com/QMCPACK/qmcpack/pull/2734).
+* Improved support for spin-orbit in real-space QMC including documentation [\#2733](https://github.com/QMCPACK/qmcpack/pull/2733).
+* Important bug fix for wavefunction optimization in few electron systems such as isolated atoms. The bug would result in slow or no
+  convergence. Thanks to Jaron Krogel and Matus Dubecky for reports and reproducers.
+  [\#2496](https://github.com/QMCPACK/qmcpack/issues/2496).
+* Implementation of L2 potentials and evaluation in DMC [\#1948](https://github.com/QMCPACK/qmcpack/pull/1948).
+* Consistent with our two year support policy for open source compilers, libraries, and tooling, several version minimums have
+  been increased to either avoid bugs or to utilize new features.
+* Clang 7 is the earliest supported Clang compiler. The latest release is recommended.
+* Intel 2019 is the earliest supported Intel compiler. The latest release is recommended.
+* Future releases of QMCPACK will require C++17. The current minimum is C++14.
+* AoS builds are no longer supported. The code has been removed now that the default structures-of-arrays (SoA) build has
+  sufficiently broad capability.
 * The default CUDA architecture is set to sm_70 (Volta).
-* AoS builds are no longer supported. The code has been removed.
+* QMCPACK is built with ENABLE_TIMERS=ON by default [\#2663](https://github.com/QMCPACK/qmcpack/issues/2663)
+* Various bug fixes to complete the transition to Python 3.
+* Ongoing improvements to the OpenMP offload implementation.
+
+### NEXUS
+
+* NEXUS manual is now available at https://nexus-workflows.readthedocs.io, having been converted to use the reStructuredText and sphinx
+  documentation system.
+* Various small fixes and improvements.
 
 ## [3.9.2] - 2020-04-29
 

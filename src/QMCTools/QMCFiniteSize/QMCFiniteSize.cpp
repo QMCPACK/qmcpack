@@ -67,7 +67,6 @@ bool QMCFiniteSize::validateXML()
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    bool inputnode = true;
     if (cname == "particleset")
     {
       ptclPool.put(cur);
@@ -83,7 +82,7 @@ bool QMCFiniteSize::validateXML()
       if (a)
       {
         pushDocument((const char*)a);
-        inputnode = processPWH(XmlDocStack.top()->getRoot());
+        processPWH(XmlDocStack.top()->getRoot());
         popDocument();
       }
     }
@@ -116,18 +115,8 @@ void QMCFiniteSize::wfnPut(xmlNodePtr cur)
   pAttrib.put(cur);
   ParticleSet* qp = ptclPool.getParticleSet(target);
 
-  { //check ESHDF should be used to initialize both target and associated ionic system
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
-      std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
-      {
-        qp = ptclPool.createESParticleSet(tcur, target, qp);
-      }
-      tcur = tcur->next;
-    }
-  }
+  if(qp == nullptr)
+    throw std::runtime_error("target particle set named '" + target + "' not found");
 }
 
 bool QMCFiniteSize::processPWH(xmlNodePtr cur)
@@ -170,7 +159,7 @@ void QMCFiniteSize::initBreakup()
   P      = ptclPool.getParticleSet("e");
   AA     = LRCoulombSingleton::getHandler(*P);
   myRcut = AA->get_rc();
-  if (rVs == 0)
+  if (rVs == nullptr)
   {
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }

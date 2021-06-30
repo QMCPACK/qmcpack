@@ -36,17 +36,13 @@ protected:
    *  Do not write out blocks of gets for variables like this
    *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
-  bool use_drift_ = true;
-  IndexType samples_per_thread_    = -1;
-  IndexType samples_               = -1;
-  IndexType steps_between_samples_ = -1;
+  bool use_drift_    = true;
+  IndexType samples_ = -1;
   /** @} */
 
 public:
   bool get_use_drift() const { return use_drift_; }
-  IndexType get_samples_per_thread() const { return samples_per_thread_; }
   IndexType get_samples() const { return samples_; }
-  IndexType get_steps_between_samples() const { return steps_between_samples_; }
 
   friend std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci);
 };

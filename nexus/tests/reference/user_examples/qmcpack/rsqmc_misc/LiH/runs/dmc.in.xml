@@ -15,7 +15,7 @@
          </parameter>
          <parameter name="LR_dim_cutoff"       >    15                 </parameter>
       </simulationcell>
-      <particleset name="e" random="yes">
+      <particleset name="e" random="yes" randomsrc="ion0">
          <group name="u" size="1" mass="1.0">
             <parameter name="charge"              >    -1                    </parameter>
             <parameter name="mass"                >    1.0                   </parameter>

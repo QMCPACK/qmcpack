@@ -35,6 +35,7 @@ namespace qmcplusplus
 {
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
+using PosType      = QMCTraits::PosType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
@@ -42,7 +43,7 @@ using PsiValueType = QMCTraits::QTFull::ValueType;
 #if defined(ENABLE_CUDA)
 typedef DiracDeterminantBatched<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
-typedef DiracDeterminantBatched<MatrixUpdateOMP<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #endif
 #else
 typedef DiracDeterminantBatched<> DetType;
@@ -62,9 +63,10 @@ void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
 
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(3);
-  DetType ddb(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(3);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   int norb = 3;
   ddb.set(0, norb);
@@ -113,15 +115,53 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 2) = 0.9105960265;
 
   check_matrix(ddb.psiMinv, b);
+
+  // set virtutal particle position
+  PosType newpos(0.3, 0.2, 0.5);
+
+  elec.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec.getTotalNum());
+  ddb.evaluateRatiosAlltoOne(elec, ratios);
+
+  CHECK(std::real(ratios[0]) == Approx(1.2070809985));
+  CHECK(std::real(ratios[1]) == Approx(0.2498726439));
+  CHECK(std::real(ratios[2]) == Approx(-1.3145695364));
+
+  elec.makeMove(0, newpos - elec.R[0]);
+  PsiValueType ratio_0 = ddb.ratio(elec, 0);
+  elec.rejectMove(0);
+
+  CHECK(std::real(ratio_0) == Approx(-0.5343861437));
+
+  VirtualParticleSet VP(elec, 2);
+  std::vector<PosType> newpos2(2);
+  std::vector<ValueType> ratios2(2);
+  newpos2[0] = newpos - elec.R[1];
+  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
+  VP.makeMoves(1, elec.R[1], newpos2);
+  ddb.evaluateRatios(VP, ratios2);
+
+  CHECK(std::real(ratios2[0]) == Approx(0.4880285278));
+  CHECK(std::real(ratios2[1]) == Approx(0.9308456444));
+
+  //test acceptMove
+  elec.makeMove(1, newpos - elec.R[1]);
+  PsiValueType ratio_1 = ddb.ratio(elec, 1);
+  ddb.acceptMove(elec, 1);
+  elec.acceptMove(1);
+
+  CHECK(std::real(ratio_1) == Approx(0.9308456444));
+  CHECK(std::real(ddb.LogValue) == Approx(1.9891064655));
 }
 
 //#define DUMP_INFO
 
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(4);
-  DetType ddb(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(4);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   int norb = 4;
   ddb.set(0, norb);
@@ -245,9 +285,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(4);
-  DetType ddc(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(4);
+  DetType ddc(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   int norb = 4;
   // maximum delay 2
@@ -331,7 +372,8 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 
   check_matrix(ddc.psiMinv, a_update1);
 
-  grad                    = ddc.evalGrad(elec, 1);
+  grad = ddc.evalGrad(elec, 1);
+
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
@@ -350,7 +392,8 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1, true);
 
-  grad                    = ddc.evalGrad(elec, 2);
+  grad = ddc.evalGrad(elec, 2);
+
   PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());

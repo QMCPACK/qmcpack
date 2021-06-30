@@ -107,7 +107,7 @@ struct PooledMemory
   inline void allocate()
   {
     myData.resize(Current + Current_scalar * scalar_multiplier);
-    if ((size_t(myData.data())) & (QMC_CLINE - 1))
+    if ((size_t(myData.data())) & (QMC_SIMD_ALIGNMENT - 1))
       throw std::runtime_error("Unaligned memory allocated in PooledMemory");
     Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data() + Current);
   }

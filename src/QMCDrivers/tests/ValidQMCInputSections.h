@@ -43,7 +43,6 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          32 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>
@@ -57,7 +56,6 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
     <parameter name="crowds">                 1 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          1 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>
@@ -88,10 +86,10 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
 )",
      R"(
   <qmc method="dmc_batch" move="pbyp">
-    <parameter name="crowds">                 8 </parameter>
+    <parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="total_walkers">                32 </parameter>
-    <parameter name="reserve">                1.5 </parameter>
+    <parameter name="total_walkers">          8 </parameter>
+    <parameter name="reserve">             1.25 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>
@@ -104,6 +102,19 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
 // to avoid creating a situation where section test xml is in two places
 constexpr int valid_dmc_input_dmc_index       = 0;
 constexpr int valid_dmc_input_dmc_batch_index = 1;
+
+constexpr std::array<const char*, 2> valid_opt_input_sections{
+    R"(
+  <qmc method="opt_batch" move="pbyp" gpu="yes">
+  </qmc>
+)",
+    R"(
+  <qmc method="opt_batch" move="pbyp">
+    <optimize method="test" output_param_file="yes"/>
+    <parameter name="opt_num_crowds">                 4 </parameter>
+    <parameter name="opt_crowd_size">                 8 </parameter>
+  </qmc>
+)"};
 
 // clang-format: on
 } // namespace testing

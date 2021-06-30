@@ -35,10 +35,10 @@ class MultiDiracDeterminant : public WaveFunctionComponent
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer, &evalOrbTimer,
-      &evalOrb1Timer;
+  NewTimer &UpdateTimer, &RatioTimer, &MWRatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer,
+      &evalOrbTimer, &evalOrb1Timer;
   NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer;
-  // Optimizable parameters
+  // Optimizable parameter
   opt_variables_type myVars;
 
   typedef SPOSet::IndexVector_t IndexVector_t;
@@ -56,7 +56,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(SPOSetPtr const& spos, int first = 0);
+  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor);
 
   ///default destructor
   ~MultiDiracDeterminant();
@@ -69,26 +69,22 @@ public:
    */
   MultiDiracDeterminant(const MultiDiracDeterminant& s);
 
-  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s);
+  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s) = delete;
 
   /** return a clone of Phi
    */
   SPOSetPtr clonePhi() const;
 
-  SPOSetPtr getPhi() { return Phi; };
-
-  inline IndexType rows() const { return NumPtcls; }
-
-  inline IndexType cols() const { return NumOrbitals; }
+  SPOSetPtr getPhi() { return Phi.get(); };
 
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
-   *@param norb total number of orbitals (including unoccupied)
+   *@param ref_det_id id of the reference determinant
+   *
+   * Note: ciConfigList should have been populated when calling this function
    */
-  void set(int first, int nel, int norb);
-
-  void set(int first, int nel);
+  void set(int first, int nel, int ref_det_id);
 
   void setBF(BackflowTransformation* bf) {}
 
@@ -117,8 +113,8 @@ public:
     if (!Optimizable)
       return;
 
-    const ValueVector_t& detValues_up = detValues;
-    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const ValueVector_t& detValues_up = getRatiosToRefDet();
+    const ValueVector_t& detValues_dn = pseudo_dn.getRatiosToRefDet();
     const GradMatrix_t& grads_up      = grads;
     const GradMatrix_t& grads_dn      = pseudo_dn.grads;
     const ValueMatrix_t& lapls_up     = lapls;
@@ -141,46 +137,30 @@ public:
   }
 
   void evaluateDerivativesWF(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           const MultiDiracDeterminant& pseudo_dn,
-                           const PsiValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn)
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi,
+                             const MultiDiracDeterminant& pseudo_dn,
+                             const PsiValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn)
   {
     if (!Optimizable)
       return;
 
-    const ValueVector_t& detValues_up = detValues;
-    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const ValueVector_t& detValues_up = getRatiosToRefDet();
+    const ValueVector_t& detValues_dn = pseudo_dn.getRatiosToRefDet();
     const ValueMatrix_t& M_up         = psiM;
     const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
     const ValueMatrix_t& Minv_up      = psiMinv;
     const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
 
-    Phi->evaluateDerivativesWF(P,
-                                optvars, 
-                                dlogpsi, 
-                                psiCurrent, 
-                                Coeff, 
-                                C2node_up, 
-                                C2node_dn, 
-                                detValues_up,
-                                detValues_dn, 
-                                M_up, 
-                                M_dn, 
-                                Minv_up, 
-                                Minv_dn, 
-                                *detData, 
-                                lookup_tbl);
+    Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn,
+                               M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
   }
 
 
   inline void reportStatus(std::ostream& os) {}
-
-  ///reset the size: with the number of particles and number of orbtials
-  virtual void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
@@ -220,13 +200,15 @@ public:
     return PsiValueType();
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
-  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
@@ -239,7 +221,7 @@ public:
 
   // create necessary structures used in the evaluation of the determinants
   // this works with confgList, which shouldn't change during a simulation
-  void createDetData(ci_configuration2& ref,
+  void createDetData(const ci_configuration2& ref,
                      std::vector<int>& data,
                      std::vector<std::pair<int, int>>& pairs,
                      std::vector<RealType>& sign);
@@ -321,7 +303,6 @@ public:
                                                const std::vector<RealType>& sign);
 
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
                                           ValueVector_t& ratios,
                                           const ValueMatrix_t& psiinv,
                                           const ValueMatrix_t& psi,
@@ -381,71 +362,131 @@ public:
       }
   */
 
-  void setDetInfo(int ref, std::vector<ci_configuration2>* list);
+  /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
+   *@param P particle set which provides the positions
+   *@param iat the index of the moved electron
+   *@param refPtcl if given, the id of the reference particle in virtual moves
+   */
+  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
+  /// multi walker version of evaluateDetsForPtclMove
+  void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                         int iat);
 
-  void evaluateDetsForPtclMove(ParticleSet& P, int iat);
-  void evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat);
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
+  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
+  void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                                 int iat);
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
+
+
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateGrads(ParticleSet& P, int iat);
-  void evaluateAllForPtclMove(ParticleSet& P, int iat);
-  // full evaluation of all the structures from scratch, used in evaluateLog for example
-  void evaluateForWalkerMove(ParticleSet& P, bool fromScratch = true);
+  /// multi walker version of mw_evaluateGrads
+  void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int iat);
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateGradsWithSpin(ParticleSet& P, int iat);
 
-  ///total number of particles
-  int NP;
+  // full evaluation of all the structures from scratch, used in evaluateLog for example
+  void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
+  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
+  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
+
+  // accessors
+  inline int getNumDets() const { return ciConfigList->size(); }
+  inline int getNumPtcls() const { return NumPtcls; }
+  inline int getFirstIndex() const { return FirstIndex; }
+  inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
+
+  const ValueVector_t& getRatiosToRefDet() const { return ratios_to_ref_; }
+  const ValueVector_t& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  const GradMatrix_t& getGrads() const { return grads; }
+  const GradMatrix_t& getNewGrads() const { return new_grads; }
+  const ValueMatrix_t& getLapls() const { return lapls; }
+  const ValueMatrix_t& getNewLapls() const { return new_lapls; }
+  const ValueMatrix_t& getSpinGrads() const { return spingrads; }
+  const ValueMatrix_t& getNewSpinGrads() const { return new_spingrads; }
+
+  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
+  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
+
+private:
+  ///reset the size: with the number of particles
+  void resize(int nel);
+
+  ///a set of single-particle orbitals used to fill in the  values of the matrix
+  const std::unique_ptr<SPOSet> Phi;
   ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
+  const int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
   ///index of the first particle with respect to the particle set
   int FirstIndex;
   ///index of the last particle with respect to the particle set
   int LastIndex;
-  ///index of the particle (or row)
-  int WorkingIndex;
-  ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
-  /// number of determinants handled by this object
-  int NumDets;
-  ///bool to cleanup
-  bool IsCloned;
   ///use shared_ptr
-  std::vector<ci_configuration2>* ciConfigList;
+  std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   // the reference determinant never changes, so there is no need to store it.
   // if its value is zero, then use a data from backup, but always use this one
   // by default
   int ReferenceDeterminant;
-
-  /// store determinants (old and new)
-  ValueVector_t detValues, new_detValues;
-  GradMatrix_t grads, new_grads;
-  ValueMatrix_t lapls, new_lapls;
+  // flag to determine if spin arrays need to be resized and used. Set by ParticleSet::is_spinor_ in SlaterDetBuilder
+  const bool is_spinor_;
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM, psiM_temp, TpsiM, psiMinv, psiMinv_temp;
+  ValueMatrix_t psiM, TpsiM;
+  /// inverse Dirac determinant matrix of the reference det
+  ValueMatrix_t psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM, dpsiM_temp;
+  GradMatrix_t dpsiM;
   // temporaty storage
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM, d2psiM_temp;
+  ValueMatrix_t d2psiM;
+  /* dspin_psiM(i,j) \f$= \partial_{s_i} \psi_j({\bf r}_i,s_i)\f$ where \f$s_i\f$s is the spin variable
+   * This is only resized if a spinor calculation is used
+   */
+  ValueMatrix_t dspin_psiM;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
   ValueVector_t workV1, workV2;
+  //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
+  ValueVector_t dspin_psiV;
 
   ValueMatrix_t dotProducts;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
-  ValueType curRatio;
   ValueType* FirstAddressOfGrads;
   ValueType* LastAddressOfGrads;
   ValueType* FirstAddressOfdpsiM;
   ValueType* LastAddressOfdpsiM;
+
+  /// determinant ratios with respect to the reference determinant
+  ValueVector_t ratios_to_ref_;
+  /// new determinant ratios with respect to the updated reference determinant upon a proposed move
+  ValueVector_t new_ratios_to_ref_;
+  /// new value of the reference determinant over the old value upon a proposed move
+  ValueType curRatio;
+  /// log value of the reference determinant
+  LogValueType log_value_ref_det_;
+  /// store determinant grads (old and new)
+  GradMatrix_t grads, new_grads;
+  /// store determinant lapls (old and new)
+  ValueMatrix_t lapls, new_lapls;
+  // additional storage for spin derivatives. Only resized if the calculation uses spinors
+  ValueMatrix_t spingrads, new_spingrads;
+
 
   /* mmorales:
    *  i decided to stored the excitation information of all determinants in the following
@@ -455,9 +496,9 @@ public:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  std::vector<int>* detData;
-  std::vector<std::pair<int, int>>* uniquePairs;
-  std::vector<RealType>* DetSigns;
+  std::shared_ptr<std::vector<int>> detData;
+  std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
+  std::shared_ptr<std::vector<RealType>> DetSigns;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 

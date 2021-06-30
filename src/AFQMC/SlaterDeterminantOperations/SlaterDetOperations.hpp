@@ -23,9 +23,8 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-class SlaterDetOperations
-    : public boost::variant<SlaterDetOperations_shared<ComplexType>,
-                            SlaterDetOperations_serial<ComplexType, DeviceBufferManager>>
+class SlaterDetOperations : public boost::variant<SlaterDetOperations_shared<ComplexType>,
+                                                  SlaterDetOperations_serial<ComplexType, DeviceBufferManager>>
 {
 public:
   SlaterDetOperations() : variant()
@@ -37,8 +36,7 @@ public:
 
   explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
 
-  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, DeviceBufferManager> const& other) =
-      delete;
+  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, DeviceBufferManager> const& other) = delete;
   explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, DeviceBufferManager>&& other)
       : variant(std::move(other))
   {}

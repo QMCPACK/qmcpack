@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 
 /// sincos function wrapper
-#if __APPLE__
+#if defined(__APPLE__)
 
 inline void sincos(double a, double* s, double* c)
 {

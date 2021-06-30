@@ -386,7 +386,6 @@ if [[ $sys == *"mkl"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
 # MKL setup used by many builds for BLAS, LAPACK etc.
 source /opt/intel2020/mkl/bin/mklvars.sh intel64
-CTCFG="$CTCFG -DENABLE_MKL=1 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
 fi
 
 # Complex
@@ -405,14 +404,6 @@ QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Full
 CTCFG="$CTCFG -DQMC_MIXED_PRECISION=0"
 fi
 
-# SoA/AoS build (label aos only)
-if [[ $sys == *"aos"* ]]; then
-QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-AoS
-CTCFG="$CTCFG -DENABLE_SOA=0"
-else
-CTCFG="$CTCFG -DENABLE_SOA=1"
-fi
-
 # Boilerplate for all tests
 CTCFG="$CTCFG -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1"
 
@@ -424,8 +415,6 @@ else
     echo "AFQMC is enabled for this complex build"
     CTCFG="$CTCFG -DBUILD_AFQMC=1"
 fi
-
-
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in

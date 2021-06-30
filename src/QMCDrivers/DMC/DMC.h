@@ -31,7 +31,7 @@ class DMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -50,6 +50,8 @@ private:
   std::string KillWalker;
   ///input std::string to determine swap walkers among mpi processors
   std::string SwapWalkers;
+  ///input to control diffusion with L2 operator
+  std::string L2;
   ///input std::string to determine to use reconfiguration
   std::string Reconfiguration;
   ///input std::string to determine to use nonlocal move

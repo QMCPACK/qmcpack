@@ -39,11 +39,11 @@ struct LocalECPotential_CUDA : public LocalECPotential
   gpu::device_vector<CUDA_PRECISION> ZionGPU;
 
   std::vector<PosType> SortedIons;
-  void add(int groupID, RadialPotentialType* ppot, RealType zion);
+  void add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType zion);
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   LocalECPotential_CUDA(ParticleSet& ions, ParticleSet& elns);
 };

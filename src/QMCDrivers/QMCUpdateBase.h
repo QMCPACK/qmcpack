@@ -42,6 +42,13 @@ public:
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
   typedef SimpleFixedNodeBranch BranchEngineType;
+#ifdef MIXED_PRECISION
+  typedef TinyVector<OHMMS_PRECISION_FULL, DIM> mPosType;
+  typedef Tensor<OHMMS_PRECISION_FULL, DIM> mTensorType;
+#else
+  typedef PosType mPosType;
+  typedef TensorType mTensorType;
+#endif
 
   ///If true, terminate the simulation, but it is never checked
   bool BadState;
@@ -290,6 +297,9 @@ protected:
 
   ///copy constructor (disabled)
   QMCUpdateBase(const QMCUpdateBase&) = delete;
+
+  /// check logpsi and grad and lap against values computed from scratch
+  static bool checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf);
 
 private:
   ///set default parameters

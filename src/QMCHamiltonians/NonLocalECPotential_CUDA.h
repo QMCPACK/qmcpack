@@ -75,9 +75,10 @@ public:
                            ParticleSet& els,
                            TrialWaveFunction& psi,
                            bool usePBC,
-                           bool doForces = false);
+                           bool doForces   = false,
+                           bool enable_DLA = false);
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
   void addEnergy(MCWalkerConfiguration& W,

@@ -12,16 +12,19 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "hdf5.h"
 #include <iostream>
 #include <string>
 #include <sstream>
-
+#include <array>
+#include "Message/Communicate.h"
+#include "hdf/hdf_archive.h"
 
 int main(int argc, char* argv[])
 {
-  hid_t file, dset; /* Handles */
-  herr_t status;
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+#endif
+  using namespace qmcplusplus;
   if (argc != 2)
   {
     std::cout << "Program must take as an argument a single input eshdf file to parse" << std::endl;
@@ -29,24 +32,21 @@ int main(int argc, char* argv[])
   }
   std::string fname(argv[1]);
   //cout << "Input file is: " << fname << std::endl;
-  std::string dataset = "electrons/number_of_kpoints";
-  file                = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hdf_archive hin;
+  hin.open(fname, H5F_ACC_RDONLY);
+  const std::string dataset = "electrons/number_of_kpoints";
   // Get the number of kpoints from the eshdf file
-  dset = H5Dopen(file, dataset.c_str());
   int data;
-  status = H5Dread(dset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data);
-  status = H5Dclose(dset);
+  hin.read(data, dataset);
   // get all of the reduced kpoints from the file
-  float kpt[3];
+  std::array<float, 3> kpt;
   for (int i = 0; i < data; i++)
   {
     std::ostringstream os;
     os << "electrons/kpoint_" << i << "/reduced_k";
-    dset   = H5Dopen(file, os.str().c_str());
-    status = H5Dread(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &kpt);
+    hin.read(kpt, os.str());
     std::cout << kpt[0] << "   " << kpt[1] << "   " << kpt[2] << "\n";
-    status = H5Dclose(dset);
   }
-  status = H5Fclose(file);
+  hin.close();
   return 0;
 }

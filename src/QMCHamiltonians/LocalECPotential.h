@@ -44,7 +44,7 @@ struct LocalECPotential : public OperatorBase
   ///temporary energy per particle for pbyp move
   RealType PPtmp;
   ///unique set of local ECP to cleanup
-  std::vector<RadialPotentialType*> PPset;
+  std::vector<std::unique_ptr<RadialPotentialType>> PPset;
   ///PP[iat] is the local potential for the iat-th particle
   std::vector<RadialPotentialType*> PP;
   ///effective charge per ion
@@ -63,44 +63,42 @@ struct LocalECPotential : public OperatorBase
 
   LocalECPotential(const ParticleSet& ions, ParticleSet& els);
 
-  ~LocalECPotential();
-
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities();
-  virtual void checkout_particle_quantities(TraceManager& tm);
+  virtual void contribute_particle_quantities() override;
+  virtual void checkout_particle_quantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities();
+  virtual void delete_particle_quantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
+                                 ParticleSet::ParticlePos_t& pulay_terms) override;
 
 
   Return_t evaluate_orig(ParticleSet& P);
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "LocalECPotential: " << IonConfig.getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species
    * @param ppot local pseudopotential
    * @param z effective charge of groupID particle
    */
-  void add(int groupID, RadialPotentialType* ppot, RealType z);
+  void add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType z);
 };
 } // namespace qmcplusplus
 #endif

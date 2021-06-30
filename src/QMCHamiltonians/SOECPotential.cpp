@@ -28,11 +28,8 @@ SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunct
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   PP.resize(NumIons, nullptr);
-  PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
+  PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
 }
-
-//destructor
-SOECPotential::~SOECPotential() { delete_iter(PPset.begin(), PPset.end()); }
 
 void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
@@ -65,28 +62,21 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
-OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  SOECPotential* myclone = new SOECPotential(IonConfig, qp, psi);
+  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
-  {
     if (PPset[ig])
-    {
-      SOECPComponent* ppot = PPset[ig]->makeClone(qp);
-      myclone->addComponent(ig, ppot);
-    }
-  }
+      myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(PPset[ig]->makeClone(qp)));
   return myclone;
 }
 
-void SOECPotential::addComponent(int groupID, SOECPComponent* ppot)
+void SOECPotential::addComponent(int groupID, std::unique_ptr<SOECPComponent>&& ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-    {
-      PP[iat] = ppot;
-    }
-  PPset[groupID] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 } // namespace qmcplusplus

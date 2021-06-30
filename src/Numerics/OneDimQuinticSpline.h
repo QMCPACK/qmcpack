@@ -36,7 +36,6 @@ public:
 
   using base_type::d2Y;
   using base_type::dY;
-  using base_type::GridManager;
   using base_type::m_grid;
   using base_type::m_Y;
   using base_type::Y;
@@ -55,10 +54,11 @@ public:
   value_type last_deriv;
   value_type ConstValue;
 
-  OneDimQuinticSpline(grid_type* gt = 0) : base_type(gt) {}
+  OneDimQuinticSpline(std::unique_ptr<grid_type> gt = std::unique_ptr<grid_type>()) : base_type(std::move(gt)) {}
 
   template<class VV>
-  OneDimQuinticSpline(grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
+  OneDimQuinticSpline(std::unique_ptr<grid_type> gt, const VV& nv)
+      : base_type(std::move(gt)), first_deriv(0.0), last_deriv(0.0)
   {
     int n = nv.size();
     m_Y.resize(nv.size());
@@ -104,36 +104,6 @@ public:
     F = a.F;
   }
 
-  const OneDimQuinticSpline<Td, Tg, CTd, CTg>& operator=(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
-  {
-    shallow_copy(a);
-    return *this;
-  }
-
-  void shallow_copy(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
-  {
-    this->GridManager = a.GridManager;
-    this->OwnGrid     = false;
-    m_grid            = a.m_grid;
-    m_Y.resize(a.m_Y.size());
-    m_Y2.resize(a.m_Y2.size());
-    m_Y         = a.m_Y;
-    m_Y2        = a.m_Y2;
-    ConstValue  = a.ConstValue;
-    r_min       = a.r_min;
-    r_max       = a.r_max;
-    first_deriv = a.first_deriv;
-    last_deriv  = a.last_deriv;
-    B.resize(a.B.size());
-    B = a.B;
-    D.resize(a.D.size());
-    D = a.D;
-    E.resize(a.E.size());
-    E = a.E;
-    F.resize(a.F.size());
-    F = a.F;
-  }
-
 private:
   inline Td quinticInterpolate(Td cL, Td a, Td b, Td c, Td d, Td e, Td f) const
   {
@@ -156,7 +126,7 @@ private:
   }
 
 public:
-  inline value_type splint(point_type r) const
+  inline value_type splint(point_type r) const override
   {
     if (r < r_min)
     {
@@ -172,7 +142,7 @@ public:
   }
 
 
-  inline value_type splint(point_type r, value_type& du, value_type& d2u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const override
   {
     if (r < r_min)
     {
@@ -202,7 +172,7 @@ public:
     return quinticInterpolateThirdDeriv(cL, m_Y[Loc], B[Loc], m_Y2[Loc], D[Loc], E[Loc], F[Loc], du, d2u, d3u);
   }
 
-  inline void spline(int imin, value_type yp1, int imax, value_type ypn)
+  inline void spline(int imin, value_type yp1, int imax, value_type ypn) override
   {
     first_deriv = yp1;
     last_deriv  = ypn;
@@ -224,7 +194,7 @@ public:
     ConstValue = m_Y[imax];
   }
 
-  inline void spline() { spline(0, 0.0, m_grid->size() - 1, 0.0); }
+  inline void spline() override { spline(0, 0.0, m_grid->size() - 1, 0.0); }
 };
 
 

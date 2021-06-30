@@ -19,7 +19,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              ParticleSet& P,
                                              TrialWaveFunction& Psi,
                                              QMCHamiltonian& H,
-                                             QMCHamiltonian& H_KE_Node,
+                                             std::vector<std::string>& H_KE_node_names,
                                              RandomGenerator_t& Rng)
     : e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
@@ -33,6 +33,12 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
 
   rng_ptr_list_.resize(crowd_size);
 
+  // build a temporary H_KE for later calling makeClone
+  // need makeClone to setup internal myIndex of a new copy.
+  QMCHamiltonian H_KE;
+  for (const std::string& node_name : H_KE_node_names)
+    H_KE.addOperator(H.getHamiltonian(node_name)->makeClone(P, Psi), node_name);
+
   for (int ib = 0; ib < crowd_size; ib++)
   {
     ParticleSet* pCopy         = new ParticleSet(P);
@@ -41,10 +47,11 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
     p_ptr_list_[ib].reset(pCopy);
     wf_ptr_list_[ib].reset(psiCopy);
     h_ptr_list_[ib].reset(H.makeClone(*pCopy, *psiCopy));
-    h0_ptr_list_[ib].reset(H_KE_Node.makeClone(*pCopy, *psiCopy));
+    h0_ptr_list_[ib].reset(H_KE.makeClone(*pCopy, *psiCopy));
 
     rng_ptr_list_[ib] = std::make_unique<RandomGenerator_t>(Rng);
     h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
+    h0_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
 
     rng_save_ptr_ = std::make_unique<RandomGenerator_t>(Rng);
   }

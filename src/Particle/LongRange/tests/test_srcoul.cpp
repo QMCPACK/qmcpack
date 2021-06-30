@@ -23,12 +23,12 @@ using mRealType = LRHandlerBase::mRealType;
 struct EslerCoulomb3D_ForSRCOUL
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
-  inline double operator()(double r, double rinv) { return rinv; }
-  inline double Vk(double k) { return 1. / (k * k); }
-  inline double dVk_dk(double k) { return -2 * norm / (k * k * k); }
+  inline double operator()(double r, double rinv) const { return rinv; }
+  inline double Vk(double k) const { return 1. / (k * k); }
+  inline double dVk_dk(double k) const { return -2 * norm / (k * k * k); }
   void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }
   void reset(ParticleSet& ref, double rs) { reset(ref); } // ignore rs
-  inline double df(double r) { return -1. / (r * r); }
+  inline double df(double r) const { return -1. / (r * r); }
 };
 
 /** evalaute bare Coulomb in 3D
@@ -49,8 +49,7 @@ TEST_CASE("srcoul", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
@@ -93,8 +92,7 @@ TEST_CASE("srcoul df", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);

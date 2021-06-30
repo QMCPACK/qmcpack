@@ -58,10 +58,12 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
     //return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
   }
 
-
   void accumulate(const Walker_t& awalker, RealType wgt);
 
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     //accumulate  the number of times accumulation has occurred.
     //d_wgt+=last-first;
@@ -69,18 +71,18 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
       accumulate(**first, wgt);
   }
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
-      accumulate(walker, wgt);
+    for (MCPWalker& walker : walkers)
+      accumulate(walker, 1.0);
   }
 
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    *@param record storage of scalar records (name,value)
    */
-  void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
-  ScalarEstimatorBase* clone();
+  void add2Record(RecordNamedProperty<RealType>& record) override;
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
+  CSEnergyEstimator* clone() override;
 
   void evaluateDiff();
 };

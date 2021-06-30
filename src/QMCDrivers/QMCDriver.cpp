@@ -46,18 +46,19 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      Communicate* comm,
-                     const std::string& QMC_driver_type)
+                     const std::string& QMC_driver_type,
+                     bool enable_profiling)
     : MPIObjectBase(comm),
       Estimators(0),
-      Traces(0),
-      branchEngine(0),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
       W(w),
       Psi(psi),
       H(h),
-      wOut(0)
+      wOut(0),
+      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
   AppendRun    = false;
@@ -68,69 +69,66 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  RollBackBlocks = 0;
-  m_param.add(RollBackBlocks, "rewind", "int");
   Period4CheckPoint = -1;
   storeConfigs      = 0;
-  //m_param.add(storeConfigs,"storeConfigs","int");
-  m_param.add(storeConfigs, "storeconfigs", "int");
-  m_param.add(storeConfigs, "store_configs", "int");
+  //m_param.add(storeConfigs,"storeConfigs");
+  m_param.add(storeConfigs, "storeconfigs");
+  m_param.add(storeConfigs, "store_configs");
   Period4CheckProperties = 100;
-  m_param.add(Period4CheckProperties, "checkProperties", "int");
-  m_param.add(Period4CheckProperties, "checkproperties", "int");
-  m_param.add(Period4CheckProperties, "check_properties", "int");
+  m_param.add(Period4CheckProperties, "checkProperties");
+  m_param.add(Period4CheckProperties, "checkproperties");
+  m_param.add(Period4CheckProperties, "check_properties");
   Period4WalkerDump = 0;
-  //m_param.add(Period4WalkerDump,"recordWalkers","int");
-  m_param.add(Period4WalkerDump, "record_walkers", "int");
-  m_param.add(Period4WalkerDump, "recordwalkers", "int");
+  //m_param.add(Period4WalkerDump,"recordWalkers");
+  m_param.add(Period4WalkerDump, "record_walkers");
+  m_param.add(Period4WalkerDump, "recordwalkers");
   Period4ConfigDump = 0;
-  //m_param.add(Period4ConfigDump,"recordConfigs","int");
-  m_param.add(Period4ConfigDump, "recordconfigs", "int");
-  m_param.add(Period4ConfigDump, "record_configs", "int");
+  //m_param.add(Period4ConfigDump,"recordConfigs");
+  m_param.add(Period4ConfigDump, "recordconfigs");
+  m_param.add(Period4ConfigDump, "record_configs");
   CurrentStep = 0;
-  m_param.add(CurrentStep, "current", "int");
+  m_param.add(CurrentStep, "current");
   nBlocks = 1;
-  m_param.add(nBlocks, "blocks", "int");
+  m_param.add(nBlocks, "blocks");
   nSteps = 1;
-  m_param.add(nSteps, "steps", "int");
+  m_param.add(nSteps, "steps");
   nSubSteps = 1;
-  m_param.add(nSubSteps, "substeps", "int");
-  //m_param.add(nSubSteps,"subSteps","int");
-  m_param.add(nSubSteps, "sub_steps", "int");
+  m_param.add(nSubSteps, "substeps");
+  //m_param.add(nSubSteps,"subSteps");
+  m_param.add(nSubSteps, "sub_steps");
   nWarmupSteps = 0;
-  m_param.add(nWarmupSteps, "warmupsteps", "int");
-  //m_param.add(nWarmupSteps,"warmupSteps","int");
-  m_param.add(nWarmupSteps, "warmup_steps", "int");
+  m_param.add(nWarmupSteps, "warmupsteps");
+  //m_param.add(nWarmupSteps,"warmupSteps");
+  m_param.add(nWarmupSteps, "warmup_steps");
   nAccept        = 0;
   nReject        = 0;
   nTargetWalkers = W.getActiveWalkers();
-  m_param.add(nTargetWalkers, "walkers", "int");
+  m_param.add(nTargetWalkers, "walkers");
   //sample-related parameters
   //samples will set nTargetPopulation
   nTargetSamples       = 0;
   nStepsBetweenSamples = 1;
-  m_param.add(nStepsBetweenSamples, "stepsbetweensamples", "int");
+  m_param.add(nStepsBetweenSamples, "stepsbetweensamples");
   nSamplesPerThread = 0;
-  m_param.add(nSamplesPerThread, "samplesperthread", "real");
-  m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
+  m_param.add(nSamplesPerThread, "samplesperthread");
+  m_param.add(nSamplesPerThread, "dmcwalkersperthread");
 
   nTargetPopulation = 0;
 
-  m_param.add(nTargetPopulation, "samples", "real");
+  m_param.add(nTargetPopulation, "samples");
 
-  SpinMoves = "no";
-  SpinMass  = 1.0;
-  m_param.add(SpinMoves, "SpinMoves", "string");
-  m_param.add(SpinMass, "SpinMass", "double");
+  SpinMass = 1.0;
+  m_param.add(SpinMass, "SpinMass");
 
   Tau = 0.1;
-  //m_param.add(Tau,"timeStep","AU");
-  m_param.add(Tau, "timestep", "AU");
-  m_param.add(Tau, "time_step", "AU");
-  //m_param.add(Tau,"Tau","AU");
-  m_param.add(Tau, "tau", "AU");
+  //m_param.add(Tau,"timeStep");
+  m_param.add(Tau, "timestep");
+  m_param.add(Tau, "time_step");
+  //m_param.add(Tau,"Tau");
+  m_param.add(Tau, "tau");
   MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs", "real");
+  m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
+  m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
@@ -153,7 +151,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nBlocksBetweenRecompute = 0;
 #endif
 #endif
-  m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
+  m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
@@ -203,9 +201,9 @@ void QMCDriver::process(xmlNodePtr cur)
   int numCopies = (H1.empty()) ? 1 : H1.size();
   W.resetWalkerProperty(numCopies);
   //create branchEngine first
-  if (branchEngine == 0)
+  if (!branchEngine)
   {
-    branchEngine = new BranchEngineType(Tau, W.getGlobalNumWalkers());
+    branchEngine = std::make_unique<BranchEngineType>(Tau, W.getGlobalNumWalkers());
   }
   //execute the put function implemented by the derived classes
   put(cur);
@@ -222,9 +220,9 @@ void QMCDriver::process(xmlNodePtr cur)
   DriftModifier->parseXML(cur);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
-  if (Traces == 0)
+  if (!Traces)
   {
-    Traces = new TraceManager(myComm);
+    Traces = std::make_unique<TraceManager>(myComm);
   }
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
@@ -519,14 +517,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //reset CurrentStep to zero if qmc/@continue='no'
   if (!AppendRun)
     CurrentStep = 0;
-
-  tolower(SpinMoves);
-  if (SpinMoves != "yes" && SpinMoves != "no")
-    myComm->barrier_and_abort("SpinMoves must be yes/no!\n");
-#if defined(QMC_CUDA)
-  if (SpinMoves == "yes")
-    myComm->barrier_and_abort("Spin moves are not supported in legacy CUDA build.");
-#endif
 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
   if (qmc_common.qmc_counter || qmc_common.is_restart)

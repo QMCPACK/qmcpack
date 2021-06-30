@@ -732,6 +732,7 @@ XmlNode::XmlNode(const XmlStream& xstream, std::istream* const _stream, int star
 void XmlNode::createFromStream(const XmlStream& xstream, int start, bool deferValue)
 {
   valueDeferred_ = deferValue;
+  valInline_     = false;
 
   // this will populate the name and attributes
   handleTagString(xstream, start);

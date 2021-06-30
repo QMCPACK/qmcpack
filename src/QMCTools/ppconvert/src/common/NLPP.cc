@@ -70,7 +70,7 @@ NLPPClass::Read(IOSectionClass &in)
     int l;
     assert (in.ReadVar("l", l));
     if (l > numChannels) {
-      cerr << "Skipped channels in NLPPClass read.\n";
+      std::cerr << "Skipped channels in NLPPClass read.\n";
       abort();
     }
     Vl[l].Read(in, PotentialGrid);
@@ -191,8 +191,10 @@ ChannelPotential::A(double q, double qp)
 	 (3.0*qp*(q*q - qp*qp)*R0*cos(qp*R0) + 
 	  (3.0*qp*qp + q*q*(-3.0 + qp*qp * R0*R0))*sin(qp*R0)));
   }
-  else
-    return sqrt(-1.0);
+  else{
+    assert(0);
+    return std::numeric_limits<double>::quiet_NaN(); // sqrt(-1.0);
+  }
 }
 
 // double
@@ -222,8 +224,8 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   ProjectorNorm = 1.0/sqrt(norm);
   Job = EKB;
   E_KB = norm/integrator.Integrate(0.0, grid.End, 1.0e-12);
-  cerr << "l = " << l << "  Norm is " << norm 
-       << "  E_KB is " << E_KB << "  R0 = " << R0 << endl;
+  std::cerr << "l = " << l << "  Norm is " << norm 
+       << "  E_KB is " << E_KB << "  R0 = " << R0 << std::endl;
   
   // Compute zeta(r)
   Array<double,1> zeta(grid.NumPoints);
@@ -292,11 +294,12 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
 //     fclose (fout);
 //   }
   // Now solve Mx = b
-  Array<int,1> perm;
-  double sign;
-  LUdecomp (M, perm, sign);
-  LUsolve (M, perm, b);
-  x = b;
+  Array<int, 1> perm({nb}, int{0});
+
+  auto const& LU = lup::decompose(M, perm);
+  assert(size(LU) == size(M)); // check it is invertible
+  x = lup::solve(LU, perm, b);
+
   for (int i=0; i<nb; i++) 
     chi_q(G_maxIndex+i) = x(i);
   chi_q(G_maxIndex+nb) = 0.0;
@@ -320,8 +323,8 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   double norm2 = integrator.Integrate(0.0, grid.End, 1.0e-8);
   double error = integrator.Integrate( R0, grid.End, 1.0e-8);
   if (error > 1.0e-16)
-    cerr << "Fractional error in real-space projection = "
-	 << (error / norm2) << endl;
+    std::cerr << "Fractional error in real-space projection = "
+	 << (error / norm2) << std::endl;
 }
 
 

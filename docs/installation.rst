@@ -28,9 +28,9 @@ are given in the referenced sections.
    (:ref:`buildqe`).
 
 #. Run the cmake configure step and build with make
-   (:ref:`cmake` and :ref:`cmakequick`). Examples for
-   common systems are given in
-   :ref:`installexamples`.
+   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
+   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
+   run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -326,7 +326,7 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum Espresso binaries including pw2qmcpack.x
+    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
     QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE               Add extra include paths
     QMC_EXTRA_LIBS            Add extra link libraries
@@ -338,15 +338,13 @@ the path to the source directory.
     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
                               including details of which tests are enabled.
 
-- Intel MKL related
+- BLAS/LAPACK related
 
   ::
 
-    ENABLE_MKL          Enable Intel MKL libraries (1:yes (default for intel compiler),
-                                                  0:no (default otherwise)).
-    MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
-                        or intel without standard environment variables.)
-                        One of the above environment variables can be used.
+    BLA_VENDOR          If set, checks only the specified vendor, if not set checks all the possibilities.
+                        See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
+    MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
 
 - libxml2 related
 
@@ -360,8 +358,8 @@ the path to the source directory.
 
   ::
 
-    HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
-    ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
+    HDF5_PREFER_PARALLEL TRUE(default for MPI build)/FALSE, enables/disable parallel HDF5 library searching.
+    ENABLE_PHDF5         ON(default for parallel HDF5 library)/OFF, enables/disable parallel collective I/O.
 
 - FFTW related
 
@@ -379,18 +377,22 @@ the path to the source directory.
                            e.g. "-n", "-np", etc.
     MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
 
-- LLVM/Clang Developer Options
+- Sanitizers Developer Options
 
   ::
 
-    LLVM_SANITIZE_ADDRES  link with the Clang address sanitizer library
-    LLVM_SANITIZE_MEMORY  link with the Clang memory sanitizer library
+    ENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
+    
 
-`Clang address sanitizer library <https://clang.llvm.org/docs/AddressSanitizer.html>`_
+`Clang address sanitizer library asan <https://clang.llvm.org/docs/AddressSanitizer.html>`_
 
-`Clang memory sanitizer library <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+`Clang address sanitizer library ubsan <https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html>`_
 
-See :ref:`LLVM-Sanitizer-Libraries` for more information.
+`Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
+
+`Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+
+See :ref:`Sanitizer-Libraries` for more information.
 
 Notes for OpenMP target offload to accelerators (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -443,7 +445,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
@@ -601,10 +603,11 @@ To use Intel MKL with, e.g. an MPICH wrapped gcc:
 
   cmake \
     -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-    -DENABLE_MKL=1 -DMKL_ROOT=$MKLROOT/lib \
+    -DMKL_ROOT=YOUR_INTEL_MKL_ROOT_DIRECTORY \
     ..
 
-MKLROOT is the directory containing the MKL binary, examples, and lib
+MKL\_ROOT is only necessary when MKL is not auto-detected successfully or a particular MKL installation is desired.
+YOUR\_INTEL\_MKL\_ROOT\_DIRECTORY is the directory containing the MKL bin, examples, and lib
 directories (etc.) and is often /opt/intel/mkl.
 
 .. _threadedlibrary:
@@ -678,8 +681,8 @@ production, a platform-optimized BLAS should be used.
 
 ::
 
-  apt-get cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  apt-get libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
+  sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
+  sudo apt-get install libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
   export CXX=mpiCC
   cd build
   cmake ..
@@ -738,11 +741,7 @@ Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These instructions assume a fresh installation of macports
-and use the gcc 6.1 compiler. Older versions are fine, but it is vital to ensure that
-matching compilers and libraries are used for all
-packages and to force use of what is installed in /opt/local.  Performance should be very reasonable.
-Note that we use the Apple-provided Accelerate framework for
-optimized BLAS.
+and use the gcc 10.2 compiler. 
 
 Follow the Macports install instructions at https://www.macports.org/.
 
@@ -752,24 +751,40 @@ Follow the Macports install instructions at https://www.macports.org/.
 
 - Install MacPorts for your version of OS X.
 
-Install the required tools:
+We recommend to make sure macports is updated:
 
 ::
 
-  sudo port install gcc6
-  sudo port select gcc mp-gcc6
-  sudo port install openmpi-devel-gcc6
-  sudo port select --set mpi openmpi-devel-gcc61-fortran
+  sudo port -v selfupdate # Required for macports first run, recommended in general
+  sudo port upgrade outdated # Recommended
 
-  sudo port install fftw-3 +gcc6
+
+Install the required tools. For thoroughness we include the current full set of python
+dependencies. Some of the tests will be skipped if not all are available.
+
+::
+
+  sudo port install gcc10
+  sudo port select gcc mp-gcc10
+  sudo port install openmpi-devel-gcc10
+  sudo port select --set mpi openmpi-devel-gcc10-fortran
+
+  sudo port install fftw-3 +gcc10
   sudo port install libxml2
   sudo port install cmake
-  sudo post install boost +gcc6
-  sudo port install hdf5 +gcc6
+  sudo port install boost +gcc10
+  sudo port install hdf5 +gcc10
 
-  sudo port select --set python python27
-  sudo port install py27-numpy +gcc6
-  sudo port install py27-matplotlib  #For graphical plots with qmca
+  sudo port install python38
+  sudo port select --set python python38
+  sudo port select --set python3 python38
+  sudo port install py38-numpy +gcc10
+  sudo port select --set cython cython38
+  sudo port install py38-scipy +gcc10
+  sudo port install py38-h5py +gcc10
+  sudo port install py38-pandas
+  sudo port install py38-lxml
+  sudo port install py38-matplotlib  #For graphical plots with qmca
 
 QMCPACK build:
 
@@ -780,13 +795,14 @@ QMCPACK build:
   make -j 6 # Adjust for available core count
   ls -l bin/qmcpack
 
-Cmake should pickup the versions of HDF5 and libxml (etc.) installed in
-/opt/local by macports. If you have other copies of these libraries
-installed and wish to force use of a specific version, use the
-environment variables detailed in :ref:`envvar`.
+Run the deterministic tests:
 
-This recipe was verified on July 1, 2016, on a Mac running OS X 10.11.5
-"El Capitain."
+::
+
+  ctest -R deterministic
+
+This recipe was verified on October 26, 2020, on a Mac running OS X 10.15.7
+"Catalina" with macports 2.6.3.
 
 Installing on Mac OS X using Homebrew (brew)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -794,8 +810,7 @@ Installing on Mac OS X using Homebrew (brew)
 Homebrew is a package manager for OS X that provides a convenient
 route to install all the QMCPACK dependencies. The
 following recipe will install the latest available versions of each
-package. This was successfully tested under OS X 10.12 "Sierra" in December 2017. Note that it is necessary to build the MPI software from
-source to use the brew-provided gcc instead of Apple CLANG.
+package. This was successfully tested under OS X 10.15.7 "Catalina" on October 26, 2020.
 
 1.  Install Homebrew from http://brew.sh/:
 
@@ -809,17 +824,14 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
   ::
 
-    brew install gcc # installs gcc 7.2.0 on 2017-12-19
-    export HOMEBREW_CXX=g++-7
-    export HOMEBREW_CC=gcc-7
-    brew install mpich2 --build-from-source
-    # Build from source required to use homebrew compiled compilers as
-    # opposed to Apple CLANG. Check "mpicc -v" indicates Homebrew gcc
+    brew install gcc # 10.2.0 when tested
+    brew install openmpi
     brew install cmake
     brew install fftw
     brew install boost
-    brew install homebrew/science/hdf5
-    #Note: Libxml2 is not required via brew since OS X already includes it.
+    brew install hdf5
+    export OMPI_CC=gcc-10
+    export OMPI_CXX=g++-10
 
 3.  Configure and build QMCPACK:
 
@@ -827,13 +839,14 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
     cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
           -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
-    make -j 12
+    make -j 6 # Adjust for available core count
+    ls -l bin/qmcpack
 
-4.  Run the short tests. When MPICH is used for the first time, OSX will request approval of the network connection for each executable.
+4.  Run the deterministic tests
 
   ::
 
-    ctest -R short -LE unstable
+    ctest -R deterministic
 
 Installing on ALCF Theta, Cray XC40
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -876,9 +889,9 @@ For ease of reproducibility we provide build scripts for Summit.
   ./config/build_olcf_summit.sh
   ls bin
 
-Building Quantum Espresso
+Building Quantum ESPRESSO
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-We provide a build script for the v6.4.1 release of Quantum Espresso (QE).
+We provide a build script for the v6.4.1 release of Quantum ESPRESSO (QE).
 The following can be used to build a CPU version of QE on Summit,
 placing the script in the external\_codes/quantum\_espresso directory.
 
@@ -1067,17 +1080,24 @@ supercomputer. The other frequently encountered challenge is that the
 compiler configuration is nonintuitive.  This is especially the case
 with the Intel compiler. If you encounter any difficulties, we
 recommend testing the Spack compiler configuration on a simpler
-packages, e.g. HDF5.
+package, e.g. HDF5.
 
-Here are some additional limitations of the QMCPACK Spack package that
-will be resolved in future releases:
+Here are some additional limitations that new users should be aware
+of:
 
-- CUDA support in Spack still has some limitations.  It will
-  catch only some compiler-CUDA conflicts.
+* CUDA support in Spack still has some limitations.  It will
+  not catch the most recent compiler-CUDA conflicts.
 
-- The Intel compiler must find a recent and compatible GCC
+* The Intel compiler must find a recent and compatible GCC
   compiler in its path or one must be explicity set with the
-  ``-gcc-name`` and ``-gxx-name`` flags.
+  ``-gcc-name`` and ``-gxx-name`` flags in your ``compilers.yaml``.
+
+* Cross-compilation is non-intuitive. If the host OS and target OS are the same,
+  but only the processors differ, you will just need to add the ``target=<target CPU>``.
+  However, if the host OS is different from the target OS and you will need to add
+  ``os=<target OS>``. If both the OS and CPU differ between host and target, you will
+  need to set the ``arch=<platform string>``. For more information, see:
+  https://spack.readthedocs.io/en/latest/basic_usage.html?highlight=cross%20compilation#architecture-specifiers
 
 Setting up the Spack environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1113,7 +1133,7 @@ to add one:
 
   your-laptop> spack compiler add <path-to-compiler>
 
-The Intel compiler, and other commerical compilers like PGI, typically
+The Intel ("classic") compiler and other commerical compilers may
 require extra environment variables to work properly. If you have an
 module environment set-up by your system administrators, it is
 recommended that you set the module name in
@@ -1226,10 +1246,13 @@ options and different versions of the application. A full list can be displayed 
     ecp  ecp-apps
 
   Preferred version:
-    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
+    3.11.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.11.0
 
   Safe versions:
-    develop  [git] https://github.com/QMCPACK/qmcpack.git
+    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    3.11.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.11.0
+    3.10.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
     3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
     3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
     3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
@@ -1244,40 +1267,36 @@ options and different versions of the application. A full list can be displayed 
 
   Variants:
     Name [Default]          Allowed values          Description
+    ====================    ====================    =============================
 
-
-    build_type [Release]    Debug, Release,         The build type to build
-                            RelWithDebInfo
-    afqmc [off]             True, False             Install with AFQMC support.
+    afqmc [off]             on, off                 Install with AFQMC support.
                                                     NOTE that if used in
                                                     combination with CUDA, only
                                                     AFQMC will have CUDA.
-    complex [off]           True, False             Build the complex (general
+    build_type [Release]    Debug, Release,         The build type to build
+                            RelWithDebInfo
+    complex [off]           on, off                 Build the complex (general
                                                     twist/k-point) version
-    cuda [off]              True, False             Build with CUDA
+    cuda [off]              on, off                 Build with CUDA
     cuda_arch [none]        none, 53, 20, 62,       CUDA architecture
                             60, 61, 50, 75, 70,
                             72, 32, 52, 30, 35
-    da [off]                True, False             Install with support for basic
+    da [off]                on, off                 Install with support for basic
                                                     data analysis tools
-    gui [off]               True, False             Install with Matplotlib (long
+    gui [off]               on, off                 Install with Matplotlib (long
                                                     installation time)
-    mixed [off]             True, False             Build the mixed precision
+    mixed [off]             on, off                 Build the mixed precision
                                                     (mixture of single and double
                                                     precision) version for gpu and
                                                     cpu
-    mpi [on]                True, False             Build with MPI support
-    phdf5 [on]              True, False             Build with parallel collective
+    mpi [on]                on, off                 Build with MPI support
+    phdf5 [on]              on, off                 Build with parallel collective
                                                     I/O
-    ppconvert [off]         True, False             Install with pseudopotential
+    ppconvert [off]         on, off                 Install with pseudopotential
                                                     converter.
-    qe [on]                 True, False             Install with patched Quantum
+    qe [on]                 on, off                 Install with patched Quantum
                                                     Espresso 6.4.0
-    soa [on]                True, False             Build with Structure-of-Array
-                                                    instead of Array-of-Structure
-                                                    code. Only for CPU codeand
-                                                    only in mixed precision
-    timers [off]            True, False             Build with support for timers
+    timers [off]            on, off                 Build with support for timers
 
   Installation Phases:
     cmake    build    install
@@ -1323,9 +1342,9 @@ installation process, for example:
 
   your-laptop> spack install --test=root qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
 
-will run the unit and short tests. The current behavior of the QMCPACK
+will run the unit and deterministic tests. The current behavior of the QMCPACK
 Spack package is to complete the install as long as all the unit tests
-pass. If the short tests fail, a warning is issued at the command prompt.
+pass. If the deterministic tests fail, a warning is issued at the command prompt.
 
 For CUDA, you will need to specify and extra ``cuda_arch``
 parameter otherwise, it will default to ``cuda_arch=61``.
@@ -1395,9 +1414,7 @@ facility. Additionally, Spack packages compiled by the facility can be
 reused by chaining Spack installations
 https://spack.readthedocs.io/en/latest/chain.html.
 
-Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
-
-Installing Quantum-Espresso with Spack
+Installing Quantum-ESPRESSO with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 More information about the QE Spack package can be obtained directly
@@ -1413,7 +1430,7 @@ Spack installation command that needs to be invoked:
 
 ::
 
-  your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+  your-laptop> spack install quantum-espresso+qmcpack~patch@6.7%gcc hdf5=parallel
 
 The ``~`` decorator means deactivate the ``patch``
 variant. This refers not to the QMCPACK patch, but to the upstream
@@ -1429,7 +1446,7 @@ is non-intuitive for Spack newcomers:
 
 ::
 
-  your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.4.1%gcc hdf5=serial
+  your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.7%gcc hdf5=serial
 
 QE Spack package is well tested with GCC and Intel compilers, but will not work
 with the PGI compiler or in a cross-compile environment.
@@ -1617,7 +1634,7 @@ See :ref:`unit-testing` for more details about unit tests.
 
 .. _integtestqe:
 
-Integration tests with Quantum Espresso
+Integration tests with Quantum ESPRESSO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As described in :ref:`buildqe`, it is possible to test entire
@@ -1625,9 +1642,9 @@ workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
 pw2qmcpack converter is available.
 
-By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK,
-tests named with the "qe-" prefix will be included in the test set of your build.
-You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
+By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK, tests named with the "qe-"
+prefix will be included in the test set of your build. If CMake finds pw2qmcpack.x and pw.x in the same location on the PATH,
+these tests will also be activated. You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
 
 ::
 
@@ -1683,7 +1700,7 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (2) VMC with drift term included, and (3) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README file because of their large size. You
-will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1``
+will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER``
 when running CMake as
 described in the README file.
 

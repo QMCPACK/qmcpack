@@ -72,8 +72,8 @@ class atomcentered_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
-  using Static3Tensor         = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
+  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
+  using Static3Tensor        = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
 
   // MAM: Note -
   // This class uses lots of memory, but can be safely moved to single precision.
@@ -117,7 +117,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "filename", "std::string");
+      m_param.add(orb_file, "filename");
       m_param.put(cur);
     }
 
@@ -167,8 +167,8 @@ public:
       TG.Node().broadcast_n(&nsites, 1, 0);
       TG.Node().broadcast_n(orbs.begin(), orbs.size(), 0);
       NAO = orbs.back();
-      S   = std::move(CTensor({2, NAO, NMO}, make_node_allocator<ComplexType>(TG)));
-      XY  = std::move(CMatrix({NAO, NAO}, make_node_allocator<ComplexType>(TG)));
+      S   = CTensor({2, NAO, NMO}, make_node_allocator<ComplexType>(TG));
+      XY  = CMatrix({NAO, NAO}, make_node_allocator<ComplexType>(TG));
       CMatrix_ref S_(make_device_ptr(S[0].origin()), {NAO, NMO});
       if (!dump.readEntry(S_, "Left"))
       {
@@ -196,8 +196,8 @@ public:
       orbs.resize(nsites + 1);
       TG.Node().broadcast_n(orbs.begin(), orbs.size(), 0);
       NAO = orbs.back();
-      S   = std::move(CTensor({2, NAO, NMO}, make_node_allocator<ComplexType>(TG)));
-      XY  = std::move(CMatrix({NAO, NAO}, make_node_allocator<ComplexType>(TG)));
+      S   = CTensor({2, NAO, NMO}, make_node_allocator<ComplexType>(TG));
+      XY  = CMatrix({NAO, NAO}, make_node_allocator<ComplexType>(TG));
     }
     ns2 = nsites * nsites;
     TG.Node().barrier();
@@ -219,9 +219,9 @@ public:
       type_id2D.emplace_back("CS");
     }
 
-    DMAverage1D = std::move(mpi3CTensor({nave, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage1D = mpi3CTensor({nave, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage1D.origin(), DMAverage1D.num_elements(), ComplexType(0.0, 0.0));
-    DMAverage2D = std::move(mpi3CTensor({nave, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage2D = mpi3CTensor({nave, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage2D.origin(), DMAverage2D.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -260,26 +260,26 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork1D.size(0) != nw || DMWork1D.size(1) != 3 || DMWork1D.size(2) != nsites)
       {
-        DMWork1D = std::move(mpi3CTensor({nw, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork1D = mpi3CTensor({nw, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork2D.size(0) != nw || DMWork2D.size(1) != 3 || DMWork2D.size(2) != ns2)
       {
-        DMWork2D = std::move(mpi3CTensor({nw, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork2D = mpi3CTensor({nw, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (NwIJ.size(0) != nsp || NwIJ.size(1) != nw || NwIJ.size(2) != nsites || NwIJ.size(3) != nsites)
       {
-        NwIJ = std::move(mpi3C4Tensor({nsp, nw, nsites, nsites}, shared_allocator<ComplexType>{TG.TG_local()}));
+        NwIJ = mpi3C4Tensor({nsp, nw, nsites, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (NwI.size(0) != nsp || NwI.size(1) != nw || NwI.size(2) != nsites)
       {
-        NwI = std::move(mpi3CTensor({nsp, nw, nsites}, shared_allocator<ComplexType>{TG.TG_local()}));
+        NwI = mpi3CTensor({nsp, nw, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (shapes.size(0) < 2 * nw * nsites * nsites)
-        shapes = std::move(IVector(iextensions<1u>{2 * nw * nsites * nsites}, IAllocator{}));
+        shapes = IVector(iextensions<1u>{2 * nw * nsites * nsites}, IAllocator{});
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork1D.origin(), DMWork1D.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork2D.origin(), DMWork2D.num_elements(), ComplexType(0.0, 0.0));
@@ -312,14 +312,11 @@ public:
     {
       int nwlk = std::min(nwbatch, nw - iw0);
 
-      Static3Tensor QwI({nwlk, NAO, NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      Static3Tensor MwIJ({nwlk, NAO, NAO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      Static3Tensor devNwIJ({nwlk, nsites, nsites}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      StaticMatrix devNwI({nwlk, nsites}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor QwI({nwlk, NAO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor MwIJ({nwlk, NAO, NAO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor devNwIJ({nwlk, nsites, nsites},
+                            buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix devNwI({nwlk, nsites}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       for (int is = 0; is < nsp; ++is)
       {

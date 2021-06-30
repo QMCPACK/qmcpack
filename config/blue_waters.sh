@@ -101,7 +101,7 @@ cd build$suffix
 cmake $CMAKE_FLAGS -D QMC_COMPLEX=1 ..
 make -j 32 $target
 cd ..
-ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
+ln -s ./build$suffix/bin/qmcpack_complex ./qmcpack$suffix
 
 ################################################################
 ## GPU Binaries                                               ##
@@ -133,4 +133,4 @@ cmake -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
 cmake -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
 make -j 32 $target
 cd ..
-ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
+ln -s ./build$suffix/bin/qmcpack_complex ./qmcpack$suffix

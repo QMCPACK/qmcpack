@@ -20,7 +20,7 @@
 #include <complex>
 #include <list>
 
-#include "Platforms/sysutil.h"
+#include "Host/sysutil.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -59,7 +59,7 @@ T get_parameter(Factory& F, std::string const& obj_name, std::string const& pnam
   {
     T res(def);
     ParameterSet m_param;
-    m_param.add(res, pname.c_str(), type_to_string<T>().c_str());
+    m_param.add(res, pname.c_str());
     m_param.put(cur);
     return res;
   }
@@ -344,18 +344,18 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
 
 inline void memory_report()
 {
-  qmcplusplus::app_log() << "\n --> CPU Memory Available: " << freemem() << std::endl;
+  qmcplusplus::app_log() << "\n --> CPU Memory Available: " << (freemem() >> 20) << std::endl;
 #ifdef ENABLE_CUDA
   size_t free_, tot_;
   cudaMemGetInfo(&free_, &tot_);
-  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << free_ / 1024.0 / 1024.0 << " "
-                         << tot_ / 1024.0 / 1024.0 << "\n"
+  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << (free_ >> 20) << " "
+                         << (tot_ >> 20) << "\n"
                          << std::endl;
 #elif ENABLE_HIP
   size_t free_, tot_;
   hipMemGetInfo(&free_, &tot_);
-  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << free_ / 1024.0 / 1024.0 << " "
-                         << tot_ / 1024.0 / 1024.0 << "\n"
+  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << (free_ >> 20) << " "
+                         << (tot_ >> 20) << "\n"
                          << std::endl;
 #endif
 }

@@ -1,11 +1,11 @@
 #if COMPILATION_INSTRUCTIONS
-(echo "#include<"$0">" > $0x.cpp) && c++ -O3 -std=c++14 -Wall -D_TEST_BOOST_MPI3_DETAIL_STRIDED $0x.cpp -o $0x.x && $0x.x $@ && rm -f $0x.cpp; exit
+(echo '#include"'$0'"'>$0.cpp)&&clang++ -Wall -D_TEST_BOOST_MPI3_DETAIL_STRIDED $0.cpp -o $0x&&$0x&&rm $0.cpp;exit
 #endif
 
-#ifndef ALF_BOOST_MPI3_DETAIL_STRIDED_HPP
-#define ALF_BOOST_MPI3_DETAIL_STRIDED_HPP
+#ifndef MPI3_DETAIL_STRIDED_HPP
+#define MPI3_DETAIL_STRIDED_HPP
 
-#include<boost/iterator/iterator_adaptor.hpp>
+//#include<boost/iterator/iterator_adaptor.hpp>
 
 namespace boost{
 namespace mpi3{
@@ -65,7 +65,7 @@ template<class Iterator> struct is_strided : decltype(is_strided_aux(std::declva
 
 #ifdef _TEST_BOOST_MPI3_DETAIL_STRIDED
 
-#include "alf/boost/mpi3/detail/iterator.hpp"
+#include "../detail/iterator.hpp"
 
 #include<vector>
 #include<iostream>

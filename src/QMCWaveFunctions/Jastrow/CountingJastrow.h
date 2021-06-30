@@ -209,7 +209,7 @@ public:
   }
 
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateExponents(P);
     for (int i = 0; i < num_els; ++i)
@@ -222,13 +222,13 @@ public:
   }
 
 
-  void recompute(ParticleSet& P)
+  void recompute(const ParticleSet& P)
   {
     evaluateExponents(P);
     LogValue = Jval;
   }
 
-  void evaluateExponents(ParticleSet& P)
+  void evaluateExponents(const ParticleSet& P)
   {
     // evaluate counting regions
     C->evaluate(P);
@@ -274,7 +274,7 @@ public:
   }
 
 
-  void evaluateExponents_print(std::ostream& os, ParticleSet& P)
+  void evaluateExponents_print(std::ostream& os, const ParticleSet& P)
   {
     // print counting regions
     C->evaluate_print(app_log(), P);

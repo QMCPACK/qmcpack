@@ -28,10 +28,10 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
-                                                           SPOSetPtr const spos,
+                                                           std::shared_ptr<SPOSet>&& spos,
                                                            BackflowTransformation* BF,
                                                            int first)
-    : DiracDeterminantBase("DiracDeterminantWithBackflow", spos, first)
+    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first)
 {
   Optimizable  = true;
   is_fermionic = true;
@@ -485,7 +485,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *for local energy calculations.
  */
 DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
@@ -998,11 +998,11 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
   //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, spo, BFTrans, FirstIndex);
+  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, std::move(spo), BFTrans, FirstIndex);
   dclone->resize(NumPtcls, NumOrbitals);
   dclone->Optimizable = Optimizable;
   return dclone;

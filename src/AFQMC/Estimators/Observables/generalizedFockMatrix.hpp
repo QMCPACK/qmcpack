@@ -70,7 +70,7 @@ class generalizedFockMatrix : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using Static3Tensor     = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
+  using Static3Tensor    = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
 
 public:
   generalizedFockMatrix(afqmc::TaskGroup_& tg_,
@@ -106,7 +106,7 @@ public:
     using std::fill_n;
     writer = (TG.getGlobalRank() == 0);
 
-    DMAverage = std::move(mpi3CTensor({2, nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CTensor({2, nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -138,11 +138,11 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != 3 || DMWork.size(1) != nw || DMWork.size(2) != dm_size)
       {
-        DMWork = std::move(mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
@@ -155,8 +155,7 @@ public:
     }
 
     DeviceBufferManager buffer_manager;
-    Static3Tensor gFock({2, nw, dm_size}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor gFock({2, nw, dm_size}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     HamOp->generalizedFockMatrix(G, gFock[0], gFock[1]);
 

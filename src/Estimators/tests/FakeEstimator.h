@@ -17,15 +17,15 @@ namespace qmcplusplus
 {
 class FakeEstimator : public ScalarEstimatorBase
 {
-  virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
+  void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override {}
 
-  virtual void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt) {}
+  void accumulate(const RefVector<MCPWalker>& walkers) override {}
 
-  virtual void add2Record(RecordNamedProperty<RealType>& record) {}
+  void add2Record(RecordNamedProperty<RealType>& record) override {}
 
-  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
 
-  virtual ScalarEstimatorBase* clone() { return new FakeEstimator; }
+  FakeEstimator* clone() override { return new FakeEstimator; }
 };
 
 } // namespace qmcplusplus

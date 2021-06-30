@@ -9,11 +9,8 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CUDA_SRCS cuBLAS_missing_functions.cu CUDAfill.cpp CUDAallocator.cpp CUDAruntime.cpp)
 
-SET(CUDA_SRCS
-  cuBLAS_missing_functions.cu
-)
-
-CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
-CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda)
-TARGET_LINK_LIBRARIES(platform_cuda PRIVATE ${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY})
+cuda_add_library(platform_cuda ${CUDA_SRCS})
+cuda_add_cublas_to_target(platform_cuda)
+target_link_libraries(platform_cuda PRIVATE ${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY})

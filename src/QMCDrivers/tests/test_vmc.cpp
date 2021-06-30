@@ -39,9 +39,6 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -83,7 +80,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

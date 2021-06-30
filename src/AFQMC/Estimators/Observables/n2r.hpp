@@ -109,7 +109,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "orbitals", "std::string");
+      m_param.add(orb_file, "orbitals");
       m_param.put(cur);
     }
 
@@ -164,7 +164,7 @@ public:
                     << std::endl;
         APP_ABORT("");
       }
-      Orbitals = std::move(auxCMatrix({NMO, dm_size}, orb_alloc_));
+      Orbitals = auxCMatrix({NMO, dm_size}, orb_alloc_);
       for (int k = 0, kn = 0; k < nk; k++)
       {
         for (int i = 0; i < norbs[k]; i++, kn++)
@@ -187,14 +187,14 @@ public:
     else
     {
       TG.Node().broadcast_n(&dm_size, 1, 0);
-      Orbitals = std::move(auxCMatrix({NMO, dm_size}, orb_alloc_));
+      Orbitals = auxCMatrix({NMO, dm_size}, orb_alloc_);
     }
     TG.Node().barrier();
 
     using std::fill_n;
     writer = (TG.getGlobalRank() == 0);
 
-    DMAverage = std::move(mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -232,11 +232,11 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
       {
-        DMWork = std::move(mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
@@ -408,14 +408,14 @@ private:
   void set_buffer(size_t N)
   {
     if (Buff.num_elements() < N)
-      Buff = std::move(auxCVector(iextensions<1u>{N}, aux_alloc));
+      Buff = auxCVector(iextensions<1u>{N}, aux_alloc);
     using std::fill_n;
     fill_n(Buff.origin(), N, ComplexType(0.0));
   }
   void set_buffer2(size_t N)
   {
     if (Buff2.num_elements() < N)
-      Buff2 = std::move(stdCVector(iextensions<1u>{N}));
+      Buff2 = stdCVector(iextensions<1u>{N});
     using std::fill_n;
     fill_n(Buff2.origin(), N, ComplexType(0.0));
   }

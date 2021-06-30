@@ -31,7 +31,11 @@ do
     make -j 20
     if [ $? -eq 0 ]; then
       build_dir=$(pwd)
-      ln -sf ${build_dir}/bin/qmcpack ${build_dir}/../bin/qmcpack_${build}
+      if [ -e ${build_dir}/bin/qmcpack_complex ]; then
+        ln -sf ${build_dir}/bin/qmcpack_complex ${build_dir}/../bin/qmcpack_${build}
+      else
+        ln -sf ${build_dir}/bin/qmcpack ${build_dir}/../bin/qmcpack_${build}
+      fi
     fi
     cd ..
 done

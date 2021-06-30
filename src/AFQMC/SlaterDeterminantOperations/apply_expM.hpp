@@ -134,14 +134,13 @@ namespace batched
  * Calculate S = exp(im*V)*S using a Taylor expansion of exp(V)
  */
 template<class MatA, class MatB, class MatC>
-inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, 
-                       int order = 6, char TA = 'N')
+inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 6, char TA = 'N')
 {
   static_assert(std::decay<MatA>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatB>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatC>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
-  assert(V.size(0) == S.size(0)); 
-  assert(V.size(0) == T1.size(0)); 
+  assert(V.size(0) == S.size(0));
+  assert(V.size(0) == T1.size(0));
   assert(V.size(0) == T2.size(0));
   assert(V.size(1) == V.size(2));
   assert(V.size(2) == S.size(1));
@@ -193,15 +192,14 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
  * Version for non_collinear calculations, where there are 2 S matrices per V in the batch.
  */
 template<class MatA, class MatB, class MatC>
-inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2, 
-                       int order = 6, char TA = 'N')
+inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 6, char TA = 'N')
 {
   static_assert(std::decay<MatA>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatB>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatC>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
-  assert(V.size(0)*2 == S.size(0)); 
-  assert(V.size(0)*2 == T1.size(0)); 
-  assert(V.size(0)*2 == T2.size(0));
+  assert(V.size(0) * 2 == S.size(0));
+  assert(V.size(0) * 2 == T1.size(0));
+  assert(V.size(0) * 2 == T2.size(0));
   assert(V.size(1) == V.size(2));
   assert(V.size(2) == S.size(1));
   assert(S.size(1) == T1.size(1));
@@ -227,29 +225,30 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   auto pT1(std::addressof(T1));
   auto pT2(std::addressof(T2));
 
-  using pointerA = typename std::decay<MatA>::type::element_const_ptr; 
-  using pointerC = typename std::decay<MatC>::type::element_ptr; 
+  using pointerA = typename std::decay<MatA>::type::element_const_ptr;
+  using pointerC = typename std::decay<MatC>::type::element_ptr;
 
   int nbatch = S.size(0);
-  int ldv = V.stride(1); 
-  int M = T2.size(2); 
-  int N = T2.size(1);
-  int K = T1.size(1);
+  int ldv    = V.stride(1);
+  int M      = T2.size(2);
+  int N      = T2.size(1);
+  int K      = T1.size(1);
 
   std::vector<pointerA> Vi;
   std::vector<pointerC> T1i;
   std::vector<pointerC> T2i;
-  Vi.reserve(2*V.size(0));  
-  T1i.reserve(T1.size(0));  
-  T2i.reserve(T2.size(0));  
-  for (int i = 0; i < V.size(0); i++) { 
+  Vi.reserve(2 * V.size(0));
+  T1i.reserve(T1.size(0));
+  T2i.reserve(T2.size(0));
+  for (int i = 0; i < V.size(0); i++)
+  {
     Vi.emplace_back(ma::pointer_dispatch(V[i].origin()));
     Vi.emplace_back(ma::pointer_dispatch(V[i].origin()));
-  }  
+  }
   for (int i = 0; i < T1.size(0); i++)
     T1i.emplace_back(ma::pointer_dispatch(T1[i].origin()));
   for (int i = 0; i < T2.size(0); i++)
-    T2i.emplace_back(ma::pointer_dispatch(T2[i].origin()));    
+    T2i.emplace_back(ma::pointer_dispatch(T2[i].origin()));
 
   auto pT1i(std::addressof(T1i));
   auto pT2i(std::addressof(T2i));
@@ -263,8 +262,8 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
     using ma::gemmBatched;
     // careful with fortran ordering
-    gemmBatched('N',TA,M,N,K,fact, pT1i->data(), (*pT1).stride(1), Vi.data(), ldv, 
-                             zero, pT2i->data(), (*pT2).stride(1), nbatch);
+    gemmBatched('N', TA, M, N, K, fact, pT1i->data(), (*pT1).stride(1), Vi.data(), ldv, zero, pT2i->data(),
+                (*pT2).stride(1), nbatch);
     using ma::axpy;
     axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
     std::swap(pT1, pT2);

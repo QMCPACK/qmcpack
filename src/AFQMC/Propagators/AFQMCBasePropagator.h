@@ -51,8 +51,8 @@ protected:
   using aux_allocator = localTG_allocator<ComplexType>;
   using sp_pointer    = typename device_allocator<SPComplexType>::pointer;
 
-  using stack_alloc_type     = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using stack_alloc_SPtype   = LocalTGBufferManager::template allocator_t<SPComplexType>;
+  using stack_alloc_type   = LocalTGBufferManager::template allocator_t<ComplexType>;
+  using stack_alloc_SPtype = LocalTGBufferManager::template allocator_t<SPComplexType>;
 
   using StaticVector    = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
   using StaticMatrix    = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
@@ -161,12 +161,12 @@ public:
     {
       if (walker_type != COLLINEAR)
         APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
-      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[0], printP1eV));
-      P1[1] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[1], printP1eV));
+      P1[0] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[0], printP1eV);
+      P1[1] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[1], printP1eV);
     }
     else
     {
-      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, printP1eV));
+      P1[0] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, printP1eV);
     }
   }
 

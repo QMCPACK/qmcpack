@@ -9,14 +9,29 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR CUDA)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR CUDA)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+cuda_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+target_link_libraries(cuda_device_value_test_kernels PUBLIC platform_device)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_CUDAallocator.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_device containers catch_main)
+add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
+target_link_libraries(${UTEST_EXE} platform_device containers catch_main)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} platform_omptarget)
+endif()
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+
+set(UTEST_EXE test_DeviceValue)
+set(UTEST_NAME deterministic-unit_${UTEST_EXE})
+add_executable(${UTEST_EXE} test_DeviceValue.cpp)
+target_link_libraries(${UTEST_EXE} platform_device cuda_device_value_test_kernels catch_main qmcutil)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} platform_omptarget)
+endif()
+target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

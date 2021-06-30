@@ -22,6 +22,7 @@
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
 
 namespace qmcplusplus
 {
@@ -47,7 +48,10 @@ private:
   ///flag to indicate that a qmc is the first QMC
   bool FirstQMC;
 
+  /// the last driver object. Should be in a loop only.
   std::unique_ptr<QMCDriverInterface> last_driver;
+  /// last branch engine used by legacy drivers
+  std::unique_ptr<SimpleFixedNodeBranch> last_branch_engine_legacy_driver;
 
   ///xml mcwalkerset elements for output
   std::vector<xmlNodePtr> m_walkerset;

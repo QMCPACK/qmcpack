@@ -17,7 +17,7 @@
 
 #define BOOST_NO_AUTO_PTR
 
-static const size_t SM_SIZE_KB  = 64;    // should probably poke the system
+static const size_t SM_SIZE_KB          = 64; // should probably poke the system
 static const size_t DEFAULT_BLOCK_SIZE  = 32;
 static const size_t DOT_BLOCK_SIZE      = 32;
 static const size_t REDUCE_BLOCK_SIZE   = 32;

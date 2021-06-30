@@ -62,13 +62,13 @@ public:
 
     std::string str("no");
     ParameterSet m_param;
-    m_param.add(cutoff1bar, "cutoff_1bar", "double");
-    m_param.add(cutoff_cholesky, "cutoff_decomposition", "double");
-    m_param.add(cutoff_cholesky, "cutoff_factorization", "double");
-    m_param.add(cutoff_cholesky, "cutoff_cholesky", "double");
-    m_param.add(str, "skip_V2", "std::string");
-    m_param.add(maximum_buffer_size, "buffer_size", "int");
-    m_param.add(factorizedHalfRotationType, "rotation_type", "std::string");
+    m_param.add(cutoff1bar, "cutoff_1bar");
+    m_param.add(cutoff_cholesky, "cutoff_decomposition");
+    m_param.add(cutoff_cholesky, "cutoff_factorization");
+    m_param.add(cutoff_cholesky, "cutoff_cholesky");
+    m_param.add(str, "skip_V2");
+    m_param.add(maximum_buffer_size, "buffer_size");
+    m_param.add(factorizedHalfRotationType, "rotation_type");
     m_param.put(cur);
 
     std::transform(str.begin(), str.end(), str.begin(), (int (*)(int))tolower);

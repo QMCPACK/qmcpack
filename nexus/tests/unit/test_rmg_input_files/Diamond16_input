@@ -1,0 +1,143 @@
+############################################################################
+#                                                                          #
+#   Sample input file for ultrasoft real-space code, short version.        #
+#   All items after a # are treated as comments.                           #
+#   New tag format, tags may be in any order in input file.                #
+#   Unless stated otherwise, atomic units are used                         #
+#                                                                          #
+############################################################################
+
+# Description of run. Default: "QMD run"
+description="Diamond 16 atom test cell"
+test_energy = "-91.81065082"
+
+# Wavefunction grid
+wavefunction_grid="32 32 32"
+renormalize_forces = "false"
+
+# Ratio of fine grid to coarse grid (all values must be the same)
+potential_grid_refinement="2"
+#kohn_sham_fd_order = "10"
+#laplacian_offdiag = "true"
+
+
+#i.e. use occupations as specified elswhere in this file
+occupations_type="Fixed"
+#"Fermi Dirac"
+#"Gaussian"
+#"Error Function" 
+
+## If states_count_and_occupation is not given,
+# number of states is specified by the following two options:
+unoccupied_states_per_kpoint="16"
+
+# K-point vector and weight, repeat for each k-point
+kpoint_mesh="2 2 2"
+
+bravais_lattice_type=
+#"Cubic Primitive"
+"Cubic Face Centered"
+#"Cubic Body Centered"
+#"Hexagonal Primitive"
+#"Hexagonal Rhombohedral (Trigonal)"
+#"Tetragonal Primitive"
+#"Tetragonal Body Centered"
+#"Orthorhombic Primitive"
+#"Monoclinic Primitive"
+#"Triclinic Primitive"
+
+#lattice_vector=
+#"
+#6.720       6.720       0.000
+#0.000       6.720       6.720 
+#6.720       0.000       6.720 
+#"
+
+# Units for bravais_lattice_type and atoms
+crds_units= "Bohr"
+
+# Lattice constants 
+a_length="13.44"
+b_length="13.44"
+c_length="13.44"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+force_grad_order = "0"
+
+start_mode=
+"LCAO Start"
+#"Modified LCAO Start"
+#"Random Start"
+#"Restart From File"
+
+calculation_mode=
+"Quench Electrons"
+#"Relax Structure"
+#"Constant Volume And Energy"
+#"Constant Temperature And Energy"
+#"Band Structure Only"
+
+# Default: "LDA"
+#exchange_correlation_type=
+#"pz"
+#"GGA BLYP"
+#"GGA XB CP"
+#"revpbe"
+#"sla+pw+pbe+vdw1"
+#"vdw-df"
+#"vdw-df-cx"
+#"pbe"
+
+
+# Criterion used to judge SCF convergency 
+rms_convergence_criterion="1.0e-8"
+energy_convergence_criterion="1.0e-12"
+
+charge_density_mixing="0.7"
+
+charge_mixing_type=
+#"Linear"
+#"Pulay"
+"Broyden"
+
+max_scf_steps="40"
+ionic_time_step = "10"
+
+#
+# Subspace diagonalization options
+subdiag_driver="lapack"
+
+# Potential acceleration options
+# By default poisson is set to zero but it may work better for some systems
+# Setting it to 1.0 is a good option.
+potential_acceleration_constant_step="1.0"
+
+
+#kohn_sham_solver="davidson"
+kohn_sham_solver="multigrid"
+localize_projectors="false"
+localize_localpp="false"
+
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atomic_coordinate_type="Cell Relative"
+atoms = "
+C      0.000000        0.000000        0.000000  0.0
+C      0.125000        0.125000        0.125000  0.0
+C      0.000000        0.000000        0.500000  0.0
+C      0.125000        0.125000        0.625000  0.0
+C      0.000000        0.500000        0.000000  0.0
+C      0.125000        0.625000        0.125000  0.0
+C      0.000000        0.500000        0.500000  0.0
+C      0.125000        0.625000        0.625000  0.0
+C      0.500000        0.000000        0.000000  0.0
+C      0.625000        0.125000        0.125000  0.0
+C      0.500000        0.000000        0.500000  0.0
+C      0.625000        0.125000        0.625000  0.0
+C      0.500000        0.500000        0.000000  0.0
+C      0.625000        0.625000        0.125000  0.0
+C      0.500000        0.500000        0.500000  0.0
+C      0.625000        0.625000        0.625000  0.0
+"

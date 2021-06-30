@@ -20,18 +20,13 @@
 #include "Estimators/accumulators.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
-#include "QMCDrivers/WalkerControlBase.h"
 #include "QMCDrivers/Crowd.h"
 #include <bitset>
 
 namespace qmcplusplus
 {
-class EstimatorManagerNew;
-
 /** Manages the state of QMC sections and handles population control for DMCs
  *
- * \todo: Remove Estimator dependency, only has come dependency. Express accumulate in
- *       the actual DMC algorithm (i.e. in DMCBatched.cpp)
  * \todo: Remove duplicate reading of Driver XML section with own copies of input
  *       parameters.
  * \todo: Rename, it is the only branching class so its name is too much
@@ -43,51 +38,30 @@ class EstimatorManagerNew;
  * progress of a qmc section. It implements several methods to control the
  * population and trial energy during a DMC and evaluate the properties of
  * a population, e.g., energy, variance, population etc.
- * It owns WalkerController (pointer to a WalkerControlBase object) which
- * manages the population (killing and duplicating walkers) and
- * load balancing among multiple MPI tasks.
- * \see {http://qmcpack.cmscc.org/qmc-basics}
+  * \see {http://qmcpack.cmscc.org/qmc-basics}
  *
- * Steps in 'Legacy' SFNB states machine
+ * Steps in SFNB states machine
  * 1. Construction (gets global walker number (rank or section wide?)
- * 2. setEstimatorManager (also makes bootstrapping SFNB state dependent on valid Communicate*)
  * 3. put(reads driver XML node yet again)
- * 4. setWalkerController (Maybe a WalkerController pointer is passed in)
- * 5. InitWalkerController 
- *   a. Creates walkercontroller if WalkerController is a nullptr
- *   b. If TargetWalkers isn't known
+ * 4. InitParam
+ *   a. If TargetWalkers isn't known
  *      aa. allreduce and updates MCMW globalWalkers.
- *      bb. resets walker offsets
- *      cc. sets target walkers to whatever current total active walkers is.
- *   c. resets WalkerController
- *   d. If not a restart
+ *      bb. sets target walkers to whatever current total active walkers is.
+ *   b. If not a restart
  *      aa. saves fixW and killWalker to internal params, otherwise just discards.
  *      bb. updates SFNB copy of MAX/MINWALKRS from walker controller, 
  *          these were set in constructer but I guess thats ony if this is a restart
- *   e. setWalkerId
- *      aa. call start()
- *         1. Which calls reset which crucially calculates and update logN state.
- *      bb. updates all the walker id's of walkers in MCWC.
- * 6. checkParameters
- *   a. getApproximateEnergyVariance from SFNB's estimator
- *   b. set ETrial, EREF, SIGMA2 from estimator
- *   c. clear EnergyHist and VarianceHist
- *
- * Finally branch can be called! It will be called once each step.
- *
- * 7. call branch (iter and MCMW)
+ * 7. updateParam after each walker control branch (outside SFNBranch)
  *   a. Not first iter during warmup then call WalkerController branch.
  *      else call WC doNotBranch, returns pop_now
  *   b. copy a bunch a state from WC to SFNB (should be with respect to pop_now - number of released nodes)
  *   c. If using taueff update that based on acceptance ration and current tau.
  *   d. If not warmup calculate ETRIAL based on EREF and feedback * log(TargetWalkers) - log(pop_now) 
  *   e. set WC's TrialEnergy
- *   d. multiply walkers.Colelctables *= the inverse weight.
- *   f. call SFNB's estimator accumilator on MCWC
  */
-struct SFNBranch : public QMCTraits
+class SFNBranch : public QMCTraits
 {
-  typedef SFNBranch ThisType;
+public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
@@ -116,42 +90,26 @@ struct SFNBranch : public QMCTraits
     B_MODE_MAX = 10 /**< size of BranchMode */
   };
 
-  /** booleans to set the branch modes
-   * \since 2008-05-05
-   */
-  typedef std::bitset<B_MODE_MAX> BranchModeType;
-  BranchModeType BranchMode;
+  using BranchModeType = std::bitset<B_MODE_MAX>;
 
   /*! enum for iParam std::bitset<B_IPARAM_MAX>
-   * \since 2008-05-05
-   *
    * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
    * Why?  Much easier to use bool flags.  Are these ever serialized?
    */
   enum
   {
-    B_WARMUPSTEPS = 0 /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
-    ,
-    B_ENERGYUPDATEINTERVAL = 1 /**< frequency of the trial energy updates, default 1 */
-    ,
-    B_COUNTER = 2 /**< counter for tracking object state */
-    ,
-    B_TARGETWALKERS = 3 /**< target total number of walkers per mpi group */
-    ,
-    B_MAXWALKERS = 4 /**< maximum number of walkers per node */
-    ,
-    B_MINWALKERS = 5 /**< minimum number of walkers per node */
-    ,
-    B_BRANCHINTERVAL = 6 /**< interval between branch, see population control */
-    ,
-    B_IPARAM_MAX = 8 /**< size of iParam */
+    B_WARMUPSTEPS = 0,      /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
+    B_ENERGYUPDATEINTERVAL, /**< frequency of the trial energy updates, default 1 */
+    B_COUNTER,              /**< counter for tracking object state */
+    B_TARGETWALKERS,        /**< target total number of walkers per mpi group */
+    B_BRANCHINTERVAL,       /**< interval between branch, see population control */
+    B_IPARAM_MAX            /**< size of iParam */
   };
 
   /** input parameters of integer types
    * \since 2008-05-05
    */
-  typedef TinyVector<int, B_IPARAM_MAX> IParamType;
-  IParamType iParam;
+  using IParamType = TinyVector<int, B_IPARAM_MAX>;
 
   /** enum for vParam 
    *
@@ -161,16 +119,15 @@ struct SFNBranch : public QMCTraits
   enum class SimpleBranchVectorParameter
   {
     TAU = 0,
-    TAUEFF,
-    ETRIAL,
-    EREF,
-    ENOW,
+    TAUEFF, // effective time step
+    ETRIAL, // Trial energy
+    EREF,   // Center of the branching cutoff energy window
+    ENOW,   // weighted average energy of the population in the current step
     BRANCHMAX,
     BRANCHCUTOFF,
     BRANCHFILTER,
     SIGMA2,
-    ACC_ENERGY,
-    ACC_SAMPLES,
+    SIGMA_BOUND,
     FEEDBACK,
     FILTERSCALE,
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
@@ -189,66 +146,14 @@ struct SFNBranch : public QMCTraits
     const FullPrecRealType& operator[](PAR_ENUM sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
   };
   using VParamType = VParams<SBVP>;
-  VParamType vParam;
-
-  /** number of remaning steps for a specific tasks
-   *
-   * set differently for BranchMode[B_DMCSTAGE]
-   */
-  int ToDoSteps;
-  ///Feed*log(N)
-  FullPrecRealType logN;
-  ///save xml element
-  xmlNodePtr myNode;
-  ///WalkerController
-  std::unique_ptr<WalkerControlBase> WalkerController;
-  ///Backup WalkerController for mixed DMC
-  std::unique_ptr<WalkerControlBase> BackupWalkerController;
-
-  ///TODO: Should not be raw pointer
-  EstimatorManagerNew* MyEstimator;
-  ///a simple accumulator for energy
-  accumulator_set<FullPrecRealType> EnergyHist;
-  ///a simple accumulator for variance
-  accumulator_set<FullPrecRealType> VarianceHist;
-  ///a simple accumulator for energy
-  accumulator_set<RealType> R2Accepted;
-  ///a simple accumulator for energy
-  accumulator_set<RealType> R2Proposed;
-  ///a simple accumulator for reptation's center slice
-  accumulator_set<RealType> R2Center;
-  /////histogram of populations
-  //BlockHistogram<RealType> PopHist;
-  /////histogram of populations
-  //BlockHistogram<RealType> DMCEnergyHist;
-  ///root name
-  std::string RootName;
-  ///scheme of branching cutoff
-  std::string branching_cutoff_scheme;
-  ///set of parameters
-  ParameterSet m_param;
-  ///string parameters
-  std::vector<std::string> sParam;
-
-  /// Used for the average scaling
-  FullPrecRealType ScaleSum;
-  unsigned long ScaleNum;
-  //@TODO move these to private
-  ///LogJacob
-  RealType LogJacobRef;
-  ///LogNorm
-  std::vector<RealType> LogNorm;
-
-  ///Releasednode
-  bool RN;
 
   ///Constructor
   SFNBranch(RealType tau, int nideal);
 
   ///copy constructor
-  SFNBranch(const SFNBranch& abranch);
+  SFNBranch(const SFNBranch& abranch) = delete;
 
-  ~SFNBranch() {}
+  ~SFNBranch();
 
   inline bool phaseChanged(RealType psi0) const
   {
@@ -267,26 +172,13 @@ struct SFNBranch : public QMCTraits
   inline void advanceQMCCounter() { iParam[B_COUNTER]++; }
   inline void regressQMCCounter() { iParam[B_COUNTER]--; }
 
-  /** get the EstimatorManager */
-  EstimatorManagerNew* getEstimatorManager() { return MyEstimator; }
-
-  /** set the EstimatorManager
-   * @param est estimator created by the first QMCDriver
-   * this assumes estimator managers are reused section to section
-   * */
-  void setEstimatorManager(EstimatorManagerNew* est) { MyEstimator = est; }
-
-  /** initialize  the WalkerController
+  /** initialize branching parameters
    * @param pop Population of Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
    * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
-
-  /** determine trial and reference energies
-   */
-  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
+  int initParam(const MCPopulation& population, FullPrecRealType ene, FullPrecRealType var, bool fixW, bool killwalker);
 
   /** return the bare branch weight
    *
@@ -381,23 +273,6 @@ struct SFNBranch : public QMCTraits
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
 
-  /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
-   * @param enew new energy
-   * @param eold old energy
-   * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
-   * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
-   * @param taueff
-   */
-  inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
-  {
-    ScaleSum += scnew + scold;
-    ScaleNum += 2;
-    FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    FullPrecRealType s1    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew / scavg;
-    FullPrecRealType s0    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold / scavg;
-    return std::exp(taueff * 0.5 * (s1 + s0));
-  }
-
   inline RealType getEref() const { return vParam[SBVP::EREF]; }
   inline RealType getEtrial() const { return vParam[SBVP::ETRIAL]; }
   inline RealType getTau() const { return vParam[SBVP::TAU]; }
@@ -407,47 +282,54 @@ struct SFNBranch : public QMCTraits
    * @param iter current step
    * @param w Walker configuration
    */
-  void branch(int iter, MCPopulation& population);
-
-  /** restart averaging
-   * @param counter Counter to determine the cummulative average will be reset.
-   */
-  void flush(int counter);
-
-  /** reset the internal parameters */
-  void reset();
+  void updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec);
 
   bool put(xmlNodePtr cur);
-
-  /** write the state
-   * @param fname name of the configuration file
-   * @param overwrite NOT USED
-   */
-  void write(Communicate& comm, const std::string& fname, bool overwrite = true);
-
-  void read(const std::string& fname);
 
   /** create map between the parameter name and variables */
   void registerParameters();
 
-  ///start a run
-  void start(const std::string& froot, bool append = false);
   ///finalize the simulation
-  void finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers);
+  void printStatus() const;
 
-  void setRN(bool rn);
+  friend std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);
 
 private:
-  ///default constructor (disabled)
-  SFNBranch() {}
-
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
-  /// if yes, disable branching for debugging or benchmarking
-  std::string debug_disable_branching_;
+
+  BranchModeType BranchMode;
+
+  IParamType iParam;
+
+  VParamType vParam;
+  /// number of remaning steps in warmup, [0, iParam[B_WARMUPSTEPS]]
+  int WarmUpToDoSteps;
+  /// number of remaning steps in before adjusting ETRIAL, [0, iParam[B_ENERGYUPDATEINTERVAL]]
+  int EtrialUpdateToDoSteps;
+  ///save xml element
+  xmlNodePtr myNode;
+  ///a simple accumulator for energy
+  accumulator_set<FullPrecRealType> EnergyHist;
+  ///a simple accumulator for variance
+  accumulator_set<FullPrecRealType> VarianceHist;
+  ///a simple accumulator for energy
+  accumulator_set<RealType> R2Accepted;
+  ///a simple accumulator for energy
+  accumulator_set<RealType> R2Proposed;
+  ///a simple accumulator for reptation's center slice
+  accumulator_set<RealType> R2Center;
+  /////histogram of populations
+  //BlockHistogram<RealType> DMCEnergyHist;
+  ///scheme of branching cutoff
+  std::string branching_cutoff_scheme;
+  ///set of parameters
+  ParameterSet m_param;
+  ///string parameters
+  std::vector<std::string> sParam;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);

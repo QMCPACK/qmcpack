@@ -14,10 +14,9 @@
 #ifndef QMCPLUSPLUS_CUSP_CORRECTION_CONSTRUCTOR_H
 #define QMCPLUSPLUS_CUSP_CORRECTION_CONSTRUCTOR_H
 
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
-#include "QMCWaveFunctions/LCAO/SoaCuspCorrectionBasisSet.h"
-#include "QMCWaveFunctions/LCAO/CuspCorrection.h"
+#include "LCAOrbitalSet.h"
+#include "LCAOrbitalSetWithCorrection.h"
+#include "CuspCorrection.h"
 
 namespace qmcplusplus
 {

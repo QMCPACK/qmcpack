@@ -78,7 +78,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override
   {
     registerObservablesF(h5list, gid);
   }
@@ -90,7 +90,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P) override {}
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetStress(plist, offset); }
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur) override;
 
   bool get(std::ostream& os) const override

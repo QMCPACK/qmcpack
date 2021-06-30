@@ -40,7 +40,7 @@ public:
    * calls LCAOSpinorBuilder::loadMO to build up and down from the H5 file
    * registers up and down into a SpinorSet and returns
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
 
 private:
   /** load the up and down MO sets
@@ -58,7 +58,6 @@ private:
    * after this, we have up/dn LCAOrbitalSet that can be registered to the SpinorSet
    */
   bool putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr);
-  bool putOccupation(int norbs, xmlNodePtr cur);
 };
 } // namespace qmcplusplus
 #endif

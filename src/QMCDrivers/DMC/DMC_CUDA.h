@@ -34,7 +34,8 @@ public:
   DMCcuda(MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
-          Communicate* comm);
+          Communicate* comm,
+          bool enable_profiling);
   bool run();
   bool put(xmlNodePtr cur);
   void resetUpdateEngine();
@@ -68,7 +69,7 @@ private:
   ///use T-moves
   int UseTMove;
 
-  NewTimer& ResizeTimer, &DriftDiffuseTimer, &BranchTimer, &HTimer;
+  NewTimer &ResizeTimer, &DriftDiffuseTimer, &BranchTimer, &HTimer;
 };
 } // namespace qmcplusplus
 

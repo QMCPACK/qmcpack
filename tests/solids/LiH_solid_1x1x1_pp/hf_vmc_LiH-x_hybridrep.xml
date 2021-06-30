@@ -16,7 +16,7 @@
        </parameter>
        <parameter name="LR_dim_cutoff"       >    10                 </parameter>
     </simulationcell>
-    <particleset name="e" random="yes">
+    <particleset name="e" random="yes" random_source="i">
        <group name="u" size="2" mass="1.0">
           <parameter name="charge"              >    -1                    </parameter>
           <parameter name="mass"                >    1.0                   </parameter>
@@ -85,7 +85,7 @@
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers">    16 </parameter>
     <parameter name="substeps">  5 </parameter>
-    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="warmupSteps">  400 </parameter>
     <parameter name="steps">  100 </parameter>
     <parameter name="blocks">  1000 </parameter>
     <parameter name="timestep">  1.0 </parameter>

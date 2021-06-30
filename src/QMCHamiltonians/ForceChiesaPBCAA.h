@@ -73,7 +73,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 
   Return_t g_filter(RealType r);
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list, gid);
   }
@@ -97,7 +97,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P);
 
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   bool put(xmlNodePtr cur);
 

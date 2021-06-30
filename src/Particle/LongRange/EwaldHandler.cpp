@@ -106,7 +106,7 @@ void EwaldHandler::fillFk(KContainer& KList)
   app_log().flush();
 }
 
-EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
+EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
 {
   mRealType uk = 0.0;
   if (SuperCellEnum == SUPERCELL_SLAB)
@@ -133,7 +133,7 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
 
   EwaldHandler::mRealType EwaldHandler::evaluate_slab(pRealType z, const std::vector<int>& kshell,
                                                       const pComplexType* restrict eikr_i,
-                                                      const pComplexType* restrict eikr_j)
+                                                      const pComplexType* restrict eikr_j) const
   {
     mRealType zp = z * Sigma;
     mRealType vk = -SlabFunc0(z, zp);

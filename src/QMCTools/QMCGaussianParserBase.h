@@ -27,7 +27,6 @@
 #include "Utilities/SimpleParser.h"
 #include "Particle/ParticleSet.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "hdf/hdf_archive.h"
 
 using namespace qmcplusplus;
@@ -71,6 +70,7 @@ struct QMCGaussianParserBase
   int numMO, readNO, readGuess, numMO2print;
   int ci_size, ci_nca, ci_ncb, ci_nea, ci_neb, ci_nstates;
   int NbKpts;
+  int nbexcitedstates;
   double ci_threshold;
 
 
@@ -111,7 +111,6 @@ struct QMCGaussianParserBase
   std::vector<int> Image;
 
   std::vector<int> CIexcitLVL;
-
 
   std::vector<std::pair<int, double>> coeff2csf;
 

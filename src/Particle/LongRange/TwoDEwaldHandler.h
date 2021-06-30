@@ -52,30 +52,30 @@ public:
    */
   TwoDEwaldHandler(const TwoDEwaldHandler& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new TwoDEwaldHandler(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new TwoDEwaldHandler(*this, ref); }
 
-  void initBreakup(ParticleSet& ref);
+  void initBreakup(ParticleSet& ref) override;
 
-  void Breakup(ParticleSet& ref, RealType rs_in) { initBreakup(ref); }
+  void Breakup(ParticleSet& ref, RealType rs_in) override { initBreakup(ref); }
 
-  void resetTargetParticleSet(ParticleSet& ref) {}
+  void resetTargetParticleSet(ParticleSet& ref) override {}
 
-  inline RealType evaluate(RealType r, RealType rinv) { return erfc(r * Sigma) * rinv; }
+  inline RealType evaluate(RealType r, RealType rinv) const override { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline RealType evaluateLR(RealType r) { return -erf(r * Sigma) / r; }
+  inline RealType evaluateLR(RealType r) const override { return -erf(r * Sigma) / r; }
 
-  inline RealType evaluateSR_k0() { return 2.0 * std::sqrt(M_PI) / (Sigma * Volume); }
+  inline RealType evaluateSR_k0() const override { return 2.0 * std::sqrt(M_PI) / (Sigma * Volume); }
 
-  inline RealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
+  inline RealType evaluateLR_r0() const override { return 2.0 * Sigma / std::sqrt(M_PI); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline RealType srDf(RealType r, RealType rinv) { return 0.0; }
+  inline RealType srDf(RealType r, RealType rinv) const override { return 0.0; }
 
   void fillFk(KContainer& KList);
 };

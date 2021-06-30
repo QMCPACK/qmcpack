@@ -27,7 +27,7 @@
 
 namespace qmcplusplus
 {
-struct observable_helper;
+class ObservableHelper;
 
 /** Abstract class for an estimator of a scalar operator.
  *
@@ -102,33 +102,32 @@ struct ScalarEstimatorBase
     first_sq += FirstIndex;
     for (int i = 0; i < scalars.size(); i++)
     {
-      *first++         = scalars[i].mean();
-      *first_sq++      = scalars[i].mean2();
+      *first++    = scalars[i].mean();
+      *first_sq++ = scalars[i].mean2();
+      // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
+      // to the local RealType which is hard coded to QMCTFullPrecRealType.
+      // I think it is a bad idea to have RealType to have a changing meaning,
+      // I also feel like having the floating point expension needed to write always to
+      // double in hdf5 is poor form especially since I had to figure this out in many
+      // years later.
       scalars_saved[i] = scalars[i]; //save current block
       scalars[i].clear();
     }
   }
 
-  /** take the block accumulated scalars and return the block weight
+  /** add the block accumulated scalars
    * @param first starting iterator of values
-   * @param first_sq starting iterator of squared values
    */
   template<typename IT>
-  inline RealType takeBlockSumsGetWeight(IT first, IT first_sq)
+  inline void addAccumulated(IT first)
   {
     first += FirstIndex;
-    first_sq += FirstIndex;
-    RealType weight = scalars[0].count();
     for (int i = 0; i < scalars.size(); i++)
     {
-      *first++         = scalars[i].result();
-      *first_sq++      = scalars[i].result2();
-      scalars_saved[i] = scalars[i]; //save current block
+      *first++ += scalars[i].result();
       scalars[i].clear();
     }
-    return weight;
   }
-
 
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration
@@ -146,7 +145,7 @@ struct ScalarEstimatorBase
    * @param wgt weight or maybe norm
    *
    */
-  virtual void accumulate(const int global_walkers, RefVector<MCPWalker>&, RealType wgt) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>&) = 0;
 
   /** add the content of the scalar estimator to the record
    * @param record scalar data list
@@ -159,15 +158,10 @@ struct ScalarEstimatorBase
    * @param h5desc descriptor of a data stored in a h5 group
    * @param gid h5 group to which each statistical data will be stored
    */
-  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) = 0;
+  virtual void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) = 0;
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
-
-  inline void setNumberOfBlocks(int nsamples)
-  {
-    //       NSTEPS=1.0/ static_cast<RealType>(nsamples);
-  }
 };
 } // namespace qmcplusplus
 

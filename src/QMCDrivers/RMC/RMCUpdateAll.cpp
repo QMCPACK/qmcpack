@@ -62,10 +62,10 @@ bool RMCUpdateAllWithDrift::put(xmlNodePtr cur)
   // bool usedrift=false;
   std::string action   = "SLA";
   std::string usedrift = "no";
-  m_param.add(usedrift, "useScaledDrift", "string");
-  m_param.add(action, "Action", "string");
-  m_param.add(equilSteps, "equilsteps", "int");
-  m_param.add(equilSteps, "equilSteps", "int");
+  m_param.add(usedrift, "useScaledDrift");
+  m_param.add(action, "Action");
+  m_param.add(equilSteps, "equilsteps");
+  m_param.add(equilSteps, "equilSteps");
 
   // m_param.add(scaleDrift,"scaleDrift");
   m_param.put(cur);
@@ -116,7 +116,6 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   //app_log()<<"Old phase = "<<Psi.getPhase()<< std::endl;
   makeGaussRandomWithEngine(deltaR, RandomGen);
   RealType r2proposed = Dot(deltaR, deltaR);
-  RealType r2accept   = 0.0;
   //      W.reptile->r2prop += r2proposed;
   //      W.reptile->r2samp++;
   if (!W.makeMoveAllParticlesWithDrift(curhead, drift, deltaR, m_sqrttau))
@@ -239,8 +238,6 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   if (RandomGen() < acceptProb)
   {
     //Assuming the VMC step is fine, we are forcing the move.
-    r2accept = r2proposed;
-    //        W.reptile->r2accept+=r2accept;
     MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
 
     W.saveWalker(overwriteWalker);

@@ -26,6 +26,7 @@
 #endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "QMCDrivers/WFOpt/OutputMatrix.h"
 
 namespace qmcplusplus
 {
@@ -41,12 +42,11 @@ class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
-                                      TrialWaveFunction& psi,
-                                      QMCHamiltonian& h,
+  QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
+                                      MCWalkerConfiguration& w,
                                       QMCDriverInput&& qmcdriver_input,
                                       VMCDriverInput&& vmcdriver_input,
-                                      MCPopulation& population,
+                                      MCPopulation&& population,
                                       SampleStack& samples,
                                       Communicate* comm);
 
@@ -54,13 +54,13 @@ public:
   ~QMCFixedSampleLinearOptimizeBatched();
 
   ///Run the Optimization algorithm.
-  bool run();
+  bool run() override;
   ///preprocess xml node
-  bool put(xmlNodePtr cur);
+  void process(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl);
+  RealType Func(RealType dl) override;
 
 private:
   inline bool ValidCostFunction(bool valid)
@@ -199,6 +199,18 @@ private:
 
   //whether to use hybrid method
   bool doHybrid;
+
+  // Output Hamiltonian and overlap matrices
+  bool do_output_matrices_;
+
+  // Flag to open the files on first pass and print header line
+  bool output_matrices_initialized_;
+
+  OutputMatrix output_hamiltonian_;
+  OutputMatrix output_overlap_;
+
+  // Freeze variational parameters.  Do not update them during each step.
+  bool freeze_parameters_;
 };
 } // namespace qmcplusplus
 #endif

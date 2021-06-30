@@ -12,6 +12,7 @@
 
 
 #include "CuspCorrectionConstruction.h"
+#include "SoaCuspCorrectionBasisSet.h"
 #include "Message/Communicate.h"
 #include "Utilities/FairDivide.h"
 
@@ -28,26 +29,22 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 {
   typedef QMCTraits::RealType RealType;
 
-  NewTimer* cuspApplyTimer =
-      timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
+  NewTimer& cuspApplyTimer =
+      *timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  phi.BasisSetSize = lcwc.getBasisSetSize();
-  phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  eta.BasisSetSize = lcwc.getBasisSetSize();
-  eta.setIdentity(false);
 
 
   std::vector<bool> corrCenter(num_centers, "true");
 
   //What's this grid's lifespan?  Why on the heap?
-  LogGrid<RealType>* radial_grid = new LogGrid<RealType>;
+  auto radial_grid = std::make_unique<LogGrid<RealType>>();
   radial_grid->set(0.000001, 100.0, 1001);
 
 
@@ -69,7 +66,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
     // loop over MO index - cot must be an array (of len MO size)
     //   the loop is inside cot - in the multiqunitic
-    SoaCuspCorrection::COT* cot = new CuspCorrectionAtomicBasis<RealType>();
+    auto cot = std::make_unique<CuspCorrectionAtomicBasis<RealType>>();
     cot->initializeRadialSet(*radial_grid, orbital_set_size);
     //How is this useful?
     // cot->ID.resize(orbital_set_size);
@@ -80,8 +77,8 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
     for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++)
     {
       computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, xgrid, rad_orb, info(ic, mo_idx));
-      OneDimQuinticSpline<RealType> radial_spline(radial_grid, rad_orb);
       RealType yprime_i = (rad_orb[1] - rad_orb[0]) / (radial_grid->r(1) - radial_grid->r(0));
+      OneDimQuinticSpline<RealType> radial_spline(radial_grid->makeClone(), rad_orb);
       radial_spline.spline(0, yprime_i, rad_orb.size() - 1, 0.0);
       cot->addSpline(mo_idx, radial_spline);
 
@@ -111,7 +108,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
         out.close();
       }
     }
-    lcwc.cusp.add(ic, cot);
+    lcwc.cusp.add(ic, std::move(cot));
   }
   removeSTypeOrbitals(corrCenter, lcwc);
 }
@@ -194,22 +191,19 @@ void generateCuspInfo(int orbital_set_size,
 {
   typedef QMCTraits::RealType RealType;
 
-  NewTimer* cuspCreateTimer =
-      timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
-  NewTimer* splitPhiEtaTimer = timer_manager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
-  NewTimer* computeTimer = timer_manager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
+  NewTimer& cuspCreateTimer =
+      *timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
+  NewTimer& splitPhiEtaTimer = *timer_manager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
+  NewTimer& computeTimer =
+      *timer_manager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  phi.BasisSetSize = lcwc.getBasisSetSize();
-  phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  eta.BasisSetSize = lcwc.getBasisSetSize();
-  eta.setIdentity(false);
 
 
   std::vector<bool> corrCenter(num_centers, "true");
@@ -235,26 +229,24 @@ void generateCuspInfo(int orbital_set_size,
       ParticleSet localTargetPtcl(targetPtcl);
       ParticleSet localSourcePtcl(sourcePtcl);
 
-      LCAOrbitalSet local_phi(phi);
-      local_phi.myBasisSet = phi.myBasisSet->makeClone();
-      local_phi.C          = nullptr;
-      local_phi.setIdentity(false);
+      LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()),
+                              phi.isOptimizable());
+      local_phi.setOrbitalSetSize(phi.getOrbitalSetSize());
 
-      LCAOrbitalSet local_eta(eta);
-      local_eta.myBasisSet = eta.myBasisSet->makeClone();
-      local_eta.C          = nullptr;
-      local_eta.setIdentity(false);
+      LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()),
+                              eta.isOptimizable());
+      local_eta.setOrbitalSetSize(eta.getOrbitalSetSize());
 
 #pragma omp critical
       app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;
 
-      splitPhiEtaTimer->start();
+      {
+        ScopedTimer local_timer(splitPhiEtaTimer);
 
-      *(local_eta.C) = *(lcwc.C);
-      *(local_phi.C) = *(lcwc.C);
-      splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
-
-      splitPhiEtaTimer->stop();
+        *(local_eta.C) = *(lcwc.C);
+        *(local_phi.C) = *(lcwc.C);
+        splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
+      }
 
       bool corrO = false;
       auto& cref(*(local_phi.C));
@@ -294,9 +286,10 @@ void generateCuspInfo(int orbital_set_size,
         RealType eta0 = etaMO.phi(0.0);
         ValueVector_t ELorig(npts);
         CuspCorrection cusp(info(center_idx, mo_idx));
-        computeTimer->start();
-        minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
-        computeTimer->stop();
+        {
+          ScopedTimer local_timer(computeTimer);
+          minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
+        }
         // Update shared object.  Each iteration accesses a different element and
         // this is an array (no bookkeeping data to update), so no synchronization
         // is necessary.

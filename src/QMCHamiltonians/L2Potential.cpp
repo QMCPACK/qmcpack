@@ -23,15 +23,10 @@ L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFun
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
   size_t ns    = ions.getSpeciesSet().getTotalNum();
-  PPset.resize(ns, 0);
+  PPset.resize(ns);
   PP.resize(NumIons, nullptr);
   psi_ref = &psi;
 }
-
-
-///destructor
-L2Potential::~L2Potential() { delete_iter(PPset.begin(), PPset.end()); }
-
 
 void L2Potential::resetTargetParticleSet(ParticleSet& P)
 {
@@ -43,12 +38,12 @@ void L2Potential::resetTargetParticleSet(ParticleSet& P)
 }
 
 
-void L2Potential::add(int groupID, L2RadialPotential* ppot)
+void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 {
-  PPset[groupID] = ppot;
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 
@@ -98,15 +93,72 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 }
 
 
-OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
 {
-  L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
+  K = 0.0;
+  D = 0.0;
+  D.diagonal(1.0);
+
+  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+
+  for (int iat = 0; iat < NumIons; iat++)
+  {
+    L2RadialPotential* ppot = PP[iat];
+    if (ppot == nullptr)
+      continue;
+    RealType r = d_table.getTempDists()[iat];
+    if (r < ppot->rcut)
+    {
+      PosType rv   = -1 * d_table.getTempDispls()[iat];
+      RealType vL2 = ppot->evaluate(r);
+      K += 2 * rv * vL2;
+      for (int i = 0; i < DIM; ++i)
+        D(i, i) += 2 * vL2 * r * r;
+      for (int i = 0; i < DIM; ++i)
+        for (int j = 0; j < DIM; ++j)
+          D(i, j) -= 2 * vL2 * rv[i] * rv[j];
+    }
+  }
+}
+
+
+void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
+{
+  D = 0.0;
+  D.diagonal(1.0);
+
+  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+
+  for (int iat = 0; iat < NumIons; iat++)
+  {
+    L2RadialPotential* ppot = PP[iat];
+    if (ppot == nullptr)
+      continue;
+    RealType r = d_table.getTempDists()[iat];
+    if (r < ppot->rcut)
+    {
+      PosType rv   = d_table.getTempDispls()[iat];
+      RealType vL2 = ppot->evaluate(r);
+      for (int i = 0; i < DIM; ++i)
+        D(i, i) += 2 * vL2 * r * r;
+      for (int i = 0; i < DIM; ++i)
+        for (int j = 0; j < DIM; ++j)
+          D(i, j) -= 2 * vL2 * rv[i] * rv[j];
+    }
+  }
+}
+
+
+std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
+  {
     if (PPset[ig])
     {
-      L2RadialPotential* ppot = PPset[ig]->makeClone();
-      myclone->add(ig, ppot);
+      myclone->add(ig, std::unique_ptr<L2RadialPotential>(PPset[ig]->makeClone()));
     }
+  }
   return myclone;
 }
 

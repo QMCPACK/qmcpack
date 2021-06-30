@@ -41,12 +41,17 @@ public:
    */
   WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c, bool tasking = false);
 
+  ///destructor
+  ~WaveFunctionFactory();
+
   ///read from xmlNode
   bool put(xmlNodePtr cur);
   ///get xmlNode
   xmlNodePtr getNode() const { return myNode; }
   ///get targetPsi
   TrialWaveFunction* getTWF() const { return targetPsi.get(); }
+  ///get SPOSet
+  SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
 
 private:
   /** process xmlNode to populate targetPsi
@@ -73,6 +78,9 @@ private:
   xmlNodePtr myNode;
   ///builder tree
   UPtrVector<WaveFunctionComponentBuilder> psiBuilder;
+
+  /// factory for all the sposet builders in this WF
+  SPOSetBuilderFactory sposet_builder_factory_;
 };
 
 } // namespace qmcplusplus

@@ -60,9 +60,9 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSet* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
 
-  ParticleSet* ps2 = new ParticleSet();
+  auto ps2 = std::make_unique<ParticleSet>();
   ps2->setName("particle_set_2");
-  pp.addParticleSet(ps2);
+  pp.addParticleSet(std::move(ps2));
 
   // should do nothing, since no random particlesets were specified
   pp.randomize();
@@ -91,7 +91,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
     0.1 0.2 0.3 \
   </attrib> \
 </particleset> \
-<particleset name=\"elec\" random=\"yes\" randomsrc=\"ion0\"> \
+<particleset name=\"elec\" random=\"yes\" randomsrc=\"ion0\" spinor=\"yes\"> \
    <group name=\"u\" size=\"4\"> \
       <parameter name=\"charge\">-1</parameter> \
    </group> \
@@ -110,11 +110,14 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 
   ParticleSet* ions = pp.getParticleSet("ion0");
   REQUIRE(ions != NULL);
+  REQUIRE(!ions->is_spinor_);
 
   ParticleSet* elec = pp.getParticleSet("elec");
   REQUIRE(ions != NULL);
+  REQUIRE(elec->is_spinor_);
   REQUIRE(elec->R.size() == 4);
   REQUIRE(elec->spins.size() == 4);
+
 
   // should do something
   pp.randomize();

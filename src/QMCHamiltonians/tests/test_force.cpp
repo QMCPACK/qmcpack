@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
@@ -33,8 +32,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   ParticleSet ions;
   ParticleSet elec;
@@ -80,8 +78,6 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   elec.addTable(ions);
   elec.update();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   BareForce force(ions, elec);
   force.addionion = false;
@@ -140,9 +136,6 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 // PBC case
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(5.0);
@@ -267,9 +260,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  OperatorBase* base_force2 = force.makeClone(elec, psi);
-  ForceChiesaPBCAA* force2  = dynamic_cast<ForceChiesaPBCAA*>(base_force2);
-  REQUIRE(force2 != NULL);
+  std::unique_ptr<OperatorBase> base_force2 = force.makeClone(elec, psi);
+  ForceChiesaPBCAA* force2                  = dynamic_cast<ForceChiesaPBCAA*>(base_force2.get());
+  REQUIRE(force2 != nullptr);
 
   check_force_copy(*force2, force);
 }
@@ -277,9 +270,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 // Open BC case
 TEST_CASE("Ceperley Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   //Lattice.BoxBConds = false; // periodic
   //Lattice.R.diagonal(5.0);
@@ -369,9 +359,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 // Test construction of Coulomb forces in OBC
 TEST_CASE("Ion-ion Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   ParticleSet elec;
 

@@ -24,10 +24,6 @@ namespace qmcplusplus
 {
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     : ForceBase(ref, ref),
-      myGrid(0),
-      rVs(0),
-      myGridforce(0),
-      rVsforce(0),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
@@ -48,6 +44,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   }
   if (!is_active)
   {
+    ref.update();
     update_source(ref);
 
     ewaldref::RealMat A;
@@ -100,7 +97,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << Value << std::endl;
 }
 
-CoulombPBCAA::~CoulombPBCAA() {}
+CoulombPBCAA::~CoulombPBCAA() = default;
 
 void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -302,20 +299,18 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   //AA->initBreakup(*PtclRef);
   myConst = evalConsts();
   myRcut  = AA->get_rc(); //Basis.get_rc();
-  if (rVs == 0)
-  {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
-  }
+
+  if (rVs == nullptr)
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut);
+
   if (ComputeForces)
   {
     dAA = LRCoulombSingleton::getDerivHandler(P);
-    if (rVsforce == 0)
+    if (rVsforce == nullptr)
     {
-      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGridforce);
+      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut);
     }
   }
-
-  P.update();
 }
 
 
@@ -509,12 +504,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   return res;
 }
 
-
-OperatorBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  if (is_active)
-    return new CoulombPBCAA(qp, is_active, ComputeForces);
-  else
-    return new CoulombPBCAA(*this); //nothing needs to be re-evaluated
+  return std::make_unique<CoulombPBCAA>(*this);
 }
 } // namespace qmcplusplus

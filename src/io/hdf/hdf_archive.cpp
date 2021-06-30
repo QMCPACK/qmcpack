@@ -11,8 +11,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <config.h>
 #include "hdf_archive.h"
+#ifdef HAVE_MPI
+#include "mpi3/communicator.hpp"
+#endif
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -50,16 +52,15 @@ void hdf_archive::set_access_plist()
   Mode.set(NOIO, false);
 }
 
-void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
+void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
 {
   access_id = H5P_DEFAULT;
-  myComm    = comm;
   if (comm && comm->size() > 1) //for parallel communicator
   {
     bool use_phdf5 = false;
+#if defined(ENABLE_PHDF5)
     if (request_pio)
     {
-#if defined(ENABLE_PHDF5)
       // enable parallel I/O
       MPI_Info info = MPI_INFO_NULL;
       access_id     = H5Pcreate(H5P_FILE_ACCESS);
@@ -72,10 +73,8 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
       use_phdf5 = true;
-#else
-      use_phdf5 = false;
-#endif
     }
+#endif
     Mode.set(IS_PARALLEL, use_phdf5);
     Mode.set(IS_MASTER, !comm->rank());
     if (request_pio && !use_phdf5)
@@ -92,7 +91,7 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
 }
 
 #ifdef HAVE_MPI
-void hdf_archive::set_access_plist(bool request_pio, boost::mpi3::communicator& comm)
+void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request_pio)
 {
   access_id = H5P_DEFAULT;
   if (comm.size() > 1) //for parallel communicator
@@ -108,7 +107,7 @@ void hdf_archive::set_access_plist(bool request_pio, boost::mpi3::communicator& 
       H5Pset_all_coll_metadata_ops(access_id, true);
       H5Pset_coll_metadata_write(access_id, true);
 #endif
-      H5Pset_fapl_mpio(access_id, &comm, info);
+      H5Pset_fapl_mpio(access_id, comm.get(), info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
@@ -139,7 +138,7 @@ bool hdf_archive::create(const std::string& fname, unsigned flags)
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-    std::runtime_error("Only create file in parallel or by master but not every rank!");
+    throw std::runtime_error("Only create file in parallel or by master but not every rank!");
   close();
   file_id = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
   return file_id != is_closed;

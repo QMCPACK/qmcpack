@@ -467,7 +467,7 @@ inline rocsolverStatus_t rocsolver_gqr_strided(rocsolverHandle_t handle,
     qmc_hip::hip_check(hipDeviceSynchronize(), "rocsolver_gqr_strided");
     qmc_hip::hipsolver_check(success, "rocsolver_gqr_strided");
   }
-  qmc_hip::hip_check(hipDeviceSynchronize(),"rocsolver_gqr_strided");
+  qmc_hip::hip_check(hipDeviceSynchronize(), "rocsolver_gqr_strided");
   qmc_hip::hip_check(hipGetLastError(), "rocsolver_gqr_strided");
   //qmc_hip::hipsolver_check(rocsolver_set_stream(handle,s0), "rocsolver_setStream");
 

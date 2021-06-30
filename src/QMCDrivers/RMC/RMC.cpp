@@ -35,25 +35,17 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 /// Constructor.
-RMC::RMC(MCWalkerConfiguration& w,
-         TrialWaveFunction& psi,
-         QMCHamiltonian& h,
-         Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "RMC"),
-      prestepsVMC(-1),
-      rescaleDrift("no"),
-      beta(-1),
-      beads(-1),
-      fromScratch(true)
+RMC::RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+    : QMCDriver(w, psi, h, comm, "RMC"), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
 {
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(rescaleDrift, "drift", "string");
-  m_param.add(beta, "beta", "double");
-  m_param.add(beads, "beads", "int");
-  m_param.add(resizeReptile, "resize", "int");
-  m_param.add(prestepsVMC, "vmcpresteps", "int");
+  m_param.add(rescaleDrift, "drift");
+  m_param.add(beta, "beta");
+  m_param.add(beads, "beads");
+  m_param.add(resizeReptile, "resize");
+  m_param.add(prestepsVMC, "vmcpresteps");
 
   Action.resize(3);
   Action[0] = w.addProperty("ActionBackward");
@@ -77,7 +69,7 @@ bool RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();
@@ -86,7 +78,7 @@ bool RMC::run()
       int ip                 = omp_get_thread_num();
       IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
-      MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+      MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);
       int now_loc = CurrentStep;
 
@@ -116,15 +108,19 @@ bool RMC::run()
     //why was this commented out? Are checkpoints stored some other way?
     if (storeConfigs)
       recordBlock(block);
-
     rmc_loop.stop();
-    bool enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(rmc_loop);
-    // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
 
-    if (!enough_time_for_next_iteration)
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(rmc_loop);
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("RMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("RMC", block);
+      run_time_manager.markStop();
       break;
     }
   } //block
@@ -252,8 +248,8 @@ void RMC::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1]);
     wClones[ip]->reptile = W.ReptileList[ip];
     //app_log()<<"Thread # "<<ip<< std::endl;
     // printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
@@ -269,7 +265,7 @@ void RMC::resetRun()
     }
     else
     {
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     }
 
     //this will "unroll" the reptile according to forced VMC steps (no bounce).  See beginning of function for logic of setting prestepVMC.
@@ -279,7 +275,7 @@ void RMC::resetRun()
     }
 
     //set up initial action and transprob.
-    MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+    MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
   }
 
 
@@ -291,7 +287,7 @@ void RMC::resetRun()
   {
     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
     {
-      Movers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], false);
+      Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
       branchEngine->collect(CurrentStep, W);
     }
   }

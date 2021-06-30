@@ -32,7 +32,8 @@ namespace qmcplusplus
 class MPC : public OperatorBase
 {
 protected:
-  UBspline_3d_d *VlongSpline, *DensitySpline;
+  std::shared_ptr<UBspline_3d_d> VlongSpline;
+  //std::shared_ptr<UBspline_3d_d> DensitySpline;
   double Vconst;
   void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, int N);
   void init_gvecs();
@@ -74,23 +75,23 @@ public:
 
   ~MPC();
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   /** implement all-walker stuff */
-  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   /** Do nothing */
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "MPC potential: " << PtclRef->getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void initBreakup();
 };

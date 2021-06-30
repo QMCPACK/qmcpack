@@ -36,19 +36,20 @@ namespace qmcplusplus
 QMCDriverInterface* VMCFactory::create(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       Communicate* comm)
+                                       Communicate* comm,
+                                       bool enable_profiling)
 {
   int np = omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
   QMCDriverInterface* qmc = nullptr;
 #ifdef QMC_CUDA
   if (VMCMode & 16)
-    qmc = new VMCcuda(w, psi, h, comm);
+    qmc = new VMCcuda(w, psi, h, comm, enable_profiling);
   else
 #endif
       if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMC(w, psi, h, comm);
+    qmc = new VMC(w, psi, h, comm, enable_profiling);
   }
   //else if(VMCMode == 2) //(0,1,0)
   //{

@@ -23,12 +23,12 @@ using mRealType = LRHandlerBase::mRealType;
 struct EslerCoulomb3D
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
-  inline double operator()(double r, double rinv) { return rinv; }
+  inline double operator()(double r, double rinv) const { return rinv; }
   void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }
-  inline double Xk(double k, double rc) { return -norm / (k * k) * std::cos(k * rc); }
-  inline double Fk(double k, double rc) { return -Xk(k, rc); }
+  inline double Xk(double k, double rc) const { return -norm / (k * k) * std::cos(k * rc); }
+  inline double Fk(double k, double rc) const { return -Xk(k, rc); }
   inline double integrate_r2(double r) const { return 0.5 * r * r; }
-  inline double df(double r) { return 0; }                // ignore derivatives for now
+  inline double df(double r) const { return 0; }                // ignore derivatives for now
   void reset(ParticleSet& ref, double rs) { reset(ref); } // ignore rs
 };
 
@@ -50,8 +50,7 @@ TEST_CASE("temp3d", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);
 
   handler.initBreakup(ref);

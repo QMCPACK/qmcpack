@@ -18,7 +18,6 @@
 #include "Message/OpenMP.h"
 #include "OhmmsData/AttributeSet.h"
 #include "RandomNumberControl.h"
-#include "Utilities/RandomGeneratorIO.h"
 #include "Utilities/Timer.h"
 #include "hdf/HDFVersion.h"
 #include "hdf/hdf_archive.h"
@@ -31,6 +30,7 @@
 #include <set>
 #include <exception>
 #include <iostream>
+#include <memory>
 #endif
 #include "Utilities/SimpleParser.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 ///initialize the static data members
 PrimeNumberSet<RandomGenerator_t::uint_type> RandomNumberControl::PrimeNumbers;
-std::vector<RandomGenerator_t*> RandomNumberControl::Children;
+std::vector<std::unique_ptr<RandomGenerator_t>> RandomNumberControl::Children;
 RandomGenerator_t::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
@@ -93,7 +93,7 @@ void RandomNumberControl::make_children()
   int n        = nthreads - Children.size();
   while (n)
   {
-    Children.push_back(new RandomGenerator_t);
+    Children.push_back(std::make_unique<RandomGenerator_t>());
     n--;
   }
   int rank       = OHMMS::Controller->rank();
@@ -258,8 +258,8 @@ void RandomNumberControl::read_old(const std::string& fname, Communicate* comm)
     hout.push("random");
     std::string engname;
     hout.read(slab, Random.EngineName);
-    shape[0] = static_cast<int>(slab.size(0));
-    shape[1] = static_cast<int>(slab.size(1));
+    shape[0]           = static_cast<int>(slab.size(0));
+    shape[1]           = static_cast<int>(slab.size(1));
 #endif
   }
 
@@ -380,7 +380,11 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 //Parallel read
 void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 {
-  int nthreads = omp_get_max_threads();
+  // cast integer to size_t
+  const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
+  const size_t comm_size = static_cast<size_t>(comm->size());
+  const size_t comm_rank = static_cast<size_t>(comm->rank());
+
   std::vector<uint_type> vt, mt;
   TinyVector<int, 3> shape_now(comm->size(), nthreads, Random.state_size()); //cur configuration
   TinyVector<int, 3> shape_hdf5(3, 0);                                       //configuration when file was written
@@ -404,9 +408,9 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
   vt.resize(nthreads * Random.state_size()); //buffer for children[ip]
   mt.resize(Random.state_size());            //buffer for single thread Random object of random nums
 
-  std::array<int, 2> shape{comm->size() * nthreads, Random.state_size()}; //global dims of children dataset
-  std::array<int, 2> counts{nthreads, Random.state_size()};               //local dimensions of dataset
-  std::array<int, 2> offsets{comm->rank() * nthreads, 0};                 //offsets for each process to read in
+  std::array<size_t, 2> shape{comm_size * nthreads, Random.state_size()}; //global dims of children dataset
+  std::array<size_t, 2> counts{nthreads, Random.state_size()};            //local dimensions of dataset
+  std::array<size_t, 2> offsets{comm_rank * nthreads, 0};                 //offsets for each process to read in
 
   hin.push("random"); //group that holds children[ip] random nums
   hyperslab_proxy<std::vector<uint_type>, 2> slab(vt, shape, counts, offsets);
@@ -433,7 +437,11 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 //Parallel write
 void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
 {
-  int nthreads = omp_get_max_threads();
+  // cast integer to size_t
+  const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
+  const size_t comm_size = static_cast<size_t>(comm->size());
+  const size_t comm_rank = static_cast<size_t>(comm->rank());
+
   std::vector<uint_type> vt, mt;
   TinyVector<int, 3> shape_hdf5(comm->size(), nthreads, Random.state_size()); //configuration at write time
   vt.reserve(nthreads * Random.state_size()); //buffer for random numbers from children[ip] of each thread
@@ -447,9 +455,9 @@ void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
   }
   Random.save(mt); //get nums for single random object (no threads)
 
-  std::array<int, 2> shape{comm->size() * nthreads, Random.state_size()}; //global dimensions
-  std::array<int, 2> counts{nthreads, Random.state_size()};               //local dimensions
-  std::array<int, 2> offsets{comm->rank() * nthreads, 0};                 //offset for the file write
+  std::array<size_t, 2> shape{comm_size * nthreads, Random.state_size()}; //global dimensions
+  std::array<size_t, 2> counts{nthreads, Random.state_size()};            //local dimensions
+  std::array<size_t, 2> offsets{comm_rank * nthreads, 0};                 //offset for the file write
 
   hout.push(hdf::main_state);
   hout.write(shape_hdf5, "nprocs_nthreads_statesize"); //save the shape of the data at write
@@ -471,11 +479,15 @@ void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
 //Scatter read
 void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 {
-  int nthreads = omp_get_max_threads();
+  // cast integer to size_t
+  const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
+  const size_t comm_size = static_cast<size_t>(comm->size());
+  const size_t comm_rank = static_cast<size_t>(comm->rank());
+
   std::vector<uint_type> vt, vt_tot, mt, mt_tot;
-  TinyVector<int, 3> shape_now(comm->size(), nthreads, Random.state_size()); //current configuration
-  TinyVector<int, 3> shape_hdf5;                                             //configuration when hdf5 file was written
-  std::array<int, 2> shape{comm->size() * nthreads, Random.state_size()};    //dimensions of children dataset
+  TinyVector<size_t, 3> shape_now(comm_size, nthreads, Random.state_size()); //current configuration
+  TinyVector<size_t, 3> shape_hdf5;                                          //configuration when hdf5 file was written
+  std::array<size_t, 2> shape{comm_size * nthreads, Random.state_size()};    //dimensions of children dataset
 
   //grab configuration of threads/procs and Random.state_size() in hdf5 file
   if (comm->rank() == 0)
@@ -538,10 +550,14 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 //scatter write
 void RandomNumberControl::write_rank_0(hdf_archive& hout, Communicate* comm)
 {
-  int nthreads = omp_get_max_threads();
+  // cast integer to size_t
+  const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
+  const size_t comm_size = static_cast<size_t>(comm->size());
+  const size_t comm_rank = static_cast<size_t>(comm->rank());
+
   std::vector<uint_type> vt, vt_tot, mt, mt_tot;
-  std::array<int, 2> shape{comm->size() * nthreads, Random.state_size()};     //dimensions of children dataset
-  TinyVector<int, 3> shape_hdf5(comm->size(), nthreads, Random.state_size()); //configuration at write time
+  std::array<size_t, 2> shape{comm_size * nthreads, Random.state_size()};     //dimensions of children dataset
+  TinyVector<size_t, 3> shape_hdf5(comm_size, nthreads, Random.state_size()); //configuration at write time
   vt.reserve(nthreads * Random.state_size()); //buffer for children[ip] (Random object of seeds for each thread)
   mt.reserve(Random.state_size()); //buffer for single Random object of seeds, one per proc regardless of thread num
 

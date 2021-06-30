@@ -4,25 +4,22 @@
 #//
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory 
+#// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
-#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign 
+#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR particle_base)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR particle_base)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+add_executable(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_attrib_ops.cpp)
+use_fake_rng(${UTEST_EXE})
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle qmcfakerng)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} qmcutil containers platform_omptarget)
+endif()
 
-
-ADD_EXECUTABLE(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_attrib_ops.cpp)
-USE_FAKE_RNG(${UTEST_EXE})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcparticle qmcfakerng)
-IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil containers)
-ENDIF()
-
-#ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

@@ -17,7 +17,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 
 namespace qmcplusplus
@@ -27,15 +27,18 @@ using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
 
-DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl)
+DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
+                                     TrialWaveFunction& psi,
+                                     ParticleSet* Pcl,
+                                     const WaveFunctionFactory& factory)
+    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
 {
   reset();
 }
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc), wf_factory_(master.wf_factory_)
 {
   reset();
   set_state(master);
@@ -53,9 +56,9 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-OperatorBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
-  return new DensityMatrices1B(*this, P, psi);
+  return std::make_unique<DensityMatrices1B>(*this, P, psi);
 }
 
 
@@ -252,7 +255,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    basis_functions.add(get_sposet(sposets[i]));
+    basis_functions.add(wf_factory_.getSPOSet(sposets[i]));
   }
   basis_size = basis_functions.size();
 
@@ -360,15 +363,14 @@ void DensityMatrices1B::initialize()
     normalize();
   }
 
-  const TimerNameList_t<DMTimers>
-    DMTimerNames = {{DM_eval              , "DensityMatrices1B::evaluate"},
-                    {DM_gen_samples       , "DensityMatrices1B::generate_samples"},
-                    {DM_gen_sample_basis  , "DensityMatrices1B::generate_sample_basis"},
-                    {DM_gen_sample_ratios , "DensityMatrices1B::generate_sample_ratios"},
-                    {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
-                    {DM_matrix_products   , "DensityMatrices1B::evaluate_matrix_products"},
-                    {DM_accumulate        , "DensityMatrices1B::evaluate_matrix_accum"}};
-  setup_timers(timers,DMTimerNames,timer_level_fine);
+  const TimerNameList_t<DMTimers> DMTimerNames = {{DM_eval, "DensityMatrices1B::evaluate"},
+                                                  {DM_gen_samples, "DensityMatrices1B::generate_samples"},
+                                                  {DM_gen_sample_basis, "DensityMatrices1B::generate_sample_basis"},
+                                                  {DM_gen_sample_ratios, "DensityMatrices1B::generate_sample_ratios"},
+                                                  {DM_gen_particle_basis, "DensityMatrices1B::generate_particle_basis"},
+                                                  {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
+                                                  {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
+  setup_timers(timers, DMTimerNames, timer_level_fine);
 
   initialized = true;
 }
@@ -521,7 +523,7 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 }
 
 
-void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
 #if defined(QMC_COMPLEX)
   std::vector<int> ng(3);
@@ -543,11 +545,10 @@ void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5
   hid_t ngid        = H5Gcreate(dgid, nname.c_str(), 0);
   for (int s = 0; s < nspecies; ++s)
   {
-    observable_helper* oh;
-    oh = new observable_helper(species_name[s]);
-    oh->set_dimensions(ng, nindex + s * nentries);
-    oh->open(ngid);
-    h5desc.push_back(oh);
+    h5desc.emplace_back(species_name[s]);
+    auto& oh = h5desc.back();
+    oh.set_dimensions(ng, nindex + s * nentries);
+    oh.open(ngid);
   }
 
   if (energy_mat)
@@ -556,11 +557,10 @@ void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5
     hid_t egid        = H5Gcreate(dgid, ename.c_str(), 0);
     for (int s = 0; s < nspecies; ++s)
     {
-      observable_helper* oh;
-      oh = new observable_helper(species_name[s]);
-      oh->set_dimensions(ng, eindex + s * nentries);
-      oh->open(egid);
-      h5desc.push_back(oh);
+      h5desc.emplace_back(species_name[s]);
+      auto& oh = h5desc.back();
+      oh.set_dimensions(ng, eindex + s * nentries);
+      oh.open(egid);
     }
   }
 }
@@ -624,52 +624,36 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   generate_sample_ratios(Psi_NM);     // conj(Psi ratio) : particles x samples
   generate_particle_basis(P, Phi_NB); // conj(basis)     : particles x basis_size
   // perform integration via matrix products
-  timers[DM_matrix_products]->start();
-  for (int s = 0; s < nspecies; ++s)
   {
-    Matrix_t& Psi_nm     = *Psi_NM[s];
-    Matrix_t& Phi_Psi_nb = *Phi_Psi_NB[s];
-    Matrix_t& Phi_nb     = *Phi_NB[s];
-    diag_product(Psi_nm, sample_weights, Psi_nm);
-    product(Psi_nm, Phi_MB, Phi_Psi_nb);       // ratio*basis : particles x basis_size
-    product_AtB(Phi_nb, Phi_Psi_nb, *N_BB[s]); // conj(basis)^T*ratio*basis : basis_size^2
-    if (energy_mat)
-    {
-      Vector_t& E = *E_N[s];
-      diag_product(E, Phi_nb, Phi_nb);           // diag(energies)*qmcplusplus::conj(basis)
-      product_AtB(Phi_nb, Phi_Psi_nb, *E_BB[s]); // (energies*conj(basis))^T*ratio*basis
-    }
-  }
-  timers[DM_matrix_products]->stop();
-  // accumulate data into collectables
-  timers[DM_accumulate]->start();
-  const int basis_size2 = basis_size * basis_size;
-  int ij                = nindex;
-  for (int s = 0; s < nspecies; ++s)
-  {
-    //int ij=nindex; // for testing
-    const Matrix_t& NDM = *N_BB[s];
-    for (int n = 0; n < basis_size2; ++n)
-    {
-      Value_t val = NDM(n);
-      P.Collectables[ij] += real(val);
-      ij++;
-#if defined(QMC_COMPLEX)
-      P.Collectables[ij] += imag(val);
-      ij++;
-#endif
-    }
-  }
-  if (energy_mat)
-  {
-    int ij = eindex;
+    ScopedTimer local_timer(timers[DM_matrix_products]);
     for (int s = 0; s < nspecies; ++s)
     {
-      //int ij=eindex; // for testing
-      const Matrix_t& EDM = *E_BB[s];
+      Matrix_t& Psi_nm     = *Psi_NM[s];
+      Matrix_t& Phi_Psi_nb = *Phi_Psi_NB[s];
+      Matrix_t& Phi_nb     = *Phi_NB[s];
+      diag_product(Psi_nm, sample_weights, Psi_nm);
+      product(Psi_nm, Phi_MB, Phi_Psi_nb);       // ratio*basis : particles x basis_size
+      product_AtB(Phi_nb, Phi_Psi_nb, *N_BB[s]); // conj(basis)^T*ratio*basis : basis_size^2
+      if (energy_mat)
+      {
+        Vector_t& E = *E_N[s];
+        diag_product(E, Phi_nb, Phi_nb);           // diag(energies)*qmcplusplus::conj(basis)
+        product_AtB(Phi_nb, Phi_Psi_nb, *E_BB[s]); // (energies*conj(basis))^T*ratio*basis
+      }
+    }
+  }
+  // accumulate data into collectables
+  {
+    ScopedTimer local_timer(timers[DM_accumulate]);
+    const int basis_size2 = basis_size * basis_size;
+    int ij                = nindex;
+    for (int s = 0; s < nspecies; ++s)
+    {
+      //int ij=nindex; // for testing
+      const Matrix_t& NDM = *N_BB[s];
       for (int n = 0; n < basis_size2; ++n)
       {
-        Value_t val = EDM(n);
+        Value_t val = NDM(n);
         P.Collectables[ij] += real(val);
         ij++;
 #if defined(QMC_COMPLEX)
@@ -678,8 +662,26 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
 #endif
       }
     }
+    if (energy_mat)
+    {
+      int ij = eindex;
+      for (int s = 0; s < nspecies; ++s)
+      {
+        //int ij=eindex; // for testing
+        const Matrix_t& EDM = *E_BB[s];
+        for (int n = 0; n < basis_size2; ++n)
+        {
+          Value_t val = EDM(n);
+          P.Collectables[ij] += real(val);
+          ij++;
+#if defined(QMC_COMPLEX)
+          P.Collectables[ij] += imag(val);
+          ij++;
+#endif
+        }
+      }
+    }
   }
-  timers[DM_accumulate]->stop();
 
 
   // jtk come back to this
@@ -932,10 +934,10 @@ inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
         rmin[d]     = std::min(rmin[d], rd);
         rmax[d]     = std::max(rmax[d], rd);
         rmean[d] += rd;
-        rstd[d]  += rd * rd;
+        rstd[d] += rd * rd;
       }
     rmean /= rsamples.size();
-    rstd  /= rsamples.size();
+    rstd /= rsamples.size();
     for (int d = 0; d < DIM; ++d)
       rstd[d] = std::sqrt(rstd[d] - rmean[d] * rmean[d]);
     app_log() << "\nrsamples properties:" << std::endl;
@@ -1172,7 +1174,7 @@ void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
       Matrix_t& P_nm = *Psi_nm[s];
       for (int n = 0; n < species_size[s]; ++n, ++p)
       {
-        P_nm(n,m) = qmcplusplus::conj(psi_ratios[p]);
+        P_nm(n, m) = qmcplusplus::conj(psi_ratios[p]);
       }
     }
   }

@@ -1,31 +1,37 @@
-
-INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 
 # Runs unit tests
-FUNCTION( ADD_UNIT_TEST TESTNAME TEST_BINARY )
-    MESSAGE_VERBOSE("Adding test ${TESTNAME}")
-    IF ( HAVE_MPI )
-        ADD_TEST(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${TEST_BINARY} ${ARGN})
-        #SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1 )
-    ELSE()
-        ADD_TEST(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${ARGN})
-        #SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1 )
-    ENDIF()
-    SET(TEST_LABELS_TEMP "")
-    ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP )
-    SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit")
-ENDFUNCTION()
+function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
+  message_verbose("Adding test ${TESTNAME}")
+  math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
+  if(HAVE_MPI)
+    add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
+                                      ${TEST_BINARY} ${ARGN})
+    set(TEST_ADDED TRUE)
+  else()
+    if((${PROCS} STREQUAL "1"))
+      add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${ARGN})
+      set(TEST_ADDED TRUE)
+    else()
+      message_verbose("Disabling test ${TESTNAME} (building without MPI)")
+    endif()
+  endif()
 
-FUNCTION( ADD_MPI_UNIT_TEST TESTNAME TEST_BINARY PROC_COUNT )
-    MESSAGE_VERBOSE("Adding test ${TESTNAME}")
-    IF ( HAVE_MPI )
-      ADD_TEST(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROC_COUNT} ${MPIEXEC_PREFLAGS} ${TEST_BINARY} ${ARGN})
-      # Tests should be able to deal with any number of threads but mpi aware unit tests aren't
-      # guaranteed yet.
-    SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1 )
-    SET(TEST_LABELS_TEMP "")
-    ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP )
-    SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit")
-    ENDIF()
-ENDFUNCTION()
+  if(TEST_ADDED)
+    set_tests_properties(${TESTNAME} PROPERTIES PROCESSORS ${TOT_PROCS} ENVIRONMENT OMP_NUM_THREADS=${THREADS}
+                                                PROCESSOR_AFFINITY TRUE)
 
+    if(QMC_CUDA
+       OR ENABLE_CUDA
+       OR ENABLE_OFFLOAD)
+      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
+    endif()
+  endif()
+
+  set(TEST_LABELS_TEMP "")
+  add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
+  set_property(
+    TEST ${TESTNAME}
+    APPEND
+    PROPERTY LABELS "unit")
+endfunction()

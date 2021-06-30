@@ -33,11 +33,11 @@ void SPOSetBuilder::reserve_states(int nsets)
   int sets_needed = nsets - states.size();
   if (sets_needed > 0)
     for (int s = 0; s < sets_needed; ++s)
-      states.push_back(new SPOSetInfo());
+      states.push_back(std::make_unique<SPOSetInfo>());
 }
 
 
-SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
   return 0;
@@ -70,7 +70,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   // process general sposet construction requests
   //   and preserve legacy interface
-  SPOSet* sposet = 0;
+  std::unique_ptr<SPOSet> sposet;
   if (legacy && input_info.legacy_request)
     sposet = createSPOSetFromXML(cur);
   else
@@ -86,7 +86,8 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     abort();
 #else
     // create sposet with rotation
-    auto* rot_spo   = new RotatedSPOs(sposet);
+    auto& sposet_ref = *sposet;
+    auto rot_spo    = std::make_unique<RotatedSPOs>(std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
@@ -100,16 +101,16 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     }
 
     // pass sposet name and rename sposet before rotation
-    if (!sposet->getName().empty())
+    if (!sposet_ref.getName().empty())
     {
-      rot_spo->setName(sposet->getName());
-      sposet->setName(sposet->getName() + "_before_rotation");
+      rot_spo->setName(sposet_ref.getName());
+      sposet_ref.setName(sposet_ref.getName() + "_before_rotation");
     }
-    if (sposet->getName().empty())
-      sposet->setName(spo_object_name + "_before_rotation");
+    if (sposet_ref.getName().empty())
+      sposet_ref.setName(spo_object_name + "_before_rotation");
 
     // overwrite sposet
-    sposet = rot_spo;
+    sposet = std::move(rot_spo);
 #endif
   }
 
@@ -121,10 +122,10 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_warning() << "SPOSet object name mismatched! input name: " << spo_object_name
                   << "   object name: " << sposet->getName() << std::endl;
 
+  sposet->checkObject();
   // builder owns created sposets
-  sposets.push_back(sposet);
-
-  return sposet;
+  sposets.push_back(std::move(sposet));
+  return sposets.back().get();
 }
 
 } // namespace qmcplusplus

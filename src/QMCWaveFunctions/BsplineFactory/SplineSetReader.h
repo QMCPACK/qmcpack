@@ -49,18 +49,18 @@ struct SplineSetReader : public BsplineReaderBase
   fftw_plan FFTplan;
 
   SplineSetReader(EinsplineSetBuilder* e)
-      : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(0), FFTplan(NULL)
+      : BsplineReaderBase(e), spline_r(nullptr), spline_i(nullptr), bspline(nullptr), FFTplan(nullptr)
   {}
 
-  ~SplineSetReader() { clear(); }
+  ~SplineSetReader() override { clear(); }
 
   void clear()
   {
     einspline::destroy(spline_r);
     einspline::destroy(spline_i);
-    if (FFTplan != NULL)
+    if (FFTplan != nullptr)
       fftw_destroy_plan(FFTplan);
-    FFTplan = NULL;
+    FFTplan = nullptr;
   }
 
   // set info for Hybrid
@@ -71,67 +71,63 @@ struct SplineSetReader : public BsplineReaderBase
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  void export_MultiSpline(multi_UBspline_3d_z** target)
+  std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() override
   {
-    *target                        = new multi_UBspline_3d_z;
-    const auto* source_MultiSpline = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
+    Ugrid xyz_grid[3];
+    BCtype_d xyz_bc_d[3];
+    set_grid(bspline->HalfG, xyz_grid, xyz_bc_d);
 
-    (*target)->spcode   = MULTI_U3D;
-    (*target)->tcode    = DOUBLE_COMPLEX;
-    (*target)->coefs    = (complex_double*)source_MultiSpline->coefs;
-    (*target)->x_stride = source_MultiSpline->x_stride / 2;
-    (*target)->y_stride = source_MultiSpline->y_stride / 2;
-    (*target)->z_stride = source_MultiSpline->z_stride / 2;
+    BCtype_z xyz_bc[3];
+    for (int i = 0; i< 3; i++)
+    {
+      xyz_bc[i].lCode = xyz_bc_d[i].lCode;
+      xyz_bc[i].rCode = xyz_bc_d[i].rCode;
+    }
 
-    (*target)->x_grid.start     = source_MultiSpline->x_grid.start;
-    (*target)->x_grid.end       = source_MultiSpline->x_grid.end;
-    (*target)->x_grid.num       = source_MultiSpline->x_grid.num;
-    (*target)->x_grid.delta     = source_MultiSpline->x_grid.delta;
-    (*target)->x_grid.delta_inv = source_MultiSpline->x_grid.delta_inv;
-    (*target)->y_grid.start     = source_MultiSpline->y_grid.start;
-    (*target)->y_grid.end       = source_MultiSpline->y_grid.end;
-    (*target)->y_grid.num       = source_MultiSpline->y_grid.num;
-    (*target)->y_grid.delta     = source_MultiSpline->y_grid.delta;
-    (*target)->y_grid.delta_inv = source_MultiSpline->y_grid.delta_inv;
-    (*target)->z_grid.start     = source_MultiSpline->z_grid.start;
-    (*target)->z_grid.end       = source_MultiSpline->z_grid.end;
-    (*target)->z_grid.num       = source_MultiSpline->z_grid.num;
-    (*target)->z_grid.delta     = source_MultiSpline->z_grid.delta;
-    (*target)->z_grid.delta_inv = source_MultiSpline->z_grid.delta_inv;
+    const auto* source = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
+    std::unique_ptr<multi_UBspline_3d_z> target;
+    target.reset(einspline::create(target.get(), xyz_grid, xyz_bc, source->num_splines / 2));
 
-    (*target)->xBC.lCode  = source_MultiSpline->xBC.lCode;
-    (*target)->xBC.rCode  = source_MultiSpline->xBC.rCode;
-    (*target)->xBC.lVal_r = source_MultiSpline->xBC.lVal;
-    (*target)->xBC.lVal_i = source_MultiSpline->xBC.lVal;
-    (*target)->xBC.rVal_r = source_MultiSpline->xBC.rVal;
-    (*target)->xBC.rVal_i = source_MultiSpline->xBC.rVal;
-    (*target)->yBC.lCode  = source_MultiSpline->yBC.lCode;
-    (*target)->yBC.rCode  = source_MultiSpline->yBC.rCode;
-    (*target)->yBC.lVal_r = source_MultiSpline->yBC.lVal;
-    (*target)->yBC.lVal_i = source_MultiSpline->yBC.lVal;
-    (*target)->yBC.rVal_r = source_MultiSpline->yBC.rVal;
-    (*target)->yBC.rVal_i = source_MultiSpline->yBC.rVal;
-    (*target)->zBC.lCode  = source_MultiSpline->zBC.lCode;
-    (*target)->zBC.rCode  = source_MultiSpline->zBC.rCode;
-    (*target)->zBC.lVal_r = source_MultiSpline->zBC.lVal;
-    (*target)->zBC.lVal_i = source_MultiSpline->zBC.lVal;
-    (*target)->zBC.rVal_r = source_MultiSpline->zBC.rVal;
-    (*target)->zBC.rVal_i = source_MultiSpline->zBC.rVal;
+    if (source->x_grid.num != target->x_grid.num ||
+        source->y_grid.num != target->y_grid.num ||
+        source->z_grid.num != target->z_grid.num )
+     throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent grid dimensions.");
 
-    (*target)->num_splines = source_MultiSpline->num_splines / 2;
-    (*target)->coefs_size  = source_MultiSpline->coefs_size / 2;
-    // (*target)->lapl3 = (complex_double*) malloc (6*sizeof(double)*(*target)->z_stride);
+    if (source->coefs_size != target->coefs_size * 2)
+     throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent coefs_size.");
+
+    std::copy_n(source->coefs, source->coefs_size, (double*) target->coefs);
+
+    return target;
   }
 
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  void export_MultiSpline(multi_UBspline_3d_d** target)
+  std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() override
   {
-    *target = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
+    Ugrid xyz_grid[3];
+    BCtype_d xyz_bc[3];
+    set_grid(bspline->HalfG, xyz_grid, xyz_bc);
+
+    const auto* source = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
+    std::unique_ptr<multi_UBspline_3d_d> target;
+    target.reset(einspline::create(target.get(), xyz_grid, xyz_bc, source->num_splines));
+
+    if (source->x_grid.num != target->x_grid.num ||
+        source->y_grid.num != target->y_grid.num ||
+        source->z_grid.num != target->z_grid.num )
+     throw std::runtime_error("export_MultiSplineDouble failed for inconsistent grid dimensions.");
+
+    if (source->coefs_size != target->coefs_size)
+     throw std::runtime_error("export_MultiSplineDouble failed for inconsistent coefs_size.");
+
+    std::copy_n(source->coefs, source->coefs_size, target->coefs);
+
+    return target;
   }
 
-  SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
+  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup) override
   {
     ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
@@ -154,15 +150,13 @@ struct SplineSetReader : public BsplineReaderBase
     typename splineset_t::BCType xyz_bc[3];
     bool havePsig = set_grid(bspline->HalfG, xyz_grid, xyz_bc);
     if (!havePsig)
-    {
-      APP_ABORT("SplineSetReader needs psi_g. Set precision=\"double\".");
-    }
+      myComm->barrier_and_abort("SplineSetReader needs psi_g. Set precision=\"double\".");
     bspline->create_spline(xyz_grid, xyz_bc);
-    //    int TwistNum = mybuilder->TwistNum;
+
     std::ostringstream oo;
     oo << bandgroup.myName << ".g" << MeshSize[0] << "x" << MeshSize[1] << "x" << MeshSize[2] << ".h5";
-    std::string splinefile = oo.str(); //bandgroup.myName+".h5";
-    //=make_spline_filename(mybuilder->H5FileName,mybuilder->TileMatrix,spin,TwistNum,bandgroup.GroupID,MeshSize);
+
+    const std::string splinefile(oo.str());
     bool root       = (myComm->rank() == 0);
     int foundspline = 0;
     Timer now;
@@ -248,7 +242,7 @@ struct SplineSetReader : public BsplineReaderBase
     }
 
     clear();
-    return bspline;
+    return std::unique_ptr<SPOSet>{bspline};
   }
 
   /** fft and spline cG
@@ -305,15 +299,21 @@ struct SplineSetReader : public BsplineReaderBase
         int ti        = cur_bands[iorb_h5].TwistIndex;
         std::string s = psi_g_path(ti, spin, cur_bands[iorb_h5].BandIndex);
         if (!h5f.readEntry(cG, s))
-          APP_ABORT("SplineSetReader Failed to read band(s) from h5!\n");
+        {
+          std::ostringstream msg;
+          msg << "SplineSetReader Failed to read band(s) from h5 file. "
+              << "Attemped dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
+          throw std::runtime_error(msg.str());
+        }
         double total_norm = compute_norm(cG);
         if ((checkNorm) && (std::abs(total_norm - 1.0) > PW_COEFF_NORM_TOLERANCE))
         {
-          std::cerr << "The orbital " << iorb_h5 << " has a wrong norm " << total_norm
-                    << ", computed from plane wave coefficients!" << std::endl
-                    << "This may indicate a problem with the HDF5 library versions used "
-                    << "during wavefunction conversion or read." << std::endl;
-          APP_ABORT("SplineSetReader Wrong orbital norm!");
+          std::ostringstream msg;
+          msg << "SplineSetReader The orbital " << iorb_h5 << " has a wrong norm " << total_norm
+              << ", computed from plane wave coefficients!" << std::endl
+              << "This may indicate a problem with the HDF5 library versions used "
+              << "during wavefunction conversion or read." << std::endl;
+          throw std::runtime_error(msg.str());
         }
         fft_spline(cG, ti);
         bspline->set_spline(spline_r, spline_i, cur_bands[iorb_h5].TwistIndex, iorb, 0);
@@ -336,44 +336,8 @@ struct SplineSetReader : public BsplineReaderBase
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
-    //not used by may be enabled later
-    APP_ABORT("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
-    int nx = MeshSize[0];
-    int ny = MeshSize[1];
-    int nz = MeshSize[2];
-    splineData_r.resize(nx, ny, nz);
-    splineData_i.resize(ny, ny, nz);
-    Array<std::complex<double>, 3> rawData(nx, ny, nz);
-    const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
-
-    // create single splines as an intermediate storage
-    TinyVector<double, 3> start(0.0);
-    TinyVector<double, 3> end(1.0);
-    spline_r = einspline::create(spline_r, start, end, MeshSize, bspline->HalfG);
-    if (bspline->is_complex)
-      spline_i = einspline::create(spline_i, start, end, MeshSize, bspline->HalfG);
-
-    //this will be parallelized with OpenMP
-    int N = bandgroup.getNumDistinctOrbitals();
-    for (int iorb = 0; iorb < N; ++iorb)
-    {
-      //check dimension
-      if (myComm->rank() == 0)
-      {
-        std::string path = psi_r_path(cur_bands[iorb].TwistIndex, spin, cur_bands[iorb].BandIndex);
-        HDFAttribIO<Array<std::complex<double>, 3>> h_splineData(rawData);
-        h_splineData.read(mybuilder->H5FileID, path.c_str());
-        simd::copy(splineData_r.data(), splineData_i.data(), rawData.data(), rawData.size());
-      }
-      mpi::bcast(*myComm, splineData_r);
-      einspline::set(spline_r, splineData_r.data());
-      if (bspline->is_complex)
-      {
-        mpi::bcast(*myComm, splineData_i);
-        einspline::set(spline_i, splineData_i.data());
-      }
-      bspline->set_spline(spline_r, spline_i, cur_bands[iorb].TwistIndex, iorb, 0);
-    }
+    // old implementation buried in the history
+    myComm->barrier_and_abort("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
   }
 };
 } // namespace qmcplusplus

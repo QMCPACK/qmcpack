@@ -41,7 +41,7 @@ public:
                          std::size_t sz = MAXIMUM_EMPLACE_BUFFER_SIZE)
       : M(std::addressof(mat_)), m(nullptr)
   {
-    m = std::move(std::make_unique<shm_mutex>(node));
+    m = std::make_unique<shm_mutex>(node);
     buff.reserve(std::max(sz, std::size_t(0)));
   }
 

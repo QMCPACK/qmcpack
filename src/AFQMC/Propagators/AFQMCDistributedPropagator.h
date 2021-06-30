@@ -73,7 +73,7 @@ public:
   AFQMCDistributedPropagator(AFQMCDistributedPropagator&& other) : base(std::move(other)), core_comm()
   {
     // move constructor for communicator seems broken
-    core_comm = std::move(TG.TG().split(TG.getLocalTGRank(), TG.TG().rank()));
+    core_comm = TG.TG().split(TG.getLocalTGRank(), TG.TG().rank());
   }
   AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = delete;
 

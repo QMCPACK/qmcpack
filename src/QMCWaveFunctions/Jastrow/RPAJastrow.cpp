@@ -31,8 +31,8 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager)
-    : WaveFunctionComponent("RPAJastrow"), IsManager(is_manager), targetPtcl(target)
+RPAJastrow::RPAJastrow(ParticleSet& target)
+    : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
 {
   Optimizable = true;
 }
@@ -66,8 +66,8 @@ bool RPAJastrow::put(xmlNodePtr cur)
   Kc                = -1.0;
   std::string ID_Rs = "RPA_rs";
   ParameterSet params;
-  params.add(Rs, "rs", "double");
-  params.add(Kc, "kc", "double");
+  params.add(Rs, "rs");
+  params.add(Kc, "kc");
   params.put(cur);
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
   return true;
@@ -188,18 +188,18 @@ void RPAJastrow::makeShortRange()
   Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
-  SRA   = new ShortRangePartAdapter<RealType>(myHandler);
-  SRA->setRmax(Rcut);
-  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl, IsManager);
+  ShortRangePartAdapter<RealType> SRA(myHandler);
+  SRA.setRmax(Rcut);
+  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl);
   size_t nparam                              = 12;  // number of Bspline parameters
   size_t npts                                = 100; // number of 1D grid points for basis functions
-  RealType cusp                              = SRA->df(0);
+  RealType cusp                              = SRA.df(0);
   RealType delta                             = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
-    Y[i] = SRA->evaluate(X[i]);
+    Y[i] = SRA.evaluate(X[i]);
   }
   X[npts]              = npts * delta;
   Y[npts]              = 0.0;
@@ -209,7 +209,7 @@ void RPAJastrow::makeShortRange()
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
-    Y[i] = SRA->evaluate(X[i]);
+    Y[i] = SRA.evaluate(X[i]);
   }
   j2->addFunc(0, 0, nfunc);
   ShortRangeRPA = j2;
@@ -232,7 +232,7 @@ void RPAJastrow::reportStatus(std::ostream& os)
     Psi[i]->reportStatus(os);
 }
 
-RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
+RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)
 {
@@ -338,7 +338,7 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
                                          tpq);
   }
 
-  RPAJastrow* myClone = new RPAJastrow(tpq, IsManager);
+  RPAJastrow* myClone = new RPAJastrow(tpq);
   myClone->Rcut       = Rcut;
   myClone->Kc         = Kc;
   myClone->setHandler(tempHandler);

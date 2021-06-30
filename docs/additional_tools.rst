@@ -71,7 +71,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
 
   Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
 
-   convert [-gaussian|-casino|-gamess|-orbitals]
+   convert [-gaussian|gamess|-orbitals]
    filename
   [-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]
   [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
@@ -81,7 +81,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
   -threshold 0.01 -TargetState 0 -prefix sample
   When the input format is missing, the  extension of filename is used to determine
   the format
-   *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.h5 -> hdf5 format
+   *.Fchk -> gaussian; *.out -> gamess; *.h5 -> hdf5 format
 
 As an example, to convert a GAMESS calculation using a single determinant, the following use is sufficient:
 
@@ -277,18 +277,16 @@ prefix ``Mysim`` and output files will be
 
 ``convert4qmc`` input type:
 
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | **option name** | **description**                                                            |                     |
-  +=================+============================================================================+=====================+
-  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|                     |
-  |                 | all codes  in molden2qmc                                                   | Actively maintained |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gamess``     | Gamess code                                                                | Maintained          |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gaussian``   | Gaussian code                                                              | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-casino``     | Casino code                                                                | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
+  +-----------------+----------------------------------------------------------------------------+
+  | **option name** | **description**                                                            |
+  +=================+============================================================================+
+  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|
+  |                 | all codes  in molden2qmc                                                   |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-gamess``     | Gamess code                                                                |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-gaussian``   | Gaussian code                                                              |
+  +-----------------+----------------------------------------------------------------------------+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
@@ -694,11 +692,11 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 pw2qmcpack.x
 ~~~~~~~~~~~~
 
-``pw2qmcpack.x`` is an executable that converts PWSCF wavefunctions to QMCPACK readable
-HDF5 format.  This utility is built alongside the QE postprocessing utilities.
-This utility is written in Fortran90 and is distributed as a patch of the QE
-source code.  The patch, as well as automated QE download and patch scripts, can be found in
-``qmcpack/external_codes/quantum_espresso``.
+``pw2qmcpack.x`` is an executable that converts PWSCF wavefunctions from the Quantum ESPRESSO (QE) package to QMCPACK readable
+HDF5 format.  This utility is built alongside the QE postprocessing utilities. This utility is written in Fortran90 and is
+distributed as a patch of the QE source code.  The patch, as well as automated QE download and patch scripts, can be found in
+``qmcpack/external_codes/quantum_espresso``. Once built, we recommend also build QMCPACK with the QE_BIN option pointing to the
+build pw.x and pw2qmcpack.x directory. This will enable workflow tests to be run.
 
 pw2qmcpack can be used in serial in small systems and should be used in parallel with large systems for best performance. The K_POINT gamma optimization is not supported.
 
@@ -757,14 +755,14 @@ After the wavefunction file is written (basename.sample in this case) one can us
 
 This reads the Qbox wavefunction and performs the Fourier transform before saving to a QMCPACK eshdf format wavefunction.  Currently multiple k-points are supported, but due to difficulties with the qbox wavefunction file format, the single particle orbitals do not have their proper energies associated with them.  This means that when tiling from a primitive cell to a supercell, the lowest n single particle orbitals from all necessary k-points will be used.  This can be problematic in the case of a metal and this feature should be used with EXTREME caution.
 
-In the case of quantum espresso, QE must be compiled with HDF support.  If this is the case, then an eshdf file can be generated by targeting the data-file-schema.xml file
-generated in the output of quantum espresso.  For example, if one is running a calculation with outdir = 'out' and prefix='Pt' then the converter can be invoked as:
+In the case of Quantum ESPRESSO, QE must be compiled with HDF support.  If this is the case, then an eshdf file can be generated by targeting the data-file-schema.xml file
+generated in the output of Quantum ESPRESSO.  For example, if one is running a calculation with outdir = 'out' and prefix='Pt' then the converter can be invoked as:
 
 ::
 
   convertpw4qmc out/Pt.save/data-file-schema.xml -o qmcpackWavefunction.h5
 
-Note that this method is insensitive to parallelization options given to quantum espresso.  Additionally, it supports noncollinear magnetism and can be used to generate
+Note that this method is insensitive to parallelization options given to Quantum ESPRESSO.  Additionally, it supports noncollinear magnetism and can be used to generate
 wavefunctions suitable for qmcpack calculations with spin-orbit coupling.
 
 .. _ppconvert:
@@ -772,20 +770,22 @@ wavefunctions suitable for qmcpack calculations with spin-orbit coupling.
 ppconvert
 ~~~~~~~~~
 
-``ppconvert`` is a utility to convert PPs between different commonly used formats.
-It is a stand-alone C++ executable that is not built by default but that is accessible via adding
-``-DBUILD_PPCONVERT=1`` to CMake and then typing ``make ppconvert``.
-Currently it converts CASINO, FHI, UPF (generated by OPIUM), BFD, and GAMESS formats to several other formats
-including XML (QMCPACK) and UPF (QE). See all the formats via ``ppconvert -h``.
-For output formats requiring Kleinman-Bylander projectors, the atom will be solved with DFT
-if the projectors are not provided in the input formats.
+``ppconvert`` is a utility to convert PPs between different commonly used formats. As with all operations on pseudopotentials,
+great care should be exercised when using this tool. The tool is not yet considered to be fully robust and converted potentials
+should be examined carefully. Please report any issues. Generally DFT-derived potentials should not be used with QMC. The main
+intended use for the converter is to convert potentials generated for QMC calculations into formats acceptable to DFT and quantum
+chemistry codes for trial wavefunction generation.
 
-This requires providing reference states and sometimes needs extra tuning for heavy elements.
-To avoid ghost states, the local channel can be changed via the ``--local_channel`` option. Ghost state considerations are similar to those of DFT calculations but could be worse if ghost states were not considered during the original PP construction.
-To make the self-consistent calculation converge, the density mixing parameter may need to be reduced
-via the ``--density_mix`` option.
-Note that the reference state should include only the valence electrons.
-One reference state should be included for each channel in the PP.
+Currently it converts CASINO, FHI, UPF (generated by OPIUM), BFD, and GAMESS formats to several other formats including XML
+(QMCPACK) and UPF (QE). See all the formats via ``ppconvert -h``.
+
+For output formats requiring Kleinman-Bylander projectors, the atom will be solved with DFT if the projectors are not provided in
+the input formats. This requires providing reference states and often needs extra tuning for heavy elements. To avoid ghost
+states, the local channel can be changed via the ``--local_channel`` option. Ghost state considerations are similar to those of
+DFT calculations but could be worse if ghost states were not considered during the original PP construction. To make the
+self-consistent calculation converge, the density mixing parameter may need to be reduced via the ``--density_mix`` option. Note
+that the reference state should include only the valence electrons. One reference state should be included for each channel in the
+PP.
 
 For example, for a sodium atom with a neon core, the reference state would be "1s(1)."
 ``--s_ref`` needs to include a 1s state, ``--p_ref`` needs to include a 2p state,
@@ -797,8 +797,12 @@ For example, Ti PP has 12 valence electrons. When using the neutral atom state,
 ``--s_ref``, ``--p_ref``, and ``--d_ref`` are all set as "1s(2)2p(6)2s(2)3d(2)."
 When using an ionized state, the three reference states are all set as "1s(2)2p(6)2s(2)" or "1s(2)2p(6)2s(2)3d(0)."
 
-Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of "ghost" states. Potentially these can be removed by adjusting the local channel (e.g., by setting ``--local_channel 1``, which chooses the p channel as the local channel instead of d.
-For this reason, validation of UPF PPs is always required from the third row and is strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
+Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of "ghost"
+states. Potentially these can be removed by adjusting the local channel (e.g., by setting ``--local_channel 1``, which chooses the
+p channel as the local channel instead of d. For this reason, validation of UPF PPs is always required from the third row and is
+strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for
+the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does
+not use the Kleinman-Bylander projectors.
 
 .. _molden2qmc:
 

@@ -33,7 +33,6 @@
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
@@ -127,9 +126,9 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
     double so_d_ref = so_d[i];
     double so_f_ref = so_f[i];
 
-    double so_p_val = getSplinedSOPot(ecp.pp_so, 0, r);
-    double so_d_val = getSplinedSOPot(ecp.pp_so, 1, r);
-    double so_f_val = getSplinedSOPot(ecp.pp_so, 2, r);
+    double so_p_val = getSplinedSOPot(ecp.pp_so.get(), 0, r);
+    double so_d_val = getSplinedSOPot(ecp.pp_so.get(), 1, r);
+    double so_f_val = getSplinedSOPot(ecp.pp_so.get(), 2, r);
 
     REQUIRE(so_p_val == Approx(so_p_ref));
     REQUIRE(so_d_val == Approx(so_d_ref));
@@ -228,8 +227,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
   ions.resetGroups();
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -284,7 +281,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   bool okay2 = ecp.read_pp_file("Na.BFD.xml");
 
-  NonLocalECPComponent* nlpp = ecp.pp_nonloc;
+  NonLocalECPComponent* nlpp = ecp.pp_nonloc.get();
 
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
@@ -447,9 +444,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   Lattice.LR_dim_cutoff = 15;
   Lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion0");
   ions.create(1);
@@ -485,10 +483,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
-
   ions.resetGroups();
   elec.resetGroups();
 
@@ -517,12 +511,12 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   auto spo_up = std::make_unique<EGOSet>(kup, k2up);
   auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  DiracDeterminant<>* dd = new DiracDeterminant<>(spinor_set);
+  DiracDeterminant<>* dd = new DiracDeterminant<>(std::move(spinor_set));
   dd->resize(nelec, norb);
 
   psi.addComponent(dd);
@@ -533,7 +527,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   bool okay3 = ecp.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay3);
 
-  SOECPComponent* sopp = ecp.pp_so;
+  SOECPComponent* sopp = ecp.pp_so.get();
   REQUIRE(sopp != nullptr);
   copyGridUnrotatedForTest(*sopp);
 

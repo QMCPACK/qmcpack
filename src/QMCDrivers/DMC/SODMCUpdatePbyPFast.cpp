@@ -50,11 +50,12 @@ SODMCUpdatePbyPWithRejectionFast::~SODMCUpdatePbyPWithRejectionFast() {}
 
 void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  myTimers[SODMC_buffer]->start();
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-  W.loadWalker(thisWalker, true);
-  Psi.copyFromBuffer(W, w_buffer);
-  myTimers[SODMC_buffer]->stop();
+  {
+    ScopedTimer local_timer(myTimers[SODMC_buffer]);
+    W.loadWalker(thisWalker, true);
+    Psi.copyFromBuffer(W, w_buffer);
+  }
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
   makeGaussRandomWithEngine(deltaS, RandomGen);
@@ -65,91 +66,100 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
-  myTimers[SODMC_movePbyP]->start();
-  for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
-    RealType tauovermass = Tau * MassInvS[ig];
-    RealType oneover2tau = 0.5 / (tauovermass);
-    RealType sqrttau     = std::sqrt(tauovermass);
-    for (int iat = W.first(ig); iat < W.last(ig); ++iat)
+    ScopedTimer local_timer(myTimers[SODMC_movePbyP]);
+    for (int ig = 0; ig < W.groups(); ++ig) //loop over species
     {
-      //get the displacement
-      ComplexType spingrad_iat;
-      GradType grad_iat = Psi.evalGradWithSpin(W, iat, spingrad_iat);
-      PosType dr;
-      ParticleSet::Scalar_t ds;
-      DriftModifier->getDrift(tauovermass, grad_iat, dr);
-      DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
-      dr += sqrttau * deltaR[iat];
-      ds += std::sqrt(tauovermass / spinMass) * deltaS[iat];
-      bool is_valid = W.makeMoveAndCheckWithSpin(iat, dr, ds);
-      RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
-      rr_proposed += rr;
-      if (!is_valid || rr > m_r2max)
+      RealType tauovermass = Tau * MassInvS[ig];
+      RealType oneover2tau = 0.5 / (tauovermass);
+      RealType sqrttau     = std::sqrt(tauovermass);
+      Psi.prepareGroup(W, ig);
+      for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
-        ++nRejectTemp;
-        continue;
-      }
-      ValueType ratio = Psi.calcRatioGradWithSpin(W, iat, grad_iat, spingrad_iat);
-      //node is crossed reject the move
-      if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
-      {
-        ++nRejectTemp;
-        ++nNodeCrossing;
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-      }
-      else
-      {
-        FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
-        logGf += -0.5 * deltaS[iat] * deltaS[iat];
-        //Use the force of the particle iat
+        //get the displacement
+        ComplexType spingrad_iat;
+        GradType grad_iat = Psi.evalGradWithSpin(W, iat, spingrad_iat);
+        PosType dr;
+        ParticleSet::Scalar_t ds;
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
-        dr                     = W.R[iat] - W.activePos - dr;
-        ds                     = W.spins[iat] - W.activeSpinVal - ds;
-        FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
-        logGb += -spinMass * oneover2tau * ds * ds;
-        RealType prob = std::norm(ratio) * std::exp(logGb - logGf);
-        if (RandomGen() < prob)
+        dr += sqrttau * deltaR[iat];
+        ds += std::sqrt(tauovermass / spinMass) * deltaS[iat];
+        bool is_valid = W.makeMoveAndCheckWithSpin(iat, dr, ds);
+        RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
+        rr_proposed += rr;
+        if (!is_valid || rr > m_r2max)
         {
-          ++nAcceptTemp;
-          Psi.acceptMove(W, iat, true);
-          W.acceptMove(iat, true);
-          rr_accepted += rr;
-          gf_acc *= prob; //accumulate the ratio
+          ++nRejectTemp;
+          W.accept_rejectMove(iat, false);
+          continue;
+        }
+        ValueType ratio = Psi.calcRatioGradWithSpin(W, iat, grad_iat, spingrad_iat);
+        //node is crossed reject the move
+        if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
+        {
+          ++nRejectTemp;
+          ++nNodeCrossing;
+          W.accept_rejectMove(iat, false);
+          Psi.rejectMove(iat);
         }
         else
         {
-          ++nRejectTemp;
-          W.rejectMove(iat);
-          Psi.rejectMove(iat);
+          FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+          logGf += -0.5 * deltaS[iat] * deltaS[iat];
+          //Use the force of the particle iat
+          DriftModifier->getDrift(tauovermass, grad_iat, dr);
+          DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
+          dr                     = W.R[iat] - W.activePos - dr;
+          ds                     = W.spins[iat] - W.activeSpinVal - ds;
+          FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
+          logGb += -spinMass * oneover2tau * ds * ds;
+          RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
+          bool is_accepted = false;
+
+          if (RandomGen() < prob)
+          {
+            is_accepted = true;
+
+            ++nAcceptTemp;
+            Psi.acceptMove(W, iat, true);
+            rr_accepted += rr;
+          }
+          else
+          {
+            ++nRejectTemp;
+            Psi.rejectMove(iat);
+          }
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }
+    Psi.completeUpdates();
+    W.donePbyP();
   }
-  Psi.completeUpdates();
-  W.donePbyP();
-  myTimers[SODMC_movePbyP]->stop();
 
   if (nAcceptTemp > 0)
   {
     //need to overwrite the walker properties
-    myTimers[SODMC_buffer]->start();
-    thisWalker.Age  = 0;
-    RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
-    W.saveWalker(thisWalker);
-    myTimers[SODMC_buffer]->stop();
-    myTimers[SODMC_hamiltonian]->start();
-    enew = H.evaluateWithToperator(W);
-    myTimers[SODMC_hamiltonian]->stop();
+    RealType logpsi(0);
+    {
+      ScopedTimer local_timer(myTimers[SODMC_buffer]);
+      thisWalker.Age = 0;
+      logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
+      assert(checkLogAndGL(W, Psi));
+      W.saveWalker(thisWalker);
+    }
+    {
+      ScopedTimer local_timer(myTimers[SODMC_hamiltonian]);
+      enew = H.evaluateWithToperator(W);
+    }
     thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 1.0);
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
-    myTimers[SODMC_collectables]->start();
-    H.auxHevaluate(W, thisWalker);
-    H.saveProperty(thisWalker.getPropertyBase());
-    myTimers[SODMC_collectables]->stop();
+    {
+      ScopedTimer local_timer(myTimers[SODMC_collectables]);
+      H.auxHevaluate(W, thisWalker);
+      H.saveProperty(thisWalker.getPropertyBase());
+    }
   }
   else
   {
@@ -164,21 +174,21 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
     thisWalker.Weight = wtmp;
     ++nAllRejected;
     enew   = eold; //copy back old energy
-    gf_acc = 1.0;
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  myTimers[SODMC_tmoves]->start();
-  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
-  if (NonLocalMoveAcceptedTemp > 0)
   {
-    RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
-    W.saveWalker(thisWalker);
-    NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
+    ScopedTimer local_timer(myTimers[SODMC_tmoves]);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    if (NonLocalMoveAcceptedTemp > 0)
+    {
+      RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
+      W.saveWalker(thisWalker);
+      NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
+    }
   }
-  myTimers[SODMC_tmoves]->stop();
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
 

@@ -74,6 +74,10 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   rrotsgrid_m.resize(n);
   nchannel = nlpp_m.size();
   nknot    = sgridxyz_m.size();
+
+  //Now we inititalize the quadrature grid rrotsgrid_m to the unrotated grid.
+  rrotsgrid_m = sgridxyz_m;
+
   //This is just to check
   //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
   if (lmax)
@@ -182,87 +186,84 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
   return pairpot;
 }
 
-void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
-                                            const RefVector<ParticleSet>& p_list,
-                                            const RefVector<TrialWaveFunction>& psi_list,
-                                            const RefVector<const NLPPJob<RealType>>& joblist,
-                                            TrialWaveFunction& psi_leader,
-                                            std::vector<RealType>& pairpots,
-                                            bool use_DLA)
+void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                          const RefVector<const NLPPJob<RealType>>& joblist,
+                                          std::vector<RealType>& pairpots,
+                                          ResourceCollection& collection,
+                                          bool use_DLA)
 {
-  if (ecp_component_list.size() > 1)
+  auto& ecp_component_leader = ecp_component_list.getLeader();
+  if (ecp_component_leader.VP)
   {
-    if (ecp_component_list[0].get().VP)
-    {
-      // Compute ratios with VP
-      RefVector<VirtualParticleSet> vp_list;
-      RefVector<const VirtualParticleSet> const_vp_list;
-      RefVector<const std::vector<PosType>> deltaV_list;
-      RefVector<std::vector<ValueType>> psiratios_list;
-      vp_list.reserve(ecp_component_list.size());
-      const_vp_list.reserve(ecp_component_list.size());
-      deltaV_list.reserve(ecp_component_list.size());
-      psiratios_list.reserve(ecp_component_list.size());
+    // Compute ratios with VP
+    RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
+    RefVector<const VirtualParticleSet> const_vp_list;
+    RefVector<const std::vector<PosType>> deltaV_list;
+    RefVector<std::vector<ValueType>> psiratios_list;
+    vp_list.reserve(ecp_component_list.size());
+    const_vp_list.reserve(ecp_component_list.size());
+    deltaV_list.reserve(ecp_component_list.size());
+    psiratios_list.reserve(ecp_component_list.size());
 
-      for (size_t i = 0; i < ecp_component_list.size(); i++)
-      {
-        NonLocalECPComponent& component(ecp_component_list[i]);
-        const NLPPJob<RealType>& job = joblist[i];
-
-        component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
-
-        vp_list.push_back(*component.VP);
-        const_vp_list.push_back(*component.VP);
-        deltaV_list.push_back(component.deltaV);
-        psiratios_list.push_back(component.psiratio);
-      }
-
-      VirtualParticleSet::flex_makeMoves(vp_list, deltaV_list, joblist, true);
-      if (use_DLA)
-        psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list,
-                                               TrialWaveFunction::ComputeType::FERMIONIC);
-      else
-        psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list);
-    }
-    else
-    {
-      // Compute ratios without VP. This is working but very slow code path.
-#pragma omp parallel for
-      for (size_t i = 0; i < p_list.size(); i++)
-      {
-        NonLocalECPComponent& component(ecp_component_list[i]);
-        auto* VP = component.VP;
-        ParticleSet& W(p_list[i]);
-        TrialWaveFunction& psi(psi_list[i]);
-        const NLPPJob<RealType>& job = joblist[i];
-
-        component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
-
-        // Compute ratio of wave functions
-        for (int j = 0; j < component.getNknot(); j++)
-        {
-          W.makeMove(job.electron_id, component.deltaV[j], false);
-          if (use_DLA)
-            component.psiratio[j] = psi.calcRatio(W, job.electron_id, TrialWaveFunction::ComputeType::FERMIONIC);
-          else
-            component.psiratio[j] = psi.calcRatio(W, job.electron_id);
-          W.rejectMove(job.electron_id);
-          psi.resetPhaseDiff();
-        }
-      }
-    }
-
-    for (size_t i = 0; i < p_list.size(); i++)
+    for (size_t i = 0; i < ecp_component_list.size(); i++)
     {
       NonLocalECPComponent& component(ecp_component_list[i]);
       const NLPPJob<RealType>& job = joblist[i];
-      pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+
+      component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
+
+      vp_list.push_back(*component.VP);
+      const_vp_list.push_back(*component.VP);
+      deltaV_list.push_back(component.deltaV);
+      psiratios_list.push_back(component.psiratio);
+    }
+
+    auto vp_to_p_list = VirtualParticleSet::RefVectorWithLeaderParticleSet(vp_list);
+    ResourceCollectionTeamLock<ParticleSet> vp_res_lock(collection, vp_to_p_list);
+
+    VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
+
+    if (use_DLA)
+      TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
+                                           TrialWaveFunction::ComputeType::FERMIONIC);
+    else
+      TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+  }
+  else
+  {
+    // Compute ratios without VP. This is working but very slow code path.
+#pragma omp parallel for
+    for (size_t i = 0; i < p_list.size(); i++)
+    {
+      NonLocalECPComponent& component(ecp_component_list[i]);
+      ParticleSet& W(p_list[i]);
+      TrialWaveFunction& psi(psi_list[i]);
+      const NLPPJob<RealType>& job = joblist[i];
+
+      component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
+
+      // Compute ratio of wave functions
+      for (int j = 0; j < component.getNknot(); j++)
+      {
+        W.makeMove(job.electron_id, component.deltaV[j], false);
+        if (use_DLA)
+          component.psiratio[j] = psi.calcRatio(W, job.electron_id, TrialWaveFunction::ComputeType::FERMIONIC);
+        else
+          component.psiratio[j] = psi.calcRatio(W, job.electron_id);
+        W.rejectMove(job.electron_id);
+        psi.resetPhaseDiff();
+      }
     }
   }
-  else if (ecp_component_list.size() == 1)
-    pairpots[0] = ecp_component_list[0].get().evaluateOne(p_list[0], joblist[0].get().ion_id, psi_list[0],
-                                                          joblist[0].get().electron_id, joblist[0].get().ion_elec_dist,
-                                                          joblist[0].get().ion_elec_displ, use_DLA);
+
+  for (size_t i = 0; i < p_list.size(); i++)
+  {
+    NonLocalECPComponent& component(ecp_component_list[i]);
+    const NLPPJob<RealType>& job = joblist[i];
+    pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
+  }
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
@@ -275,6 +276,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
+
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
+  for (int j = 0; j < nknot; j++)
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
+
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;
@@ -406,6 +413,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
+
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
+  for (int j = 0; j < nknot; j++)
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;

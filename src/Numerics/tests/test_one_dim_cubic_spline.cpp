@@ -117,10 +117,10 @@ TEST_CASE("one_dim_cubic_spline_1", "[numerics]")
   const int n               = 3;
   std::vector<double> yvals = {1.0, 2.0, 1.5};
 
-  LinearGrid<double> grid;
-  grid.set(0.0, 2.0, n);
+  auto grid = std::make_unique<LinearGrid<double>>();
+  grid->set(0.0, 2.0, n);
 
-  OneDimCubicSpline<double> cubic_spline(&grid, yvals);
+  OneDimCubicSpline<double> cubic_spline(std::move(grid), yvals);
 
   int imin = 0;
   int imax = 3 - 1;

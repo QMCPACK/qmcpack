@@ -43,6 +43,8 @@ User's Guide and Developer's Manual
    external_tools
    contributing
    unit_testing
+   integration_tests
+   running_docker
    design_features
    developing
    appendices

@@ -16,6 +16,7 @@
 
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 namespace qmcplusplus
 {
@@ -169,7 +170,7 @@ public:
   ///indices of orbitals within each sposet to evaluate
   std::vector<std::vector<int>*> sposet_indices;
 
-  ///sposets obtained by name from SPOSetBuilderFactory
+  ///sposets obtained by name from WaveFunctionFactory
   std::vector<SPOSet*> sposets;
 
   ///evaluate points at grid cell centers instead of edges
@@ -216,11 +217,11 @@ public:
 
 
   //constructor/destructor
-  OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm);
+  OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
   ~OrbitalImages(){};
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 
   ///read xml input
   bool put(xmlNodePtr cur);
@@ -234,7 +235,7 @@ public:
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) {}
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
 
   //should be empty for Collectables interface
   void resetTargetParticleSet(ParticleSet& P) {}
@@ -268,6 +269,10 @@ public:
                          value_types_enum value_type,
                          derivative_types_enum derivative_type = value_d,
                          int dimension                         = 0);
+
+private:
+  /// reference to the sposet_builder_factory
+  const WaveFunctionFactory& wf_factory_;
 };
 
 } // namespace qmcplusplus

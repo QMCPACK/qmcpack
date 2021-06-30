@@ -24,12 +24,14 @@
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTableData.h"
 #include <fftw3.h>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/einspline_helper.hpp"
+#if !defined(MIXED_PRECISION)
+#include "QMCWaveFunctions/EinsplineSet.h"
+#endif
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
@@ -105,20 +107,21 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipC
   AnalyzeTwists2();
 }
 
-SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__, __LINE__, "createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  SPOSet* OrbitalSet;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet      = 0;
   int TwistNum_inp = 0;
+  bool skipChecks  = false;
 
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
+  std::string skip_checks("no");
   std::string use_einspline_set_extended(
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
 #if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
@@ -127,7 +130,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string useGPU = "no";
 #endif
   std::string GPUsharing = "no";
-  ScopedTimer spo_timer_scope(timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
@@ -146,6 +149,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(truncate, "truncate");
     a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
+    a.add(skip_checks, "skip_checks");
 #if defined(QMC_CUDA)
     a.add(gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
 #endif
@@ -160,6 +164,10 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (myName.empty())
       myName = "einspline";
   }
+
+  if (skip_checks == "yes")
+    skipChecks = true;
+
 
   SourcePtcl = ParticleSets[sourceName];
   if (SourcePtcl == 0)
@@ -232,13 +240,17 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   iter = SPOSetMap.find(aset);
   if ((iter != SPOSetMap.end()) && (!NewOcc))
   {
-    app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
-              << "cloning EinsplineSet object.\n";
-    return iter->second->makeClone();
+    app_log() << "SPOSet parameters match in EinsplineSetBuilder. cloning EinsplineSet object." << std::endl;
+    app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions "
+                     "has been deprecated. Create a single SPO set outside determinantset instead."
+                  << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
+    auto OrbitalSet = std::unique_ptr<SPOSet>(iter->second->makeClone());
+    OrbitalSet->setName("");
+    return OrbitalSet;
   }
 
   if (FullBands[spinSet] == 0)
-    FullBands[spinSet] = new std::vector<BandInfo>;
+    FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
 
   // Ensure the first SPO set must be spinSet==0
   // to correctly initialize key data of EinsplineSetBuilder
@@ -250,7 +262,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   // set the internal parameters
   if (spinSet == 0)
-    set_metadata(numOrbs, TwistNum_inp);
+    set_metadata(numOrbs, TwistNum_inp, skipChecks);
   //if (use_complex_orb == "yes") UseRealOrbitals = false; // override given user input
 
   // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
@@ -285,7 +297,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //////////////////////////////////
   Timer mytimer;
   mytimer.restart();
-  OccupyBands(spinSet, sortBands, numOrbs);
+  OccupyBands(spinSet, sortBands, numOrbs, skipChecks);
   if (spinSet == 0)
     TileIons();
 
@@ -323,10 +335,9 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs        = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
-  SPOSet* bspline_zd = MixedSplineReader->create_spline_set(spinSet, spo_cur);
-  if (!bspline_zd)
+  auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  if (!OrbitalSet)
     APP_ABORT_TRACE(__FILE__, __LINE__, "Failed to create SPOSet*");
-  OrbitalSet = bspline_zd;
 #if defined(MIXED_PRECISION)
   if (use_einspline_set_extended == "yes")
   {
@@ -348,11 +359,11 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
 #endif
         temp_OrbitalSet = new EinsplineSetExtended<double>;
-      MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet*>(OrbitalSet)->getHalfG();
+      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet&>(*OrbitalSet).getHalfG();
       new_OrbitalSet         = temp_OrbitalSet;
     }
     else
@@ -364,7 +375,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
 #endif
         temp_OrbitalSet = new EinsplineSetExtended<std::complex<double>>;
-      MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineComplexDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       for (int iorb = 0, num = 0; iorb < NumDistinctOrbitals; iorb++)
@@ -378,7 +389,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     }
     //set the internal parameters
     setTiling(new_OrbitalSet, numOrbs);
-    OrbitalSet = new_OrbitalSet;
+    OrbitalSet.reset(new_OrbitalSet);
   }
 #endif
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
@@ -462,11 +473,11 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
   OrbitalSet->finalizeConstruction();
-  SPOSetMap[aset] = OrbitalSet;
+  SPOSetMap[aset] = OrbitalSet.get();
   return OrbitalSet;
 }
 
-SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   update_token(__FILE__, __LINE__, "createSPOSet(cur,input_info)");
 
@@ -492,10 +503,10 @@ SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input
   int norb = input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  SPOSet* bspline_zd = MixedSplineReader->create_spline_set(spinSet, cur, input_info);
+  auto bspline_zd = MixedSplineReader->create_spline_set(spinSet, cur, input_info);
   //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
   if (bspline_zd)
-    SPOSetMap[aset] = bspline_zd;
+    SPOSetMap[aset] = bspline_zd.get();
   return bspline_zd;
 }
 

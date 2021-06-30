@@ -96,11 +96,10 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   {
     Qspec[spec] = tspeciesB(ChargeAttribIndxB, spec);
   }
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
   dAB = LRCoulombSingleton::getDerivHandler(P);
 }
 
@@ -212,9 +211,9 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   app_log() << "ionionforce = " << ionionforce << std::endl;
   app_log() << "addionion=" << addionion << std::endl;
   ParameterSet fcep_param_set;
-  fcep_param_set.add(Rcut, "rcut", "real");
-  fcep_param_set.add(N_basis, "nbasis", "int");
-  fcep_param_set.add(m_exp, "weight_exp", "int");
+  fcep_param_set.add(Rcut, "rcut");
+  fcep_param_set.add(N_basis, "nbasis");
+  fcep_param_set.add(m_exp, "weight_exp");
   fcep_param_set.put(cur);
   app_log() << "    ForceChiesaPBCAA Parameters" << std::endl;
   app_log() << "        ForceChiesaPBCAA::Rcut=" << Rcut << std::endl;
@@ -232,12 +231,12 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
   addObservablesF(plist);
 }
 
-OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  ForceChiesaPBCAA* tmp = new ForceChiesaPBCAA(PtclA, qp, false);
-  tmp->Rcut             = Rcut;    // parameter: radial distance within which estimator is used
-  tmp->m_exp            = m_exp;   // parameter: exponent in polynomial fit
-  tmp->N_basis          = N_basis; // parameter: size of polynomial basis set
+  std::unique_ptr<ForceChiesaPBCAA> tmp = std::make_unique<ForceChiesaPBCAA>(PtclA, qp, false);
+  tmp->Rcut                             = Rcut;    // parameter: radial distance within which estimator is used
+  tmp->m_exp                            = m_exp;   // parameter: exponent in polynomial fit
+  tmp->N_basis                          = N_basis; // parameter: size of polynomial basis set
   tmp->Sinv.resize(N_basis, N_basis);
   tmp->Sinv = Sinv; // terms in fitting polynomial
   tmp->h.resize(N_basis);
