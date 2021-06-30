@@ -78,8 +78,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
-  std::vector<GradVectorType*> gradLogPsi;
-  std::vector<ValueVectorType*> lapLogPsi;
+  typedef ParticleAttrib<QTFull::GradType> WavefunctionFirstDerivativeType;
+  typedef ParticleAttrib<QTFull::ValueType> WavefunctionSecondDerivativeType;
+  std::vector<WavefunctionFirstDerivativeType*> gradLogPsi;
+  std::vector<WavefunctionSecondDerivativeType*> lapLogPsi;
 
   J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
       : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)),
@@ -516,8 +518,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     lapLogPsi.resize(NumVars, 0);
     for (int i = 0; i < NumVars; ++i)
     {
-      gradLogPsi[i] = new GradVectorType(Nelec);
-      lapLogPsi[i]  = new ValueVectorType(Nelec);
+      gradLogPsi[i] = new WavefunctionFirstDerivativeType(Nelec);
+      lapLogPsi[i]  = new WavefunctionSecondDerivativeType(Nelec);
     }
   }
 
@@ -581,8 +583,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       lapLogPsi.resize(NumVars, 0);
       for (int i = 0; i < NumVars; ++i)
       {
-        gradLogPsi[i] = new GradVectorType(Nelec);
-        lapLogPsi[i]  = new ValueVectorType(Nelec);
+        gradLogPsi[i] = new WavefunctionFirstDerivativeType(Nelec);
+        lapLogPsi[i]  = new WavefunctionSecondDerivativeType(Nelec);
       }
       OffSet.resize(F.size());
       int varoffset = myVars.Index[0];
