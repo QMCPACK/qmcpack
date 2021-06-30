@@ -362,7 +362,7 @@ else()
       deterministic-NiO_a4_e48_pp-vmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
       det_NiO-fcc-S1-vmc
-      det_NiO-vmc-short.in.xml
+      det_NiO-vmc.in.xml
       1
       1
       TRUE
@@ -417,7 +417,7 @@ else()
        deterministic-NiO_a4_e48_pp-vmc_sdj_batched
        "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
        det_NiO-batched-fcc-S1-vmc 
-       det_NiO-batched-vmc-short.in.xml
+       det_NiO-batched-vmc.in.xml
        1
        1
        TRUE
