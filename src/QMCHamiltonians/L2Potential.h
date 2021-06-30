@@ -71,16 +71,16 @@ struct L2Potential : public OperatorBase
 
   L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   void evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K);
   void evaluateD(ParticleSet& P, int iel, TensorType& D);
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "L2Potential: " << IonConfig.getName();
     return true;

@@ -77,9 +77,9 @@ public:
 
 public:
   UnitCellType GetLattice();
-  virtual void resetParameters(const opt_variables_type& active) {}
+  void resetParameters(const opt_variables_type& active) override {}
   void resetSourceParticleSet(ParticleSet& ions);
-  void setOrbitalSetSize(int norbs);
+  void setOrbitalSetSize(int norbs) override;
   inline std::string Type() { return "EinsplineSet"; }
   EinsplineSet() : TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0) { className = "EinsplineSet"; }
 };

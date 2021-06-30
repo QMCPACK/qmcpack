@@ -37,10 +37,10 @@ public:
   /// constructor
   ProjectData(const char* aname = 0);
 
-  bool get(std::ostream& os) const;
-  bool put(std::istream& is);
-  bool put(xmlNodePtr cur);
-  void reset();
+  bool get(std::ostream& os) const override;
+  bool put(std::istream& is) override;
+  bool put(xmlNodePtr cur) override;
+  void reset() override;
 
   ///increment a series number and reset m_projectroot
   void advance();

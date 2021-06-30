@@ -91,14 +91,14 @@ public:
                                                                                                   T9 s9,
                                                                                                   T10 s10);
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  void Print(std::ofstream& out);
+  void Print(std::ofstream& out) override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(Array<T, RANK>& val);
   template<class TT>
@@ -184,12 +184,12 @@ class IOVarASCII<double, 0> : public IOVarBase
 public:
   double Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(double& val)
   {
@@ -212,12 +212,12 @@ class IOVarASCII<int, 0> : public IOVarBase
 public:
   int Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(int& val)
   {
@@ -240,12 +240,12 @@ class IOVarASCII<std::string, 0> : public IOVarBase
 public:
   std::string Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(std::string& val);
   bool VarWrite(std::string val);
@@ -264,12 +264,12 @@ class IOVarASCII<bool, 0> : public IOVarBase
 public:
   bool Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(bool& val)
   {
@@ -293,12 +293,12 @@ class IOVarASCII<std::complex<double>, 0> : public IOVarBase
 public:
   std::complex<double> Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(std::complex<double>& val)
   {

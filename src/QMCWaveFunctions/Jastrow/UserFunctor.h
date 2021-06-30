@@ -69,23 +69,20 @@ struct UserFunctor : public OptimizableFunctorBase
 
 // void setCusp(real_type cusp)
 
-  void setCusp(real_type cusp)
+  void setCusp(real_type cusp) override
   {
     A     = cusp;
     Opt_A = false;
     reset();
   }
-  
-
-  OptimizableFunctorBase* makeClone() const { return new UserFunctor(*this); }
-
-  void reset()
-  {
-  }
 
 
+  OptimizableFunctorBase* makeClone() const override { return new UserFunctor(*this); }
 
-// inline real_type evaluate(real_type r) const
+  void reset() override {}
+
+
+  // inline real_type evaluate(real_type r) const
 
   inline real_type evaluate(real_type r) const {
    return A*r/(B*r + 1) - A/B;
@@ -150,9 +147,9 @@ struct UserFunctor : public OptimizableFunctorBase
       valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
   }
 
-  inline real_type f(real_type r) { return evaluate(r); }
+  inline real_type f(real_type r) override { return evaluate(r); }
 
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) override
   {
     real_type dudr, d2udr2;
     real_type res = evaluate(r, dudr, d2udr2);
@@ -161,7 +158,7 @@ struct UserFunctor : public OptimizableFunctorBase
 
 // inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
 
-  inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs) override
   {
     int i = 0;
     
@@ -211,7 +208,7 @@ struct UserFunctor : public OptimizableFunctorBase
 
 //  bool put(xmlNodePtr cur)
 
-  bool put(xmlNodePtr cur)
+  bool put(xmlNodePtr cur) override
   {
     cur = cur->xmlChildrenNode;
     while (cur != NULL)
@@ -256,13 +253,13 @@ struct UserFunctor : public OptimizableFunctorBase
   }
 
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
     //myVars.print(std::cout);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
     //myVars.print(std::cout);
@@ -270,7 +267,7 @@ struct UserFunctor : public OptimizableFunctorBase
 
 //void resetParameters(const opt_variables_type& active)
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (myVars.size())
     {

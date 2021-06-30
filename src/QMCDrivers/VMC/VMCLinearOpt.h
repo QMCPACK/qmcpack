@@ -32,15 +32,15 @@ public:
                QMCHamiltonian& h,
                Communicate* comm);
 
-  ~VMCLinearOpt()
+  ~VMCLinearOpt() override
   {
     //         if (UseDrift == "rn")
     //           delete_iter(CSMovers.begin(),CSMovers.end());
   }
-  bool run();
+  bool run() override;
   //       RealType runCS(std::vector<RealType>& curParams, std::vector<RealType>& curDir, std::vector<RealType>& lambdas);
   //       int runCS(std::vector<std::vector<RealType> >& bestParams, RealType& errorbars);
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   //       inline void getDeltaCosts(std::vector<RealType>& cstVec)
   //       {
@@ -61,7 +61,7 @@ public:
     for (int i = 0; i < s_vec.size(); i++)
       s_vec[i] = 0;
   }
-  virtual QMCRunType getRunType() { return QMCRunType::CS_LINEAR_OPTIMIZE; }
+  QMCRunType getRunType() override { return QMCRunType::CS_LINEAR_OPTIMIZE; }
 
 private:
   ///number of RN warmup steps

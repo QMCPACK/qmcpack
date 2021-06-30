@@ -40,9 +40,9 @@ public:
         QMCHamiltonian& h,
         Communicate* comm);
 
-  bool run();
-  bool put(xmlNodePtr cur);
-  virtual QMCRunType getRunType() { return QMCRunType::CSVMC; }
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
+  QMCRunType getRunType() override { return QMCRunType::CSVMC; }
 
 private:
   std::string UseDrift;

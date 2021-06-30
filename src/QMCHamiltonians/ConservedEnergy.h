@@ -73,11 +73,11 @@ using WP = WalkerProperties::Indexes;
 struct ConservedEnergy : public OperatorBase
 {
   ConservedEnergy() {}
-  ~ConservedEnergy() {}
+  ~ConservedEnergy() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
-  Return_t evaluate(ParticleSet& P)
+  Return_t evaluate(ParticleSet& P) override
   {
     RealType gradsq = Dot(P.G, P.G);
     RealType lap    = Sum(P.L);
@@ -91,9 +91,9 @@ struct ConservedEnergy : public OperatorBase
   }
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "ConservedEnergy";
     return true;

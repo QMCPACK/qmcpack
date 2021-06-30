@@ -59,7 +59,7 @@ struct Transform2GridFunctor : public Transform2GridFunctorBase<FnOut>
    values to the grid points and performs the 1D-Cubic Spline
    for interpolation.
   */
-  void generate(point_type ri, point_type rf, int ng, int np = 0)
+  void generate(point_type ri, point_type rf, int ng, int np = 0) override
   {
     //reference to the output functions grid
     typename FnOut::grid_type& grid = out_.grid();
@@ -115,7 +115,7 @@ struct Transform2GridFunctor : public Transform2GridFunctorBase<FnOut>
     already been initialized.
    */
 
-  void generate(int np = 0)
+  void generate(int np = 0) override
   {
     typename FnOut::grid_type& grid = out_.grid();
     out_.resize(grid.size());

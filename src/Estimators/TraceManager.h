@@ -676,7 +676,7 @@ struct CombinedTraceSample : public TraceSample<T>
     reset();
   }
 
-  virtual bool is_combined() { return true; }
+  bool is_combined() override { return true; }
 
   inline void reset() { combined = false; }
 

@@ -28,17 +28,17 @@ private:
 public:
   ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& psi) : psi_ref(psi), ptcl_ref(ptcl) {}
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
 #ifdef QMC_CUDA
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 #endif
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "Chiesa correction: " << ptcl_ref.getName();
     return true;

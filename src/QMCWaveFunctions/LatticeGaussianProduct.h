@@ -44,7 +44,7 @@ public:
 
   LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls);
 
-  ~LatticeGaussianProduct();
+  ~LatticeGaussianProduct() override;
 
   /** check out optimizable variables
    */
@@ -81,7 +81,6 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 

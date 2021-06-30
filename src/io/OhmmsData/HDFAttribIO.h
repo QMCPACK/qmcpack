@@ -64,8 +64,8 @@ struct HDFAttribIOBase
 template<class T>
 struct HDFAttribIO : public HDFAttribIOBase
 {
-  void write(hid_t, const char*) {}
-  void read(hid_t, const char*) {}
+  void write(hid_t, const char*) override {}
+  void read(hid_t, const char*) override {}
 };
 
 } // namespace qmcplusplus

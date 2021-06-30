@@ -71,9 +71,9 @@ public:
              SampleStack& samples_,
              Communicate* comm);
 
-  void process(xmlNodePtr node);
+  void process(xmlNodePtr node) override;
 
-  bool run();
+  bool run() override;
 
   /** Refactor of VMCUpdatePbyP in crowd context
    *
@@ -111,7 +111,7 @@ private:
   int prevSteps;
   int prevStepsBetweenSamples;
   const VMCDriverInput vmcdriver_input_;
-  QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
+  QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
   ///copy constructor

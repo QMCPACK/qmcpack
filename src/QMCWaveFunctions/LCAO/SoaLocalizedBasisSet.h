@@ -79,7 +79,7 @@ public:
   SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a);
 
   /** makeClone */
-  BaseType* makeClone() const { return new SoaLocalizedBasisSet<COT, ORBT>(*this); }
+  BaseType* makeClone() const override { return new SoaLocalizedBasisSet<COT, ORBT>(*this); }
 
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
@@ -91,11 +91,11 @@ public:
 
   /** set BasisSetSize and allocate mVGL container
    */
-  void setBasisSetSize(int nbs);
+  void setBasisSetSize(int nbs) override;
 
   /**  Determine which orbitals are S-type.  Used by cusp correction.
     */
-  void queryOrbitalsForSType(const std::vector<bool>& corrCenter, std::vector<bool>& is_s_orbital) const;
+  void queryOrbitalsForSType(const std::vector<bool>& corrCenter, std::vector<bool>& is_s_orbital) const override;
 
   /** compute VGL 
    * @param P quantum particleset
@@ -103,7 +103,7 @@ public:
    * @param vgl Matrix(5,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl);
+  void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
 
   /** compute VGH 
    * @param P quantum particleset
@@ -111,7 +111,7 @@ public:
    * @param vgl Matrix(10,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh);
+  void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) override;
 
   /** compute VGHGH 
    * @param P quantum particleset
@@ -119,7 +119,7 @@ public:
    * @param vghgh Matrix(20,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh);
+  void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh) override;
 
   /** compute values for the iat-paricle move
    *
@@ -132,11 +132,15 @@ public:
    * displacement. We need to keep track of Tv because it must be add
    * as a phase factor, i.e., exp(i*k*Tv).
    */
-  void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals);
+  void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals) override;
 
-  void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl);
+  void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl) override;
 
-  void evaluateGradSourceVGL(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh);
+  void evaluateGradSourceVGL(const ParticleSet& P,
+                             int iat,
+                             const ParticleSet& ions,
+                             int jion,
+                             vghgh_type& vghgh) override;
 
   /** add a new set of Centered Atomic Orbitals
    * @param icenter the index of the center

@@ -30,9 +30,9 @@ public:
                   std::vector<QMCHamiltonian*>& h,
                   RandomGenerator_t& rg);
 
-  ~CSVMCUpdatePbyP();
+  ~CSVMCUpdatePbyP() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
 };
@@ -49,9 +49,9 @@ public:
                                std::vector<QMCHamiltonian*>& h,
                                RandomGenerator_t& rg);
 
-  ~CSVMCUpdatePbyPWithDriftFast();
+  ~CSVMCUpdatePbyPWithDriftFast() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
 };
