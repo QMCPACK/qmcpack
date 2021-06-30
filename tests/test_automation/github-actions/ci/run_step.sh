@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 case "$1" in 
 
   # Configure qmcpack using cmake out-of-source builds 

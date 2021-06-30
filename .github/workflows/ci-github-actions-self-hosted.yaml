@@ -7,7 +7,12 @@ on:
 
 jobs:
   gpu-cuda:
-    if: github.repository_owner == 'QMCPACK'
+    if: |
+        github.repository_owner == 'QMCPACK' &&
+        github.event.issue.pull_request &&
+        ( startsWith(github.event.comment.body, 'Test this please') || 
+          startsWith(github.event.comment.body, 'Start testing in-house') )
+          
     runs-on: [self-hosted,Linux,X64,gpu,cuda]
     
     env:
@@ -22,17 +27,16 @@ jobs:
         ]
 
     steps:
-    - name: Check PR trigger in comments
-      uses: khan/pull-request-comment-trigger@master
-      id: check
+    - name: Verify actor
       # Only trigger for certain "actors" (those commenting the PR, not the PR originator) 
       # this is in-line with the current workflow
       env:
         ACTOR_TOKEN: ${{secrets.TOKENIZER}}${{github.actor}}${{secrets.TOKENIZER}}
         SECRET_ACTORS: ${{secrets.CI_GPU_ACTORS}}
-      if: contains('${{env.SECRET_ACTORS}}', '${{env.ACTOR_TOKEN}}')
-      with:
-        trigger: 'Test this please'
+      if: contains(env.SECRET_ACTORS, env.ACTOR_TOKEN)
+      id: check
+      run: |
+          echo "::set-output name=triggered::true"
 
     # Request repo info, required since issue_comment doesn't point at PR commit, but develop 
     - name: GitHub API Request
@@ -86,7 +90,7 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh test
       
     - name: Report PR status
-      if: steps.check.outputs.triggered == 'true'
+      if: always() && steps.check.outputs.triggered == 'true'
       uses: Sibz/github-status-action@v1
       with: 
         authToken: ${{secrets.GITHUB_TOKEN}}
