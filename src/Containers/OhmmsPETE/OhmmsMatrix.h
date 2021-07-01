@@ -52,6 +52,14 @@ public:
   /** constructor with an initialized ref */
   inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(ref, n * m) {}
 
+  /** This allows construction of a Matrix on another containers owned memory that is using a dualspace allocator.
+   *  It can be any span of that memory.
+   *  You're going to get a bunch of compile errors if the Container in questions is not using a the QMCPACK
+   *  realspace dualspace allocator "interface"
+   */
+  template<typename CONTAINER>
+  Matrix(const CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m) {}
+
   // Copy Constructor
   Matrix(const This_t& rhs)
   {
@@ -106,6 +114,18 @@ public:
     D2      = m;
     TotSize = n * m;
     X.attachReference(ref, TotSize);
+  }
+
+  /** Attach to pre-allocated memory and propagate the allocator of the owning container.
+   *  Required for sane access to dual space memory
+   */
+  template<typename CONTAINER>
+  inline void attachReference(const CONTAINER& other, T* ref, size_type n, size_type m)
+  {
+    D1      = n;
+    D2      = m;
+    TotSize = n * m;
+    X.attachReference(other, ref, TotSize);
   }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>

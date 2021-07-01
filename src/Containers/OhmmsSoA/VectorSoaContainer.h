@@ -123,11 +123,11 @@ struct VectorSoaContainer
     if (n_padded * D > nAllocated)
     {
       if (nAllocated)
-        myAlloc.deallocate(myData, nAllocated);
+        mAllocator.deallocate(myData, nAllocated);
       nLocal     = n;
       nGhosts    = n_padded;
       nAllocated = nGhosts * D;
-      myData     = myAlloc.allocate(nAllocated);
+      myData     = mAllocator.allocate(nAllocated);
     }
     else
     {
@@ -147,7 +147,7 @@ struct VectorSoaContainer
   __forceinline void free()
   {
     if (nAllocated)
-      myAlloc.deallocate(myData, nAllocated);
+      mAllocator.deallocate(myData, nAllocated);
     nLocal     = 0;
     nGhosts    = 0;
     nAllocated = 0;
@@ -240,6 +240,8 @@ struct VectorSoaContainer
   __forceinline T* data() { return myData; }
   ///return the base
   __forceinline const T* data() const { return myData; }
+  /// return non_const data
+  T* getNonConstData() const { return myData; }
   ///return the pointer of the i-th components
   __forceinline T* restrict data(size_t i) { return myData + i * nGhosts; }
   ///return the const pointer of the i-th components
@@ -252,16 +254,16 @@ struct VectorSoaContainer
 
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline T* device_data() { return myAlloc.getDevicePtr(); }
+  __forceinline T* device_data() { return mAllocator.getDevicePtr(); }
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline const T* device_data() const { return myAlloc.getDevicePtr(); }
+  __forceinline const T* device_data() const { return mAllocator.getDevicePtr(); }
   ///return the pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline T* restrict device_data(size_t i) { return myAlloc.getDevicePtr() + i * nGhosts; }
+  __forceinline T* restrict device_data(size_t i) { return mAllocator.getDevicePtr() + i * nGhosts; }
   ///return the const pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline const T* restrict device_data(size_t i) const { return myAlloc.getDevicePtr() + i * nGhosts; }
+  __forceinline const T* restrict device_data(size_t i) const { return mAllocator.getDevicePtr() + i * nGhosts; }
 
 private:
   /// number of elements
@@ -273,10 +275,14 @@ private:
   /// pointer: what type????
   T* myData;
   /// allocator
-  Alloc myAlloc;
+  Alloc mAllocator;
 
   /// return true if memory is not owned by the container but from outside.
   inline bool isRefAttached() const { return nGhosts * D > nAllocated; }
+
+  // We need this because of the hack propagation of the VectorSoaContainer allocator
+  // to allow proper OhmmsVector based views of VectorSoAContainer elements with OMPallocator
+  friend class qmcplusplus::Vector<T, Alloc>;
 };
 
 } // namespace qmcplusplus

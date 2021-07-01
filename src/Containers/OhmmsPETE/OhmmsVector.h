@@ -68,6 +68,19 @@ public:
     }
   }
 
+  /** This allows construction of a Vector on another containers owned memory that is using a dualspace allocator.
+   *  It can be any span of that memory.
+   *  You're going to get a bunch of compile errors if the Container in questions is not using a the QMCPACK
+   *  realspace dualspace allocator "interface"
+   */
+  template<typename CONTAINER>
+  Vector(const CONTAINER& other, T* ref, size_t n)
+      : nLocal(n),
+        nAllocated(0),
+        X(ref),
+        mAllocator(other.mAllocator.get_device_ptr(), other.mAllocator.get_allocator_host_ptr())
+  {}
+
   Vector(std::initializer_list<T> ts)
   {
     if (qmc_allocator_traits<Alloc>::is_host_accessible)
@@ -124,6 +137,22 @@ public:
       // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
       //throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     }
+    nLocal     = n;
+    nAllocated = 0;
+    X          = ref;
+  }
+
+  /** Attach to pre-allocated memory and propagate the allocator of the owning container.
+   *  Required for sane access to dual space memory
+   */
+  template<typename CONTAINER>
+  inline void attachReference(const CONTAINER& other, T* ref, size_t n)
+  {
+    if (nAllocated)
+    {
+      free();
+    }
+    mAllocator.actually_copy(other.mAllocator);
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
@@ -203,15 +232,18 @@ public:
   inline pointer data() { return X; }
   inline const_pointer data() const { return X; }
 
+  /** Return the device_ptr matching X if this is a vector attached or
+   *  owning dual space memory.
+   */
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline pointer device_data()
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.getDevicePtr(X);
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const_pointer device_data() const
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.getDevicePtr(X);
   }
 
   inline pointer first_address() { return X; }
@@ -225,7 +257,7 @@ private:
   size_t nLocal;
   ///The number of allocated
   size_t nAllocated;
-  ///pointer to the data managed by this object
+  ///pointer to the data accessed through this object
   T* X;
   ///allocator
   Alloc mAllocator;

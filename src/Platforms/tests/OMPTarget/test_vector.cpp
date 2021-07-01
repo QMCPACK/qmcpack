@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("OMPvector", "[OMP]")
+TEST_CASE("std_vector_OMPallocator", "[OMP]")
 {
   typedef std::vector<double, OMPallocator<double>> vec_t;
   vec_t A(3);
