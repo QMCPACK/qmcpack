@@ -132,8 +132,8 @@ public:
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
   }
 
-  // Stop makeClone
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
+  // final keyword is intended to disable makeClone being further inherited.
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
     return std::unique_ptr<DiracDeterminantBase>();
