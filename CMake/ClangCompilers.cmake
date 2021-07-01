@@ -54,9 +54,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=vla")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
 
 # set compiler warnings
-set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} -Wall -Wno-unused-variable -Wno-overloaded-virtual -Wno-unused-private-field -Wno-unused-local-typedef -Wsuggest-override"
-)
+string(APPEND CMAKE_CXX_FLAGS " -Wall -Wno-unused-variable -Wno-overloaded-virtual -Wno-unused-private-field -Wno-unused-local-typedef -Wsuggest-override")
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmisleading-indentation")
