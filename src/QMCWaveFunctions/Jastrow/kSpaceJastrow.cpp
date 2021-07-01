@@ -754,9 +754,9 @@ void kSpaceJastrow::resetParameters(const opt_variables_type& active)
 
 bool kSpaceJastrow::put(xmlNodePtr cur) { return true; }
 
-WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> kSpaceJastrow::makeClone(ParticleSet& tqp) const
 {
-  kSpaceJastrow* kj = new kSpaceJastrow(Ions);
+  auto kj = std::make_unique<kSpaceJastrow>(Ions);
   kj->copyFrom(*this);
   // kSpaceJastrow *kj = new kSpaceJastrow(*this);
   // kj->VarMap.clear();

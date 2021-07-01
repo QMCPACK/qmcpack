@@ -70,7 +70,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi;
-  psi.addComponent(new ConstantOrbital);
+  psi.addComponent(std::make_unique<ConstantOrbital>());
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -151,7 +151,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi;
-  psi.addComponent(new ConstantOrbital);
+  psi.addComponent(std::make_unique<ConstantOrbital>());
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -237,7 +237,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi;
-  psi.addComponent(new ConstantOrbital);
+  psi.addComponent(std::make_unique<ConstantOrbital>());
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 

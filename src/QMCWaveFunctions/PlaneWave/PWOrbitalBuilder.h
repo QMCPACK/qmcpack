@@ -63,11 +63,11 @@ public:
   ~PWOrbitalBuilder();
 
   ///implement vritual function
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   hid_t getH5(xmlNodePtr cur, const char* aname);
-  WaveFunctionComponent* putSlaterDet(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
   SPOSet* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)

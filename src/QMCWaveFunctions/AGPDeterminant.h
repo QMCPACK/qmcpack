@@ -41,7 +41,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  AGPDeterminant(BasisSetType* bs = 0);
+  AGPDeterminant(BasisSetType* bs = nullptr);
 
   ///default destructor
   ~AGPDeterminant();
@@ -90,9 +90,11 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   ///Total number of particles
   int NumPtcls;

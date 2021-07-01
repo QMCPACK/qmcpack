@@ -30,6 +30,8 @@
 #include "type_traits/CUDATypes.h"
 #endif
 
+#include <memory>
+
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
  */
@@ -50,7 +52,6 @@ struct WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
 
-typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
 
 /**@defgroup WaveFunctionComponent group
@@ -449,7 +450,7 @@ struct WaveFunctionComponent : public QMCTraits
    *
    * If not true, return a proxy class
    */
-  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  virtual std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const;
 
   /** Return the Chiesa kinetic energy correction
    */

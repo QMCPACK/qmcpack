@@ -167,54 +167,54 @@ public:
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */
-  void checkInVariables(opt_variables_type& active);
+  void checkInVariables(opt_variables_type& active) override;
 
   /** check out optimizable variables
    */
-  void checkOutVariables(const opt_variables_type& active);
+  void checkOutVariables(const opt_variables_type& active) override;
 
   ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active) override;
 
-  inline void finalizeOptimization() { KEcorr = j2_ke_corr_helper.computeKEcorr(); }
+  inline void finalizeOptimization() override { KEcorr = j2_ke_corr_helper.computeKEcorr(); }
 
   /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os);
+  void reportStatus(std::ostream& os) override;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L);
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   /** recompute internal data assuming distance table is fully ready */
-  void recompute(const ParticleSet& P);
+  void recompute(const ParticleSet& P) override;
 
-  PsiValueType ratio(ParticleSet& P, int iat);
-  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios);
-  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  GradType evalGrad(ParticleSet& P, int iat);
+  GradType evalGrad(ParticleSet& P, int iat) override;
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
-  inline void restore(int iat) {}
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  inline void restore(int iat) override {}
 
   /** compute G and L after the sweep
    */
   LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
-                          bool fromscratch = false);
+                          bool fromscratch = false) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   /*@{ internal compute engines*/
   valT computeU(const ParticleSet& P, int iat, const DistRow& dist);
@@ -234,7 +234,7 @@ public:
 
   inline RealType ChiesaKEcorrection() { return KEcorr = j2_ke_corr_helper.computeKEcorr(); }
 
-  inline RealType KECorrection() { return KEcorr; }
+  inline RealType KECorrection() override { return KEcorr; }
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
 };

@@ -183,10 +183,10 @@ void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
 
 /*@todo makeClone should be a pure virtual function
  */
-WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const
+std::unique_ptr<WaveFunctionComponent> WaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
   APP_ABORT("Implement WaveFunctionComponent::makeClone " + ClassName + " class.");
-  return 0;
+  return std::unique_ptr<WaveFunctionComponent>();
 }
 
 WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection() { return 0; }

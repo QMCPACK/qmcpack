@@ -71,13 +71,13 @@ void MultiSlaterDeterminantFast::initialize()
 
 MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast() = default;
 
-WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
   std::vector<std::unique_ptr<MultiDiracDeterminant>> dets_clone;
   for (auto& det : Dets)
     dets_clone.emplace_back(std::make_unique<MultiDiracDeterminant>(*det));
 
-  MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp, std::move(dets_clone), use_pre_computing_);
+  auto clone = std::make_unique<MultiSlaterDeterminantFast>(tqp, std::move(dets_clone), use_pre_computing_);
   if (usingBF)
   {
     BackflowTransformation* tr = BFTrans->makeClone(tqp);
@@ -314,7 +314,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto psi_inv = static_cast<ValueType>(PsiValueType(1.0) / psi_list[iw]);
+    auto psi_inv    = static_cast<ValueType>(PsiValueType(1.0) / psi_list[iw]);
     grad_now[iw][0] = grad_now_list[iw * 3 + 0] * psi_inv;
     grad_now[iw][1] = grad_now_list[iw * 3 + 1] * psi_inv;
     grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
