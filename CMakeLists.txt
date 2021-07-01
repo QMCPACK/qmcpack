@@ -989,13 +989,6 @@ if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
 
 endif()
 
-set(CMAKE_CXX_CLANG_TIDY
-    clang-tidy-12;
-    -header-filter=.;
-    --fix;
-    -checks=-*,modernize-use-override;
-)
-
 ############################################################
 # FLAGS at the project level
 ############################################################
