@@ -68,7 +68,7 @@ struct VectorSoaContainer
   }
 
   ///move constructor
-  VectorSoaContainer(VectorSoaContainer&& in)
+  VectorSoaContainer(VectorSoaContainer&& in) noexcept
       : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(std::move(in.myData))
   {
     in.myData     = nullptr;
