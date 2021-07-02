@@ -22,7 +22,7 @@ class SkEstimator_CUDA : public SkEstimator
 {
 public:
   SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 };
 } // namespace qmcplusplus
 

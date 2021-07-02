@@ -109,7 +109,7 @@ struct ConservedEnergy : public OperatorBase
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
     auto& walkers = W.WalkerList;

@@ -73,7 +73,9 @@ public:
 
   //methods to be implemented in the future (possibly)
   void resetParameters(const opt_variables_type& optVariables) override;
-  void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
+#ifdef QMC_CUDA
+  void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi) override;
+#endif
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
