@@ -38,7 +38,7 @@ class RPAJastrow : public WaveFunctionComponent
 public:
   RPAJastrow(ParticleSet& target);
 
-  ~RPAJastrow();
+  ~RPAJastrow() override;
 
   bool put(xmlNodePtr cur);
 

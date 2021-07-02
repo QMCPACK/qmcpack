@@ -34,8 +34,8 @@ public:
 
 
   inline void setSkParser(SkParserBase* skparser_i) { skparser = skparser_i; };
-  bool validateXML();
-  bool execute();
+  bool validateXML() override;
+  bool execute() override;
 
   void build_spherical_grid(IndexType mtheta, IndexType mphi);
   void getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem);

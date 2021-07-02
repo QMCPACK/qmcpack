@@ -61,7 +61,7 @@ public:
     F.resize(NumGroups * NumGroups, 0);
   }
 
-  ~DiffTwoBodyJastrowOrbital()
+  ~DiffTwoBodyJastrowOrbital() override
   {
     delete_iter(gradLogPsi.begin(), gradLogPsi.end());
     delete_iter(lapLogPsi.begin(), lapLogPsi.end());
@@ -107,7 +107,7 @@ public:
   }
 
   ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
     while (it != it_end)
@@ -116,7 +116,7 @@ public:
     }
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
     typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
@@ -173,7 +173,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi)
+                           std::vector<ValueType>& dhpsioverpsi) override
   {
     if (myVars.size() == 0)
       return;
@@ -204,7 +204,7 @@ public:
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi)
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
   {
     if (myVars.size() == 0)
       return;
@@ -294,7 +294,7 @@ public:
     }
   }
 
-  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
+  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override
   {
     DiffTwoBodyJastrowOrbital<FT>* j2copy = new DiffTwoBodyJastrowOrbital<FT>(tqp);
     std::map<const FT*, FT*> fcmap;

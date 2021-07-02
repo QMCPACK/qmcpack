@@ -42,10 +42,10 @@ public:
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
 
-  bool get(std::ostream& os) const;
-  bool put(std::istream& is);
-  bool put(xmlNodePtr cur);
-  void reset();
+  bool get(std::ostream& os) const override;
+  bool put(std::istream& is) override;
+  bool put(xmlNodePtr cur) override;
+  void reset() override;
   static void test();
 
   static void make_seeds();

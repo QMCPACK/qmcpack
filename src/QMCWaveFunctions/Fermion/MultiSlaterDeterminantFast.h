@@ -80,7 +80,7 @@ public:
                              bool use_pre_computing);
 
   ///destructor
-  ~MultiSlaterDeterminantFast();
+  ~MultiSlaterDeterminantFast() override;
 
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;

@@ -39,6 +39,10 @@ set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wmaybe-uninitialized -Wuninitialized -Wreorder -Wno-unknown-pragmas -Wno-sign-compare"
 )
 
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.2)
+  string(APPEND CMAKE_CXX_FLAGS " -Wsuggest-override")
+endif()
+
 # Set extra optimization specific flags
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math")

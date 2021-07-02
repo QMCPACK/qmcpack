@@ -35,14 +35,14 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
-  ~NonLocalECPotential();
+  ~NonLocalECPotential() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() override;
-  virtual void checkout_particle_quantities(TraceManager& tm) override;
-  virtual void delete_particle_quantities() override;
+  void contribute_particle_quantities() override;
+  void checkout_particle_quantities(TraceManager& tm) override;
+  void delete_particle_quantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;

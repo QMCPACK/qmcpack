@@ -84,11 +84,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
     cutoff_radius = 0.0;
   }
 
-  OptimizableFunctorBase* makeClone() const { return new BsplineFunctor(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new BsplineFunctor(*this); }
 
-  void setCusp(real_type c) { CuspValue = c; }
+  void setCusp(real_type c) override { CuspValue = c; }
 
-  void setPeriodic(bool p) { periodic = p; }
+  void setPeriodic(bool p) override { periodic = p; }
 
   void resize(int n)
   {
@@ -102,7 +102,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     SplineDerivs.resize(numCoefs);
   }
 
-  void reset()
+  void reset() override
   {
     int numCoefs = NumParams + 4;
     int numKnots = numCoefs - 2;
@@ -271,7 +271,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
   }
 
 
-  inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs) override
   {
     if (r >= cutoff_radius)
       return false;
@@ -366,13 +366,13 @@ struct BsplineFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) override
   {
     if (r >= cutoff_radius)
       return 0.0;
     return evaluate(r);
   }
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) override
   {
     if (r >= cutoff_radius)
       return 0.0;
@@ -382,7 +382,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
   }
 
 
-  bool put(xmlNodePtr cur)
+  bool put(xmlNodePtr cur) override
   {
     ReportEngine PRE("BsplineFunctor", "put(xmlNodePtr)");
     //CuspValue = -1.0e10;
@@ -572,21 +572,21 @@ struct BsplineFunctor : public OptimizableFunctorBase
     myVars.print(os);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     if (notOpt)
       return;
     myVars.getIndex(active);
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     if (notOpt)
       return;
     active.insertFrom(myVars);
   }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (notOpt)
       return;

@@ -72,7 +72,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
 
-  ~J1OrbitalSoA()
+  ~J1OrbitalSoA() override
   {
     for (int i = 0; i < F.size(); ++i)
       if (F[i] != nullptr)

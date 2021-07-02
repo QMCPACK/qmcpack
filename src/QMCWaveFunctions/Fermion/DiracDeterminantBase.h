@@ -52,7 +52,7 @@ public:
   }
 
   ///default destructor
-  virtual ~DiracDeterminantBase() {}
+  ~DiracDeterminantBase() override {}
 
   // copy constructor and assign operator disabled
   DiracDeterminantBase(const DiracDeterminantBase& s) = delete;
@@ -79,13 +79,13 @@ public:
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
+  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
+  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
-  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
+  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
-  inline void reportStatus(std::ostream& os) override final {}
+  inline void reportStatus(std::ostream& os) final {}
 
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
@@ -139,12 +139,12 @@ public:
     return std::unique_ptr<DiracDeterminantBase>();
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
     return 0.0;
   }
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
     return GradType();

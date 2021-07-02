@@ -60,7 +60,7 @@ private:
 public:
   ///constructor
   PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
-  ~PWOrbitalBuilder();
+  ~PWOrbitalBuilder() override;
 
   ///implement vritual function
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;

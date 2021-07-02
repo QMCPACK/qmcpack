@@ -34,7 +34,7 @@ public:
   SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF);
 
   ///destructor
-  ~SlaterDetWithBackflow();
+  ~SlaterDetWithBackflow() override;
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf) override

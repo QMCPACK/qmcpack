@@ -29,7 +29,7 @@ public:
     SKERR
   };
 
-  void parse(const string& fname);
+  void parse(const string& fname) override;
 
 private:
   vector<vector<RealType>> read_sk_file(const string& fname);

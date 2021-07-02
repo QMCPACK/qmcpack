@@ -52,7 +52,7 @@ public:
    *
    * Builder takes care of who owns what
    */
-  ~PWOrbitalSet();
+  ~PWOrbitalSet() override;
 
   SPOSet* makeClone() const override;
   /** resize  the orbital base

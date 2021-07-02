@@ -42,17 +42,17 @@ public:
   QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCOptimize();
+  ~QMCOptimize() override;
 
   ///Run the Optimization algorithm.
-  bool run();
+  bool run() override;
   ///process xml node
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
 
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
-  QMCRunType getRunType() { return QMCRunType::OPTIMIZE; }
+  QMCRunType getRunType() override { return QMCRunType::OPTIMIZE; }
 
 private:
   ///index to denote the partition id

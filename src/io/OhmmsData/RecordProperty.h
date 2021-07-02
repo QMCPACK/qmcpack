@@ -116,7 +116,7 @@ struct RecordNamedProperty : public RecordProperty
 
   RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(0), Values(a.Values), Names(a.Names) {}
 
-  ~RecordNamedProperty()
+  ~RecordNamedProperty() override
   {
     if (OutStream)
       delete OutStream;
@@ -193,7 +193,7 @@ struct RecordNamedProperty : public RecordProperty
   }
 
   ///implement virtual functions
-  inline void reset(const char* fileroot, bool append = false)
+  inline void reset(const char* fileroot, bool append = false) override
   {
     if (OutStream)
       delete OutStream;
@@ -217,7 +217,7 @@ struct RecordNamedProperty : public RecordProperty
     OutStream->setf(std::ios::right, std::ios::adjustfield);
   }
 
-  inline void report(int iter)
+  inline void report(int iter) override
   {
     if (stride && iter % stride == 0)
     {
@@ -227,8 +227,8 @@ struct RecordNamedProperty : public RecordProperty
     }
   }
 
-  void finalize() {}
-  bool put(xmlNodePtr cur);
+  void finalize() override {}
+  bool put(xmlNodePtr cur) override;
 };
 
 template<class T>

@@ -107,7 +107,7 @@ public:
   ///Copy operator (disabled).
   QMCDriver& operator=(const QMCDriver&) = delete;
 
-  virtual ~QMCDriver() override;
+  ~QMCDriver() override;
 
   ///return current step
   inline int current() const { return CurrentStep; }
@@ -343,7 +343,7 @@ protected:
    *
    * virtual function with a default implementation
    */
-  virtual void recordBlock(int block) override;
+  void recordBlock(int block) override;
 
   /** finalize a qmc section
    * @param block current block

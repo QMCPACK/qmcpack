@@ -48,19 +48,19 @@ private:
   int Pos, saved;
 
 public:
-  bool OpenFile(std::string fname);
-  void CloseFile();
-  bool FindToken(std::string token);
-  bool ReadInt(int& val);
-  bool ReadLong(long& val);
-  bool ReadDouble(double& val);
+  bool OpenFile(std::string fname) override;
+  void CloseFile() override;
+  bool FindToken(std::string token) override;
+  bool ReadInt(int& val) override;
+  bool ReadLong(long& val) override;
+  bool ReadDouble(double& val) override;
   bool ReadComplex(std::complex<double>& val);
-  bool ReadWord(std::string& word);
-  bool ReadLine(std::string& line);
-  bool NextLine();
-  void SavePos();
-  void RestorePos();
-  void Reset();
+  bool ReadWord(std::string& word) override;
+  bool ReadLine(std::string& line) override;
+  bool NextLine() override;
+  void SavePos() override;
+  void RestorePos() override;
+  void Reset() override;
 
   MemParserClass()
   {
@@ -77,19 +77,19 @@ private:
   std::streampos Pos, saved;
 
 public:
-  bool OpenFile(std::string fname);
-  void CloseFile();
-  bool FindToken(std::string token);
-  bool ReadInt(int& val);
-  bool ReadLong(long& val);
-  bool ReadDouble(double& val);
+  bool OpenFile(std::string fname) override;
+  void CloseFile() override;
+  bool FindToken(std::string token) override;
+  bool ReadInt(int& val) override;
+  bool ReadLong(long& val) override;
+  bool ReadDouble(double& val) override;
   bool ReadComplex(std::complex<double>& val);
-  bool ReadWord(std::string& word);
-  bool ReadLine(std::string& line);
-  bool NextLine();
-  void SavePos();
-  void RestorePos();
-  void Reset();
+  bool ReadWord(std::string& word) override;
+  bool ReadLine(std::string& line) override;
+  bool NextLine() override;
+  void SavePos() override;
+  void RestorePos() override;
+  void Reset() override;
 
   FileParserClass()
   {
@@ -109,19 +109,19 @@ private:
   inline long BufferEnd() { return BufferStart + (long)Buffer.size(); }
 
 public:
-  bool OpenFile(std::string fname);
-  void CloseFile();
-  bool FindToken(std::string token);
-  bool ReadInt(int& val);
-  bool ReadLong(long& val);
-  bool ReadDouble(double& val);
+  bool OpenFile(std::string fname) override;
+  void CloseFile() override;
+  bool FindToken(std::string token) override;
+  bool ReadInt(int& val) override;
+  bool ReadLong(long& val) override;
+  bool ReadDouble(double& val) override;
   bool ReadComplex(std::complex<double>& val);
-  bool ReadWord(std::string& word);
-  bool ReadLine(std::string& line);
-  bool NextLine();
-  void SavePos();
-  void RestorePos();
-  void Reset();
+  bool ReadWord(std::string& word) override;
+  bool ReadLine(std::string& line) override;
+  bool NextLine() override;
+  void SavePos() override;
+  void RestorePos() override;
+  void Reset() override;
 
   FileParserClass2(int buffSize = 16777216) { MaxBufferSize = buffSize; }
 };

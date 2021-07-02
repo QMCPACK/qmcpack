@@ -52,8 +52,8 @@ void NumericalDiffOrbital::resetParameters(const opt_variables_type& optvars)
 
 void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
-                                               std::vector<RealType>& dlogpsi,
-                                               std::vector<RealType>& dhpsioverpsi)
+                                               std::vector<ValueType>& dlogpsi,
+                                               std::vector<ValueType>& dhpsioverpsi)
 {
   //
   if (refOrbital.empty())
@@ -118,8 +118,8 @@ void AnalyticDiffOrbital::checkOutVariables(const opt_variables_type& optvars)
 
 void AnalyticDiffOrbital::evaluateDerivatives(ParticleSet& P,
                                               const opt_variables_type& optvars,
-                                              std::vector<RealType>& dlogpsi,
-                                              std::vector<RealType>& dhpsioverpsi)
+                                              std::vector<ValueType>& dlogpsi,
+                                              std::vector<ValueType>& dhpsioverpsi)
 {
   if (MyIndex < 0)
     return;
