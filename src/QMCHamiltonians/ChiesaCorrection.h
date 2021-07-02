@@ -33,7 +33,7 @@ public:
   Return_t evaluate(ParticleSet& P) override;
 
 #ifdef QMC_CUDA
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 #endif
 
   bool put(xmlNodePtr cur) override;

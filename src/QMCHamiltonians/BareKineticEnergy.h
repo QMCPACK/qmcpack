@@ -471,7 +471,7 @@ struct BareKineticEnergy : public OperatorBase
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
   {
     auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
