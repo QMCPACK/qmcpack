@@ -82,6 +82,10 @@ struct DualAllocator : public HostAllocator
   T* getDevicePtr() { return device_ptr_; }
   const T* getDevicePtr() const { return device_ptr_; }
 
+  T* getDevicePtr(T* host_ptr) { return device_ptr_ + (host_ptr_ - host_ptr) ; }
+  const T* getDevicePtr(T* host_ptr) const { return
+      device_ptr_ + (host_ptr_ -host_ptr); }
+
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
