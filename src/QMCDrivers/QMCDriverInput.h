@@ -33,8 +33,8 @@ public:
   QMCDriverInput()                      = default;
   QMCDriverInput(const QMCDriverInput&) = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
-  QMCDriverInput(QMCDriverInput&&);
-  QMCDriverInput& operator=(QMCDriverInput&&);
+  QMCDriverInput(QMCDriverInput&&) noexcept;
+  QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
 
 protected:
 
@@ -129,8 +129,8 @@ public:
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
-inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) = default;
-inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) = default;
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept = default;
+inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) noexcept = default;
 
 } // namespace qmcplusplus
 
