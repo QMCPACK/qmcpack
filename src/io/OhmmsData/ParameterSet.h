@@ -35,7 +35,7 @@ struct ParameterSet : public OhmmsElementBase
 
   ParameterSet(const char* aname = "parameter") : OhmmsElementBase(aname) {}
 
-  ~ParameterSet()
+  ~ParameterSet() override
   {
     iterator it(m_param.begin());
     iterator it_end(m_param.end());
@@ -46,7 +46,7 @@ struct ParameterSet : public OhmmsElementBase
     }
   }
 
-  inline bool get(std::ostream& os) const
+  inline bool get(std::ostream& os) const override
   {
     const_iterator it(m_param.begin());
     const_iterator it_end(m_param.end());
@@ -58,7 +58,7 @@ struct ParameterSet : public OhmmsElementBase
     return true;
   }
 
-  inline bool put(std::istream& is) { return true; }
+  inline bool put(std::istream& is) override { return true; }
 
   /** assign parameters to the set
    * @param cur the xml node to work on
@@ -69,7 +69,7 @@ struct ParameterSet : public OhmmsElementBase
    * - <parameter name="aname"> value </parameter>
    * aname is converted into lower cases.
    */
-  inline bool put(xmlNodePtr cur)
+  inline bool put(xmlNodePtr cur) override
   {
     if (cur == NULL)
       return true; //handle empty node
@@ -107,7 +107,7 @@ struct ParameterSet : public OhmmsElementBase
     return something;
   }
 
-  inline void reset() {}
+  inline void reset() override {}
 
   /** add a new parameter corresponding to an xmlNode <parameter/>
    *@param aparam reference the object which this parameter is assigned to.

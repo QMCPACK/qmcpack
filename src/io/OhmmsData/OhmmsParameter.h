@@ -124,7 +124,7 @@ public:
   }
 
   ///print to an std::ostream
-  inline bool get(std::ostream& os) const
+  inline bool get(std::ostream& os) const override
   {
     os << "<parameter name=\"" << myName << "\">" << ref_ << "</parameter>" << std::endl;
     return true;
@@ -133,7 +133,7 @@ public:
   /*!inline bool put(xmlNodePtr cur), used by ParameterSet
    *\param cur the current xmlNode whose content is assigned to ref_
    */
-  inline bool put(xmlNodePtr cur)
+  inline bool put(xmlNodePtr cur) override
   {
     checkTagStatus(myName, tag_staus_);
     node_ = cur;
@@ -144,7 +144,7 @@ public:
 
 
   ///read from std::istream, used by OhmmsAttributeSet
-  inline bool put(std::istream& is)
+  inline bool put(std::istream& is) override
   {
     checkTagStatus(myName, tag_staus_);
     is >> ref_;
@@ -158,7 +158,7 @@ public:
    *input file does not contain the corresponding <parameter/>. The content
    *of the new xmlNode is the current value of ref_.
    */
-  bool add(xmlNodePtr parent)
+  bool add(xmlNodePtr parent) override
   {
     if (!node_)
     {
@@ -172,7 +172,7 @@ public:
   inline void setValue(T x) { ref_ = x; }
 
   ///reset member data
-  inline void reset() { getContent(ref_, node_); }
+  inline void reset() override { getContent(ref_, node_); }
 };
 
 /*!\class OhmmsParameter<bool>
@@ -214,7 +214,7 @@ public:
   }
 
   ///print to an std::ostream
-  inline bool get(std::ostream& os) const
+  inline bool get(std::ostream& os) const override
   {
     os << "<parameter name=\"" << myName << "\">" << ref_ << "</parameter>" << std::endl;
     return true;
@@ -226,7 +226,7 @@ public:
    *Example is <parameter name="force"/> to turn on the force-evaluation flag
    *of NoPropagator.
    */
-  inline bool put(xmlNodePtr cur)
+  inline bool put(xmlNodePtr cur) override
   {
     checkTagStatus(myName, tag_staus_);
     node_ = cur;
@@ -248,7 +248,7 @@ public:
   inline void setValue(bool x) { ref_ = x; }
 
   ///read from std::istream
-  inline bool put(std::istream& is)
+  inline bool put(std::istream& is) override
   {
     checkTagStatus(myName, tag_staus_);
     std::string yes;
@@ -266,7 +266,7 @@ public:
    *input file does not contain the corresponding <parameter/>. The content
    *of the new xmlNode is the current value of ref_.
    */
-  bool add(xmlNodePtr parent)
+  bool add(xmlNodePtr parent) override
   {
     if (!node_)
     {
@@ -278,6 +278,6 @@ public:
   }
 
   ///reset member data
-  inline void reset() { getContent(ref_, node_); }
+  inline void reset() override { getContent(ref_, node_); }
 };
 #endif /*OHMMS_OHMMSPARAMETER_H*/

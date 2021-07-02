@@ -66,7 +66,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     cutoff_radius = 0.0;
   }
 
-  OptimizableFunctorBase* makeClone() const { return new PolynomialFunctor3D(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new PolynomialFunctor3D(*this); }
 
   void resize(int neI, int nee)
   {
@@ -216,7 +216,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     // }
   }
 
-  void reset()
+  void reset() override
   {
     resize(N_eI, N_ee);
     reset_gamma();
@@ -907,10 +907,10 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
 #endif
   }
 
-  inline real_type f(real_type r) { return 0.0; }
-  inline real_type df(real_type r) { return 0.0; }
+  inline real_type f(real_type r) override { return 0.0; }
+  inline real_type df(real_type r) override { return 0.0; }
 
-  bool put(xmlNodePtr cur)
+  bool put(xmlNodePtr cur) override
   {
     ReportEngine PRE("PolynomialFunctor3D", "put(xmlNodePtr)");
     // //CuspValue = -1.0e10;
@@ -991,7 +991,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (notOpt)
       return;
@@ -1010,9 +1010,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     reset_gamma();
   }
 
-  void checkInVariables(opt_variables_type& active) { active.insertFrom(myVars); }
+  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
 
-  void checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
+  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   void print(std::ostream& os)
   {

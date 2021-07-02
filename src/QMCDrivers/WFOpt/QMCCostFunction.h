@@ -35,7 +35,7 @@ public:
   QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunction();
+  ~QMCCostFunction() override;
 
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations() override;

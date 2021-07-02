@@ -88,11 +88,11 @@ private:
 
 public:
   BareForce(ParticleSet& ions, ParticleSet& elns);
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
-  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override
   {
     registerObservablesF(h5list, gid);
   }
@@ -101,16 +101,16 @@ public:
    * @param plist RecordNameProperty
    * @param collectables Observables that are accumulated by evaluate
    */
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist) { setObservablesF(plist); }
+  void setObservables(PropertySetType& plist) override { setObservablesF(plist); }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetF(plist, offset); }
+  void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetF(plist, offset); }
 
   /** Do nothing */
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "Force Base Hamiltonian: " << pairName;
     return true;

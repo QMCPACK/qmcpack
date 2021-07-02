@@ -73,12 +73,12 @@ public:
                          const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
-  ~MultiSlaterDeterminant();
+  ~MultiSlaterDeterminant() override;
 
-  virtual void checkInVariables(opt_variables_type& active) override;
-  virtual void checkOutVariables(const opt_variables_type& active) override;
-  virtual void resetParameters(const opt_variables_type& active) override;
-  virtual void reportStatus(std::ostream& os) override;
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}
@@ -87,25 +87,25 @@ public:
                              ParticleSet::ParticleGradient_t& G,
                              ParticleSet::ParticleLaplacian_t& L);
 
-  virtual LogValueType evaluateLog(const ParticleSet& P,
-                                   ParticleSet::ParticleGradient_t& G,
-                                   ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  virtual GradType evalGrad(ParticleSet& P, int iat) override;
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-  virtual PsiValueType ratio(ParticleSet& P, int iat) override;
-  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
-  virtual void restore(int iat) override;
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  void restore(int iat) override;
 
-  virtual void registerData(ParticleSet& P, WFBufferType& buf) override;
-  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
-  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  virtual std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi) override;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
 
   virtual void resize(int, int);
 

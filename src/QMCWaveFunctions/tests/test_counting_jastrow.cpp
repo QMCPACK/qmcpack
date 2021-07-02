@@ -296,11 +296,11 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     RealType ratioval = std::real( cj->ratio(elec, iat) );
     REQUIRE( ratioval_exact[iat] == Approx(std::real(ratioval)) );
 
-    PosType grad_iat(0,0,0);
+    GradType grad_iat(0, 0, 0);
     RealType gradratioval = std::real( cj->ratioGrad(elec, iat, grad_iat) );
     REQUIRE( ratioval_exact[iat] == Approx(gradratioval));
     for(int k = 0; k < 3; ++k)
-      REQUIRE(Jgrad_t_exact[iat][k] == Approx(grad_iat[k]));
+      REQUIRE(Jgrad_t_exact[iat][k] == Approx(std::real(grad_iat[k])));
 
     cj->acceptMove(elec, iat);
   }

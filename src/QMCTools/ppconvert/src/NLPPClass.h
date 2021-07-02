@@ -127,14 +127,14 @@ public:
   void WriteCASINO(std::string filename);
   void WriteHDF5(std::string filename);
   void CalcProjector(std::string refstate, int lchannel);
-  double V(double r);
-  double V(int l, double r);
-  double dVdr(double r);
-  double dVdr(int l, double r);
-  double d2Vdr2(double r);
-  double d2Vdr2(int l, double r);
-  void Write(IOSectionClass& out);
-  void Read(IOSectionClass& in);
+  double V(double r) override;
+  double V(int l, double r) override;
+  double dVdr(double r) override;
+  double dVdr(int l, double r) override;
+  double d2Vdr2(double r) override;
+  double d2Vdr2(int l, double r) override;
+  void Write(IOSectionClass& out) override;
+  void Read(IOSectionClass& in) override;
 
   void SetDensityMix(double mix) { DensityMix = mix; }
 

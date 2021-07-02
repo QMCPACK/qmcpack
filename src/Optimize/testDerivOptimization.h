@@ -63,7 +63,7 @@ public:
       setTarget(atarget);
   }
 
-  ~testDerivOptimization() {}
+  ~testDerivOptimization() override {}
 
   void setTarget(ObjectFuncType* fn)
   {
@@ -96,7 +96,7 @@ public:
     Parms_.resize(newSize, 0.0);
   }
 
-  bool optimize(ObjectFuncType* fn)
+  bool optimize(ObjectFuncType* fn) override
   {
     setTarget(fn);
     return optimize();
@@ -120,7 +120,7 @@ public:
    *
    */
 
-  bool put(xmlNodePtr cur)
+  bool put(xmlNodePtr cur) override
   {
     std::string output_file("no");
     OhmmsAttributeSet attrib;

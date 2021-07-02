@@ -37,7 +37,7 @@ public:
   std::vector<int> component_offsets;
 
   CompositeSPOSet();
-  ~CompositeSPOSet();
+  ~CompositeSPOSet() override;
 
   ///add a sposet component to this composite sposet
   void add(SPOSet* component);
@@ -47,18 +47,22 @@ public:
 
   //SPOSet interface methods
   ///size is determined by component sposets and nothing else
-  inline void setOrbitalSetSize(int norbs) {}
+  inline void setOrbitalSetSize(int norbs) override {}
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   /** add sposet clones from another Composite SPOSet
      *   should only be used in makeClone functions following shallow copy
      */
   void clone_from(const CompositeSPOSet& master);
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override;
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
@@ -68,27 +72,27 @@ public:
 
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables);
+  void resetParameters(const opt_variables_type& optVariables) override;
   void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix_t& d2logdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet);
+                            HessMatrix_t& ddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& ddlogdet,
-                            GGGMatrix_t& dddlogdet);
+                            GGGMatrix_t& dddlogdet) override;
 };
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
@@ -96,9 +100,9 @@ struct CompositeSPOSetBuilder : public SPOSetBuilder
   CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
 
   //SPOSetBuilder interface
-  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
-  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input) override;
 
   /// reference to the sposet_builder_factory
   const SPOSetBuilderFactory& sposet_builder_factory_;

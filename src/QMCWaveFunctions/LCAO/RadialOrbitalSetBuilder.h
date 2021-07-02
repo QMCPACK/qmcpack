@@ -60,7 +60,7 @@ struct A2NTransformer : TransformerBase<T>
   std::unique_ptr<FnIn> m_ref; //candidate for unique_ptr
   A2NTransformer(std::unique_ptr<FnIn> in) : m_ref(std::move(in)) {}
 
-  void convert(grid_type& agrid, FnOut& multiset, int ispline, int order)
+  void convert(grid_type& agrid, FnOut& multiset, int ispline, int order) override
   {
     typedef OneDimQuinticSpline<OHMMS_PRECISION_FULL> spline_type;
     spline_type radorb(agrid.makeClone());

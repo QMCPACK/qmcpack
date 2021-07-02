@@ -469,17 +469,17 @@ struct ShortRangePartAdapter : OptimizableFunctorBase
 
   explicit ShortRangePartAdapter(HandlerType* inhandler) : Uconst(0), myHandler(inhandler) {}
 
-  OptimizableFunctorBase* makeClone() const { return new ShortRangePartAdapter<T>(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new ShortRangePartAdapter<T>(*this); }
 
-  inline void reset() {}
+  inline void reset() override {}
   inline void setRmax(real_type rm) { Uconst = myHandler->evaluate(rm, 1.0 / rm); }
   inline real_type evaluate(real_type r) { return f(r); }
-  inline real_type f(real_type r) { return myHandler->evaluate(r, 1.0 / r) - Uconst; }
-  inline real_type df(real_type r) { return myHandler->srDf(r, 1.0 / r); }
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& optVariables) {}
-  bool put(xmlNodePtr cur) { return true; }
+  inline real_type f(real_type r) override { return myHandler->evaluate(r, 1.0 / r) - Uconst; }
+  inline real_type df(real_type r) override { return myHandler->srDf(r, 1.0 / r); }
+  void checkInVariables(opt_variables_type& active) override {}
+  void checkOutVariables(const opt_variables_type& active) override {}
+  void resetParameters(const opt_variables_type& optVariables) override {}
+  bool put(xmlNodePtr cur) override { return true; }
   real_type Uconst;
   HandlerType* myHandler;
 };

@@ -63,10 +63,10 @@ public:
                            const std::string& QMC_driver_type = "QMCLinearOptimizeBatched");
 
   ///Destructor
-  virtual ~QMCLinearOptimizeBatched() = default;
+  ~QMCLinearOptimizeBatched() override = default;
 
   ///Run the Optimization algorithm.
-  virtual bool run() override = 0;
+  bool run() override = 0;
 
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
@@ -192,7 +192,7 @@ public:
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
 
-  virtual QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
   NewTimer& eigenvalue_timer_;

@@ -33,10 +33,10 @@ public:
   /// Constructor.
   DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling);
 
-  bool run();
-  bool put(xmlNodePtr cur);
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
   void setTau(RealType i);
-  QMCRunType getRunType() { return QMCRunType::DMC; }
+  QMCRunType getRunType() override { return QMCRunType::DMC; }
 
 private:
   ///Index to determine what to do when node crossing is detected

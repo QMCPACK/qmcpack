@@ -129,7 +129,7 @@ public:
   ///Copy operator (disabled).
   QMCDriverNew& operator=(const QMCDriverNew&) = delete;
 
-  virtual ~QMCDriverNew() override;
+  ~QMCDriverNew() override;
 
   bool putQMCInfo(xmlNodePtr cur);
 
@@ -148,7 +148,7 @@ public:
    *
    * virtual function with a default implementation
    */
-  virtual void recordBlock(int block) override;
+  void recordBlock(int block) override;
 
   /** finalize a qmc section
    * @param block current block
@@ -212,7 +212,7 @@ public:
    *  \todo remove cur, the driver and all its child nodes should be completely processed before
    *        this stage of driver initialization is hit.
    */
-  virtual void process(xmlNodePtr cur) override = 0;
+  void process(xmlNodePtr cur) override = 0;
 
   /** Do common section starting tasks
    *

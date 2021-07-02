@@ -156,7 +156,7 @@ protected:
 public:
   J2OrbitalSoA(const std::string& obj_name, ParticleSet& p);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
-  ~J2OrbitalSoA();
+  ~J2OrbitalSoA() override;
 
   /* initialize storage */
   void init(ParticleSet& p);

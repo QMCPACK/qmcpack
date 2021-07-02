@@ -376,7 +376,7 @@ public:
     return Jgrad[iat];
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, PosType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     evaluateTempExponents(P, iat);
     grad_iat += Jgrad_t[iat];

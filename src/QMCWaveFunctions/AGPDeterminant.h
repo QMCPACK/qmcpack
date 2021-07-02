@@ -44,27 +44,27 @@ public:
   AGPDeterminant(BasisSetType* bs = nullptr);
 
   ///default destructor
-  ~AGPDeterminant();
+  ~AGPDeterminant() override;
 
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  PsiValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat) override;
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -72,11 +72,11 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   /** move was rejected. copy the real container to the temporary to move on
    */
-  void restore(int iat);
+  void restore(int iat) override;
 
   void resizeByWalkers(int nwalkers);
 
@@ -92,7 +92,7 @@ public:
    */
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L);
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 

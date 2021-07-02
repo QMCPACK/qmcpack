@@ -52,7 +52,7 @@ public:
   DampedDynamics(ObjectFuncType* atarget = 0);
 
   /** destructor */
-  ~DampedDynamics() {}
+  ~DampedDynamics() override {}
 
   /** set the target function
    * @param fn target function to optimize
@@ -64,7 +64,7 @@ public:
   /** optimize an object function
    * @param fn object function
    */
-  bool optimize(ObjectFuncType* fn)
+  bool optimize(ObjectFuncType* fn) override
   {
     setTarget(fn);
     return optimize();
@@ -80,7 +80,7 @@ public:
   bool put(std::istream&);
 
   ///read from an xmlNode
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///reset member data
   void reset();

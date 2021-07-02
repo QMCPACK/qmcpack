@@ -59,7 +59,7 @@ public:
   MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor);
 
   ///default destructor
-  ~MultiDiracDeterminant();
+  ~MultiDiracDeterminant() override;
 
   /**copy constructor
    * @param s existing DiracDeterminant
@@ -89,16 +89,16 @@ public:
   void setBF(BackflowTransformation* bf) {}
 
   ///optimizations  are disabled
-  inline void checkInVariables(opt_variables_type& active) { Phi->checkInVariables(active); }
+  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  inline void checkOutVariables(const opt_variables_type& active) { Phi->checkOutVariables(active); }
+  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
   int build_occ_vec(const std::vector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
-  void resetParameters(const opt_variables_type& active) { Phi->resetParameters(active); }
+  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
@@ -160,21 +160,21 @@ public:
   }
 
 
-  inline void reportStatus(std::ostream& os) {}
+  inline void reportStatus(std::ostream& os) override {}
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   /** move was rejected. copy the real container to the temporary to move on
    */
-  void restore(int iat);
+  void restore(int iat) override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
@@ -182,19 +182,19 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  PsiValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return PsiValueType();
   }
 
-  GradType evalGrad(ParticleSet& P, int iat)
+  GradType evalGrad(ParticleSet& P, int iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return GradType();
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return PsiValueType();
@@ -202,7 +202,7 @@ public:
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L)
+                           ParticleSet::ParticleLaplacian_t& L) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;

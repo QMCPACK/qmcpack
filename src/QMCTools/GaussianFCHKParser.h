@@ -28,7 +28,7 @@ public:
 
   GaussianFCHKParser(int argc, char** argv);
 
-  void parse(const std::string& fname);
+  void parse(const std::string& fname) override;
 
   void getGeometry(std::istream& is);
 

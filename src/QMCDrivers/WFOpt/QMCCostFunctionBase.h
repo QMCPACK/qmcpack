@@ -73,7 +73,7 @@ public:
   QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  virtual ~QMCCostFunctionBase();
+  ~QMCCostFunctionBase() override;
 
   ///process xml node
   bool put(xmlNodePtr cur);
@@ -84,22 +84,22 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i) { return OptVariables[i]; }
+  Return_t& Params(int i) override { return OptVariables[i]; }
   ///return optimization parameter i
-  Return_t Params(int i) const { return OptVariables[i]; }
+  Return_t Params(int i) const override { return OptVariables[i]; }
   int getType(int i) const { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
-  Return_rt Cost(bool needGrad = true);
+  Return_rt Cost(bool needGrad = true) override;
 
   ///return the cost value for CGMinimization
   Return_rt computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(std::vector<Return_rt>& PGradient,
-                        const std::vector<Return_rt>& PM,
-                        Return_rt FiniteDiff = 0){};
+  void GradCost(std::vector<Return_rt>& PGradient,
+                const std::vector<Return_rt>& PM,
+                Return_rt FiniteDiff = 0) override{};
   ///return the number of optimizable parameters
-  inline int getNumParams() const { return OptVariables.size(); }
+  inline int getNumParams() const override { return OptVariables.size(); }
   ///return the number of optimizable parameters
   inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
@@ -109,7 +109,7 @@ public:
   inline void getParameterTypes(std::vector<int>& types) { return OptVariablesForPsi.getParameterTypeList(types); }
 
   ///dump the current parameters and other report
-  void Report();
+  void Report() override;
   ///report  parameters at the end
   void reportParameters();
 
@@ -146,7 +146,7 @@ public:
                         Return_rt val0,
                         Return_rt& dl,
                         Return_rt& val_proj,
-                        Return_rt& lambda_max);
+                        Return_rt& lambda_max) override;
 
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
@@ -172,7 +172,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline std::string getParamName(int i) const { return OptVariables.name(i); }
+  inline std::string getParamName(int i) const override { return OptVariables.name(i); }
 
   inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 

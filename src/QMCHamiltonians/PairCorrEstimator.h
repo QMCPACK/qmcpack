@@ -35,18 +35,18 @@ public:
    */
   PairCorrEstimator(ParticleSet& elns, std::string& sources);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   /* evaluate the pair correlation functions */
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   void addObservables(PropertySetType& plist) {}
-  void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void set_norm_factor();
