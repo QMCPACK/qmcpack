@@ -6,7 +6,7 @@
     </application>
   </project>
 
-  <random seed="154"/>
+  <random seed="37831"/>
   <qmcsystem>
   <simulationcell>
     <parameter name="lattice">
@@ -15,7 +15,7 @@
       3.94055   7.8811   3.94055
     </parameter>
     <parameter name="bconds">p p p </parameter>
-    <parameter name="LR_dim_cutoff">15</parameter>
+    <parameter name="LR_dim_cutoff">30</parameter>
   </simulationcell>
   </qmcsystem>
   <particleset name="i" size="4">
