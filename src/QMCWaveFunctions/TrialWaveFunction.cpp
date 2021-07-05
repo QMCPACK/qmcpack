@@ -66,7 +66,7 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
 *@warning Have not decided whether Z is cleaned up by TrialWaveFunction
 *  or not. It will depend on I/O implementation.
 */
-TrialWaveFunction::~TrialWaveFunction() { delete_iter(Z.begin(), Z.end()); }
+TrialWaveFunction::~TrialWaveFunction() {}
 
 void TrialWaveFunction::startOptimization()
 {
@@ -85,10 +85,8 @@ void TrialWaveFunction::stopOptimization()
 
 /** Takes owndership of aterm
  */
-void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
+void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
 {
-  Z.push_back(aterm);
-
   std::string aname = aterm->ClassName;
   if (!aterm->myName.empty())
     aname += ":" + aterm->myName;
@@ -98,6 +96,8 @@ void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 
   for (auto& suffix : suffixes)
     WFC_timers_.push_back(*timer_manager.createTimer(aname + "::" + suffix));
+
+  Z.emplace_back(std::move(aterm));
 }
 
 
@@ -418,9 +418,6 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
 
 void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-
   grad_grad_psi.resize(P.getTotalNum());
 
   for (int i = 0; i < Z.size(); i++)
@@ -1216,7 +1213,7 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extractWFCPtrList(const U
   std::vector<WaveFunctionComponent*> WFC_list;
   WFC_list.reserve(g.size());
   for (auto& WF : g)
-    WFC_list.push_back(WF->Z[id]);
+    WFC_list.push_back(WF->Z[id].get());
   return WFC_list;
 }
 

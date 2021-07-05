@@ -43,16 +43,16 @@ public:
   QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCFixedSampleLinearOptimize();
+  ~QMCFixedSampleLinearOptimize() override;
 
   ///Run the Optimization algorithm.
-  bool run();
+  bool run() override;
   ///preprocess xml node
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl);
+  RealType Func(RealType dl) override;
 
 private:
   inline bool ValidCostFunction(bool valid)

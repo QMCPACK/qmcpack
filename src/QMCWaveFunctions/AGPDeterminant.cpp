@@ -413,10 +413,10 @@ void AGPDeterminant::restore(int iat)
   curRatio = 1.0;
 }
 
-WaveFunctionComponentPtr AGPDeterminant::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> AGPDeterminant::makeClone(ParticleSet& tqp) const
 {
-  AGPDeterminant* myclone = new AGPDeterminant(0);
-  myclone->GeminalBasis   = GeminalBasis->makeClone();
+  auto myclone          = std::make_unique<AGPDeterminant>(nullptr);
+  myclone->GeminalBasis = GeminalBasis->makeClone();
   myclone->resize(Nup, Ndown);
   myclone->Lambda = Lambda;
   if (Nup != Ndown)

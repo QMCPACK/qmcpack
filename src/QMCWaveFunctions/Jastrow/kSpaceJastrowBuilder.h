@@ -22,12 +22,13 @@ namespace qmcplusplus
 //forward declaration
 class ParticleSet;
 
-struct kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
+class kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
 {
+public:
   const ParticleSet& sourcePtcl;
   std::map<std::string, kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
-  kSpaceJastrowBuilder(Communicate *comm, ParticleSet& target, const ParticleSet& source)
+  kSpaceJastrowBuilder(Communicate* comm, ParticleSet& target, const ParticleSet& source)
       : WaveFunctionComponentBuilder(comm, target), sourcePtcl(source)
   {
     // nothing for now
@@ -36,7 +37,7 @@ struct kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
     SymmMap["none"]      = kSpaceJastrow::NOSYMM;
   }
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
   void outputJastrow(kSpaceJastrow* jastrow);
 };
 

@@ -75,11 +75,11 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Dets[i]->copyFromBuffer(P, buf);
 }
 
-WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  BackflowTransformation* tr     = BFTrans->makeClone(tqp);
-  SlaterDetWithBackflow* myclone = new SlaterDetWithBackflow(tqp, tr);
-  myclone->Optimizable           = Optimizable;
+  BackflowTransformation* tr = BFTrans->makeClone(tqp);
+  auto myclone               = std::make_unique<SlaterDetWithBackflow>(tqp, tr);
+  myclone->Optimizable       = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {
     DiracDeterminantBase* dclne = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));

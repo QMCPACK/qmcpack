@@ -774,7 +774,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
-    WaveFunctionComponent* orb = Psi.getOrbitals()[iorb];
+    auto& orb = Psi.getOrbitals()[iorb];
 
     ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
@@ -818,7 +818,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     if (!checkSlaterDet)
       continue; // skip SlaterDet check if <backflow> is present
     // DiracDeterminantWithBackflow::evaluateLog requires a call to BackflowTransformation::evaluate in its owning SlaterDetWithBackflow to work correctly.
-    SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
+    SlaterDet* sd = dynamic_cast<SlaterDet*>(orb.get());
     if (sd)
     {
       for (int isd = 0; isd < sd->Dets.size(); isd++)
@@ -2031,13 +2031,13 @@ void WaveFunctionTester::runDerivCloneTest()
 }
 void WaveFunctionTester::runwftricks()
 {
-  std::vector<WaveFunctionComponent*>& Orbitals = Psi.getOrbitals();
+  auto& Orbitals = Psi.getOrbitals();
   app_log() << " Total of " << Orbitals.size() << " orbitals." << std::endl;
   int SDindex(0);
   for (int i = 0; i < Orbitals.size(); i++)
     if ("SlaterDet" == Orbitals[i]->ClassName)
       SDindex = i;
-  SPOSetPtr Phi   = dynamic_cast<SlaterDet*>(Orbitals[SDindex])->getPhi();
+  SPOSetPtr Phi   = dynamic_cast<SlaterDet*>(Orbitals[SDindex].get())->getPhi();
   int NumOrbitals = Phi->getBasisSetSize();
   app_log() << "Basis set size: " << NumOrbitals << std::endl;
   std::vector<int> SPONumbers(0, 0);

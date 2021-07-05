@@ -123,11 +123,11 @@ public:
     init(elecs);
   }
 
-  ~JeeIOrbitalSoA() {}
+  ~JeeIOrbitalSoA() override {}
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& elecs) const
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const override
   {
-    JeeIOrbitalSoA<FT>* eeIcopy = new JeeIOrbitalSoA<FT>(myName, Ions, elecs, false);
+    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(myName, Ions, elecs, false);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)
@@ -307,7 +307,7 @@ public:
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     myVars.clear();
 
@@ -320,7 +320,7 @@ public:
 
   /** check out optimizable variables
    */
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
 
@@ -353,7 +353,7 @@ public:
   }
 
   ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (!Optimizable)
       return;
@@ -370,7 +370,7 @@ public:
   }
 
   /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) override
   {
     for (auto& ftPair : J3Unique)
       ftPair.second->myVars.print(os);
@@ -402,12 +402,12 @@ public:
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L)
+                           ParticleSet::ParticleLaplacian_t& L) override
   {
     return evaluateGL(P, G, L, true);
   }
 
-  PsiValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
 
@@ -418,7 +418,7 @@ public:
     return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
-  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
@@ -427,7 +427,7 @@ public:
                                     VP.getDistTable(ee_Table_ID_).getDistRow(k), ions_nearby_old));
   }
 
-  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const auto& eI_dists              = eI_table.getDistances();
@@ -456,9 +456,9 @@ public:
     }
   }
 
-  GradType evalGrad(ParticleSet& P, int iat) { return GradType(dUat[iat]); }
+  GradType evalGrad(ParticleSet& P, int iat) override { return GradType(dUat[iat]); }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -471,9 +471,9 @@ public:
     return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
-  inline void restore(int iat) {}
+  inline void restore(int iat) override {}
 
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
@@ -563,7 +563,7 @@ public:
     }
   }
 
-  inline void recompute(const ParticleSet& P)
+  inline void recompute(const ParticleSet& P) override
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
@@ -807,7 +807,7 @@ public:
     }
   }
 
-  inline void registerData(ParticleSet& P, WFBufferType& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf) override
   {
     if (Bytes_in_WFBuffer == 0)
     {
@@ -827,14 +827,14 @@ public:
     }
   }
 
-  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override
   {
     Uat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
     dUat.attachReference(Nelec, Nelec_padded, buf.lendReference<valT>(Nelec_padded * OHMMS_DIM));
@@ -845,7 +845,7 @@ public:
   LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
-                          bool fromscratch = false)
+                          bool fromscratch = false) override
   {
     if (fromscratch)
       recompute(P);
@@ -863,7 +863,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi)
+                           std::vector<ValueType>& dhpsioverpsi) override
   {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
@@ -980,7 +980,7 @@ public:
     }
   }
 
-  inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc)
+  inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
     ParticleSet::ParticleGradient_t tempG;
     ParticleSet::ParticleLaplacian_t tempL;
@@ -1027,7 +1027,7 @@ public:
                                  ParticleSet& source,
                                  int isrc,
                                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
   {
     ParticleSet::ParticleGradient_t Gp, Gm, dG;
     ParticleSet::ParticleLaplacian_t Lp, Lm, dL;

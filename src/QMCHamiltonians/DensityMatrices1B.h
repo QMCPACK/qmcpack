@@ -158,32 +158,32 @@ public:
   //constructor/destructor
   DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl, const WaveFunctionFactory& factory);
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
-  ~DensityMatrices1B();
+  ~DensityMatrices1B() override;
 
   //standard interface
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
-  bool put(xmlNodePtr cur);
-  Return_t evaluate(ParticleSet& P);
+  bool put(xmlNodePtr cur) override;
+  Return_t evaluate(ParticleSet& P) override;
 
   //optional standard interface
-  void get_required_traces(TraceManager& tm);
-  void setRandomGenerator(RandomGenerator_t* rng);
+  void get_required_traces(TraceManager& tm) override;
+  void setRandomGenerator(RandomGenerator_t* rng) override;
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) {}
-  void setObservables(PropertySetType& plist) {}
-  void setParticlePropertyList(PropertySetType& plist, int offset) {}
-  void contribute_scalar_quantities() {}
-  void checkout_scalar_quantities(TraceManager& tm) {}
-  void collect_scalar_quantities() {}
-  void delete_scalar_quantities() {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
+  void setObservables(PropertySetType& plist) override {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) override {}
+  void contribute_scalar_quantities() override {}
+  void checkout_scalar_quantities(TraceManager& tm) override {}
+  void collect_scalar_quantities() override {}
+  void delete_scalar_quantities() override {}
 
   //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  bool get(std::ostream& os) const override { return false; }
 
   //local functions
   //  initialization/finalization

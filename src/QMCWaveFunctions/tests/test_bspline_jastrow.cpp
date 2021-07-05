@@ -108,7 +108,8 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   RadialJastrowBuilder jastrow(c, elec_);
 
   typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
-  std::unique_ptr<J2Type> j2(dynamic_cast<J2Type*>(jastrow.buildComponent(jas1)));
+  auto j2_uptr = jastrow.buildComponent(jas1);
+  J2Type* j2   = dynamic_cast<J2Type*>(j2_uptr.get());
   REQUIRE(j2);
 
   // update all distance tables
@@ -314,7 +315,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   RadialJastrowBuilder jastrow(c, elec_, ions_);
 
   typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
-  std::unique_ptr<J1Type> j1(dynamic_cast<J1Type*>(jastrow.buildComponent(jas1)));
+  auto j1_uptr = jastrow.buildComponent(jas1);
+  J1Type* j1   = dynamic_cast<J1Type*>(j1_uptr.get());
   REQUIRE(j1);
 
   // update all distance tables
@@ -518,7 +520,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   RadialJastrowBuilder jastrow2(c, elec_, ions_);
 
-  std::unique_ptr<J1Type> j12(dynamic_cast<J1Type*>(jastrow2.buildComponent(jas2)));
+  auto j12_uptr = jastrow2.buildComponent(jas2);
+  J1Type* j12   = dynamic_cast<J1Type*>(j12_uptr.get());
   REQUIRE(j12);
 
   // Cut and paste from output of gen_bspline_jastrow.py

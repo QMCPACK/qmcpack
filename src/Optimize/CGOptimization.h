@@ -52,7 +52,7 @@ public:
   CGOptimization(ObjectFuncType* atarget = 0);
 
   /** destructor */
-  ~CGOptimization() {}
+  ~CGOptimization() override {}
 
   /** set the target function
    * @param fn target function to optimize
@@ -64,7 +64,7 @@ public:
   /** optimize an object function
    * @param fn object function
    */
-  bool optimize(ObjectFuncType* fn)
+  bool optimize(ObjectFuncType* fn) override
   {
     setTarget(fn);
     return optimize();
@@ -80,7 +80,7 @@ public:
   bool put(std::istream&);
 
   ///read from an xmlNode
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///reset member data
   void reset();
@@ -104,7 +104,7 @@ protected:
    *
    * Lineminimization uses this function to find the minimum along the CG direction
    */
-  Return_t Func(Return_t dl);
+  Return_t Func(Return_t dl) override;
 };
 
 template<class T>

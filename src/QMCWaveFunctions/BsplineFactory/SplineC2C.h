@@ -84,7 +84,7 @@ public:
     KeyWord    = "SplineC2C";
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2C(*this); }
+  SPOSet* makeClone() const override { return new SplineC2C(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -145,12 +145,12 @@ public:
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const;
 
-  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
 
-  virtual void evaluateDetRatios(const VirtualParticleSet& VP,
-                                 ValueVector_t& psi,
-                                 const ValueVector_t& psiinv,
-                                 std::vector<ValueType>& ratios) override;
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector_t& psi,
+                         const ValueVector_t& psiinv,
+                         std::vector<ValueType>& ratios) override;
 
   /** assign_vgl
    */
@@ -161,11 +161,11 @@ public:
    */
   void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-  virtual void evaluateVGL(const ParticleSet& P,
-                           const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,
@@ -174,11 +174,11 @@ public:
                   int first,
                   int last) const;
 
-  virtual void evaluateVGH(const ParticleSet& P,
-                           const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           HessVector_t& grad_grad_psi) override;
+  void evaluateVGH(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override;
 
   void assign_vghgh(const PointType& r,
                     ValueVector_t& psi,
@@ -188,12 +188,12 @@ public:
                     int first = 0,
                     int last  = -1) const;
 
-  virtual void evaluateVGHGH(const ParticleSet& P,
-                             const int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             HessVector_t& grad_grad_psi,
-                             GGGVector_t& grad_grad_grad_psi) override;
+  void evaluateVGHGH(const ParticleSet& P,
+                     const int iat,
+                     ValueVector_t& psi,
+                     GradVector_t& dpsi,
+                     HessVector_t& grad_grad_psi,
+                     GGGVector_t& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
   friend struct SplineSetReader;

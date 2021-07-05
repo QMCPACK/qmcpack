@@ -186,7 +186,7 @@ public:
   ParticleSet(const ParticleSet& p);
 
   ///default destructor
-  virtual ~ParticleSet();
+  ~ParticleSet() override;
 
   /** create  particles
    * @param n number of particles
@@ -198,16 +198,16 @@ public:
   void create(const std::vector<int>& agroup);
 
   ///write to a std::ostream
-  bool get(std::ostream&) const;
+  bool get(std::ostream&) const override;
 
   ///read from std::istream
-  bool put(std::istream&);
+  bool put(std::istream&) override;
 
   ///reset member data
-  void reset();
+  void reset() override;
 
   ///initialize ParticleSet from xmlNode
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///specify quantum_domain of particles
   void set_quantum_domain(quantum_domains qdomain);

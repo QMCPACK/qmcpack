@@ -516,10 +516,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  DiracDeterminant<>* dd = new DiracDeterminant<>(std::move(spinor_set));
+  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set));
   dd->resize(nelec, norb);
 
-  psi.addComponent(dd);
+  psi.addComponent(std::move(dd));
 
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);

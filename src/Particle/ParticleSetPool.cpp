@@ -35,7 +35,7 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectB
   myName    = aname;
 }
 
-ParticleSetPool::ParticleSetPool(ParticleSetPool&& other)
+ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
     : MPIObjectBase(other.myComm),
       SimulationCell(std::move(other.SimulationCell)),
       TileMatrix(other.TileMatrix),

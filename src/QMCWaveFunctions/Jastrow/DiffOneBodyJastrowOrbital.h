@@ -56,7 +56,7 @@ public:
     NumPtcls = els.getTotalNum();
   }
 
-  ~DiffOneBodyJastrowOrbital()
+  ~DiffOneBodyJastrowOrbital() override
   {
     delete_iter(gradLogPsi.begin(), gradLogPsi.end());
     delete_iter(lapLogPsi.begin(), lapLogPsi.end());
@@ -81,14 +81,14 @@ public:
 
 
   ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     for (int i = 0; i < Funique.size(); ++i)
       if (Funique[i])
         Funique[i]->resetParameters(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
     for (int i = 0; i < Funique.size(); ++i)
@@ -127,7 +127,7 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi)
+                           std::vector<ValueType>& dhpsioverpsi) override
   {
     evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
@@ -156,7 +156,7 @@ public:
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi)
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
   {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
@@ -249,7 +249,7 @@ public:
     }
   }
 
-  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
+  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override
   {
     DiffOneBodyJastrowOrbital<FT>* j1copy = new DiffOneBodyJastrowOrbital<FT>(CenterRef, tqp);
     for (int i = 0; i < Funique.size(); ++i)

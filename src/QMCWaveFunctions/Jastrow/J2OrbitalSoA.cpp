@@ -228,9 +228,9 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 }
 
 template<typename FT>
-WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
-  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(myName, tqp);
+  auto j2copy = std::make_unique<J2OrbitalSoA<FT>>(myName, tqp);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;

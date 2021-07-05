@@ -36,8 +36,8 @@ public:
           QMCHamiltonian& h,
           Communicate* comm,
           bool enable_profiling);
-  bool run();
-  bool put(xmlNodePtr cur);
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
   void resetUpdateEngine();
 
 private:
@@ -61,7 +61,7 @@ private:
   bool checkBounds(const PosType& newpos);
   void checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
 
-  QMCRunType getRunType() { return QMCRunType::DMC; }
+  QMCRunType getRunType() override { return QMCRunType::DMC; }
 
   ///hide initialization from the main function
   void resetRun();

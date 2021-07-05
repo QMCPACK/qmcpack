@@ -52,7 +52,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   SoaDistanceTableAA()                          = delete;
   SoaDistanceTableAA(const SoaDistanceTableAA&) = delete;
-  ~SoaDistanceTableAA() {}
+  ~SoaDistanceTableAA() override {}
 
   size_t compute_size(int N)
   {

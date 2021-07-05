@@ -18,7 +18,6 @@
 
 namespace qmcplusplus
 {
-
 /** LatticeGaussianProduct LatticeGaussianProduct Builder with constraints
  */
 class LatticeGaussianProductBuilder : public WaveFunctionComponentBuilder
@@ -26,7 +25,7 @@ class LatticeGaussianProductBuilder : public WaveFunctionComponentBuilder
 public:
   LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target

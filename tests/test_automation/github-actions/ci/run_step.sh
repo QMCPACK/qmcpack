@@ -1,10 +1,19 @@
 #!/bin/bash
 
+set -x
+
 case "$1" in 
 
   # Configure qmcpack using cmake out-of-source builds 
   configure)
     
+    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
+    then
+      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
+      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build
+    fi
+    
+    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build"
     cd ${GITHUB_WORKSPACE}/..
     mkdir qmcpack-build
     cd qmcpack-build
