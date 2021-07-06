@@ -33,6 +33,11 @@ foreach(item ${CL_ARGS})
   endif()
 endforeach()
 
+# https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT.html
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  SET(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/qmcpack" CACHE PATH "Default install prefix for unified build" FORCE)
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
 # Need to pass <INSTALL_DIR> to external project
 # https://stackoverflow.com/questions/29723659/cmake-external-projects-command-seems-to-ignore-install-dir
 list(APPEND CL_ARGS "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>")
