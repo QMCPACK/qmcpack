@@ -48,6 +48,7 @@ ExternalProject_Add(
 
 ExternalProject_Add(
   qmcpack-complex
+  DEPENDS qmcpack-real
   SOURCE_DIR ${qmcpack_SOURCE_DIR}
   CMAKE_ARGS "${CL_ARGS};-DQMC_COMPLEX=1"
 )
