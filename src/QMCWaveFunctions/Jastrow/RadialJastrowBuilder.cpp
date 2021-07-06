@@ -146,7 +146,7 @@ template<class RadFuncType>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ2(xmlNodePtr)");
-  using RT                = typename RadFuncType::real_type;
+  using Real                = typename RadFuncType::real_type;
   using J2OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J2OrbitalType;
   using DiffJ2OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ2OrbitalType;
 
@@ -330,7 +330,7 @@ template<class RadFuncType>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ1(xmlNodePtr)");
-  using RT            = typename RadFuncType::real_type;
+  using Real            = typename RadFuncType::real_type;
   using J1OrbitalType = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
 
   XMLAttrString input_name(cur, "name");
@@ -413,17 +413,12 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
 template<>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 {
-  using RT               = RealType;
-  using SplineEngineType = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
-  using RadFunctorType   = CubicSplineSingle<RT, SplineEngineType>;
-  using GridType         = LinearGrid<RT>;
+  using Real               = RealType;
+  using SplineEngineType = CubicBspline<Real, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
+  using RadFunctorType   = CubicSplineSingle<Real, SplineEngineType>;
+  using GridType         = LinearGrid<Real>;
   using HandlerType      = LRHandlerBase;
   using J1OrbitalType    = J1OrbitalSoA<RadFunctorType>;
-
-  /*
-  using J1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::J1OrbitalType;
-  using DiffJ1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::DiffJ1OrbitalType;
-  */
 
   std::string input_name;
   std::string rpafunc = "RPA";
@@ -463,14 +458,14 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   }
   myHandler->Breakup(targetPtcl, Rs);
 
-  RT Rcut          = myHandler->get_rc() - 0.1;
+  Real Rcut          = myHandler->get_rc() - 0.1;
   GridType* myGrid = new GridType;
   int npts         = static_cast<int>(Rcut / 0.01) + 1;
   myGrid->set(0, Rcut, npts);
 
   //create the numerical functor
   auto nfunc                     = std::make_unique<RadFunctorType>();
-  ShortRangePartAdapter<RT>* SRA = new ShortRangePartAdapter<RT>(myHandler);
+  ShortRangePartAdapter<Real>* SRA = new ShortRangePartAdapter<Real>(myHandler);
   SRA->setRmax(Rcut);
   nfunc->initialize(SRA, myGrid);
 
