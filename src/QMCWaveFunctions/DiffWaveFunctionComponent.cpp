@@ -26,7 +26,7 @@ DiffWaveFunctionComponent::DiffWaveFunctionComponent(WaveFunctionComponent* orb)
     refOrbital.push_back(orb);
 }
 
-DiffWaveFunctionComponentPtr DiffWaveFunctionComponent::makeClone(ParticleSet& tpq) const
+std::unique_ptr<DiffWaveFunctionComponent> DiffWaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
   APP_ABORT("Implement DiffWaveFunctionComponent::makeClone for this orbital");
   return 0;

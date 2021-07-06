@@ -33,13 +33,13 @@ public:
   using opt_variables_type = optimize::VariableSet;
 
   // counting function pointers
-  std::vector<CountingGaussian*> C;
+  std::vector<std::unique_ptr<CountingGaussian>> C;
 
   RealType Nval_t;
 
   // reference gaussian id, pointer
   std::string Cref_id;
-  CountingGaussian* Cref;
+  std::unique_ptr<CountingGaussian> Cref;
 
   // number of electrons
   int num_els;
@@ -94,8 +94,8 @@ public:
 
   int max_num_derivs() const
   {
-    auto comp = [](CountingGaussian* a, CountingGaussian* b) { return a->myVars.size_of_active() < b->myVars.size_of_active(); };
-    CountingGaussian* Cmax = *(std::max_element(C.begin(), C.end(), comp));
+    auto comp  = [](const auto& a, const auto& b) { return a->myVars.size_of_active() < b->myVars.size_of_active(); };
+    auto& Cmax = *(std::max_element(C.begin(), C.end(), comp));
     return Cmax->myVars.size();
   }
 
@@ -104,10 +104,10 @@ public:
     return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i];
   }
 
-  void addFunc(CountingGaussian* func, std::string fid)
+  void addFunc(std::unique_ptr<CountingGaussian> func, std::string fid)
   {
     C_id.push_back(fid);
-    C.push_back(func);
+    C.push_back(std::move(func));
   }
 
   void initialize()
@@ -190,14 +190,14 @@ public:
       C[I]->reportStatus(os);
   }
 
-  CountingGaussianRegion* makeClone()
+  std::unique_ptr<CountingGaussianRegion> makeClone()
   {
     // create a new object and clone counting functions
-    CountingGaussianRegion* cr = new CountingGaussianRegion(num_els);
+    auto cr = std::make_unique<CountingGaussianRegion>(num_els);
     for (int i = 0; i < C.size(); ++i)
     {
-      CountingGaussian* Ci = C[i]->makeClone(C_id[i]);
-      cr->addFunc(Ci, C_id[i]);
+      auto Ci = C[i]->makeClone(C_id[i]);
+      cr->addFunc(std::move(Ci), C_id[i]);
     }
     // get the index of the reference gaussian
     cr->Cref_id = Cref_id;
@@ -206,7 +206,7 @@ public:
     // initialize each of the counting functions using the reference gaussian
     cr->Cref = cr->C[ref_index]->makeClone(Cref_id + "_ref");
     for(auto it = cr->C.begin(); it != cr->C.end(); ++it)
-      (*it)->initialize(cr->Cref);
+      (*it)->initialize(cr->Cref.get());
     cr->initialize();
     return cr;
   }
@@ -228,7 +228,7 @@ public:
     Cref = C[ref_index]->makeClone(Cref_id + "_ref");
     // initialize with reference gaussian
     for(auto it = C.begin(); it != C.end(); ++it)
-      (*it)->initialize(Cref);
+      (*it)->initialize(Cref.get());
     initialize();
     return true;
   }

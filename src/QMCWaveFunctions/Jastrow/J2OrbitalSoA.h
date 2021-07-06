@@ -162,7 +162,7 @@ public:
   void init(ParticleSet& p);
 
   /** add functor for (ia,ib) pair */
-  void addFunc(int ia, int ib, FT* j);
+  void addFunc(int ia, int ib, std::unique_ptr<FT> j);
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables

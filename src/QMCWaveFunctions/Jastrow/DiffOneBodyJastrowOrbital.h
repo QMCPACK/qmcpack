@@ -249,9 +249,9 @@ public:
     }
   }
 
-  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<DiffWaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    DiffOneBodyJastrowOrbital<FT>* j1copy = new DiffOneBodyJastrowOrbital<FT>(CenterRef, tqp);
+    auto j1copy = std::make_unique<DiffOneBodyJastrowOrbital<FT>>(CenterRef, tqp);
     for (int i = 0; i < Funique.size(); ++i)
     {
       if (Funique[i])
