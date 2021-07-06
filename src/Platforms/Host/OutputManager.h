@@ -40,11 +40,11 @@ public:
 
   void setVerbosity(Verbosity level);
 
-  bool isActive(Verbosity level);
+  bool isActive(Verbosity level) const;
 
-  bool isDebugActive() { return isActive(Verbosity::DEBUG); }
+  bool isDebugActive() const { return isActive(Verbosity::DEBUG); }
 
-  bool isHighActive() { return isActive(Verbosity::HIGH); }
+  bool isHighActive() const { return isActive(Verbosity::HIGH); }
 
   /// Pause the summary and log streams
   void pause();
