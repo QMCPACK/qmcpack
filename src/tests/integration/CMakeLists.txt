@@ -9,34 +9,36 @@
 #// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+if (ENABLE_CUDA OR ENABLE_OFFLOAD)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-set(SRC_DIR dualallocators)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/integration)
+  set(SRC_DIR dualallocators)
+  set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/integration)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
 
-set(UTEST_EXE test_${SRC_DIR})
-set(UTEST_NAME deterministic-integration_${SRC_DIR})
+  set(UTEST_EXE test_${SRC_DIR})
+  set(UTEST_NAME deterministic-integration_${SRC_DIR})
 
-set(INTEGRATION_TEST_SRC
-  test_dual_allocators_ohmms_containers.cpp)
+  set(INTEGRATION_TEST_SRC
+    test_dual_allocators_ohmms_containers.cpp)
 
-add_executable(${UTEST_EXE} ${INTEGRATION_TEST_SRC})
-target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(${UTEST_EXE} catch_main containers container_testing platform_device utilities_for_test)
+  add_executable(${UTEST_EXE} ${INTEGRATION_TEST_SRC})
+  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+  target_link_libraries(${UTEST_EXE} catch_main containers container_testing platform_device utilities_for_test)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} platform_omptarget)
+  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(${UTEST_EXE} platform_omptarget)
+  endif()
+
+  if("${ENABLE_SANITIZER}" STREQUAL "asan")
+    set_property(
+      TEST ${UTEST_NAME}
+      APPEND
+      PROPERTY LABELS noasan)
+  endif()
+
 endif()
-
-if("${ENABLE_SANITIZER}" STREQUAL "asan")
-  set_property(
-    TEST ${UTEST_NAME}
-    APPEND
-    PROPERTY LABELS noasan)
-endif()
-
