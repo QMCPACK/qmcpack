@@ -40,7 +40,7 @@ public:
     static_assert(qmc_allocator_traits<DUAL_ALLOC>::is_dual_space, "DeviceValue intended to be used with dual allocator");
     value_ptr_  = std::allocator_traits<DUAL_ALLOC>::allocate(allocator_, 1);
     *value_ptr_ = t_val;
-    cudaErrorCheck(cudaMemcpy(allocator_.getDevicePtr(), value_ptr_, sizeof(T), cudaMemcpyHostToDevice),
+    cudaErrorCheck(cudaMemcpy(allocator_.get_device_ptr(), value_ptr_, sizeof(T), cudaMemcpyHostToDevice),
                    "failed to copy to device initial value of DeviceValue");
   }
   // Not sure this is correct

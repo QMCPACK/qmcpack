@@ -208,6 +208,7 @@ else() #{{{
     add_subdirectory(Message/tests)
     add_subdirectory(Optimize/tests)
     add_subdirectory(QMCTools/tests)
+    add_subdirectory(tests)
   endif() #}
 
 endif() #}}}

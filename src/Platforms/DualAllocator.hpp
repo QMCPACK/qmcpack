@@ -75,7 +75,7 @@ struct DualAllocator : public HostAllocator
     host_ptr_   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
     device_ptr_ = std::allocator_traits<DeviceAllocator>::allocate(device_allocator_, n);
     dual_device_mem_allocated += n * sizeof(T);
-    return host_ptr_;
+    return allocator_host_ptr_;
   }
 
   void deallocate(Value* pt, std::size_t n)
@@ -103,6 +103,8 @@ struct DualAllocator : public HostAllocator
 
   T* get_host_ptr() { return host_ptr_; }
 
+  T* get_allocator_host_ptr() { return allocator_host_ptr_; }
+  
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
