@@ -35,22 +35,6 @@ T* getOffloadDevicePtr(T* host_ptr)
   return device_ptr;
 }
 
-/** Return the device ptr for memory inside of the dual memory allocation.
- *  Since we have containers of containers memory and dual memory spaces we need this.
- */
-template<typename T>
-T* getOffloadDevicePtr(T* allocator_ptr, T* host_ptr)
-{
-  int offset = host_ptr - allocator_ptr;
-  if (offset < 0)
-  {
-    throw std::logic_error("host_ptr is on wrong side of allocator_ptr so must be illegal");
-  }
-  T* device_ptr;
-  PRAGMA_OFFLOAD("omp target data use_device_ptr(allocator_ptr)") { device_ptr = host_ptr; }
-  return device_ptr + offset;
-}
-
 template<typename T, class HostAllocator = std::allocator<T>>
 struct OMPallocator : public HostAllocator
 {
@@ -112,8 +96,8 @@ struct OMPallocator : public HostAllocator
   T* getDevicePtr() { return device_ptr_; }
   const T* getDevicePtr() const { return device_ptr_; }
 
-  T* getDevicePtr(T* host_ptr) { return getOffloadDevicePtr(allocator_host_ptr_, host_ptr); }
-  const T* getDevicePtr(T* host_ptr) const { return getOffloadDevicePtr(allocator_host_ptr_, host_ptr); }
+  T* getDevicePtr(T* host_ptr) { return device_ptr_ + (host_ptr - allocator_host_ptr_); }
+  const T* getDevicePtr(T* host_ptr) const { return device_ptr_ + (host_ptr - allocator_host_ptr_); }
 
 private:
   // pointee is on device.
@@ -139,7 +123,7 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 
   static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
-    T* device_ptr = getOffloadDevicePtr(alloc.get_allocator_host_ptr(), host_ptr);
+    T* device_ptr = alloc.getDevicePtr(host_ptr);
     PRAGMA_OFFLOAD("omp target update to(device_ptr[:n])");
   }
 
