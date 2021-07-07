@@ -9,7 +9,7 @@
 #// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-if (ENABLE_CUDA OR ENABLE_OFFLOAD)
+if (ENABLE_CUDA OR (ENABLE_CUDA AND ENABLE_OFFLOAD))
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
   set(SRC_DIR dualallocators)

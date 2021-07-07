@@ -14,7 +14,6 @@
 #include <algorithm>
 #include "config.h"
 #if defined(ENABLE_OFFLOAD)
-#warning "OMP allocator included"
 #include "OMPTarget/OMPallocator.hpp"
 #endif
 #if defined(ENABLE_CUDA)
