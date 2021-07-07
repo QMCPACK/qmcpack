@@ -202,7 +202,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi)
+                           std::vector<ValueType>& dhpsioverpsi) override
   {
     evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
@@ -231,7 +231,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi)
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
   {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
@@ -524,10 +524,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   }
 
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(myName, Ions, tqp);
-    j1copy->Optimizable      = Optimizable;
+    auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp);
+    j1copy->Optimizable = Optimizable;
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
       if (J1UniqueFunctors[i] != nullptr)
