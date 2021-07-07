@@ -321,7 +321,10 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
   xBC.rCode = DERIV1;
   //hack to interface to NUgrid stuff in double prec for MIXED build
   vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
-  return create_NUBspline_1d_d(grid1d, xBC, vals_fp.data());
+  auto* nubspline_1d_d = create_NUBspline_1d_d(grid1d, xBC, vals_fp.data());
+  destroy_grid(grid1d);
+
+  return nubspline_1d_d;
 }
 
 //Integrate the spline using Simpson's 5/8 rule.  For Bsplines, this should be exact
@@ -489,6 +492,7 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
     k2vksk.push_back(0.5 * k2vk * skavg);
   }
 
+  destroy_Bspline(spline);
   k2vksk.push_back(0.0);
   nonunigrid1d.push_back(kmax);
 
@@ -498,7 +502,7 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   RealType integratedval = integrate_spline(integrand, 0.0, kmax, 200);
   RealType intnorm       = Vol / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
                                                     //included in QMCPACK's v_k.  See CoulombFunctor.
-
+  destroy_NUBspline_1d_d(integrand);
   return intnorm * integratedval;
 }
 
