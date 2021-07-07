@@ -74,7 +74,7 @@ public:
    *  realspace dualspace allocator "interface"
    */
   template<typename CONTAINER>
-  Vector(const CONTAINER& other, T* ref, size_t n)
+  Vector(CONTAINER& other, T* ref, size_t n)
       : nLocal(n),
         nAllocated(0),
         X(ref),

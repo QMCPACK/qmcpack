@@ -117,7 +117,7 @@ struct OMPallocator : public HostAllocator
 
 private:
   // pointee is on device.
-  T* device_ptr_                  = nullptr;
+  T* device_ptr_         = nullptr;
   T* allocator_host_ptr_ = nullptr;
 
 public:
@@ -135,6 +135,17 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
   {
     qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value);
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
+  }
+
+  static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  {
+    T* device_ptr = getOffloadDevicePtr(alloc.get_allocator_host_ptr(), host_ptr);
+    PRAGMA_OFFLOAD("omp target update to(device_ptr[:n])");
+  }
+
+  static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  {
+    PRAGMA_OFFLOAD("omp target update to(host_ptr[:n])");
   }
 };
 

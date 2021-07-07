@@ -94,8 +94,9 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
  * They assume there is only one memory space and that the host has access to it.
  */
 template<typename T>
-struct CUDAAllocator
+class CUDAAllocator
 {
+public:
   typedef T value_type;
   typedef size_t size_type;
   typedef T* pointer;
@@ -152,6 +153,39 @@ struct CUDAAllocator
   template<class U>
   static void destroy(U* p)
   {}
+
+  void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
+  {
+    if (hstream_)
+    {
+      cudaErrorCheck(cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyHostToDevice, hstream_),
+                     "cudaMemcpyAsync failed in copyToDevice");
+    }
+    else
+    {
+      cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
+                     "cudaMemcpy failed in copToDevice");
+    }
+  }
+
+  void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
+  {
+    if (hstream_)
+    {
+      cudaErrorCheck(cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost, hstream_),
+                     "cudaMemcpyAsync failed in copyFromDevice");
+    }
+    else
+    {
+      cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
+                     "cudaMemcpy failed in copyFromDevice");
+    }
+  }
+
+  void set_stream(cudaStream_t stream) { hstream_ = stream; }
+
+private:
+  cudaStream_t hstream_ = 0;
 };
 
 template<class T1, class T2>
@@ -201,7 +235,8 @@ struct CUDAHostAllocator
     cudaErrorCheck(cudaMallocHost(&pt, n * sizeof(T)), "Allocation failed in CUDAHostAllocator!");
     return static_cast<T*>(pt);
   }
-  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!"); }
+  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!");
+  }
 };
 
 template<class T1, class T2>

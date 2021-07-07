@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrixComputeOMPTarget.hpp"
-#include "QMCWaveFunctions/tests/makeRngSpdMatrix.hpp"
+#include "makeRngSpdMatrix.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/PinnedAllocator.h"

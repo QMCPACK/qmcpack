@@ -28,6 +28,9 @@ struct qmc_allocator_traits
   static const bool is_dual_space      = false;
 
   static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); }
+
+  static void updateTo(Allocator& a, value_type* host_ptr, size_t n) {}
+  static void updateFrom(Allocator& a, value_type* host_ptr, size_t n) {}
 };
 
 template<class Allocator>
