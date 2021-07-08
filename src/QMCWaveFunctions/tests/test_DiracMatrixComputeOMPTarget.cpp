@@ -114,7 +114,8 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
 
   Matrix<double> mat_spd;
   mat_spd.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd);
+  testing::MakeRngSpdMatrix<double> makeRngSpdMatrix;
+  makeRngSpdMatrix(mat_spd);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -125,7 +126,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
 
   Matrix<double> mat_spd2;
   mat_spd2.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd2);
+  makeRngSpdMatrix(mat_spd2);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't

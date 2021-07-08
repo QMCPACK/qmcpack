@@ -86,9 +86,10 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
   std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
+  qmcplusplus::testing::MakeRngSpdMatrix<double> makeRngSpdMatrix{};
   for (int im = 0; im < params.batch_size; ++im)
   {
-    testing::makeRngSpdMatrix(spd_mats[im]);
+    makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < params.n; ++i)
       for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
@@ -137,9 +138,10 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
   std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
+  testing::MakeRngSpdMatrix<double> makeRngSpdMatrix;
   for (int im = 0; im < params.batch_size; ++im)
   {
-    testing::makeRngSpdMatrix(spd_mats[im]);
+    makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < params.n; ++i)
       for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
@@ -189,9 +191,10 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
   std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
+  testing::MakeRngSpdMatrix<double> makeRngSpdMatrix;
   for (int im = 0; im < params.batch_size; ++im)
   {
-    testing::makeRngSpdMatrix(spd_mats[im]);
+    makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < params.n; ++i)
       for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
@@ -246,9 +249,11 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunct
   std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
   std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
+
+  testing::MakeRngSpdMatrix<double> makeRngSpdMatrix;
   for (int im = 0; im < params.batch_size; ++im)
   {
-    testing::makeRngSpdMatrix(spd_mats[im]);
+    makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < params.n; ++i)
       for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
