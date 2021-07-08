@@ -77,7 +77,7 @@ public:
   void freeGPUmem() override;
   void checkInVariables(opt_variables_type& active) override;
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
-  void addFunc(int ia, int ib, FT* j);
+  void addFunc(int ia, int ib, std::unique_ptr<FT> j);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;

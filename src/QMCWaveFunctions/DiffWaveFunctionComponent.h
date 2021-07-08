@@ -114,7 +114,7 @@ struct DiffWaveFunctionComponent
   /** make clone
     * @param tqp target Quantum ParticleSet
     */
-  virtual DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  virtual std::unique_ptr<DiffWaveFunctionComponent> makeClone(ParticleSet& tqp) const;
 };
 
 /** a generic DiffWaveFunctionComponent using a finite-difference method for a single optimizable parameter.

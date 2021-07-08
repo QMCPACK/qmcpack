@@ -157,7 +157,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2   = std::make_unique<J2OrbitalType>(j2name, targetPtcl);
-  auto* dJ2 = new DiffJ2OrbitalType(targetPtcl);
+  auto dJ2  = std::make_unique<DiffJ2OrbitalType>(targetPtcl);
 
   std::string init_mode("0");
   {
@@ -230,7 +230,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
       app_summary() << "    Radial function for species: " << spA << " - " << spB << std::endl;
       app_debug() << "    RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
 
-      auto* functor = new RadFuncType();
+      auto functor = std::make_unique<RadFuncType>();
       functor->setCusp(cusp);
       functor->setPeriodic(targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius   = targetPtcl.Lattice.WignerSeitzRadius;
@@ -242,9 +242,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       app_summary() << std::endl;
 
-      J2->addFunc(ia, ib, functor);
-      dJ2->addFunc(ia, ib, functor);
-
       if (is_manager())
       {
         char fname[32];
@@ -252,10 +249,14 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
         std::ofstream os(fname);
         print(*functor, os);
       }
+
+      auto functor_2 = std::unique_ptr<RadFuncType>{dynamic_cast<RadFuncType*>(functor->makeClone())};
+      J2->addFunc(ia, ib, std::move(functor_2));
+      dJ2->addFunc(ia, ib, std::move(functor));
     }
     cur = cur->next;
   }
-  J2->dPsi = dJ2;
+  J2->dPsi = std::move(dJ2);
   J2->setOptimizable(true);
 
   // compute Chiesa Correction based on the current J2 parameters
@@ -339,8 +340,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   XMLAttrString input_name(cur, "name");
   std::string jname = input_name.empty() ? Jastfunction : input_name;
 
-  auto J1                = std::make_unique<J1OrbitalType>(jname, *SourcePtcl, targetPtcl);
-  DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
+  auto J1  = std::make_unique<J1OrbitalType>(jname, *SourcePtcl, targetPtcl);
+  auto dJ1 = std::make_unique<DiffJ1OrbitalType>(*SourcePtcl, targetPtcl);
 
   xmlNodePtr kids = cur->xmlChildrenNode;
 
@@ -404,15 +405,14 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   }
   if (success)
   {
-    J1->dPsi = dJ1;
+    J1->dPsi = std::move(dJ1);
     J1->setOptimizable(Opt);
     return J1;
   }
   else
   {
     PRE.error("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
-    delete dJ1;
-    return nullptr;
+    return std::unique_ptr<WaveFunctionComponent>();
   }
 }
 
@@ -483,7 +483,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   nfunc->initialize(SRA, myGrid);
 
   auto J1                = std::make_unique<J1OrbitalType>(jname, *SourcePtcl, targetPtcl);
-  DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
+  auto dJ1               = std::make_unique<DiffJ1OrbitalType>(*SourcePtcl, targetPtcl);
 
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
   for (int ig = 0; ig < sSet.getTotalNum(); ig++)
@@ -492,7 +492,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
     dJ1->addFunc(ig, nfunc);
   }
 
-  J1->dPsi = dJ1;
+  J1->dPsi = std::move(dJ1);
   J1->setOptimizable(Opt);
   return J1;
 }

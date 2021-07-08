@@ -37,7 +37,7 @@ protected:
   Matrix<RealType> F;
 
   // Counting Regions
-  RegionType* C;
+  std::unique_ptr<RegionType> C;
 
   // Optimization Flags
   bool opt_F;
@@ -91,8 +91,8 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f)
-      : WaveFunctionComponent("CountingJastrow"), F(f), C(c)
+  CountingJastrow(ParticleSet& P, std::unique_ptr<RegionType> c, const Matrix<RealType>& f)
+      : WaveFunctionComponent("CountingJastrow"), F(f), C(std::move(c))
   {
     num_els = P.getTotalNum();
   }

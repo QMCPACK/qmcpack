@@ -194,7 +194,7 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
+void J2OrbitalSoA<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 {
   assert(ia < NumGroups);
   assert(ib < NumGroups);
@@ -206,10 +206,10 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
       for (int ig = 0; ig < NumGroups; ++ig)
         for (int jg = 0; jg < NumGroups; ++jg, ++ij)
           if (F[ij] == nullptr)
-            F[ij] = j;
+            F[ij] = j.get();
     }
     else
-      F[ia * NumGroups + ib] = j;
+      F[ia * NumGroups + ib] = j.get();
   }
   else
   {
@@ -217,14 +217,14 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
     // uu/dd/etc. was prevented by the builder
     if (N == NumGroups)
       for (int ig = 0; ig < NumGroups; ++ig)
-        F[ig * NumGroups + ig] = j;
+        F[ig * NumGroups + ig] = j.get();
     // generic case
-    F[ia * NumGroups + ib] = j;
-    F[ib * NumGroups + ia] = j;
+    F[ia * NumGroups + ib] = j.get();
+    F[ib * NumGroups + ia] = j.get();
   }
   std::stringstream aname;
   aname << ia << ib;
-  J2Unique[aname.str()] = std::unique_ptr<FT>(j);
+  J2Unique[aname.str()] = std::move(j);
 }
 
 template<typename FT>
@@ -243,10 +243,9 @@ std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& 
       typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F[ij]);
       if (fit == fcmap.end())
       {
-        FT* fc = new FT(*F[ij]);
-        j2copy->addFunc(ig, jg, fc);
-        //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
-        fcmap[F[ij]] = fc;
+        auto fc      = std::make_unique<FT>(*F[ij]);
+        fcmap[F[ij]] = fc.get();
+        j2copy->addFunc(ig, jg, std::move(fc));
       }
     }
   j2copy->KEcorr      = KEcorr;

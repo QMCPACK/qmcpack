@@ -186,7 +186,8 @@ void RPAJastrow::makeShortRange()
   RealType tiny = 1e-6;
   Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
-  nfunc = new FuncType;
+  auto nfunc_uptr = std::make_unique<FuncType>();
+  nfunc           = nfunc_uptr.get();
   ShortRangePartAdapter<RealType> SRA(myHandler);
   SRA.setRmax(Rcut);
   J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl);
@@ -210,7 +211,7 @@ void RPAJastrow::makeShortRange()
     X[i] = i * delta;
     Y[i] = SRA.evaluate(X[i]);
   }
-  j2->addFunc(0, 0, nfunc);
+  j2->addFunc(0, 0, std::move(nfunc_uptr));
   ShortRangeRPA = j2;
   Psi.push_back(ShortRangeRPA);
 }

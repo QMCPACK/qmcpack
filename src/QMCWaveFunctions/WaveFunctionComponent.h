@@ -118,7 +118,7 @@ struct WaveFunctionComponent : public QMCTraits
    *
    * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
    */
-  DiffWaveFunctionComponentPtr dPsi;
+  std::shared_ptr<DiffWaveFunctionComponent> dPsi;
   /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
    */
   GradVectorType dLogPsi;
@@ -140,14 +140,13 @@ struct WaveFunctionComponent : public QMCTraits
 
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
-
   ///default destructor
-  virtual ~WaveFunctionComponent() {}
+  virtual ~WaveFunctionComponent();
 
   inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
 
   ///assign a differential WaveFunctionComponent
-  virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
+  virtual void setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d);
 
   ///assembles the full value
   PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }

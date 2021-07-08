@@ -47,7 +47,7 @@ class DiffTwoBodyJastrowOrbital : public DiffWaveFunctionComponent
   Vector<RealType> dLogPsi;
   std::vector<GradVectorType*> gradLogPsi;
   std::vector<ValueVectorType*> lapLogPsi;
-  std::map<std::string, FT*> J2Unique;
+  std::map<std::string, std::unique_ptr<FT>> J2Unique;
 
 public:
   // return for testing
@@ -73,7 +73,7 @@ public:
   opt_variables_type& getComponentVars() { return myVars; }
 
 
-  void addFunc(int ia, int ib, FT* j)
+  void addFunc(int ia, int ib, std::unique_ptr<FT> j)
   {
     // make all pair terms equal to uu initially
     //   in case some terms are not provided explicitly
@@ -85,10 +85,10 @@ public:
         for (int ig = 0; ig < NumGroups; ++ig)
           for (int jg = 0; jg < NumGroups; ++jg, ++ij)
             if (F[ij] == nullptr)
-              F[ij] = j;
+              F[ij] = j.get();
       }
       else
-        F[ia * NumGroups + ib] = j;
+        F[ia * NumGroups + ib] = j.get();
     }
     else
     {
@@ -96,20 +96,21 @@ public:
       // uu/dd/etc. was prevented by the builder
       if (NumPtcls == NumGroups)
         for (int ig = 0; ig < NumGroups; ++ig)
-          F[ig * NumGroups + ig] = j;
+          F[ig * NumGroups + ig] = j.get();
       // generic case
-      F[ia * NumGroups + ib] = j;
-      F[ib * NumGroups + ia] = j;
+      F[ia * NumGroups + ib] = j.get();
+      F[ib * NumGroups + ia] = j.get();
     }
     std::stringstream aname;
     aname << ia << ib;
-    J2Unique[aname.str()] = j;
+    J2Unique[aname.str()] = std::move(j);
   }
 
   ///reset the value of all the unique Two-Body Jastrow functions
   void resetParameters(const opt_variables_type& active) override
   {
-    typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+    auto it     = J2Unique.begin();
+    auto it_end = J2Unique.end();
     while (it != it_end)
     {
       (*it++).second->resetParameters(active);
@@ -119,7 +120,8 @@ public:
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
-    typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+    auto it     = J2Unique.begin();
+    auto it_end = J2Unique.end();
     while (it != it_end)
     {
       (*it).second->myVars.getIndex(active);
@@ -294,22 +296,22 @@ public:
     }
   }
 
-  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<DiffWaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    DiffTwoBodyJastrowOrbital<FT>* j2copy = new DiffTwoBodyJastrowOrbital<FT>(tqp);
+    auto j2copy = std::make_unique<DiffTwoBodyJastrowOrbital<FT>>(tqp);
     std::map<const FT*, FT*> fcmap;
     for (int ig = 0; ig < NumGroups; ++ig)
       for (int jg = ig; jg < NumGroups; ++jg)
       {
         int ij = ig * NumGroups + jg;
-        if (F[ij] == 0)
+        if (F[ij] == nullptr)
           continue;
-        typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F[ij]);
+        auto fit = fcmap.find(F[ij]);
         if (fit == fcmap.end())
         {
-          FT* fc = new FT(*F[ij]);
-          j2copy->addFunc(ig, jg, fc);
-          fcmap[F[ij]] = fc;
+          auto fc      = std::make_unique<FT>(*F[ij]);
+          fcmap[F[ij]] = fc.get();
+          j2copy->addFunc(ig, jg, std::move(fc));
         }
       }
     j2copy->myVars.clear();
