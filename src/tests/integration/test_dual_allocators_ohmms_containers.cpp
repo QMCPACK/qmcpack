@@ -35,6 +35,7 @@ namespace qmcplusplus
 template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
 #endif
+// To save confusion and allow testing both lets call this what it is.
 #if defined(ENABLE_CUDA)
 template<typename T>
 using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
@@ -43,7 +44,7 @@ using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllo
 template<class OPA>
 void testDualAllocator()
 {
-  constexpr int nd      = 5;
+  constexpr int nd      = 3;
   using Value = typename OPA::value_type;
   VectorSoaContainer<Value, nd, OPA> vcsoa;
 
@@ -53,63 +54,55 @@ void testDualAllocator()
   // Resize so each "dimension" can hold an n x n matrix
   vcsoa.resize(n * n);
 
+  testing::MakeRngSpdMatrix<Value> makeRngSpdMatrix;
+    
   for (int iw = 0; iw < nd; ++iw)
   {
-    testing::makeRngSpdMatrix(mat_spd);
-    std::copy_n(vcsoa.data(iw), n * n, mat_spd.data());
+    makeRngSpdMatrix(mat_spd);
+    std::copy_n(mat_spd.data(), n * n, vcsoa.data(iw));
   }
 
   vcsoa.updateTo();
 
   Matrix<Value, OPA> matrix_view(vcsoa, vcsoa.data(0), n, n);
   Matrix<Value, OPA> matrix_view2(vcsoa, vcsoa.data(1), n, n);
+  Matrix<Value, OPA> matrix_view3(vcsoa, vcsoa.data(2), n, n);
 
   // Without copying allocator this causes a segfault.
   auto device_ptr = matrix_view.device_data();
   auto device_ptr2 = matrix_view2.device_data();
+  auto device_ptr3 = matrix_view3.device_data();
+
   CHECK(device_ptr != nullptr);
   CHECK(device_ptr2 != nullptr);
+  CHECK(device_ptr3 != nullptr);
 
-  // more extensive testing that insures transfer is valid to and from would be a good idea
+#if defined(ENABLE_CUDA)
+  // not sure how to do this sort of thing device side with openmp target
+  // cudaErrorCheck(cudaMemcpyAsync(device_ptr2, device_ptr, sizeof(Value) * n * n, cudaMemcpyDeviceToDevice),
+  //                "cudaMemcpyAsync in test_dual_allocators");
+  cudaErrorCheck(cudaMemcpyAsync(device_ptr, device_ptr3, sizeof(Value) * n * n, cudaMemcpyDeviceToDevice),
+                 "cudaMemcpyAsync in test_dual_allocators");
+  // cudaErrorCheck(cudaMemcpyAsync(device_ptr3, device_ptr2, sizeof(Value) * n * n, cudaMemcpyDeviceToDevice),
+  //                "cudaMemcpyAsync in test_dual_allocators");
+  cudaErrorCheck(cudaDeviceSynchronize(), "cudaStreamSynchronize failed!");
+
+  vcsoa.updateFrom();
+
+  auto check_matrix_result = checkMatrix(mat_spd, matrix_view);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+#endif
 }
 
 TEST_CASE("OhmmsMatrix_VectorSoaContainer_View", "[Integration][Allocators]")
 {
 #if defined(ENABLE_OFFLOAD)
   testDualAllocator<OffloadPinnedAllocator<double>>();
+  testDualAllocator<OffloadPinnedAllocator<std::complex<double>>>();
 #endif
 #if defined(ENABLE_CUDA)
   testDualAllocator<CUDAPinnedAllocator<double>>();
+  testDualAllocator<CUDAPinnedAllocator<std::complex<double>>>();
 #endif
-
-
-  // constexpr int nd      = 5;
-  // using Value = double;
-  // VectorSoaContainer<Value, nd, OffloadPinnedAllocator<Value>> vcsoa;
-
-  // int n = 12;
-  // Matrix<Value> mat_spd;
-  // mat_spd.resize(n, n);
-  // // Resize so each "dimension" can hold an n x n matrix
-  // vcsoa.resize(n * n);
-
-  // for (int iw = 0; iw < nd; ++iw)
-  // {
-  //   testing::makeRngSpdMatrix(mat_spd);
-  //   std::copy_n(vcsoa.data(iw), n * n, mat_spd.data());
-  // }
-
-  // vcsoa.updateTo();
-
-  // Matrix<Value, OffloadPinnedAllocator<Value>> matrix_view(vcsoa, vcsoa.data(0), n, n);
-  // Matrix<Value, OffloadPinnedAllocator<Value>> matrix_view2(vcsoa, vcsoa.data(1), n, n);
-
-  // // Without copying allocator this causes a segfault.
-  // auto device_ptr = matrix_view.device_data();
-  // auto device_ptr2 = matrix_view2.device_data();
-  // CHECK(device_ptr != nullptr);
-  // CHECK(device_ptr2 != nullptr);
-
-  // more extensive testing that insures transfer is valid to and from would be a good idea
 }
 } // namespace qmcplusplus
