@@ -69,7 +69,7 @@ public:
 
     SimpleFixedNodeBranch sfnb(tau_, num_global_walkers_);
 
-    sfnb.setEstimatorManager(emb_.get());
+    sfnb.setEstimatorManager(std::move(emb_));
 
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_index]);
 
