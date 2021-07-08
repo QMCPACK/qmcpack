@@ -734,13 +734,6 @@ create_NUBspline_1d_c (NUgrid* x_grid, BCtype_c xBC, complex_float *data)
   return spline;
 }
 
-void destroy_NUBspline_1d_d(NUBspline_1d_d* spline)
-{
-    destroy_NUBasis(spline->x_basis);
-    free(spline->coefs);
-    free(spline);
-}
-
 NUBspline_2d_c *
 create_NUBspline_2d_c (NUgrid* x_grid, NUgrid* y_grid,
 		       BCtype_c xBC, BCtype_c yBC, complex_float *data)
@@ -1057,5 +1050,6 @@ destroy_NUBspline(Bspline *spline)
   default:
     break;
   }
+  free(spline);
 }
     

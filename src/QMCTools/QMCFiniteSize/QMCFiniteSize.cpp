@@ -494,8 +494,8 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   nonunigrid1d.push_back(kmax);
 
   auto integrand =
-      std::unique_ptr<NUBspline_1d_d, void (*)(NUBspline_1d_d*)>{spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0),
-                                                                 destroy_NUBspline_1d_d};
+      std::unique_ptr<NUBspline_1d_d, void (*)(void*)>{spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0),
+                                                                 destroy_Bspline};
 
   //Integrate the spline and compute the thermodynamic limit.
   RealType integratedval = integrate_spline(integrand.get(), 0.0, kmax, 200);
