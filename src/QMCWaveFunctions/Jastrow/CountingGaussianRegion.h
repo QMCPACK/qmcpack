@@ -205,8 +205,8 @@ public:
     int ref_index = std::distance(C_id.begin(), C_id_it);
     // initialize each of the counting functions using the reference gaussian
     cr->Cref = cr->C[ref_index]->makeClone(Cref_id + "_ref");
-    for(auto it = cr->C.begin(); it != cr->C.end(); ++it)
-      (*it)->initialize(cr->Cref.get());
+    for(auto& ptr : cr->C)
+      ptr->initialize(cr->Cref.get());
     cr->initialize();
     return cr;
   }
@@ -227,8 +227,8 @@ public:
     // make a copy of the reference gaussian
     Cref = C[ref_index]->makeClone(Cref_id + "_ref");
     // initialize with reference gaussian
-    for(auto it = C.begin(); it != C.end(); ++it)
-      (*it)->initialize(Cref.get());
+    for(auto& ptr : C)
+      ptr->initialize(Cref.get());
     initialize();
     return true;
   }
