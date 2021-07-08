@@ -20,7 +20,9 @@
 #include <atomic>
 #include "config.h"
 #include "allocator_traits.hpp"
-
+#ifdef ENABLE_CUDA
+#include <cuda_runtime_api.h>
+#endif
 namespace qmcplusplus
 {
 extern std::atomic<size_t> OMPallocator_device_mem_allocated;
@@ -35,6 +37,12 @@ T* getOffloadDevicePtr(T* host_ptr)
   return device_ptr;
 }
 
+/** OMPallocator is an allocator with fused device and dualspace allocator functionality.
+ *  it is mostly c++03 style but is stateful with respect to the bond between the returned pt on the host
+ *  and the device_ptr_.  While many containers may need a copy only one can own the memory
+ *  it returns and it can only service one owner. i.e. only one object should call the allocate
+ *  and deallocate methods.
+ */
 template<typename T, class HostAllocator = std::allocator<T>>
 struct OMPallocator : public HostAllocator
 {
@@ -109,6 +117,9 @@ public:
   T* get_allocator_host_ptr() const { return allocator_host_ptr_; }
 };
 
+/** Specialization for OMPallocator which is a special DualAllocator with fused
+ *  device and dualspace allocator functionality.
+ */
 template<typename T, class HostAllocator>
 struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 {
@@ -124,12 +135,23 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
   static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
     T* device_ptr = alloc.getDevicePtr(host_ptr);
-    PRAGMA_OFFLOAD("omp target update to(device_ptr[:n])");
+    #if defined(ENABLE_CUDA)
+    cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize();
+    #endif
+    // I want this to do what the above does, but obviously don't understand target udpate"
+    PRAGMA_OFFLOAD("omp target update to(device_ptr[0:n])");
   }
 
   static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
-    PRAGMA_OFFLOAD("omp target update to(host_ptr[:n])");
+    T* device_ptr = alloc.getDevicePtr(host_ptr);
+#if defined(ENABLE_CUDA)
+    cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+#endif
+    // I want this to do what the above does, but obviously don't understand target udpate"
+    PRAGMA_OFFLOAD("omp target update from(device_ptr[0:n])");
   }
 };
 
