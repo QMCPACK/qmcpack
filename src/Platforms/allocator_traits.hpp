@@ -17,7 +17,10 @@
 
 namespace qmcplusplus
 {
-/** template class defines whether the memory allocated by the allocator is host accessible
+/** template class analogous to std::allocator_traits.
+ *  * defines the is_host_accessible and is_dual_space traits
+ *  * abstracts the data movement on and off device.
+ *  * abstracts the fill function for the allocator.
  */
 template<class Allocator>
 struct qmc_allocator_traits

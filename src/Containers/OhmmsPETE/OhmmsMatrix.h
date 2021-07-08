@@ -348,6 +348,18 @@ public:
     return m;
   }
 
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    X.updateTo();
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    X.updateFrom();
+  }
+
 protected:
   size_type D1, D2;
   size_type TotSize;

@@ -49,7 +49,7 @@ struct DualAllocator : public HostAllocator
   using Size         = typename HostAllocator::size_type;
   using Pointer      = typename HostAllocator::pointer;
   using ConstPointer = typename HostAllocator::const_pointer;
-
+  
   DualAllocator() : device_ptr_(nullptr){};
   DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
   DualAllocator& operator=(const DualAllocator&) { device_ptr_ = nullptr; }
@@ -87,8 +87,8 @@ struct DualAllocator : public HostAllocator
   // sketchy
   T* get_device_ptr() { return device_ptr_; }
 
-  T* getDevicePtr(T* host_ptr) { return device_ptr_ + (allocator_host_ptr_ - host_ptr); }
-  const T* getDevicePtr(T* host_ptr) const { return device_ptr_ + (allocator_host_ptr_ - host_ptr); }
+  T* getDevicePtr(T* host_ptr) { return device_ptr_ + (host_ptr - allocator_host_ptr_); }
+  const T* getDevicePtr(T* host_ptr) const { return device_ptr_ + (host_ptr - allocator_host_ptr_); }
 
   DeviceAllocator& get_device_allocator() { return device_allocator_; }
   const DeviceAllocator& get_device_allocator() const { return device_allocator_; }

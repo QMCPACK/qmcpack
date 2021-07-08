@@ -252,6 +252,18 @@ public:
   inline pointer last_address() { return X + nLocal; }
   inline const_pointer last_address() const { return X + nLocal; }
 
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    qmc_allocator_traits<Alloc>::updateTo(mAllocator, X, nLocal);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, nLocal);
+  }
+
 private:
   ///size
   size_t nLocal;
