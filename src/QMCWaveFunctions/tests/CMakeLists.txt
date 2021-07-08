@@ -126,7 +126,7 @@ foreach(CATEGORY trialwf sposet jastrow determinant)
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   
-  set(NOASAN_LIST trialwf jastrow)
+  set(NOASAN_LIST jastrow)
   if("${ENABLE_SANITIZER}" STREQUAL "asan" AND ${CATEGORY} IN_LIST NOASAN_LIST)
     set_property(
       TEST ${UTEST_NAME}

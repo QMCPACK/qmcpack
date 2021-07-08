@@ -116,9 +116,6 @@ if(NOT QMC_CUDA)
 
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  if("${ENABLE_SANITIZER}" STREQUAL "asan")
-    set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS noasan)
-  endif()
 
   if(HAVE_MPI)
     set(UTEST_EXE test_${SRC_DIR}_mpi)
