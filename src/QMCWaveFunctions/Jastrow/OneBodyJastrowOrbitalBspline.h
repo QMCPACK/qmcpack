@@ -82,7 +82,7 @@ public:
 
   void resetParameters(const opt_variables_type& active) override;
   void checkInVariables(opt_variables_type& active) override;
-  void addFunc(int ig, FT* j, int jg = -1);
+  void addFunc(int ig, std::unique_ptr<FT> j, int jg = -1);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;

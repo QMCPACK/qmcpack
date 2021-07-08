@@ -110,6 +110,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
     CHECK(dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
   }
 }
+
 TEST_CASE("J1 evaluate derivatives Jastrow with missing J1 for group", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;

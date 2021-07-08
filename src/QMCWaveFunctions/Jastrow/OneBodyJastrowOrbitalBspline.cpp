@@ -36,7 +36,7 @@ void OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& acti
 {
   J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::checkInVariables(active);
   for (int i = 0; i < NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
+    GPUSplines[i]->set(*this->J1UniqueFunctors[i]);
 }
 
 template<class FT>
@@ -651,7 +651,7 @@ void OneBodyJastrowOrbitalBspline<FT>::resetParameters(const opt_variables_type&
 {
   J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::resetParameters(active);
   for (int i = 0; i < NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
+    GPUSplines[i]->set(*this->J1UniqueFunctors[i]);
 }
 
 template<class FT>
@@ -721,7 +721,7 @@ void OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives(MCWalkerConfiguration
     //       std::cerr << "SplineDerivsHost = " << std::endl;
     //       for (int i=0; i<SplineDerivsHost.size(); i++)
     //         std::cerr << SplineDerivsHost[i] << std::endl;
-    opt_variables_type splineVars = this->F[cgroup]->myVars;
+    opt_variables_type splineVars = this->J1UniqueFunctors[cgroup]->myVars;
     for (int iv = 0; iv < splineVars.size(); iv++)
     {
       int varIndex  = splineVars.Index[iv];
