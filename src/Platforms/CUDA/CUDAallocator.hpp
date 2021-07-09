@@ -182,6 +182,20 @@ public:
     }
   }
 
+  void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
+  {
+    if (hstream_)
+    {
+      cudaErrorCheck(cudaMemcpyAsync(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice, hstream_),
+                     "cudaMemcpyAsync failed in copyDeviceToDevice");
+    }
+    else
+    {
+      cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
+                     "cudaMemcpy failed in copyDeviceToDevice");
+    }
+  }
+  
   void set_stream(cudaStream_t stream) { hstream_ = stream; }
 
 private:

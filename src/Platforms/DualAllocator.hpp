@@ -122,6 +122,13 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     T* device_ptr = alloc.getDevicePtr(host_ptr);
     alloc.get_device_allocator().copyFromDevice(host_ptr, device_ptr, n);
   }
+
+  static void deviceSideCopyN(DualAllocator<T, DeviceAllocator, HostAllocator>& alloc, size_t to, size_t n, size_t from) {
+    T* device_ptr = alloc.get_device_ptr();
+    T* to_ptr = device_ptr + to;
+    T* from_ptr = device_ptr + from;
+    alloc.get_device_allocator().copyDeviceToDevice(to_ptr, n, from_ptr);
+  }
 };
 
 } // namespace qmcplusplus

@@ -28,9 +28,8 @@
 
 namespace qmcplusplus
 {
-
-// This naming is pretty bad but consistent with the naming of OMPAllocator in the
-// rest of the code.
+// This naming is pretty bad but consistent with the naming over much of the code
+// its defined locally all over the place.
 #if defined(ENABLE_OFFLOAD)
 template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
@@ -44,8 +43,8 @@ using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllo
 template<class OPA>
 void testDualAllocator()
 {
-  constexpr int nd      = 3;
-  using Value = typename OPA::value_type;
+  constexpr int nd = 3;
+  using Value      = typename OPA::value_type;
   VectorSoaContainer<Value, nd, OPA> vcsoa;
 
   int n = 12;
@@ -55,7 +54,7 @@ void testDualAllocator()
   vcsoa.resize(n * n);
 
   testing::MakeRngSpdMatrix<Value> makeRngSpdMatrix;
-    
+
   for (int iw = 0; iw < nd; ++iw)
   {
     makeRngSpdMatrix(mat_spd);
@@ -68,9 +67,9 @@ void testDualAllocator()
   Matrix<Value, OPA> matrix_view2(vcsoa, vcsoa.data(1), n, n);
   Matrix<Value, OPA> matrix_view3(vcsoa, vcsoa.data(2), n, n);
 
-  
+
   // Without copying allocator this causes a segfault.
-  auto device_ptr = matrix_view.device_data();
+  auto device_ptr  = matrix_view.device_data();
   auto device_ptr2 = matrix_view2.device_data();
   auto device_ptr3 = matrix_view3.device_data();
 
@@ -78,32 +77,36 @@ void testDualAllocator()
   CHECK(device_ptr2 != nullptr);
   CHECK(device_ptr3 != nullptr);
 
-#if defined(ENABLE_CUDA)
-  // not sure how to do this sort of thing device side with openmp target
-  // cudaErrorCheck(cudaMemcpyAsync(device_ptr2, device_ptr, sizeof(Value) * n * n, cudaMemcpyDeviceToDevice),
-  //                "cudaMemcpyAsync in test_dual_allocators");
-  cudaErrorCheck(cudaMemcpyAsync(device_ptr, device_ptr3, sizeof(Value) * n * n, cudaMemcpyDeviceToDevice),
-                 "cudaMemcpyAsync in test_dual_allocators");
-  // cudaErrorCheck(cudaMemcpyAsync(device_ptr3, device_ptr2, sizeof(Value) * n * n, cudaMemcpyDeviceToDevice),
-  //                "cudaMemcpyAsync in test_dual_allocators");
-  cudaErrorCheck(cudaDeviceSynchronize(), "cudaStreamSynchronize failed!");
+  int ifrom                = 2;
+  int ito                  = 0;
 
+  vcsoa.copyDeviceDataByIndex(0,2);
   vcsoa.updateFrom();
 
   auto check_matrix_result = checkMatrix(mat_spd, matrix_view);
-  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
-#endif
+  CHECKED_ELSE(check_matrix_result.result) {
+    FAIL(check_matrix_result.result_message); }
+
+  matrix_view2(0,0) = 0.0;
+  matrix_view2(1,0) = 1,0;
+
+  matrix_view2.updateTo();
+  vcsoa.copyDeviceDataByIndex(0,1);
+  matrix_view.updateFrom();
+  CHECK(matrix_view(0,0) == 0.0);
+  CHECK(matrix_view(1,0) == 1.0);
+  
 }
 
 TEST_CASE("OhmmsMatrix_VectorSoaContainer_View", "[Integration][Allocators]")
 {
 #if defined(ENABLE_OFFLOAD)
   testDualAllocator<OffloadPinnedAllocator<double>>();
-  //  testDualAllocator<OffloadPinnedAllocator<std::complex<double>>>();
+  testDualAllocator<OffloadPinnedAllocator<std::complex<double>>>();
 #endif
 #if defined(ENABLE_CUDA)
   testDualAllocator<CUDAPinnedAllocator<double>>();
-  // testDualAllocator<CUDAPinnedAllocator<std::complex<double>>>();
+  testDualAllocator<CUDAPinnedAllocator<std::complex<double>>>();
 #endif
 }
 } // namespace qmcplusplus

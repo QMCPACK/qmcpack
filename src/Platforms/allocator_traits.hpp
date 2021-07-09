@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 /** template class analogous to std::allocator_traits.
  *  * defines the is_host_accessible and is_dual_space traits
- *  * abstracts the data movement on and off device.
+ *  * abstracts the data movement on,off and from place to place on device.
  *  * abstracts the fill function for the allocator.
  */
 template<class Allocator>
@@ -32,8 +32,10 @@ struct qmc_allocator_traits
 
   static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); }
 
+  // So we can write generic tests that work with all QMCPACK allocators
   static void updateTo(Allocator& a, value_type* host_ptr, size_t n) {}
   static void updateFrom(Allocator& a, value_type* host_ptr, size_t n) {}
+  static void deviceSideCopyN(Allocator& a, size_t to, size_t n, size_t from) {}
 };
 
 template<class Allocator>

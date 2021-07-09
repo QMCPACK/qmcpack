@@ -134,24 +134,43 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 
   static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    #if defined(ENABLE_CUDA)
-    cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice);
-    cudaDeviceSynchronize();
-    #endif
-    // I want this to do what the above does, but obviously don't understand target udpate"
-    PRAGMA_OFFLOAD("omp target update to(device_ptr[0:n])");
+    auto* alloc_host_ptr = alloc.get_allocator_host_ptr();
+    auto start = host_ptr - alloc_host_ptr;
+    PRAGMA_OFFLOAD("omp target update to(host_ptr[start:n])");
   }
 
   static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-#if defined(ENABLE_CUDA)
-    cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
-#endif
-    // I want this to do what the above does, but obviously don't understand target udpate"
-    PRAGMA_OFFLOAD("omp target update from(device_ptr[0:n])");
+    auto* alloc_host_ptr = alloc.get_allocator_host_ptr();
+    auto start = host_ptr - alloc_host_ptr;
+    PRAGMA_OFFLOAD("omp target update from(host_ptr[start:n])");
+  }
+
+  // Not very optimized device side copy.  Only used for testing.
+  static void deviceSideCopyN(OMPallocator<T, HostAllocator>& alloc, size_t to, size_t n, size_t from)
+  {
+    const int chunk_per_team   = 128;
+    const size_t memory_size   = from + n - to;
+    const int num_teams_native = (memory_size + chunk_per_team - 1) / chunk_per_team;
+    auto* host_ptr             = alloc.get_allocator_host_ptr();
+    {
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(1) num_teams(num_teams_native) \
+map(always, to: host_ptr[to:memory_size])")
+      for (int team_id = 0; team_id < num_teams_native; team_id++)
+      {
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int j = 0; j < chunk_per_team; j++)
+        {
+          auto pos = chunk_per_team * team_id + j;
+          if (pos >= to && pos < to + n)
+          {
+            auto* off_to_ptr   = host_ptr + pos;
+            auto* off_from_ptr = host_ptr + from + (pos - to);
+            *off_to_ptr        = *off_from_ptr;
+          }
+        }
+      }
+    }
   }
 };
 
