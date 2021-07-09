@@ -13,9 +13,8 @@
 
 #include <algorithm>
 #include "config.h"
-#if defined(ENABLE_OFFLOAD)
+#include "PinnedAllocator.h"
 #include "OMPTarget/OMPallocator.hpp"
-#endif
 #if defined(ENABLE_CUDA)
 #include "DualAllocator.hpp"
 #include "CUDA/CUDAallocator.hpp"
@@ -30,11 +29,8 @@ namespace qmcplusplus
 {
 // This naming is pretty bad but consistent with the naming over much of the code
 // its defined locally all over the place.
-#if defined(ENABLE_OFFLOAD)
 template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#endif
-// To save confusion and allow testing both lets call this what it is.
 #if defined(ENABLE_CUDA)
 template<typename T>
 using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
@@ -95,15 +91,12 @@ void testDualAllocator()
   matrix_view.updateFrom();
   CHECK(matrix_view(0,0) == 0.0);
   CHECK(matrix_view(1,0) == 1.0);
-  
 }
 
 TEST_CASE("OhmmsMatrix_VectorSoaContainer_View", "[Integration][Allocators]")
 {
-#if defined(ENABLE_OFFLOAD)
   testDualAllocator<OffloadPinnedAllocator<double>>();
   testDualAllocator<OffloadPinnedAllocator<std::complex<double>>>();
-#endif
 #if defined(ENABLE_CUDA)
   testDualAllocator<CUDAPinnedAllocator<double>>();
   testDualAllocator<CUDAPinnedAllocator<std::complex<double>>>();

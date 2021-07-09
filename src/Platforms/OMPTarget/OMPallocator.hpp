@@ -42,6 +42,14 @@ T* getOffloadDevicePtr(T* host_ptr)
  *  and the device_ptr_.  While many containers may need a copy only one can own the memory
  *  it returns and it can only service one owner. i.e. only one object should call the allocate
  *  and deallocate methods.
+ *
+ *  Note: in the style of openmp portability this class always thinks its dual space even when its not,
+ *  this happens through the magic of openmp ignoring target pragmas when target isn't enabled. i.e.
+ *  -fopenmp-targets=... isn't passed at compile time.
+ *  This makes the code "simpler" and more "portable" since its the same code you would write for
+ *  openmp CPU implementation *exploding head* and that is the same implementation + pragmas
+ *  as the serial implementation. This definitely isn't true for all QMCPACK code using offload
+ *  but it is true for OMPAllocator so we do test it that way.
  */
 template<typename T, class HostAllocator = std::allocator<T>>
 struct OMPallocator : public HostAllocator
