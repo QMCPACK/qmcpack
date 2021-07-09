@@ -72,9 +72,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   Vector<posT> Grad;
   Vector<valT> Lap;
   ///Container for \f$F[ig*NIons+jg]\f$
-  std::vector<FT*> F;
+  std::vector<FT*> J1Functors;
   ///container for the unique Jastrow functions
-  std::vector<std::unique_ptr<FT>> J1Unique;
+  std::vector<std::unique_ptr<FT>> J1UniqueFunctors;
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
@@ -115,8 +115,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   /* initialize storage */
   void initialize(const ParticleSet& els)
   {
-    F.resize(Nions, nullptr);
-    J1Unique.resize(Ions.getSpeciesSet().getTotalNum());
+    J1Functors.resize(Nions, nullptr);
+    J1UniqueFunctors.resize(Ions.getSpeciesSet().getTotalNum());
     Vat.resize(Nelec);
     Grad.resize(Nelec);
     Lap.resize(Nelec);
@@ -131,12 +131,12 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   void addFunc(int source_type, std::unique_ptr<FT> afunc, int target_type = -1)
   {
-    for (int i = 0; i < F.size(); i++)
+    for (int i = 0; i < J1Functors.size(); i++)
       if (Ions.getGroupID(i) == source_type)
-        F[i] = afunc.get();
-    //if (J1Unique[source_type] != nullptr)
-    //  delete J1Unique[source_type];
-    J1Unique[source_type] = std::move(afunc);
+        J1Functors[i] = afunc.get();
+    //if (J1UniqueFunctors[source_type] != nullptr)
+    //  delete J1UniqueFunctors[source_type];
+    J1UniqueFunctors[source_type] = std::move(afunc);
   }
 
   void recompute(const ParticleSet& P) override
@@ -173,7 +173,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int iat = 0; iat < Nions; iat++)
       {
         int gid    = Ions.getGroupID(iat);
-        auto* func = J1Unique[gid].get();
+        auto* func = J1UniqueFunctors[gid].get();
         if (func != nullptr)
         {
           RealType r    = dist[iat];
@@ -265,7 +265,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
       for (size_t i = 0; i < ns; ++i)
       {
-        FT* func = F[i];
+        FT* func = J1Functors[i];
         if (func == nullptr)
           continue;
         int first(OffSet[i].first);
@@ -316,8 +316,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     {
       for (int jg = 0; jg < NumGroups; ++jg)
       {
-        if (J1Unique[jg] != nullptr)
-          curVat += J1Unique[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
+        if (J1UniqueFunctors[jg] != nullptr)
+          curVat += J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
       }
     }
     else
@@ -325,8 +325,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int c = 0; c < Nions; ++c)
       {
         int gid = Ions.getGroupID(c);
-        if (J1Unique[gid] != nullptr)
-          curVat += J1Unique[gid]->evaluate(dist[c]);
+        if (J1UniqueFunctors[gid] != nullptr)
+          curVat += J1UniqueFunctors[gid]->evaluate(dist[c]);
       }
     }
     return curVat;
@@ -340,8 +340,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     {
       for (int jg = 0; jg < NumGroups; ++jg)
       {
-        if (J1Unique[jg] != nullptr)
-          curAt += J1Unique[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
+        if (J1UniqueFunctors[jg] != nullptr)
+          curAt += J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
       }
     }
     else
@@ -349,8 +349,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int c = 0; c < Nions; ++c)
       {
         int gid = Ions.getGroupID(c);
-        if (J1Unique[gid] != nullptr)
-          curAt += J1Unique[gid]->evaluate(dist[c]);
+        if (J1UniqueFunctors[gid] != nullptr)
+          curAt += J1UniqueFunctors[gid]->evaluate(dist[c]);
       }
     }
 
@@ -411,9 +411,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
       for (int jg = 0; jg < NumGroups; ++jg)
       {
-        if (J1Unique[jg] == nullptr)
+        if (J1UniqueFunctors[jg] == nullptr)
           continue;
-        J1Unique[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(), d2U.data(),
+        J1UniqueFunctors[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(), d2U.data(),
                                   DistCompressed.data(), DistIndice.data());
       }
     }
@@ -422,9 +422,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int c = 0; c < Nions; ++c)
       {
         int gid = Ions.getGroupID(c);
-        if (J1Unique[gid] != nullptr)
+        if (J1UniqueFunctors[gid] != nullptr)
         {
-          U[c] = J1Unique[gid]->evaluate(dist[c], dU[c], d2U[c]);
+          U[c] = J1UniqueFunctors[gid]->evaluate(dist[c], dU[c], d2U[c]);
           dU[c] /= dist[c];
         }
       }
@@ -528,11 +528,11 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   {
     J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(myName, Ions, tqp);
     j1copy->Optimizable      = Optimizable;
-    for (size_t i = 0, n = J1Unique.size(); i < n; ++i)
+    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
-      if (J1Unique[i] != nullptr)
+      if (J1UniqueFunctors[i] != nullptr)
       {
-        auto fc = std::make_unique<FT>(*J1Unique[i].get());
+        auto fc = std::make_unique<FT>(*J1UniqueFunctors[i].get());
         j1copy->addFunc(i, std::move(fc));
       }
     }
@@ -544,34 +544,34 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
   void reportStatus(std::ostream& os) override
   {
-    for (size_t i = 0, n = J1Unique.size(); i < n; ++i)
+    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
-      if (J1Unique[i] != nullptr)
-        J1Unique[i]->myVars.print(os);
+      if (J1UniqueFunctors[i] != nullptr)
+        J1UniqueFunctors[i]->myVars.print(os);
     }
   }
 
   void checkInVariables(opt_variables_type& active) override
   {
     myVars.clear();
-    for (size_t i = 0, n = J1Unique.size(); i < n; ++i)
+    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
-      if (J1Unique[i] != nullptr)
+      if (J1UniqueFunctors[i] != nullptr)
       {
-        J1Unique[i]->checkInVariables(active);
-        J1Unique[i]->checkInVariables(myVars);
+        J1UniqueFunctors[i]->checkInVariables(active);
+        J1UniqueFunctors[i]->checkInVariables(myVars);
       }
     }
   }
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
-    for (int i = 0; i < J1Unique.size(); ++i)
+    for (int i = 0; i < J1UniqueFunctors.size(); ++i)
     {
-      if (J1Unique[i])
+      if (J1UniqueFunctors[i])
       {
-        J1Unique[i]->myVars.getIndex(active);
-        myVars.insertFrom(J1Unique[i]->myVars);
+        J1UniqueFunctors[i]->myVars.getIndex(active);
+        myVars.insertFrom(J1UniqueFunctors[i]->myVars);
       }
     }
     myVars.getIndex(active);
@@ -586,30 +586,30 @@ struct J1OrbitalSoA : public WaveFunctionComponent
         gradLogPsi[i] = new WavefunctionFirstDerivativeType(Nelec);
         lapLogPsi[i]  = new WavefunctionSecondDerivativeType(Nelec);
       }
-      OffSet.resize(F.size());
+      OffSet.resize(J1Functors.size());
       int varoffset = myVars.Index[0];
-      for (int i = 0; i < F.size(); ++i)
+      for (int i = 0; i < J1Functors.size(); ++i)
       {
-        if (F[i] != nullptr)
+        if (J1Functors[i] != nullptr)
         {
-          OffSet[i].first  = F[i]->myVars.Index.front() - varoffset;
-          OffSet[i].second = F[i]->myVars.Index.size() + OffSet[i].first;
+          OffSet[i].first  = J1Functors[i]->myVars.Index.front() - varoffset;
+          OffSet[i].second = J1Functors[i]->myVars.Index.size() + OffSet[i].first;
         }
       }
     }
     Optimizable = myVars.is_optimizable();
-    for (size_t i = 0, n = J1Unique.size(); i < n; ++i)
-      if (J1Unique[i] != nullptr)
-        J1Unique[i]->checkOutVariables(active);
+    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
+      if (J1UniqueFunctors[i] != nullptr)
+        J1UniqueFunctors[i]->checkOutVariables(active);
   }
 
   void resetParameters(const opt_variables_type& active) override
   {
     if (!Optimizable)
       return;
-    for (size_t i = 0, n = J1Unique.size(); i < n; ++i)
-      if (J1Unique[i] != nullptr)
-        J1Unique[i]->resetParameters(active);
+    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
+      if (J1UniqueFunctors[i] != nullptr)
+        J1UniqueFunctors[i]->resetParameters(active);
 
     for (int i = 0; i < myVars.size(); ++i)
     {
@@ -633,9 +633,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       RealType rinv     = 1.0 / r;
       PosType dr        = displ[isrc];
 
-      if (J1Unique[gid] != nullptr)
+      if (J1UniqueFunctors[gid] != nullptr)
       {
-        U[isrc] = J1Unique[gid]->evaluate(dist[isrc], dU[isrc], d2U[isrc], d3U[isrc]);
+        U[isrc] = J1UniqueFunctors[gid]->evaluate(dist[isrc], dU[isrc], d2U[isrc], d3U[isrc]);
         g_return -= dU[isrc] * rinv * dr;
       }
     }
@@ -659,13 +659,13 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       RealType rinv     = 1.0 / r;
       PosType dr        = displ[isrc];
 
-      if (J1Unique[gid] != nullptr)
+      if (J1UniqueFunctors[gid] != nullptr)
       {
-        U[isrc] = J1Unique[gid]->evaluate(dist[isrc], dU[isrc], d2U[isrc], d3U[isrc]);
+        U[isrc] = J1UniqueFunctors[gid]->evaluate(dist[isrc], dU[isrc], d2U[isrc], d3U[isrc]);
       }
       else
       {
-        APP_ABORT("J1OrbitalSoa::evaluateGradSource:  J1Unique[gid]==nullptr")
+        APP_ABORT("J1OrbitalSoa::evaluateGradSource:  J1UniqueFunctors[gid]==nullptr")
       }
 
       g_return -= dU[isrc] * rinv * dr;
