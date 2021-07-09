@@ -44,6 +44,8 @@ struct BsplineReaderBase
   bool checkNorm;
   ///save spline coefficients to storage
   bool saveSplineCoefs;
+  ///apply orbital rotations
+  bool rotate;
   ///map from spo index to band index
   std::vector<std::vector<int>> spo2band;
 
@@ -178,6 +180,9 @@ struct BsplineReaderBase
 
   /** Set the checkNorm variable */
   inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
+
+  /** Set the orbital rotation flagi */
+  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
 
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,

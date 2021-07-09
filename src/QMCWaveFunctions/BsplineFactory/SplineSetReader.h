@@ -258,8 +258,12 @@ struct SplineSetReader : public BsplineReaderBase
     fftw_execute(FFTplan);
     if (bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
-                           rotate_phase_i);
+      if (rotate)
+        fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
+                             rotate_phase_i);
+      else 
+        fix_phase_norotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
+                             rotate_phase_i);
       einspline::set(spline_r, splineData_r.data());
       einspline::set(spline_i, splineData_i.data());
     }
