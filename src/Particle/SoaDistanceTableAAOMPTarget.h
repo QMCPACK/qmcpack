@@ -237,7 +237,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
                         map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
-                        map(always, from: r_dr_ptr[:nw_new_old_dist_displ.size()])")
+                        nowait depend(out: r_dr_ptr[:nw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -275,6 +275,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }
         }
+    }
+
+    if (modes_ & DTModes::NEED_TEMP_DATA_ON_HOST)
+    {
+      PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:nw_new_old_dist_displ.size()]) from(r_dr_ptr[:nw_new_old_dist_displ.size()])")
     }
   }
 

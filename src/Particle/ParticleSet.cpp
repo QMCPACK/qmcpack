@@ -517,6 +517,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
       const auto dt_list(extractDTRefList(p_list, i));
       p_leader.DistTables[i]->mw_move(dt_list, p_list, new_positions, iat, maybe_accept);
     }
+    PRAGMA_OFFLOAD("omp taskwait")
   }
   auto& SK = p_leader.SK;
   if (SK && SK->DoUpdate)
