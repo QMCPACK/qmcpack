@@ -243,20 +243,14 @@ inline void fix_phase_rotate_c2c(const Array<std::complex<T>, 3>& in,
     }
 }
 
-template<typename T, typename T1, typename T2>
-inline void fix_phase_norotate_c2c(const Array<std::complex<T>, 3>& in,
+template<typename T, typename T1>
+inline void split_real_components_c2c(const Array<std::complex<T>, 3>& in,
                                  Array<T1, 3>& out_r,
-                                 Array<T1, 3>& out_i,
-                                 const TinyVector<T2, 3>& twist,
-                                 T& phase_r,
-                                 T& phase_i)
+                                 Array<T1, 3>& out_i)
 {
   const int nx = in.size(0);
   const int ny = in.size(1);
   const int nz = in.size(2);
-
-  phase_r = T(1.0);
-  phase_i = T(0.0);
 
 #pragma omp parallel for
   for (size_t ix = 0; ix < nx; ++ix)
@@ -268,8 +262,8 @@ inline void fix_phase_norotate_c2c(const Array<std::complex<T>, 3>& in,
       T1* restrict i_ptr                     = out_i.data() + offset;
       for (size_t iz = 0; iz < nz; ++iz)
       {
-        r_ptr[iz] = static_cast<T1>(phase_r * in_ptr[iz].real() - phase_i * in_ptr[iz].imag());
-        i_ptr[iz] = static_cast<T1>(phase_i * in_ptr[iz].real() + phase_r * in_ptr[iz].imag());
+        r_ptr[iz] = static_cast<T1>(in_ptr[iz].real());
+        i_ptr[iz] = static_cast<T1>(in_ptr[iz].imag());
       }
     }
 }
