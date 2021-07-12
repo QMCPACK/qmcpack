@@ -107,7 +107,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  CHECK(okay);
 
   xmlNodePtr root = doc.getRoot();
 
@@ -117,7 +117,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   SPOSetBuilder* builder = fac.createSPOSetBuilder(ein1);
 
   SPOSet* spo = builder->createSPOSet(ein1);
-  REQUIRE(spo);
+  CHECK(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -293,26 +293,26 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   for (unsigned int iat = 0; iat < 3; iat++)
   {
-    REQUIRE(psiM[iat][0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
-    REQUIRE(psiM[iat][1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
-    REQUIRE(psiM[iat][2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    CHECK(psiM[iat][0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psiM[iat][1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psiM[iat][2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    REQUIRE(dpsiM[iat][0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
-    REQUIRE(dpsiM[iat][0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
-    REQUIRE(dpsiM[iat][0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
+    CHECK(dpsiM[iat][0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dpsiM[iat][0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dpsiM[iat][0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
 
-    REQUIRE(dpsiM[iat][1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
-    REQUIRE(dpsiM[iat][1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
-    REQUIRE(dpsiM[iat][1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
+    CHECK(dpsiM[iat][1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dpsiM[iat][1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dpsiM[iat][1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
 
-    REQUIRE(dpsiM[iat][2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
-    REQUIRE(dpsiM[iat][2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
-    REQUIRE(dpsiM[iat][2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
+    CHECK(dpsiM[iat][2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dpsiM[iat][2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dpsiM[iat][2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
 
 
-    REQUIRE(d2psiM[iat][0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
-    REQUIRE(d2psiM[iat][1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
-    REQUIRE(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
+    CHECK(d2psiM[iat][0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2psiM[iat][1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
   }
 
   //Now we're going to test evaluateValue and evaluateVGL:
@@ -371,9 +371,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateValue(elec_, iat, psi_work);
 
-    REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
-    REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
-    REQUIRE(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
     elec_.rejectMove(iat);
   }
 
@@ -388,29 +388,29 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateVGL_spin(elec_, iat, psi_work, dpsi_work, d2psi_work, dspsi_work);
 
-    REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
-    REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
-    REQUIRE(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    REQUIRE(dpsi_work[0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
-    REQUIRE(dpsi_work[0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
-    REQUIRE(dpsi_work[0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
+    CHECK(dpsi_work[0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dpsi_work[0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dpsi_work[0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
 
-    REQUIRE(dpsi_work[1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
-    REQUIRE(dpsi_work[1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
-    REQUIRE(dpsi_work[1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
+    CHECK(dpsi_work[1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dpsi_work[1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dpsi_work[1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
 
-    REQUIRE(dpsi_work[2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
-    REQUIRE(dpsi_work[2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
-    REQUIRE(dpsi_work[2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
+    CHECK(dpsi_work[2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dpsi_work[2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dpsi_work[2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
 
-    REQUIRE(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
-    REQUIRE(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
-    REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
+    CHECK(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
 
-    REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
-    REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
-    REQUIRE(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
+    CHECK(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
+    CHECK(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
+    CHECK(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
 
     elec_.rejectMove(iat);
   }
@@ -425,13 +425,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluate_spin(elec_, iat, psi_work, dspsi_work);
 
-    REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
-    REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
-    REQUIRE(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
-    REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
-    REQUIRE(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
+    CHECK(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
+    CHECK(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
+    CHECK(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
 
     elec_.rejectMove(iat);
   }
