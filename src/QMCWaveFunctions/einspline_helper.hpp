@@ -243,10 +243,13 @@ inline void fix_phase_rotate_c2c(const Array<std::complex<T>, 3>& in,
     }
 }
 
+/** Split FFTs into real/imaginary components. 
+  * @param in ffts
+  * @param out_r real component
+  * @param out_i imaginary components
+  */
 template<typename T, typename T1>
-inline void split_real_components_c2c(const Array<std::complex<T>, 3>& in,
-                                 Array<T1, 3>& out_r,
-                                 Array<T1, 3>& out_i)
+inline void split_real_components_c2c(const Array<std::complex<T>, 3>& in, Array<T1, 3>& out_r, Array<T1, 3>& out_i)
 {
   const int nx = in.size(0);
   const int ny = in.size(1);
