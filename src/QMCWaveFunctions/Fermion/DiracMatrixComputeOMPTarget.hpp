@@ -161,15 +161,17 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
-                                                                            OffloadPinnedMatrix<TMAT>& inv_a_mat,
-                                                                            std::complex<TREAL>& log_value)
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(
+      Resource& resource,
+      const OffloadPinnedMatrix<TMAT>& a_mat,
+      OffloadPinnedMatrix<TMAT>& inv_a_mat,
+      OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
     const int ldb = inv_a_mat.cols();
     simd::transpose(a_mat.data(), n, lda, inv_a_mat.data(), n, ldb);
-    computeInvertAndLog(inv_a_mat, n, ldb, log_value);
+    computeInvertAndLog(inv_a_mat, n, ldb, log_values[0]);
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -178,9 +180,11 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
-                                                                             OffloadPinnedMatrix<TMAT>& inv_a_mat,
-                                                                             std::complex<TREAL>& log_value)
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(
+      Resource& resource,
+      const OffloadPinnedMatrix<TMAT>& a_mat,
+      OffloadPinnedMatrix<TMAT>& inv_a_mat,
+      OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
@@ -188,7 +192,7 @@ public:
 
     psiM_fp_.resize(n * lda);
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
-    computeInvertAndLog(psiM_fp_, n, lda, log_value);
+    computeInvertAndLog(psiM_fp_, n, lda, log_values[0]);
 
     //Matrix<TMAT> data_ref_matrix;
     //maybe n, lda
@@ -202,8 +206,9 @@ public:
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
   template<typename TMAT, typename TREAL>
-  inline void mw_invertTranspose(RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-                                 RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
+  inline void mw_invertTranspose(Resource& resource,
+                                 RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
+                                 const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<std::complex<TREAL>>& log_values,
                                  const std::vector<bool>& recompute)
   {

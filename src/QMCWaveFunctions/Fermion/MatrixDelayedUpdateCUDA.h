@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,41 +16,23 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "Fermion/DiracMatrixComputeCUDA.hpp"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
-#include "ResourceCollection.h"
-
+#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
-struct CUDALinearAlgebraHandles : public Resource
+
+namespace testing
 {
-  // CUDA specific variables
-  cudaStream_t hstream;
-  cublasHandle_t h_cublas;
-
-  CUDALinearAlgebraHandles() : Resource("CUDALinearAlgebraHandles")
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
-
-  CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles() {}
-
-  ~CUDALinearAlgebraHandles()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
-
-  Resource* makeClone() const override { return new CUDALinearAlgebraHandles(*this); }
-};
+  class DiracDeterminantBatchedTest;
+}
 
 template<typename T>
 struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
@@ -98,14 +81,21 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
 template<typename T, typename T_FP>
 class MatrixDelayedUpdateCUDA
 {
+public:
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
-
+  using FullPrecReal = QMCTraits::FullPrecRealType;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<T>, OffloadPinnedAllocator<std::complex<T>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  /// matrix inversion engine
-  DiracMatrix<T_FP> detEng;
+  using DiracMatrixCompute = DiracMatrixComputeCUDA<T_FP>;
+
+  
+  
+  // This facilitates generic testing code don't use to obscure the handle type 
+  using Handles = CUDALinearAlgebraHandles;
+private:
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// scratch space for rank-1 update
@@ -120,7 +110,7 @@ class MatrixDelayedUpdateCUDA
   int invRow_id;
   // scratch space for keeping one row of Ainv
   OffloadValueVector_t rcopy;
-
+  
   using DeviceValueMatrix_t = Matrix<T, CUDAAllocator<T>>;
   using DeviceValueVector_t = Vector<T, CUDAAllocator<T>>;
   /// orbital values of delayed electrons
@@ -138,9 +128,17 @@ class MatrixDelayedUpdateCUDA
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
+  // psi(r')/psi(r) during a PbyP move
+  FullPrecReal cur_ratio_;
+  
+  /** @ingroup Resources
+   *  @{ */
   // CUDA stream, cublas handle object
   std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
-  // multi walker memory buffers
+  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
+  UPtr<DiracMatrixCompute> det_inverter_;
+  /**}@ */
+
   std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem<T>> mw_mem_;
 
   inline void waitStream()
@@ -148,7 +146,9 @@ class MatrixDelayedUpdateCUDA
     cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
   }
 
-  // ensure no previous delay left
+  /** ensure no previous delay left.
+   *  This looks like it should be an assert
+   */
   inline void guard_no_delay() const
   {
     if (delay_count != 0)
@@ -353,7 +353,12 @@ public:
 
   void createResource(ResourceCollection& collection) const
   {
-    collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
+    //the semantics of the ResourceCollection are such that we don't want to add a Resource that we need
+    //later in the chain of resource creation.
+    auto clah_ptr = std::make_unique<CUDALinearAlgebraHandles>();
+    auto dmcc_ptr = std::make_unique<DiracMatrixComputeCUDA<T_FP>>(clah_ptr->hstream);
+    collection.addResource(std::move(clah_ptr));
+    collection.addResource(std::move(dmcc_ptr));
     collection.addResource(std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem<T>>());
   }
 
@@ -363,7 +368,11 @@ public:
     if (!res_ptr)
       throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast CUDALinearAlgebraHandles failed");
     cuda_handles_.reset(res_ptr);
-
+    auto det_eng_ptr = dynamic_cast<DiracMatrixComputeCUDA<T_FP>*>(collection.lendResource().release());
+    if (!det_eng_ptr)
+      throw std::runtime_error(
+          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixComputeCUDA<T_FP>* failed");
+    det_inverter_.reset(det_eng_ptr);
     auto res2_ptr = dynamic_cast<MatrixDelayedUpdateCUDAMultiWalkerMem<T>*>(collection.lendResource().release());
     if (!res2_ptr)
       throw std::runtime_error(
@@ -374,67 +383,82 @@ public:
   void releaseResource(ResourceCollection& collection)
   {
     collection.takebackResource(std::move(cuda_handles_));
+    collection.takebackResource(std::move(det_inverter_));
     collection.takebackResource(std::move(mw_mem_));
   }
 
-  inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
+  Handles& getHandles() { return *cuda_handles_; }
+
+  /** Why do you need to modify another classes data member?
+   */
+  inline const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
+  
+  inline OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
+  QMCTraits::FullPrecRealType& cur_ratio() {return cur_ratio_; }
+  const QMCTraits::FullPrecRealType get_cur_ratio() const { return cur_ratio_; }
+  
+  /** make this class unit tests friendly without the need of setup resources.
+   *  belongs in a friend class in test
+   */
+  inline void checkResourcesForTest()
+  {
+    if (!cuda_handles_)
+    {
+      throw std::logic_error(
+          "Null cuda_handles_, Even for testing proper resource creation and acquisition must be made.");
+    }
+
+    if (!det_inverter_)
+    {
+      throw std::logic_error(
+          "Null det_inverter_, Even for testing proper resource creation and acquisition must be made.");
+    }
+  }
+
+
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
+   *
+   *  This does not get called constantly so get real benchmark data that redirection to mw
+   *  is a big deal before optimizing.
    * @param logdetT orbital value matrix
    * @param LogValue log(det(logdetT))
    */
-  template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
+
+  inline void invert_transpose(OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_values)
   {
-    // make this class unit tests friendly without the need of setup resources.
-    if (!cuda_handles_)
-      cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
-
-    guard_no_delay();
-
-    auto& Ainv = psiMinv;
-    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
-    T* Ainv_ptr = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    guard_no_delay(); 
+    det_inverter_->invert_transpose(*cuda_handles_, log_det, psiMinv, log_values);
+    // RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>> engines(*this);
+    // RefVector<OffloadPinnedValueMatrix_t> log_dets;
+    // engines.push_back(*this);
+    // log_dets.push_back(std::ref(log_det));
+    // mw_invertTranspose(engines, log_dets, log_values);
   }
 
-  template<typename TREAL>
-  static void mw_invert_transpose(const RefVectorWithLeader<This_t>& engines,
-                                  const RefVector<const Matrix<T>>& logdetT_list,
-                                  const RefVector<std::complex<TREAL>>& LogValues)
+  static void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
+                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 OffloadPinnedLogValueVector_t& log_values,
+                                 const std::vector<bool>& compute_mask)
   {
     auto& engine_leader = engines.getLeader();
-    // make this class unit tests friendly without the need of setup resources.
-    if (!engine_leader.cuda_handles_)
-    {
-      app_warning() << "MatrixDelayedUpdateCUDA : This message should not be seen in production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      engine_leader.cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
-    }
-    if (!engine_leader.mw_mem_)
-    {
-      app_warning() << "MatrixDelayedUpdateCUDA : This message should not be seen in production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      engine_leader.mw_mem_ = std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem<T>>();
-    }
 
     engine_leader.guard_no_delay();
 
-    // FIXME use cublas batched inverse.
+    RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
+    a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
     {
-      auto& Ainv = engines[iw].psiMinv;
-      Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
-      T* Ainv_ptr = Ainv.data();
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+      a_inv_refs.emplace_back(engines[iw].psiMinv);
+      T* a_inv_ptr = a_inv_refs.back().get().data();
+      // This seems likely to be inefficient
+      PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
+    engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs,
+                                                        log_values, compute_mask);
   }
 
   // prepare invRow and compute the old gradients.
@@ -499,6 +523,7 @@ public:
     rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
+    int success       = 0;
     const T* phiV_ptr = phiV.data();
     T* Ainv_ptr       = Ainv.data();
     T* temp_ptr       = temp.data();
@@ -507,7 +532,7 @@ public:
                     map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
@@ -515,8 +540,8 @@ public:
         for (int i = 0; i < norb; i++)
           rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
       }
-      ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr, 1,
-                   Ainv_ptr, lda);
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
+                             1, Ainv_ptr, lda);
     }
   }
 
@@ -791,6 +816,15 @@ public:
                      "cudaMemcpyAsync Ainv failed!");
     engine_leader.waitStream();
   }
+
+  DiracMatrixComputeCUDA<T_FP>& get_det_inverter()
+  {
+    if (det_inverter_)
+      return *det_inverter_;
+    throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
+  }
+
+  friend class qmcplusplus::testing::DiracDeterminantBatchedTest;
 };
 } // namespace qmcplusplus
 

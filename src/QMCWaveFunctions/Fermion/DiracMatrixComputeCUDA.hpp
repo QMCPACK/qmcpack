@@ -12,12 +12,15 @@
 #ifndef QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
 #define QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
 
+#include <type_traits>
+
 #include "OhmmsPETE/OhmmsMatrix.h"
-#ifdef ENABLE_OFFLOAD
-#include "OMPTarget/OMPallocator.hpp"
-#elif ENABLE_CUDA
-#include "DualAllocator.hpp"
-#endif
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+// #ifdef ENABLE_OFFLOAD
+// #include "OMPTarget/OMPallocator.hpp"
+// #elif ENABLE_CUDA
+// #include "DualAllocator.hpp"
+// #endif
 #include "Platforms/PinnedAllocator.h"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
@@ -43,13 +46,13 @@ class DiracMatrixComputeCUDA : public Resource
   // Why not just use QMCTraits::FullPrecRealType?
   using FullPrecReal = typename scalar_traits<T_FP>::real_type;
 
-#ifdef ENABLE_OFFLOAD
-  template<typename T>
-  using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#elif ENABLE_CUDA
-  template<typename T>
-  using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-#endif
+  // #ifdef ENABLE_OFFLOAD
+  //   template<typename T>
+  //   using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
+  // #elif ENABLE_CUDA
+  //   template<typename T>
+  //   using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+  // #endif
 
   template<typename T>
   using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
@@ -244,11 +247,12 @@ public:
    *  There is no optimization (yet) for TMAT same type as TREAL
    */
   template<typename TMAT, typename TREAL>
-  void invert_transpose(CUDALinearAlgebraHandles& cuda_handles,
+  void invert_transpose(Resource& resource,
                         OffloadPinnedMatrix<TMAT>& a_mat,
                         OffloadPinnedMatrix<TMAT>& inv_a_mat,
                         OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
+    auto& cuda_handles = dynamic_cast<CUDALinearAlgebraHandles&>(resource);
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
     psiM_fp_.resize(n * lda);
@@ -319,6 +323,8 @@ public:
 
   /** Batched inversion and calculation of log determinants.
    *  When TMAT is full precision we can use the a_mat and inv_mat directly
+   *  Side effect of this is after this call a_mats contains the LU factorization
+   *  matrix.
    */
   template<typename TMAT, typename TREAL>
   inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> mw_invertTranspose(

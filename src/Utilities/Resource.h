@@ -29,5 +29,14 @@ private:
   int index_in_collection_ = -1;
   friend class ResourceCollection;
 };
+
+/** For the sake of generic code sometimes an dummy resource is needed to pass API.
+ */
+class DummyResource : public Resource
+{
+public:
+  DummyResource() : Resource("Dummy") {}
+  Resource* makeClone() const override { return new DummyResource(); }
+};  
 } // namespace qmcplusplus
 #endif

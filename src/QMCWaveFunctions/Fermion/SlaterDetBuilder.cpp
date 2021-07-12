@@ -485,7 +485,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     if (use_batch == "yes")
     {
       app_summary() << "      Using walker batching." << std::endl;
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
@@ -495,12 +495,17 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       }
       else
 #endif
+#if defined(ENABLE_OFFLOAD)
       {
         app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
                          "delay_rank is ignored."
                       << std::endl;
-        adet = new DiracDeterminantBatched<>(std::move(psi_clone), firstIndex);
-      }
+        adet = new DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex);
+#else
+        {
+          myComm->barrier_and_abort("Batching requires ENABLE_CUDA and/or ENABLE_OFFLOAD");
+#endif
+        }
     }
     else
     {

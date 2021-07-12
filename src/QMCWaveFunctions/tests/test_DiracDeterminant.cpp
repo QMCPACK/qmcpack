@@ -30,6 +30,7 @@
 
 using std::string;
 
+#define DUMP_INFO
 
 namespace qmcplusplus
 {
