@@ -243,6 +243,34 @@ inline void fix_phase_rotate_c2c(const Array<std::complex<T>, 3>& in,
     }
 }
 
+/** Split FFTs into real/imaginary components. 
+  * @param in ffts
+  * @param out_r real component
+  * @param out_i imaginary components
+  */
+template<typename T, typename T1>
+inline void split_real_components_c2c(const Array<std::complex<T>, 3>& in, Array<T1, 3>& out_r, Array<T1, 3>& out_i)
+{
+  const int nx = in.size(0);
+  const int ny = in.size(1);
+  const int nz = in.size(2);
+
+#pragma omp parallel for
+  for (size_t ix = 0; ix < nx; ++ix)
+    for (size_t iy = 0; iy < ny; ++iy)
+    {
+      const size_t offset                    = ix * ny * nz + iy * nz;
+      const std::complex<T>* restrict in_ptr = in.data() + offset;
+      T1* restrict r_ptr                     = out_r.data() + offset;
+      T1* restrict i_ptr                     = out_i.data() + offset;
+      for (size_t iz = 0; iz < nz; ++iz)
+      {
+        r_ptr[iz] = static_cast<T1>(in_ptr[iz].real());
+        i_ptr[iz] = static_cast<T1>(in_ptr[iz].imag());
+      }
+    }
+}
+
 /** Compute the norm of an orbital.
    * @param cG the plane wave coefficients
    * @return norm of the orbital

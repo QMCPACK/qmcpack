@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false)
+    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false), rotate(true)
 {
   myComm = mybuilder->getCommunicator();
 }
