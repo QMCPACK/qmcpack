@@ -228,6 +228,27 @@ public:
       update(jat);
   }
 
+  virtual void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list, IndexType jat, const std::vector<bool>& from_temp)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].updatePartial(jat, from_temp[iw]);
+  }
+
+  /** finalize distance table calculation after particle-by-particle moves
+   * if update() doesn't make the table up-to-date during p-by-p moves
+   * finalizePbyP takes action to bring the table up-to-date
+   */
+  virtual void finalizePbyP(const ParticleSet& P) { }
+
+  virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].finalizePbyP(p_list[iw]);
+  }
+
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
    * @param rcut cutoff radius

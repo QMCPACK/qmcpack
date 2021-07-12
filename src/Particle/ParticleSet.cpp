@@ -770,15 +770,32 @@ void ParticleSet::donePbyP()
   coordinates_->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
+  for (size_t i = 0; i < DistTables.size(); ++i)
+    DistTables[i]->finalizePbyP(*this);
   activePtcl = -1;
 }
 
 void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
 {
+  ParticleSet& p_leader = p_list.getLeader();
+  ScopedTimer donePbyP_scope(p_leader.myTimers[PS_donePbyP]);
+
 // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
 #pragma omp parallel for
-  for (int iw = 0; iw < p_list.size(); iw++)
-    p_list[iw].donePbyP();
+  for (ParticleSet& pset : p_list)
+  {
+    pset.coordinates_->donePbyP();
+    if (pset.SK && !pset.SK->DoUpdate)
+      pset.SK->UpdateAllPart(pset);
+    pset.activePtcl = -1;
+  }
+
+  auto& dts = p_leader.DistTables;
+  for (int i = 0; i < dts.size(); ++i)
+  {
+    const auto dt_list(extractDTRefList(p_list, i));
+    dts[i]->mw_finalizePbyP(dt_list, p_list);
+  }
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
