@@ -181,7 +181,7 @@ struct BsplineReaderBase
   /** Set the checkNorm variable */
   inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
 
-  /** Set the orbital rotation flagi */
+  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
   inline void setRotate(bool new_rotate) { rotate = new_rotate; };
 
   void initialize_spo2band(int spin,

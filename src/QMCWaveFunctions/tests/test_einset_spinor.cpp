@@ -97,7 +97,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"A\" type=\"einspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\" meshfactor=\"4.0\"> \ 
+   <sposet_builder name=\"A\" type=\"einspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\" meshfactor=\"4.0\"> \
      <sposet name=\"myspo\" size=\"3\"> \
        <occupation mode=\"ground\"/> \
      </sposet> \
