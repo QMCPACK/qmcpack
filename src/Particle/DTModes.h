@@ -25,6 +25,10 @@ enum class DTModes : uint_fast8_t
    * DT consumers should know if full table is needed or not and request via addTable.
    */
   NEED_FULL_TABLE_ANYTIME   = 0x1,
+  /** whether temporary data set on the host is updated or not when a move is proposed.
+   * Considering transferring data from accelerator to host is relatively expensive,
+   * only request this when data on host is needed for unoptimized code path.
+   */
   NEED_TEMP_DATA_ON_HOST = 0x2
 };
 
