@@ -77,9 +77,10 @@ public:
   Vector(CONTAINER& other, T* ref, size_t n)
       : nLocal(n),
         nAllocated(0),
-        X(ref),
-        mAllocator(other.mAllocator.get_device_ptr(), other.mAllocator.get_allocator_host_ptr())
-  {}
+        X(ref)
+  {
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
+  }
 
   Vector(std::initializer_list<T> ts)
   {
@@ -152,10 +153,10 @@ public:
     {
       free();
     }
-    mAllocator.actually_copy(other.mAllocator);
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
   }
 
   //! return the current size
@@ -238,12 +239,12 @@ public:
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline pointer device_data()
   {
-    return mAllocator.getDevicePtr(X);
+    return mAllocator.getDevicePtr();
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const_pointer device_data() const
   {
-    return mAllocator.getDevicePtr(X);
+    return mAllocator.getDevicePtr();
   }
 
   inline pointer first_address() { return X; }

@@ -33,6 +33,7 @@ struct qmc_allocator_traits
   static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); }
 
   // So we can write generic tests that work with all QMCPACK allocators
+  static void attachReference(Allocator& from, Allocator& to, std::ptrdiff_t ptr_offset) {}
   static void updateTo(Allocator& a, value_type* host_ptr, size_t n) {}
   static void updateFrom(Allocator& a, value_type* host_ptr, size_t n) {}
   static void deviceSideCopyN(Allocator& a, size_t to, size_t n, size_t from) {}
