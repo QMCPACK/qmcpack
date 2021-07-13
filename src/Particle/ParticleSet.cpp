@@ -808,8 +808,6 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
   ParticleSet& p_leader = p_list.getLeader();
   ScopedTimer donePbyP_scope(p_leader.myTimers[PS_donePbyP]);
 
-// Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
-#pragma omp parallel for
   for (ParticleSet& pset : p_list)
   {
     pset.coordinates_->donePbyP();
