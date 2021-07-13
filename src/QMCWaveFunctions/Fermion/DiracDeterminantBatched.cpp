@@ -195,7 +195,9 @@ void DiracDeterminantBatched<DET_ENGINE>::resize(int nel, int morb)
   psiV.resize(NumOrbitals);
   psiV_host_view.attachReference(psiV.data(), NumOrbitals);
   dpsiV.resize(NumOrbitals);
+  dpsiV_host_view.attachReference(dpsiV.data(), NumOrbitals);
   d2psiV.resize(NumOrbitals);
+  d2psiV_host_view.attachReference(d2psiV.data(), NumOrbitals);
 }
 
 template<typename DET_ENGINE>
@@ -277,7 +279,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::PsiValueType DiracDeterminantBatch
 
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV, d2psiV);
+    Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view);
   }
 
   {
@@ -306,14 +308,12 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
   auto& grad_new_local = mw_res.grad_new_local;
-
   {
     ScopedTimer local_timer(SPOVGLTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(wfc_list.size());
     RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(wfc_list.size());
-
     const int WorkingIndex = iat - FirstIndex;
     for (int iw = 0; iw < wfc_list.size(); iw++)
     {
@@ -722,7 +722,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
   }
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateDetRatios(VP, psiV_host_view, d2psiV, ratios);
+    Phi->evaluateDetRatios(VP, psiV_host_view, d2psiV_host_view, ratios);
   }
 }
 

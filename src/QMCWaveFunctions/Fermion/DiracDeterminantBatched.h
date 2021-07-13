@@ -88,6 +88,7 @@ public:
   using OffloadPinnedLogValueVector_t = Vector<LogValueType, OffloadPinnedAllocator<LogValueType>>;
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
+  using OffloadPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
   using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
@@ -254,8 +255,10 @@ public:
   /// value of single-particle orbital for particle-by-particle update
   OffloadPinnedValueVector_t psiV;
   ValueVector_t psiV_host_view;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
+  OffloadPinnedGradVector dpsiV;
+  GradVector_t dpsiV_host_view;
+  OffloadPinnedValueVector_t d2psiV;
+  ValueVector_t d2psiV_host_view;
 
   /// delayed update engine
   DET_ENGINE det_engine_;

@@ -209,10 +209,6 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   int norb = 4;
   ddb.set(0, norb);
 
-  // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
-
   ParticleSet elec;
   elec.create(4);
 
@@ -237,7 +233,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   }
 
   //checkMatrix(ddb.psiMinv, b);
-  DetType::DetEngine_t::DiracMatrixCompute& dm = ddb.get_det_engine().get_det_inverter();
+  //DetType::DetEngine_t::DiracMatrixCompute& dm = ddb.get_det_engine().get_det_inverter();
 
   ValueMatrix a_update1, scratchT;
   a_update1.resize(4, 4);
@@ -274,6 +270,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   auto& mw_res              = ddbt.get_mw_res(ddb);
   LogValueType original_log = ddb.get_log_value();
 #if defined(ENABLE_CUDA)
+  //dm.invert_transpose(ddb.get_det_engine().getHandles(), scratchT, a_update1, mw_res.log_values);
   ddbt.invertPsiM(ddb, a_update1);
   det_update1 = mw_res.log_values[0];
 #elif defined(ENABLE_OFFLOAD)
@@ -296,7 +293,6 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   LogValueType det_update2;
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
-
 #if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
   //dm.invert_transpose(ddb.get_det_engine().getHandles(), scratchT, a_update2, mw_res.log_values);
   ddbt.invertPsiM(ddb, a_update2);
