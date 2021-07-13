@@ -93,7 +93,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     for (int iat = 0; iat < N_targets; ++iat)
     {
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, N_targets, iat);
+                                             displacements_[iat], 0, iat, iat);
       distances_[iat][iat] = BigR; //assign big distance
     }
   }
@@ -128,19 +128,28 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
           min_dist = temp_r_[jat];
           index    = jat;
         }
-      if (index >= 0)
-        dr = temp_dr_[index];
+      assert(index >= 0);
+      dr = temp_dr_[index];
     }
     else
     {
-      for (int jat = 0; jat < N_targets; ++jat)
-        if (distances_[iat][jat] < min_dist && jat != iat)
+      for (int jat = 0; jat < iat; ++jat)
+        if (distances_[iat][jat] < min_dist)
         {
           min_dist = distances_[iat][jat];
           index    = jat;
         }
-      if (index >= 0)
+      for (int jat = iat + 1; jat < N_targets; ++jat)
+        if (distances_[jat][iat] < min_dist)
+        {
+          min_dist = distances_[jat][iat];
+          index    = jat;
+        }
+      assert(index != iat && index >= 0);
+      if (index < iat)
         dr = displacements_[iat][index];
+      else
+        dr = displacements_[index][iat];
     }
     r = min_dist;
     return index;
