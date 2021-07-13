@@ -111,7 +111,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   }
 }
 
-TEST_CASE("J1 evaluate derivatives Jastrow with missing J1 for group", "[wavefunction]")
+TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
   auto ions_uptr = std::make_unique<ParticleSet>();
@@ -168,6 +168,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with missing J1 for group", "[wavefun
     <correlation elementType=\"H\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
       <coefficients id=\"J1H\" type=\"Array\"> 0.5 0.1 </coefficients> \
     </correlation> \
+    <correlation elementType=\"O\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
+      <coefficients id=\"J1O\" type=\"Array\"> 0.2 0.1 </coefficients> \
+    </correlation> \
   </jastrow> \
 </wavefunction> \
 ";
@@ -200,9 +203,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with missing J1 for group", "[wavefun
   //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
-  // Numbers not validated
-  std::vector<ValueType> expected_dlogpsi      = {-0.9336294487, -1.0196051794, 0.0, 0.0};
-  std::vector<ValueType> expected_dhpsioverpsi = {-1.1596433096, 0.7595492539, 0.0, 0.0};
+  // Numbers not validated independently
+  std::vector<ValueType> expected_dlogpsi      = {-0.6360001724, -1.1764442146, -0.9336294487, -1.0196051794};
+  std::vector<ValueType> expected_dhpsioverpsi = {-0.6225838942, 0.0099980417, -1.1853702074, 0.7798000176};
   for (int i = 0; i < nparam; i++)
   {
     CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));

@@ -36,7 +36,7 @@ void OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& acti
 {
   J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::checkInVariables(active);
   for (int i = 0; i < NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->J1UniqueFunctors[i]);
+    GPUSplines[i]->set(*JBase::J1UniqueFunctors[i]);
 }
 
 template<class FT>
