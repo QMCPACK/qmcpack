@@ -36,21 +36,16 @@ void OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& acti
 {
   J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::checkInVariables(active);
   for (int i = 0; i < NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
+    GPUSplines[i]->set(*JBase::J1UniqueFunctors[i]);
 }
 
 template<class FT>
-void OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, FT* j, int jg)
+void OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, std::unique_ptr<FT> j, int jg)
 {
-  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::addFunc(ig, j, jg);
-  CudaSpline<CTS::RealType>* newSpline = new CudaSpline<CTS::RealType>(*j);
-  UniqueSplines.push_back(newSpline);
-  // if(i==0) { //first time, assign everything
-  //   for(int ig=0; ig<NumCenterGroups; ++ig)
-  // 	if(GPUSplines[ig]==0) GPUSplines[ig]=newSpline;
-  // }
-  // else
-  GPUSplines[ig] = newSpline;
+  auto newSpline = std::make_unique<CudaSpline<CTS::RealType>>(*j);
+  GPUSplines[ig] = newSpline.get();
+  UniqueSplines.push_back(std::move(newSpline));
+  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::addFunc(ig, std::move(j), jg);
 }
 
 template<class FT>
@@ -129,7 +124,7 @@ void OneBodyJastrowOrbitalBspline<FT>::addLog(MCWalkerConfiguration& W, std::vec
       PosType r    = walkers[0]->R[eptcl];
       PosType disp = r - c;
       double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
-      host_sum -= Fs[cptcl]->evaluate(dist);
+      host_sum -= J1Unique[cptcl]->evaluate(dist);
     }
   }
   fprintf(stderr, "host = %25.16f\n", host_sum);
@@ -244,7 +239,7 @@ void OneBodyJastrowOrbitalBspline<FT>::ratio(MCWalkerConfiguration& W,
   double host_sum  = 0.0;
   for (int cptcl = 0; cptcl < CenterRef.getTotalNum(); cptcl++)
   {
-    FT* func     = Fs[cptcl];
+    FT* func     = J1Unique[cptcl];
     PosType disp = new_pos[iw] - CenterRef.R[cptcl];
     double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
     host_sum += func->evaluate(dist);
@@ -365,7 +360,7 @@ void OneBodyJastrowOrbitalBspline<FT>::addRatio(MCWalkerConfiguration& W,
   double host_sum  = 0.0;
   for (int cptcl = 0; cptcl < CenterRef.getTotalNum(); cptcl++)
   {
-    FT* func     = Fs[cptcl];
+    FT* func     = J1Unique[cptcl];
     PosType disp = new_pos[iw] - CenterRef.R[cptcl];
     double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
     host_sum += func->evaluate(dist);
@@ -564,7 +559,7 @@ void OneBodyJastrowOrbitalBspline<FT>::gradLapl(MCWalkerConfiguration& W, GradMa
     double lapl(0.0);
     for (int cptcl = 0; cptcl < CenterRef.getTotalNum(); cptcl++)
     {
-      FT* func     = Fs[cptcl];
+      FT* func     = J1Unique[cptcl];
       PosType disp = walkers[iw]->R[eptcl] - CenterRef.R[cptcl];
       double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
       double u, du, d2u;
@@ -656,7 +651,7 @@ void OneBodyJastrowOrbitalBspline<FT>::resetParameters(const opt_variables_type&
 {
   J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::resetParameters(active);
   for (int i = 0; i < NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
+    GPUSplines[i]->set(*this->J1UniqueFunctors[i]);
 }
 
 template<class FT>
@@ -726,7 +721,7 @@ void OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives(MCWalkerConfiguration
     //       std::cerr << "SplineDerivsHost = " << std::endl;
     //       for (int i=0; i<SplineDerivsHost.size(); i++)
     //         std::cerr << SplineDerivsHost[i] << std::endl;
-    opt_variables_type splineVars = this->F[cgroup]->myVars;
+    opt_variables_type splineVars = this->J1UniqueFunctors[cgroup]->myVars;
     for (int iv = 0; iv < splineVars.size(); iv++)
     {
       int varIndex  = splineVars.Index[iv];

@@ -430,7 +430,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
                      {10.80, 0, 0, 0},
                      {11.40, 0, 0, 0}};
 
-  BsplineFunctor<RealType>* bf = j1->F[0];
+  BsplineFunctor<RealType>* bf = j1->J1Functors[0];
 
   for (int i = 0; i < N; i++)
   {
@@ -444,7 +444,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
 #ifdef PRINT_SPLINE_DATA
   // write out values of the Bspline functor
-  //BsplineFunctor<double> *bf = j1->F[0];
+  //BsplineFunctor<double> *bf = j1->J1Functors[0];
   printf("NumParams = %d\n", bf->NumParams);
   printf("CuspValue = %g\n", bf->CuspValue);
   printf("DeltaR = %g\n", bf->DeltaR);
@@ -548,7 +548,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
                        {10.80, 0, 0, 0},
                        {11.40, 0, 0, 0}};
 
-  BsplineFunctor<RealType>* bf2 = j12->F[0];
+  BsplineFunctor<RealType>* bf2 = j12->J1Functors[0];
 
   for (int i = 0; i < N2; i++)
   {
