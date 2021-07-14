@@ -39,7 +39,7 @@ public:
   bool first;
 
   Backflow_ee(ParticleSet& ions, ParticleSet& els)
-      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(els)), first(true)
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(els, DTModes::NEED_TEMP_DATA_ON_HOST)), first(true)
   {
     resize(NumTargets, NumTargets);
     NumGroups = els.groups();
