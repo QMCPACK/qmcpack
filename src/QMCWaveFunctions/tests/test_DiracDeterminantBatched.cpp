@@ -285,16 +285,17 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 #endif
   //double det_ratio1 = 0.178276269185;
 
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio1_val));
+  CHECK(det_ratio1 == ValueApprox(det_ratio1_val));
 
   ddb.acceptMove(elec, 0);
 
   PsiValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
   LogValueType det_update2;
-  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
-                  scratchT.cols());
+  // simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
+  //                 scratchT.cols());
 #if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
   //dm.invert_transpose(ddb.get_det_engine().getHandles(), scratchT, a_update2, mw_res.log_values);
+  std::cout << "In batch path\n";
   ddbt.invertPsiM(ddb, a_update2);
   det_update2 = mw_res.log_values[0];
 #else

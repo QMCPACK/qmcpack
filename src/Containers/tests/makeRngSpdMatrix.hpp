@@ -123,6 +123,29 @@ private:
   testing::RandomForTest<RngValueType<T>> rng;
 };
 
+/** make a random Vector
+ */
+template<typename T, typename = typename std::enable_if<std::is_floating_point<T>::value, void>::type>
+void makeRngVector(testing::RandomForTest<RngValueType<T>>& rng, Vector<T>& vec)
+{
+  int n = vec.size();
+  rng.fillBufferRng(vec.data(), vec.size());
+}
+
+  
+/** Functor to provide scope for rng when making SpdMatrix for testing.
+ */
+template<typename T>
+class MakeRngVector
+{
+public:
+  void operator()(Vector<T>& vec) { makeRngSpdMatrix(rng, vec); }
+private:
+  testing::RandomForTest<RngValueType<T>> rng;
+};
+
+
+  
 extern template class MakeRngSpdMatrix<double>;
 extern template class MakeRngSpdMatrix<float>;
 extern template class MakeRngSpdMatrix<std::complex<double>>;

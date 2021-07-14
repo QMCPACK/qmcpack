@@ -89,6 +89,8 @@ public:
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
   using OffloadPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+  using OffloadPinnedGradMatrix       = Matrix<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+
   using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
@@ -240,9 +242,9 @@ public:
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   OffloadPinnedValueMatrix_t psiM_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
-  GradMatrix_t dpsiM;
+  OffloadPinnedGradMatrix dpsiM;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
-  ValueMatrix_t d2psiM;
+  OffloadPinnedValueMatrix_t d2psiM;
 
   /// Used for force computations
   GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;

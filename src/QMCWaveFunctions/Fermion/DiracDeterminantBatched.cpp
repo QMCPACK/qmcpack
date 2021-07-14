@@ -128,7 +128,11 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   dpsiM_list.reserve(nw);
   d2psiM_list.reserve(nw);
   std::vector<typename DDBT::ValueMatrix_t> psiM_temp_views;
+  std::vector<typename DDBT::GradMatrix_t> dpsiM_views;
+  std::vector<typename DDBT::ValueMatrix_t> d2psiM_views;
   psiM_temp_views.reserve(nw);
+  dpsiM_views.reserve(nw);
+  d2psiM_views.reserve(nw);
 
   for (int iw = 0; iw < nw; iw++)
     if (recompute_mask[iw])
@@ -138,9 +142,11 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       phi_list.push_back(*det.Phi);
       psiM_temp_views.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
+      dpsiM_views.emplace_back(det.dpsiM.data(), det.dpsiM.rows(), det.dpsiM.cols());
+      d2psiM_views.emplace_back(det.d2psiM.data(), det.d2psiM.rows(), det.d2psiM.cols());
       psiM_temp_list.push_back(psiM_temp_views.back());
-      dpsiM_list.push_back(det.dpsiM);
-      d2psiM_list.push_back(det.d2psiM);
+      dpsiM_list.push_back(dpsiM_views.back());
+      d2psiM_list.push_back(d2psiM_views.back());
     }
 
   {
@@ -482,6 +488,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
         // transfer device to host, total size 4, g(3) + l(1)
         PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
       }
+      // As far as I know the only tasks being waited on here are the psiM_vgl updates
       PRAGMA_OFFLOAD("omp taskwait")
     }
   }
@@ -517,7 +524,9 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
     { //need to compute dpsiM and d2psiM. Do not touch psiM!
       ScopedTimer spo_timer(SPOVGLTimer);
       ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
-      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, d2psiM);
+      GradMatrix_t dpsiM_host(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
+      ValueMatrix_t d2psiM_host(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
+      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_host, d2psiM_host);
     }
 
     computeGL(G, L);
@@ -554,17 +563,25 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
       psiM_temp_list.reserve(nw);
       dpsiM_list.reserve(nw);
       d2psiM_list.reserve(nw);
-      std::vector<ValueMatrix_t> psiM_temp_host_list;
-
+      using DDBT       = std::decay_t<decltype(wfc_leader)>;
+      std::vector<typename DDBT::ValueMatrix_t> psiM_temp_views;
+      std::vector<typename DDBT::GradMatrix_t> dpsiM_views;
+      std::vector<typename DDBT::ValueMatrix_t> d2psiM_views;
+      psiM_temp_views.reserve(nw);
+      dpsiM_views.reserve(nw);
+      d2psiM_views.reserve(nw);
+      
       for (int iw = 0; iw < nw; iw++)
       {
         auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
         engine_list.push_back(det.det_engine_);
         phi_list.push_back(*det.Phi);
-        psiM_temp_host_list.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
-        psiM_temp_list.push_back(psiM_temp_host_list.back());
-        dpsiM_list.push_back(det.dpsiM);
-        d2psiM_list.push_back(det.d2psiM);
+        psiM_temp_views.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
+        psiM_temp_list.push_back(psiM_temp_views.back());
+        dpsiM_views.emplace_back(det.dpsiM.data(), det.dpsiM.rows(), det.dpsiM.cols());
+        dpsiM_list.push_back(dpsiM_views.back());
+        d2psiM_views.emplace_back(det.d2psiM.data(), det.d2psiM.rows(), det.d2psiM.cols());
+        d2psiM_list.push_back(d2psiM_views.back());
       }
 
       Phi->mw_evaluate_notranspose(phi_list, p_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
@@ -817,7 +834,8 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVe
   grad_grad_source_psiM.resize(det_engine_.get_psiMinv().rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
   ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, grad_grad_source_psiM);
+  GradMatrix_t dpsiM_host(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_host, grad_grad_source_psiM);
   invertPsiM(*(this->mw_res_), psiM_temp);
 
   phi_alpha_Minv      = 0.0;
@@ -986,9 +1004,10 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMulti
   {
     ScopedTimer spo_timer(SPOVGLTimer);
     ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, d2psiM);
-    // at least with MatrixUpdateOMPTarget this is a self assignment.
-    psiM_temp          = psiM_temp_host;
+    GradMatrix_t dpsiM_temp_host(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
+    ValueMatrix_t d2psiM_temp_host(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_temp_host, d2psiM_temp_host);
+    
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")

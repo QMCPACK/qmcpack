@@ -250,5 +250,10 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
+TEST_CASE("DiracMatrixComputeCUDA_updateRow", "[wavefunction][fermion]")
+{
+  int n = 64;
+}
+
 
 } // namespace qmcplusplus
