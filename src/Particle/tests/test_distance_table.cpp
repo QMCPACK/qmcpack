@@ -547,13 +547,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   CHECK(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
 } // TEST_CASE distance_pbc_z
 
-#if defined(ENABLE_OFFLOAD)
-auto test_kind = DynamicCoordinateKind::DC_POS_OFFLOAD;
-#else
-auto test_kind = DynamicCoordinateKind::DC_POS;
-#endif
-
-TEST_CASE("distance_pbc_z batched APIs", "[distance_table][xml]")
+void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 {
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
@@ -592,9 +586,17 @@ TEST_CASE("distance_pbc_z batched APIs", "[distance_table][xml]")
   CHECK(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
   CHECK(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
   CHECK(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
-} // TEST_CASE distance_pbc_z batched APIs
+} // test_distance_pbc_z_batched_APIs
 
-TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_table][xml]")
+TEST_CASE("distance_pbc_z batched APIs", "[distance_table][xml]")
+{
+  test_distance_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS);
+#if defined(ENABLE_OFFLOAD)
+  test_distance_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS_OFFLOAD);
+#endif
+}
+
+void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind test_kind)
 {
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
@@ -649,6 +651,13 @@ TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_ta
   CHECK(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
   CHECK(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
   CHECK(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
-} // TEST_CASE distance_pbc_z ee NEED_TEMP_DATA_ON_HOST
+} // test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST
 
+TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_table][xml]")
+{
+  test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind::DC_POS);
+#if defined(ENABLE_OFFLOAD)
+  test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind::DC_POS_OFFLOAD);
+#endif
+}
 } // namespace qmcplusplus
