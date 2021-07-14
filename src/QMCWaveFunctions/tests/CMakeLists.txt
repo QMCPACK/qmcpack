@@ -92,7 +92,7 @@ set(JASTROW_SRC
     test_kspace_jastrow.cpp
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
-    test_DiffOneBodyJastrowOrbital.cpp
+    test_J1OrbitalSoA.cpp
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC
     FakeSPO.cpp
