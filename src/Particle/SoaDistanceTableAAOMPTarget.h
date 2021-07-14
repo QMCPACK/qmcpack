@@ -174,6 +174,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
+  /** evaluate the temporary pair relations when a move is proposed
+   * this implementation is asynchronous and the synchronization is managed at ParticleSet.
+   * Transfering results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
+   * If the temporary pair distance are consumed on the device directly, the device to host data transfer can be
+   * skipped as an optimization.
+   */
   void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
                const RefVectorWithLeader<ParticleSet>& p_list,
                const std::vector<PosType>& rnew_list,
@@ -359,10 +365,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list, IndexType jat, const std::vector<bool>& from_temp) override
+  void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                        IndexType jat,
+                        const std::vector<bool>& from_temp) override
   {
-    // if temp data on host is not updated during p-by-p moves, there is no need to update distance table
-    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST)) return;
+    // if temp data on host is not updated by mw_move during p-by-p moves, there is no need to update distance table
+    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
+      return;
 
 #pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
@@ -372,7 +381,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
-    // if the distance table is not updated during p-by-p, needs to recompute the whole table
+    // if the distance table is not updated by mw_move during p-by-p, needs to recompute the whole table
+    // before being used by Hamiltonian.
     if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
       mw_evaluate(dt_list, p_list);
   }
