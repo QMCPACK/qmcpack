@@ -120,7 +120,7 @@ struct OptimizableFunctorBase
 /** evaluates a functor (value and derivative) and dumps the quantities to output
  * @param func the functor for which the value and derivative is evaluated
  * @param os the output stream to write the quantities to
- * @param extent the functor is evaluated from (0, extent) unless extent < 0, in which case the functor is evaluated from (0, cutoff_radius)
+ * @param extent the functor is evaluated from [0, extent) unless extent < 0, in which case the functor is evaluated from [0, cutoff_radius)
  */
 void print(OptimizableFunctorBase& func, std::ostream& os, double extent = -1.0);
 
