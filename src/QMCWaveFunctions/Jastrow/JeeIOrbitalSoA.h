@@ -113,7 +113,7 @@ public:
 
   JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
       : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
-        ee_Table_ID_(elecs.addTable(elecs)),
+        ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST)),
         ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)),
         Ions(ions),
         NumVars(0)
