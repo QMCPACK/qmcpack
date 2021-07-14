@@ -514,21 +514,21 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     {
       int ia = myVars.where(i);
       if (ia > -1)
-        A = myVars[i] = active[ia];
+        A = std::real(myVars[i] = active[ia]);
       i++;
     }
     if (ID_B != "0")
     {
       int ib = myVars.where(i);
       if (ib > -1)
-        B = myVars[i] = active[ib];
+        B = std::real(myVars[i] = active[ib]);
       i++;
     }
     if (ID_C != "0")
     {
       int ic = myVars.where(i);
       if (ic > -1)
-        C = myVars[i] = active[ic];
+        C = std::real(myVars[i] = active[ic]);
       i++;
     }
     C2 = 2.0 * C;
@@ -844,13 +844,13 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
 
     int i = 0;
     if (Opt_A)
-      A = myVars[i++] = active[ia++];
+      A = std::real(myVars[i++] = active[ia++]);
     if (Opt_B)
-      B = myVars[i++] = active[ia++];
+      B = std::real(myVars[i++] = active[ia++]);
     if (Opt_C)
-      C = myVars[i++] = active[ia++];
+      C = std::real(myVars[i++] = active[ia++]);
     if (Opt_D)
-      D = myVars[i++] = active[ia++];
+      D = std::real(myVars[i++] = active[ia++]);
 
     reset();
   }
