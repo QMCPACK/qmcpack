@@ -390,7 +390,16 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
         else
           sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
-        print(*functor.get(), os);
+        if (std::is_same<RadFuncType, PadeFunctor<RealType>>::value ||
+            std::is_same<RadFuncType, Pade2ndOrderFunctor<RealType>>::value)
+        {
+          double plotextent = 10.0;
+          print(*functor.get(), os, plotextent);
+        }
+        else
+        {
+          print(*functor.get(), os);
+        }
       }
       J1->addFunc(ig, std::move(functor), jg);
       success = true;
@@ -510,6 +519,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     {
       guardAgainstPBC();
       return createJ1<PadeFunctor<RealType>>(cur);
+    }
+    else if (Jastfunction == "pade2")
+    {
+      guardAgainstPBC();
+      return createJ1<Pade2ndOrderFunctor<RealType>>(cur);
     }
     else if (Jastfunction == "shortrangecusp")
     {
