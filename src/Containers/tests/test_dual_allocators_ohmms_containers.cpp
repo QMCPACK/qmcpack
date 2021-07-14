@@ -73,6 +73,18 @@ void testDualAllocator()
   CHECK(device_ptr2 != nullptr);
   CHECK(device_ptr3 != nullptr);
 
+  std::ptrdiff_t distance_host = matrix_view.data() - vcsoa.data();
+  std::ptrdiff_t distance_device = matrix_view.device_data() - vcsoa.device_data();
+  CHECK( distance_host == distance_device );
+
+  distance_host = matrix_view2.data() - vcsoa.data();
+  distance_device = matrix_view2.device_data() - vcsoa.device_data();
+  CHECK( distance_host == distance_device );
+
+  distance_host = matrix_view3.data() - vcsoa.data();
+  distance_device = matrix_view3.device_data() - vcsoa.device_data();
+  CHECK( distance_host == distance_device );
+
   int ifrom                = 2;
   int ito                  = 0;
 
