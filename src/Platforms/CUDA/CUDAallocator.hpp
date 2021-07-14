@@ -154,41 +154,23 @@ public:
   static void destroy(U* p)
   {}
 
-  void setContext(CUDAAllocator& from)
-  {
-    hstream_ = from.hstream_;
-  }
-  
   void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
   {
-      cudaErrorCheck(cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice, hstream_),
-                     "cudaMemcpyAsync failed in copyToDevice");
+    cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
+                     "cudaMemcpy failed in copyToDevice");
   }
 
   void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
   {
-      cudaErrorCheck(cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost, hstream_),
-                     "cudaMemcpyAsync failed in copyFromDevice");
+    cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
+                     "cudaMemcpy failed in copyFromDevice");
   }
 
   void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
   {
-    if (hstream_)
-    {
-      cudaErrorCheck(cudaMemcpyAsync(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice, hstream_),
-                     "cudaMemcpyAsync failed in copyDeviceToDevice");
-    }
-    else
-    {
       cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
                      "cudaMemcpy failed in copyDeviceToDevice");
-    }
   }
-  
-  void set_stream(cudaStream_t stream) { hstream_ = stream; }
-
-private:
-  cudaStream_t hstream_ = 0;
 };
 
 template<class T1, class T2>

@@ -130,7 +130,7 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 
   static void attachReference(OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, T*ref, T* other_data)
   {
-    std::ptrdiff_t ptr_offset = other_data - ref;
+    std::ptrdiff_t ptr_offset = ref - other_data;
     to.attachReference(from, ptr_offset);
   }
 

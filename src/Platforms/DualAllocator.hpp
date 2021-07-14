@@ -50,11 +50,15 @@ struct DualAllocator : public HostAllocator
   using Pointer      = typename HostAllocator::pointer;
   using ConstPointer = typename HostAllocator::const_pointer;
 
-  DualAllocator() : device_ptr_(nullptr) {};
-  DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
-  DualAllocator& operator=(const DualAllocator&) { device_ptr_ = nullptr; }
+  DualAllocator() : host_ptr_(nullptr), device_ptr_(nullptr){};
+  DualAllocator(const DualAllocator&) : host_ptr_(nullptr), device_ptr_(nullptr) {}
+  DualAllocator& operator=(const DualAllocator&)
+  {
+    host_ptr_   = nullptr;
+    device_ptr_ = nullptr;
+  }
   template<class U, class V>
-  DualAllocator(const DualAllocator<U, V>&) : device_ptr_(nullptr)
+  DualAllocator(const DualAllocator<U, V>&) : host_ptr_(nullptr), device_ptr_(nullptr)
   {}
 
   template<class U, class V>
@@ -68,31 +72,27 @@ struct DualAllocator : public HostAllocator
     static_assert(std::is_same<T, Value>::value, "DualAllocator and HostAllocator data types must agree!");
     if (device_ptr_ != nullptr)
       throw std::runtime_error("DualAllocator does not support device reallocation");
-    T* host_ptr   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
+    host_ptr_   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
     device_ptr_ = std::allocator_traits<DeviceAllocator>::allocate(device_allocator_, n);
     dual_device_mem_allocated += n * sizeof(T);
-    return host_ptr;
+    return host_ptr_;
   }
 
   void deallocate(Value* pt, std::size_t n)
   {
-    assert( pt = host_ptr_ );
+    assert(pt = host_ptr_);
     dual_device_mem_allocated -= n * sizeof(T);
     std::allocator_traits<DeviceAllocator>::deallocate(device_allocator_, device_ptr_, n);
     std::allocator_traits<HostAllocator>::deallocate(allocator_, pt, n);
     device_ptr_ = nullptr;
+    host_ptr_   = nullptr;
   }
 
   void attachReference(DualAllocator& from, T* ref, T* other_ref)
   {
-    std::ptrdiff_t ptr_offset = other_ref - ref;
-    host_ptr_ = ref;
-    device_ptr_ = from.getDevicePtr() + ptr_offset;
-    // If device_ptr is associated with a stream we don't want transfers in different contexts
-    // this will lead to race conditions. if you are really coding for performance
-    // you should be able to reason clearly about context of a device_ptr and not need to use
-    // this device_ptr context or the generic updateTo or updateFrom
-    device_allocator_.setContext(from.get_device_allocator());
+    std::ptrdiff_t ptr_offset = ref - other_ref;
+    host_ptr_                 = ref;
+    device_ptr_               = from.getDevicePtr() + ptr_offset;
   }
 
   T* getDevicePtr() { return device_ptr_; }
@@ -102,6 +102,7 @@ struct DualAllocator : public HostAllocator
   const DeviceAllocator& get_device_allocator() const { return device_allocator_; }
 
   T* get_host_ptr() { return host_ptr_; }
+
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
@@ -112,13 +113,13 @@ private:
 template<typename T, class DeviceAllocator, class HostAllocator>
 struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 {
-  using DualAlloc = DualAllocator<T, DeviceAllocator, HostAllocator>;
+  using DualAlloc                      = DualAllocator<T, DeviceAllocator, HostAllocator>;
   static const bool is_host_accessible = true;
   static const bool is_dual_space      = true;
 
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 
-  static void attachReference(DualAlloc& from, DualAlloc& to, T*ref, T* other_data)
+  static void attachReference(DualAlloc& from, DualAlloc& to, T* ref, T* other_data)
   {
     to.attachReference(from, ref, other_data);
   }
@@ -148,10 +149,11 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.getDevicePtr(), n);
   }
 
-  static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from) {
+  static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
+  {
     T* device_ptr = alloc.getDevicePtr();
-    T* to_ptr = device_ptr + to;
-    T* from_ptr = device_ptr + from;
+    T* to_ptr     = device_ptr + to;
+    T* from_ptr   = device_ptr + from;
     alloc.get_device_allocator().copyDeviceToDevice(to_ptr, n, from_ptr);
   }
 };
