@@ -76,15 +76,23 @@ struct DualAllocator : public HostAllocator
 
   void deallocate(Value* pt, std::size_t n)
   {
+    assert( pt = host_ptr_ );
     dual_device_mem_allocated -= n * sizeof(T);
     std::allocator_traits<DeviceAllocator>::deallocate(device_allocator_, device_ptr_, n);
     std::allocator_traits<HostAllocator>::deallocate(allocator_, pt, n);
     device_ptr_ = nullptr;
   }
 
-  void attachReference(DualAllocator& from, std::ptrdiff_t ptr_offset)
+  void attachReference(DualAllocator& from, T* ref, T* other_ref)
   {
+    std::ptrdiff_t ptr_offset = other_ref - ref;
+    host_ptr_ = ref;
     device_ptr_ = from.getDevicePtr() + ptr_offset;
+    // If device_ptr is associated with a stream we don't want transfers in different contexts
+    // this will lead to race conditions. if you are really coding for performance
+    // you should be able to reason clearly about context of a device_ptr and not need to use
+    // this device_ptr context or the generic updateTo or updateFrom
+    device_allocator_.setContext(from.get_device_allocator());
   }
 
   T* getDevicePtr() { return device_ptr_; }
@@ -93,11 +101,12 @@ struct DualAllocator : public HostAllocator
   DeviceAllocator& get_device_allocator() { return device_allocator_; }
   const DeviceAllocator& get_device_allocator() const { return device_allocator_; }
 
+  T* get_host_ptr() { return host_ptr_; }
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
+  T* host_ptr_;
   T* device_ptr_;
-  // host pointer to device pointer map, needed for deallocation
 };
 
 template<typename T, class DeviceAllocator, class HostAllocator>
@@ -109,18 +118,33 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 
-  static void attachReference(DualAlloc& from, DualAlloc& to, std::ptrdiff_t ptr_offset)
+  static void attachReference(DualAlloc& from, DualAlloc& to, T*ref, T* other_data)
   {
-    to.attachReference(from, ptr_offset);
+    to.attachReference(from, ref, other_data);
   }
 
+  /** update to the device, assumes you are copying starting with the implicit host_ptr.
+   *
+   *  These follow the openmp target semantics where you only provide the host
+   *  side of a host_ptr device_ptr pair but the verb relates to what happens on the device.
+   *
+   *  This is primarily for testing to reduce ifdef code and single "flavor" testing
+   *
+   *  This a generic API and unlikely to be the best way to handle performance critical transfers,
+   *  but if you have to use it or ifdef at a level above a xxxCUDA.cu or xxxOMPTarget.hpp file
+   *  thats an issue. 
+   */
   static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n)
   {
+    assert(host_ptr = alloc.get_host_ptr());
     alloc.get_device_allocator().copyToDevice(alloc.getDevicePtr(), host_ptr, n);
   }
 
+  /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
+   */
   static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n)
   {
+    assert(host_ptr = alloc.get_host_ptr());
     alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.getDevicePtr(), n);
   }
 

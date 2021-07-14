@@ -76,7 +76,7 @@ public:
   template<typename CONTAINER>
   Vector(CONTAINER& other, T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref)
   {
-    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref, other.data());
   }
 
   Vector(std::initializer_list<T> ts)

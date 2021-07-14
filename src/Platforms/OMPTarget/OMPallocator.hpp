@@ -128,8 +128,9 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
 
-  static void attachReference(OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, std::ptrdiff_t ptr_offset)
+  static void attachReference(OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, T*ref, T* other_data)
   {
+    std::ptrdiff_t ptr_offset = other_data - ref;
     to.attachReference(from, ptr_offset);
   }
 

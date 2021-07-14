@@ -154,32 +154,21 @@ public:
   static void destroy(U* p)
   {}
 
+  void setContext(CUDAAllocator& from)
+  {
+    hstream_ = from.hstream_;
+  }
+  
   void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
   {
-    if (hstream_)
-    {
       cudaErrorCheck(cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice, hstream_),
                      "cudaMemcpyAsync failed in copyToDevice");
-    }
-    else
-    {
-      cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
-                     "cudaMemcpy failed in copToDevice");
-    }
   }
 
   void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
   {
-    if (hstream_)
-    {
       cudaErrorCheck(cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost, hstream_),
                      "cudaMemcpyAsync failed in copyFromDevice");
-    }
-    else
-    {
-      cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
-                     "cudaMemcpy failed in copyFromDevice");
-    }
   }
 
   void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
