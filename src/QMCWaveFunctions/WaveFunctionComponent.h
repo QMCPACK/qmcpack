@@ -52,8 +52,6 @@ struct WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
 
-typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
-
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
@@ -83,8 +81,6 @@ struct WaveFunctionComponent : public QMCTraits
     ORB_ALLWALKER     /*!< all walkers update */
   };
 
-  typedef ParticleAttrib<ValueType> ValueVectorType;
-  typedef ParticleAttrib<GradType> GradVectorType;
   typedef ParticleSet::Walker_t Walker_t;
   typedef Walker_t::WFBuffer_t WFBufferType;
   typedef Walker_t::Buffer_t BufferType;
@@ -119,12 +115,6 @@ struct WaveFunctionComponent : public QMCTraits
    * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
    */
   std::shared_ptr<DiffWaveFunctionComponent> dPsi;
-  /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
-   */
-  GradVectorType dLogPsi;
-  /** A vector for \f$ \frac{\partial \nabla^2 \log\phi}{\partial \alpha} \f$
-   */
-  ValueVectorType d2LogPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
   const std::string ClassName;
@@ -470,13 +460,13 @@ struct WaveFunctionComponent : public QMCTraits
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi);
 
-  /** Compute derivatives of rhe wavefunction with respect to the optimizable 
+  /** Compute derivatives of rhe wavefunction with respect to the optimizable
    *  parameters
    *  @param P particle set
    *  @param optvars optimizable parameters
    *  @param dlogpsi array of derivatives of the log of the wavefunction
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
-   *        the derivative of the log of the wavefunction. 
+   *        the derivative of the log of the wavefunction.
   */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
