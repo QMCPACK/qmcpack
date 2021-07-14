@@ -195,7 +195,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
 
-  auto twf_component_list = twf.getOrbitals();
+  auto& twf_component_list = twf.getOrbitals();
 
   opt_variables_type active;
   twf.checkInVariables(active);
