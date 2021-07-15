@@ -66,10 +66,6 @@ struct OMPallocator : public HostAllocator
    *  our < c++11 compliant containers may expect it.
    */
   OMPallocator(const OMPallocator&) : device_ptr_(nullptr) {}
-
-  // these semantics are surprising and "incorrect" considering OMPallocator is stateful.
-  OMPallocator& operator=(const OMPallocator&) { device_ptr_ = nullptr; }
-
   template<class U, class V>
   OMPallocator(const OMPallocator<U, V>&) : device_ptr_(nullptr)
   {}

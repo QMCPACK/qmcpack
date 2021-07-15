@@ -236,12 +236,12 @@ public:
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline pointer device_data()
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.getDevicePtr(X);
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const_pointer device_data() const
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.getDevicePtr(X);
   }
 
   inline pointer first_address() { return X; }
