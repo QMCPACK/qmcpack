@@ -121,9 +121,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
   myComm->bcast(basisType);
   myComm->bcast(addsignforM);
 
-  app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName << "\" expandYlm=\"" << Morder << "\" angular=\""
-            << sph << "\" elementType=\"" << CenterID << "\" normalized=\"" << Normalized << "\" type=\"" << basisType
-            << "\" expM=\"" << addsignforM << "\" />" << std::endl;
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
 
@@ -156,6 +153,9 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     if (sph != "cartesian")
       myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
   }
+  app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName << "\" expandYlm=\"" << Morder << "\" angular=\""
+            << sph << "\" elementType=\"" << CenterID << "\" normalized=\"" << Normalized << "\" type=\"" << basisType
+            << "\" expM=\"" << addsignforM << "\" />" << std::endl;
 
   return true;
 }
