@@ -943,5 +943,108 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end if
     #end def plot_bandstructure
 
+
+    def plot_custom_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True):
+        if 'bands' in self:
+            if filename==None:
+                filename = 'band_structure.pdf'
+            if filepath==None:
+                filepath = os.path.join(self.abspath,filename)
+            else:
+                filepath = os.path.join(filepath,filename)
+            #end if
+            try:
+                import matplotlib
+                gui_envs = ['GTKAgg','TKAgg','agg','Qt4Agg','WXAgg']
+                for gui in gui_envs:
+                    try:
+                        matplotlib.use(gui,warn=False, force=True)
+                        from matplotlib import pyplot
+                        success = True
+                        break
+                    except:
+                        continue
+                    #end try
+                #end for
+                from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,rc,savefig,gca,xticks,axvline, scatter
+                params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
+                              'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+                rcParams.update(params)
+            except(ImportError, RuntimeError):
+                success = False
+            if not success:
+                figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy','text')
+            #end if
+            fig    = figure()
+            ax     = gca()
+            kpath  = get_kpath(structure=self.input_structure, check_standard=False)
+            print(kpath)
+            quit()
+            #kpath  = # USER SUPPLIED KPOINTS?    #get_kpath(structure=self.input_structure, check_standard=False)
+            #x      = # CALCULATED FROM KPOINTS?  #kpath['explicit_path_linearcoords']
+            #labels = # USER SUPPLIED LABELS?      #kpath['explicit_kpoints_labels']
+            nbands = self.input.system.nbnd
+            for nb in range(nbands):
+                y = []
+                for bi in self.bands.up:
+                    y.append(bi['eigs'][nb])
+                #end for
+                y = array(y) - self.bands.vbm.energy
+                plot(x, y, 'k')
+                if len(self.bands.down) > 0:
+                    y = []
+                    for bi in self.bands.down:
+                        y.append(bi['eigs'][nb])
+                    #end for
+                    y = array(y) - self.bands.vbm.energy
+                    plot(x, y, 'r')
+                #end if              
+            #end for
+            for ln, li in enumerate(labels):
+                if li is not '':
+                    axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
+                    if li == 'GAMMA':
+                        labels[ln] = r'$\Gamma$'
+                    elif li is not '':
+                        labels[ln] = '${0}$'.format(li)
+                    #end if
+                    if labels[ln-1] is not '' and ln > 0:
+                        labels[ln] = labels[ln-1]+'|'+labels[ln]
+                        labels[ln-1] = ''
+                    #end if
+                #end if
+            #end for
+            
+            xlim([min(x), max(x)])
+            if max_min_e is None:
+                ylim(-5, +5)
+            else:
+                ylim(max_min_e[0],max_min_e[1])
+            #end if
+            ylabel('Energy (eV)')
+            xticks(x, labels)
+            ax.tick_params(axis='x', which='both', length=0)
+            ax.tick_params(axis='x', which='both', pad=10)
+        #end if
+        if show_vbm_cbm:
+            vbm = self.bands.vbm
+            cbm = self.bands.cbm
+            for kn, ki in enumerate(self.bands.up):
+                if (vbm.kpoint_rel == ki['kpoint_rel']).all():
+                    scatter(x[kn], 0, c='green', s=100)
+                #end if
+                if (cbm.kpoint_rel == ki['kpoint_rel']).all():
+                    scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
+                #end if
+            #end for
+        #end if
+        if save:
+            savefig(filename, format='pdf',bbox_inches='tight')
+        #end if
+        if show:
+            show()
+        #end if
+    #end def plot_custom_bandstructure
+
 #end class PwscfAnalyzer
         
