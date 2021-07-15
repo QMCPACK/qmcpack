@@ -38,46 +38,27 @@ TEST_CASE("compute_batch_parameters", "[drivers]")
   CHECK(final_batch_size == 3);
 }
 
-
-class QMCCostFunctionBatchedTest : public QMCCostFunctionBatched
+namespace testing
+{
+class LinearMethodTestSupport
 {
 public:
-  QMCCostFunctionBatchedTest(MCWalkerConfiguration& w,
-                             TrialWaveFunction& psi,
-                             QMCHamiltonian& h,
-                             SampleStack& samples,
-                             int opt_num_crowds,
-                             int crowd_size,
-                             Communicate* comm)
-      : QMCCostFunctionBatched(w, psi, h, samples, opt_num_crowds, crowd_size, comm)
-  {}
-  // For unit testing
-  Matrix<Return_rt>& getRecordsOnNode() { return RecordsOnNode_; }
-  Matrix<Return_rt>& getDerivRecords() { return DerivRecords_; }
-  Matrix<Return_rt>& getHDerivRecords() { return HDerivRecords_; }
-
-  std::vector<Return_rt>& getSumValue() { return SumValue; }
-
-  Matrix<Return_rt>& getRecords() { return Records; }
-
-  opt_variables_type& getOptVariables() { return OptVariables; }
-
-  void setNumOptimizables(int n) { NumOptimizables = n; }
-};
-
-struct LinearMethod
-{
   int numSamples;
   int numParam;
   SampleStack samples;
   MCWalkerConfiguration w;
   QMCHamiltonian h;
   TrialWaveFunction psi;
-  QMCCostFunctionBatchedTest costFn;
+  QMCCostFunctionBatched costFn;
 
-  LinearMethod(int num_opt_crowds, int crowd_size, Communicate* comm)
+  LinearMethodTestSupport(int num_opt_crowds, int crowd_size, Communicate* comm)
       : costFn(w, psi, h, samples, num_opt_crowds, crowd_size, comm)
   {}
+
+  std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }
+  Matrix<QMCCostFunctionBase::Return_rt>& getRecordsOnNode() { return costFn.RecordsOnNode_; }
+  Matrix<QMCCostFunctionBase::Return_rt>& getDerivRecords() { return costFn.DerivRecords_; }
+  Matrix<QMCCostFunctionBase::Return_rt>& getHDerivRecords() { return costFn.HDerivRecords_; }
 
   void set_samples_and_param(int nsamples, int nparam)
   {
@@ -86,14 +67,16 @@ struct LinearMethod
     samples.setTotalNum(1);
     samples.setMaxSamples(numSamples);
 
-    costFn.getOptVariables().insert("var1", 1.0);
-    costFn.setNumOptimizables(numParam);
+    costFn.OptVariables.insert("var1", 1.0);
+    costFn.NumOptimizables = numParam;
 
-    costFn.getRecordsOnNode().resize(numSamples, QMCCostFunctionBase::SUM_INDEX_SIZE);
-    costFn.getDerivRecords().resize(numSamples, numParam);
-    costFn.getHDerivRecords().resize(numSamples, numParam);
+    getRecordsOnNode().resize(numSamples, QMCCostFunctionBase::SUM_INDEX_SIZE);
+    getDerivRecords().resize(numSamples, numParam);
+    getHDerivRecords().resize(numSamples, numParam);
   }
 };
+
+} // namespace testing
 
 TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 {
@@ -104,34 +87,31 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 
   Communicate* comm = OHMMS::Controller;
 
-  LinearMethod lin(num_opt_crowds, crowd_size, comm);
+  testing::LinearMethodTestSupport lin(num_opt_crowds, crowd_size, comm);
 
   int numSamples = 1;
   int numParam   = 1;
   lin.set_samples_and_param(numSamples, numParam);
 
-  QMCCostFunctionBatchedTest& costFn = lin.costFn;
-
-  std::vector<Return_rt>& SumValue           = costFn.getSumValue();
+  std::vector<Return_rt>& SumValue           = lin.getSumValue();
   SumValue[QMCCostFunctionBase::SUM_WGT]     = 1.0;
   SumValue[QMCCostFunctionBase::SUM_E_WGT]   = -1.3;
   SumValue[QMCCostFunctionBase::SUM_ESQ_WGT] = 1.69;
 
-  auto& RecordsOnNode                               = costFn.getRecordsOnNode();
+  auto& RecordsOnNode                               = lin.getRecordsOnNode();
   RecordsOnNode(0, QMCCostFunctionBase::REWEIGHT)   = 1.0;
   RecordsOnNode(0, QMCCostFunctionBase::ENERGY_NEW) = -1.4;
 
-
-  auto& derivRecords = costFn.getDerivRecords();
+  auto& derivRecords = lin.getDerivRecords();
   derivRecords(0, 0) = 1.1;
 
-  auto& HDerivRecords = costFn.getDerivRecords();
+  auto& HDerivRecords = lin.getDerivRecords();
   HDerivRecords(0, 0) = -1.2;
 
   int N = numParam + 1;
   Matrix<Return_rt> ham(N, N);
   Matrix<Return_rt> ovlp(N, N);
-  costFn.fillOverlapHamiltonianMatrices(ham, ovlp);
+  lin.costFn.fillOverlapHamiltonianMatrices(ham, ovlp);
 
   CHECK(ovlp(0, 0) == Approx(1.0));
   CHECK(ovlp(1, 0) == Approx(0.0));
