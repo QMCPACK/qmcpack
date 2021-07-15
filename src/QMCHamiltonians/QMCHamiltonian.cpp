@@ -274,7 +274,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     Eloc.push_back(H[i]->myName);
   for (int i = 1; i < H.size(); ++i)
     Vloc.push_back(H[i]->myName);
-  for (int i = 1; i < H.size(); ++i)
+  for (int i = 0; i < H.size(); ++i)
   {
     OperatorBase& h = *H[i];
     if (h.is_quantum())

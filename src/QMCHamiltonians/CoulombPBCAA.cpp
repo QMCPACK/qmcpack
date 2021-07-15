@@ -216,6 +216,10 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     }
     else
     {
+      if (!P.getPerParticleSKState())
+      {
+        P.turnOnPerParticleSK();
+      }
       //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
       RealType v1; //single particle energy
       RealType z;
