@@ -9,21 +9,19 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CONTAINER_SRCS MinimalContainers/ConstantSizeMatrix.cpp)
+if(USE_OBJECT_TARGET)
+  add_library(containers OBJECT ${CONTAINER_SRCS})
+else()
+  add_library(containers ${CONTAINER_SRCS})
+endif()
 
-SET(CONTAINER_SRCS
-  MinimalContainers/ConstantSizeMatrix.cpp
-)
-IF(USE_OBJECT_TARGET)
-  ADD_LIBRARY(containers OBJECT ${CONTAINER_SRCS})
-ELSE()
-  ADD_LIBRARY(containers ${CONTAINER_SRCS})
-ENDIF()
+target_include_directories(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(containers PUBLIC platform_device)
 
-TARGET_INCLUDE_DIRECTORIES(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(containers PUBLIC platform_device)
-
-IF (BUILD_UNIT_TESTS)
-  SUBDIRS(OhmmsPETE/tests)
-  SUBDIRS(OhmmsSoA/tests)
-  SUBDIRS(MinimalContainers/tests)
-ENDIF()
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+  add_subdirectory(OhmmsPETE/tests)
+  add_subdirectory(OhmmsSoA/tests)
+  add_subdirectory(MinimalContainers/tests)
+endif()

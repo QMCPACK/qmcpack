@@ -89,9 +89,9 @@ void LocalECPotential_CUDA::add(int groupID, std::unique_ptr<RadialPotentialType
 
 void LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
-  int N                           = NumElecs;
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
+  int N         = NumElecs;
   if (SumGPU.size() < nw)
   {
     SumGPU.resize(nw);

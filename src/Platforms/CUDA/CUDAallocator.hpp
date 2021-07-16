@@ -94,8 +94,9 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
  * They assume there is only one memory space and that the host has access to it.
  */
 template<typename T>
-struct CUDAAllocator
+class CUDAAllocator
 {
+public:
   typedef T value_type;
   typedef size_t size_type;
   typedef T* pointer;
@@ -152,6 +153,24 @@ struct CUDAAllocator
   template<class U>
   static void destroy(U* p)
   {}
+
+  void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
+  {
+    cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
+                     "cudaMemcpy failed in copyToDevice");
+  }
+
+  void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
+  {
+    cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
+                     "cudaMemcpy failed in copyFromDevice");
+  }
+
+  void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
+  {
+      cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
+                     "cudaMemcpy failed in copyDeviceToDevice");
+  }
 };
 
 template<class T1, class T2>
@@ -171,6 +190,18 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
   static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
+  static void updateTo(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
+  {
+    T* device_ptr = alloc.getDevicePtr(host_ptr);
+    copyToDevice(device_ptr, host_ptr, n);
+  }
+
+  static void updateFrom(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
+  {
+    T* device_ptr = alloc.getDevicePtr(host_ptr);
+    copyFromDevice(host_ptr, device_ptr, n);
+  }
+
 };
 
 /** allocator for CUDA host pinned memory
@@ -201,7 +232,8 @@ struct CUDAHostAllocator
     cudaErrorCheck(cudaMallocHost(&pt, n * sizeof(T)), "Allocation failed in CUDAHostAllocator!");
     return static_cast<T*>(pt);
   }
-  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!"); }
+  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!");
+  }
 };
 
 template<class T1, class T2>

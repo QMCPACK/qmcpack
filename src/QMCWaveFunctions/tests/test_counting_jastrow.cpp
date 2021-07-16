@@ -205,8 +205,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   xmlNodePtr cj_root = doc.getRoot();
   CountingJastrowBuilder cjb(c, elec);
 
-  CountingJastrow<CountingGaussianRegion>* cj = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cjb.buildComponent(cj_root));
-  
+  auto cj_uptr                                = cjb.buildComponent(cj_root);
+  CountingJastrow<CountingGaussianRegion>* cj = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cj_uptr.get());
+
   // reference for evaluateLog, evalGrad
   RealType Jval_exact = 7.8100074447e+00;
   PosType Jgrad_exact[] = {PosType(3.6845037054e-04, -4.2882992861e-04, 0),
@@ -247,7 +248,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   CountingJastrowBuilder cjvb(c, elec, ion0);
 
   // test evaluateLog for cjv
-  CountingJastrow<CountingGaussianRegion>* cjv = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cjvb.buildComponent(cjv_root));
+  auto cjv_uptr                                = cjvb.buildComponent(cjv_root);
+  CountingJastrow<CountingGaussianRegion>* cjv = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cjv_uptr.get());
 
   for(int i = 0; i < num_els; ++i)
   {
@@ -294,11 +296,11 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     RealType ratioval = std::real( cj->ratio(elec, iat) );
     REQUIRE( ratioval_exact[iat] == Approx(std::real(ratioval)) );
 
-    PosType grad_iat(0,0,0);
+    GradType grad_iat(0, 0, 0);
     RealType gradratioval = std::real( cj->ratioGrad(elec, iat, grad_iat) );
     REQUIRE( ratioval_exact[iat] == Approx(gradratioval));
     for(int k = 0; k < 3; ++k)
-      REQUIRE(Jgrad_t_exact[iat][k] == Approx(grad_iat[k]));
+      REQUIRE(Jgrad_t_exact[iat][k] == Approx(std::real(grad_iat[k])));
 
     cj->acceptMove(elec, iat);
   }
@@ -367,7 +369,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
 
 
   // test makeClone
-  CountingJastrow<CountingGaussianRegion>* cj2 = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cj->makeClone(elec));
+  auto cj2_uptr                                = cj->makeClone(elec);
+  CountingJastrow<CountingGaussianRegion>* cj2 = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cj2_uptr.get());
   std::fill(dlogpsi.begin(), dlogpsi.end(), 0);
   std::fill(dhpsioverpsi.begin(), dhpsioverpsi.end(), 0);
 

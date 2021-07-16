@@ -51,7 +51,7 @@ public:
                                       Communicate* comm);
 
   ///Destructor
-  ~QMCFixedSampleLinearOptimizeBatched();
+  ~QMCFixedSampleLinearOptimizeBatched() override;
 
   ///Run the Optimization algorithm.
   bool run() override;

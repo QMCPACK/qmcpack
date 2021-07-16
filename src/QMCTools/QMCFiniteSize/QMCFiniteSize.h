@@ -34,8 +34,8 @@ public:
 
 
   inline void setSkParser(SkParserBase* skparser_i) { skparser = skparser_i; };
-  bool validateXML();
-  bool execute();
+  bool validateXML() override;
+  bool execute() override;
 
   void build_spherical_grid(IndexType mtheta, IndexType mphi);
   void getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem);
@@ -62,7 +62,7 @@ private:
   vector<PosType> sphericalgrid;
   GridType* myGrid;
   std::unique_ptr<LRHandlerType> AA;
-  RadFunctorType* rVs;
+  std::unique_ptr<RadFunctorType> rVs;
   bool processPWH(xmlNodePtr cur);
   void wfnPut(xmlNodePtr cur);
   void initBreakup();

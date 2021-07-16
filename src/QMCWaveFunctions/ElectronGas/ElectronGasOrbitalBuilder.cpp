@@ -42,7 +42,7 @@ ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, Particle
     : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(nullptr)
 {}
 
-WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
   ValueType bosonic_eps(-999999);
@@ -114,11 +114,8 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   }
 
   //create a Slater determinant
-  SlaterDeterminant_t* sdet;
-  if (UseBackflow)
-    sdet = new SlaterDetWithBackflow(targetPtcl, BFTrans);
-  else
-    sdet = new SlaterDeterminant_t(targetPtcl);
+  auto sdet = UseBackflow ? std::make_unique<SlaterDetWithBackflow>(targetPtcl, BFTrans)
+                          : std::make_unique<SlaterDeterminant_t>(targetPtcl);
 
   if (UseBackflow)
   {

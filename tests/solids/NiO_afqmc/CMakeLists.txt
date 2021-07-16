@@ -1,47 +1,50 @@
-IF (NOT QMC_DATA)
-  MESSAGE("QMC_DATA not set. NiO_afqmc tests not added.")
-ELSEIF(NOT EXISTS ${QMC_DATA}/NiO)
-  MESSAGE("NiO directory under QMC_DATA does not exist. NiO_afqmc tests not added.")
-ELSE()
+if(NOT QMC_DATA)
+  message("QMC_DATA not set. NiO_afqmc tests not added.")
+elseif(NOT EXISTS ${QMC_DATA}/NiO)
+  message("NiO directory under QMC_DATA does not exist. NiO_afqmc tests not added.")
+else()
 
-SET(H5_FILE NiO_afm_fcidump.h5)
-SET(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
+  set(H5_FILE NiO_afm_fcidump.h5)
+  set(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
 
-IF (EXISTS ${H5_FULL_PATH})
-  #symlink h5 file
-  MAYBE_SYMLINK(${H5_FULL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/${H5_FILE})
-  #symlink wfn file
-  MAYBE_SYMLINK(${QMC_DATA}/NiO/NiO_afm_wfn.dat ${CMAKE_CURRENT_BINARY_DIR}/NiO_afm_wfn.dat)
+  if(EXISTS ${H5_FULL_PATH})
+    #symlink h5 file
+    maybe_symlink(${H5_FULL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/${H5_FILE})
+    #symlink wfn file
+    maybe_symlink(${QMC_DATA}/NiO/NiO_afm_wfn.dat ${CMAKE_CURRENT_BINARY_DIR}/NiO_afm_wfn.dat)
 
-  LIST(APPEND NIO_AFM_SCALARS "Eloc" "-379.2037 0.0282")
+    list(APPEND NIO_AFM_SCALARS "Eloc" "-379.2037 0.0282")
 
-  QMC_RUN_AND_CHECK(long-NiO_afm-afqmc
-                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
-                    qmc_long_afm
-                    qmc_long_afm.in.xml
-                    16 1
-                    TRUE
-                    0 NIO_AFM_SCALARS # AFQMC
-                    )
+    qmc_run_and_check(
+      long-NiO_afm-afqmc
+      "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
+      qmc_long_afm
+      qmc_long_afm.in.xml
+      16
+      1
+      TRUE
+      0
+      NIO_AFM_SCALARS # AFQMC
+    )
 
+    maybe_symlink(${QMC_DATA}/NiO/NiO_nm_choldump.h5 ${CMAKE_CURRENT_BINARY_DIR}/NiO_nm_choldump.h5)
 
-  MAYBE_SYMLINK(${QMC_DATA}/NiO/NiO_nm_choldump.h5 ${CMAKE_CURRENT_BINARY_DIR}/NiO_nm_choldump.h5)
+    list(APPEND NIO_NM_SCALARS "Eloc" "-379.2024 0.0192")
 
+    qmc_run_and_check(
+      long-NiO_nm-afqmc
+      "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
+      qmc_long_nm
+      qmc_long_nm.in.xml
+      16
+      1
+      TRUE
+      0
+      NIO_NM_SCALARS # AFQMC
+    )
 
-  LIST(APPEND NIO_NM_SCALARS "Eloc" "-379.2024 0.0192")
+  else()
+    message("NiO_afqmc not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+  endif()
 
-  QMC_RUN_AND_CHECK(long-NiO_nm-afqmc
-                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
-                    qmc_long_nm
-                    qmc_long_nm.in.xml
-                    16 1
-                    TRUE
-                    0 NIO_NM_SCALARS # AFQMC
-                    )
-
-
-ELSE()
-  MESSAGE("NiO_afqmc not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
-ENDIF()
-
-ENDIF()
+endif()

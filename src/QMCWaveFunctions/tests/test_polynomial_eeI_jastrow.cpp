@@ -110,7 +110,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-  std::unique_ptr<WaveFunctionComponent> j3(dynamic_cast<J3Type*>(jastrow.buildComponent(jas_eeI)));
+  auto j3_uptr              = jastrow.buildComponent(jas_eeI);
+  WaveFunctionComponent* j3 = dynamic_cast<J3Type*>(j3_uptr.get());
   REQUIRE(j3 != nullptr);
 
   // update all distance tables

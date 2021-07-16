@@ -114,7 +114,7 @@ struct DiffWaveFunctionComponent
   /** make clone
     * @param tqp target Quantum ParticleSet
     */
-  virtual DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  virtual std::unique_ptr<DiffWaveFunctionComponent> makeClone(ParticleSet& tqp) const;
 };
 
 /** a generic DiffWaveFunctionComponent using a finite-difference method for a single optimizable parameter.
@@ -127,10 +127,10 @@ struct NumericalDiffOrbital : public DiffWaveFunctionComponent
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
-  void checkOutVariables(const opt_variables_type& optvars);
-  void resetParameters(const opt_variables_type& optvars);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
+  void checkOutVariables(const opt_variables_type& optvars) override;
+  void resetParameters(const opt_variables_type& optvars) override;
 
   /// \f$\nabla \partial_{\alpha} log\Psi\f$
   GradVectorType gradLogPsi, dg_p, dg_m;
@@ -146,10 +146,10 @@ struct AnalyticDiffOrbital : public DiffWaveFunctionComponent
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
-  void checkOutVariables(const opt_variables_type& optvars);
-  void resetParameters(const opt_variables_type& optvars);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
+  void checkOutVariables(const opt_variables_type& optvars) override;
+  void resetParameters(const opt_variables_type& optvars) override;
 
   /// \f$\nabla \partial_{\alpha} log\Psi\f$
   GradVectorType gradLogPsi;

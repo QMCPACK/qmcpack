@@ -15,7 +15,6 @@
 #define QMCPLUSPLUS_WALKER_INPUT_MANAGER_H
 
 #include "Particle/MCWalkerConfiguration.h"
-#include "OhmmsData/HDFAttribIO.h"
 #include <queue>
 
 class Communicate;

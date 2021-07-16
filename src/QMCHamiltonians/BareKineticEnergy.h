@@ -172,20 +172,20 @@ struct BareKineticEnergy : public OperatorBase
     }
   }
   ///destructor
-  ~BareKineticEnergy() {}
+  ~BareKineticEnergy() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities()
+  void contribute_particle_quantities() override
   {
     request.contribute_array(myName);
     request.contribute_array(myName + "_complex");
     request.contribute_array("momentum");
   }
 
-  virtual void checkout_particle_quantities(TraceManager& tm)
+  void checkout_particle_quantities(TraceManager& tm) override
   {
     streaming_particles = request.streaming_array(myName) || request.streaming_array(myName + "_complex") ||
         request.streaming_array("momentum");
@@ -197,7 +197,7 @@ struct BareKineticEnergy : public OperatorBase
     }
   }
 
-  virtual void delete_particle_quantities()
+  void delete_particle_quantities() override
   {
     if (streaming_particles)
     {
@@ -209,7 +209,7 @@ struct BareKineticEnergy : public OperatorBase
 #endif
 
 
-  inline Return_t evaluate(ParticleSet& P)
+  inline Return_t evaluate(ParticleSet& P) override
   {
 #if !defined(REMOVE_TRACEMANAGER)
     if (streaming_particles)
@@ -264,7 +264,7 @@ struct BareKineticEnergy : public OperatorBase
                                         ParticleSet& ions,
                                         TrialWaveFunction& psi,
                                         ParticleSet::ParticlePos_t& hf_terms,
-                                        ParticleSet::ParticlePos_t& pulay_terms)
+                                        ParticleSet::ParticlePos_t& pulay_terms) override
   {
     typedef ParticleSet::ParticlePos_t ParticlePos_t;
     typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
@@ -453,9 +453,9 @@ struct BareKineticEnergy : public OperatorBase
    *
    * Nothing is done but should check the mass
    */
-  bool put(xmlNodePtr) { return true; }
+  bool put(xmlNodePtr) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "Kinetic energy";
     return true;
@@ -471,9 +471,9 @@ struct BareKineticEnergy : public OperatorBase
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
   {
-    std::vector<Walker_t*>& walkers = W.WalkerList;
+    auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
     {
       Walker_t& w                                      = *(walkers[iw]);

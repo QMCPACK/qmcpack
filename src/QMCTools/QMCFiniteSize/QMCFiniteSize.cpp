@@ -67,7 +67,6 @@ bool QMCFiniteSize::validateXML()
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    bool inputnode = true;
     if (cname == "particleset")
     {
       ptclPool.put(cur);
@@ -83,7 +82,7 @@ bool QMCFiniteSize::validateXML()
       if (a)
       {
         pushDocument((const char*)a);
-        inputnode = processPWH(XmlDocStack.top()->getRoot());
+        processPWH(XmlDocStack.top()->getRoot());
         popDocument();
       }
     }
@@ -116,18 +115,8 @@ void QMCFiniteSize::wfnPut(xmlNodePtr cur)
   pAttrib.put(cur);
   ParticleSet* qp = ptclPool.getParticleSet(target);
 
-  { //check ESHDF should be used to initialize both target and associated ionic system
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
-      std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
-      {
-        qp = ptclPool.createESParticleSet(tcur, target, qp);
-      }
-      tcur = tcur->next;
-    }
-  }
+  if(qp == nullptr)
+    throw std::runtime_error("target particle set named '" + target + "' not found");
 }
 
 bool QMCFiniteSize::processPWH(xmlNodePtr cur)
@@ -170,7 +159,7 @@ void QMCFiniteSize::initBreakup()
   P      = ptclPool.getParticleSet("e");
   AA     = LRCoulombSingleton::getHandler(*P);
   myRcut = AA->get_rc();
-  if (rVs == 0)
+  if (rVs == nullptr)
   {
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }
@@ -323,7 +312,8 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
 {
   //hack to interface to NUgrid stuff in double prec for MIXED build
   vector<FullPrecRealType> grid_fp(grid.begin(), grid.end());
-  NUgrid* grid1d = create_general_grid(grid_fp.data(), grid_fp.size());
+  auto grid1d =
+      std::unique_ptr<NUgrid, void (*)(NUgrid*)>{create_general_grid(grid_fp.data(), grid_fp.size()), destroy_grid};
 
   BCtype_d xBC;
   xBC.lVal  = lVal;
@@ -332,7 +322,7 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
   xBC.rCode = DERIV1;
   //hack to interface to NUgrid stuff in double prec for MIXED build
   vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
-  return create_NUBspline_1d_d(grid1d, xBC, vals_fp.data());
+  return create_NUBspline_1d_d(grid1d.get(), xBC, vals_fp.data());
 }
 
 //Integrate the spline using Simpson's 5/8 rule.  For Bsplines, this should be exact
@@ -481,7 +471,7 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(vector<RealType> sk
 
 QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
 {
-  UBspline_3d_d* spline = getSkSpline(sk);
+  auto spline = std::unique_ptr<UBspline_3d_d, void (*)(void*)>{getSkSpline(sk), destroy_Bspline};
 
   RealType kmax   = AA->get_kc();
   IndexType ngrid = 2 * Klist.kshell.size() - 1; //make a lager kmesh
@@ -495,7 +485,7 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   {
     RealType kval = i * dk;
     nonunigrid1d.push_back(kval);
-    RealType skavg = sphericalAvgSk(spline, kval);
+    RealType skavg = sphericalAvgSk(spline.get(), kval);
     RealType k2vk  = kval * kval * AA->evaluate_vlr_k(kval); //evaluation for arbitrary kshell for any LRHandler
     k2vksk.push_back(0.5 * k2vk * skavg);
   }
@@ -503,10 +493,12 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   k2vksk.push_back(0.0);
   nonunigrid1d.push_back(kmax);
 
-  NUBspline_1d_d* integrand = spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0);
+  auto integrand =
+      std::unique_ptr<NUBspline_1d_d, void (*)(void*)>{spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0),
+                                                                 destroy_Bspline};
 
   //Integrate the spline and compute the thermodynamic limit.
-  RealType integratedval = integrate_spline(integrand, 0.0, kmax, 200);
+  RealType integratedval = integrate_spline(integrand.get(), 0.0, kmax, 200);
   RealType intnorm       = Vol / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
                                                     //included in QMCPACK's v_k.  See CoulombFunctor.
 

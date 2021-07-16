@@ -39,12 +39,12 @@ public:
   QMCCostFunctionCUDA(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionCUDA();
+  ~QMCCostFunctionCUDA() override;
 
-  void getConfigurations(const std::string& aroot);
-  void checkConfigurations();
-  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0);
-  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
+  void getConfigurations(const std::string& aroot) override;
+  void checkConfigurations() override;
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
   using CTS = CUDAGlobalTypes;
@@ -68,8 +68,8 @@ protected:
   std::vector<Matrix<Return_rt>*> HDerivRecords;
 
   Return_rt CSWeight;
-  void resetPsi(bool final_reset = false);
-  Return_rt correlatedSampling(bool needDerivs);
+  void resetPsi(bool final_reset = false) override;
+  Return_rt correlatedSampling(bool needDerivs) override;
 };
 } // namespace qmcplusplus
 #endif

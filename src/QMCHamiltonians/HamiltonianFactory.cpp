@@ -440,7 +440,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     cur = cur->next;
   }
   //add observables with physical and simple estimators
-  int howmany = targetH->addObservables(targetPtcl);
+  targetH->addObservables(targetPtcl);
   //do correction
   bool dmc_correction = false;
   cur                 = cur_saved->children;
@@ -480,7 +480,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   }
   //evaluate the observables again
   if (dmc_correction)
-    howmany = targetH->addObservables(targetPtcl);
+    targetH->addObservables(targetPtcl);
   return true;
 }
 

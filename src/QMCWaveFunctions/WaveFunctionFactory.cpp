@@ -58,6 +58,12 @@ WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
   targetPsi->setMassTerm(targetPtcl);
 }
 
+WaveFunctionFactory::~WaveFunctionFactory()
+{
+  if (myNode != NULL)
+    xmlFreeNode(myNode);
+}
+
 bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
 {
   app_summary() << std::endl;
@@ -73,13 +79,9 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   if (buildtree)
   {
     if (myNode == NULL)
-    {
       myNode = xmlCopyNode(cur, 1);
-    }
     else
-    {
       attach2Node = true;
-    }
   }
   cur          = cur->children;
   bool success = true;

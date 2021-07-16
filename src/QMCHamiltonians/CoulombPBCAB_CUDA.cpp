@@ -89,9 +89,9 @@ void CoulombPBCAB_CUDA::initBreakup(ParticleSet& P)
 
 void CoulombPBCAB_CUDA::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
-  RadFunctorType* savefunc = Vspec[groupID];
+  RadFunctorType* savefunc = Vspec[groupID].get();
   CoulombPBCAB::add(groupID, std::move(ppot));
-  RadFunctorType* rfunc = Vspec[groupID];
+  RadFunctorType* rfunc = Vspec[groupID].get();
   if (rfunc != savefunc)
   {
     // Setup CUDA spline
@@ -141,7 +141,7 @@ void CoulombPBCAB_CUDA::setupLongRangeGPU()
 
 void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
+  auto& walkers = W.WalkerList;
   // Short-circuit for constant contribution (e.g. fixed ions)
   // if (!is_active) {
   //   for (int iw=0; iw<walkers.size(); iw++) {
@@ -233,27 +233,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
 
 std::unique_ptr<OperatorBase> CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<CoulombPBCAB_CUDA> myclone = std::make_unique<CoulombPBCAB_CUDA>(PtclA, qp, true);
-  if (myGrid)
-  {
-    myclone->myGrid = new GridType(*myGrid);
-  }
-  for (int ig = 0; ig < Vspec.size(); ++ig)
-  {
-    if (Vspec[ig])
-    {
-      RadFunctorType* apot = Vspec[ig]->makeClone();
-      myclone->Vspec[ig]   = apot;
-      for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
-      {
-        if (PtclA.GroupID[iat] == ig)
-          myclone->Vat[iat] = apot;
-      }
-    }
-    myclone->V0Spline      = V0Spline;
-    myclone->SRSplines[ig] = SRSplines[ig];
-  }
-  return myclone;
+  return std::make_unique<CoulombPBCAB_CUDA>(*this);
 }
 
 } // namespace qmcplusplus

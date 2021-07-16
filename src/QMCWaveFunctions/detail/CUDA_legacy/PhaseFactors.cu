@@ -43,7 +43,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
   volatile __shared__ T out_shared[2*BS+1];
   __shared__ T *phi_in_ptr[BS], *phi_out_ptr[BS];
   int tid = threadIdx.x;
-  assert(warpSize == 32);
+  assert(warpSize == 32 || warpSize == 64);
 #pragma unroll
   for (int i=0; i<3; i++)
   {

@@ -87,7 +87,7 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  void set(int first, int nel, int delay = 1) override final;
+  void set(int first, int nel, int delay = 1) final;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,

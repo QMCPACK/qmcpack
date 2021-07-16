@@ -193,7 +193,7 @@ struct GaussianCombo
   void addGaussian(real_type c, real_type alpha);
 
   bool putBasisGroup(xmlNodePtr cur);
-  bool putBasisGroupH5(hdf_archive& hin);
+  bool putBasisGroupH5(hdf_archive& hin, Communicate& myComm);
 
   /**  double factorial of num
    * @param num integer to be factored
@@ -268,15 +268,15 @@ bool GaussianCombo<T>::putBasisGroup(xmlNodePtr cur)
 }
 
 template<class T>
-bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin)
+bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin, Communicate& myComm)
 {
   int NbRadFunc(0);
-  if (hin.myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     hin.read(NbRadFunc, "NbRadFunc");
     hin.push("radfunctions");
   }
-  hin.myComm->bcast(NbRadFunc);
+  myComm.bcast(NbRadFunc);
 
   for (int i = 0; i < NbRadFunc; i++)
   {
@@ -286,26 +286,26 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin)
     tempdata << dataradID0 << i;
     dataradID = tempdata.str();
 
-    if (hin.myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       hin.push(dataradID.c_str());
       hin.read(alpha, "exponent");
       hin.read(c, "contraction");
     }
 
-    hin.myComm->bcast(alpha);
-    hin.myComm->bcast(c);
+    myComm.bcast(alpha);
+    myComm.bcast(c);
 
     if (!Normalized)
       c *= NormL * std::pow(alpha, NormPow);
     //    LOGMSG("    Gaussian exponent = " << alpha
     //     << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
     gset.push_back(BasicGaussian(alpha, c));
-    if (hin.myComm->rank() == 0)
+    if (myComm.rank() == 0)
       hin.pop();
   }
   reset();
-  if (hin.myComm->rank() == 0)
+  if (myComm.rank() == 0)
     hin.pop();
 
   return true;

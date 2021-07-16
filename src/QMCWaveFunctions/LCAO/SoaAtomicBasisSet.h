@@ -46,7 +46,7 @@ struct SoaAtomicBasisSet
   ///spherical harmonics
   SH Ylm;
   ///radial orbitals
-  std::unique_ptr<ROT> MultiRnl;
+  ROT MultiRnl;
   ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
   aligned_vector<int> LM;
   /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
@@ -56,26 +56,8 @@ struct SoaAtomicBasisSet
   ///temporary storage
   VectorSoaContainer<RealType, 4> tempS;
 
-  ///set of grids : keep this until completion
-  std::vector<GridType*> Grids;
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false) : Ylm(lmax, addsignforM) {}
-
-  SoaAtomicBasisSet(const SoaAtomicBasisSet& in)
-      : BasisSetSize(in.BasisSetSize),
-        PBCImages(in.PBCImages),
-        SuperTwist(in.SuperTwist),
-        periodic_image_phase_factors(in.periodic_image_phase_factors),
-        Rmax(in.Rmax),
-        Ylm(in.Ylm),
-        MultiRnl(in.MultiRnl->makeClone()),
-        LM(in.LM),
-        NL(in.NL),
-        RnlID(in.RnlID),
-        tempS(in.tempS)
-  {}
-
-  ~SoaAtomicBasisSet() = default;
 
   void checkInVariables(opt_variables_type& active)
   {
@@ -103,7 +85,9 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+  /** Set the number of periodic image for the evaluation of the orbitals and the phase factor.
+   * In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+   */
   void setPBCParams(const TinyVector<int, 3>& pbc_images,
                     const TinyVector<double, 3> supertwist,
                     const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors)
@@ -115,10 +99,10 @@ struct SoaAtomicBasisSet
 
 
   /** implement a BasisSetBase virtual function
-       *
-       * Set Rmax and BasisSetSize
-       * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
-       */
+   *
+   * Set Rmax and BasisSetSize
+   * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
+   */
   inline void setBasisSetSize(int n)
   {
     BasisSetSize = LM.size();
@@ -129,7 +113,7 @@ struct SoaAtomicBasisSet
   template<typename T>
   inline void setRmax(T rmax)
   {
-    Rmax = (rmax > 0) ? rmax : MultiRnl->rmax();
+    Rmax = (rmax > 0) ? rmax : MultiRnl.rmax();
   }
 
   ///set the current offset
@@ -145,8 +129,7 @@ struct SoaAtomicBasisSet
   }
 
   /** evaluate VGL
-  */
-
+   */
   template<typename LAT, typename T, typename PosType, typename VGL>
   inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl, PosType Tv)
   {
@@ -224,7 +207,7 @@ struct SoaAtomicBasisSet
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
           Ylm.evaluateVGL(x, y, z);
 
-          MultiRnl->evaluate(r_new, phi, dphi, d2phi);
+          MultiRnl.evaluate(r_new, phi, dphi, d2phi);
 
           const T rinv = cone / r_new;
 
@@ -336,7 +319,7 @@ struct SoaAtomicBasisSet
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
           Ylm.evaluateVGH(x, y, z);
 
-          MultiRnl->evaluate(r_new, phi, dphi, d2phi);
+          MultiRnl.evaluate(r_new, phi, dphi, d2phi);
 
           const T rinv = cone / r_new;
 
@@ -507,7 +490,7 @@ struct SoaAtomicBasisSet
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
           Ylm.evaluateVGHGH(x, y, z);
 
-          MultiRnl->evaluate(r_new, phi, dphi, d2phi, d3phi);
+          MultiRnl.evaluate(r_new, phi, dphi, d2phi, d3phi);
 
           const T rinv = cone / r_new;
           const T xu = x * rinv, yu = y * rinv, zu = z * rinv;
@@ -663,7 +646,7 @@ struct SoaAtomicBasisSet
             continue;
 
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
-          MultiRnl->evaluate(r_new, phi_r);
+          MultiRnl.evaluate(r_new, phi_r);
           ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
           const ValueType Phase = periodic_image_phase_factors[iter] * correctphase;
           for (size_t ib = 0; ib < BasisSetSize; ++ib)

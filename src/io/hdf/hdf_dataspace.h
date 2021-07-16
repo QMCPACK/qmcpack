@@ -20,14 +20,16 @@
  * h5_space_type is a helper class for h5data_proxy and used internally
  * - h5_space_type<T,RANK>
  * - h5_space_type<std::complex<T>,RANK>
+ * - h5_space_type<std::array<T,D>,RANK>
  * - h5_space_type<TinyVector<T,D>,RANK>
  * - h5_space_type<TinyVector<std::complex<T>,D>,RANK> // removed, picked up by template recursion
  * - h5_space_type<Tensor<T,D>,RANK>
  * - h5_space_type<Tensor<std::complex<T>,D>,RANK> // removed, picked up by template recursion
  */
 
-#include "hdf_datatype.h"
 #include <complex>
+#include <array>
+#include "hdf_datatype.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 
@@ -66,6 +68,19 @@ struct h5_space_type<std::complex<T>, RANK> : public h5_space_type<T, RANK + 1>
   inline static auto get_address(std::complex<T>* a) { return Base::get_address(reinterpret_cast<T*>(a)); }
 };
 
+/** specialization of h5_space_type for std::array<T,D> for any intrinsic type T
+ */
+template<typename T, std::size_t D, hsize_t RANK>
+struct h5_space_type<std::array<T, D>, RANK> : public h5_space_type<T, RANK + 1>
+{
+  using Base = h5_space_type<T, RANK + 1>;
+  using Base::dims;
+  using Base::rank;
+  inline h5_space_type() { dims[RANK] = D; }
+  static constexpr int added_rank() { return Base::added_rank() + 1; }
+  inline static auto get_address(std::array<T, D>* a) { return Base::get_address(a->data()); }
+};
+
 /** specialization of h5_space_type for TinyVector<T,D> for any intrinsic type T
  */
 template<typename T, unsigned D, hsize_t RANK>
@@ -79,7 +94,7 @@ struct h5_space_type<TinyVector<T, D>, RANK> : public h5_space_type<T, RANK + 1>
   inline static auto get_address(TinyVector<T, D>* a) { return Base::get_address(a->data()); }
 };
 
-/** specialization of h5_space_type for TinyVector<T,D> for any intrinsic type T
+/** specialization of h5_space_type for Tensor<T,D> for any intrinsic type T
  */
 template<typename T, unsigned D, hsize_t RANK>
 struct h5_space_type<Tensor<T, D>, RANK> : public h5_space_type<T, RANK + 2>

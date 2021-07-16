@@ -70,8 +70,7 @@ namespace formic {
       ///          of the parent class std::runtime_error
       ///
       ///////////////////////////////////////////////////////////////////////////////////////////////////
-      ~Exception() throw() {}
-
+      ~Exception() throw() override {}
   };
 
 }

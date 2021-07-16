@@ -17,12 +17,12 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
+#include <limits>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include <limits>
-#include <bitset>
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
@@ -77,11 +77,8 @@ protected:
   DisplRow temp_dr_;
   /*@}*/
 
-  /** whether full table needs to be ready at anytime or not
-   * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
-   * DT consumers should know if full table is needed or not and request via addTable.
-   */
-  bool need_full_table_;
+  ///operation modes defined by DTModes
+  DTModes modes_;
 
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
@@ -97,7 +94,7 @@ public:
       : Origin(&source),
         N_sources(source.getTotalNum()),
         N_targets(target.getTotalNum()),
-        need_full_table_(false),
+        modes_(DTModes::ALL_OFF),
         old_prepared_elec_id(-1),
         name_(source.getName() + "_" + target.getName())
   {}
@@ -105,11 +102,11 @@ public:
   ///virutal destructor
   virtual ~DistanceTableData() = default;
 
-  ///get need_full_table_
-  inline bool getFullTableNeeds() const { return need_full_table_; }
+  ///get modes
+  inline DTModes getModes() const { return modes_; }
 
-  ///set need_full_table_
-  inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
+  ///set modes
+  inline void setModes(DTModes modes) { modes_ = modes; }
 
   ///return the name of table
   inline const std::string& getName() const { return name_; }
@@ -203,6 +200,12 @@ public:
    * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
   virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
+
+  /** walker batched version of move. this function may be implemented asynchronously.
+   * Additional synchroniziation for collecting results should be handled by the caller.
+   * If DTModes::NEED_TEMP_DATA_ON_HOST, host data will be updated.
+   * If no consumer requests data on the host, the transfer is skipped.
+   */
   virtual void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
                        const std::vector<PosType>& rnew_list,
@@ -229,6 +232,36 @@ public:
   {
     if (from_temp)
       update(jat);
+  }
+
+  /** walker batched version of updatePartial.
+   * If not DTModes::NEED_TEMP_DATA_ON_HOST, host data is not up-to-date and host distance table will not be updated.
+   */
+  virtual void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                                IndexType jat,
+                                const std::vector<bool>& from_temp)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].updatePartial(jat, from_temp[iw]);
+  }
+
+  /** finalize distance table calculation after particle-by-particle moves
+   * if update() doesn't make the table up-to-date during p-by-p moves
+   * finalizePbyP takes action to bring the table up-to-date
+   */
+  virtual void finalizePbyP(const ParticleSet& P) {}
+
+  /** walker batched version of finalizePbyP
+   * If not DTModes::NEED_TEMP_DATA_ON_HOST, host distance table data is not updated at all during p-by-p
+   * Thus, a recompute is necessary to update the whole host distance table for consumers like the Coulomb potential.
+   */
+  virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].finalizePbyP(p_list[iw]);
   }
 
   /** build a compact list of a neighbor for the iat source

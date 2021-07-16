@@ -36,9 +36,18 @@
 #include <vector>
 #include <iostream>
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
+#else
+#include <hip/hip_runtime.h>
+#include <hipblas.h>
+#include <hip/hip_complex.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#include "Platforms/ROCm/hipBLAS.hpp"
+#endif
 
 #define CONVERT_BS 256
 #define INVERSE_BS 16
@@ -84,7 +93,7 @@ void callAndCheckError(cublasStatus_t cublasFunc, const int line)
     case CUBLAS_STATUS_INTERNAL_ERROR:
       fprintf(stderr, "CUBLAS_STATUS_INTERNAL_ERROR\n");
       break;
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
     case CUBLAS_STATUS_NOT_SUPPORTED:
       fprintf(stderr, "CUBLAS_STATUS_NOT_SUPPORTED\n");
       break;
@@ -173,7 +182,7 @@ void cublas_inverse(cublasHandle_t handle,
                       __LINE__);
 
     //       Inversion
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
     callAndCheckError(cublasDgetriBatched(handle, N, (const double**)AWorklist_d, rowStride, PivotArray,
                                           (double**)AinvWorklist_d, rowStride, infoArray + numMats, numMats),
                       __LINE__);
@@ -194,7 +203,7 @@ void cublas_inverse(cublasHandle_t handle,
     callAndCheckError(cublasSgetrfBatched(handle, N, Alist_d, rowStride, PivotArray, infoArray, numMats), __LINE__);
 
     // Inversion
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
     callAndCheckError(cublasSgetriBatched(handle, N, (const float**)Alist_d, rowStride, PivotArray, Ainvlist_d,
                                           rowStride, infoArray + numMats, numMats),
                       __LINE__);
@@ -205,7 +214,7 @@ void cublas_inverse(cublasHandle_t handle,
 #endif
   }
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 // 2. for double matrices
@@ -235,7 +244,7 @@ void cublas_inverse(cublasHandle_t handle,
   callAndCheckError(cublasDgetrfBatched(handle, N, AWorklist_d, rowStride, PivotArray, infoArray, numMats), __LINE__);
 
   //       Inversion
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
   callAndCheckError(cublasDgetriBatched(handle, N, (const double**)AWorklist_d, rowStride, PivotArray, Ainvlist_d,
                                         rowStride, infoArray + numMats, numMats),
                     __LINE__);
@@ -245,7 +254,7 @@ void cublas_inverse(cublasHandle_t handle,
                     __LINE__);
 #endif
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 // 3. for complex float matrices
@@ -282,7 +291,7 @@ void cublas_inverse(cublasHandle_t handle,
                                           numMats),
                       __LINE__);
     //       Inversion
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
     callAndCheckError(cublasZgetriBatched(handle, N, (cuDoubleComplex *const *)AWorklist_d, rowStride, PivotArray,
                                           (cuDoubleComplex *const *)AinvWorklist_d, rowStride, infoArray + numMats, numMats),
                       __LINE__);
@@ -306,7 +315,7 @@ void cublas_inverse(cublasHandle_t handle,
                       __LINE__);
 
     // Inversion
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
     callAndCheckError(cublasCgetriBatched(handle, N, (cuComplex *const *)Alist_d, rowStride, PivotArray,
                                           (cuComplex *const *)Ainvlist_d, rowStride, infoArray + numMats, numMats),
                       __LINE__);
@@ -317,7 +326,7 @@ void cublas_inverse(cublasHandle_t handle,
 #endif
   }
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 // 4. for complex double matrices
@@ -349,7 +358,7 @@ void cublas_inverse(cublasHandle_t handle,
                                         numMats),
                     __LINE__);
   //       Inversion
-#if (CUDA_VERSION >= 6050)
+#if defined(CUDA_VERSION) && (CUDA_VERSION >= 6050)
   callAndCheckError(cublasZgetriBatched(handle, N, (cuDoubleComplex *const *)AWorklist_d, rowStride, PivotArray,
                                         (cuDoubleComplex *const *)Ainvlist_d, rowStride, infoArray + numMats, numMats),
                     __LINE__);
@@ -359,7 +368,7 @@ void cublas_inverse(cublasHandle_t handle,
                     __LINE__);
 #endif
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 
@@ -437,13 +446,13 @@ void test_cublas_inverse(int matSize, int numMats)
 
   callAndCheckError(cudaMemcpyAsync(CWorklist_d, CWorklist, numMats * sizeof(T*), cudaMemcpyHostToDevice), __LINE__);
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 
   clock_t start = clock();
 
   // Call cublas functions to do inversion
   cublas_inverse(handle, Alist_d, Clist_d, AWorklist_d, CWorklist_d, N, row_stride, numMats, true);
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 
   clock_t end = clock();
   double t    = double(end - start) / double(CLOCKS_PER_SEC) / double(numMats);

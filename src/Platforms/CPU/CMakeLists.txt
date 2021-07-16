@@ -9,10 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CPU_SRCS BlasThreadingEnv.cpp)
 
-SET(CPU_SRCS
-  BlasThreadingEnv.cpp
-)
-
-ADD_LIBRARY(platform_cpu ${CPU_SRCS})
-TARGET_LINK_LIBRARIES(platform_cpu Math::BLAS_LAPACK Math::scalar_vector_functions)
+add_library(platform_cpu ${CPU_SRCS})
+target_link_libraries(platform_cpu Math::BLAS_LAPACK Math::scalar_vector_functions)

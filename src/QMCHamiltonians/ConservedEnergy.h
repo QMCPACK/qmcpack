@@ -73,11 +73,11 @@ using WP = WalkerProperties::Indexes;
 struct ConservedEnergy : public OperatorBase
 {
   ConservedEnergy() {}
-  ~ConservedEnergy() {}
+  ~ConservedEnergy() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
-  Return_t evaluate(ParticleSet& P)
+  Return_t evaluate(ParticleSet& P) override
   {
     RealType gradsq = Dot(P.G, P.G);
     RealType lap    = Sum(P.L);
@@ -91,9 +91,9 @@ struct ConservedEnergy : public OperatorBase
   }
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "ConservedEnergy";
     return true;
@@ -109,10 +109,10 @@ struct ConservedEnergy : public OperatorBase
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    std::vector<Walker_t*>& walkers = W.WalkerList;
+    auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
     {
       Walker_t& w = *(walkers[iw]);

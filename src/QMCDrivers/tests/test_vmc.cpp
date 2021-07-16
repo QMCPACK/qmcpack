@@ -39,9 +39,6 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -75,8 +72,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 
 
   TrialWaveFunction psi;
-  ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb);
+  psi.addComponent(std::make_unique<ConstantOrbital>());
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 

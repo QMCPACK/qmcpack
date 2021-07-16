@@ -31,8 +31,7 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target)
-    : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
+RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
 {
   Optimizable = true;
 }
@@ -187,19 +186,20 @@ void RPAJastrow::makeShortRange()
   RealType tiny = 1e-6;
   Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
-  nfunc = new FuncType;
-  SRA   = new ShortRangePartAdapter<RealType>(myHandler);
-  SRA->setRmax(Rcut);
+  auto nfunc_uptr = std::make_unique<FuncType>();
+  nfunc           = nfunc_uptr.get();
+  ShortRangePartAdapter<RealType> SRA(myHandler);
+  SRA.setRmax(Rcut);
   J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl);
   size_t nparam                              = 12;  // number of Bspline parameters
   size_t npts                                = 100; // number of 1D grid points for basis functions
-  RealType cusp                              = SRA->df(0);
+  RealType cusp                              = SRA.df(0);
   RealType delta                             = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
-    Y[i] = SRA->evaluate(X[i]);
+    Y[i] = SRA.evaluate(X[i]);
   }
   X[npts]              = npts * delta;
   Y[npts]              = 0.0;
@@ -209,9 +209,9 @@ void RPAJastrow::makeShortRange()
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
-    Y[i] = SRA->evaluate(X[i]);
+    Y[i] = SRA.evaluate(X[i]);
   }
-  j2->addFunc(0, 0, nfunc);
+  j2->addFunc(0, 0, std::move(nfunc_uptr));
   ShortRangeRPA = j2;
   Psi.push_back(ShortRangeRPA);
 }
@@ -303,7 +303,7 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 /** this is a great deal of logic for make clone I'm wondering what is going on
  */
-WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
+std::unique_ptr<WaveFunctionComponent> RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler = nullptr;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
@@ -338,9 +338,9 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
                                          tpq);
   }
 
-  RPAJastrow* myClone = new RPAJastrow(tpq);
-  myClone->Rcut       = Rcut;
-  myClone->Kc         = Kc;
+  auto myClone  = std::make_unique<RPAJastrow>(tpq);
+  myClone->Rcut = Rcut;
+  myClone->Kc   = Kc;
   myClone->setHandler(tempHandler);
   if (!DropLongRange)
     myClone->makeLongRange();

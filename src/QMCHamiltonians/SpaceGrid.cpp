@@ -518,7 +518,6 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
   }
   Point du, uc, ubc, rc;
   RealType vol     = 0.0;
-  RealType vol_tot = 0.0;
   RealType vscale  = std::abs(det(axes));
   for (int i = 0; i < dimensions[0]; i++)
   {
@@ -563,7 +562,6 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
           break;
         }
         vol *= vscale;
-        vol_tot += vol;
         rc = dot(axes, ubc) + origin;
         //app_log()<< std::endl;
         //app_log()<<"umin "<<uc-du/2<< std::endl;

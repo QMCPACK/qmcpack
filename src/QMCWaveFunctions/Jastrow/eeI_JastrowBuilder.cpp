@@ -116,7 +116,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   return true;
 }
 
-WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   xmlNodePtr kids = cur->xmlChildrenNode;
@@ -136,7 +136,7 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
     if (ftype == "polynomial")
     {
       typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-      J3Type* J3 = new J3Type(jname, *sourcePtcl, targetPtcl, true);
+      auto J3 = std::make_unique<J3Type>(jname, *sourcePtcl, targetPtcl, true);
       putkids(kids, *J3);
       return J3;
     }

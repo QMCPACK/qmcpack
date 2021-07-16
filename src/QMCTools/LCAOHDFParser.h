@@ -34,7 +34,7 @@ public:
   int readtype, numAO;
   int NFZC, NEXT, NTOT, NAC;
 
-  void parse(const std::string& fname);
+  void parse(const std::string& fname) override;
 
   void getGeometry(const std::string& fname);
   void getCell(const std::string& fname);

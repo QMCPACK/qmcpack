@@ -203,11 +203,11 @@ void LatticeGaussianProduct::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(FirstAddressOfdU, LastAddressOfdU);
 }
 
-WaveFunctionComponentPtr LatticeGaussianProduct::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> LatticeGaussianProduct::makeClone(ParticleSet& tqp) const
 {
-  LatticeGaussianProduct* j1copy = new LatticeGaussianProduct(CenterRef, tqp);
-  j1copy->ParticleAlpha          = ParticleAlpha;
-  j1copy->ParticleCenter         = ParticleCenter;
+  auto j1copy            = std::make_unique<LatticeGaussianProduct>(CenterRef, tqp);
+  j1copy->ParticleAlpha  = ParticleAlpha;
+  j1copy->ParticleCenter = ParticleCenter;
   return j1copy;
 }
 

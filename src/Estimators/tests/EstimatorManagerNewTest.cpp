@@ -31,9 +31,10 @@ EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) :
 bool EstimatorManagerNewTest::testAddGetEstimator()
 {
   // Must create on heap since the EstimatorManager destructor deletes all estimators
-  FakeEstimator* fake_est = new FakeEstimator;
+  auto fake_est_uptr      = std::make_unique<FakeEstimator>();
+  FakeEstimator* fake_est = fake_est_uptr.get();
 
-  em.add(fake_est, "fake");
+  em.add(std::move(fake_est_uptr), "fake");
 
   ScalarEstimatorBase* est2 = em.getEstimator("fake");
   FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);

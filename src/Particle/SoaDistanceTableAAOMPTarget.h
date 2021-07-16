@@ -174,6 +174,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
+  /** evaluate the temporary pair relations when a move is proposed
+   * this implementation is asynchronous and the synchronization is managed at ParticleSet.
+   * Transfering results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
+   * If the temporary pair distance are consumed on the device directly, the device to host data transfer can be
+   * skipped as an optimization.
+   */
   void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
                const RefVectorWithLeader<ParticleSet>& p_list,
                const std::vector<PosType>& rnew_list,
@@ -237,7 +243,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
                         map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
-                        map(always, from: r_dr_ptr[:nw_new_old_dist_displ.size()])")
+                        nowait depend(out: r_dr_ptr[:nw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -275,6 +281,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }
         }
+    }
+
+    if (modes_ & DTModes::NEED_TEMP_DATA_ON_HOST)
+    {
+      PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:nw_new_old_dist_displ.size()]) \
+                      from(r_dr_ptr[:nw_new_old_dist_displ.size()])")
     }
   }
 
@@ -333,6 +345,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void updatePartial(IndexType jat, bool from_temp) override
   {
     ScopedTimer local_timer(update_timer_);
+
     //update by a cache line
     const int nupdate = getAlignedSize<T>(jat);
     if (from_temp)
@@ -350,6 +363,28 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       for (int idim = 0; idim < D; ++idim)
         std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
     }
+  }
+
+  void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                        IndexType jat,
+                        const std::vector<bool>& from_temp) override
+  {
+    // if temp data on host is not updated by mw_move during p-by-p moves, there is no need to update distance table
+    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
+      return;
+
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].updatePartial(jat, from_temp[iw]);
+  }
+
+  void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list) const override
+  {
+    // if the distance table is not updated by mw_move during p-by-p, needs to recompute the whole table
+    // before being used by Hamiltonian.
+    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
+      mw_evaluate(dt_list, p_list);
   }
 
 private:

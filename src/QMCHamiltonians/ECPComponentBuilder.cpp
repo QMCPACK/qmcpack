@@ -36,8 +36,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       AtomicNumber(0),
       Zeff(0),
       RcutMax(-1),
-      Species(aname),
-      grid_global(0)
+      Species(aname)
 {
   angMon["s"] = 0;
   angMon["p"] = 1;

@@ -234,10 +234,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   elec2b.update();
 
   TrialWaveFunction psi2;
-  WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
-  psi2.addComponent(orb1);
-  WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
-  psi2.addComponent(orb2);
+  auto orb1 = psi.getOrbitals()[0]->makeClone(elec2);
+  psi2.addComponent(std::move(orb1));
+  auto orb2 = psi.getOrbitals()[1]->makeClone(elec2);
+  psi2.addComponent(std::move(orb2));
 
 
   // Prepare to compare using list with one wavefunction and particleset

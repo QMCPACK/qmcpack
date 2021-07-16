@@ -118,7 +118,7 @@ public:
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
    */
-  void addComponent(WaveFunctionComponent* aterm);
+  void addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -437,7 +437,7 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  std::vector<WaveFunctionComponent*>& getOrbitals() { return Z; }
+  std::vector<std::unique_ptr<WaveFunctionComponent>> const& getOrbitals() { return Z; }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
@@ -487,7 +487,7 @@ private:
   const bool use_tasking_;
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
-  std::vector<WaveFunctionComponent*> Z;
+  std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;

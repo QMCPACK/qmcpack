@@ -9,29 +9,36 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <type_traits>
 #include "Platforms/CPU/BLAS.hpp"
 #include "Platforms/CPU/SIMD/simd.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "type_traits/type_tests.hpp"
+#include "type_traits/type_mapping.hpp"
 
 namespace qmcplusplus
 {
 
+/** Get the right type for rng in case of complex T.
+ *  Probably a more elegant way to do this especially in c++17
+ */
+template<typename T>
+using RngValueType = typename c14disjunction::disjunction<OnTypesEqual<T, float, float>,
+                                                          OnTypesEqual<T, double, double>,
+                                                          OnTypesEqual<T, std::complex<float>, float>,
+                                                          OnTypesEqual<T, std::complex<double>, double>,
+                                                          default_type<void>>::type;
+
 namespace testing
 {
-/** Puts a Random symmetric positive definite matrix into mat_spd.
- *  assumes matrix is square.
- *  This is derived from the method used in scikit.learn make_spd_matrix.
- *  That is a bsd three clause license.
- */
-template<typename T, IsReal<T> = true>
-void makeRngSpdMatrix(Matrix<T>& mat_spd)
+
+template<typename T, typename = typename std::enable_if<std::is_floating_point<T>::value, void>::type>
+void makeRngSpdMatrix(testing::RandomForTest<RngValueType<T>>& rng, Matrix<T>& mat_spd)
 {
   int n = mat_spd.rows();
   Matrix<T> mat_a;
   mat_a.resize(n, n);
-  testing::RandomForTest<T> rng;
   rng.fillBufferRng(mat_a.data(), mat_a.size());
   Matrix<T> mat_a_t(mat_a);
   Matrix<T> mat_c;
@@ -66,12 +73,11 @@ void makeRngSpdMatrix(Matrix<T>& mat_spd)
 }
 
 template<typename T, IsComplex<T> = true>
-void makeRngSpdMatrix(Matrix<T>& mat_spd)
+void makeRngSpdMatrix(testing::RandomForTest<RngValueType<T>>& rng, Matrix<T>& mat_spd)
 {
   int n = mat_spd.rows();
   Matrix<T> mat_a;
   mat_a.resize(n, n);
-  testing::RandomForTest<typename T::value_type> rng;
   rng.fillBufferRng(mat_a.data(), mat_a.size());
   Matrix<T> mat_a_t(mat_a);
   Matrix<T> mat_c;
@@ -106,10 +112,21 @@ void makeRngSpdMatrix(Matrix<T>& mat_spd)
   simd::transpose(mat_u.data(), n, mat_u.cols(), mat_spd.data(), n, n);
 }
 
-  extern template void makeRngSpdMatrix<double>(Matrix<double>& mat_spd);
-  extern template void makeRngSpdMatrix<float>(Matrix<float>& mat_spd);
-  extern template void makeRngSpdMatrix<std::complex<double>>(Matrix<std::complex<double>>& mat_spd);
-  extern template void makeRngSpdMatrix<std::complex<float>>(Matrix<std::complex<float>>& mat_spd);
+/** Functor to provide scope for rng when making SpdMatrix for testing.
+ */
+template<typename T>
+class MakeRngSpdMatrix
+{
+public:
+  void operator()(Matrix<T>& mat_spd) { makeRngSpdMatrix(rng, mat_spd); }
+private:
+  testing::RandomForTest<RngValueType<T>> rng;
+};
+
+extern template class MakeRngSpdMatrix<double>;
+extern template class MakeRngSpdMatrix<float>;
+extern template class MakeRngSpdMatrix<std::complex<double>>;
+extern template class MakeRngSpdMatrix<std::complex<float>>;
 
 } // namespace testing
 } // namespace qmcplusplus

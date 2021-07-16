@@ -68,7 +68,7 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tpq) const override;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const override;
 
   bool put(xmlNodePtr cur);
 

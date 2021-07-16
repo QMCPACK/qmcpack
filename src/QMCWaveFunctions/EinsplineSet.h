@@ -77,9 +77,9 @@ public:
 
 public:
   UnitCellType GetLattice();
-  virtual void resetParameters(const opt_variables_type& active) {}
+  void resetParameters(const opt_variables_type& active) override {}
   void resetSourceParticleSet(ParticleSet& ions);
-  void setOrbitalSetSize(int norbs);
+  void setOrbitalSetSize(int norbs) override;
   inline std::string Type() { return "EinsplineSet"; }
   EinsplineSet() : TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0) { className = "EinsplineSet"; }
 };
@@ -353,42 +353,42 @@ public:
     NumCoreOrbs    = ncores;
   }
 
+#if !defined(QMC_COMPLEX)
   // Real return values
-  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi) override;
   void evaluateVGL(const ParticleSet& P,
                    int iat,
                    RealValueVector_t& psi,
                    RealGradVector_t& dpsi,
-                   RealValueVector_t& d2psi);
+                   RealValueVector_t& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             RealValueMatrix_t& psi,
                             RealGradMatrix_t& dpsi,
-                            RealValueMatrix_t& d2psi);
+                            RealValueMatrix_t& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             RealValueMatrix_t& psi,
                             RealGradMatrix_t& dpsi,
-                            RealHessMatrix_t& grad_grad_psi);
+                            RealHessMatrix_t& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             RealValueMatrix_t& psi,
                             RealGradMatrix_t& dpsi,
                             RealHessMatrix_t& grad_grad_psi,
-                            RealGGGMatrix_t& grad_grad_grad_logdet);
+                            RealGGGMatrix_t& grad_grad_grad_logdet) override;
 
   //    void evaluate (const ParticleSet& P, const PosType& r, std::vector<double> &psi);
-#if !defined(QMC_COMPLEX)
   // This is the gradient of the orbitals w.r.t. the ion iat
   void evaluateGradSource(const ParticleSet& P,
                           int first,
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          RealGradMatrix_t& gradphi);
+                          RealGradMatrix_t& gradphi) override;
   // Evaluate the gradient w.r.t. to ion iat of the gradient and
   // laplacian of the orbitals w.r.t. the electrons
   void evaluateGradSource(const ParticleSet& P,
@@ -398,60 +398,57 @@ public:
                           int iat_src,
                           RealGradMatrix_t& dphi,
                           RealHessMatrix_t& dgrad_phi,
-                          RealGradMatrix_t& dlaplphi);
-  void evaluateGradSource(const ParticleSet& P,
-                          int first,
-                          int last,
-                          const ParticleSet& source,
-                          int iat_src,
-                          ComplexGradMatrix_t& gradphi);
-#endif
+                          RealGradMatrix_t& dlaplphi) override;
+#else
   // Complex return values
-  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi) override;
   void evaluateVGL(const ParticleSet& P,
                    int iat,
                    ComplexValueVector_t& psi,
                    ComplexGradVector_t& dpsi,
-                   ComplexValueVector_t& d2psi);
+                   ComplexValueVector_t& d2psi) override;
   void evaluateVGH(const ParticleSet& P,
                    int iat,
                    ComplexValueVector_t& psi,
                    ComplexGradVector_t& dpsi,
-                   ComplexHessVector_t& grad_grad_psi);
+                   ComplexHessVector_t& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ComplexValueMatrix_t& psi,
                             ComplexGradMatrix_t& dpsi,
-                            ComplexValueMatrix_t& d2psi);
+                            ComplexValueMatrix_t& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ComplexValueMatrix_t& psi,
                             ComplexGradMatrix_t& dpsi,
-                            ComplexHessMatrix_t& grad_grad_psi);
+                            ComplexHessMatrix_t& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ComplexValueMatrix_t& psi,
                             ComplexGradMatrix_t& dpsi,
                             ComplexHessMatrix_t& grad_grad_psi,
-                            ComplexGGGMatrix_t& grad_grad_grad_logdet);
+                            ComplexGGGMatrix_t& grad_grad_grad_logdet) override;
+#endif
+
 #ifdef QMC_CUDA
-  void finalizeConstruction();
+  void finalizeConstruction() override;
 
   // Vectorized evaluation functions
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi);
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi);
-  void evaluate(std::vector<Walker_t*>& walkers, std::vector<PosType>& newpos, gpu::device_vector<CTS::RealType*>& phi);
+#if !defined(QMC_COMPLEX)
+  void evaluate(std::vector<Walker_t*>& walkers,
+                int iat,
+                gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::ComplexType*>& phi);
+                gpu::device_vector<CTS::RealType*>& phi) override;
   inline void evaluate(std::vector<Walker_t*>& walkers,
                        std::vector<PosType>& newpos,
                        gpu::device_vector<CTS::RealType*>& phi,
                        gpu::device_vector<CTS::RealType*>& grad_lapl,
-                       int row_stride)
+                       int row_stride) override
   {
     evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
   }
@@ -461,17 +458,23 @@ public:
                 gpu::device_vector<CTS::RealType*>& grad_lapl,
                 int row_stride,
                 int k,
-                bool klinear);
+                bool klinear) override;
 
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
+#else
+  void evaluate(std::vector<Walker_t*>& walkers,
+                int iat,
+                gpu::device_vector<CTS::ComplexType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::ComplexType*>& phi) override;
   inline void evaluate(std::vector<Walker_t*>& walkers,
                        std::vector<PosType>& newpos,
                        gpu::device_vector<CTS::ComplexType*>& phi,
                        gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                       int row_stride)
+                       int row_stride) override
   {
-#ifdef QMC_COMPLEX
     evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
-#endif
   }
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
@@ -479,20 +482,20 @@ public:
                 gpu::device_vector<CTS::ComplexType*>& grad_lapl,
                 int row_stride,
                 int k,
-                bool klinear);
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
+                bool klinear) override;
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi) override;
+#endif
 #endif
 
-  void resetParameters(const opt_variables_type& active);
-  void setOrbitalSetSize(int norbs);
+  void resetParameters(const opt_variables_type& active) override;
+  void setOrbitalSetSize(int norbs) override;
   std::string Type();
 
   void registerTimers();
-  PosType get_k(int orb) { return kPoints[orb]; }
+  PosType get_k(int orb) override { return kPoints[orb]; }
 
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   EinsplineSetExtended()
       : MultiSpline(NULL),
@@ -611,35 +614,44 @@ protected:
   void sort_electrons(std::vector<PosType>& pos);
 
 public:
-  void finalizeConstruction();
+  void finalizeConstruction() override;
   //    void registerTimers();
 
   // Resize cuda objects
   void resize_cuda(int numwalkers);
 
   // Vectorized evaluation functions
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi);
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi);
-  void evaluate(std::vector<Walker_t*>& walkers, std::vector<PosType>& newpos, gpu::device_vector<CTS::RealType*>& phi);
+#if !defined(QMC_COMPLEX)
+  void evaluate(std::vector<Walker_t*>& walkers,
+                int iat,
+                gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::ComplexType*>& phi);
+                gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi,
                 gpu::device_vector<CTS::RealType*>& grad_lapl,
-                int row_stride);
+                int row_stride) override;
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
+#else
+  void evaluate(std::vector<Walker_t*>& walkers,
+                int iat,
+                gpu::device_vector<CTS::ComplexType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::ComplexType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi,
                 gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                int row_stride);
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
+                int row_stride) override;
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi) override;
+#endif
 
   std::string Type();
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   EinsplineSetHybrid();
 };

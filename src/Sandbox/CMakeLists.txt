@@ -1,4 +1,4 @@
-PROJECT(Sandbox)
+project(Sandbox)
 
 # add apps XYZ.cpp, e.g., qmc_particles.cpp
 set(ESTEST diff_distancetables einspline_spo einspline_spo_nested determinant restart determinant_delayed_update)

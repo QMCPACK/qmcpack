@@ -21,9 +21,6 @@ namespace qmcplusplus
 {
 TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
@@ -61,9 +58,6 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
 #ifdef QMC_COMPLEX
 TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 { // basically copy and pasted from real test, except "myi"
-  Communicate* c;
-  c = OHMMS::Controller;
-
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
@@ -100,9 +94,6 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 
 TEST_CASE("get scaled drift real", "[drivers][drift]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
@@ -138,9 +129,6 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
 #ifdef QMC_COMPLEX
 TEST_CASE("get scaled drift complex", "[drivers][drift]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   MCWalkerConfiguration elec;
 
   elec.setName("elec");

@@ -71,7 +71,7 @@ struct SplineSetReader : public BsplineReaderBase
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble()
+  std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() override
   {
     Ugrid xyz_grid[3];
     BCtype_d xyz_bc_d[3];
@@ -104,7 +104,7 @@ struct SplineSetReader : public BsplineReaderBase
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble()
+  std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() override
   {
     Ugrid xyz_grid[3];
     BCtype_d xyz_bc[3];
@@ -127,7 +127,7 @@ struct SplineSetReader : public BsplineReaderBase
     return target;
   }
 
-  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup)
+  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup) override
   {
     ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
@@ -258,8 +258,15 @@ struct SplineSetReader : public BsplineReaderBase
     fftw_execute(FFTplan);
     if (bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
-                           rotate_phase_i);
+      if (rotate)
+        fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
+                             rotate_phase_i);
+      else 
+      {
+        split_real_components_c2c(FFTbox, splineData_r, splineData_i);
+        rotate_phase_r = 1.0;
+        rotate_phase_i = 0.0;
+      }
       einspline::set(spline_r, splineData_r.data());
       einspline::set(spline_i, splineData_i.data());
     }
@@ -336,44 +343,8 @@ struct SplineSetReader : public BsplineReaderBase
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
-    //not used by may be enabled later
+    // old implementation buried in the history
     myComm->barrier_and_abort("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
-    int nx = MeshSize[0];
-    int ny = MeshSize[1];
-    int nz = MeshSize[2];
-    splineData_r.resize(nx, ny, nz);
-    splineData_i.resize(ny, ny, nz);
-    Array<std::complex<double>, 3> rawData(nx, ny, nz);
-    const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
-
-    // create single splines as an intermediate storage
-    TinyVector<double, 3> start(0.0);
-    TinyVector<double, 3> end(1.0);
-    spline_r = einspline::create(spline_r, start, end, MeshSize, bspline->HalfG);
-    if (bspline->is_complex)
-      spline_i = einspline::create(spline_i, start, end, MeshSize, bspline->HalfG);
-
-    //this will be parallelized with OpenMP
-    int N = bandgroup.getNumDistinctOrbitals();
-    for (int iorb = 0; iorb < N; ++iorb)
-    {
-      //check dimension
-      if (myComm->rank() == 0)
-      {
-        std::string path = psi_r_path(cur_bands[iorb].TwistIndex, spin, cur_bands[iorb].BandIndex);
-        HDFAttribIO<Array<std::complex<double>, 3>> h_splineData(rawData);
-        h_splineData.read(mybuilder->H5FileID, path.c_str());
-        simd::copy(splineData_r.data(), splineData_i.data(), rawData.data(), rawData.size());
-      }
-      mpi::bcast(*myComm, splineData_r);
-      einspline::set(spline_r, splineData_r.data());
-      if (bspline->is_complex)
-      {
-        mpi::bcast(*myComm, splineData_i);
-        einspline::set(spline_i, splineData_i.data());
-      }
-      bspline->set_spline(spline_r, spline_i, cur_bands[iorb].TwistIndex, iorb, 0);
-    }
   }
 };
 } // namespace qmcplusplus

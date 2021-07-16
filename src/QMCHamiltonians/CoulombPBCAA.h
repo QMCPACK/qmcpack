@@ -36,20 +36,14 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
-  // using shared_ptr on AA, dAA is a compromise
-  // When ion-ion is_active = false, makeClone calls the copy constructor.
-  // AA, dAA are shared between clones.
-  // When elec-elec is_active = true, makeClone calls the constructor
-  // AA, dAA are not shared between clones and behave more like unique_ptr
-
-  // energy-optimized
+  /// energy-optimized long range handle
   std::shared_ptr<LRHandlerType> AA;
-  GridType* myGrid;
-  RadFunctorType* rVs;
-  // force-optimized
+  /// energy-optimized short range pair potential
+  std::shared_ptr<RadFunctorType> rVs;
+  /// force-optimized long range handle
   std::shared_ptr<LRHandlerType> dAA;
-  GridType* myGridforce;
-  RadFunctorType* rVsforce;
+  /// force-optimized short range pair potential
+  std::shared_ptr<RadFunctorType> rVsforce;
 
   bool is_active;
   bool FirstTime;
@@ -84,7 +78,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   /** constructor */
   CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
 
-  ~CoulombPBCAA();
+  ~CoulombPBCAA() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -111,10 +105,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   void initBreakup(ParticleSet& P);
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() override;
-  virtual void checkout_particle_quantities(TraceManager& tm) override;
+  void contribute_particle_quantities() override;
+  void checkout_particle_quantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities() override;
+  void delete_particle_quantities() override;
 #endif
 
   Return_t evalSR(ParticleSet& P);

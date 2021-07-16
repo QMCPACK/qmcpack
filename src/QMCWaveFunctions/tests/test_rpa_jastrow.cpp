@@ -30,9 +30,6 @@ namespace qmcplusplus
 {
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions_;
   ParticleSet elec_;
 

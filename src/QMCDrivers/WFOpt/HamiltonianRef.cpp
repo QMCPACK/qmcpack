@@ -59,10 +59,9 @@ int HamiltonianRef::addObservables(ParticleSet& P)
   P.Collectables.rewind();
   for (int i = 0; i < Hrefs_.size(); ++i)
     Hrefs_[i].get().addObservables(Observables, P.Collectables);
-  int last_obs;
   int myIndex = P.PropertyList.add(Observables.Names[0]);
   for (int i = 1; i < Observables.size(); ++i)
-    last_obs = P.PropertyList.add(Observables.Names[i]);
+    P.PropertyList.add(Observables.Names[i]);
   P.Collectables.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size() << " to P::PropertyList "
@@ -74,9 +73,9 @@ int HamiltonianRef::addObservables(ParticleSet& P)
 #ifdef QMC_CUDA
 void HamiltonianRef::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector)
 {
-  using WP = WalkerProperties::Indexes;
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  const int nw                    = walkers.size();
+  using WP      = WalkerProperties::Indexes;
+  auto& walkers = W.WalkerList;
+  const int nw  = walkers.size();
   std::vector<FullPrecRealType> LocalEnergyVector(nw, 0.0);
   for (int i = 0; i < Hrefs_.size(); ++i)
     Hrefs_[i].get().addEnergy(W, LocalEnergyVector);

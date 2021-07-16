@@ -18,19 +18,17 @@
 #include "LCAOrbitalBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/LCAO/NGFunctor.h"
-#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
-#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
-#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
-#include "QMCWaveFunctions/LCAO/SoaAtomicBasisSet.h"
-#include "QMCWaveFunctions/LCAO/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-//#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
-#include "QMCWaveFunctions/LCAO/AOBasisBuilder.h"
-#include "QMCWaveFunctions/LCAO/MultiFunctorAdapter.h"
+#include "MultiQuinticSpline1D.h"
+#include "SoaCartesianTensor.h"
+#include "SoaSphericalTensor.h"
+#include "SoaAtomicBasisSet.h"
+#include "SoaLocalizedBasisSet.h"
+#include "LCAOrbitalSet.h"
+#include "AOBasisBuilder.h"
+#include "MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
-#include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
+#include "LCAOrbitalSetWithCorrection.h"
+#include "CuspCorrectionConstruction.h"
 #endif
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
@@ -477,10 +475,12 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
-    myComm->barrier_and_abort("LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
+    myComm->barrier_and_abort(
+        "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
+    lcos =
+        std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
 #endif
   }
   else
@@ -491,7 +491,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     const int num_centers = sourcePtcl.getTotalNum();
-    auto& lcwc = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
+    auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
     // Sometimes sposet attribute is 'name' and sometimes it is 'id'
     if (id == "")
@@ -500,7 +500,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     const int orbital_set_size = lcos->getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
-    bool valid = false;
+    /// use int instead of bool to handle MPI bcast properly.
+    int valid = false;
     if (myComm->rank() == 0)
       valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
 

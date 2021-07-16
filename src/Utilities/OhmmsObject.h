@@ -45,7 +45,7 @@ class OhmmsObject : public OhmmsElementBase
 public:
   OhmmsObject();
   OhmmsObject(const std::string& tname, const std::string& oname);
-  virtual ~OhmmsObject();
+  ~OhmmsObject() override;
 
   ///return the ObjectID which is unique to each object
   int id() const { return ObjectID; }

@@ -29,9 +29,9 @@ public:
                   QMCHamiltonian& h,
                   RandomGenerator_t& rg);
   ///destructor
-  ~DMCUpdatePbyPL2();
+  ~DMCUpdatePbyPL2() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
   TimerList_t myTimers;

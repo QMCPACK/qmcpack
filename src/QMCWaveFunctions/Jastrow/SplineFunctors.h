@@ -66,7 +66,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     }
   }
 
-  OptimizableFunctorBase* makeClone() const { return new CubicSplineSingle<RT, FNOUT>(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new CubicSplineSingle<RT, FNOUT>(*this); }
 
   ///constructor with arguments
   CubicSplineSingle(FNIN* in_, grid_type* agrid) : InFunc(in_) { initialize(in_, agrid); }
@@ -112,10 +112,10 @@ struct CubicSplineSingle : public OptimizableFunctorBase
   inline real_type evaluateAll(real_type r, real_type rinv) { return Y = OutFunc.splint(r, dY, d2Y); }
 
   /** implement the virtual function of OptimizableFunctorBase */
-  inline real_type f(real_type r) { return OutFunc.splint(r); }
+  inline real_type f(real_type r) override { return OutFunc.splint(r); }
 
   /** implement the virtual function of OptimizableFunctorBase  */
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) override
   {
     real_type dudr, d2udr2;
     OutFunc.splint(r, dudr, d2udr2);
@@ -145,7 +145,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     // need to actually implement this!
   }
 
-  bool put(xmlNodePtr cur)
+  bool put(xmlNodePtr cur) override
   {
     bool s = false;
     if (InFunc)
@@ -153,20 +153,20 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     return s;
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     if (InFunc)
       InFunc->checkInVariables(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     if (InFunc)
       InFunc->checkOutVariables(active);
   }
 
   ///reset the input/output function
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (InFunc)
     {
@@ -194,7 +194,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     reset();
   }
 
-  void reset()
+  void reset() override
   {
     if (InFunc)
     {
@@ -239,7 +239,7 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   ///set the output numerical function
   void setOutFunc(FNOUT* out_) { OutFunc = out_; }
   ///reset the input/output function
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (!InFunc)
       APP_ABORT("CubicSplineBasisSet::resetParameters failed due to null input function ");
@@ -247,7 +247,7 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
     reset();
   }
 
-  void reset()
+  void reset() override
   {
     if (!OutFunc)
       OutFunc = new FNOUT;
@@ -270,17 +270,17 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   inline real_type evaluate(real_type r) { return OutFunc->splint(r); }
 
   /** implement the virtual function of OptimizableFunctorBase */
-  real_type f(real_type r) { return OutFunc->splint(r); }
+  real_type f(real_type r) override { return OutFunc->splint(r); }
 
   /** implement the virtual function of OptimizableFunctorBase  */
-  real_type df(real_type r)
+  real_type df(real_type r) override
   {
     real_type dudr, d2udr2;
     OutFunc->splint(r, dudr, d2udr2);
     return dudr;
   }
 
-  bool put(xmlNodePtr cur) { return InFunc->put(cur); }
+  bool put(xmlNodePtr cur) override { return InFunc->put(cur); }
 
   void print(std::ostream& os)
   {

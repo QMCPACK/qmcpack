@@ -1026,15 +1026,6 @@ void DescentEngine::computeFinalizationUncertainties(std::vector<ValueType>& wei
     this->mpi_unbiased_ratio_of_means(n, wtv, nmv, dnv, currentMean, currentVar, currentErr);
 
     app_log() << "Blocking analysis error for per process length " << n << " is: " << currentErr << std::endl;
-    int new_len;
-    if (n % 2 == 0)
-    {
-      new_len = n / 2;
-    }
-    else
-    {
-      new_len = n / 2 + 1;
-    }
 
     std::vector<ValueType> tmp1, tmp2, tmp3;
 

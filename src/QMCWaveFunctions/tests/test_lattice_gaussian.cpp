@@ -111,7 +111,8 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   LatticeGaussianProductBuilder jastrow(c, elec_, pp);
-  std::unique_ptr<LatticeGaussianProduct> LGP(dynamic_cast<LatticeGaussianProduct*>(jastrow.buildComponent(jas1)));
+  auto LGP_uptr = jastrow.buildComponent(jas1);
+  auto LGP      = dynamic_cast<LatticeGaussianProduct*>(LGP_uptr.get());
   double width = 0.5;
   double alpha = 1./(2*width*width);
   // check initialization. Nope, cannot access Psi.Z

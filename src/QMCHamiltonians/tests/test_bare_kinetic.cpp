@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -31,9 +30,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   ParticleSet elec;
 
@@ -59,9 +55,6 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   elec.addTable(ions);
   elec.update();
-
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
 
   const char* particles = "<tmp> \
@@ -161,8 +154,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   ions.resetGroups();
 

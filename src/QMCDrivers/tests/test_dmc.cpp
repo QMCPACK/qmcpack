@@ -39,9 +39,6 @@ namespace qmcplusplus
 {
 TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][dmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -75,8 +72,9 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
 
   TrialWaveFunction psi;
-  ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb);
+  auto orb_uptr = std::make_unique<ConstantOrbital>();
+  auto orb      = orb_uptr.get();
+  psi.addComponent(std::move(orb_uptr));
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -134,9 +132,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dmc]")
 
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -170,8 +165,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
 
   TrialWaveFunction psi;
-  LinearOrbital* orb = new LinearOrbital;
-  psi.addComponent(orb);
+  psi.addComponent(std::make_unique<LinearOrbital>());
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 

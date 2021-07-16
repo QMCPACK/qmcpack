@@ -26,14 +26,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/LCAO/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/LCAO/SoaAtomicBasisSet.h"
-#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
-#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
-#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
-
+#include "LCAOrbitalSet.h"
 
 class Communicate;
 namespace qmcplusplus

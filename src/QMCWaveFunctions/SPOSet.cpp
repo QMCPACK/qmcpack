@@ -226,7 +226,9 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
+void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
+                      int iat,
+                      gpu::device_vector<CTS::ValueType*>& phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";

@@ -22,7 +22,7 @@ LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, 
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {}
 
-WaveFunctionComponent* LatticeGaussianProductBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> LatticeGaussianProductBuilder::buildComponent(xmlNodePtr cur)
 {
   ParticleSet& p = targetPtcl;
   // initialize widths to zero; if no user input, then abort
@@ -42,7 +42,7 @@ WaveFunctionComponent* LatticeGaussianProductBuilder::buildComponent(xmlNodePtr 
     app_error() << "Could not file source ParticleSet " << sourceOpt << " for ion wave function.\n";
   }
   ParticleSet* sourcePtcl = (*pa_it).second;
-  LatticeGaussianProduct* orb         = new LatticeGaussianProduct(*sourcePtcl, targetPtcl);
+  auto orb                = std::make_unique<LatticeGaussianProduct>(*sourcePtcl, targetPtcl);
   orb->ParticleAlpha.resize(targetPtcl.getTotalNum());
   orb->ParticleCenter.resize(targetPtcl.getTotalNum());
   int num_nonzero = 0;

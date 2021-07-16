@@ -43,7 +43,7 @@ struct force_rvo : public T
   force_rvo() {}
   using T::T;
   force_rvo(const force_rvo&);
-  force_rvo(force_rvo&&);
+  force_rvo(force_rvo&&) noexcept;
 };
 
 

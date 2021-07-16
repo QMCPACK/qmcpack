@@ -44,7 +44,7 @@ void JastrowBuilder::resetOptions()
   sourceOpt    = targetPtcl.getName();
 }
 
-WaveFunctionComponent* JastrowBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   myNode = cur;
   resetOptions();
@@ -84,7 +84,7 @@ WaveFunctionComponent* JastrowBuilder::buildComponent(xmlNodePtr cur)
   }
 }
 
-WaveFunctionComponent* JastrowBuilder::buildCounting(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildCounting(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "addCounting(xmlNodePtr)");
   std::unique_ptr<CountingJastrowBuilder> cjb;
@@ -92,14 +92,14 @@ WaveFunctionComponent* JastrowBuilder::buildCounting(xmlNodePtr cur)
   if (pa_it != ptclPool.end() && sourceOpt != targetPtcl.getName()) // source is not target
   {
     ParticleSet* sourcePtcl = (*pa_it).second;
-    cjb = std::make_unique<CountingJastrowBuilder>(myComm, targetPtcl, *sourcePtcl);
+    cjb                     = std::make_unique<CountingJastrowBuilder>(myComm, targetPtcl, *sourcePtcl);
   }
   else
     cjb = std::make_unique<CountingJastrowBuilder>(myComm, targetPtcl);
   return cjb->buildComponent(cur);
 }
 
-WaveFunctionComponent* JastrowBuilder::buildkSpace(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildkSpace(xmlNodePtr cur)
 {
   app_log() << "  JastrowBuilder::buildkSpace(xmlNodePtr)" << std::endl;
   std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
@@ -114,13 +114,13 @@ WaveFunctionComponent* JastrowBuilder::buildkSpace(xmlNodePtr cur)
   return sBuilder.buildComponent(cur);
 }
 
-WaveFunctionComponent* JastrowBuilder::buildOneBody(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildOneBody(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "addOneBody(xmlNodePtr)");
   if (sourceOpt == targetPtcl.getName())
   {
     PRE.error("One-Body Jastrow Function needs a source different from " + targetPtcl.getName() +
-                "\nExit JastrowBuilder::buildOneBody.\n");
+              "\nExit JastrowBuilder::buildOneBody.\n");
     return nullptr;
   }
   std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
@@ -135,7 +135,7 @@ WaveFunctionComponent* JastrowBuilder::buildOneBody(xmlNodePtr cur)
   return rb.buildComponent(cur);
 }
 
-WaveFunctionComponent* JastrowBuilder::build_eeI(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> JastrowBuilder::build_eeI(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
   ReportEngine PRE(ClassName, "add_eeI(xmlNodePtr)");
@@ -157,7 +157,7 @@ WaveFunctionComponent* JastrowBuilder::build_eeI(xmlNodePtr cur)
 }
 
 
-WaveFunctionComponent* JastrowBuilder::buildTwoBody(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildTwoBody(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "addTwoBody(xmlNodePtr)");
   RadialJastrowBuilder rb(myComm, targetPtcl);

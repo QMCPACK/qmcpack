@@ -27,7 +27,6 @@ inline omp_int_t omp_get_max_threads() { return 1; }
 inline omp_int_t omp_get_num_threads() { return 1; }
 inline omp_int_t omp_get_level() { return 0; }
 inline omp_int_t omp_get_ancestor_thread_num(int level) { return 0; }
-inline bool omp_get_nested() { return false; }
 #endif
 
 /// get the number of threads at the next parallel level

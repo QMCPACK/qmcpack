@@ -214,10 +214,9 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
     H[i]->addObservables(Observables, P.Collectables);
   for (int i = 0; i < auxH.size(); ++i)
     auxH[i]->addObservables(Observables, P.Collectables);
-  int last_obs;
   myIndex = P.PropertyList.add(Observables.Names[0]);
   for (int i = 1; i < Observables.size(); ++i)
-    last_obs = P.PropertyList.add(Observables.Names[i]);
+    P.PropertyList.add(Observables.Names[i]);
   numCollectables = P.Collectables.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size() << " to P::PropertyList "
@@ -874,11 +873,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& 
 }
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                                   ParticleSet& ions,
-                                                                   TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos_t& hf_term,
-                                                                   ParticleSet::ParticlePos_t& pulay_terms,
-                                                                   ParticleSet::ParticlePos_t& wf_grad)
+                                                                                ParticleSet& ions,
+                                                                                TrialWaveFunction& psi,
+                                                                                ParticleSet::ParticlePos_t& hf_term,
+                                                                                ParticleSet::ParticlePos_t& pulay_terms,
+                                                                                ParticleSet::ParticlePos_t& wf_grad)
 {
   ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
@@ -1019,8 +1018,8 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
 void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector)
 {
   ScopedTimer local_timer(ham_timer_);
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (LocalEnergyVector.size() != nw)
   {
     LocalEnergyVector.resize(nw);
@@ -1060,8 +1059,8 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
                               std::vector<std::vector<NonLocalData>>& Txy)
 {
   ScopedTimer local_timer(ham_timer_);
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (LocalEnergyVector.size() != nw)
   {
     LocalEnergyVector.resize(nw);

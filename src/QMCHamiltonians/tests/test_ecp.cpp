@@ -33,7 +33,6 @@
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
@@ -227,8 +226,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   ions.resetGroups();
 
@@ -486,10 +483,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
   ions.resetGroups();
   elec.resetGroups();
 
@@ -523,10 +516,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  DiracDeterminant<>* dd = new DiracDeterminant<>(std::move(spinor_set));
+  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set));
   dd->resize(nelec, norb);
 
-  psi.addComponent(dd);
+  psi.addComponent(std::move(dd));
 
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);
