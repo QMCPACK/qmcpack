@@ -12,6 +12,9 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DTDIMPL_AA_H
 #define QMCPLUSPLUS_DTDIMPL_AA_H
+
+#include "Lattice/ParticleBConds3DSoa.h"
+#include "DistanceTableData.h"
 #include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
@@ -54,7 +57,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   SoaDistanceTableAA(const SoaDistanceTableAA&) = delete;
   ~SoaDistanceTableAA() override {}
 
-  size_t compute_size(int N)
+  size_t compute_size(int N) const
   {
     const size_t N_padded  = getAlignedSize<T>(N);
     const size_t Alignment = getAlignment<T>();
