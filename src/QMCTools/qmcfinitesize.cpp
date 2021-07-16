@@ -128,7 +128,8 @@ int main(int argc, char** argv)
     std::cout << "  [SK_FILE]\n";
     std::cout << "    filename containing the S(k) data\n";
     std::cout << "  [optional_args]\n";
-    std::cout << "    --skname:     in the stat.h5, the S(k) group name. Set to \"name\" defined in qmcpack input file where SkAll estimator was specified\n";
+    std::cout << "    --skname:     in the stat.h5, the S(k) group name. Set to \"name\" defined in qmcpack input file "
+                 "where SkAll estimator was specified\n";
     std::cout << "  [option]\n";
     std::cout << "    option corresonding to the optional_arg\n";
     std::cout << "---------------------------\n";
