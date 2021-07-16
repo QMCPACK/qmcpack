@@ -322,9 +322,14 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   app_log()<<" slater_base_size = "<<slater_base.size()<<std::endl;
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet* sposet_up = bb->createSPOSet(slater_base[0]);
+  SPOSet* sposet_dn = bb->createSPOSet(slater_base[1]);
 
     
+  TWFPrototype twf;
+  twf.add_determinant(0,sposet_up);
+  twf.add_determinant(1,sposet_dn);
+
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
   SPOSet::ValueVector_t d2psi;
@@ -332,14 +337,55 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-  sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
-
-  app_log()<<" DOOPY ========+> \n";
-  for (int p=0; p<9; p++)
+/* DEBUG
+  for (int ii=0; ii<5; ii++)
   {
-    app_log()<<values[p]<<" "<<dpsi[p]<<" "<<d2psi[p]<<std::endl;
+    values=0;
+    dpsi=0;
+    d2psi=0;
+    sposet_up->evaluateVGL(elec, ii, values, dpsi, d2psi);
+    app_log()<<"   !!!!!! iat = "<<ii<<" !!!!!!!\n";
+    for (int p=0; p<9; p++)
+    {
+      app_log()<<values[p]<<" "<<dpsi[p]<<" "<<d2psi[p]<<std::endl;
+    }
+    app_log()<<"  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
   }
+*/
+/* DEBUG
+  for (int ii=5; ii<9; ii++)
+  {
+    values=0;
+    dpsi=0;
+    d2psi=0;
+    sposet_dn->evaluateVGL(elec, ii, values, dpsi, d2psi);
+    app_log()<<"   !!!!!! iat = "<<ii<<" !!!!!!!\n";
+    for (int p=0; p<9; p++)
+    {
+      app_log()<<values[p]<<" "<<dpsi[p]<<" "<<d2psi[p]<<std::endl;
+    }
+    app_log()<<"  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+  }
+ */
+  using ValueMatrix_t = SPOSet::ValueMatrix_t;
+
+  ValueMatrix_t upmat;
+  ValueMatrix_t dnmat;
+  upmat.resize(5,28);
+  dnmat.resize(4,28);
+
+  std::vector<ValueMatrix_t> matlist;
+  matlist.push_back(upmat);
+  matlist.push_back(dnmat);
+
+  twf.get_M(elec,matlist);
+
+//  app_log()<<" Mup = \n";
+//  app_log()<<" "<<matlist[0]<<std::endl;
+//  app_log()<<" Mdn = \n";
+//  app_log()<<" "<<matlist[1]<<std::endl;
   
+   
 }
 
 TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
