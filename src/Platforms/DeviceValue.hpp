@@ -49,7 +49,7 @@ public:
   T get_value(){return *value_ptr_;}
   T* getPtr(){return value_ptr_;}
   T* getDevicePtr() { return allocator_.getDevicePtr(); }
-  const T* getDevicePtr() const { return allocator_.get_DevicePtr(); }
+  const T* getDevicePtr() const { return allocator_.getDevicePtr(); }
 };
   
 } // namespace qmcplusplus

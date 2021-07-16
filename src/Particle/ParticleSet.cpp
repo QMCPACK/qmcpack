@@ -517,6 +517,9 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
       const auto dt_list(extractDTRefList(p_list, i));
       p_leader.DistTables[i]->mw_move(dt_list, p_list, new_positions, iat, maybe_accept);
     }
+
+    // DistTables mw_move calls are asynchronous. Wait for them before return.
+    PRAGMA_OFFLOAD("omp taskwait")
   }
   auto& SK = p_leader.SK;
   if (SK && SK->DoUpdate)
@@ -669,50 +672,54 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
  * When the activePtcl is equal to iat, overwrite the position and update the
  * content of the distance tables.
  */
-void ParticleSet::acceptMove_impl(Index_t iat, bool forward_mode)
-{
-  if (iat == activePtcl)
-  {
-    //Update position + distance-table
-    for (int i = 0; i < DistTables.size(); i++)
-      if (forward_mode)
-        DistTables[i]->updatePartial(iat, true);
-      else
-        DistTables[i]->update(iat);
-
-    //Do not change SK: 2007-05-18
-    if (SK && SK->DoUpdate)
-      SK->acceptMove(iat, GroupID[iat], R[iat]);
-
-    R[iat]     = activePos;
-    spins[iat] = activeSpinVal;
-    activePtcl = -1;
-  }
-  else
-  {
-    std::ostringstream o;
-    o << "  Illegal acceptMove " << iat << " != " << activePtcl;
-    APP_ABORT(o.str());
-  }
-}
-
 void ParticleSet::acceptMove(Index_t iat)
 {
+#ifndef NDEBUG
+  if (iat != activePtcl)
+    throw std::runtime_error("Bug detected by acceptMove! Request electron is not active!");
+#endif
   ScopedTimer update_scope(myTimers[PS_accept]);
+  //Update position + distance-table
   coordinates_->setOneParticlePos(activePos, iat);
-  acceptMove_impl(iat, false);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->update(iat);
+
+  //Do not change SK: 2007-05-18
+  if (SK && SK->DoUpdate)
+    SK->acceptMove(iat, GroupID[iat], R[iat]);
+
+  R[iat]     = activePos;
+  spins[iat] = activeSpinVal;
+  activePtcl = -1;
+}
+
+void ParticleSet::acceptMoveForwardMode(Index_t iat)
+{
+  assert(iat == activePtcl);
+  ScopedTimer update_scope(myTimers[PS_accept]);
+  //Update position + distance-table
+  coordinates_->setOneParticlePos(activePos, iat);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->updatePartial(iat, true);
+
+  //Do not change SK: 2007-05-18
+  if (SK && SK->DoUpdate)
+    SK->acceptMove(iat, GroupID[iat], R[iat]);
+
+  R[iat]     = activePos;
+  spins[iat] = activeSpinVal;
+  activePtcl = -1;
 }
 
 void ParticleSet::accept_rejectMove(Index_t iat, bool accepted, bool forward_mode)
 {
-  if (accepted)
-  {
-    ScopedTimer update_scope(myTimers[PS_accept]);
-    coordinates_->setOneParticlePos(activePos, iat);
-    acceptMove_impl(iat, forward_mode);
-  }
-  else if (forward_mode)
-    rejectMoveForwardMode(iat);
+  if (forward_mode)
+    if (accepted)
+      acceptMoveForwardMode(iat);
+    else
+      rejectMoveForwardMode(iat);
+  else if (accepted)
+    acceptMove(iat);
   else
     rejectMove(iat);
 }
@@ -740,27 +747,51 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
                                        const std::vector<bool>& isAccepted,
                                        bool forward_mode)
 {
-  ParticleSet& leader = p_list.getLeader();
-  ScopedTimer update_scope(leader.myTimers[PS_accept]);
-
-  const auto coords_list(extractCoordsRefList(p_list));
-  std::vector<SingleParticlePos_t> new_positions;
-  new_positions.reserve(p_list.size());
-  for (const ParticleSet& pset : p_list)
-    new_positions.push_back(pset.activePos);
-  leader.coordinates_->mw_acceptParticlePos(coords_list, iat, new_positions, isAccepted);
-
-#pragma omp parallel for
-  for (int iw = 0; iw < p_list.size(); iw++)
+  if (forward_mode)
   {
-    if (isAccepted[iw])
-      p_list[iw].acceptMove_impl(iat, forward_mode);
-    else if (forward_mode)
-      p_list[iw].rejectMoveForwardMode(iat);
-    else
-      p_list[iw].rejectMove(iat);
-    assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
+    ParticleSet& p_leader = p_list.getLeader();
+    ScopedTimer update_scope(p_leader.myTimers[PS_accept]);
+
+    const auto coords_list(extractCoordsRefList(p_list));
+    std::vector<SingleParticlePos_t> new_positions;
+    new_positions.reserve(p_list.size());
+    for (const ParticleSet& pset : p_list)
+      new_positions.push_back(pset.activePos);
+    p_leader.coordinates_->mw_acceptParticlePos(coords_list, iat, new_positions, isAccepted);
+
+    auto& dts = p_leader.DistTables;
+    for (int i = 0; i < dts.size(); ++i)
+    {
+      const auto dt_list(extractDTRefList(p_list, i));
+      dts[i]->mw_updatePartial(dt_list, iat, isAccepted);
+    }
+
+    for (int iw = 0; iw < p_list.size(); iw++)
+    {
+      assert(iat == p_list[iw].activePtcl);
+      if (isAccepted[iw])
+      {
+        //Do not change SK: 2007-05-18
+        if (p_list[iw].SK && p_list[iw].SK->DoUpdate)
+          p_list[iw].SK->acceptMove(iat, p_list[iw].GroupID[iat], p_list[iw].R[iat]);
+
+        p_list[iw].R[iat]     = p_list[iw].activePos;
+        p_list[iw].spins[iat] = p_list[iw].activeSpinVal;
+      }
+      p_list[iw].activePtcl = -1;
+      assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
+    }
   }
+  else
+#pragma omp parallel for
+    for (int iw = 0; iw < p_list.size(); iw++)
+    {
+      if (isAccepted[iw])
+        p_list[iw].acceptMove(iat);
+      else
+        p_list[iw].rejectMove(iat);
+      assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
+    }
 }
 
 void ParticleSet::donePbyP()
@@ -769,15 +800,30 @@ void ParticleSet::donePbyP()
   coordinates_->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
+  for (size_t i = 0; i < DistTables.size(); ++i)
+    DistTables[i]->finalizePbyP(*this);
   activePtcl = -1;
 }
 
 void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
 {
-// Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
-#pragma omp parallel for
-  for (int iw = 0; iw < p_list.size(); iw++)
-    p_list[iw].donePbyP();
+  ParticleSet& p_leader = p_list.getLeader();
+  ScopedTimer donePbyP_scope(p_leader.myTimers[PS_donePbyP]);
+
+  for (ParticleSet& pset : p_list)
+  {
+    pset.coordinates_->donePbyP();
+    if (pset.SK && !pset.SK->DoUpdate)
+      pset.SK->UpdateAllPart(pset);
+    pset.activePtcl = -1;
+  }
+
+  auto& dts = p_leader.DistTables;
+  for (int i = 0; i < dts.size(); ++i)
+  {
+    const auto dt_list(extractDTRefList(p_list, i));
+    dts[i]->mw_finalizePbyP(dt_list, p_list);
+  }
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)

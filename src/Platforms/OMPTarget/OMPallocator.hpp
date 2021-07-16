@@ -2,14 +2,15 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file OMPallocator.hpp
+/** @file
  */
 #ifndef QMCPLUSPLUS_OMPTARGET_ALLOCATOR_H
 #define QMCPLUSPLUS_OMPTARGET_ALLOCATOR_H
@@ -19,7 +20,9 @@
 #include <atomic>
 #include "config.h"
 #include "allocator_traits.hpp"
-
+#ifdef ENABLE_CUDA
+#include <cuda_runtime_api.h>
+#endif
 namespace qmcplusplus
 {
 extern std::atomic<size_t> OMPallocator_device_mem_allocated;
@@ -34,6 +37,20 @@ T* getOffloadDevicePtr(T* host_ptr)
   return device_ptr;
 }
 
+/** OMPallocator is an allocator with fused device and dualspace allocator functionality.
+ *  it is mostly c++03 style but is stateful with respect to the bond between the returned pt on the host
+ *  and the device_ptr_.  While many containers may need a copy only one can own the memory
+ *  it returns and it can only service one owner. i.e. only one object should call the allocate
+ *  and deallocate methods.
+ *
+ *  Note: in the style of openmp portability this class always thinks its dual space even when its not,
+ *  this happens through the magic of openmp ignoring target pragmas when target isn't enabled. i.e.
+ *  -fopenmp-targets=... isn't passed at compile time.
+ *  This makes the code "simpler" and more "portable" since its the same code you would write for
+ *  openmp CPU implementation *exploding head* and that is the same implementation + pragmas
+ *  as the serial implementation. This definitely isn't true for all QMCPACK code using offload
+ *  but it is true for OMPAllocator so we do test it that way.
+ */
 template<typename T, class HostAllocator = std::allocator<T>>
 struct OMPallocator : public HostAllocator
 {
@@ -43,11 +60,20 @@ struct OMPallocator : public HostAllocator
   using const_pointer = typename HostAllocator::const_pointer;
 
   OMPallocator() = default;
-  OMPallocator(const OMPallocator&) : device_ptr(nullptr) {}
-  OMPallocator& operator=(const OMPallocator&) { device_ptr = nullptr; }
+  /** Gives you a OMPallocator with no state.
+   *  But OMPallocoator is stateful so this copy constructor is a lie.
+   *  However until allocators are correct > c++11 this is retained since
+   *  our < c++11 compliant containers may expect it.
+   */
+  OMPallocator(const OMPallocator&) : device_ptr_(nullptr) {}
+
+  // these semantics are surprising and "incorrect" considering OMPallocator is stateful.
+  OMPallocator& operator=(const OMPallocator&) { device_ptr_ = nullptr; }
+
   template<class U, class V>
-  OMPallocator(const OMPallocator<U, V>&) : device_ptr(nullptr)
+  OMPallocator(const OMPallocator<U, V>&) : device_ptr_(nullptr)
   {}
+
   template<class U, class V>
   struct rebind
   {
@@ -60,7 +86,7 @@ struct OMPallocator : public HostAllocator
     value_type* pt = HostAllocator::allocate(n);
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
     OMPallocator_device_mem_allocated += n * sizeof(T);
-    device_ptr = getOffloadDevicePtr(pt);
+    device_ptr_         = getOffloadDevicePtr(pt);
     return pt;
   }
 
@@ -71,14 +97,25 @@ struct OMPallocator : public HostAllocator
     HostAllocator::deallocate(pt, n);
   }
 
-  T* getDevicePtr() { return device_ptr; }
-  const T* getDevicePtr() const { return device_ptr; }
+  void attachReference(OMPallocator& from, std::ptrdiff_t ptr_offset)
+  {
+    device_ptr_ = from.getDevicePtr() + ptr_offset;
+  }
+
+  T* getDevicePtr() { return device_ptr_; }
+  const T* getDevicePtr() const { return device_ptr_; }
 
 private:
   // pointee is on device.
-  T* device_ptr = nullptr;
+  T* device_ptr_         = nullptr;
+
+public:
+  T* get_device_ptr() const { return device_ptr_; }
 };
 
+/** Specialization for OMPallocator which is a special DualAllocator with fused
+ *  device and dualspace allocator functionality.
+ */
 template<typename T, class HostAllocator>
 struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 {
@@ -90,8 +127,32 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
     qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value);
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
+
+  static void attachReference(OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, T* from_data, T* ref)
+  {
+    std::ptrdiff_t ptr_offset = ref - from_data;
+    to.attachReference(from, ptr_offset);
+  }
+
+  static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  {
+    PRAGMA_OFFLOAD("omp target update to(host_ptr[:n])");
+  }
+
+  static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  {
+    PRAGMA_OFFLOAD("omp target update from(host_ptr[:n])");
+  }
+
+  // Not very optimized device side copy.  Only used for testing.
+  static void deviceSideCopyN(OMPallocator<T, HostAllocator>& alloc, size_t to, size_t n, size_t from)
+  {
+    auto* dev_ptr = alloc.getDevicePtr();
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(dev_ptr)")
+    for (int i = 0; i < n; i++)
+      dev_ptr[to + i] = dev_ptr[from + i];
+  }
 };
 
 } // namespace qmcplusplus
-
 #endif
