@@ -4,7 +4,7 @@
 
 namespace qmcplusplus
 {
-SkParserBase::SkParserBase() : isParseSuccess(false), isGridComputed(false), isSkComputed(false)
+SkParserBase::SkParserBase() : isParseSuccess(false), isGridComputed(false), isSkComputed(false), skname("skall")
 {
   skraw.resize(0);
   sk.resize(0);
