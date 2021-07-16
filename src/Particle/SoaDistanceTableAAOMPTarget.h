@@ -14,6 +14,8 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AA_OMPTARGET_H
 #define QMCPLUSPLUS_DTDIMPL_AA_OMPTARGET_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
+#include "DistanceTableData.h"
 #include "CPU/SIMD/algorithm.hpp"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
@@ -31,8 +33,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///number of targets with padding
   int Ntargets_padded;
 
-  ///actual memory for displacements_
-  aligned_vector<RealType> memory_pool_displs_;
+  ///actual memory for dist and displacements_
+  aligned_vector<RealType> memory_pool_;
 
   /// old distances
   DistRow old_r_mem_;
@@ -98,13 +100,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     // initialize memory containers and views
     Ntargets_padded         = getAlignedSize<T>(N_targets);
     const size_t total_size = compute_size(N_targets);
-    memory_pool_displs_.resize(total_size * D);
+    memory_pool_.resize(total_size * (1 + D));
     distances_.resize(N_targets);
     displacements_.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
-      distances_[i].resize(Ntargets_padded);
-      displacements_[i].attachReference(i, total_size, memory_pool_displs_.data() + compute_size(i));
+      distances_[i].attachReference(memory_pool_.data() + compute_size(i), i);
+      displacements_[i].attachReference(i, total_size, memory_pool_.data() + total_size + compute_size(i));
     }
 
     old_r_mem_.resize(N_targets);
@@ -143,12 +145,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     ScopedTimer local_timer(evaluate_timer_);
 
     constexpr T BigR = std::numeric_limits<T>::max();
-    for (int iat = 0; iat < N_targets; ++iat)
-    {
+    for (int iat = 1; iat < N_targets; ++iat)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, N_targets, iat);
-      distances_[iat][iat] = BigR; //assign big distance
-    }
+                                             displacements_[iat], 0, iat, iat);
   }
 
   ///evaluate the temporary pair relations
@@ -302,19 +301,28 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
           min_dist = temp_r_[jat];
           index    = jat;
         }
-      if (index >= 0)
-        dr = temp_dr_[index];
+      assert(index >= 0);
+      dr = temp_dr_[index];
     }
     else
     {
-      for (int jat = 0; jat < N_targets; ++jat)
-        if (distances_[iat][jat] < min_dist && jat != iat)
+      for (int jat = 0; jat < iat; ++jat)
+        if (distances_[iat][jat] < min_dist)
         {
           min_dist = distances_[iat][jat];
           index    = jat;
         }
-      if (index >= 0)
+      for (int jat = iat + 1; jat < N_targets; ++jat)
+        if (distances_[jat][iat] < min_dist)
+        {
+          min_dist = distances_[jat][iat];
+          index    = jat;
+        }
+      assert(index != iat && index >= 0);
+      if (index < iat)
         dr = displacements_[iat][index];
+      else
+        dr = displacements_[index][iat];
     }
     r = min_dist;
     return index;

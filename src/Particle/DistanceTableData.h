@@ -55,9 +55,11 @@ protected:
   /*@{*/
   /** distances_[i][j] , [N_targets][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) is defined and up-to-date after pbyp move.
-   *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
-   *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
+   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
+   *            There is no bound check to protect j>=i terms as the nature of operator[].
+   *            When the storage of the table is allocated as a single memory segment,
+   *            out-of-bound access is still within the segment and
+   *            thus doesn't trigger an alarm by the address sanitizer.
    *        For derived AB, the full table is up-to-date after pbyp move
    */
   std::vector<DistRow> distances_;
@@ -65,7 +67,7 @@ protected:
   /** displacements_[N_targets]x[3][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
    *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined.
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
    *        For derived AB, A1=A, A2=B, the full table is allocated.
    */
   std::vector<DisplRow> displacements_;
