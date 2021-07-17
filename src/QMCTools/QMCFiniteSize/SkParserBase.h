@@ -28,6 +28,7 @@ public:
 
   virtual void parse(const string& fname) = 0;
 
+
   void get_grid(Grid_t& xgrid, Grid_t& ygrid, Grid_t& zgrid);
   void get_sk(vector<RealType>& sk, vector<RealType>& skerr);
 
@@ -43,6 +44,8 @@ public:
 
   inline bool is_normalized() { return isNormalized; }
   inline bool has_grid() { return hasGrid; }
+
+  void setName(std::string in_name) { skname = in_name; }
 
 protected:
   bool isParseSuccess;
@@ -62,6 +65,8 @@ protected:
   vector<RealType> sk;
   vector<RealType> skerr;
   vector<PosType> kgrid;
+
+  std::string skname;
 };
 
 } // namespace qmcplusplus
