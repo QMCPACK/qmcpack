@@ -90,7 +90,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   elec_.resetGroups();
 
   const char* particles = "<tmp> \
-<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
+<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\"> \
    <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
       <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
     </correlation> \
