@@ -68,6 +68,8 @@ public:
                                               ParticleSet::ParticlePos_t& pulay_terms) override;
 
 
+  void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B) override;
+
   /** set non local moves options
    * @param cur the xml input
    */

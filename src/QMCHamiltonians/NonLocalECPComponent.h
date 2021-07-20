@@ -32,6 +32,7 @@ namespace qmcplusplus
 class NonLocalECPComponent : public QMCTraits
 {
 private:
+  using ValueMatrix_t = SPOSet::ValueMatrix_t;
   typedef std::vector<PosType> SpherGridType;
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
@@ -239,6 +240,14 @@ public:
                                        const std::vector<ValueType>& dlogpsi,
                                        std::vector<ValueType>& dhpsioverpsi);
 
+  void evaluateOneBodyOpMatrixContribution(ParticleSet& P, 
+                                           int iat,  
+                                           TWFPrototype& psi,
+                                           int iel,
+                                           RealType r,
+                                           const PosType& dr, 
+                                           std::vector<ValueMatrix_t>& B);
+  
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);

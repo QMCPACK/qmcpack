@@ -31,11 +31,15 @@ class TWFPrototype
     using IndexType = QMCTraits::IndexType;
     using RealType = QMCTraits::RealType;
 
+    using ValueVector_t = SPOSet::ValueVector_t;
+    using GradVector_t = SPOSet::GradVector_t;
+
     TWFPrototype();
     void add_determinant(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
     inline void add_jastrow(WaveFunctionComponent* j){J.push_back(j);};
 
     void get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mmat);
+    IndexType get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val);
     void get_egrad_elapl_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec,
                            std::vector<GradMatrix_t>& gmat, std::vector<ValueMatrix_t>& lmat);
 
@@ -46,7 +50,8 @@ class TWFPrototype
     //  Prod_i Det(M_i).  
     inline IndexType num_orbitals(const IndexType sid){return num_orbs[sid];};  
     inline IndexType num_particles(const IndexType sid){return num_ptcls[sid];};
-
+    //This takes a particle set group index, and returns the "determinant" this refers to. 
+    IndexType get_group_index(const IndexType gid);
   private:
  
   std::vector<IndexType> num_ptcls;

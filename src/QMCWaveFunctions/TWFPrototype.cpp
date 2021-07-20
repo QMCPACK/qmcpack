@@ -18,6 +18,14 @@ TWFPrototype::TWFPrototype()
   std::cout<<"TWFPrototype initialized\n"; 
 }
 
+TWFPrototype::IndexType TWFPrototype::get_group_index(const IndexType gid)
+{
+  IndexType ndets=groups.size();
+  for(IndexType i=0; i<ndets; i++)
+    if(gid==groups[i]) return i;
+
+  return IndexType(-1);
+}
 void TWFPrototype::add_determinant(const ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
   app_log()<<" Gonna add a determinant with "<<gid<<" "<<spo<<std::endl;
@@ -79,6 +87,32 @@ void TWFPrototype::get_egrad_elapl_M(const ParticleSet& P, std::vector<ValueMatr
     lmat[i]=0;
     spos[i]->evaluate_notranspose(P,first,last,mvec[i],gmat[i],lmat[i]);
   }
+}
+
+TWFPrototype::IndexType TWFPrototype::get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val)
+{
+  IndexType gid = P.getGroupID(iel);
+  IndexType first= P.first(gid);
+  IndexType thisIndex= iel-first;
+  assert(thisIndex >= 0 && thisIndex < P.getTotalNum());
+ 
+  IndexType detIndex=-1;
+  for(IndexType i=0; i<groups.size(); i++)
+  {
+    if(gid==groups[i]) detIndex=i;
+  }
+  assert(detIndex != -1);
+  GradVector_t tempg;
+  ValueVector_t templ;
+
+  IndexType norbs=spos[detIndex]->getOrbitalSetSize();
+  
+  tempg.resize(norbs);
+  templ.resize(norbs);
+
+  spos[detIndex]->evaluateVGL(P,iel,val,tempg,templ);
+
+  return detIndex;
 }
 
 

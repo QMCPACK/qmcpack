@@ -593,6 +593,118 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   return pairpot;
 }
 
+void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+                                                                           int iat,
+                                                                           TWFPrototype& psi,
+                                                                           int iel,
+                                                                           RealType r,
+                                                                           const PosType& dr,
+                                                                           std::vector<ValueMatrix_t>& B)
+
+{
+  using ValueVector_t = SPOSet::ValueVector_t;
+  //Some initial computation to find out the species and row number of electron.
+  IndexType gid = W.getGroupID(iel);
+  IndexType detid = psi.get_group_index(gid);
+  IndexType firstIndex = W.first(gid);
+  IndexType thisIndex = iel-firstIndex;
+
+  IndexType numOrbs = psi.num_orbitals(detid);
+  ValueVector_t phi_row; //phi_0(r), phi_1(r), ...
+  ValueVector_t temp_row;
+
+  phi_row.resize(numOrbs);
+  temp_row.resize(numOrbs);
+ 
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
+
+ 
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  const RealType rinv = cone / r;
+
+  for (int ip = 0; ip < nchannel; ip++)
+    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
+
+  for (int j = 0; j<nknot; j++)
+  {
+    W.makeMove(iel, deltaV[j],false); //Update distance tables.
+    psi.get_M_row(W,iel,phi_row); 
+    W.rejectMove(iel);
+
+    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
+    // Forming the Legendre polynomials
+    lpol[0]           = cone;
+    RealType lpolprev = czero;
+    for (int l = 0; l < lmax; l++)
+    {
+      //Not a big difference
+      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+      //lpol[l+1]/=(l+1);
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+      lpolprev = lpol[l];
+    }
+
+    ValueType lsum = 0.0;
+    for (int l = 0; l < nchannel; l++)
+    {
+      temp_row = (vrad[l] * lpol[angpp_m[l]]*sgridweight_m[j])*phi_row;
+      for(int iorb=0; iorb<numOrbs; iorb++)
+        B[detid][thisIndex][iorb] += temp_row[iorb];
+    }
+  }  
+/*
+  {
+    // Compute ratio of wave functions
+    for (int j = 0; j < nknot; j++)
+    {
+      W.makeMove(iel, deltaV[j], false);
+      if (use_DLA)
+        psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
+      else
+        psiratio[j] = psi.calcRatio(W, iel);
+      W.rejectMove(iel);
+      psi.resetPhaseDiff();
+    }
+  }
+
+//  for (int j = 0; j < nknot; j++)
+//    psiratio[j] *= sgridweight_m[j];
+
+  // Compute radial potential, multiplied by (2l+1) factor.
+
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  const RealType rinv = cone / r;
+  RealType pairpot    = czero;
+  // Compute spherical harmonics on grid
+  for (int j = 0; j < nknot; j++)
+  {
+    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
+    // Forming the Legendre polynomials
+    lpol[0]           = cone;
+    RealType lpolprev = czero;
+    for (int l = 0; l < lmax; l++)
+    {
+      //Not a big difference
+      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+      //lpol[l+1]/=(l+1);
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+      lpolprev = lpol[l];
+    }
+
+    ValueType lsum = 0.0;
+    for (int l = 0; l < nchannel; l++)
+      lsum += vrad[l] * lpol[angpp_m[l]];
+    knot_pots[j] = std::real(lsum * psiratio[j]);
+    pairpot += knot_pots[j];
+  } */
+}
+
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 {
