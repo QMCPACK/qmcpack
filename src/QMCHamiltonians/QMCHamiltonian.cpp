@@ -872,6 +872,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& 
   return localEnergy;
 }
 
+
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
                                                                                 ParticleSet& ions,
                                                                                 TrialWaveFunction& psi,
@@ -892,6 +893,16 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(
     convert(wfgradraw_[iat], wf_grad[iat]);
   }
   return localEnergy;
+}
+
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
+                                                                                ParticleSet& ions,
+                                                                                TWFPrototype& psi,
+                                                                                ParticleSet::ParticlePos_t& hf_term,
+                                                                                ParticleSet::ParticlePos_t& pulay_terms,
+                                                                                ParticleSet::ParticlePos_t& wf_grad)
+{
+  return 0.0;
 }
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()

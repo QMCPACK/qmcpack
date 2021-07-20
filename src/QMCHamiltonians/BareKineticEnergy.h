@@ -22,6 +22,7 @@
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -107,6 +108,8 @@ inline std::string int2string(const int& i)
 template<typename T>
 struct BareKineticEnergy : public OperatorBase
 {
+  using ValueMatrix_t = SPOSet::ValueMatrix_t;
+  using GradMatrix_t = SPOSet::GradMatrix_t;
   ///true, if all the species have the same mass
   bool SameMass;
   ///mass of the particle
@@ -484,16 +487,36 @@ struct BareKineticEnergy : public OperatorBase
   }
 #endif
 
-  //Not used anymore
-  //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-  //  for(int iw=0; iw< W.walkers(); iw++) {
-  //    RealType ke = 0.0;
-  //    for(int iat=0; iat< W.particles(); iat++) {
-  //      ke += dot(W.G(iw,iat),W.G(iw,iat)) + W.L(iw,iat);
-  //    }
-  //    LE[iw] -= M*ke;
-  //  }
-  //}
+  void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B) override
+  {
+    IndexType ngroups = P.groups();
+    assert(B.size() == ngroups);
+    std::vector<ValueMatrix_t> M;
+    std::vector<GradMatrix_t> grad_M;
+    std::vector<ValueMatrix_t> lapl_M;
+    for(int ig=0; ig<ngroups; ig++)
+    {
+      IndexType norbs = psi.num_orbitals(ig);
+      IndexType numptcls = psi.num_particles(ig);
+
+      ValueMatrix_t zeromat;
+      GradMatrix_t zerogradmat;
+      
+      zeromat.resize(numptcls,norbs);
+      zerogradmat.resize(numptcls,norbs);
+     
+      M.push_back(zeromat);
+      grad_M.push_back(zerogradmat);
+      lapl_M.push_back(zeromat);
+    }
+
+    psi.get_egrad_elapl_M(P,M,grad_M,lapl_M);
+    for(int ig=0; ig<ngroups; ig++)
+    {  
+      lapl_M[ig]*=MinusOver2M[ig];
+      B[ig]+= lapl_M[ig];
+    }
+  }
 };
 } // namespace qmcplusplus
 #endif

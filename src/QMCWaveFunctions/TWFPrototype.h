@@ -32,7 +32,7 @@ class TWFPrototype
     using RealType = QMCTraits::RealType;
 
     TWFPrototype();
-    void add_determinant(const IndexType groupid, SPOSet* spo);
+    void add_determinant(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
     inline void add_jastrow(WaveFunctionComponent* j){J.push_back(j);};
 
     void get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mmat);
@@ -41,9 +41,16 @@ class TWFPrototype
 
     RealType evaluateLog(ParticleSet& P);
        
-    
+    //Whatever the group is labelled as in the particle set, sid corresponds to the group used to create determinant sid.  
+    //  so sid=4 returns the number of particles and orbitals used for det #4.  Assuming a multispecies determinantal wfn like
+    //  Prod_i Det(M_i).  
+    inline IndexType num_orbitals(const IndexType sid){return num_orbs[sid];};  
+    inline IndexType num_particles(const IndexType sid){return num_ptcls[sid];};
+
   private:
-  
+ 
+  std::vector<IndexType> num_ptcls;
+  std::vector<IndexType> num_orbs; 
   std::vector<SPOSet*> spos;
   std::vector<IndexType> groups;
   std::vector<ValueMatrix_t> psiM;

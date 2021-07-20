@@ -24,6 +24,7 @@
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCWaveFunctions/TWFPrototype.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -329,6 +330,22 @@ public:
   FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
                                      ParticleSet& ions,
                                      TrialWaveFunction& psi,
+                                     ParticleSet::ParticlePos_t& hf_terms,
+                                     ParticleSet::ParticlePos_t& pulay_terms,
+                                     ParticleSet::ParticlePos_t& wf_grad);
+  
+ /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Re [(dH)Psi]/Psi
+  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
+  * @param wf_grad  Re (dPsi/Psi)
+  * @return Local Energy.
+  */
+  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
+                                     ParticleSet& ions,
+                                     TWFPrototype& psi,
                                      ParticleSet::ParticlePos_t& hf_terms,
                                      ParticleSet::ParticlePos_t& pulay_terms,
                                      ParticleSet::ParticlePos_t& wf_grad);

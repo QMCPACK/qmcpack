@@ -27,6 +27,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/ObservableHelper.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
+#include "QMCWaveFunctions/TWFPrototype.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -64,6 +65,7 @@ struct NonLocalData : public QMCTraits
  */
 struct OperatorBase : public QMCTraits
 {
+  using ValueMatrix_t = SPOSet::ValueMatrix_t;
   /** type of return value of evaluate
    */
   typedef FullPrecRealType Return_t;
@@ -325,6 +327,12 @@ struct OperatorBase : public QMCTraits
     //If not otherwise specified, this defaults to evaluate().  
     return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
   }
+
+  virtual void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B)
+  {
+        
+  }
+
   /** update data associated with a particleset
    * @param s source particle set
    *

@@ -18,7 +18,7 @@ TWFPrototype::TWFPrototype()
   std::cout<<"TWFPrototype initialized\n"; 
 }
 
-void TWFPrototype::add_determinant(const IndexType gid, SPOSet* spo)
+void TWFPrototype::add_determinant(const ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
   app_log()<<" Gonna add a determinant with "<<gid<<" "<<spo<<std::endl;
   if( std::find(groups.begin(), groups.end(), gid) == groups.end())
@@ -26,6 +26,11 @@ void TWFPrototype::add_determinant(const IndexType gid, SPOSet* spo)
     app_log()<<"adding the determinant\n";
     groups.push_back(gid);
     spos.push_back(spo);
+    IndexType first = P.first(gid);
+    IndexType last = P.last(gid);
+    IndexType norbs = spo->getOrbitalSetSize();
+    num_orbs.push_back(norbs);
+    num_ptcls.push_back(last-first);
   } 
 }
 
