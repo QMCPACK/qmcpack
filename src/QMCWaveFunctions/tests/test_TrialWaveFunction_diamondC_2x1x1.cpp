@@ -98,7 +98,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   //diamondC_1x1x1
   const char* spo_xml = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.5\" precision=\"float\" size=\"2\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.5\" precision=\"double\" size=\"2\"/> \
 </tmp> \
 ";
 
