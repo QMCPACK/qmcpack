@@ -21,15 +21,15 @@ if(MKL_INCLUDE_DIRECTORIES)
   message(STATUS "MKL_INCLUDE_DIRECTORIES: ${MKL_INCLUDE_DIRECTORIES}")
 else(MKL_INCLUDE_DIRECTORIES)
   message(STATUS "mkl.h cannot be found")
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  if(COMPILER MATCHES "Intel")
     message(
       FATAL_ERROR
         "Intel's standard compilervar.sh sets the env variable MKLROOT.\n"
         "If you are invoking icc without the customary environment\n"
         "you must set the the environment variable or pass cmake MKL_ROOT.")
-  else(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  else(COMPILER MATCHES "Intel")
     message(FATAL_ERROR "Pass mkl root directory to cmake via MKL_ROOT.")
-  endif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  endif(COMPILER MATCHES "Intel")
 endif(MKL_INCLUDE_DIRECTORIES)
 
 # Check for mkl.h
