@@ -22,6 +22,8 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
+#include <regex>
+
 namespace qmcplusplus
 {
 using LogValueType = TrialWaveFunction::LogValueType;
@@ -36,8 +38,11 @@ struct float_tag
 template<class DiracDet, class SPO_precision>
 void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 {
-  double precision = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
-
+#if defined(MIXED_PRECISION)
+  const double precision = 1e-4;
+#else
+  const double precision = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
+#endif
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
@@ -104,22 +109,16 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  std::string spo_xml;
-  if (std::is_same<SPO_precision, float_tag>::value)
-  {
-    spo_xml = "<tmp> \
+  std::string spo_xml = "<tmp> \
                <determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.5\" precision=\"float\" size=\"2\"/> \
                </tmp> \
                ";
-  }
-  else
+#ifndef MIXED_PRECISION
+  if (std::is_same<SPO_precision, double_tag>::value)
   {
-    spo_xml = "<tmp> \
-               <determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.5\" precision=\"double\" size=\"2\"/> \
-               </tmp> \
-               ";
+    spo_xml = std::regex_replace(spo_xml, std::regex("float"), "double");
   }
-
+#endif
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml);
   REQUIRE(okay);
@@ -293,9 +292,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655, -0.0022419843498631)).epsilon(precision));
   REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634, 0.0022419843493758)).epsilon(precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(713.69119517454).epsilon(precision));
-  REQUIRE(grad_old[0][1] == Approx(713.69119517455).epsilon(precision));
-  REQUIRE(grad_old[0][2] == Approx(-768.40759023681).epsilon(precision));
+  REQUIRE(grad_old[0][0] == Approx(713.69119517454).epsilon(2. * precision));
+  REQUIRE(grad_old[0][1] == Approx(713.69119517455).epsilon(2. * precision));
+  REQUIRE(grad_old[0][2] == Approx(-768.40759023681).epsilon(2. * precision));
   REQUIRE(grad_old[1][0] == Approx(118.0287755709).epsilon(precision));
   REQUIRE(grad_old[1][1] == Approx(118.0287755709).epsilon(precision));
   REQUIRE(grad_old[1][2] == Approx(-118.46550094069).epsilon(precision));
