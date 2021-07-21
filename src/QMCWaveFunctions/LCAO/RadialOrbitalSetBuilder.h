@@ -177,7 +177,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
 template<typename COT>
 bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
 {
-  app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+  app_log() << "   Grid is created by the input parameters in h5" << std::endl;
 
   std::string gridtype;
   if (myComm->rank() == 0)

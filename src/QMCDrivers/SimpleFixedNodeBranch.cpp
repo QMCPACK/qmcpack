@@ -41,7 +41,7 @@ enum
   DUMMYOPT
 };
 
-SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) : MyEstimator(0) //, PopHist(5), DMCEnergyHist(5)
+SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) //, PopHist(5), DMCEnergyHist(5)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -79,7 +79,6 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
     : BranchMode(abranch.BranchMode),
       iParam(abranch.iParam),
       vParam(abranch.vParam),
-      MyEstimator(0),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme),
       sParam(abranch.sParam)
 {
