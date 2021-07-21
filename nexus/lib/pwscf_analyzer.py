@@ -245,7 +245,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             bands.up = obj()
             bands.down = obj()
             polarized = False
-            #self.input.system.nspin = 1
+            self.input.system.nspin = 1
             if self.input.system.nspin > 1:
                 polarized = True
             #end if
