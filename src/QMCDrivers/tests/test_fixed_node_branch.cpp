@@ -35,14 +35,15 @@ TEST_CASE("Fixed node branch", "[drivers][walker_control]")
 {
   Communicate* c = OHMMS::Controller;
 
-  EstimatorManagerBase emb(c);
+  auto emb_uptr = std::make_unique<EstimatorManagerBase>(c);
+  auto emb      = emb_uptr.get();
 
   double tau = 0.5;
   int nideal = 1;
   SimpleFixedNodeBranch fnb(tau, nideal);
 
-  fnb.setEstimatorManager(&emb);
-  REQUIRE(fnb.getEstimatorManager() == &emb);
+  fnb.setEstimatorManager(std::move(emb_uptr));
+  REQUIRE(fnb.getEstimatorManager() == emb);
 
   REQUIRE(fnb.getTau() == Approx(tau));
 
