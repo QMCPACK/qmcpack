@@ -33,10 +33,10 @@ class SpeciesSet
 public:
   typedef double Scalar_t;
   typedef std::vector<Scalar_t> SpeciesAttrib_t;
-  typedef std::vector<SpeciesAttrib_t*> AttribList_t;
+  typedef std::vector<SpeciesAttrib_t> AttribList_t;
 
   //! The number of species
-  unsigned TotalNum;
+  unsigned TotalNum = 0;
 
   //! Species name list
   std::vector<std::string> speciesName;
@@ -46,16 +46,6 @@ public:
 
   //! List of species attributes
   AttribList_t d_attrib;
-
-  //! Constructor
-  SpeciesSet();
-
-  SpeciesSet(const SpeciesSet& species);
-
-  SpeciesSet& operator=(const SpeciesSet& species);
-
-  //! Destructor
-  virtual ~SpeciesSet();
 
   ///return the number of species
   inline int size() const { return TotalNum; }
@@ -91,7 +81,7 @@ public:
    * @param j species index
    * @return the value of i-th attribute for the j-th species
    */
-  inline double operator()(int i, int j) const { return d_attrib[i]->operator[](j); }
+  inline double operator()(int i, int j) const { return d_attrib[i][j]; }
 
   /**
    * assignment operator
@@ -99,7 +89,7 @@ public:
    * @param j species index
    * @return the value of i-th attribute for the j-th species
    */
-  inline double& operator()(int i, int j) { return d_attrib[i]->operator[](j); }
+  inline double& operator()(int i, int j) { return d_attrib[i][j]; }
 
   /**
    * @param m the number of species to be added
