@@ -30,6 +30,11 @@ namespace qmcplusplus
 
 class CostFunctionCrowdData;
 
+namespace testing
+{
+class LinearMethodTestSupport;
+};
+
 
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
@@ -87,6 +92,8 @@ protected:
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
 #endif
+
+  friend testing::LinearMethodTestSupport;
 };
 } // namespace qmcplusplus
 #endif

@@ -15,9 +15,9 @@ namespace qmcplusplus
 {
 namespace testing
 {
-template void makeRngSpdMatrix<double>(Matrix<double>& mat_spd);
-template void makeRngSpdMatrix<float>(Matrix<float>& mat_spd);
-template void makeRngSpdMatrix<std::complex<double>>(Matrix<std::complex<double>>& mat_spd);
-template void makeRngSpdMatrix<std::complex<float>>(Matrix<std::complex<float>>& mat_spd);
+template class MakeRngSpdMatrix<double>;
+template class MakeRngSpdMatrix<float>;
+template class MakeRngSpdMatrix<std::complex<double>>;
+template class MakeRngSpdMatrix<std::complex<float>>;
 } // namespace testing
 } // namespace qmcplusplus

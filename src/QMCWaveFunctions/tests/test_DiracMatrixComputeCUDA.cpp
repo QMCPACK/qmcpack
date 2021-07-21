@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrixComputeCUDA.hpp"
-#include "QMCWaveFunctions/tests/makeRngSpdMatrix.hpp"
+#include "makeRngSpdMatrix.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/PinnedAllocator.h"
@@ -43,7 +43,6 @@ using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
-
 TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 {
   OffloadPinnedMatrix<double> mat_a;
@@ -68,8 +67,6 @@ TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
                                     temp_mat.device_data(), lda, dev_zero.getDevicePtr(),
                                 mat_c.device_data(), lda, mat_a.device_data(), lda),
                    "cuBLAS::geam failed.");
-
-
 }
   
 TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermion]")
@@ -152,7 +149,8 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 
   Matrix<std::complex<double>> mat_spd;
   mat_spd.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd);
+  testing::MakeRngSpdMatrix<std::complex<double>> makeRngSpdMatrix;
+  makeRngSpdMatrix(mat_spd);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -163,7 +161,7 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 
   Matrix<std::complex<double>> mat_spd2;
   mat_spd2.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd2);
+  makeRngSpdMatrix(mat_spd2);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -206,7 +204,8 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
 
   Matrix<double> mat_spd;
   mat_spd.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd);
+  testing::MakeRngSpdMatrix<double> makeRngSpdMatrix;
+  makeRngSpdMatrix(mat_spd);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -217,7 +216,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
 
   Matrix<double> mat_spd2;
   mat_spd2.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd2);
+  makeRngSpdMatrix(mat_spd2);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't

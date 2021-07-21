@@ -16,9 +16,8 @@
 
 #include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTableData.h"
-#include "Lattice/ParticleBConds.h"
-#include "Lattice/ParticleBConds3DSoa.h"
 #include "Particle/SoaDistanceTableAA.h"
+
 namespace qmcplusplus
 {
 /** Adding SymmetricDTD to the list, e.g., el-el distance table

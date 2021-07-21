@@ -709,12 +709,11 @@ protected:
                                               const std::vector<SingleParticlePos_t>& new_positions,
                                               bool maybe_accept = true);
 
-  /** actual implemenation for accepting a proposed move, support both regular and forward modes
+  /** actual implemenation for accepting a proposed move in forward mode
    *
    * @param iat the index of the particle whose position and other attributes to be updated
-   * @param forward_mode if ture, in forward mode.
    */
-  void acceptMove_impl(Index_t iat, bool forward_mode);
+  void acceptMoveForwardMode(Index_t iat);
 
   /** reject a proposed move in forward mode
    * @param iat the electron whose proposed move gets rejected.

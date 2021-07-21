@@ -437,7 +437,7 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  std::vector<std::unique_ptr<WaveFunctionComponent>>& getOrbitals() { return Z; }
+  std::vector<std::unique_ptr<WaveFunctionComponent>> const& getOrbitals() { return Z; }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
