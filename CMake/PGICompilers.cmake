@@ -34,10 +34,8 @@ set(CMAKE_CXX_FLAGS
 )
 
 # Set extra optimization specific flags
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fast")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fast")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fast")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fast")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast")
 
 # Setting this to 'OFF' adds the -A flag, which enforces strict standard compliance
 #  and causes the compilation to fail with some GNU header files
