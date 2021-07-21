@@ -245,6 +245,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             bands.up = obj()
             bands.down = obj()
             polarized = False
+            #self.input.system.nspin = 1
             if self.input.system.nspin > 1:
                 polarized = True
             #end if
@@ -843,7 +844,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def make_movie
 
 
-    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None,ref_pa=None):
         if 'bands' in self:
             success = True
             from structure import get_kpath
@@ -878,14 +879,22 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             fig    = figure()
             ax     = gca()
-            nbands = self.input.system.nbnd
+            if not 'input_structure' in self:
+                from structure import generate_structure
+                self.input_structure = generate_structure(
+                                units = 'B', #self.input.cell_parameters.specifier, # TODO: HOW TO MAKE THIS GENERAL?
+                                axes  = self.input.cell_parameters.vectors,
+                                elem  = self.input.atomic_positions.atoms,
+                                pos = self.input.atomic_positions.positions,
+                            )
+            #end if
 
             if k_labels is None:
                 kpath  = get_kpath(structure=self.input_structure, check_standard=False)
                 x      = kpath['explicit_path_linearcoords']
                 labels = kpath['explicit_kpoints_labels']
             else:
-                labels = k_labels
+                labels = k_labels.copy()
                 # Calculate linear coordinates from self.kpoints_cart
                 x = []
                 prev_label = ''
@@ -907,20 +916,61 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     prev_label = curr_label
                 #end for
             #end if
+            plot(x,[0]*len(x),color='k',linestyle='--')
+            if ref_pa is not None:
+                nbands = len(ref_pa.bands.up[0].eigs) # self.input.system.nbnd
+                for nb in range(nbands):
+                    y = []
+                    for bi in ref_pa.bands.up:
+                        y.append(bi['eigs'][nb])
+                    #end for
+                    flev = ref_pa.bands.vbm.energy
+                    if nb==nbands-1:
+                        print('ref fermi level: ',flev)
+                    #end if
+                    y = array(y) - flev
+                    if nb==nbands-1:
+                        plot(x, y, 'g',alpha=0.65,linewidth=2.4,label='ref up')
+                    else:
+                        plot(x, y, 'g',alpha=0.65,linewidth=2.4)
+                    #end if
+                    if len(ref_pa.bands.down) > 0:
+                        y = []
+                        for bi in ref_pa.bands.down:
+                            y.append(bi['eigs'][nb])
+                        #end for
+                        y = array(y) - flev
+                        if nb==nbands-1:
+                            plot(x, y, 'g',alpha=0.65,linestyle=':',linewidth=2.2,label='ref dn')
+                        else:
+                            plot(x, y, 'g',alpha=0.65,linestyle=':',linewidth=2.2)
+                        #end if
+                    #end if              
+                #end for
+            #end if
+            nbands = len(self.bands.up[0].eigs) #self.input.system.nbnd
             for nb in range(nbands):
                 y = []
                 for bi in self.bands.up:
                     y.append(bi['eigs'][nb])
                 #end for
                 y = array(y) - self.bands.vbm.energy
-                plot(x, y, 'k')
+                if nb==nbands-1:
+                    plot(x, y, 'k',label='up')
+                else:
+                    plot(x, y, 'k')
+                #end if
                 if len(self.bands.down) > 0:
                     y = []
                     for bi in self.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
                     y = array(y) - self.bands.vbm.energy
-                    plot(x, y, 'r')
+                    if nb==nbands-1:
+                        plot(x, y, 'k',linestyle=':',label='dn')
+                    else:
+                        plot(x, y, 'k',linestyle=':')
+                    #end if
                 #end if              
             #end for
             for ln, li in enumerate(labels):
@@ -961,6 +1011,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
         #end if
+        ax.legend(loc='upper right',frameon=True,framealpha=1.0,ncol=2,bbox_to_anchor=(0.9,1.15))
         if save:
             savefig(filename, format='pdf',bbox_inches='tight')
         #end if
