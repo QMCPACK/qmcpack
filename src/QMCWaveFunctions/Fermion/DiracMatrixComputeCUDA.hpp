@@ -74,8 +74,8 @@ class DiracMatrixComputeCUDA : public Resource
   Vector<char, OffloadPinnedAllocator<char>> invM_ptrs_;
 
   // cuBLAS geam wants these.
-  T_FP dev_one{1.0};
-  T_FP dev_zero{0.0};
+  T_FP host_one{1.0};
+  T_FP host_zero{0.0};
 
   /** Calculates the actual inv and log determinant on accelerator
    *
@@ -116,8 +116,8 @@ class DiracMatrixComputeCUDA : public Resource
                                      a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM to device");
       // On the device Here we transpose to a_mat;
-      cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &dev_one,
-                                    inv_a_mats[iw].get().device_data(), lda, &dev_zero,
+      cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
+                                    inv_a_mats[iw].get().device_data(), lda, &host_zero,
                                     a_mats[iw].get().device_data(), lda, a_mats[iw].get().device_data(), lda),
                        "cuBLAS::geam failed.");
     }
