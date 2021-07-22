@@ -53,18 +53,17 @@ TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
   OffloadPinnedMatrix<double> mat_c;
   mat_c.resize(n, n);
 
-  DeviceValue<double, OffloadPinnedAllocator<double>> dev_one(1.0);
-  DeviceValue<double, OffloadPinnedAllocator<double>> dev_zero(0.0);
+  double dev_one(1.0);
+  double dev_zero(0.0);
   
   std::vector<double> A{2, 5, 8, 7, 5, 2, 2, 8, 7, 5, 6, 6, 5, 4, 4, 8};
   std::copy_n(A.begin(), 16, mat_a.data());
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   int lda= n;
-  cublasSetPointerMode(cuda_handles->h_cublas, CUBLAS_POINTER_MODE_DEVICE);
   cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()),
                             mat_a.size() * sizeof(double), cudaMemcpyHostToDevice, cuda_handles->hstream));
-  cublasErrorCheck(cuBLAS::geam(cuda_handles->h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, dev_one.getDevicePtr(),
-                                    temp_mat.device_data(), lda, dev_zero.getDevicePtr(),
+  cublasErrorCheck(cuBLAS::geam(cuda_handles->h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &dev_one,
+                                    temp_mat.device_data(), lda, &dev_zero,
                                 mat_c.device_data(), lda, mat_a.device_data(), lda),
                    "cuBLAS::geam failed.");
 }

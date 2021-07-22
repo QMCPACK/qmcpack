@@ -22,7 +22,6 @@
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
-#include "Platforms/DeviceValue.hpp"
 #include "type_traits/scalar_traits.h"
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
@@ -75,8 +74,8 @@ class DiracMatrixComputeCUDA : public Resource
   Vector<char, OffloadPinnedAllocator<char>> invM_ptrs_;
 
   // cuBLAS geam wants these.
-  DeviceValue<T_FP, OffloadPinnedAllocator<T_FP>> dev_one{1.0};
-  DeviceValue<T_FP, OffloadPinnedAllocator<T_FP>> dev_zero{0.0};
+  T_FP dev_one{1.0};
+  T_FP dev_zero{0.0};
 
   /** Calculates the actual inv and log determinant on accelerator
    *
@@ -107,12 +106,6 @@ class DiracMatrixComputeCUDA : public Resource
     Vector<const T_FP*> invM_ptr_buffer(reinterpret_cast<const TMAT**>(invM_ptrs_.data()), nw);
     cudaStream_t hstream;
     cublasErrorCheck(cublasGetStream(h_cublas, &hstream), "cublasGetStream failed!");
-    // I think we want to only be using device side pointers how else can we
-    // be sure what the data transfer pattern is.
-    // But i don't know what the other cuBLAS code assumes.
-    cublasPointerMode_t previous_pointer_mode;
-    cublasErrorCheck(cublasGetPointerMode(h_cublas, &previous_pointer_mode), "cublasGetPointerMode failed");
-    cublasErrorCheck(cublasSetPointerMode(h_cublas, CUBLAS_POINTER_MODE_DEVICE), "cublasSetPointerMode failed");
 
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -123,8 +116,8 @@ class DiracMatrixComputeCUDA : public Resource
                                      a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM to device");
       // On the device Here we transpose to a_mat;
-      cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, dev_one.getDevicePtr(),
-                                    inv_a_mats[iw].get().device_data(), lda, dev_zero.getDevicePtr(),
+      cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &dev_one,
+                                    inv_a_mats[iw].get().device_data(), lda, &dev_zero,
                                     a_mats[iw].get().device_data(), lda, a_mats[iw].get().device_data(), lda),
                        "cuBLAS::geam failed.");
     }
@@ -152,8 +145,6 @@ class DiracMatrixComputeCUDA : public Resource
                                    log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
-    // restore the pointer mode for this cublas handle.
-    cublasErrorCheck(cublasSetPointerMode(h_cublas, previous_pointer_mode), "cublasSetPointerMode failed");
   }
 
 
