@@ -328,11 +328,19 @@ struct OperatorBase : public QMCTraits
     return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
   }
 
-  virtual void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B)
+  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B)
   {
         
   }
 
+  inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
+                                         ParticleSet& source, 
+                                         TWFPrototype& psi, 
+                                         int iat, 
+                                         std::vector<std::vector<ValueMatrix_t> >& Bforce)
+  {
+    
+  } 
   /** update data associated with a particleset
    * @param s source particle set
    *

@@ -517,6 +517,50 @@ struct BareKineticEnergy : public OperatorBase
       B[ig]+= lapl_M[ig];
     }
   }
+
+  //Bforce.  First index is the x, y, or z component.  so Bforce[0] would be the std::vector<ValueMatrix_t> of d/dx B.
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
+                                         ParticleSet& source, 
+                                         TWFPrototype& psi, 
+                                         int iat, 
+                                         std::vector<std::vector<ValueMatrix_t> >& Bforce) override
+  {
+    IndexType ngroups = P.groups();
+    assert(Bforce.size() == OHMMS_DIM);
+    assert(Bforce[0].size() == ngroups);
+    std::vector<ValueMatrix_t> mtmp;
+    for(int ig=0; ig<ngroups; ig++)
+    {
+      IndexType norbs = psi.num_orbitals(ig);
+      IndexType numptcls = psi.num_particles(ig);
+
+      ValueMatrix_t zeromat;
+      GradMatrix_t zerogradmat;
+      
+      zeromat.resize(numptcls,norbs);
+      zerogradmat.resize(numptcls,norbs);
+     
+      mtmp.push_back(zeromat);
+    }
+
+    std::vector<std::vector<ValueMatrix_t> > dm, dlapl;
+    dm.push_back(mtmp);
+    dm.push_back(mtmp);
+    dm.push_back(mtmp);
+
+    dlapl.push_back(mtmp);
+    dlapl.push_back(mtmp);
+    dlapl.push_back(mtmp);
+
+    psi.get_igrad_igradelapl_M(P,source, iat, dm, dlapl);
+    for(int idim=0; idim<OHMMS_DIM; idim++)
+      for(int ig=0; ig<ngroups; ig++)
+      {  
+        dlapl[idim][ig]*=MinusOver2M[ig];
+        Bforce[idim][ig]+= dlapl[idim][ig];
+      }
+     
+  }
 };
 } // namespace qmcplusplus
 #endif
