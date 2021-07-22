@@ -141,10 +141,7 @@ void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
   streaming_particles = request.streaming_array(myName);
   if (streaming_particles)
   {
-    if (!Ps.getPerParticleSKState())
-    {
-      Ps.turnOnPerParticleSK();
-    }
+    Ps.turnOnPerParticleSK();
     V_sample = tm.checkout_real<1>(myName, Ps);
     if (!is_active)
       evaluate_sp(Ps);
