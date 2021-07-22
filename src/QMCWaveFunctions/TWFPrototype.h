@@ -28,6 +28,7 @@ class TWFPrototype
   public:
     using ValueMatrix_t = SPOSet::ValueMatrix_t;
     using GradMatrix_t = SPOSet::GradMatrix_t;
+    using HessMatrix_t = SPOSet::HessMatrix_t;
     using IndexType = QMCTraits::IndexType;
     using RealType = QMCTraits::RealType;
 
@@ -40,8 +41,14 @@ class TWFPrototype
 
     void get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mmat);
     IndexType get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val);
+    IndexType get_igrad_row(const ParticleSet& P, const ParticleSet& source, IndexType iel, IndexType iat_source, std::vector<ValueVector_t>& dval);
     void get_egrad_elapl_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec,
                            std::vector<GradMatrix_t>& gmat, std::vector<ValueMatrix_t>& lmat);
+    void get_igrad_M(const ParticleSet& P, const ParticleSet& source, int iat, 
+                               std::vector<std::vector<ValueMatrix_t> >& dmvec);  
+    void get_igrad_igradelapl_M(const ParticleSet& P, const ParticleSet& source, int iat, 
+                               std::vector<std::vector<ValueMatrix_t> >& dmvec,  
+                               std::vector<std::vector<ValueMatrix_t> >& dlmat);
 
     RealType evaluateLog(ParticleSet& P);
        

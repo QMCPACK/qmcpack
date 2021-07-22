@@ -89,6 +89,78 @@ void TWFPrototype::get_egrad_elapl_M(const ParticleSet& P, std::vector<ValueMatr
   }
 }
 
+void TWFPrototype::get_igrad_M(const ParticleSet& P, const ParticleSet& source, int iat, std::vector<std::vector<ValueMatrix_t> >& dmvec)
+{
+  IndexType ndets=dmvec[0].size();
+  IndexType norbs=0;
+  IndexType nptcls=0;
+  IndexType gid=0;
+  IndexType first=0;
+  IndexType last=0;
+  for(IndexType i=0; i<ndets; i++)
+  { 
+    gid=groups[i];
+    first=P.first(i);
+    last=P.last(i);
+    nptcls=last-first;
+    norbs=spos[i]->getOrbitalSetSize();
+
+    GradMatrix_t grad_phi;
+ 
+    grad_phi.resize(nptcls,norbs);
+  
+    spos[i]->evaluateGradSource(P,first,last,source,iat,grad_phi);
+   
+    for(IndexType idim=0; idim<OHMMS_DIM; idim++)
+      for(IndexType iptcl=0; iptcl<nptcls; iptcl++)
+        for(IndexType iorb=0; iorb<norbs; iorb++)
+        {
+          dmvec[idim][i][iptcl][iorb]+=grad_phi[iptcl][iorb][idim];
+        }
+  } 
+}
+
+void TWFPrototype::get_igrad_igradelapl_M(const ParticleSet& P, const ParticleSet& source, int iat, std::vector<std::vector<ValueMatrix_t> >& dmvec,  std::vector<std::vector<ValueMatrix_t> >& dlmat)
+{
+  IndexType ndets=dmvec[0].size();
+  IndexType norbs=0;
+  IndexType nptcls=0;
+  IndexType gid=0;
+  IndexType first=0;
+  IndexType last=0;
+  for(IndexType i=0; i<ndets; i++)
+  { 
+    gid=groups[i];
+    first=P.first(i);
+    last=P.last(i);
+    nptcls=last-first;
+    norbs=spos[i]->getOrbitalSetSize();
+
+    GradMatrix_t grad_phi;
+    HessMatrix_t grad_grad_phi;
+    GradMatrix_t grad_lapl_phi;
+ 
+    grad_phi.resize(nptcls,norbs);
+    grad_grad_phi.resize(nptcls,norbs);
+    grad_lapl_phi.resize(nptcls,norbs);
+  
+    spos[i]->evaluateGradSource(P,first,last,source,iat,grad_phi,grad_grad_phi,grad_lapl_phi);
+    
+    for(IndexType idim=0; idim<OHMMS_DIM; idim++)
+      for(IndexType iptcl=0; iptcl<nptcls; iptcl++)
+        for(IndexType iorb=0; iorb<norbs; iorb++)
+        {
+          dmvec[idim][i][iptcl][iorb]+=grad_phi[iptcl][iorb][idim];
+          dlmat[idim][i][iptcl][iorb]+=grad_lapl_phi[iptcl][iorb][idim];
+        }
+  } 
+}
+
+TWFPrototype::IndexType TWFPrototype::get_igrad_row(const ParticleSet& P, const ParticleSet& source, IndexType iel, IndexType iat_source, std::vector<ValueVector_t>& dval)
+{
+  return -1;
+}
+
 TWFPrototype::IndexType TWFPrototype::get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val)
 {
   IndexType gid = P.getGroupID(iel);
