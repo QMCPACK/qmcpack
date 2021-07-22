@@ -169,7 +169,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       auto* psiM_vgl_ptr = det.psiM_vgl.data();
       size_t stride      = wfc_leader.psiM_vgl.capacity();
       PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
-        another_psiM_temp.emplace_back(std::make_unique<OffloadPinnedValueMatrix_t>(psiM_vgl, psiM_vgl.getNonConstData(), det.psiM_temp.rows(), det.psiM_temp.cols()));
+        another_psiM_temp.emplace_back(std::make_unique<OffloadPinnedValueMatrix_t>(const_cast<decltype(psiM_vgl)&>(psiM_vgl), psiM_vgl.getNonConstData(), det.psiM_temp.rows(), det.psiM_temp.cols()));
       another_psiM_temp_list.push_back(*another_psiM_temp[iw]);
     }
     // These shouldn't be in the code without an explanation of which task would need to synchronize here.

@@ -193,6 +193,10 @@ public:
   ValueMatrix_t& getPsiMinv() { return psiM; }
 #endif
 
+  // For compatible testing with DiracDeterminantBatched
+  DiracDeterminant<DU_TYPE>& get_det_engine() { return *this; }
+  ValueMatrix_t& get_psiMinv() { return psiM; }
+  
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM_temp;
 

@@ -426,7 +426,7 @@ public:
    * @param logdetT orbital value matrix
    * @param LogValue log(det(logdetT))
    */
-  inline void invert_transpose(OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_valuesxb)
+  inline void invert_transpose(OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_values)
   {
     guard_no_delay(); 
     det_inverter_->invert_transpose(*cuda_handles_, log_det, psiMinv, log_values);

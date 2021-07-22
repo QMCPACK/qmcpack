@@ -235,7 +235,7 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  auto& get_det_engine() { return det_engine_; }
+  DET_ENGINE& get_det_engine() { return det_engine_; }
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;

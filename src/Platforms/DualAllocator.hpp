@@ -75,7 +75,7 @@ struct DualAllocator : public HostAllocator
     host_ptr_   = std::allocator_traits<HostAllocator>::allocate(allocator_, n);
     device_ptr_ = std::allocator_traits<DeviceAllocator>::allocate(device_allocator_, n);
     dual_device_mem_allocated += n * sizeof(T);
-    return allocator_host_ptr_;
+    return host_ptr_;
   }
 
   void deallocate(Value* pt, std::size_t n)
@@ -103,8 +103,6 @@ struct DualAllocator : public HostAllocator
 
   T* get_host_ptr() { return host_ptr_; }
 
-  T* get_allocator_host_ptr() { return allocator_host_ptr_; }
-  
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
@@ -156,13 +154,6 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     T* device_ptr = alloc.getDevicePtr();
     T* to_ptr     = device_ptr + to;
     T* from_ptr   = device_ptr + from;
-    alloc.get_device_allocator().copyDeviceToDevice(to_ptr, n, from_ptr);
-  }
-
-  static void deviceSideCopyN(DualAllocator<T, DeviceAllocator, HostAllocator>& alloc, size_t to, size_t n, size_t from) {
-    T* device_ptr = alloc.get_device_ptr();
-    T* to_ptr = device_ptr + to;
-    T* from_ptr = device_ptr + from;
     alloc.get_device_allocator().copyDeviceToDevice(to_ptr, n, from_ptr);
   }
 };

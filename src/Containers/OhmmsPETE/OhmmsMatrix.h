@@ -122,7 +122,7 @@ public:
    *  Required for sane access to dual space memory
    */
   template<typename CONTAINER>
-  inline void attachReference(const CONTAINER& other, T* ref, size_type n, size_type m)
+  inline void attachReference(CONTAINER& other, T* ref, size_type n, size_type m)
   {
     D1      = n;
     D2      = m;
