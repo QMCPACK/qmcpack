@@ -374,26 +374,33 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
 
   std::vector<ValueMatrix_t> matlist;
   std::vector<ValueMatrix_t> Bkin;
+  std::vector<std::vector<ValueMatrix_t> > dM;
+  std::vector<std::vector<ValueMatrix_t> > dB;
   matlist.push_back(upmat);
   matlist.push_back(dnmat);
+  
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+  dB.push_back(matlist);
 
   Bkin.push_back(upmat);
   Bkin.push_back(dnmat);
 
   twf.get_M(elec,matlist);
   
-  app_log()<<" READY FOR HAAAAAAM\n"; 
-  for (int i = 0; i < ham->sizeOfObservables(); i++)
-    app_log() << "  HamTest " << ham->getObservableName(i) << " " << std::endl;
-
-  app_log()<<" NO MORE HAAAAAAM\n"; 
   OperatorBase* kinop=ham->getHamiltonian(KINETIC);
  
   kinop-> evaluateOneBodyOpMatrix(elec,twf,Bkin);
 
   std::vector<ValueMatrix_t> minv;
   std::vector<ValueMatrix_t> Bkin_gs;
- 
+  std::vector<std::vector<ValueMatrix_t> > dB_gs;
+  std::vector<std::vector<ValueMatrix_t> > dM_gs;
+  std::vector<ValueMatrix_t> tmp_gs;
   //This handles the computation of the ground state determinant.  Here for now.
   for(int id=0; id<matlist.size(); id++)
   {
@@ -405,6 +412,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
     gs_m.resize(ptclnum,ptclnum);
     gs_kin.resize(ptclnum,ptclnum);
     gs_minv.resize(ptclnum,ptclnum);
+    tmp_gs.push_back(gs_m); 
     for(int i=0; i<ptclnum; i++)
       for(int j=0; j<ptclnum; j++)
       {
@@ -416,7 +424,27 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
     minv.push_back(gs_minv);
     Bkin_gs.push_back(gs_kin);
   }
-  
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+
+  kinop->evaluateOneBodyOpMatrixForceDeriv(elec,ions,twf,0,dB);
+  twf.get_igrad_M(elec,ions,0,dM);
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+    for(int id=0; id<matlist.size(); id++)
+    {
+      int ptclnum = twf.num_particles(id);
+      for(int i=0; i<ptclnum; i++)
+        for(int j=0; j<ptclnum; j++)
+        {      
+          dB_gs[idim][id][i][j] = dB[idim][id][i][j];
+          dM_gs[idim][id][i][j] = dM[idim][id][i][j];
+        }
+    }
   ValueType keval = 0.0;
   //Now to compute the kinetic energy
   for(int id=0; id<matlist.size(); id++)
@@ -430,11 +458,59 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
       }
     keval+=ke_id;
   }
-   
-  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+
   app_log()<<" KEVal = "<<keval<<std::endl;
-  
+ 
+  //Now we do the forces.  
+  //First build up the intermediate matrices.
+  std::vector<ValueMatrix_t> X;
+    
+  for(int id=0; id<matlist.size(); id++)
+  {
+    int ptclnum = twf.num_particles(id);
+    ValueMatrix_t Xid;
+    ValueMatrix_t tmpmat;
+
+    Xid.resize(ptclnum,ptclnum);
+    tmpmat.resize(ptclnum,ptclnum);
+    //(B*A^-1)
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+        for(int k=0; k<ptclnum; k++)
+        {
+          tmpmat[i][j]+=Bkin_gs[id][i][k]*minv[id][k][j];
+        } 
+
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+        for(int k=0; k<ptclnum; k++)
+        {
+          Xid[i][j]+=minv[id][i][k]*tmpmat[k][j];
+        } 
+    X.push_back(Xid);
+  }
+
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+  {
+    ValueType dval=0.0;
+    ValueType dwfn=0.0;
+    for(int id=0; id<matlist.size(); id++)
+    {
+      int ptclnum = twf.num_particles(id);
+      ValueType dval_id=0.0; 
+      ValueType dwfn_id=0.0;
+      for(int i=0; i<ptclnum; i++)
+        for(int j=0; j<ptclnum; j++)
+        {
+          dval_id+=minv[id][i][j]*dB_gs[idim][id][j][i]-X[id][i][j]*dM_gs[idim][id][j][i];
+          dwfn_id+=minv[id][i][j]*dM_gs[idim][id][j][i];
+        }
+      dval+=dval_id;
+      dwfn+=dwfn_id;
+    }
+    app_log()<<"F[0]["<<idim<<"]="<<dval<<std::endl;
+    app_log()<<"dTWF[0]["<<idim<<"]="<<dwfn<<std::endl;
+  } 
   app_log()<<" Now evaluating nonlocalecp\n"; 
   OperatorBase* nlppop=ham->getHamiltonian(NONLOCALECP);
   app_log()<<"nlppop = "<<nlppop<<std::endl;
