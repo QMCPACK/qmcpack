@@ -235,6 +235,11 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
+  return previous_default_run();
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::previous_default_run()
+{
   start();
   bool Valid(true);
   int Total_iterations(0);
