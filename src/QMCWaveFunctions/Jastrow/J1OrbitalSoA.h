@@ -84,8 +84,13 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   std::vector<WavefunctionSecondDerivativeType*> lapLogPsi;
 
   J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
-      : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)),
-        Nions(ions.getTotalNum()), Nelec(els.getTotalNum()), NumGroups(determineNumGroups(ions)), Ions(ions), NumVars(0)
+      : WaveFunctionComponent("J1OrbitalSoA", obj_name),
+        myTableID(els.addTable(ions)),
+        Nions(ions.getTotalNum()),
+        Nelec(els.getTotalNum()),
+        NumGroups(determineNumGroups(ions)),
+        Ions(ions),
+        NumVars(0)
   {
     if (myName.empty())
       throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
@@ -317,7 +322,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int jg = 0; jg < NumGroups; ++jg)
       {
         if (J1UniqueFunctors[jg] != nullptr)
-          curVat += J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
+          curVat +=
+              J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
       }
     }
     else
@@ -341,7 +347,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int jg = 0; jg < NumGroups; ++jg)
       {
         if (J1UniqueFunctors[jg] != nullptr)
-          curAt += J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
+          curAt +=
+              J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
       }
     }
     else
@@ -413,8 +420,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       {
         if (J1UniqueFunctors[jg] == nullptr)
           continue;
-        J1UniqueFunctors[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(), d2U.data(),
-                                  DistCompressed.data(), DistIndice.data());
+        J1UniqueFunctors[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(),
+                                          d2U.data(), DistCompressed.data(), DistIndice.data());
       }
     }
     else
