@@ -160,6 +160,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
+  ResourceCollection res_col("test_determinant");
+  psi.createResource(res_col);
+  psi.acquireResource(res_col);
+
 #if !defined(QMC_CUDA)
   // initialize distance tables.
   elec_.update();
@@ -191,6 +195,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
 
   elec_clone.update();
+
+  res_col.rewind();
+  psi.releaseResource(res_col);
+  res_col.rewind();
+  psi_clone->acquireResource(res_col);
+  
+  
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
   REQUIRE(logpsi_clone == Approx(-4.546410485374186));
@@ -206,6 +217,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   PosType delta(0.1, 0.1, 0.2);
 
   elec_.makeMove(moved_elec_id, delta);
+
+  res_col.rewind();
+  psi_clone->releaseResource(res_col);
+  res_col.rewind();
+  psi.acquireResource(res_col);
 
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
@@ -262,14 +278,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " "
             << WF_list[1]->getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-4.546410485374186, -3.141586279080522)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
 #endif
 

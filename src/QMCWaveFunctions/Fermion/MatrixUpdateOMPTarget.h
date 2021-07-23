@@ -164,14 +164,14 @@ public:
    *
    * note psiMinv has had its dimensions messed with.  rows have been padded to alignment adding colums.
    */
-  inline void invert_transpose(OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedLogValueVector_t& log_values)
+  inline void invert_transpose(OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv, OffloadPinnedLogValueVector_t& log_values)
   {
-    auto& Ainv = psiMinv;
     DummyResource dummy_resource;
-    det_inverter_->invert_transpose(dummy_resource, logdetT, Ainv, log_values);
-    T* Ainv_ptr = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
-    // needed?
+    det_inverter_->invert_transpose(dummy_resource, logdetT, a_inv, log_values);
+    T* a_inv_ptr = a_inv.data();
+    // This is likely better optional
+    PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv.size()])")
+    // For the above transfer
     PRAGMA_OFFLOAD("omp taskwait")
   }
 
@@ -194,6 +194,18 @@ public:
     }
     PRAGMA_OFFLOAD("omp taskwait")
     det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_),logdetT_list, a_inv_refs, log_values, compute_mask);
+  }
+
+  static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
+                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
+                                 OffloadPinnedLogValueVector_t& log_values,
+                                 const std::vector<bool>& compute_mask)
+  {
+    auto& engine_leader = engines.getLeader();
+    auto& det_inverter  = engine_leader.get_det_inverter();
+
+    det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_),logdetT_list, a_inv_list, log_values, compute_mask);
   }
 
   template<typename GT>

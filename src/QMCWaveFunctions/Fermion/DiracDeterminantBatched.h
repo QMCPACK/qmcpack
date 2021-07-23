@@ -144,6 +144,7 @@ public:
                          const RefVector<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<ValueType>>& ratios) const override;
 
+  /** Legacy single method */
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -237,6 +238,17 @@ public:
 
   DET_ENGINE& get_det_engine() { return det_engine_; }
 
+  /** @defgroup LegacySingleData Single Walker Data Members of Legacy OO design
+   *  @brief    Deprecated as high throughput of walkers requires a division between
+   *            walker data which should be "SoA" and traditional OO design which is generally AoS with
+   *            single "structure" functions bundled.
+   *  
+   *  @ingroup LegacySingleData
+   *  @{
+   */
+  /// Legacy single determinant values of single-particle orbital for particle-by-particle update
+  /// Ideally DDB should use the mw_res resources and not these duplicative values.
+
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
@@ -254,7 +266,6 @@ public:
   ValueMatrix_t lapl_phi_Minv;
   HessMatrix_t grad_phi_alpha_Minv;
 
-  /// value of single-particle orbital for particle-by-particle update
   OffloadPinnedValueVector_t psiV;
   ValueVector_t psiV_host_view;
   OffloadPinnedGradVector dpsiV;
@@ -262,8 +273,9 @@ public:
   OffloadPinnedValueVector_t d2psiV;
   ValueVector_t d2psiV_host_view;
 
-  /// delayed update engine
+  /// Delayed update engine 1 per walker.
   DET_ENGINE det_engine_;
+  /**@}*/
 
   std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>> mw_res_;
 
@@ -271,6 +283,7 @@ public:
 
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                            RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
                             const std::vector<bool>& compute_mask);
 
   /// maximal number of delayed updates
@@ -283,8 +296,8 @@ private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
-  /// invert logdetT(psiM), result is in the engine.
-  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, OffloadPinnedValueMatrix_t& logdetT);
+  /// Legacy single invert logdetT(psiM), result is stored in DDB object.
+  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

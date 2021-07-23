@@ -73,8 +73,11 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   Resource* makeClone() const override { return new MatrixDelayedUpdateCUDAMultiWalkerMem(*this); }
 };
 
-/** implements dirac matrix delayed update using OpenMP offload and CUDA.
+/** Implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE in DiracDeterminantBatched.
+ * This is a 1 per walker class unlike DiracDeterminantBatched and
+ * DiracMatrixComputeCUDA which are 1 per many walkers
+ *
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
@@ -423,15 +426,16 @@ public:
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    *
-   *  This does not get called constantly so get real benchmark data that redirection to mw
+   *  This does not get called constantly so to get real benchmark data that redirection to mw
    *  is a big deal before optimizing.
+   *  psiMinv is copied to the Host as a side effect
    * @param logdetT orbital value matrix
    * @param LogValue log(det(logdetT))
    */
-  inline void invert_transpose(OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_values)
+  inline void invert_transpose(OffloadPinnedValueMatrix_t& log_det, OffloadPinnedValueMatrix_t& a_inv, OffloadPinnedLogValueVector_t& log_values)
   {
     guard_no_delay(); 
-    det_inverter_->invert_transpose(*cuda_handles_, log_det, psiMinv, log_values);
+    det_inverter_->invert_transpose(*cuda_handles_, log_det, a_inv, log_values);
     // RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>> engines(*this);
     // RefVector<OffloadPinnedValueMatrix_t> log_dets;
     // engines.push_back(*this);
@@ -459,6 +463,20 @@ public:
     }
     PRAGMA_OFFLOAD("omp taskwait")
     engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs,
+                                                        log_values, compute_mask);
+  }
+
+  static void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
+                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
+                                 OffloadPinnedLogValueVector_t& log_values,
+                                 const std::vector<bool>& compute_mask)
+  {
+    auto& engine_leader = engines.getLeader();
+
+    engine_leader.guard_no_delay();
+    size_t a_inv_size = a_inv_list[0].get().size();
+    engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_list,
                                                         log_values, compute_mask);
   }
 
@@ -511,7 +529,10 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
-  /** This assumes the device side of psiMinv is current
+  /** Update the "local" psiMinv on the device.
+   *  Side Effect Transfers:
+   *  * phiV is left on host side in the single methods so it must be transferred to device
+   *  * psiMinv is transferred back to host
    */
   template<typename VVT, typename RATIOT>
   void updateRow(int rowchanged, VVT& phiV, RATIOT c_ratio_in)

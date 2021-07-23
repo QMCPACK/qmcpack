@@ -230,8 +230,6 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
   std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
 #endif
-  //double det_ratio1 = 0.178276269185;
-
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
@@ -247,11 +245,10 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
-  //double det_ratio2_val = 0.178276269185;
   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
   ddb.acceptMove(elec, 1);
-
+  ddb.LogValue = 0.0;
   PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   LogValueType det_update3;
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
