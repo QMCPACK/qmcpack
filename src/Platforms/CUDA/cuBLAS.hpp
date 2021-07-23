@@ -80,6 +80,46 @@ namespace qmcplusplus
  */
 namespace cuBLAS
 {
+inline cublasStatus_t copy(cublasHandle_t& handle,
+                           int n,
+                           const float* x,
+                           int incx,
+                           float* y,
+                           int incy)
+{
+  return cublasScopy(handle, n, x, incx, y, incy);
+}
+
+inline cublasStatus_t copy(cublasHandle_t& handle,
+                           int n,
+                           const double* x,
+                           int incx,
+                           double* y,
+                           int incy)
+{
+  return cublasDcopy(handle, n, x, incx, y, incy);
+}
+
+inline cublasStatus_t copy(cublasHandle_t& handle,
+                           int n,
+                           const std::complex<float>* x,
+                           int incx,
+                           std::complex<float>* y,
+                           int incy)
+{
+  return cublasCcopy(handle, n, castCUDAType(x), incx, castCUDAType(y), incy);
+}
+
+inline cublasStatus_t copy(cublasHandle_t& handle,
+                           int n,
+                           const std::complex<double>* x,
+                           int incx,
+                           std::complex<double>* y,
+                           int incy)
+{
+  return cublasZcopy(handle, n, castCUDAType(x), incx, castCUDAType(y), incy);
+}
+
 inline cublasStatus_t geam(cublasHandle_t& handle,
                            cublasOperation_t& transa,
                            cublasOperation_t& transb,
@@ -128,7 +168,8 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
                            std::complex<double>* C,
                            int ldc)
 {
-  return cublasZgeam(handle, transa, transb, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(beta), castCUDAType(B), ldb, castCUDAType(C), ldc);
+  return cublasZgeam(handle, transa, transb, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(beta),
+                     castCUDAType(B), ldb, castCUDAType(C), ldc);
 }
 
 inline cublasStatus_t geam(cublasHandle_t& handle,
@@ -145,9 +186,10 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
                            std::complex<float>* C,
                            int ldc)
 {
-  return cublasCgeam(handle, transa, transb, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(beta), castCUDAType(B), ldb, castCUDAType(C), ldc);
+  return cublasCgeam(handle, transa, transb, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(beta),
+                     castCUDAType(B), ldb, castCUDAType(C), ldc);
 }
-  
+
 inline cublasStatus_t gemm(cublasHandle_t& handle,
                            const cublasOperation_t transa,
                            const cublasOperation_t transb,
@@ -220,6 +262,72 @@ inline cublasStatus_t gemm(cublasHandle_t& handle,
 {
   return cublasZgemm(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(B), ldb,
                      castCUDAType(beta), castCUDAType(C), ldc);
+}
+
+inline cublasStatus_t gemv(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           int m,
+                           int n,
+                           const float* alpha,
+                           const float* A,
+                           int lda,
+                           const float* x,
+                           int incx,
+                           const float* beta,
+                           float* y,
+                           int incy)
+{
+  return cublasSgemv(handle, transa, m, n, alpha, A, lda, x, incx, beta, y, incy);
+}
+
+inline cublasStatus_t gemv(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           int m,
+                           int n,
+                           const double* alpha,
+                           const double* A,
+                           int lda,
+                           const double* x,
+                           int incx,
+                           const double* beta,
+                           double* y,
+                           int incy)
+{
+  return cublasDgemv(handle, transa, m, n, alpha, A, lda, x, incx, beta, y, incy);
+}
+
+inline cublasStatus_t gemv(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           int m,
+                           int n,
+                           const std::complex<float>* alpha,
+                           const std::complex<float>* A,
+                           int lda,
+                           const std::complex<float>* x,
+                           int incx,
+                           const std::complex<float>* beta,
+                           std::complex<float>* y,
+                           int incy)
+{
+  return cublasCgemv(handle, transa, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(x), incx,
+                     castCUDAType(beta), castCUDAType(y), incy);
+}
+
+inline cublasStatus_t gemv(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           int m,
+                           int n,
+                           const std::complex<double>* alpha,
+                           const std::complex<double>* A,
+                           int lda,
+                           const std::complex<double>* x,
+                           int incx,
+                           const std::complex<double>* beta,
+                           std::complex<double>* y,
+                           int incy)
+{
+  return cublasZgemv(handle, transa, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(x), incx,
+                     castCUDAType(beta), castCUDAType(y), incy);
 }
 
 inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
@@ -312,6 +420,64 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
   return cublasZgemmBatched(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(non_const_A), lda,
                             castCUDAType(non_const_B), ldb, castCUDAType(beta), castCUDAType(non_const_C), ldc,
                             batchCount);
+}
+
+inline cublasStatus_t ger(cublasHandle_t& handle,
+                          int m,
+                          int n,
+                          const float* alpha,
+                          const float* x,
+                          int incx,
+                          const float* y,
+                          int incy,
+                          float* const A,
+                          int lda)
+{
+  return cublasSger(handle, m, n, alpha, x, incx, y, incy, A, lda);
+}
+
+inline cublasStatus_t ger(cublasHandle_t& handle,
+                          int m,
+                          int n,
+                          const double* alpha,
+                          const double* x,
+                          int incx,
+                          const double* y,
+                          int incy,
+                          double* const A,
+                          int lda)
+{
+  return cublasDger(handle, m, n, alpha, x, incx, y, incy, A, lda);
+}
+
+inline cublasStatus_t ger(cublasHandle_t& handle,
+                          int m,
+                          int n,
+                          const std::complex<float>* alpha,
+                          const std::complex<float>* x,
+                          int incx,
+                          const std::complex<float>* y,
+                          int incy,
+                          std::complex<float>* A,
+                          int lda)
+{
+  return cublasCgerc(handle, m, n, castCUDAType(alpha), castCUDAType(x), incx, castCUDAType(y), incy, castCUDAType(A),
+                     lda);
+}
+
+inline cublasStatus_t ger(cublasHandle_t& handle,
+                          int m,
+                          int n,
+                          const std::complex<double>* alpha,
+                          const std::complex<double>* x,
+                          int incx,
+                          const std::complex<double>* y,
+                          int incy,
+                          std::complex<double>* A,
+                          int lda)
+{
+  return cublasZgerc(handle, m, n, castCUDAType(alpha), castCUDAType(x), incx, castCUDAType(y), incy, castCUDAType(A),
+                     lda);
 }
 
 inline cublasStatus_t getrf_batched(cublasHandle_t& handle,

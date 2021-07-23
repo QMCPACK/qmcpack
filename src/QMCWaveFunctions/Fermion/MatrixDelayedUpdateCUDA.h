@@ -98,8 +98,10 @@ public:
 private:
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
+  // This is used only for the single walker update
   /// scratch space for rank-1 update
   OffloadValueVector_t temp;
+  // This is used only for the single walker update
   // row of up-to-date Ainv
   OffloadValueVector_t invRow;
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
@@ -509,39 +511,29 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
+  /** This assumes the device side of psiMinv is current
+   */
   template<typename VVT, typename RATIOT>
-  void updateRow(int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
+  void updateRow(int rowchanged, VVT& phiV, RATIOT c_ratio_in)
   {
     guard_no_delay();
     auto& Ainv = psiMinv;
     // update the inverse matrix
     constexpr T cone(1), czero(0);
     const int norb = Ainv.rows();
+    // This is Binv.cols() in DelayedUpdate
     const int lda  = Ainv.cols();
     temp.resize(norb);
     rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
-    int dummy_handle  = 0;
-    int success       = 0;
-    const T* phiV_ptr = phiV.data();
-    T* Ainv_ptr       = Ainv.data();
-    T* temp_ptr       = temp.data();
-    T* rcopy_ptr      = rcopy.data();
-    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
-                    use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
-    {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
-      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
-      {
-        temp_ptr[rowchanged] -= cone;
-        PRAGMA_OFFLOAD("omp parallel for simd")
-        for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
-      }
-      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                             1, Ainv_ptr, lda);
-    }
+    cudaErrorCheck(cudaMemcpyAsync(phiV.device_data(), phiV.data(), sizeof(T) * phiV.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream), "cuda copy failed in MatrixDelayedUpdateCUDA::updateRow");
+
+    cublasErrorCheck(cuBLAS::gemv(cuda_handles_->h_cublas, CUBLAS_OP_T, norb, norb, &cone, psiMinv.device_data(), lda, phiV.device_data(), 1, &czero, temp.device_data(), 1), "cuBLAS::gemv failed in MatrixDelayedUpdateCUDA::updateRow"); 
+    cublasErrorCheck(cuBLAS::copy(cuda_handles_->h_cublas, norb, Ainv.device_data() + rowchanged * lda, 1, rcopy.device_data(), 1), "cuBLAS::copy failed in MatrixDelayedUpdateCUDA::updateRow");
+    T alpha = static_cast<T>(RATIOT(-1) / c_ratio_in);
+    cublasErrorCheck(cuBLAS::ger(cuda_handles_->h_cublas, norb, norb, &alpha, rcopy.device_data(), 1, temp.device_data(), 1, psiMinv.device_data(), lda), "cuBLAS::ger failed in MatrixDelayedUpdateCUDA::updateRow");
+    cudaErrorCheck(cudaMemcpyAsync(psiMinv.data(), psiMinv.device_data(), sizeof(T) * norb * norb, cudaMemcpyDeviceToHost, cuda_handles_->hstream), "cuda copy failed in MatrixDelayedUpdateCUDA::updateRow");
+    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
   }
 
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
