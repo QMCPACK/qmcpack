@@ -87,7 +87,7 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
-  // Previous default linear optimizer
+  // Previous default linear optimizer ("quartic")
   bool previous_default_run();
 
 
