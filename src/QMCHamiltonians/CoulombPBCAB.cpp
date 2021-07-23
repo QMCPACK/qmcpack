@@ -76,6 +76,8 @@ void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
   streaming_particles = request.streaming_array(myName);
   if (streaming_particles)
   {
+    Pion.turnOnPerParticleSK();
+    Peln.turnOnPerParticleSK();
     Ve_sample = tm.checkout_real<1>(myName, Peln);
     Vi_sample = tm.checkout_real<1>(myName, Pion);
   }
