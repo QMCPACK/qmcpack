@@ -27,20 +27,9 @@ if(QMC_OMP)
     if(OFFLOAD_TARGET MATCHES "nvptx64")
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-unknown-cuda-version")
     endif()
-
-    # Intel clang compiler needs a different flag for the host side OpenMP library when offload is used.
-    if(OFFLOAD_TARGET MATCHES "spir64")
-      set(OMP_FLAG "-fiopenmp")
-    else(OFFLOAD_TARGET MATCHES "spir64")
-      set(OMP_FLAG "-fopenmp")
-    endif(OFFLOAD_TARGET MATCHES "spir64")
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OMP_FLAG}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OMP_FLAG}")
-  else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
   endif()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif(QMC_OMP)
 
 # Set clang specific flags (which we always want)
@@ -66,10 +55,8 @@ if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
 endif()
 
 # Set extra optimization specific flags
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fomit-frame-pointer -ffast-math")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fomit-frame-pointer -ffast-math")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 
 # Set extra debug flags
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer -fstandalone-debug")

@@ -49,7 +49,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
-      Estimators(0),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
@@ -209,10 +208,10 @@ void QMCDriver::process(xmlNodePtr cur)
   put(cur);
   //create and initialize estimator
   Estimators = branchEngine->getEstimatorManager();
-  if (Estimators == 0)
+  if (Estimators == nullptr)
   {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
+    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(myComm));
+    Estimators = branchEngine->getEstimatorManager();
     branchEngine->read(h5FileRoot);
   }
   if (DriftModifier == 0)

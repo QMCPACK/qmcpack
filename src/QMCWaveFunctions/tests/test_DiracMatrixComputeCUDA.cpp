@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrixComputeCUDA.hpp"
-#include "QMCWaveFunctions/tests/makeRngSpdMatrix.hpp"
+#include "makeRngSpdMatrix.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/PinnedAllocator.h"
@@ -43,7 +43,6 @@ using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
-
 TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 {
   OffloadPinnedMatrix<double> mat_a;
@@ -54,22 +53,19 @@ TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
   OffloadPinnedMatrix<double> mat_c;
   mat_c.resize(n, n);
 
-  DeviceValue<double, OffloadPinnedAllocator<double>> dev_one(1.0);
-  DeviceValue<double, OffloadPinnedAllocator<double>> dev_zero(0.0);
+  double host_one(1.0);
+  double host_zero(0.0);
   
   std::vector<double> A{2, 5, 8, 7, 5, 2, 2, 8, 7, 5, 6, 6, 5, 4, 4, 8};
   std::copy_n(A.begin(), 16, mat_a.data());
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   int lda= n;
-  cublasSetPointerMode(cuda_handles->h_cublas, CUBLAS_POINTER_MODE_DEVICE);
   cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()),
                             mat_a.size() * sizeof(double), cudaMemcpyHostToDevice, cuda_handles->hstream));
-  cublasErrorCheck(cuBLAS::geam(cuda_handles->h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, dev_one.getDevicePtr(),
-                                    temp_mat.device_data(), lda, dev_zero.getDevicePtr(),
+  cublasErrorCheck(cuBLAS::geam(cuda_handles->h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
+                                    temp_mat.device_data(), lda, &host_zero,
                                 mat_c.device_data(), lda, mat_a.device_data(), lda),
                    "cuBLAS::geam failed.");
-
-
 }
   
 TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermion]")
@@ -152,7 +148,8 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 
   Matrix<std::complex<double>> mat_spd;
   mat_spd.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd);
+  testing::MakeRngSpdMatrix<std::complex<double>> makeRngSpdMatrix;
+  makeRngSpdMatrix(mat_spd);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -163,7 +160,7 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 
   Matrix<std::complex<double>> mat_spd2;
   mat_spd2.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd2);
+  makeRngSpdMatrix(mat_spd2);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -206,7 +203,8 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
 
   Matrix<double> mat_spd;
   mat_spd.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd);
+  testing::MakeRngSpdMatrix<double> makeRngSpdMatrix;
+  makeRngSpdMatrix(mat_spd);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't
@@ -217,7 +215,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
 
   Matrix<double> mat_spd2;
   mat_spd2.resize(n, n);
-  testing::makeRngSpdMatrix(mat_spd2);
+  makeRngSpdMatrix(mat_spd2);
   // You would hope you could do this
   // OffloadPinnedMatrix<double> mat_a(mat_spd);
   // But you can't

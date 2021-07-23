@@ -38,17 +38,14 @@ public:
   {
     comm_ = comm;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
-    FakeEstimator* fake_est = new FakeEstimator;
-    emb_->add(fake_est, "fake");
-
+    emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
   SetupSimpleFixedNodeBranch()
   {
     comm_ = OHMMS::Controller;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
-    FakeEstimator* fake_est = new FakeEstimator;
-    emb_->add(fake_est, "fake");
+    emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
   SimpleFixedNodeBranch operator()()
@@ -72,7 +69,7 @@ public:
 
     SimpleFixedNodeBranch sfnb(tau_, num_global_walkers_);
 
-    sfnb.setEstimatorManager(emb_.get());
+    sfnb.setEstimatorManager(std::move(emb_));
 
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_index]);
 

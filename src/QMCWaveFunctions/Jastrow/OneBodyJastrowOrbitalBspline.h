@@ -45,7 +45,8 @@ private:
   using ValueMatrix_t = typename JBase::ValueMatrix_t;
   using RealMatrix_t  = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
+  std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;
   int MaxCoefs;
   ParticleSet& ElecRef;
   gpu::device_vector<CTS::RealType> L, Linv;
@@ -81,7 +82,7 @@ public:
 
   void resetParameters(const opt_variables_type& active) override;
   void checkInVariables(opt_variables_type& active) override;
-  void addFunc(int ig, FT* j, int jg = -1);
+  void addFunc(int ig, std::unique_ptr<FT> j, int jg = -1);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;

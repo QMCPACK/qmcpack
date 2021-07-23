@@ -38,6 +38,8 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
     throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
 }
 
+WaveFunctionComponent::~WaveFunctionComponent() = default;
+
 void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                            const RefVector<ParticleSet::ParticleGradient_t>& G_list,
@@ -162,7 +164,7 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
-void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
+void WaveFunctionComponent::setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d) { dPsi = std::move(d); }
 
 void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
                                                 const opt_variables_type& active,

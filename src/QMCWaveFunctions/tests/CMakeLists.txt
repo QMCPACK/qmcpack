@@ -92,11 +92,10 @@ set(JASTROW_SRC
     test_kspace_jastrow.cpp
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
-    test_DiffOneBodyJastrowOrbital.cpp
+    test_J1OrbitalSoA.cpp
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC
     FakeSPO.cpp
-    makeRngSpdMatrix.cpp
     test_DiracDeterminantBatched.cpp
     test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
@@ -118,21 +117,13 @@ foreach(CATEGORY trialwf sposet jastrow determinant)
   add_executable(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
 
   target_link_libraries(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions
-                        utilities_for_test)
+                        utilities_for_test container_testing)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  
-  set(NOASAN_LIST trialwf jastrow)
-  if("${ENABLE_SANITIZER}" STREQUAL "asan" AND ${CATEGORY} IN_LIST NOASAN_LIST)
-    set_property(
-      TEST ${UTEST_NAME}
-      APPEND
-      PROPERTY LABELS noasan)
-  endif()
 endforeach()
 
 # do not merge with test_wavefunction_determinant until all of
@@ -153,13 +144,14 @@ endif()
 if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
-  set(BENCHMARK_SRC makeRngSpdMatrix.cpp benchmark_DiracMatrixComputeCUDA.cpp)
+  set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
   target_link_libraries(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions
-                        utilities_for_test)
+                        utilities_for_test container_testing)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcutil qmcparticle containers platform_omptarget)
   endif()
+#  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 endif()
