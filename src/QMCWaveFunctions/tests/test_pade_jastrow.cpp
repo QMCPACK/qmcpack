@@ -199,9 +199,9 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   opt_variables_type active;
   twf.checkInVariables(active);
-
+  active.removeInactive();
   int nparam = active.size_of_active();
-  REQUIRE(nparam == 6);
+  REQUIRE(nparam == 3);
 
   using ValueType = QMCTraits::ValueType;
   std::vector<ValueType> dlogpsi(nparam);
@@ -210,8 +210,8 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
   // Numbers not validated
-  std::vector<ValueType> expected_dlogpsi      = {-0.3249548841, 0.0376658437, -0.2814191847, 0.0, 0.0, 0.0};
-  std::vector<ValueType> expected_dhpsioverpsi = {0.0146266746, 0.0031788682, 0.4554097531, 0.0, 0.0, 0.0};
+  std::vector<ValueType> expected_dlogpsi      = {-0.3249548841, 0.0376658437, -0.2814191847};
+  std::vector<ValueType> expected_dhpsioverpsi = {0.0146266746, 0.0031788682, 0.4554097531};
   for (int i = 0; i < nparam; i++)
   {
     CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
