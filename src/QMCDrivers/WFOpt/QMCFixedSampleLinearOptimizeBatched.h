@@ -87,6 +87,10 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
+  // Previous linear optimizers ("quartic" and "rescale")
+  bool previous_linear_methods_run();
+
+
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
