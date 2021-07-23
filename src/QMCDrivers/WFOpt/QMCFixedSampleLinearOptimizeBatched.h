@@ -87,8 +87,8 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
-  // Previous default linear optimizer ("quartic")
-  bool previous_default_run();
+  // Previous linear optimizers ("quartic" and "rescale")
+  bool previous_linear_methods_run();
 
 
 #ifdef HAVE_LMY_ENGINE
