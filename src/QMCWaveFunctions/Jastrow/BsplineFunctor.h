@@ -158,7 +158,33 @@ struct BsplineFunctor : public OptimizableFunctorBase
               const T* restrict _distArray,
               T* restrict distArrayCompressed) const;
 
-  inline real_type evaluate(real_type r)
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const BsplineFunctor* const functors[],
+                           const int iStart[],
+                           const int iEnd[],
+                           const int num_pairs,
+                           const int* ref_at,
+                           const T* mw_dist,
+                           const int dist_stride,
+                           T* mw_vals)
+  {
+    for(int ip = 0; ip < num_pairs; ip++)
+    {
+      mw_vals[ip] = 0;
+      for(int ig = 0; ig < num_groups; ig++)
+      {
+        auto& functor(*functors[ig]);
+        for (int j = iStart[ig]; j < iEnd[ig]; j++)
+          if (j != ref_at[ip])
+            mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+      }
+    }
+  }
+
+  inline real_type evaluate(real_type r) const
   {
     if (r >= cutoff_radius)
       return 0.0;
@@ -177,6 +203,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
             coefs[i + 2] * (A8 * tp[0] + A9 * tp[1] + A10 * tp[2] + A11 * tp[3]) +
             coefs[i + 3] * (A12 * tp[0] + A13 * tp[1] + A14 * tp[2] + A15 * tp[3]));
   }
+
   inline real_type evaluate(real_type r, real_type rinv) { return Y = evaluate(r, dY, d2Y); }
 
   inline void evaluateAll(real_type r, real_type rinv) { Y = evaluate(r, dY, d2Y); }

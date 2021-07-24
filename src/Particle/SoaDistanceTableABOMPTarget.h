@@ -175,7 +175,7 @@ public:
     }
   }
 
-   const T* getMultiWalkerDataPtr() const override
+  const T* getMultiWalkerDataPtr() const override
   {
     if(!mw_mem_)
       throw std::runtime_error("SoaDistanceTableABOMPTarget mw_mem_ is nullptr");

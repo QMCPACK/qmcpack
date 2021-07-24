@@ -23,7 +23,8 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include "CPU/SIMD/aligned_allocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
+#include "Platforms/PinnedAllocator.h"
 #include "J2KECorrection.h"
 
 namespace qmcplusplus
@@ -47,6 +48,8 @@ template<class FT>
 class J2OMPTarget : public WaveFunctionComponent
 {
 public:
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   ///alias FuncType
   using FuncType = FT;
   ///type of each component U, dU, d2U;
@@ -65,12 +68,16 @@ protected:
   size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
+  /// the index of the first particle in each group
+  Vector<int, OffloadPinnedAllocator<int>> g_first;
+  /// the index + 1 of the last particle in each group
+  Vector<int, OffloadPinnedAllocator<int>> g_last;
   ///diff value
   RealType DiffVal;
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  Vector<valT> Uat;
+  Vector<valT, OffloadPinnedAllocator<valT>> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
   gContainer_type dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
@@ -132,12 +139,18 @@ public:
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
+  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                         std::vector<std::vector<ValueType>>& ratios) const override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
   inline void restore(int iat) override {}
+
+  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** compute G and L after the sweep
    */
