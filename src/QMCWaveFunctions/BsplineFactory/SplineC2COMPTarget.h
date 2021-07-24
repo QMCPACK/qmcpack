@@ -253,7 +253,7 @@ public:
                                  std::vector<ValueType>& ratios) override;
 
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const override;

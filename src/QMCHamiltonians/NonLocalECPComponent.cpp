@@ -199,7 +199,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   {
     // Compute ratios with VP
     RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
-    RefVector<const VirtualParticleSet> const_vp_list;
+    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*ecp_component_leader.VP);
     RefVector<const std::vector<PosType>> deltaV_list;
     RefVector<std::vector<ValueType>> psiratios_list;
     vp_list.reserve(ecp_component_list.size());

@@ -277,7 +277,7 @@ public:
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
   static void mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVector<const VirtualParticleSet>& Vp_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 

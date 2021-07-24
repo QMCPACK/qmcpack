@@ -17,6 +17,8 @@
 
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+
+#include <memory>
 #include "Message/Communicate.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
@@ -29,8 +31,6 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
-
-#include <memory>
 
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
@@ -513,7 +513,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios of all the virtual moves of all the walkers
    */
   virtual void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<const VirtualParticleSet>& vp_list,
+                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
 
   /** evaluate ratios to evaluate the non-local PP

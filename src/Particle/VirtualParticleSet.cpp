@@ -61,7 +61,10 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
                                         const RefVector<const NLPPJob<RealType>>& joblist,
                                         bool sphere)
 {
-  RefVectorWithLeader<ParticleSet> p_list(vp_list.getLeader());
+  auto& vp_leader = vp_list.getLeader();
+  vp_leader.onSphere = sphere;
+
+  RefVectorWithLeader<ParticleSet> p_list(vp_leader);
   p_list.reserve(vp_list.size());
 
   for (int iw = 0; iw < vp_list.size(); iw++)
