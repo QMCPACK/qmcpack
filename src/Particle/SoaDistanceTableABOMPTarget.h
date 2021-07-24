@@ -64,7 +64,7 @@ private:
 
     // initialize memory containers and views
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    const int stride_size      = N_sources_padded * (D + 1);
+    const int stride_size      = getPerTargetPctlStrideSize();
     r_dr_memorypool_.resize(stride_size * N_targets);
 
     distances_.resize(N_targets);
@@ -175,7 +175,16 @@ public:
     }
   }
 
-  /** evaluate the full table */
+   const T* getMultiWalkerDataPtr() const override
+  {
+    if(!mw_mem_)
+      throw std::runtime_error("SoaDistanceTableABOMPTarget mw_mem_ is nullptr");
+    return mw_mem_->mw_r_dr.data();
+  }
+
+  size_t getPerTargetPctlStrideSize() const override { return getAlignedSize<T>(N_sources) * (D + 1); }
+
+ /** evaluate the full table */
   inline void evaluate(ParticleSet& P) override
   {
     resize();
@@ -199,7 +208,7 @@ public:
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
     const int num_teams        = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-    const size_t stride_size   = N_sources_padded * (D + 1);
+    const size_t stride_size   = getPerTargetPctlStrideSize();
 
     {
       ScopedTimer offload(offload_timer_);
@@ -258,7 +267,7 @@ public:
     const int N_sources_padded = getAlignedSize<T>(N_sources);
 
 #ifndef NDEBUG
-    const int stride_size = N_sources_padded * (D + 1);
+    const int stride_size = getPerTargetPctlStrideSize();
     count_targets = 0;
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {

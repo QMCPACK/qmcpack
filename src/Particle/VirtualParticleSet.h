@@ -79,6 +79,14 @@ public:
       ref_list.push_back(vp);
     return ref_list;
   }
+
+  static int countVPs(const RefVector<const VirtualParticleSet>& vp_list)
+  {
+    int nVPs = 0;
+    for (const VirtualParticleSet& vp : vp_list)
+      nVPs += vp.getTotalNum();
+    return nVPs;
+  }
 };
 } // namespace qmcplusplus
 #endif
