@@ -30,7 +30,11 @@ enum class DTModes : uint_fast8_t
    * only request this when data on host is needed for unoptimized code path.
    * This flag affects three subroutines mw_move, mw_updatePartial, mw_finalizePbyP in DistanceTableData.
    */
-  NEED_TEMP_DATA_ON_HOST = 0x2
+  NEED_TEMP_DATA_ON_HOST = 0x2,
+  /** skip data transfer back to host after mw_evalaute full distance table.
+   * this optimization can be used for distance table consumed directly on the device without copying back to the host.
+   */
+  MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST = 0x4
 };
 
 constexpr bool operator&(DTModes x, DTModes y)

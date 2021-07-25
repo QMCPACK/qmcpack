@@ -325,7 +325,7 @@ public:
       ScopedTimer offload(dt_leader.offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
                         map(always, to: input_ptr[:offload_input.size()]) \
-                        map(always, from: r_dr_ptr[:mw_r_dr.size()])")
+                        depend(out:r_dr_ptr[:mw_r_dr.size()]) nowait")
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -348,6 +348,14 @@ public:
             DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                           iel);
         }
+
+      if(!(modes_ & DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST))
+      {
+        PRAGMA_OFFLOAD("omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
+      }
+      // wait for computing and (optional) transfering back to host.
+      // It can potentially be moved to ParticleSet to fuse multiple similar taskwait
+      PRAGMA_OFFLOAD("omp taskwait")
     }
   }
 
