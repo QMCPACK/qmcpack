@@ -115,6 +115,7 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
   const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
   const auto& dt_leader(vp_leader.getDistTable(wfc_leader.my_table_ID_));
 
+  refPctls.updateTo();
   FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, g_first.data(), g_last.data(), nVPs, refPctls.data(), dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data());
 
   ivp = 0;

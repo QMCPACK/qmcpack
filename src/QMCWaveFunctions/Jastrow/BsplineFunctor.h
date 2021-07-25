@@ -171,16 +171,54 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            const int dist_stride,
                            T* mw_vals)
   {
+    Vector<char, OffloadPinnedAllocator<char>> mw_buffer;
+    mw_buffer.resize((sizeof(T*) + sizeof(T) * 2)*num_groups);
+    T** mw_coefs_ptr = reinterpret_cast<T**>(mw_buffer.data());
+    T* mw_DeltaRInv_ptr = reinterpret_cast<T*>(mw_buffer.data() + sizeof(T*) * num_groups);
+    T* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
+    for (int ig = 0; ig < num_groups; ig++)
+    {
+      mw_coefs_ptr[ig] = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig] = functors[ig]->DeltaRInv;
+      mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+    }
+
+    auto* mw_buffer_ptr = mw_buffer.data();
+
+    PRAGMA_OFFLOAD("omp target teams distribute map(always, to:mw_buffer_ptr[:mw_buffer.size()]) \
+                    map(to:iStart[:num_groups], iEnd[:num_groups]) \
+                    map(to:ref_at[:num_pairs], mw_dist[:dist_stride*num_pairs]) \
+                    map(always, from:mw_vals[:num_pairs])")
     for(int ip = 0; ip < num_pairs; ip++)
     {
-      mw_vals[ip] = 0;
+      T sum = 0;
+      const T* dist = mw_dist + ip * dist_stride;
+      T** mw_coefs = reinterpret_cast<T**>(mw_buffer_ptr);
+      T* mw_DeltaRInv = reinterpret_cast<T*>(mw_buffer_ptr + sizeof(T*) * num_groups);
+      T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
       for(int ig = 0; ig < num_groups; ig++)
       {
-        auto& functor(*functors[ig]);
+        const T* coefs = mw_coefs[ig];
+        T DeltaRInv = mw_DeltaRInv[ig];
+        T cutoff_radius = mw_cutoff_radius[ig];
+        PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
         for (int j = iStart[ig]; j < iEnd[ig]; j++)
-          if (j != ref_at[ip])
-            mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+        {
+          T r = dist[j];
+          if (j != ref_at[ip] && r < cutoff_radius)
+          {
+            r *= DeltaRInv;
+            real_type ipart, t;
+            t     = std::modf(r, &ipart);
+            int i = (int)ipart;
+            sum += coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3) +
+            coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
+            coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
+            coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
+          }
+        }
       }
+      mw_vals[ip] = sum;
     }
   }
 
