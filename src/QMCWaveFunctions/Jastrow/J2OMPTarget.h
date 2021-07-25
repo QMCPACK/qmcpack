@@ -23,12 +23,15 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 #include "J2KECorrection.h"
 
 namespace qmcplusplus
 {
+
+template<typename T>
+struct J2OMPTargetMultiWalkerMem;
+
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
@@ -48,8 +51,6 @@ template<class FT>
 class J2OMPTarget : public WaveFunctionComponent
 {
 public:
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   ///alias FuncType
   using FuncType = FT;
   ///type of each component U, dU, d2U;
@@ -96,6 +97,8 @@ protected:
   // helper for compute J2 Chiesa KE correction
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
+  std::unique_ptr<J2OMPTargetMultiWalkerMem<RealType>> mw_mem_;
+
 public:
   J2OMPTarget(const std::string& obj_name, ParticleSet& p);
   J2OMPTarget(const J2OMPTarget& rhs) = delete;
@@ -106,6 +109,12 @@ public:
 
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
+
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection) override;
+
+  void releaseResource(ResourceCollection& collection) override;
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables

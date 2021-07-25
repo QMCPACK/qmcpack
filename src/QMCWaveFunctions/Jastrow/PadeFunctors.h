@@ -25,6 +25,7 @@
 #include <cmath>
 // #include <vector>
 #include "OhmmsPETE/TinyVector.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 
 
 namespace qmcplusplus
@@ -124,7 +125,8 @@ struct PadeFunctor : public OptimizableFunctorBase
                            const int* ref_at,
                            const T* mw_dist,
                            const int dist_stride,
-                           T* mw_vals)
+                           T* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
     for(int ip = 0; ip < num_pairs; ip++)
     {

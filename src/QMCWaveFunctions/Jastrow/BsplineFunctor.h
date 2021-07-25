@@ -28,8 +28,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Numerics/LinearFit.h"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
+
 
 namespace qmcplusplus
 {
@@ -37,10 +37,6 @@ template<class T>
 struct BsplineFunctor : public OptimizableFunctorBase
 {
   using value_type = real_type;
-  template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   static constexpr real_type A0 = -1.0 / 6.0, A1 = 3.0 / 6.0, A2 = -3.0 / 6.0, A3 = 1.0 / 6.0;
   static constexpr real_type A4 = 3.0 / 6.0, A5 = -6.0 / 6.0, A6 = 0.0 / 6.0, A7 = 4.0 / 6.0;
@@ -169,12 +165,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            const int* ref_at,
                            const T* mw_dist,
                            const int dist_stride,
-                           T* mw_vals)
+                           T* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
-    Vector<char, OffloadPinnedAllocator<char>> mw_buffer;
-    mw_buffer.resize((sizeof(T*) + sizeof(T) * 2)*num_groups);
-    T** mw_coefs_ptr = reinterpret_cast<T**>(mw_buffer.data());
-    T* mw_DeltaRInv_ptr = reinterpret_cast<T*>(mw_buffer.data() + sizeof(T*) * num_groups);
+    transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2)*num_groups);
+    T** mw_coefs_ptr = reinterpret_cast<T**>(transfer_buffer.data());
+    T* mw_DeltaRInv_ptr = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
     T* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
     for (int ig = 0; ig < num_groups; ig++)
     {
@@ -183,9 +179,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
       mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
     }
 
-    auto* mw_buffer_ptr = mw_buffer.data();
+    auto* transfer_buffer_ptr = transfer_buffer.data();
 
-    PRAGMA_OFFLOAD("omp target teams distribute map(always, to:mw_buffer_ptr[:mw_buffer.size()]) \
+    PRAGMA_OFFLOAD("omp target teams distribute map(always, to:transfer_buffer_ptr[:transfer_buffer.size()]) \
                     map(to:iStart[:num_groups], iEnd[:num_groups]) \
                     map(to:ref_at[:num_pairs], mw_dist[:dist_stride*num_pairs]) \
                     map(always, from:mw_vals[:num_pairs])")
@@ -193,8 +189,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
     {
       T sum = 0;
       const T* dist = mw_dist + ip * dist_stride;
-      T** mw_coefs = reinterpret_cast<T**>(mw_buffer_ptr);
-      T* mw_DeltaRInv = reinterpret_cast<T*>(mw_buffer_ptr + sizeof(T*) * num_groups);
+      T** mw_coefs = reinterpret_cast<T**>(transfer_buffer_ptr);
+      T* mw_DeltaRInv = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
       T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
       for(int ig = 0; ig < num_groups; ig++)
       {

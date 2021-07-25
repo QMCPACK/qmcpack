@@ -19,6 +19,7 @@
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 
 namespace qmcplusplus
 {
@@ -26,6 +27,7 @@ namespace qmcplusplus
 class NonLocalECPComponent;
 template<typename T>
 struct NLPPJob;
+struct VPMultiWalkerMem;
 
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
@@ -34,6 +36,10 @@ class VirtualParticleSet : public ParticleSet
 private:
   /// true, if virtual particles are on a sphere for NLPP
   bool onSphere;
+  /// multi walker resource
+  std::unique_ptr<VPMultiWalkerMem> mw_mem_;
+
+  Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls();
 
 public:
   /// Reference particle
@@ -46,11 +52,26 @@ public:
 
   inline bool isOnSphere() const { return onSphere; }
 
+  const Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls() const;
+
   /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
      * @param nptcl number of virtual particles
      */
   VirtualParticleSet(const ParticleSet& p, int nptcl);
+
+  ~VirtualParticleSet();
+
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource and assocaite it with the list of ParticleSet
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
+   */
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<VirtualParticleSet>& vp_list);
+  /** release external resource
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
+   */
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<VirtualParticleSet>& vp_list);
 
   /** move virtual particles to new postions and update distance tables
      * @param jel reference particle that all the VP moves from
@@ -80,9 +101,17 @@ public:
     return ref_list;
   }
 
-  static int countVPs(const RefVector<const VirtualParticleSet>& vp_list)
+  static size_t countVPs(const RefVectorWithLeader<const VirtualParticleSet>& vp_list)
   {
-    int nVPs = 0;
+    size_t nVPs = 0;
+    for (const VirtualParticleSet& vp : vp_list)
+      nVPs += vp.getTotalNum();
+    return nVPs;
+  }
+
+  static size_t countVPs(const RefVectorWithLeader<VirtualParticleSet>& vp_list)
+  {
+    size_t nVPs = 0;
     for (const VirtualParticleSet& vp : vp_list)
       nVPs += vp.getTotalNum();
     return nVPs;

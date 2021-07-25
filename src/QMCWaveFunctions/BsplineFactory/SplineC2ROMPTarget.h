@@ -22,8 +22,7 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
 #include "SplineOMPTargetMultiWalkerMem.h"
@@ -40,11 +39,6 @@ template<typename ST>
 class SplineC2ROMPTarget : public BsplineSet
 {
 public:
-  template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;

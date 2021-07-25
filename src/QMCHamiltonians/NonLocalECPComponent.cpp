@@ -220,8 +220,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
       psiratios_list.push_back(component.psiratio);
     }
 
-    auto vp_to_p_list = VirtualParticleSet::RefVectorWithLeaderParticleSet(vp_list);
-    ResourceCollectionTeamLock<ParticleSet> vp_res_lock(collection, vp_to_p_list);
+    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
 
     VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
 
