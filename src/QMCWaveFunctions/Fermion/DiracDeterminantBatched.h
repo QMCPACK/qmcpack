@@ -36,6 +36,10 @@ class DiracDeterminantBatchedTest;
 struct SetupDiracDetResources;
 } // namespace testing
 
+/** Should contain the Multiwalker data.
+ *  in truth this is not used in many cases and instead single walker data stashed in the "extra" copies of
+ *  DiracDeterminantBatched are used..
+ */
 template<typename DET_ENGINE>
 struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
@@ -66,6 +70,14 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   std::vector<GradType> grad_new_local;
 };
 
+/** Currently DiracDeterminantBatched (DDB) is an object managing batched computation and update of DiracDeterminants,
+ *  the multiwalker resources needed to accomplish this, and is also the container element class for all the 
+ *  determinant single walker data members and as such is derived from DiracDeterminantBase : WaveFunctionComponent. 
+ *  One of these perwalker members is the DET_ENGINE. The DET_ENGINE is specialized for
+ *  portability framework and/or accelerator. The per walker psiMinv is owned by the DET_ENGINE. The psiM its derivative and
+ *  temp elements are still ownded by the DDB.
+ *
+ */
 template<typename DET_ENGINE>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {

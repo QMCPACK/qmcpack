@@ -600,22 +600,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
     for (int iw = 0; iw < nw; iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-
-      // #ifndef NDEBUG
-      //       GradMatrix_t dpsiM_from_device   = det.dpsiM;
-      //       ValueMatrix_t d2psiM_from_device = det.d2psiM;
-
-      //       auto& my_psiM_vgl  = det.psiM_vgl;
-      //       auto* psiM_vgl_ptr = my_psiM_vgl.data();
-      //       // transfer device to host, total size 4, g(3) + l(1)
-      //       PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
-
-      //       det.Phi->evaluate_notranspose(p_list[iw], FirstIndex, LastIndex, det.psiM_temp, det.dpsiM, det.d2psiM);
-
-      //       assert(dpsiM_from_device == det.dpsiM);
-      //       assert(d2psiM_from_device == det.d2psiM);
-      // #endif
-
       det.computeGL(G_list[iw], L_list[iw]);
     }
   }
@@ -692,7 +676,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
                                                        std::vector<PsiValueType>& ratios) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  // wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
