@@ -4816,6 +4816,8 @@ def generate_determinantset_old(type           = 'bspline',
 
         spin_channel,excitation = excitation
         if spin_channel=='up':
+            print('dset up')
+            print(dset)
             sdet = dset.get('updet')
         elif spin_channel=='down':
             sdet = dset.get('downdet')
@@ -4829,6 +4831,7 @@ def generate_determinantset_old(type           = 'bspline',
             coeff_sign = ''
             if spin_channel=='triplet':
                 coeff_sign = '-'
+            #end if
 
             dset = determinantset(
                 type       = type,
@@ -4879,6 +4882,28 @@ def generate_determinantset_old(type           = 'bspline',
                         ),
                     )
                 )
+            print('dset singlet')
+            print(dset.sposets)
+            quit()
+            #            </coefficient>
+            #      </sposet>
+            #      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
+            #        <detlist size="108" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="36" cutoff="0.01">
+            #          <csf id="CSFcoeff_0" exctLvl="0" coeff="0.967946" qchem_coeff="0.967946" occ="222200000000000000000000000000000000">
+            #            <det id="csf_0-0" coeff="1" alpha="111100000000000000000000000000000000" beta="111100000000000000000000000000000000"/>
+            #          </csf>
+            #          <csf id="CSFcoeff_1" exctLvl="2" coeff="-3.1687806779658031e-02" qchem_coeff="-0.062847" occ="202202000000000000000000000000000000">
+            #            <det id="csf_1-0" coeff="1" alpha="101101000000000000000000000000000000" beta="101101000000000000000000000000000000"/>
+            #          </csf>
+            #          <csf id="CSFcoeff_2" exctLvl="2" coeff="3.2244152276826255e-02" qchem_coeff="0.055893" occ="211211000000000000000000000000000000">
+            #            <det id="csf_2-0" coeff="0.5" alpha="101101000000000000000000000000000000" beta="110110000000000000000000000000000000"/>
+            #            <det id="csf_2-1" coeff="0.5" alpha="101110000000000000000000000000000000" beta="110101000000000000000000000000000000"/>
+            #            <det id="csf_2-2" coeff="0.5" alpha="110101000000000000000000000000000000" beta="101110000000000000000000000000000000"/>
+            #            <det id="csf_2-3" coeff="0.5" alpha="110110000000000000000000000000000000" beta="101101000000000000000000000000000000"/>
+            #          </csf>
+            #          <csf id="CSFcoeff_3" exctLvl="2" coeff="-1.5041816126718590e-02" qchem_coeff="-0.044897" occ="112211000000000000000000000000000000">
+            #            <det id="csf_3-0" coeff="-0.5" alpha="101101000000000000000000000000000000" beta="011110000000000000000000000000000000"/>
+            #
             
             if '-' in excitation or '+' in excitation: #Type 2
                 # assume excitation of form '-216 +217'
@@ -4895,8 +4920,8 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nel+'0'*(exc_orbs[1]-nel)
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
 
-                dset.sposets.spo_u.size = exc_orbs[1]
-                dset.sposets.spo_d.size = exc_orbs[1]
+                dset.sposets['spo_u'].size = exc_orbs[1]
+                dset.sposets['spo_d'].size = exc_orbs[1]
 
             elif 'cb' not in excitation and 'vb' not in excitation: #Type 1 
                 exc_orbs = array(excitation.split(),dtype=int)

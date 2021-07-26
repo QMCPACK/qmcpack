@@ -234,12 +234,20 @@ class Qmcpack(Simulation):
                 #end if
 
             elif isinstance(sim,Convert4qmc):
+                print('HERE MCB. Incorporating orbitals from c4q')
 
                 res = QmcpackInput(result.location)
                 qs  = input.simulation.qmcsystem
                 oldwfn = qs.wavefunction
                 newwfn = res.qmcsystem.wavefunction
+                #print(newwfn) #MCB
+                #quit()
+
+                newwfn.determinantset.slaterdeterminant.determinants.updet.occupation = oldwfn.determinantset.slaterdeterminant.determinants.updet.occupation
+                newwfn.determinantset.slaterdeterminant.determinants.downdet.occupation = oldwfn.determinantset.slaterdeterminant.determinants.downdet.occupation
+                #newwfn.determinantset.slaterdeterminant = oldwfn.determinantset.slaterdeterminant
                 dset = newwfn.determinantset
+
                 if 'jastrows' in newwfn:
                     del newwfn.jastrows
                 #end if
