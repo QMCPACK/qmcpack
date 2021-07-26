@@ -214,7 +214,7 @@ void cublas_inverse(cublasHandle_t handle,
 #endif
   }
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 // 2. for double matrices
@@ -254,7 +254,7 @@ void cublas_inverse(cublasHandle_t handle,
                     __LINE__);
 #endif
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 // 3. for complex float matrices
@@ -326,7 +326,7 @@ void cublas_inverse(cublasHandle_t handle,
 #endif
   }
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 // 4. for complex double matrices
@@ -368,7 +368,7 @@ void cublas_inverse(cublasHandle_t handle,
                     __LINE__);
 #endif
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 }
 
 
@@ -446,13 +446,13 @@ void test_cublas_inverse(int matSize, int numMats)
 
   callAndCheckError(cudaMemcpyAsync(CWorklist_d, CWorklist, numMats * sizeof(T*), cudaMemcpyHostToDevice), __LINE__);
 
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 
   clock_t start = clock();
 
   // Call cublas functions to do inversion
   cublas_inverse(handle, Alist_d, Clist_d, AWorklist_d, CWorklist_d, N, row_stride, numMats, true);
-  cudaDeviceSynchronize();
+  callAndCheckError(cudaDeviceSynchronize(), __LINE__);
 
   clock_t end = clock();
   double t    = double(end - start) / double(CLOCKS_PER_SEC) / double(numMats);

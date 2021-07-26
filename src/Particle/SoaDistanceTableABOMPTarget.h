@@ -14,6 +14,8 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
 #define QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
+#include "DistanceTableData.h"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"

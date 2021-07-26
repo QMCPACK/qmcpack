@@ -78,7 +78,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   /** constructor */
   CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
 
-  ~CoulombPBCAA();
+  ~CoulombPBCAA() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -105,10 +105,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   void initBreakup(ParticleSet& P);
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() override;
-  virtual void checkout_particle_quantities(TraceManager& tm) override;
+  void contribute_particle_quantities() override;
+  void checkout_particle_quantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities() override;
+  void delete_particle_quantities() override;
 #endif
 
   Return_t evalSR(ParticleSet& P);

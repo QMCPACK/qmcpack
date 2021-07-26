@@ -27,7 +27,7 @@ public:
 
   /** constructor */
   SpinorSet();
-  ~SpinorSet() = default;
+  ~SpinorSet() override = default;
 
   //This class is initialized by separately building the up and down channels of the spinor set and
   //then registering them.

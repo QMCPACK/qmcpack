@@ -34,7 +34,7 @@ struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
 
   gpu::device_vector<CUDA_PRECISION> SumGPU;
   gpu::host_vector<CUDA_PRECISION> SumHost;
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 };
@@ -56,7 +56,7 @@ struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
   gpu::device_vector<CUDA_PRECISION> ZionGPU;
   gpu::device_vector<CUDA_PRECISION> IGPU;
 
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 };

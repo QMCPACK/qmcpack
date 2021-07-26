@@ -65,7 +65,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   REQUIRE(wff.getTWF() != nullptr);
   REQUIRE(wff.getTWF()->size() == 1);
 
-  WaveFunctionComponent* j2_base = wff.getTWF()->getOrbitals()[0];
+  auto& j2_base = wff.getTWF()->getOrbitals()[0];
   REQUIRE(j2_base != nullptr);
 }
 } // namespace qmcplusplus

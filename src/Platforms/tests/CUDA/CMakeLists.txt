@@ -25,13 +25,3 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-
-set(UTEST_EXE test_DeviceValue)
-set(UTEST_NAME deterministic-unit_${UTEST_EXE})
-add_executable(${UTEST_EXE} test_DeviceValue.cpp)
-target_link_libraries(${UTEST_EXE} platform_device cuda_device_value_test_kernels catch_main qmcutil)
-if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} platform_omptarget)
-endif()
-target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

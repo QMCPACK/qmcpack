@@ -423,10 +423,10 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
 
 SPOSetPtr MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
 
-WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminant::makeClone");
-  return 0;
+  return std::unique_ptr<MultiDiracDeterminant>();
 }
 
 /** constructor

@@ -193,6 +193,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setCommon(XMLRoot);
   //Norm for spinor wavefunctions is different from SPO's by a factor of sqrt(2).  Disable the unit norm check.
   MixedSplineReader->setCheckNorm(false);
+  //Set no rotation to the orbitals
+  MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
   HasCoreOrbs = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);

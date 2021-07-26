@@ -22,9 +22,9 @@ public:
   /// Constructor.
   SOVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
 
-  ~SOVMCUpdateAll();
+  ~SOVMCUpdateAll() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
   /// Copy Constructor (disabled)

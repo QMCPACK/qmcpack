@@ -45,7 +45,7 @@ void OutputManagerClass::setVerbosity(Verbosity level)
   }
 }
 
-bool OutputManagerClass::isActive(Verbosity level) { return level <= global_verbosity_level; }
+bool OutputManagerClass::isActive(Verbosity level) const { return level <= global_verbosity_level; }
 
 void OutputManagerClass::pause()
 {

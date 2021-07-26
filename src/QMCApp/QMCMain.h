@@ -39,10 +39,10 @@ public:
   QMCMain(Communicate* c);
 
   ///destructor
-  ~QMCMain();
+  ~QMCMain() override;
 
-  bool validateXML();
-  bool execute();
+  bool validateXML() override;
+  bool execute() override;
 
 private:
   ///flag to indicate that a qmc is the first QMC

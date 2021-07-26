@@ -16,8 +16,6 @@
 
 #define cublasCgemmBatched      hipblasCgemmBatched
 #define cublasCgetrfBatched     hipblasCgetrfBatched
-#define cublasCgetrfBatched     hipblasCgetrfBatched
-#define cublasCgetriBatched     hipblasCgetriBatched
 #define cublasCgetriBatched     hipblasCgetriBatched
 #define cublasComplex           hipblasComplex
 #define cublasCreate            hipblasCreate
@@ -25,18 +23,14 @@
 #define cublasDgemmBatched      hipblasDgemmBatched
 #define cublasDgetrfBatched     hipblasDgetrfBatched
 #define cublasDgetriBatched     hipblasDgetriBatched
-#define cublasDgetriBatched     hipblasDgetriBatched
 #define cublasDoubleComplex     hipblasDoubleComplex
 #define cublasHandle_t          hipblasHandle_t
 #define cublasSgemmBatched      hipblasSgemmBatched
 #define cublasSgetrfBatched     hipblasSgetrfBatched
 #define cublasSgetriBatched     hipblasSgetriBatched
-#define cublasSgetriBatched     hipblasSgetriBatched
 #define cublasStatus_t          hipblasStatus_t
 #define cublasZgemmBatched      hipblasZgemmBatched
 #define cublasZgetrfBatched     hipblasZgetrfBatched
-#define cublasZgetrfBatched     hipblasZgetrfBatched
-#define cublasZgetriBatched     hipblasZgetriBatched
 #define cublasZgetriBatched     hipblasZgetriBatched
 
 #define cuComplex                       hipComplex

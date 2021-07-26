@@ -218,186 +218,189 @@ private:
   //
   ///////////////////////////////////////////////////////////////////////////////
 
-  void solve_subspace_nonsymmetric(const bool outer);
+    void solve_subspace_nonsymmetric(const bool outer) override;
 
-  ///////////////////////////////////////////////////////////////////////////////
-  // \brief solves the subspace eigenvalue problem
-  //
-  //
-  //
-  ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    // \brief solves the subspace eigenvalue problem
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////////
 
-  void solve_subspace(const bool outer);
+    void solve_subspace(const bool outer) override;
 
-public:
-  
-  ///////////////////////////////////////////////////////////////////////////////
-  // \brief constructor with given parameters
-  //
-  //
-  //
-  ///////////////////////////////////////////////////////////////////////////////
+  public:
+    ///////////////////////////////////////////////////////////////////////////////
+    // \brief constructor with given parameters
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////////
 
-  SpamLMHD(const formic::VarDeps * dep_ptr, 
-           const int nfds,
-           const int lm_krylov_iter,
-           const int inner_maxIter,
-           const int appro_degree,
-           const bool inner_print,
-           const double lm_eigen_thresh,
-           const double lm_min_S_eval,
-           const double appro_factor,
-           const bool var_deps_use,
-           const bool chase_lowest,
-           const bool chase_closest,
-           const bool ground,
-           const std::vector<double> & vf,
-           const double init_energy,
-           const double hd_shift,
-           const double lm_max_e_change,
-           const double total_weight,
-           const double vgsa,
-           formic::Matrix<double> & der_rat,
-           formic::Matrix<double> & le_der,
-           formic::Matrix<double> & der_rat_appro,
-           formic::Matrix<double> & le_der_appro);
+    SpamLMHD(const formic::VarDeps* dep_ptr,
+             const int nfds,
+             const int lm_krylov_iter,
+             const int inner_maxIter,
+             const int appro_degree,
+             const bool inner_print,
+             const double lm_eigen_thresh,
+             const double lm_min_S_eval,
+             const double appro_factor,
+             const bool var_deps_use,
+             const bool chase_lowest,
+             const bool chase_closest,
+             const bool ground,
+             const std::vector<double>& vf,
+             const double init_energy,
+             const double hd_shift,
+             const double lm_max_e_change,
+             const double total_weight,
+             const double vgsa,
+             formic::Matrix<double>& der_rat,
+             formic::Matrix<double>& le_der,
+             formic::Matrix<double>& der_rat_appro,
+             formic::Matrix<double>& le_der_appro);
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief evaluate tau and compute the "variance corrected" Hamiltonian
-  // 
-  // 
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief evaluate tau and compute the "variance corrected" Hamiltonian
+    //
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void tau_and_correct_ham()
-  {}
+    void tau_and_correct_ham() override {}
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief adds a new krylov vector 
-  //
-  // \param[in]  v  vector that needs to be added
-  //
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief adds a new krylov vector
+    //
+    // \param[in]  v  vector that needs to be added
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void add_krylov_vector(const formic::ColVec<double> & v)
-  {}
+    void add_krylov_vector(const formic::ColVec<double>& v) override {}
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // \brief adds a new Krylov basis vector for spam inner loop
-  //
-  //
-  //
-  ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
+    // \brief adds a new Krylov basis vector for spam inner loop
+    //
+    //
+    //
+    ////////////////////////////////////////////////////////////////////////////////
 
-  void add_krylov_vector_inner(const formic::ColVec<double> & v);
+    void add_krylov_vector_inner(const formic::ColVec<double>& v) override;
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // \brief adds a bunch of new Krylov vectors(which is a matrix) for spam outer 
-  //        loop
-  //
-  //
-  ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
+    // \brief adds a bunch of new Krylov vectors(which is a matrix) for spam outer
+    //        loop
+    //
+    //
+    ////////////////////////////////////////////////////////////////////////////////
 
-  void add_krylov_vectors_outer(const formic::Matrix<double> & m);
+    void add_krylov_vectors_outer(const formic::Matrix<double>& m) override;
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief function that perfoms hamiltonian matrix-vector multiplication 
-  // 
-  // \param[in]   x              input vector 
-  // \param[in]   matrix_built   whether we have already built the matrix or not
-  // \param[in]   transpose      whether to use transposed hamiltonian or not 
-  // \param[in]   approximate    whether to use approximated hamiltonian or not
-  // \param[out]  y              result vector 
-  //
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief function that perfoms hamiltonian matrix-vector multiplication
+    //
+    // \param[in]   x              input vector
+    // \param[in]   matrix_built   whether we have already built the matrix or not
+    // \param[in]   transpose      whether to use transposed hamiltonian or not
+    // \param[in]   approximate    whether to use approximated hamiltonian or not
+    // \param[out]  y              result vector
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void HMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool transpose, const bool approximate);  
+    void HMatVecOp(const formic::ColVec<double>& x,
+                   formic::ColVec<double>& y,
+                   const bool transpose,
+                   const bool approximate) override;
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief function that performs hamiltonian matrix-matrix multiplication 
-  //
-  // \param[in]   x              input matrix 
-  // \param[in]   matrix_built   whether we have already built the matrix or not
-  // \param[in]   transpose      whether to use the transposed hamiltonian or not
-  // \param[in]   approximate    whether to use approximated hamiltonian or not
-  // \param[out]  y              result matrix
-  //
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief function that performs hamiltonian matrix-matrix multiplication
+    //
+    // \param[in]   x              input matrix
+    // \param[in]   matrix_built   whether we have already built the matrix or not
+    // \param[in]   transpose      whether to use the transposed hamiltonian or not
+    // \param[in]   approximate    whether to use approximated hamiltonian or not
+    // \param[out]  y              result matrix
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void HMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool transpose, const bool approximate);
+    void HMatMatOp(const formic::Matrix<double>& x,
+                   formic::Matrix<double>& y,
+                   const bool transpose,
+                   const bool approximate) override;
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief function that performs overlap matrix-vector multiplication 
-  //
-  // \param[in]   x              input vector 
-  // \param[in]   matrix_built   whether we have already built the matrix or not 
-  // \param[in]   approximate    whether to use approximated overlap or not 
-  // \param[out]  y              result vector
-  // NOTE: Unlike hamiltonian matrix-vector multiplication function, no transpose flag
-  //       in this function because overlap matrix is assumed to be symmetric
-  //
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief function that performs overlap matrix-vector multiplication
+    //
+    // \param[in]   x              input vector
+    // \param[in]   matrix_built   whether we have already built the matrix or not
+    // \param[in]   approximate    whether to use approximated overlap or not
+    // \param[out]  y              result vector
+    // NOTE: Unlike hamiltonian matrix-vector multiplication function, no transpose flag
+    //       in this function because overlap matrix is assumed to be symmetric
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void SMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate);
-  void LSMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate) {}
+    void SMatVecOp(const formic::ColVec<double>& x, formic::ColVec<double>& y, const bool approximate) override;
+    void LSMatVecOp(const formic::ColVec<double>& x, formic::ColVec<double>& y, const bool approximate) override {}
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief function that performs overlap matrix-matrix multiplication 
-  //
-  // \param[in]   x              input matrix 
-  // \param[in]   matrix_built   whether we have already built the matrix or not 
-  // \param[in]   approximate    whether to use approximated overlap or not 
-  // \param[out]  y              result matrix 
-  // NOTE: Unlike hamiltonian matrix-matrix multiplication function, no transpose flag
-  //       in this function because overlap matrix is assumed to be symmetric
-  //
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief function that performs overlap matrix-matrix multiplication
+    //
+    // \param[in]   x              input matrix
+    // \param[in]   matrix_built   whether we have already built the matrix or not
+    // \param[in]   approximate    whether to use approximated overlap or not
+    // \param[out]  y              result matrix
+    // NOTE: Unlike hamiltonian matrix-matrix multiplication function, no transpose flag
+    //       in this function because overlap matrix is assumed to be symmetric
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void SMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool approximate = false);
+    void SMatMatOp(const formic::Matrix<double>& x, formic::Matrix<double>& y, const bool approximate = false) override;
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief updates hamiltonian * krylov vector and hamiltonian projection based on 
-  //        new shift 
-  //
-  //
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief updates hamiltonian * krylov vector and hamiltonian projection based on
+    //        new shift
+    //
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void update_hvecs_sub(const double new_i_shift, const double new_s_shift);
+    void update_hvecs_sub(const double new_i_shift, const double new_s_shift) override;
 
-  ////////////////////////////////////////////////////////////////////////////////////
-  // \brief reset the eigen solver 
-  // 
-  // \brief clear subspace projection of Hamiltonian and overlap matrix, clear Krylov
-  //        subspace and action of Hamiltonian and overlap matrix
-  ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // \brief reset the eigen solver
+    //
+    // \brief clear subspace projection of Hamiltonian and overlap matrix, clear Krylov
+    //        subspace and action of Hamiltonian and overlap matrix
+    ////////////////////////////////////////////////////////////////////////////////////
 
-  void child_reset();
-	
-  /////////////////////////////////////////////////////////////////////////////////////
-  // \brief solves the eigenvalue problem via the normal davidson method
-  //
-  //
-  //
-  /////////////////////////////////////////////////////////////////////////////////////
-  	
-  bool iterative_solve(double & eval, std::ostream & output);
-		
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // \brief solves the eigenvalue problem
-  //
-  //
-  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////
+    void child_reset() override;
 
-  bool solve(double & eval, std::ostream & output);
-	
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // \brief converts eigenvectors into wave function coefficients
-  //        solving this question Hc = Sd for d, S is the ground overlap matrix 
-  //
-  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////
+    // \brief solves the eigenvalue problem via the normal davidson method
+    //
+    //
+    //
+    /////////////////////////////////////////////////////////////////////////////////////
 
-  void child_convert_to_wf_coeff();
+    bool iterative_solve(double& eval, std::ostream& output) override;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // \brief solves the eigenvalue problem
+    //
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    bool solve(double& eval, std::ostream& output) override;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // \brief converts eigenvectors into wave function coefficients
+    //        solving this question Hc = Sd for d, S is the ground overlap matrix
+    //
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    void child_convert_to_wf_coeff() override;
 };
 
 }

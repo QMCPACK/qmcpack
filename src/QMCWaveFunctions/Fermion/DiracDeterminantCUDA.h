@@ -149,54 +149,63 @@ protected:
 
 public:
   // safe-guard all CPU interfaces
-  DiracDeterminantCUDA* makeCopy(std::shared_ptr<SPOSet>&& spo) const
+  DiracDeterminantCUDA* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::makeCopy is illegal!");
     return nullptr;
   }
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
     return 0;
   }
 
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) { throw std::runtime_error("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
+  {
+    throw std::runtime_error("Calling DiracDeterminantCUDA::acceptMove is illegal!");
+  }
 
-  void restore(int iat) { throw std::runtime_error("Calling DiracDeterminantCUDA::restore is illegal!"); }
+  void restore(int iat) override { throw std::runtime_error("Calling DiracDeterminantCUDA::restore is illegal!"); }
 
-  PsiValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::ratio is illegal!");
     return 0;
   }
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
     return 0;
   }
 
-  void registerData(ParticleSet& P, WFBufferType& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::registerData is illegal!");
   }
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
     return 0;
   }
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::copyFromBuffer is illegal!");
   }
 
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
+  void update(MCWalkerConfiguration* W,
+              std::vector<Walker_t*>& walkers,
+              int iat,
+              std::vector<bool>* acc,
+              int k) override;
+  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override;
 
-  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1)
+  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1) override
   {
     RowStride         = ((NumOrbitals + 31) / 32) * 32;
     size_t kblock2    = ((kblocksize * kblocksize + 31) / 32) * 32;
@@ -224,48 +233,51 @@ public:
     Phi->reserve(pool);
   }
 
-  void recompute(MCWalkerConfiguration& W, bool firstTime);
+  void recompute(MCWalkerConfiguration& W, bool firstTime) override;
 
-  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
+  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;
 
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
 
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
 
-  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios);
+  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios) override;
 
-  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& grad);
+  void ratio(MCWalkerConfiguration& W,
+             int iat,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& grad) override;
 
   void ratio(MCWalkerConfiguration& W,
              int iat,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl);
+             std::vector<ValueType>& lapl) override;
   void calcRatio(MCWalkerConfiguration& W,
                  int iat,
                  std::vector<ValueType>& psi_ratios,
                  std::vector<GradType>& grad,
-                 std::vector<ValueType>& lapl);
+                 std::vector<ValueType>& lapl) override;
   void addRatio(MCWalkerConfiguration& W,
                 int iat,
                 int k,
                 std::vector<ValueType>& psi_ratios,
                 std::vector<GradType>& grad,
-                std::vector<ValueType>& lapl);
+                std::vector<ValueType>& lapl) override;
 
-  void ratio(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void ratio(std::vector<Walker_t*>& walkers,
              std::vector<int>& iatList,
              std::vector<PosType>& rNew,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl);
+             std::vector<ValueType>& lapl) override;
 
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
 
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios);
+                std::vector<ValueType>& psi_ratios) override;
 
   void NLratios_CPU(MCWalkerConfiguration& W,
                     std::vector<NLjob>& jobList,
@@ -279,7 +291,7 @@ public:
                      int iat,
                      int k,
                      int kd,
-                     int nw);
+                     int nw) override;
 };
 } // namespace qmcplusplus
 #endif // QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H

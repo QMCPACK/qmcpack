@@ -116,8 +116,8 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
 
   PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
-  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  std::unique_ptr<SlaterDet> sd(dynamic_cast<SlaterDet*>(orb));
+  auto orb      = pw_builder.buildComponent(pw1);
+  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb.get());
   REQUIRE(sd != nullptr);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->getPhi(0);
@@ -263,8 +263,8 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
 
   PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
-  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  std::unique_ptr<SlaterDet> sd(dynamic_cast<SlaterDet*>(orb));
+  auto orb      = pw_builder.buildComponent(pw1);
+  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb.get());
   REQUIRE(sd != nullptr);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->getPhi(0);

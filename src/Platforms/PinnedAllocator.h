@@ -22,6 +22,7 @@
 namespace qmcplusplus
 {
 
+/** The fact that the pinned allocators are not always pinned hurts readability elsewhere. */
 template<typename T>
 #ifdef ENABLE_CUDA
 using PinnedAllocator = CUDALockedPageAllocator<T>;

@@ -60,7 +60,7 @@ struct A2NTransformer : TransformerBase<T>
   std::unique_ptr<FnIn> m_ref; //candidate for unique_ptr
   A2NTransformer(std::unique_ptr<FnIn> in) : m_ref(std::move(in)) {}
 
-  void convert(grid_type& agrid, FnOut& multiset, int ispline, int order)
+  void convert(grid_type& agrid, FnOut& multiset, int ispline, int order) override
   {
     typedef OneDimQuinticSpline<OHMMS_PRECISION_FULL> spline_type;
     spline_type radorb(agrid.makeClone());
@@ -177,7 +177,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
 template<typename COT>
 bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
 {
-  app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+  app_log() << "   Grid is created by the input parameters in h5" << std::endl;
 
   std::string gridtype;
   if (myComm->rank() == 0)

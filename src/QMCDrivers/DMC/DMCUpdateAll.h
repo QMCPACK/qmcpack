@@ -22,9 +22,9 @@ public:
   /// Constructor.
   DMCUpdateAllWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
-  ~DMCUpdateAllWithRejection();
+  ~DMCUpdateAllWithRejection() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
   /// Copy Constructor (disabled)
   DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection&) = delete;
@@ -38,9 +38,9 @@ public:
   /// Constructor.
   DMCUpdateAllWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
-  ~DMCUpdateAllWithKill();
+  ~DMCUpdateAllWithKill() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
   /// Copy Constructor (disabled)
   DMCUpdateAllWithKill(const DMCUpdateAllWithKill&) = delete;

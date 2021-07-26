@@ -59,10 +59,10 @@ void TwoBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& acti
 }
 
 template<class FT>
-void TwoBodyJastrowOrbitalBspline<FT>::addFunc(int ia, int ib, FT* j)
+void TwoBodyJastrowOrbitalBspline<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 {
-  J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::addFunc(ia, ib, j);
   CudaSpline<CTS::RealType>* newSpline = new CudaSpline<CTS::RealType>(*j);
+  J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::addFunc(ia, ib, std::move(j));
   UniqueSplines.push_back(newSpline);
   if (ia == ib)
   {

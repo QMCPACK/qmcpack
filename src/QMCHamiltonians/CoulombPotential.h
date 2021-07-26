@@ -108,9 +108,9 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() override { request.contribute_array(myName); }
+  void contribute_particle_quantities() override { request.contribute_array(myName); }
 
-  virtual void checkout_particle_quantities(TraceManager& tm) override
+  void checkout_particle_quantities(TraceManager& tm) override
   {
     streaming_particles = request.streaming_array(myName);
     if (streaming_particles)
@@ -125,7 +125,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
   }
 
-  virtual void delete_particle_quantities() override
+  void delete_particle_quantities() override
   {
     if (streaming_particles)
     {
@@ -321,7 +321,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     //myTableIndex is the same
   }
 
-  ~CoulombPotential() {}
+  ~CoulombPotential() override {}
 
   void update_source(ParticleSet& s) override
   {

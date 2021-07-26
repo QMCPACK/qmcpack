@@ -53,7 +53,7 @@ public:
    *@param cur the current xml node
    *
    */
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   /// reference to the sposet_builder_factory, should be const once the legacy input style is removed
@@ -62,9 +62,9 @@ private:
   TrialWaveFunction& targetPsi;
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  SlaterDeterminant_t* slaterdet_0;
-  MultiSlaterDeterminant_t* multislaterdet_0;
-  MultiSlaterDeterminantFast* multislaterdetfast_0;
+  std::unique_ptr<SlaterDeterminant_t> slaterdet_0;
+  std::unique_ptr<MultiSlaterDeterminant_t> multislaterdet_0;
+  std::unique_ptr<MultiSlaterDeterminantFast> multislaterdetfast_0;
 
   bool UseBackflow;
   BackflowTransformation* BFTrans;
@@ -76,7 +76,7 @@ private:
    */
   bool putDeterminant(xmlNodePtr cur, int firstIndex);
 
-  bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
+  bool createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur);
 
   bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
                      std::vector<std::vector<size_t>>& C2node,

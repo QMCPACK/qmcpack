@@ -33,7 +33,7 @@ particular emphasis is placed on code quality and reproducibility.
  * Python3. Older versions are not supported as of January 2020.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
-over two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the
+over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
 same period but may require use of an exact version. We also aim to support the standard software environments on machines such as
 Summit at OLCF, Theta at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly
 encouraged for highest performance and easiest configuration.
@@ -41,18 +41,18 @@ encouraged for highest performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 10.3.0, 8.3.0
-  * Clang/LLVM 11.0.1
-  * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
-  * PGI/NVIDIA HPC SDK 20.9 configured to use C++ library from GCC 8.3.0
-* Boost 1.75.0, 1.68.0
+  * GCC 10.3.0, 9.1.0
+  * Clang/LLVM 12.0.0
+  * Intel 19.1.1.217 configured to use C++ library from GCC 9.1.0 
+  * NVIDIA HPC SDK 21.5 configured to use C++ library from GCC 9.1.0
+* Boost 1.76.0, 1.68.0
 * HDF5 1.12.0, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.20.0, 3.14.0
+* CMake 3.20.3, 3.14.0
 * MPI
   * OpenMPI 4.1.0, 3.1.6
   * Intel MPI 19.1.1.217
-* CUDA 11.2.1
+* CUDA 11.3.1
 
 Workflow tests are performed with Quantum Espresso v6.7.0 and PySCF v1.7.5. These check trial wavefunction generation and
 conversion through to actual QMC runs.

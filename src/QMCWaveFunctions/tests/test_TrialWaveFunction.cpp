@@ -112,12 +112,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_dn->set(2, 2);
 
-  auto* slater_det = new SlaterDet(elec_);
+  auto slater_det = std::make_unique<SlaterDet>(elec_);
   slater_det->add(det_up, 0);
   slater_det->add(det_dn, 1);
 
   TrialWaveFunction psi;
-  psi.addComponent(slater_det);
+  psi.addComponent(std::move(slater_det));
 
   const char* jas_input = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \

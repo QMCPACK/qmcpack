@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
 /**@file ExampleHeBuilder.h
  *@brief Example builder for simple He wavefunction.
  */
@@ -30,7 +29,7 @@ class ExampleHeBuilder : public WaveFunctionComponentBuilder
 public:
   ExampleHeBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   PtclPoolType& ptclPool;

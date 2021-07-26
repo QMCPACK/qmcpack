@@ -31,7 +31,7 @@ public:
                          RandomGenerator_t& rg,
                          std::vector<int> act,
                          std::vector<int> tp);
-  ~RMCUpdatePbyPWithDrift();
+  ~RMCUpdatePbyPWithDrift() override;
 
   enum
   {
@@ -41,13 +41,13 @@ public:
 
   void advanceWalkersVMC();
   void advanceWalkersRMC();
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-  void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
-  void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) override;
+  void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end) override;
+  void initWalkers(WalkerIter_t it, WalkerIter_t it_end) override;
   void accumulate(WalkerIter_t it, WalkerIter_t it_end);
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
 private:
   /// Copy Constructor (disabled)
