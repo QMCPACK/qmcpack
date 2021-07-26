@@ -75,7 +75,7 @@ void SampleStack::loadSample(ParticleSet& pset, size_t iw) const
   pset.spins = sample_vector_[iw]->spins;
 }
 
-bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)
+bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock)
 {
   MCWalkerConfiguration wtemp;
   wtemp.resize(0, total_num_);
@@ -88,7 +88,7 @@ bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFW
     nwoff[ip + 1] = nwoff[ip] + w;
   wtemp.setGlobalNumWalkers(nwoff[np]);
   wtemp.setWalkerOffsets(nwoff);
-  out->dump(wtemp, nBlock);
+  out.dump(wtemp, nBlock);
   return true;
 }
 
