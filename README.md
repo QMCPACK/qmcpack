@@ -33,7 +33,7 @@ particular emphasis is placed on code quality and reproducibility.
  * Python3. Older versions are not supported as of January 2020.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
-over two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the
+over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
 same period but may require use of an exact version. We also aim to support the standard software environments on machines such as
 Summit at OLCF, Theta at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly
 encouraged for highest performance and easiest configuration.

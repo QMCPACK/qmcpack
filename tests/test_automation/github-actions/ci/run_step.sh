@@ -118,7 +118,7 @@ case "$1" in
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      TEST_LABEL="-L unit -LE noasan"
+      TEST_LABEL="-L unit"
     fi
     
     if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
