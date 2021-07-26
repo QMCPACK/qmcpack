@@ -11,6 +11,7 @@
 
 #include "QMCTools/DiracParser.h"
 #include "io/hdf/hdf_archive.h"
+#include <cstdio>
 
 typedef std::pair<double, double> primExpCoeff;
 typedef std::vector<primExpCoeff> basisFunc;
@@ -294,13 +295,22 @@ void DiracParser::getSpinors(std::istream& is)
     std::vector<std::complex<double>> upkp(numAO, 0), dnkp(numAO, 0);
     if (is.tellg() > endspinors)
       break;
-    while (getwords(currentWords, is))
+    while (std::getline(is,aline))
     {
-      if (currentWords.size() == 0)
+      if (aline.size() == 0)
         break;
-      assert(currentWords.size() == 9);
+
+      char sp[4];
+      char info[12];
+      double up_r,up_i,dn_r,dn_i;
+      int bidx;
+      std::sscanf(aline.c_str(), "%3c%5d%2c%12c%2c%lf%lf%lf%lf",sp,&bidx,sp,info,sp,&up_r,&up_i,&dn_r,&dn_i);
+      bidx -= 1; //count from 0
+      assert(bidx >= 0);
+      parsewords(info, currentWords);
+
       double norm              = 1.0;
-      std::string label        = currentWords[4];
+      std::string label = currentWords[3];
       normMapType::iterator it = normMap.find(label);
       if (it != normMap.end())
         norm = it->second;
@@ -310,29 +320,26 @@ void DiracParser::getSpinors(std::istream& is)
         abort();
       }
 
+      std::complex<double> a = {up_r, up_i};
+      std::complex<double> b = {dn_r, dn_i};
+      std::complex<double> c = {-dn_r, dn_i};
+      std::complex<double> d = {up_r, -up_i};
+      up[bidx] = a * norm;
+      dn[bidx] = b * norm;
+      upkp[bidx] = c * norm;
+      dnkp[bidx] = d * norm;
 
-      int bidx               = std::stoi(currentWords[0]) - 1;
-      std::complex<double> a = {std::stod(currentWords[5]), std::stod(currentWords[6])};
-      std::complex<double> b = {std::stod(currentWords[7]), std::stod(currentWords[8])};
-      std::complex<double> c = {-std::stod(currentWords[7]), std::stod(currentWords[8])};
-      std::complex<double> d = {std::stod(currentWords[5]), -std::stod(currentWords[6])};
-      up[bidx]               = a * norm;
-      dn[bidx]               = b * norm;
-      upkp[bidx]             = c * norm;
-      dnkp[bidx]             = d * norm;
-      /*
-      up[bidx]   = a;
-      dn[bidx]   = b;
-      upkp[bidx] = c;
-      dnkp[bidx] = d;
-      */
     }
+
     upcoeff.push_back(up);
     upcoeff.push_back(upkp);
     dncoeff.push_back(dn);
     dncoeff.push_back(dnkp);
+
   }
+
   std::cout << "Found " << upcoeff.size() << " spinors" << std::endl;
+
 }
 
 void DiracParser::dumpHDF5(const std::string& fname)
