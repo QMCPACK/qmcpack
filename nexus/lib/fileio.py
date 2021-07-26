@@ -882,7 +882,7 @@ class XsfFile(StandardFile):
 
 
     # test needed
-    def remove_ghost(self,density=None):
+    def remove_ghost(self,density=None,overwrite=False):
         if density is None:
             density = self.get_density()
         #end if
@@ -896,7 +896,46 @@ class XsfFile(StandardFile):
         g = array(d.shape,dtype=int)-1
         data = zeros(tuple(g),dtype=float)
         data[:,:,:] = d[:g[0],:g[1],:g[2]]
-        density.values_noghost = data
+        if overwrite:
+            density.values = data
+        else:
+            density.values_noghost = data
+        #end if
+        return data
+    #end def remove_ghost
+
+    # test needed
+    def add_ghost(self,density=None,overwrite=False):
+        if density is None:
+            density = self.get_density()
+        #end if
+        if 'values_noghost' in density:
+            return density.values_noghost
+        #end if
+        data = density.values
+
+        # add the ghost cells
+        d = data
+        g = array(d.shape,dtype=int)+1
+        data = zeros(tuple(g),dtype=float)
+
+        data[:g[0]-1,:g[1]-1,:g[2]-1] = d[:g[0]-1,:g[1]-1,:g[2]-1]
+
+        data[ g[0]-1,:g[1]-1,:g[2]-1] = d[      0,:g[1]-1,:g[2]-1]
+        data[:g[0]-1, g[1]-1,:g[2]-1] = d[:g[0]-1,      0,:g[2]-1]
+        data[:g[0]-1,:g[1]-1, g[2]-1] = d[:g[0]-1,:g[1]-1,      0]
+
+        data[ g[0]-1, g[1]-1,:g[2]-1] = d[      0,      0,:g[2]-1]
+        data[:g[0]-1, g[1]-1, g[2]-1] = d[:g[0]-1,      0,      0]
+        data[ g[0]-1,:g[1]-1, g[2]-1] = d[      0,:g[1]-1,      0]
+
+        data[ g[0]-1, g[1]-1, g[2]-1] = d[      0,      0,      0]
+
+        if overwrite:
+            density.values = data
+        else:
+            density.values_noghost = data
+        #end if
         return data
     #end def remove_ghost
 

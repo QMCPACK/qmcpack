@@ -1791,6 +1791,7 @@ class Supercomputer(Machine):
         env = ''
         if job.env!=None:
             for name,val in job.env.items():
+                print(name,val)
                 env +='export {0}={1}\n'.format(name,val)
             #end for
         #end if

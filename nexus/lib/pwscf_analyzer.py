@@ -930,7 +930,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end if
                     y = array(y) - flev
                     if nb==nbands-1:
-                        plot(x, y, 'g',alpha=0.65,linewidth=2.4,label='ref up')
+                        plot(x, y, 'g',alpha=0.65,linewidth=2.4,label='A-AFM')
                     else:
                         plot(x, y, 'g',alpha=0.65,linewidth=2.4)
                     #end if
@@ -956,7 +956,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end for
                 y = array(y) - self.bands.vbm.energy
                 if nb==nbands-1:
-                    plot(x, y, 'k',label='up')
+                    plot(x, y, 'k',label='FM')
+                    #plot(x, y, 'k')
                 else:
                     plot(x, y, 'k')
                 #end if
@@ -1011,7 +1012,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
         #end if
-        ax.legend(loc='upper right',frameon=True,framealpha=1.0,ncol=2,bbox_to_anchor=(0.9,1.15))
+        ax.legend(loc='upper right',frameon=True,framealpha=1.0,ncol=2) #,bbox_to_anchor=(0.9,1.15))
         if save:
             savefig(filename, format='pdf',bbox_inches='tight')
         #end if
