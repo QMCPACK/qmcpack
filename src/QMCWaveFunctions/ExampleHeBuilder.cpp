@@ -24,7 +24,7 @@ ExampleHeBuilder::ExampleHeBuilder(Communicate* comm, ParticleSet& p, PtclPoolTy
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets), els(p)
 {}
 
-WaveFunctionComponent* ExampleHeBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ExampleHeBuilder::buildComponent(xmlNodePtr cur)
 {
   std::string ion_name = "ion0";
   OhmmsAttributeSet oAttrib;
@@ -37,7 +37,7 @@ WaveFunctionComponent* ExampleHeBuilder::buildComponent(xmlNodePtr cur)
     app_error() << " Ion particle set not found  = " << ion_name << std::endl;
     APP_ABORT("Ion not found");
   }
-  auto* WF = new ExampleHeComponent(*(ion_it->second), els);
+  auto WF = std::make_unique<ExampleHeComponent>(*(ion_it->second), els);
   WF->put(cur);
   return WF;
 }

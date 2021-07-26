@@ -20,6 +20,7 @@ target_include_directories(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(containers PUBLIC platform_device)
 
 if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
   add_subdirectory(OhmmsPETE/tests)
   add_subdirectory(OhmmsSoA/tests)
   add_subdirectory(MinimalContainers/tests)

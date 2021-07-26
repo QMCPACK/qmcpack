@@ -73,14 +73,14 @@ public:
   /// copy constructor
   // MPC(const MPC& c);
 
-  ~MPC();
+  ~MPC() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
 
   /** implement all-walker stuff */
-  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override;

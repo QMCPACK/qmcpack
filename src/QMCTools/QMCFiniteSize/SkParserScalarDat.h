@@ -26,7 +26,7 @@ public:
     SKERR
   };
 
-  void parse(const string& fname);
+  void parse(const string& fname) override;
 
 private:
   void read_sk_file(const string& fname);

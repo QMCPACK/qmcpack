@@ -59,7 +59,7 @@ public:
     this->KeyWord   = "Hybrid" + this->KeyWord;
   }
 
-  virtual SPOSet* makeClone() const override { return new HybridRepCplx(*this); }
+  SPOSet* makeClone() const override { return new HybridRepCplx(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

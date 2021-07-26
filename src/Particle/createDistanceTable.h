@@ -15,7 +15,6 @@
 #define QMCPLUSPLUS_DISTANCETABLE_H
 
 #include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
 
 namespace qmcplusplus
 {

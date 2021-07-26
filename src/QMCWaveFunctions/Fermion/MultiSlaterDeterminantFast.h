@@ -80,7 +80,7 @@ public:
                              bool use_pre_computing);
 
   ///destructor
-  ~MultiSlaterDeterminantFast();
+  ~MultiSlaterDeterminantFast() override;
 
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
@@ -154,7 +154,7 @@ public:
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,

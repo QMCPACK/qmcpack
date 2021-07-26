@@ -15,7 +15,8 @@
 
 #include <config.h>
 #include <algorithm>
-#include "Lattice/CrystalLattice.h"
+#include "CrystalLattice.h"
+#include "ParticleBConds.h"
 
 namespace qmcplusplus
 {

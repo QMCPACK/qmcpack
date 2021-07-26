@@ -334,7 +334,7 @@ struct DummyLRHandler : public LRHandlerBase
   mRealType srDf(mRealType r, mRealType rinv) const override { return 0.0; }
   void Breakup(ParticleSet& ref, mRealType rs_in) override {}
   void resetTargetParticleSet(ParticleSet& ref) override {}
-  virtual LRHandlerBase* makeClone(ParticleSet& ref) const override { return new DummyLRHandler<Func>(LR_kc); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new DummyLRHandler<Func>(LR_kc); }
 };
 
 } // namespace qmcplusplus

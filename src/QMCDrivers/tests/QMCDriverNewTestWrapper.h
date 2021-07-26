@@ -38,11 +38,11 @@ public:
                      "QMCDriverNewTestWrapper")
   {}
 
-  ~QMCDriverNewTestWrapper() {}
+  ~QMCDriverNewTestWrapper() override {}
 
-  QMCRunType getRunType() { return QMCRunType::DUMMY; }
+  QMCRunType getRunType() override { return QMCRunType::DUMMY; }
 
-  void process(xmlNodePtr node)
+  void process(xmlNodePtr node) override
   {
     // We want to test the reserve ability as well
     AdjustedWalkerCounts awc =
@@ -120,7 +120,7 @@ public:
     CHECK_THROWS_AS(adjustGlobalWalkerCount(16, 0, 14, 0, 0, 0), UniformCommunicateError);
   }
 
-  bool run() { return false; }
+  bool run() override { return false; }
 
   int get_num_crowds() { return crowds_.size(); }
 

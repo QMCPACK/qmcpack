@@ -160,15 +160,15 @@ class XMLSaveParticle : public ParticleTags, public RecordProperty
 public:
   XMLSaveParticle(Particle_t& pin);
 
-  ~XMLSaveParticle();
+  ~XMLSaveParticle() override;
 
-  void reset(const char* fileroot, bool append = false);
+  void reset(const char* fileroot, bool append = false) override;
 
-  void report(int iter);
+  void report(int iter) override;
 
-  void finalize() {}
+  void finalize() override {}
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   void get(std::ostream& os, int olevel) const;
 

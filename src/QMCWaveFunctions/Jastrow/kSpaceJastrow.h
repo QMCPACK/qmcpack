@@ -152,32 +152,35 @@ public:
                 std::string twobodyid,
                 bool twoBodySpin);
 
+  kSpaceJastrow(const ParticleSet& ions);
 
   void setCoefficients(std::vector<RealType>& oneBodyCoefs, std::vector<RealType>& twoBodyCoefs);
 
   //implement virtual functions for optimizations
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  PsiValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat) override;
 
-  GradType evalGrad(ParticleSet& P, int iat);
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  void restore(int iat);
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  void restore(int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   // Allocate per-walker data in the PooledData buffer
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
   // Walker move has been accepted -- update the buffer
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   ///process input file
   bool put(xmlNodePtr cur);
@@ -189,20 +192,19 @@ public:
   // structure factors.  Used to sort the G-vectors according to
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi) override;
 
   /** evaluate the ratio
   */
-  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
 private:
   void copyFrom(const kSpaceJastrow& old);
-  kSpaceJastrow(const ParticleSet& ions);
   std::vector<int> TwoBodyVarMap;
   std::vector<int> OneBodyVarMap;
 };

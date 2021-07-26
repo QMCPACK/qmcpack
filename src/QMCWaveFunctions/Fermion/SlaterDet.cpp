@@ -246,9 +246,9 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ", buf.current());
 }
 
-WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) const
 {
-  SlaterDet* myclone   = new SlaterDet(tqp);
+  auto myclone         = std::make_unique<SlaterDet>(tqp);
   myclone->Optimizable = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {

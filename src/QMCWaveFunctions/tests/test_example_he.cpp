@@ -86,10 +86,10 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(wff.getTWF() != nullptr);
   REQUIRE(wff.getTWF()->size() == 1);
 
-  WaveFunctionComponent* base_example_he = wff.getTWF()->getOrbitals()[0];
+  auto& base_example_he = wff.getTWF()->getOrbitals()[0];
   REQUIRE(base_example_he != nullptr);
 
-  ExampleHeComponent* example_he = dynamic_cast<ExampleHeComponent*>(base_example_he);
+  ExampleHeComponent* example_he = dynamic_cast<ExampleHeComponent*>(base_example_he.get());
   REQUIRE(example_he != nullptr);
 
   ions->update();

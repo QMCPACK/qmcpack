@@ -74,9 +74,9 @@ public:
 
   void resize(int NT) { NumTargets = NT; }
 
-  ~Backflow_ee_kSpace(){};
+  ~Backflow_ee_kSpace() override{};
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
   {
     Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);
     clone->resize(NumTargets);
@@ -118,7 +118,7 @@ public:
     */
   }
 
-  void registerData(WFBufferType& buf)
+  void registerData(WFBufferType& buf) override
   {
     /*
           FirstOfU = &(UIJ(0,0)[0]);
@@ -133,9 +133,9 @@ public:
     */
   }
 
-  void reportStatus(std::ostream& os) { myVars.print(os); }
+  void reportStatus(std::ostream& os) override { myVars.print(os); }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (Optimize)
     {
@@ -151,21 +151,21 @@ public:
     }
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     if (Optimize)
       active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     if (Optimize)
       myVars.getIndex(active);
   }
 
-  inline bool isOptimizable() { return Optimize; }
+  inline bool isOptimizable() override { return Optimize; }
 
-  inline int indexOffset()
+  inline int indexOffset() override
   {
     if (Optimize)
       return myVars.where(0);
@@ -173,7 +173,7 @@ public:
       return 0;
   }
 
-  inline void acceptMove(int iat, int UpdateMode)
+  inline void acceptMove(int iat, int UpdateMode) override
   {
     int num;
     switch (UpdateMode)
@@ -246,7 +246,7 @@ public:
     //      BIJ_temp=0.0;
   }
 
-  inline void restore(int iat, int UpdateType)
+  inline void restore(int iat, int UpdateType) override
   {
     //      UIJ_temp=0.0;
     //      AIJ_temp=0.0;
@@ -255,7 +255,7 @@ public:
 
   /** calculate quasi-particle coordinates only
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP) override
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
     APP_ABORT("Backflow_ee_kSpace::evaluate");
@@ -293,7 +293,7 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
     APP_ABORT("Backflow_ee_kSpace::evaluate");
@@ -351,23 +351,30 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index) {}
+  inline void evaluatePbyP(const ParticleSet& P,
+                           ParticleSet::ParticlePos_t& newQP,
+                           const std::vector<int>& index) override
+  {}
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) {}
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
                            ParticleSet::ParticlePos_t& newQP,
                            const std::vector<int>& index,
-                           HessMatrix_t& Amat)
+                           HessMatrix_t& Amat) override
   {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat) {}
+  inline void evaluatePbyP(const ParticleSet& P,
+                           int iat,
+                           ParticleSet::ParticlePos_t& newQP,
+                           HessMatrix_t& Amat) override
+  {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
@@ -375,7 +382,7 @@ public:
                            ParticleSet::ParticlePos_t& newQP,
                            const std::vector<int>& index,
                            GradMatrix_t& Bmat,
-                           HessMatrix_t& Amat)
+                           HessMatrix_t& Amat) override
   {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -384,13 +391,13 @@ public:
                            int iat,
                            ParticleSet::ParticlePos_t& newQP,
                            GradMatrix_t& Bmat,
-                           HessMatrix_t& Amat)
+                           HessMatrix_t& Amat) override
   {}
 
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) {}
+  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) override {}
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    *  calculate derivatives wrt to variational parameters
@@ -401,7 +408,7 @@ public:
                                       HessMatrix_t& Amat,
                                       GradMatrix_t& Cmat,
                                       GradMatrix_t& Ymat,
-                                      HessArray_t& Xmat)
+                                      HessArray_t& Xmat) override
   {}
 };
 

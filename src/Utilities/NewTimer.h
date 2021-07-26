@@ -248,8 +248,8 @@ public:
 
   ScopeGuard(const ScopeGuard&) = delete;
   ScopeGuard& operator=(const ScopeGuard&) = delete;
-  ScopeGuard(ScopeGuard&&) = default;
-  ScopeGuard& operator=(ScopeGuard&&) = default;
+  ScopeGuard(ScopeGuard&&) noexcept        = default;
+  ScopeGuard& operator=(ScopeGuard&&) noexcept = default;
 
   ~ScopeGuard()
   {

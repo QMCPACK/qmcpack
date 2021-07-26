@@ -1393,7 +1393,7 @@ Installing QMCPACK with Spack on Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Spack works robustly on the standard flavors of Linux (Ubuntu, CentOS,
-Ubuntu, etc.) using GCC, Clang, PGI, and Intel compilers.
+Ubuntu, etc.) using GCC, Clang, NVHPC, and Intel compilers.
 
 Installing QMCPACK with Spack on Mac OS X
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1449,7 +1449,7 @@ is non-intuitive for Spack newcomers:
   your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.7%gcc hdf5=serial
 
 QE Spack package is well tested with GCC and Intel compilers, but will not work
-with the PGI compiler or in a cross-compile environment.
+with the NVHPC compiler or in a cross-compile environment.
 
 Reporting Bugs
 ~~~~~~~~~~~~~~

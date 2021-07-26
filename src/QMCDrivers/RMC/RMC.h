@@ -30,10 +30,10 @@ public:
   typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
   RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
-  bool run();
-  bool put(xmlNodePtr cur);
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
-  virtual QMCRunType getRunType() { return QMCRunType::RMC; }
+  QMCRunType getRunType() override { return QMCRunType::RMC; }
 
 private:
   int prestepsVMC;

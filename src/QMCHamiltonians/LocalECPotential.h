@@ -66,10 +66,10 @@ struct LocalECPotential : public OperatorBase
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() override;
-  virtual void checkout_particle_quantities(TraceManager& tm) override;
+  void contribute_particle_quantities() override;
+  void checkout_particle_quantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities() override;
+  void delete_particle_quantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;

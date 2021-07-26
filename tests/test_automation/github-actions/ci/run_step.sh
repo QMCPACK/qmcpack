@@ -7,6 +7,13 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds 
   configure)
     
+    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
+    then
+      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
+      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build
+    fi
+    
+    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build"
     cd ${GITHUB_WORKSPACE}/..
     mkdir qmcpack-build
     cd qmcpack-build
@@ -111,13 +118,15 @@ case "$1" in
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      TEST_LABEL="-L unit -LE noasan"
+      TEST_LABEL="-L unit"
     fi
     
     if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+       # Clang 12 helper threads used by target nowait is very broken. Disable this feature
+       export LIBOMP_USE_HIDDEN_HELPER_TASK=0
        # Run only unit tests (reasonable for CI using openmp-offload)
        TEST_LABEL="-L unit"
     fi

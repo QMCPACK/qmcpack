@@ -56,7 +56,7 @@ public:
 
   void appendSample(MCSample&& sample);
 
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}

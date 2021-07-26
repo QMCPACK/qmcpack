@@ -152,10 +152,12 @@ void CompositeSPOSet::evaluateVGL(const ParticleSet& P,
   }
 }
 
+#ifdef QMC_CUDA
 void CompositeSPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
 {
   not_implemented("evaluate(P,r,psi)");
 }
+#endif
 
 //methods to be implemented later
 void CompositeSPOSet::resetParameters(const opt_variables_type& optVariables)

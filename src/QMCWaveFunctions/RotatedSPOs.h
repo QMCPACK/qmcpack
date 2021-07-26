@@ -24,7 +24,7 @@ public:
   //constructor
   RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
   //destructor
-  ~RotatedSPOs();
+  ~RotatedSPOs() override;
 
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;

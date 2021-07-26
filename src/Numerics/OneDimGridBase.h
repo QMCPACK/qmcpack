@@ -141,11 +141,14 @@ struct LinearGrid : public OneDimGridBase<T, CT>
   using OneDimGridBase<T, CT>::DeltaInv;
   using OneDimGridBase<T, CT>::X;
 
-  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const { return std::make_unique<LinearGrid<T, CT>>(*this); }
+  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const override
+  {
+    return std::make_unique<LinearGrid<T, CT>>(*this);
+  }
 
-  inline int locate(T r) const { return static_cast<int>((static_cast<double>(r) - X[0]) * DeltaInv); }
+  inline int locate(T r) const override { return static_cast<int>((static_cast<double>(r) - X[0]) * DeltaInv); }
 
-  inline void set(T ri, T rf, int n)
+  inline void set(T ri, T rf, int n) override
   {
     GridTag     = LINEAR_1DGRID;
     lower_bound = ri;
@@ -192,11 +195,11 @@ struct LogGrid : public OneDimGridBase<T, CT>
   // T Delta;
   T OneOverLogDelta;
 
-  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const { return std::make_unique<LogGrid<T, CT>>(*this); }
+  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const override { return std::make_unique<LogGrid<T, CT>>(*this); }
 
-  inline int locate(T r) const { return static_cast<int>(std::log(r / X[0]) * OneOverLogDelta); }
+  inline int locate(T r) const override { return static_cast<int>(std::log(r / X[0]) * OneOverLogDelta); }
 
-  inline void set(T ri, T rf, int n)
+  inline void set(T ri, T rf, int n) override
   {
     GridTag     = LOG_1DGRID;
     lower_bound = ri;
@@ -238,16 +241,19 @@ struct LogGridZero : public OneDimGridBase<T, CT>
   T OneOverA;
   T OneOverB;
 
-  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const { return std::make_unique<LogGridZero<T, CT>>(*this); }
+  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const override
+  {
+    return std::make_unique<LogGridZero<T, CT>>(*this);
+  }
 
-  inline int locate(T r) const { return static_cast<int>(std::log(r * OneOverB + 1.0) * OneOverA); }
+  inline int locate(T r) const override { return static_cast<int>(std::log(r * OneOverB + 1.0) * OneOverA); }
 
   /** the meaing of ri/rf are different from the convetions of other classes
    * @param ri ratio
    * @param rf norm
    * @param n number of grid, [0,n)
    */
-  inline void set(T ri, T rf, int n)
+  inline void set(T ri, T rf, int n) override
   {
     GridTag     = LOGZERO_1DGRID;
     lower_bound = ri;
@@ -286,7 +292,10 @@ struct NumericalGrid : public OneDimGridBase<T, CT>
     assign(nv.begin(), nv.end());
   }
 
-  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const { return std::make_unique<NumericalGrid<T, CT>>(*this); }
+  std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const override
+  {
+    return std::make_unique<NumericalGrid<T, CT>>(*this);
+  }
 
 
   template<class IT>
@@ -307,7 +316,7 @@ struct NumericalGrid : public OneDimGridBase<T, CT>
       X.resize(n);
   }
 
-  inline int locate(T r) const
+  inline int locate(T r) const override
   {
     int k;
     int klo = 0;
@@ -324,7 +333,7 @@ struct NumericalGrid : public OneDimGridBase<T, CT>
     return klo;
   }
 
-  inline void set(T ri, T rf, int n)
+  inline void set(T ri, T rf, int n) override
   {
     lower_bound = ri;
     upper_bound = rf;

@@ -285,7 +285,7 @@ void MCWalkerConfiguration::loadEnsemble()
 //}
 
 bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others,
-                                         HDFWalkerOutput* out,
+                                         HDFWalkerOutput& out,
                                          int np,
                                          int nBlock)
 {

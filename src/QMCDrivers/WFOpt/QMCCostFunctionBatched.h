@@ -30,6 +30,11 @@ namespace qmcplusplus
 
 class CostFunctionCrowdData;
 
+namespace testing
+{
+class LinearMethodTestSupport;
+};
+
 
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
@@ -44,20 +49,20 @@ public:
                          Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionBatched();
+  ~QMCCostFunctionBatched() override;
 
-  void getConfigurations(const std::string& aroot);
-  void checkConfigurations();
+  void getConfigurations(const std::string& aroot) override;
+  void checkConfigurations() override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod);
+                                  const std::string& MinMethod) override;
 #endif
 
 
-  void resetPsi(bool final_reset = false);
-  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0);
-  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
+  void resetPsi(bool final_reset = false) override;
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
   /// H components used in correlated sampling. It can be KE or KE+NLPP
@@ -70,7 +75,7 @@ protected:
   Matrix<Return_rt> DerivRecords_;
   Matrix<Return_rt> HDerivRecords_;
 
-  Return_rt correlatedSampling(bool needGrad = true);
+  Return_rt correlatedSampling(bool needGrad = true) override;
 
   SampleStack& samples_;
 
@@ -87,6 +92,8 @@ protected:
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
 #endif
+
+  friend testing::LinearMethodTestSupport;
 };
 } // namespace qmcplusplus
 #endif

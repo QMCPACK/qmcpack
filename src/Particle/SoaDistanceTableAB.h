@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_H
 #define QMCPLUSPLUS_DTDIMPL_AB_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
 #include "Utilities/FairDivide.h"
 #include "Message/OpenMP.h"
 

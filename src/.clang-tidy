@@ -1,4 +1,4 @@
-Checks:          '-*,readability-identifier-naming'
+Checks:          '-*,readability-identifier-naming,modernize-use-override,performance-noexcept-move-constructor'
 WarningsAsErrors: ''
 FormatStyle:     file
 HeaderFilterRegex: 'src/.*'

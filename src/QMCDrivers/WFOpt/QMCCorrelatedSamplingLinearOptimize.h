@@ -43,14 +43,14 @@ public:
                                       Communicate* comm);
 
   ///Destructor
-  ~QMCCorrelatedSamplingLinearOptimize();
+  ~QMCCorrelatedSamplingLinearOptimize() override;
 
   ///Run the Optimization algorithm.
-  bool run();
+  bool run() override;
   ///process xml node
-  bool put(xmlNodePtr cur);
-  RealType Func(RealType dl);
-  virtual QMCRunType getRunType() { return QMCRunType::CS_LINEAR_OPTIMIZE; }
+  bool put(xmlNodePtr cur) override;
+  RealType Func(RealType dl) override;
+  QMCRunType getRunType() override { return QMCRunType::CS_LINEAR_OPTIMIZE; }
 
 private:
   inline bool ValidCostFunction(bool valid)

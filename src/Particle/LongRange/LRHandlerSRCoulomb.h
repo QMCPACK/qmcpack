@@ -64,7 +64,7 @@ public:
     myFunc.reset(ref);
   }
 
-  ~LRHandlerSRCoulomb() {}
+  ~LRHandlerSRCoulomb() override {}
 
   /** "copy" constructor
    * @param aLR LRHandlerSRCoulomb
