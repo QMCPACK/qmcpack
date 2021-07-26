@@ -32,16 +32,16 @@ namespace qmcplusplus
 {
 #ifdef ENABLE_OFFLOAD
   template<typename T>
-  using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
+  using DualSpacePinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
 #elif ENABLE_CUDA
   template<typename T>
-  using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+  using DualSpacePinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 
 template<typename T>
-using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedMatrix = Matrix<T, DualSpacePinnedAllocator<T>>;
 template<typename T>
-using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedVector = Vector<T, DualSpacePinnedAllocator<T>>;
 
 TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 {
