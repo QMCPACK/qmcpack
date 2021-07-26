@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -56,15 +56,13 @@ VirtualParticleSet::~VirtualParticleSet() = default;
 
 Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls()
 {
-  if (!mw_mem_)
-    throw std::runtime_error("VirtualParticleSet::getMultiWalkerRefPctls mw_mem_ is nullptr");
+  assert(mw_mem_ != nullptr);
   return mw_mem_->mw_refPctls;
 }
 
 const Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls() const
 {
-  if (!mw_mem_)
-    throw std::runtime_error("VirtualParticleSet::getMultiWalkerRefPctls mw_mem_ is nullptr");
+  assert(mw_mem_ != nullptr);
   return mw_mem_->mw_refPctls;
 }
 

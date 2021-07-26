@@ -376,6 +376,9 @@ public:
                                    int iat,
                                    const std::vector<bool>& isAccepted,
                                    bool safe_to_delay = false);
+
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   *  See WaveFunctionComponent::completeUpdates for more detail */
   void completeUpdates();
   /* batched version of completeUpdates.  */
   static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
