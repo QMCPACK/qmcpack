@@ -11,7 +11,7 @@ if(QMC_OMP)
       message(FATAL_ERROR "NVIDIA HPC compiler requires -gpu=ccXX option set based on the target GPU architecture! "
                           "Please add -DOFFLOAD_ARCH=ccXX to cmake. For example, cc70 is for Volta.")
     endif()
-    set(CMAKE_CXX_FLAGS "-mp=gpu")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mp=gpu")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-gpu=${OFFLOAD_ARCH}")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mp=allcores")
