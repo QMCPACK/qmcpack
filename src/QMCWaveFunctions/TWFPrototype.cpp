@@ -42,6 +42,18 @@ void TWFPrototype::add_determinant(const ParticleSet& P, const IndexType gid, SP
   } 
 }
 
+TWFPrototype::IndexType TWFPrototype::get_det_id(const IndexType species_id)
+{
+  IndexType detIndex=-1;
+  for(IndexType i=0; i<groups.size(); i++)
+  {
+    if(species_id==groups[i]) detIndex=i;
+  }
+  assert(detIndex != -1);
+
+  return detIndex;
+}
+
 void TWFPrototype::get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
 {
   IndexType ndets=mvec.size();
@@ -164,16 +176,8 @@ TWFPrototype::IndexType TWFPrototype::get_igrad_row(const ParticleSet& P, const 
 TWFPrototype::IndexType TWFPrototype::get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val)
 {
   IndexType gid = P.getGroupID(iel);
-  IndexType first= P.first(gid);
-  IndexType thisIndex= iel-first;
-  assert(thisIndex >= 0 && thisIndex < P.getTotalNum());
- 
-  IndexType detIndex=-1;
-  for(IndexType i=0; i<groups.size(); i++)
-  {
-    if(gid==groups[i]) detIndex=i;
-  }
-  assert(detIndex != -1);
+  IndexType detIndex = get_det_id(gid);
+  
   GradVector_t tempg;
   ValueVector_t templ;
 

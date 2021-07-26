@@ -33,6 +33,10 @@ class NonLocalECPComponent : public QMCTraits
 {
 private:
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
+  using GradMatrix_t  = SPOSet::GradMatrix_t;
+  using ValueVector_t = SPOSet::ValueVector_t;
+  using GradVector_t  = SPOSet::GradVector_t;
+
   typedef std::vector<PosType> SpherGridType;
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
@@ -247,6 +251,15 @@ public:
                                            RealType r,
                                            const PosType& dr, 
                                            std::vector<ValueMatrix_t>& B);
+  
+  void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P, 
+                                           ParticleSet& source,
+                                           int iat,  
+                                           TWFPrototype& psi,
+                                           int iel,
+                                           RealType r,
+                                           const PosType& dr, 
+                                           std::vector<std::vector<ValueMatrix_t> >& dB);
   
   void print(std::ostream& os);
 

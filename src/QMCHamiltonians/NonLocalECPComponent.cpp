@@ -678,67 +678,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;
 
-  GradType gradtmp_(0);
-  PosType realgradtmp_(0);
-
-  //Pseudopotential derivative w.r.t. ions can be split up into 3 contributions:
-  // term coming from the gradient of the radial potential
-  PosType gradpotterm_(0);
-  // term coming from gradient of legendre polynomial
-  PosType gradlpolyterm_(0);
-  // term coming from dependence of quadrature grid on ion position.
-  PosType gradwfnterm_(0);
-
-  //Now for the Pulay specific stuff...
-  // $\nabla_I \Psi(...r...)/\Psi(...r...)$
-  ParticleSet::ParticlePos_t pulay_ref;
-  ParticleSet::ParticlePos_t pulaytmp_;
-  // $\nabla_I \Psi(...q...)/\Psi(...r...)$ for each quadrature point.
-  std::vector<ParticleSet::ParticlePos_t> pulay_quad(nknot);
-
-  //A working array for pulay stuff.
-  GradType iongradtmp_(0);
-  //resize everything.
-  pulay_ref.resize(ions.getTotalNum());
-  pulaytmp_.resize(ions.getTotalNum());
-  for (size_t j = 0; j < nknot; j++)
-    pulay_quad[j].resize(ions.getTotalNum());
-
-  if (VP)
-  {
-    APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
-    // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
-    psi.evaluateRatios(*VP, psiratio);
-  }
-  else
-  {
-    // Compute ratio of wave functions
-    for (int j = 0; j < nknot; j++)
-    {
-      W.makeMove(iel, deltaV[j], false);
-      psiratio[j] = psi.calcRatioGrad(W, iel, gradtmp_);
-      //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
-      //Multiply times $\Psi(q)/\Psi(r)$ to get
-      // $\nabla\Psi(q)/\Psi(r)
-      gradtmp_ *= psiratio[j];
-#if defined(QMC_COMPLEX)
-      //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio[j]);
-#else
-      //Real nonlocalpp forces seem to differ from those in the complex build.  Since
-      //complex build has been validated against QE, that indicates there's a bug for the real build.
-      gradpsiratio[j] = gradtmp_;
-#endif
-      W.rejectMove(iel);
-      psi.resetPhaseDiff();
-      //psi.rejectMove(iel);
-    }
-  }
-
-  for (int j = 0; j < nknot; j++)
-    psiratio[j] *= sgridweight_m[j];
-
   // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
   RealType secondderiv(0);
 
@@ -752,54 +691,57 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
-  //Now to construct the 3N dimensional ionic wfn derivatives for pulay terms.
-  //This is going to be slow an painful for now.
-  for (size_t jat = 0; jat < ions.getTotalNum(); jat++)
-  {
-    pulay_ref[jat] = psi.evalGradSource(W, ions, jat);
-    gradpotterm_   = 0;
-    for (size_t j = 0; j < nknot; j++)
-    {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
-      //This sequence is necessary to update the distance tables and make the
-      //inverse matrix available for force computation.  Move the particle to
-      //quadrature point...
-      W.makeMove(iel, deltaV[j]);
-      psi.calcRatio(W, iel);
-      psi.acceptMove(W, iel);
-      W.acceptMove(iel); // it only updates the jel-th row of e-e table
-      //Done with the move.  Ready for force computation.
 
-      iongradtmp_ = psi.evalGradSource(W, ions, jat);
-      iongradtmp_ *= psiratio[j];
-#ifdef QMC_COMPLEX
-      convert(iongradtmp_, pulay_quad[j][jat]);
-#endif
-      pulay_quad[j][jat] = iongradtmp_;
-      //And move the particle back.
-      deltaV[j] = dr - r * rrotsgrid_m[j];
-
-      // mirror the above in reverse order
-      W.makeMove(iel, deltaV[j]);
-      psi.calcRatio(W, iel);
-      psi.acceptMove(W, iel);
-      W.acceptMove(iel);
-    }
-  }
-
+  IndexType gid = W.getGroupID(iel);
+  IndexType detIndex = psi.get_det_id(gid); 
+  IndexType thisEIndex= iel-W.first(gid);
+  IndexType numptcls=psi.num_particles(detIndex);
+  IndexType norbs=psi.num_orbitals(detIndex);
+  SPOSet* spo=psi.get_sposet(detIndex);
+   
   RealType pairpot = 0;
   // Compute spherical harmonics on grid
+  GradMatrix_t iongrad_phimat;
+  GradVector_t iongrad_phi;
+  ValueVector_t phi,laplphi;
+  GradVector_t gradphi;
+  
+  iongrad_phimat.resize(numptcls,norbs);
+  iongrad_phi.resize(norbs);
+  phi.resize(norbs);
+  gradphi.resize(norbs);
+  laplphi.resize(norbs);
+  
+  GradVector_t udotgradpsi,wfgradrow;
+  GradVector_t gpot,glpoly,gwfn;
+  wfgradrow.resize(norbs); 
+  udotgradpsi.resize(norbs); 
+  gpot.resize(norbs);
+  glpoly.resize(norbs);
+  gwfn.resize(norbs);
   for (int j = 0; j < nknot; j++)
   {
+    W.makeMove(iel, deltaV[j], false);
+   
+    spo->evaluateGradSource(W,iel,iel,ions,iat,iongrad_phimat);
+    iongrad_phi = iongrad_phimat(thisEIndex);
+    spo->evaluateVGL(W,iel,phi,gradphi,laplphi);
+    
+      
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
     cosgrad[j] = rinv * uminusrvec;
 
-    RealType udotgradpsi = dot(gradpsiratio[j], rrotsgrid_m[j]);
-    wfngrad[j]           = gradpsiratio[j] - dr * (udotgradpsi * rinv);
-    wfngrad[j] *= sgridweight_m[j];
-
+    udotgradpsi=0.0;
+    wfgradrow=0.0;
+   
+    
+    for(int iorb=0; iorb<norbs; iorb++)
+    {
+      udotgradpsi[iorb] = dot(gradphi[iorb],rrotsgrid_m[j]);
+      wfgradrow[iorb] = gradphi[iorb]-dr*(udotgradpsi[iorb]*rinv);
+    } 
     // Forming the Legendre polynomials
     //P_0(x)=1; P'_0(x)=0.
     lpol[0]  = cone;
@@ -822,28 +764,25 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       dlpolprev = dlpol[l];
     }
 
-    RealType lsum = czero;
-    // Now to compute the forces:
-    gradpotterm_   = 0;
-    gradlpolyterm_ = 0;
-    gradwfnterm_   = 0;
-    pulaytmp_      = 0;
-
     for (int l = 0; l < nchannel; l++)
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
-      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
-      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
-      pulaytmp_ -= std::real(vrad[l]) * lpol[angpp_m[l]] * pulay_quad[j];
+      for(int iorb=0; iorb<norbs; iorb++)
+      {
+        gpot[iorb]  +=  sgridweight_m[j]*vgrad[l]*lpol[angpp_m[l]]*phi[iorb];
+        glpoly[iorb]+= sgridweight_m[j]*vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * phi[iorb];  
+        gwfn[iorb]  +=  sgridweight_m[j]*vrad[l]*lpol[angpp_m[l]]*(wfgradrow[iorb] + iongrad_phi[iorb]);     
+      }
     }
-    knot_pots[j] = std::real(lsum * psiratio[j]);
-    pulaytmp_ += knot_pots[j] * pulay_ref;
-    pairpot += knot_pots[j];
-    force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
-    pulay_terms += pulaytmp_;
+  
+    for(int idim=0; idim<OHMMS_DIM; idim++)
+    {
+      for(int iorb=0; iorb<norbs; iorb++)
+      {
+        dB[idim][detIndex][thisEIndex][iorb]+=gpot[iorb][idim]+glpoly[iorb][idim]-gwfn[iorb][idim];
+      }
+    }
   }
 }
 

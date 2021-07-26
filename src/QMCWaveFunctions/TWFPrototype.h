@@ -50,6 +50,7 @@ class TWFPrototype
                                std::vector<std::vector<ValueMatrix_t> >& dmvec,  
                                std::vector<std::vector<ValueMatrix_t> >& dlmat);
 
+    SPOSet* get_sposet(const IndexType sid){return spos[sid];};
     RealType evaluateLog(ParticleSet& P);
        
     //Whatever the group is labelled as in the particle set, sid corresponds to the group used to create determinant sid.  
@@ -57,6 +58,8 @@ class TWFPrototype
     //  Prod_i Det(M_i).  
     inline IndexType num_orbitals(const IndexType sid){return num_orbs[sid];};  
     inline IndexType num_particles(const IndexType sid){return num_ptcls[sid];};
+    inline IndexType num_species(){return spos.size();};
+    IndexType get_det_id(const IndexType speciesid);
     //This takes a particle set group index, and returns the "determinant" this refers to. 
     IndexType get_group_index(const IndexType gid);
   private:
