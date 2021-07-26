@@ -177,14 +177,14 @@ public:
 
   const T* getMultiWalkerDataPtr() const override
   {
-    if(!mw_mem_)
+    if (!mw_mem_)
       throw std::runtime_error("SoaDistanceTableABOMPTarget mw_mem_ is nullptr");
     return mw_mem_->mw_r_dr.data();
   }
 
   size_t getPerTargetPctlStrideSize() const override { return getAlignedSize<T>(N_sources) * (D + 1); }
 
- /** evaluate the full table */
+  /** evaluate the full table */
   inline void evaluate(ParticleSet& P) override
   {
     resize();
@@ -268,7 +268,7 @@ public:
 
 #ifndef NDEBUG
     const int stride_size = getPerTargetPctlStrideSize();
-    count_targets = 0;
+    count_targets         = 0;
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
@@ -349,9 +349,10 @@ public:
                                                           iel);
         }
 
-      if(!(modes_ & DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST))
+      if (!(modes_ & DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST))
       {
-        PRAGMA_OFFLOAD("omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
+        PRAGMA_OFFLOAD(
+            "omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
       }
       // wait for computing and (optional) transfering back to host.
       // It can potentially be moved to ParticleSet to fuse multiple similar taskwait

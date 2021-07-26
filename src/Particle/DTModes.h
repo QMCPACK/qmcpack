@@ -24,7 +24,7 @@ enum class DTModes : uint_fast8_t
    * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
    * DT consumers should know if full table is needed or not and request via addTable.
    */
-  NEED_FULL_TABLE_ANYTIME   = 0x1,
+  NEED_FULL_TABLE_ANYTIME = 0x1,
   /** whether temporary data set on the host is updated or not when a move is proposed.
    * Considering transferring data from accelerator to host is relatively expensive,
    * only request this when data on host is needed for unoptimized code path.

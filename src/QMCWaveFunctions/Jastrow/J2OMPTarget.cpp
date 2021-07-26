@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 
 template<typename T>
-struct J2OMPTargetMultiWalkerMem: public Resource
+struct J2OMPTargetMultiWalkerMem : public Resource
 {
   // fused buffer for fast transfer
   Vector<char, OffloadPinnedAllocator<char>> transfer_buffer;
@@ -129,16 +129,17 @@ void J2OMPTarget<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<V
 
 template<typename FT>
 void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                       std::vector<std::vector<ValueType>>& ratios) const
+                                        const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                        std::vector<std::vector<ValueType>>& ratios) const
 {
   // add early return to prevent from accessing vp_list[0]
-  if (wfc_list.size() == 0) return;
-  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
-  auto& vp_leader = vp_list.getLeader();
+  if (wfc_list.size() == 0)
+    return;
+  auto& wfc_leader        = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& vp_leader         = vp_list.getLeader();
   const auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
-  auto& mw_vals = wfc_leader.mw_mem_->mw_vals;
-  const int nw = wfc_list.size();
+  auto& mw_vals           = wfc_leader.mw_mem_->mw_vals;
+  const int nw            = wfc_list.size();
 
   const size_t nVPs = mw_refPctls.size();
   mw_vals.resize(nVPs);
@@ -148,13 +149,15 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
   const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
   const auto& dt_leader(vp_leader.getDistTable(wfc_leader.my_table_ID_));
 
-  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, g_first.data(), g_last.data(), nVPs, mw_refPctls.data(), dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(), wfc_leader.mw_mem_->transfer_buffer);
+  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, g_first.data(), g_last.data(), nVPs, mw_refPctls.data(),
+                   dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
+                   wfc_leader.mw_mem_->transfer_buffer);
 
   size_t ivp = 0;
   for (int iw = 0; iw < nw; ++iw)
   {
     const VirtualParticleSet& vp = vp_list[iw];
-    const auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    const auto& wfc              = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
     for (int k = 0; k < vp.getTotalNum(); ++k, ivp++)
       ratios[iw][k] = std::exp(wfc.Uat[mw_refPctls[ivp]] - mw_vals[ivp]);
   }
@@ -192,8 +195,8 @@ void J2OMPTarget<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 template<typename FT>
 typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::updateBuffer(ParticleSet& P,
-                                                                       WFBufferType& buf,
-                                                                       bool fromscratch)
+                                                                     WFBufferType& buf,
+                                                                     bool fromscratch)
 {
   evaluateGL(P, P.G, P.L, false);
   buf.forward(Bytes_in_WFBuffer);
@@ -234,7 +237,9 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 
 template<typename FT>
 J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OMPTarget", obj_name), my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)), j2_ke_corr_helper(p, F)
+    : WaveFunctionComponent("J2OMPTarget", obj_name),
+      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
     throw std::runtime_error("J2OMPTarget object name cannot be empty!");
@@ -346,12 +351,12 @@ std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& t
  */
 template<typename FT>
 void J2OMPTarget<FT>::computeU3(const ParticleSet& P,
-                                 int iat,
-                                 const DistRow& dist,
-                                 RealType* restrict u,
-                                 RealType* restrict du,
-                                 RealType* restrict d2u,
-                                 bool triangle)
+                                int iat,
+                                const DistRow& dist,
+                                RealType* restrict u,
+                                RealType* restrict du,
+                                RealType* restrict d2u,
+                                bool triangle)
 {
   const int jelmax = triangle ? iat : N;
   constexpr valT czero(0);
@@ -529,22 +534,21 @@ void J2OMPTarget<FT>::recompute(const ParticleSet& P)
 
 template<typename FT>
 void J2OMPTarget<FT>::mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-}
+{}
 
 template<typename FT>
 typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L)
+                                                                    ParticleSet::ParticleGradient_t& G,
+                                                                    ParticleSet::ParticleLaplacian_t& L)
 {
   return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
 WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L,
-                                                                 bool fromscratch)
+                                                                ParticleSet::ParticleGradient_t& G,
+                                                                ParticleSet::ParticleLaplacian_t& L,
+                                                                bool fromscratch)
 {
   if (fromscratch)
     recompute(P);

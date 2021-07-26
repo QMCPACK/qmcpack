@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-struct VPMultiWalkerMem: public Resource
+struct VPMultiWalkerMem : public Resource
 {
   /// multi walker reference particle
   Vector<int, OffloadPinnedAllocator<int>> mw_refPctls;
@@ -56,14 +56,14 @@ VirtualParticleSet::~VirtualParticleSet() = default;
 
 Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls()
 {
-  if(!mw_mem_)
+  if (!mw_mem_)
     throw std::runtime_error("VirtualParticleSet::getMultiWalkerRefPctls mw_mem_ is nullptr");
   return mw_mem_->mw_refPctls;
 }
 
 const Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalkerRefPctls() const
 {
-  if(!mw_mem_)
+  if (!mw_mem_)
     throw std::runtime_error("VirtualParticleSet::getMultiWalkerRefPctls mw_mem_ is nullptr");
   return mw_mem_->mw_refPctls;
 }
@@ -75,10 +75,11 @@ void VirtualParticleSet::createResource(ResourceCollection& collection) const
   ParticleSet::createResource(collection);
 }
 
-void VirtualParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<VirtualParticleSet>& vp_list)
+void VirtualParticleSet::acquireResource(ResourceCollection& collection,
+                                         const RefVectorWithLeader<VirtualParticleSet>& vp_list)
 {
   auto& vp_leader = vp_list.getLeader();
-  auto res_ptr = dynamic_cast<VPMultiWalkerMem*>(collection.lendResource().release());
+  auto res_ptr    = dynamic_cast<VPMultiWalkerMem*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
   vp_leader.mw_mem_.reset(res_ptr);
@@ -87,7 +88,8 @@ void VirtualParticleSet::acquireResource(ResourceCollection& collection, const R
   ParticleSet::acquireResource(collection, p_list);
 }
 
-void VirtualParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<VirtualParticleSet>& vp_list)
+void VirtualParticleSet::releaseResource(ResourceCollection& collection,
+                                         const RefVectorWithLeader<VirtualParticleSet>& vp_list)
 {
   collection.takebackResource(std::move(vp_list.getLeader().mw_mem_));
   auto p_list = RefVectorWithLeaderParticleSet(vp_list);
@@ -102,7 +104,8 @@ void VirtualParticleSet::makeMoves(int jel,
                                    int iat)
 {
   if (sphere && iat < 0)
-    throw std::runtime_error("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
+    throw std::runtime_error(
+        "VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere      = sphere;
   refPtcl       = jel;
   refSourcePtcl = iat;
@@ -113,11 +116,11 @@ void VirtualParticleSet::makeMoves(int jel,
 }
 
 void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
-                                        const RefVector<const std::vector<PosType>>& deltaV_list,
-                                        const RefVector<const NLPPJob<RealType>>& joblist,
-                                        bool sphere)
+                                      const RefVector<const std::vector<PosType>>& deltaV_list,
+                                      const RefVector<const NLPPJob<RealType>>& joblist,
+                                      bool sphere)
 {
-  auto& vp_leader = vp_list.getLeader();
+  auto& vp_leader    = vp_list.getLeader();
   vp_leader.onSphere = sphere;
 
   const size_t nVPs = countVPs(vp_list);
@@ -140,7 +143,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
     assert(vp.R.size() == deltaV.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
-      vp.R[k] = job.elec_pos + deltaV[k];
+      vp.R[k]          = job.elec_pos + deltaV[k];
       mw_refPctls[ivp] = vp.refPtcl;
     }
     p_list.push_back(vp);

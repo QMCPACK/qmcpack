@@ -161,7 +161,9 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)), j2_ke_corr_helper(p, F)
+    : WaveFunctionComponent("J2OrbitalSoA", obj_name),
+      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
     throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
