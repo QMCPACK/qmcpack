@@ -4883,8 +4883,18 @@ def generate_determinantset_old(type           = 'bspline',
                     )
                 )
             print('dset singlet')
-            print(dset.sposets)
-            quit()
+            print(dset)
+            #      <sposet basisset="LCAOBSet" name="spo-up" size="36">
+            #        <occupation mode="ground"/>
+            #        <coefficient size="57" id="updetC">
+            #  8.57620000000000e-01 -6.90800000000000e-03 -1.05123000000000e-01  0.00000000000000e+00
+            # -8.23220000000000e-02  0.00000000000000e+00  0.00000000000000e+00 -4.38296000000000e-01
+            #</coefficient>
+            #      </sposet>
+            #      <sposet basisset="LCAOBSet" name="spo-dn" size="36">
+            #        <occupation mode="ground"/>
+            #        <coefficient size="57" id="downdetC">
+            #  8.57620000000000e-01 -6.90800000000000e-03 -1.05123000000000e-01  0.00000000000000e+00
             #            </coefficient>
             #      </sposet>
             #      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
@@ -4920,8 +4930,10 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nel+'0'*(exc_orbs[1]-nel)
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
 
-                dset.sposets['spo_u'].size = exc_orbs[1]
-                dset.sposets['spo_d'].size = exc_orbs[1]
+                #dset.sposets['spo_u'].size = exc_orbs[1]
+                #dset.sposets['spo_d'].size = exc_orbs[1]
+                #dset.sposets['spo_up'].size = exc_orbs[1]
+                #dset.sposets['spo_down'].size = exc_orbs[1]
 
             elif 'cb' not in excitation and 'vb' not in excitation: #Type 1 
                 exc_orbs = array(excitation.split(),dtype=int)
@@ -4930,6 +4942,8 @@ def generate_determinantset_old(type           = 'bspline',
                 QmcpackInput.class_error('{} excitation is not yet available for type 3'.format(spin_channel))
             #end if
 
+            print('dset MCB')
+            print(dset)
             return dset
         
         #end if
