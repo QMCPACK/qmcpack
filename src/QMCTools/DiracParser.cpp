@@ -16,6 +16,40 @@
 typedef std::pair<double, double> primExpCoeff;
 typedef std::vector<primExpCoeff> basisFunc;
 
+fermIrrep::fermIrrep(std::string label_in, int nSpinors, int numAO) : label(label_in)
+{
+  energies.resize(nSpinors, 0);
+  spinor_mo_coeffs.resize(nSpinors);
+  for (int mo = 0; mo < nSpinors; mo++)
+  {
+    spinor_mo_coeffs[mo].resize(numAO);
+    for (int ao = 0; ao < numAO; ao++)
+      spinor_mo_coeffs[mo][ao].resize(4, 0);
+  }
+}
+
+fermIrrep fermIrrep::generate_kramers_pair()
+{
+  std::string new_label = label;
+  assert(label[1] == '1');
+  new_label[1] = '2';
+  int nspinor  = get_num_spinors();
+  int numAO    = get_num_ao();
+  fermIrrep kp(new_label, nspinor, numAO);
+  kp.energies = energies;
+  for (int mo = 0; mo < nspinor; mo++)
+  {
+    for (int ao = 0; ao < numAO; ao++)
+    {
+      kp.spinor_mo_coeffs[mo][ao][0] = -spinor_mo_coeffs[mo][ao][2];
+      kp.spinor_mo_coeffs[mo][ao][1] = spinor_mo_coeffs[mo][ao][3];
+      kp.spinor_mo_coeffs[mo][ao][2] = spinor_mo_coeffs[mo][ao][0];
+      kp.spinor_mo_coeffs[mo][ao][3] = -spinor_mo_coeffs[mo][ao][1];
+    }
+  }
+  return kp;
+}
+
 DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
 {
   ECP      = false;
@@ -279,67 +313,120 @@ void DiracParser::getSpinors(std::istream& is)
 {
   is.clear();
   is.seekg(pivot_begin);
-  search(is, "Coefficients from DFCOEF", aline);
-  std::streampos startspinors = is.tellg();
-  search(is, "************************", aline);
-  std::streampos endspinors = is.tellg();
 
-  is.clear();
-  is.seekg(startspinors);
+  search(is, "Output from DBLGRP");
+  skiplines(is, 2);
+  getwords(currentWords, is);
+  //look for "* Nirrep fermion irreps: irrep1 irrep2 ..."
+  int nirrep = currentWords.size() - 4;
+  std::vector<std::string> labels(nirrep);
+  for (int i = 0; i < nirrep; i++)
+    labels[i] = currentWords[4 + i];
 
-
-  while (lookFor(is, "Electronic eigenvalue no.", aline))
+  for (int i = 0; i < nirrep; i++)
   {
-    skiplines(is, 1);
-    std::vector<std::complex<double>> up(numAO, 0), dn(numAO, 0);
-    std::vector<std::complex<double>> upkp(numAO, 0), dnkp(numAO, 0);
-    if (is.tellg() > endspinors)
-      break;
-    while (std::getline(is,aline))
+    is.clear();
+    is.seekg(pivot_begin);
+    search(is, "VECINP: Vector print");
+    std::string irstr = "- Orbitals in fermion ircop " + labels[i];
+    lookFor(is, irstr, aline);
+    parsewords(aline.c_str(), currentWords);
+    if (currentWords.back() == ":1..oo")
     {
-      if (aline.size() == 0)
-        break;
-
-      char sp[4];
-      char info[12];
-      double up_r,up_i,dn_r,dn_i;
-      int bidx;
-      std::sscanf(aline.c_str(), "%3c%5d%2c%12c%2c%lf%lf%lf%lf",sp,&bidx,sp,info,sp,&up_r,&up_i,&dn_r,&dn_i);
-      bidx -= 1; //count from 0
-      assert(bidx >= 0);
-      parsewords(info, currentWords);
-
-      double norm              = 1.0;
-      std::string label = currentWords[3];
-      normMapType::iterator it = normMap.find(label);
-      if (it != normMap.end())
-        norm = it->second;
-      else
+      search(is, "* Occupation of subblocks");
+      lookFor(is, labels[i], aline);
+      lookFor(is, "tot.num. of pos.erg shells:", aline);
+      parsewords(aline.c_str(), currentWords);
+      int nj       = currentWords.size() - 4;
+      int nspinors = 0;
+      for (int j = 0; j < nj; j++)
+        nspinors += std::stoi(currentWords[4 + j]);
+      irreps.push_back(fermIrrep(labels[i], nspinors, numAO));
+    }
+    else
+    {
+      std::string splitby = ":.";
+      aline               = currentWords.back();
+      parsewords(aline.c_str(), currentWords, splitby);
+      if (currentWords[0] != "1")
       {
-        std::cerr << "Unknown basis function type. Aborting" << std::endl;
+        std::cerr << "Error: For vector printing, need to use 1..oo or 1..N" << std::endl;
         abort();
       }
-
-      std::complex<double> a = {up_r, up_i};
-      std::complex<double> b = {dn_r, dn_i};
-      std::complex<double> c = {-dn_r, dn_i};
-      std::complex<double> d = {up_r, -up_i};
-      up[bidx] = a * norm;
-      dn[bidx] = b * norm;
-      upkp[bidx] = c * norm;
-      dnkp[bidx] = d * norm;
-
+      int nspinors = std::stoi(currentWords[1]);
+      irreps.push_back(fermIrrep(labels[i], nspinors, numAO));
     }
-
-    upcoeff.push_back(up);
-    upcoeff.push_back(upkp);
-    dncoeff.push_back(dn);
-    dncoeff.push_back(dnkp);
-
   }
 
-  std::cout << "Found " << upcoeff.size() << " spinors" << std::endl;
+  std::cout << "Found " << nirrep << " fermion irreps." << std::endl;
+  for (int i = 0; i < nirrep; i++)
+    std::cout << "  irrep " << irreps[i].get_label() << " with " << irreps[i].get_num_spinors() << " spinors and "
+              << irreps[i].get_num_ao() << " AO coefficients." << std::endl;
 
+  search(is, "Coefficients from DFCOEF", aline);
+  std::streampos startspinors = is.tellg();
+
+  for (int i = 0; i < nirrep; i++)
+  {
+    is.clear();
+    is.seekg(startspinors);
+    std::string start_irrep = "Fermion ircop " + irreps[i].get_label();
+    search(is, start_irrep);
+    for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
+    {
+      lookFor(is, "Electronic eigenvalue no.", aline);
+      parsewords(aline.c_str(), currentWords);
+      irreps[i].energies[mo] = std::stod(currentWords.back());
+      skiplines(is, 1);
+      while (std::getline(is, aline))
+      {
+        if (aline.size() == 0)
+          break;
+        if (std::string(aline).find("*********") != std::string::npos)
+        {
+          std::cerr << "ERROR: One of the printed AO coefficients is outside the default DIRAC print format"
+                    << std::endl;
+          std::cerr << "In order to continue, please change the following in DIRAC/src/dirac/dirout.F (around line 427)"
+                    << std::endl;
+          std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F14.10)" << std::endl;
+          std::cerr << " to " << std::endl;
+          std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F20.10)" << std::endl;
+          std::cerr
+              << " and recompile DIRAC. Then rerun your particular calulcation in order to get accurate AO coefficients"
+              << std::endl;
+          abort();
+        }
+        char sp[4];
+        char info[12];
+        double up_r, up_i, dn_r, dn_i;
+        int bidx;
+        std::sscanf(aline.c_str(), "%3c%5d%2c%12c%2c%lf%lf%lf%lf", sp, &bidx, sp, info, sp, &up_r, &up_i, &dn_r, &dn_i);
+        bidx -= 1; //count from 0
+        assert(bidx >= 0);
+        parsewords(info, currentWords);
+
+        double norm              = 1.0;
+        std::string label        = currentWords[3];
+        normMapType::iterator it = normMap.find(label);
+        if (it != normMap.end())
+          norm = it->second;
+        else
+        {
+          std::cerr << "Unknown basis function type. Aborting" << std::endl;
+          abort();
+        }
+
+        irreps[i].spinor_mo_coeffs[mo][bidx][0] = up_r * norm;
+        irreps[i].spinor_mo_coeffs[mo][bidx][1] = up_i * norm;
+        irreps[i].spinor_mo_coeffs[mo][bidx][2] = dn_r * norm;
+        irreps[i].spinor_mo_coeffs[mo][bidx][3] = dn_i * norm;
+      }
+    }
+
+    std::cout << "Found coefficients for " << irreps[i].get_label() << std::endl;
+    kp_irreps.push_back(irreps[i].generate_kramers_pair());
+    std::cout << "Generated kramers pair with irrep " << kp_irreps[i].get_label() << std::endl;
+  }
 }
 
 void DiracParser::dumpHDF5(const std::string& fname)
@@ -453,21 +540,34 @@ void DiracParser::dumpHDF5(const std::string& fname)
   hout.write(nk, "Nbkpts");
   hout.pop();
 
-  numMO = upcoeff.size();
+  numMO = 0;
+  for (int i = 0; i < irreps.size(); i++)
+    numMO += 2 * irreps[i].get_num_spinors(); //irrep and kp
+
   Matrix<double> up_real(numMO, numAO);
   Matrix<double> up_imag(numMO, numAO);
   Matrix<double> dn_real(numMO, numAO);
   Matrix<double> dn_imag(numMO, numAO);
-  for (int mo = 0; mo < numMO; mo++)
+  int totmo = 0;
+  for (int i = 0; i < irreps.size(); i++)
   {
-    for (int ao = 0; ao < numAO; ao++)
+    for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++, totmo += 2)
     {
-      up_real[mo][ao] = upcoeff[mo][ao].real();
-      up_imag[mo][ao] = upcoeff[mo][ao].imag();
-      dn_real[mo][ao] = dncoeff[mo][ao].real();
-      dn_imag[mo][ao] = dncoeff[mo][ao].imag();
+      for (int ao = 0; ao < numAO; ao++)
+      {
+        up_real[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][0];
+        up_imag[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][1];
+        dn_real[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][2];
+        dn_imag[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][3];
+        up_real[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][0];
+        up_imag[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][1];
+        dn_real[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][2];
+        dn_imag[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][3];
+      }
     }
   }
+  assert(totmo == numMO);
+
   str = "KPTS_0";
   hout.push(str, true);
   hout.write(up_real, "eigenset_0");

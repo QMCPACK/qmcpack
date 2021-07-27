@@ -42,6 +42,18 @@ struct atBasisSet
   std::vector<basisGroup> basisGroups;
 };
 
+struct fermIrrep
+{
+  std::string label;
+  std::vector<double> energies;
+  std::vector<std::vector<std::vector<double>>> spinor_mo_coeffs; //mo,ao,up_r,up_i,dn_r,dn_i
+  fermIrrep(std::string label_in, int nSpinors, int numAO);
+  fermIrrep generate_kramers_pair();
+  int get_num_spinors() { return energies.size(); }
+  int get_num_ao() { return spinor_mo_coeffs[0].size(); }
+  std::string get_label() { return label; }
+};
+
 class DiracParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
   typedef std::map<std::string, double> normMapType;
@@ -64,6 +76,9 @@ private:
   std::vector<std::vector<std::complex<double>>> dncoeff;
   int numAO, numMO;
   normMapType normMap;
+
+  std::vector<fermIrrep> irreps;
+  std::vector<fermIrrep> kp_irreps;
 };
 
 
