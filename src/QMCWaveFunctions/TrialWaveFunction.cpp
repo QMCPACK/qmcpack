@@ -998,7 +998,7 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
 }
 
 void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                          const RefVector<const VirtualParticleSet>& vp_list,
+                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                           const RefVector<std::vector<ValueType>>& ratios_list,
                                           ComputeType ct)
 {
@@ -1009,7 +1009,7 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     std::vector<ValueType>& ratios = ratios_list[iw];
-    assert(vp_list[iw].get().getTotalNum() == ratios.size());
+    assert(vp_list[iw].getTotalNum() == ratios.size());
     std::fill(ratios.begin(), ratios.end(), 1.0);
     t[iw].resize(ratios.size());
   }

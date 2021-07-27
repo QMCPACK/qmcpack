@@ -22,8 +22,7 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
 #include "SplineOMPTargetMultiWalkerMem.h"
@@ -40,11 +39,6 @@ template<typename ST>
 class SplineC2ROMPTarget : public BsplineSet
 {
 public:
-  template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
@@ -261,7 +255,7 @@ public:
                                  std::vector<ValueType>& ratios) override;
 
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const override;

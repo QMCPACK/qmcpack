@@ -414,7 +414,7 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                   std::vector<std::vector<ValueType>>& ratios) const
 {
   const size_t nw = wfc_list.size();
