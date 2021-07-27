@@ -13,16 +13,55 @@
 // -*- C++ -*-
 
 
-#include "J2OrbitalSoA.h"
+#include "J2OMPTarget.h"
 #include "CPU/SIMD/algorithm.hpp"
 #include "BsplineFunctor.h"
 #include "PadeFunctors.h"
 #include "UserFunctor.h"
+#include "SoaDistanceTableABOMPTarget.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
+
+template<typename T>
+struct J2OMPTargetMultiWalkerMem : public Resource
+{
+  // fused buffer for fast transfer
+  Vector<char, OffloadPinnedAllocator<char>> transfer_buffer;
+  // multi walker result
+  Vector<T, OffloadPinnedAllocator<T>> mw_vals;
+
+  J2OMPTargetMultiWalkerMem() : Resource("J2OMPTargetMultiWalkerMem") {}
+
+  J2OMPTargetMultiWalkerMem(const J2OMPTargetMultiWalkerMem&) : J2OMPTargetMultiWalkerMem() {}
+
+  Resource* makeClone() const override { return new J2OMPTargetMultiWalkerMem(*this); }
+};
+
 template<typename FT>
-void J2OrbitalSoA<FT>::checkInVariables(opt_variables_type& active)
+void J2OMPTarget<FT>::createResource(ResourceCollection& collection) const
+{
+  collection.addResource(std::make_unique<J2OMPTargetMultiWalkerMem<RealType>>());
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection)
+{
+  auto res_ptr = dynamic_cast<J2OMPTargetMultiWalkerMem<RealType>*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
+  mw_mem_.reset(res_ptr);
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection)
+{
+  collection.takebackResource(std::move(mw_mem_));
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::checkInVariables(opt_variables_type& active)
 {
   myVars.clear();
   auto it(J2Unique.begin()), it_end(J2Unique.end());
@@ -35,7 +74,7 @@ void J2OrbitalSoA<FT>::checkInVariables(opt_variables_type& active)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::checkOutVariables(const opt_variables_type& active)
+void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
 {
   myVars.getIndex(active);
   Optimizable = myVars.is_optimizable();
@@ -50,7 +89,7 @@ void J2OrbitalSoA<FT>::checkOutVariables(const opt_variables_type& active)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
+void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
 {
   if (!Optimizable)
     return;
@@ -71,7 +110,7 @@ void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::reportStatus(std::ostream& os)
+void J2OMPTarget<FT>::reportStatus(std::ostream& os)
 {
   auto it(J2Unique.begin()), it_end(J2Unique.end());
   while (it != it_end)
@@ -82,14 +121,51 @@ void J2OrbitalSoA<FT>::reportStatus(std::ostream& os)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void J2OMPTarget<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   for (int k = 0; k < ratios.size(); ++k)
     ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).getDistRow(k)));
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::registerData(ParticleSet& P, WFBufferType& buf)
+void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                        const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                        std::vector<std::vector<ValueType>>& ratios) const
+{
+  // add early return to prevent from accessing vp_list[0]
+  if (wfc_list.size() == 0)
+    return;
+  auto& wfc_leader        = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& vp_leader         = vp_list.getLeader();
+  const auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
+  auto& mw_vals           = wfc_leader.mw_mem_->mw_vals;
+  const int nw            = wfc_list.size();
+
+  const size_t nVPs = mw_refPctls.size();
+  mw_vals.resize(nVPs);
+
+  // need to access the spin group of refPtcl. vp_leader doesn't necessary be a member of the list.
+  // for this reason, refPtcl must be access from [0].
+  const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
+  const auto& dt_leader(vp_leader.getDistTable(wfc_leader.my_table_ID_));
+
+  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, g_first.data(), g_last.data(), nVPs, mw_refPctls.data(),
+                   dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
+                   wfc_leader.mw_mem_->transfer_buffer);
+
+  size_t ivp = 0;
+  for (int iw = 0; iw < nw; ++iw)
+  {
+    const VirtualParticleSet& vp = vp_list[iw];
+    const auto& wfc              = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    for (int k = 0; k < vp.getTotalNum(); ++k, ivp++)
+      ratios[iw][k] = std::exp(wfc.Uat[mw_refPctls[ivp]] - mw_vals[ivp]);
+  }
+  assert(ivp == nVPs);
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (Bytes_in_WFBuffer == 0)
   {
@@ -110,7 +186,7 @@ void J2OrbitalSoA<FT>::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void J2OMPTarget<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   Uat.attachReference(buf.lendReference<valT>(N), N);
   dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded * OHMMS_DIM));
@@ -118,9 +194,9 @@ void J2OrbitalSoA<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::updateBuffer(ParticleSet& P,
-                                                                       WFBufferType& buf,
-                                                                       bool fromscratch)
+typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::updateBuffer(ParticleSet& P,
+                                                                     WFBufferType& buf,
+                                                                     bool fromscratch)
 {
   evaluateGL(P, P.G, P.L, false);
   buf.forward(Bytes_in_WFBuffer);
@@ -128,7 +204,7 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::updateBuffer(ParticleS
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::valT J2OrbitalSoA<FT>::computeU(const ParticleSet& P, int iat, const DistRow& dist)
+typename J2OMPTarget<FT>::valT J2OMPTarget<FT>::computeU(const ParticleSet& P, int iat, const DistRow& dist)
 {
   valT curUat(0);
   const int igt = P.GroupID[iat] * NumGroups;
@@ -143,7 +219,7 @@ typename J2OrbitalSoA<FT>::valT J2OrbitalSoA<FT>::computeU(const ParticleSet& P,
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
+typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
 {
   posT grad;
   for (int idim = 0; idim < OHMMS_DIM; ++idim)
@@ -160,22 +236,22 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 }
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OrbitalSoA", obj_name),
+J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
+    : WaveFunctionComponent("J2OMPTarget", obj_name),
       my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
       j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
-    throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
+    throw std::runtime_error("J2OMPTarget object name cannot be empty!");
   init(p);
   KEcorr = 0.0;
 }
 
 template<typename FT>
-J2OrbitalSoA<FT>::~J2OrbitalSoA() = default;
+J2OMPTarget<FT>::~J2OMPTarget() = default;
 
 template<typename FT>
-void J2OrbitalSoA<FT>::init(ParticleSet& p)
+void J2OMPTarget<FT>::init(ParticleSet& p)
 {
   N         = p.getTotalNum();
   N_padded  = getAlignedSize<valT>(N);
@@ -193,10 +269,20 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
   F.resize(NumGroups * NumGroups, nullptr);
   DistCompressed.resize(N);
   DistIndice.resize(N);
+
+  g_first.resize(NumGroups);
+  g_last.resize(NumGroups);
+  for (int ig = 0; ig < NumGroups; ig++)
+  {
+    g_first[ig] = p.first(ig);
+    g_last[ig]  = p.last(ig);
+  }
+  g_first.updateTo();
+  g_last.updateTo();
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
+void J2OMPTarget<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 {
   assert(ia < NumGroups);
   assert(ib < NumGroups);
@@ -230,9 +316,9 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 }
 
 template<typename FT>
-std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
 {
-  auto j2copy = std::make_unique<J2OrbitalSoA<FT>>(myName, tqp);
+  auto j2copy = std::make_unique<J2OMPTarget<FT>>(myName, tqp);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;
@@ -264,13 +350,13 @@ std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& 
  * @param d2u starting second deriv
  */
 template<typename FT>
-void J2OrbitalSoA<FT>::computeU3(const ParticleSet& P,
-                                 int iat,
-                                 const DistRow& dist,
-                                 RealType* restrict u,
-                                 RealType* restrict du,
-                                 RealType* restrict d2u,
-                                 bool triangle)
+void J2OMPTarget<FT>::computeU3(const ParticleSet& P,
+                                int iat,
+                                const DistRow& dist,
+                                RealType* restrict u,
+                                RealType* restrict du,
+                                RealType* restrict d2u,
+                                bool triangle)
 {
   const int jelmax = triangle ? iat : N;
   constexpr valT czero(0);
@@ -292,7 +378,7 @@ void J2OrbitalSoA<FT>::computeU3(const ParticleSet& P,
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
+typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
@@ -301,7 +387,7 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, 
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+void J2OMPTarget<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
   const auto& dist    = d_table.getTempDists();
@@ -328,13 +414,13 @@ void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueT
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::GradType J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, int iat)
+typename J2OMPTarget<FT>::GradType J2OMPTarget<FT>::evalGrad(ParticleSet& P, int iat)
 {
   return GradType(dUat[iat]);
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -346,7 +432,7 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet&
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
+void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // get the old u, du, d2u
   const auto& d_table = P.getDistTable(my_table_ID_);
@@ -397,7 +483,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
+void J2OMPTarget<FT>::recompute(const ParticleSet& P)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -447,18 +533,22 @@ void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L)
+void J2OMPTarget<FT>::mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+{}
+
+template<typename FT>
+typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const ParticleSet& P,
+                                                                    ParticleSet::ParticleGradient_t& G,
+                                                                    ParticleSet::ParticleLaplacian_t& L)
 {
   return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
-WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L,
-                                                                 bool fromscratch)
+WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSet& P,
+                                                                ParticleSet::ParticleGradient_t& G,
+                                                                ParticleSet::ParticleLaplacian_t& L,
+                                                                bool fromscratch)
 {
   if (fromscratch)
     recompute(P);
@@ -474,7 +564,7 @@ WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleS
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   LogValue = 0.0;
   const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
@@ -505,8 +595,8 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_p
   }
 }
 
-template class J2OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
-template class J2OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
-template class J2OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
+template class J2OMPTarget<BsplineFunctor<QMCTraits::RealType>>;
+template class J2OMPTarget<PadeFunctor<QMCTraits::RealType>>;
+template class J2OMPTarget<UserFunctor<QMCTraits::RealType>>;
 
 } // namespace qmcplusplus
