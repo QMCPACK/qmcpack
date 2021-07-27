@@ -548,6 +548,8 @@ void DiracParser::dumpHDF5(const std::string& fname)
   Matrix<double> up_imag(numMO, numAO);
   Matrix<double> dn_real(numMO, numAO);
   Matrix<double> dn_imag(numMO, numAO);
+  std::vector<double> energies(numMO, 0);
+
   int totmo = 0;
   for (int i = 0; i < irreps.size(); i++)
   {
@@ -559,10 +561,12 @@ void DiracParser::dumpHDF5(const std::string& fname)
         up_imag[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][1];
         dn_real[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][2];
         dn_imag[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][3];
+        energies[totmo]        = irreps[i].energies[mo];
         up_real[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][0];
         up_imag[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][1];
         dn_real[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][2];
         dn_imag[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][3];
+        energies[totmo + 1]    = kp_irreps[i].energies[mo];
       }
     }
   }
@@ -570,6 +574,7 @@ void DiracParser::dumpHDF5(const std::string& fname)
 
   str = "KPTS_0";
   hout.push(str, true);
+  hout.write(energies, "eigenval_0");
   hout.write(up_real, "eigenset_0");
   hout.write(up_imag, "eigenset_0_imag");
   hout.write(dn_real, "eigenset_1");
