@@ -235,7 +235,6 @@ public:
     auto& cuda_handles = dynamic_cast<CUDALinearAlgebraHandles&>(resource);
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
-    const int ldb = inv_a_mat.cols();
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
     std::fill(log_values.begin(), log_values.end(), std::complex<FullPrecReal>{0.0, 0.0});
@@ -252,9 +251,9 @@ public:
     OffloadPinnedMatrix<VALUE_FP> data_ref_matrix;
 
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
-    std::cout << "n: " << n << "  lda: " << lda<< "   lbd: " << ldb << '\n';
 
-    // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
+    // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
+    // smaller of the two's dimensions
     inv_a_mat.assignUpperRight(data_ref_matrix);
     cudaErrorCheck(cudaMemcpyAsync(inv_a_mat.device_data(), inv_a_mat.data(), inv_a_mat.size() * sizeof(TMAT),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
@@ -278,7 +277,6 @@ public:
     int nw             = a_mats.size();
     const int n        = a_mats[0].get().rows();
     const int lda      = a_mats[0].get().cols();
-    const int ldb      = inv_a_mats[0].get().cols();
     size_t nsqr        = n * n;
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);
@@ -294,9 +292,9 @@ public:
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
       OffloadPinnedMatrix<VALUE_FP> data_ref_matrix;
-      data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, n);
-      // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
-      std::cout << "n: " << n << "  lda: " << lda<< "   lbd: " << ldb << '\n';
+      data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, lda);
+      // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
+      // smaller of the two's dimensions
       inv_a_mats[iw].get().assignUpperRight(data_ref_matrix);
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().device_data(), inv_a_mats[iw].get().data(),
                                      inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice,

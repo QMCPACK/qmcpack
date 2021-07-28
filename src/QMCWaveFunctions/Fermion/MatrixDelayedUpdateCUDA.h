@@ -25,6 +25,7 @@
 #include "CUDA/CUDAallocator.hpp"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "type_traits/template_types.hpp"
+#include "type_traits/type_tests.hpp"
 
 namespace qmcplusplus
 {
@@ -86,9 +87,9 @@ class MatrixDelayedUpdateCUDA
 {
 public:
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
-  using FullPrecReal = QMCTraits::FullPrecRealType;
+  using FullPrecReal = RealAlias<T_FP>; //QMCTraits::FullPrecRealType;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, OffloadPinnedAllocator<std::complex<FullPrecReal>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
@@ -134,7 +135,7 @@ private:
   int delay_count;
 
   // psi(r')/psi(r) during a PbyP move
-  FullPrecReal cur_ratio_;
+  T cur_ratio_;
   
   /** @ingroup Resources
    *  @{ */
@@ -402,8 +403,8 @@ public:
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
-  QMCTraits::FullPrecRealType& cur_ratio() {return cur_ratio_; }
-  const QMCTraits::FullPrecRealType get_cur_ratio() const { return cur_ratio_; }
+  T& cur_ratio() {return cur_ratio_; }
+  T get_cur_ratio() const { return cur_ratio_; }
   
   /** make this class unit tests friendly without the need of setup resources.
    *  belongs in a friend class in test

@@ -21,7 +21,7 @@
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
-
+#include "type_traits/type_tests.hpp"
 
 namespace qmcplusplus
 {
@@ -44,7 +44,6 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
   OffloadValueVector_t mw_temp;
   // scratch space for keeping one row of Ainv
   OffloadValueVector_t mw_rcopy;
-
   
   MatrixUpdateOMPTargetMultiWalkerMem() : Resource("MatrixUpdateOMPTargetMultiWalkerMem") {}
 
@@ -70,7 +69,8 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadValueVector_t          = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
+  using FullPrecReal = RealAlias<T_FP>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, OffloadPinnedAllocator<std::complex<FullPrecReal>>>;
   using OffloadPinnedValueVector_t    = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t    = Matrix<T, OffloadPinnedAllocator<T>>;
   //using FullPrecReal = QMCTraits::FullPrecRealType;
@@ -448,8 +448,8 @@ public:
     throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
   }
 
-  const QMCTraits::FullPrecRealType get_cur_ratio() const { return cur_ratio_; }
-  QMCTraits::FullPrecRealType& cur_ratio() { return cur_ratio_; }
+  const T get_cur_ratio() const { return cur_ratio_; }
+  T& cur_ratio() { return cur_ratio_; }
 
 };
 

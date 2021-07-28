@@ -47,7 +47,7 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   using ValueType = QMCTraits::ValueType;
   using GradType  = QMCTraits::GradType;
   using Real      = QMCTraits::RealType;
-  using FullPrecReal = QMCTraits::FullPrecRealType;
+  using FullPrecReal = QMCTraits::QTFull::RealType;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, OffloadPinnedAllocator<ValueType>>;

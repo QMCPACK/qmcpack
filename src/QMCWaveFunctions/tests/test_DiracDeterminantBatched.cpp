@@ -392,7 +392,7 @@ TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]"
   det_leader.mw_recompute(det_refs, pset_refs, recompute_mask);
 
   std::vector<PsiValueType> ratios(nw, 0.0);
-  std::vector<ParticleSet::GradType> grads_new(nw, 0.0);
+  std::vector<ParticleSet::GradType> grads_new(nw);
   det_leader.mw_ratioGrad(det_refs, pset_refs, 0, ratios, grads_new);
 
   // using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;

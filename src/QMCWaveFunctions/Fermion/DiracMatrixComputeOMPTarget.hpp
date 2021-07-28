@@ -107,11 +107,11 @@ class DiracMatrixComputeOMPTarget : public Resource
    * @param lda the first dimension of invMat
    * @param LogDet log determinant value of invMat before inversion
    */
-  template<typename TREAL>
-  inline void computeInvertAndLog(OffloadPinnedMatrix<TREAL>& invMat,
+  template<typename TVALUE>
+  inline void computeInvertAndLog(OffloadPinnedMatrix<TVALUE>& invMat,
                                   const int n,
                                   const int lda,
-                                  std::complex<T_FP>& log_value)
+                                  std::complex<FullPrecReal>& log_value)
   {
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
@@ -125,11 +125,11 @@ class DiracMatrixComputeOMPTarget : public Resource
   }
 
 
-  template<typename TREAL>
-  inline void computeInvertAndLog(OffloadPinnedVector<TREAL>& psi_Ms,
+  template<typename TVALUE>
+  inline void computeInvertAndLog(OffloadPinnedVector<TVALUE>& psi_Ms,
                                   const int n,
                                   const int lda,
-                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                                  OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
   {
     int nw = log_values.size();
     BlasThreadingEnv knob(getNextLevelNumThreads());
@@ -143,7 +143,7 @@ class DiracMatrixComputeOMPTarget : public Resource
       Xgetrf(n, n, LU_M, lda, pivots_.data() + iw * n);
       for (int i = 0; i < n; i++)
         *(LU_diags_fp_.data() + iw * n + i) = LU_M[i * lda + i];
-      std::complex<TREAL> log_value{0.0, 0.0};
+      std::complex<FullPrecReal> log_value{0.0, 0.0};
       computeLogDet(LU_diags_fp_.data() + iw * n, n, pivots_.data() + iw * n, log_value);
       log_values[iw] = log_value;
       Xgetri(n, LU_M, lda, pivots_.data() + iw * n, m_work_.data(), lwork_);
@@ -160,12 +160,12 @@ public:
    * @tparam TMAT matrix value type
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL>
+  template<typename TMAT>
   inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(
       Resource& resource,
       const OffloadPinnedMatrix<TMAT>& a_mat,
       OffloadPinnedMatrix<TMAT>& inv_a_mat,
-      OffloadPinnedVector<std::complex<TREAL>>& log_values)
+      OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
@@ -179,12 +179,12 @@ public:
    * @tparam TMAT matrix value type
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL>
+  template<typename TMAT>
   inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(
       Resource& resource,
       const OffloadPinnedMatrix<TMAT>& a_mat,
       OffloadPinnedMatrix<TMAT>& inv_a_mat,
-      OffloadPinnedVector<std::complex<TREAL>>& log_values)
+      OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();

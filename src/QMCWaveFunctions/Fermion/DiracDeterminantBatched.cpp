@@ -83,7 +83,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.get_det_engine());
     wfc_leader.mw_res_->log_values[iw] = {0.0, 0.0};
-    //typename decltype(mw_res_)::element_type{}; // Logdet.LogValue;
   }
 
   DET_ENGINE::mw_invertTranspose(engine_list, logdetT_list, a_inv_list, wfc_leader.mw_res_->log_values, compute_mask);

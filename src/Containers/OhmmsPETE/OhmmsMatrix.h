@@ -155,8 +155,8 @@ public:
     auto& this_ref = *this;
     size_t cols = std::max(this_ref.cols(), other.cols());
     size_t rows = std::max(this_ref.rows(), other.rows());
-    for(int i = 0; i < rows; ++i)
-      for(int j = 0; j < cols; ++j)
+    for(int j = 0; j < cols; ++j)
+      for(int i = 0; i < rows; ++i)
         this_ref(i,j) = other(i,j);
   }
   

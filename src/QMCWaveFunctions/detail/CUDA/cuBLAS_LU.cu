@@ -51,7 +51,7 @@ __device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, int n_in
   diag.y              = lu_diag.y * pivot_factor;
   cuDoubleComplex log_value;
   log_value.x = log(sqrt(diag.x * diag.x + diag.y * diag.y));
-  log_value.y = atan2(diag.y, diag.x);
+  log_value.y = - atan2(diag.y, diag.x);
   return log_value;
 }
 
