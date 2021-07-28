@@ -74,7 +74,7 @@ private:
   std::vector<atBasisSet> basisset;
   std::vector<std::vector<std::complex<double>>> upcoeff;
   std::vector<std::vector<std::complex<double>>> dncoeff;
-  int numAO, numMO;
+  int numAO;
   normMapType normMap;
 
   std::vector<fermIrrep> irreps;

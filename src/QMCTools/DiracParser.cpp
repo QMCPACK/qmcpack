@@ -52,10 +52,13 @@ fermIrrep fermIrrep::generate_kramers_pair()
 
 DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
 {
-  ECP      = false;
-  BohrUnit = true;
-  PBC      = false;
-  normMap  = {
+  ECP          = true;
+  BohrUnit     = true;
+  PBC          = false;
+  isSpinor     = true;
+  angular_type = "cartesian";
+  expandYlm    = "Dirac";
+  normMap      = {
       {"s", 1.0},
       {"px", 1.0},
       {"py", 1.0},
@@ -169,12 +172,36 @@ void DiracParser::parse(const std::string& fname)
   std::cout << "Found " << NumberOfSpecies << " unique species" << std::endl;
   std::cout << "Found " << NumberOfAtoms << " total number of atoms" << std::endl;
 
+  search(fin, "*SCF: Set-up for");
+  skiplines(fin, 2);
+  getwords(currentWords, fin);
+  if (currentWords[1] == "Closed")
+  {
+    NumberOfBeta  = 0;
+    NumberOfAlpha = std::stoi(currentWords[6]);
+    NumberOfEls   = NumberOfAlpha;
+  }
+  else if (currentWords[1] == "Open")
+  {
+    NumberOfBeta = 0;
+    search(fin, "* Shell specifications:");
+    lookFor(fin, "Total", aline);
+    parsewords(aline.c_str(), currentWords);
+    NumberOfAlpha = std::stoi(currentWords[1]);
+    NumberOfEls   = NumberOfAlpha;
+  }
+  else
+  {
+    std::cerr << "Error number of electrons" << std::endl;
+    abort();
+  }
+
   IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
   getGeometry(fin);
   getGaussianCenters(fin);
   getSpinors(fin);
-  dumpHDF5(fname);
+  //dumpHDF5(fname);
 }
 
 void DiracParser::getGeometry(std::istream& is)
@@ -207,7 +234,27 @@ void DiracParser::getGeometry(std::istream& is)
   }
   search(is, "total: ", aline);
   parsewords(aline.c_str(), currentWords);
-  numAO = std::stoi(currentWords[4]);
+  numAO          = std::stoi(currentWords[4]);
+  SizeOfBasisSet = numAO;
+
+  //now overwrite charge for pseudsized atoms
+  is.clear();
+  is.seekg(pivot_begin);
+  while(lookFor(is, "Nuclear Gaussian exponent for atom",aline))
+  {
+    parsewords(aline.c_str(), currentWords);
+    int z = std::stoi(currentWords[7]);
+    std::getline(is, aline);
+    if (aline.size() == 0)
+        break;
+    getwords(currentWords, is);
+    int zeff = std::stoi(currentWords[6]);
+    zeffMap.find(IonName[z])->second = zeff;
+  }
+
+  is.clear();
+  is.seekg(pivot_begin);
+
 
   search(is, "Cartesian coordinates in XYZ format", aline);
   skiplines(is, 4);
@@ -307,6 +354,54 @@ void DiracParser::getGaussianCenters(std::istream& is)
       }
     }
   }
+
+  //Store data to QMCGaussian output format
+  std::map<std::string, int> basisDataMap;
+  int nUniqAt = 0;
+  for (int i = 0; i < NumberOfAtoms; i++)
+  {
+    std::map<std::string, int>::iterator it(basisDataMap.find(GroupName[i]));
+    if (it == basisDataMap.end())
+    {
+      basisDataMap[GroupName[i]] = nUniqAt++;
+    }
+  }
+  gBound.resize(NumberOfAtoms + 1);
+  gShell.clear();
+  gNumber.clear();
+  gExp.clear();
+  gC0.clear();
+  gC1.clear();
+  int gtot = 0;
+  for (int i = 0; i < NumberOfAtoms; i++)
+  {
+    std::map<std::string, int>::iterator it(basisDataMap.find(GroupName[i]));
+    if (it == basisDataMap.end())
+    {
+      std::cerr << "Error in parser.\n";
+      abort();
+    }
+    gBound[i] = gtot;
+    int indx  = it->second;
+    gtot += basisset[indx].basisGroups.size();
+    for (int k = 0; k < basisset[indx].basisGroups.size(); k++)
+    {
+      int l  = basisset[indx].basisGroups[k].l;
+      int sh = (l == 0) ? 1 : l + 2;
+      gShell.push_back(sh);
+    }
+    for (int k = 0; k < basisset[indx].basisGroups.size(); k++)
+      gNumber.push_back(basisset[indx].basisGroups[k].radfuncs.size());
+    for (int k = 0; k < basisset[indx].basisGroups.size(); k++)
+    {
+      for (int c = 0; c < basisset[indx].basisGroups[k].radfuncs.size(); c++)
+      {
+        gExp.push_back(basisset[indx].basisGroups[k].radfuncs[c].first);
+        gC0.push_back(basisset[indx].basisGroups[k].radfuncs[c].second);
+      }
+    }
+  }
+  gBound[NumberOfAtoms] = gtot;
 }
 
 void DiracParser::getSpinors(std::istream& is)
@@ -427,158 +522,36 @@ void DiracParser::getSpinors(std::istream& is)
     kp_irreps.push_back(irreps[i].generate_kramers_pair());
     std::cout << "Generated kramers pair with irrep " << kp_irreps[i].get_label() << std::endl;
   }
-}
 
-void DiracParser::dumpHDF5(const std::string& fname)
-{
-  std::string str;
-
-  h5file = fname + ".orbs.h5";
-  hdf_archive hout;
-  hout.create(h5file.c_str(), H5F_ACC_TRUNC);
-
-  hout.push("application", true);
-  str = "dirac";
-  hout.write(str, "code");
-  hout.write(version, "version");
-  hout.pop();
-
-  hout.push("PBC", true);
-  hout.write(PBC, "PBC");
-  hout.pop();
-
-
-  hout.push("atoms", true);
-  hout.write(NumberOfAtoms, "number_of_atoms");
-  hout.write(NumberOfSpecies, "number_of_species");
-  Matrix<double> Pos(NumberOfAtoms, 3);
-  for (int i = 0; i < NumberOfAtoms; i++)
+  //store in QMCGaussian data format
+  EigVec.clear();
+  EigVal_alpha.clear();
+  EigVal_beta.clear();
+  std::vector<int> idx = {0, 2, 1, 3};
+  for (int d = 0; d < 4; d++)
   {
-    for (int d = 0; d < 3; d++)
+    for (int i = 0; i < irreps.size(); i++)
     {
-      Pos[i][d] = IonSystem.R[i][d];
-    }
-  }
-  hout.write(Pos, "positions");
-  SpeciesSet& species(IonSystem.getSpeciesSet());
-  for (int isp = 0; isp < species.size(); isp++)
-  {
-    str = "species_" + std::to_string(isp);
-    hout.push(str, true);
-    int at, core, zeff;
-    at   = species(AtomicNumberIndex, isp);
-    zeff = species(IonChargeIndex, isp);
-    core = at - zeff;
-    hout.write(at, "atomic_number");
-    hout.write(zeff, "charge");
-    hout.write(core, "core");
-    hout.write(species.speciesName[isp], "name");
-    hout.pop();
-  }
-  std::vector<int> ids(NumberOfAtoms);
-  for (int i = 0; i < NumberOfAtoms; i++)
-  {
-    ids[i] = IonSystem.GroupID[i];
-  }
-  hout.write(ids, "species_ids");
-  hout.pop();
-  hout.pop();
-
-  str = "basisset";
-  hout.push(str, true);
-  hout.write(NumberOfSpecies, "NbElements");
-  str = "LCAOBSet";
-  hout.write(str, "name");
-  for (int nb = 0; nb < basisset.size(); nb++)
-  {
-    str = "atomicBasisSet" + std::to_string(nb);
-    hout.push(str, true);
-    atBasisSet& bs = basisset[nb];
-    hout.write(bs.name, "name");
-    hout.write(bs.normalized, "normalized");
-    hout.write(bs.grid_type, "grid_type");
-    hout.write(bs.expandYlm, "expandYlm");
-    hout.write(bs.elementType, "elementType");
-    hout.write(bs.angular, "angular");
-    hout.write(bs.grid_ri, "grid_ri");
-    hout.write(bs.grid_rf, "grid_rf");
-    hout.write(bs.grid_npts, "grid_npts");
-    int nbg = bs.basisGroups.size();
-    hout.write(nbg, "NbBasisGroups");
-    for (int ng = 0; ng < bs.basisGroups.size(); ng++)
-    {
-      str = "basisGroup" + std::to_string(ng);
-      hout.push(str, true);
-      basisGroup& bg = bs.basisGroups[ng];
-      int nrf        = bg.radfuncs.size();
-      hout.write(nrf, "NbRadFunc");
-      hout.write(bg.rid, "rid");
-      hout.write(bg.l, "l");
-      hout.write(bg.n, "n");
-      hout.write(bg.type, "type");
-      hout.push("radfunctions", true);
-      for (int np = 0; np < bg.radfuncs.size(); np++)
+      for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
       {
-        str = "DataRad" + std::to_string(np);
-        hout.push(str, true);
-        primBasis& p = bg.radfuncs[np];
-        hout.write(p.first, "exponent");
-        hout.write(p.second, "contraction");
-        hout.pop();
+        for (int ao = 0; ao < irreps[i].get_num_ao(); ao++)
+          EigVec.push_back(irreps[i].spinor_mo_coeffs[mo][ao][idx[d]]);
+        for (int ao = 0; ao < kp_irreps[i].get_num_ao(); ao++)
+          EigVec.push_back(kp_irreps[i].spinor_mo_coeffs[mo][ao][idx[d]]);
       }
-      hout.pop();
-
-      hout.pop();
     }
-    hout.pop();
   }
-  hout.pop();
-
-  str = "Nb_KPTS";
-  hout.push(str, true);
-  int nk = 1;
-  hout.write(nk, "Nbkpts");
-  hout.pop();
+  for (int i = 0; i < irreps.size(); i++)
+  {
+    for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
+    {
+      EigVal_alpha.push_back(irreps[i].energies[mo]);
+      EigVal_alpha.push_back(kp_irreps[i].energies[mo]);
+    }
+  }
 
   numMO = 0;
   for (int i = 0; i < irreps.size(); i++)
     numMO += 2 * irreps[i].get_num_spinors(); //irrep and kp
-
-  Matrix<double> up_real(numMO, numAO);
-  Matrix<double> up_imag(numMO, numAO);
-  Matrix<double> dn_real(numMO, numAO);
-  Matrix<double> dn_imag(numMO, numAO);
-  std::vector<double> energies(numMO, 0);
-
-  int totmo = 0;
-  for (int i = 0; i < irreps.size(); i++)
-  {
-    for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++, totmo += 2)
-    {
-      for (int ao = 0; ao < numAO; ao++)
-      {
-        up_real[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][0];
-        up_imag[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][1];
-        dn_real[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][2];
-        dn_imag[totmo][ao]     = irreps[i].spinor_mo_coeffs[mo][ao][3];
-        energies[totmo]        = irreps[i].energies[mo];
-        up_real[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][0];
-        up_imag[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][1];
-        dn_real[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][2];
-        dn_imag[totmo + 1][ao] = kp_irreps[i].spinor_mo_coeffs[mo][ao][3];
-        energies[totmo + 1]    = kp_irreps[i].energies[mo];
-      }
-    }
-  }
-  assert(totmo == numMO);
-
-  str = "KPTS_0";
-  hout.push(str, true);
-  hout.write(energies, "eigenval_0");
-  hout.write(up_real, "eigenset_0");
-  hout.write(up_imag, "eigenset_0_imag");
-  hout.write(dn_real, "eigenset_1");
-  hout.write(dn_imag, "eigenset_1_imag");
-  hout.pop();
-  hout.close();
 }
+

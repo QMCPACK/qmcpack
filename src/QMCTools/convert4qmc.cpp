@@ -102,9 +102,7 @@ int main(int argc, char** argv)
         {
           parser  = new DiracParser(argc, argv);
           in_file = argv[++iargc];
-          parser->parse(in_file);
-          delete parser;
-          return 0;
+          usehdf5 = true;
         }
         else if (a == "-orbitals")
         {
