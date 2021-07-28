@@ -82,7 +82,7 @@ struct OMPallocator : public HostAllocator
     value_type* pt = HostAllocator::allocate(n);
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
     OMPallocator_device_mem_allocated += n * sizeof(T);
-    device_ptr_         = getOffloadDevicePtr(pt);
+    device_ptr_ = getOffloadDevicePtr(pt);
     return pt;
   }
 
@@ -103,7 +103,7 @@ struct OMPallocator : public HostAllocator
 
 private:
   // pointee is on device.
-  T* device_ptr_         = nullptr;
+  T* device_ptr_ = nullptr;
 };
 
 /** Specialization for OMPallocator which is a special DualAllocator with fused
@@ -121,7 +121,10 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
 
-  static void attachReference(const OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, const T* from_data, T* ref)
+  static void attachReference(const OMPallocator<T, HostAllocator>& from,
+                              OMPallocator<T, HostAllocator>& to,
+                              const T* from_data,
+                              T* ref)
   {
     std::ptrdiff_t ptr_offset = ref - from_data;
     to.attachReference(from, ptr_offset);
