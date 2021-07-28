@@ -145,7 +145,7 @@ bool ParticleSet::getPerParticleSKState() const
 {
   bool isPerParticleOn = false;
   if (SK)
-    isPerParticleOn = SK->StorePerParticle;
+    isPerParticleOn = SK->isStorePerParticle();
   return isPerParticleOn;
 }
 
