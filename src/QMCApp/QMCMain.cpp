@@ -260,6 +260,14 @@ bool QMCMain::execute()
       break;
     }
   }
+  // free if m_qmcation owns the memory of xmlNodePtr before clearing
+  for (auto& qmcactionPair : m_qmcaction)
+  {
+    if (!qmcactionPair.second)
+    {
+      xmlFreeNode(qmcactionPair.first);
+    }
+  }
   m_qmcaction.clear();
   t2->stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
