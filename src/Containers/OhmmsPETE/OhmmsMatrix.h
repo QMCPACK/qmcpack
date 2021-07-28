@@ -144,6 +144,22 @@ public:
     assign(*this, rhs);
   }
 
+  /** This assigns from a matrix with larger row size (used for alignment)
+   *  to whatever the rowsize is here.
+   *  Hacky but so is just making the matrix n x (n + padding) to handle row alignment.
+   *  This is unoptimized.
+   */
+  template<typename CONTAINER>
+  void assignUpperRight(const CONTAINER& other)
+  {
+    auto& this_ref = *this;
+    size_t cols = std::max(this_ref.cols(), other.cols());
+    size_t rows = std::max(this_ref.rows(), other.rows());
+    for(int i = 0; i < rows; ++i)
+      for(int j = 0; j < cols; ++j)
+        this_ref(i,j) = other(i,j);
+  }
+  
   // Assignment Operators
   inline This_t& operator=(const This_t& rhs)
   {
