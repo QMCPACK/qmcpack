@@ -14,6 +14,7 @@
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/CUDATypeMapping.hpp"
 #include "Platforms/CUDA/CUDAfill.hpp"
+#include <cuComplex.h>
 
 /** \file
  *
@@ -33,7 +34,7 @@ namespace cuBLAS_LU
 /** because atan2(y, x) = pi for (0, -x)
  *  we use a short cut for the real valued matrices
  */
-__device__ cuDoubleComplex complexDetLog(const double lu_diag, const int n_index, const int pivot)
+__device__ cuDoubleComplex complexDetLog(const double lu_diag, int n_index, const int pivot)
 {
   cuDoubleComplex log_value;
   double lud  = lu_diag * (1 - 2 * (pivot != n_index + 1));
@@ -42,7 +43,7 @@ __device__ cuDoubleComplex complexDetLog(const double lu_diag, const int n_index
   return log_value;
 }
 
-__device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, const int n_index, const int pivot)
+__device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, int n_index, const int pivot)
 {
   cuDoubleComplex diag;
   double pivot_factor = 1 - 2 * (pivot != n_index + 1);
@@ -102,13 +103,13 @@ __global__ void computeLogDet_kernel(const int n,
  *  \param[out] LU_diags - the LU_diags from the LU
  *  \param[in] batch_size - no a big deal here.
  */
-template<typename TMAT, typename T>
+template<typename TMAT>
 cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
                                        const int n,
                                        const int lda,
                                        TMAT** LU_mat,
                                        const int* pivots,
-                                       T* logdets,
+                                       std::complex<double>* logdets,
                                        const int batch_size)
 {
   // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
@@ -241,14 +242,6 @@ template void computeLogDet_batched<double>(cudaStream_t& hstream,
                                             std::complex<double>* log_dets,
                                             const int batch_size);
 
-template void computeLogDet_batched<float>(cudaStream_t& hstream,
-                                           const int n,
-                                           const int lda,
-                                           float** LU_mat,
-                                           const int* pivots,
-                                           std::complex<double>* log_dets,
-                                           const int batch_size);
-
 template void computeInverseAndDetLog_batched<double>(cublasHandle_t& h_cublas,
                                      cudaStream_t& hstream,
                                      const int n,
@@ -274,6 +267,7 @@ template void computeInverseAndDetLog_batched<std::complex<double>>(cublasHandle
                                      int* infos,
                                      std::complex<double>* log_dets,
                                      const int batch_size);
+
 
 } // namespace cuBLAS_LU
 } // namespace qmcplusplus

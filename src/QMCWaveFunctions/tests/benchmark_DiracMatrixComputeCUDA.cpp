@@ -34,14 +34,19 @@
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 
+#ifdef ENABLE_CUDA
+#include "DualAllocator.hpp"
+#endif
+
 namespace qmcplusplus
 {
 #ifdef ENABLE_OFFLOAD
 template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#elif ENABLE_CUDA
+#endif
+#ifdef ENABLE_CUDA
 template<typename T>
-using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 
 template<typename T>

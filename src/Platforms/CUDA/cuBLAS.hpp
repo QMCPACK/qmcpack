@@ -121,8 +121,8 @@ inline cublasStatus_t copy(cublasHandle_t& handle,
 }
 
 inline cublasStatus_t geam(cublasHandle_t& handle,
-                           cublasOperation_t& transa,
-                           cublasOperation_t& transb,
+                           cublasOperation_t transa,
+                           cublasOperation_t transb,
                            int m,
                            int n,
                            const float* alpha,
