@@ -11,6 +11,7 @@
 
 #include <catch.hpp>
 #include <algorithm>
+#include <cmath>
 #include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -47,6 +48,19 @@ using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
+template<typename T, IsComplex<T> = true>
+void checkLogDetValue(T val_a, T val_b) {
+  CHECK(val_a.real() == Approx(val_b.real()));
+  using Real = RealAlias<T>;
+  constexpr Real two_pi = 2 * M_PI;
+  CHECK( std::fmod(val_a.imag(), two_pi) == Approx(std::fmod(val_b.imag(), two_pi)));
+}
+
+template<typename T, IsReal<T> = true>
+void checkLogDetValue(T val_a, T val_b) {
+  CHECK(val_a == ComplexApprox(val_b));
+}
+
 template<typename VALUE, typename VALUE_FP>
 void test_DiracMatrixComputeCUDA_different_batch_sizes() {
   using FullPrecReal = RealAlias<VALUE_FP>;
@@ -63,7 +77,7 @@ void test_DiracMatrixComputeCUDA_different_batch_sizes() {
   DiracMatrixComputeCUDA<VALUE_FP> dmcc(cuda_handles->hstream);
 
   dmcc.invert_transpose(*cuda_handles, mat_a, inv_mat_a, log_values);
-  CHECK(log_values[0] == ComplexApprox(std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586}));
+  checkLogDetValue(log_values[0], std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586} );
 
   OffloadPinnedMatrix<VALUE> mat_b;
   mat_b.resize(4, 4);
@@ -91,8 +105,8 @@ void test_DiracMatrixComputeCUDA_different_batch_sizes() {
   check_matrix_result = checkMatrix(inv_mat_a2, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  CHECK(log_values[0] == ComplexApprox(std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586}));
-  CHECK(log_values[1] == ComplexApprox(std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586}));
+  checkLogDetValue(log_values[0], std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586});
+  checkLogDetValue(log_values[1], std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586});
 
   OffloadPinnedMatrix<VALUE> mat_a3;
   mat_a3.resize(4, 4);
@@ -118,10 +132,41 @@ void test_DiracMatrixComputeCUDA_different_batch_sizes() {
   check_matrix_result = checkMatrix(inv_mat_a3, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { std::cout << check_matrix_result.result_message << std::endl; }
 
-  CHECK(log_values[0] == ComplexApprox(std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586}));
-  CHECK(log_values[1] == ComplexApprox(std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586}));
-  CHECK(log_values[2] == ComplexApprox(std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586}));
+  checkLogDetValue(log_values[0],std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586});
+  checkLogDetValue(log_values[1],std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586});
+  checkLogDetValue(log_values[2],std::complex<FullPrecReal>{5.267858159063328, 6.283185307179586});
 }
+
+template<typename VALUE, typename VALUE_FP, IsComplex<VALUE> = true>
+void test_DiracMatrixComputeCUDA_complex() {
+  using FullPrecReal = RealAlias<VALUE_FP>;
+
+  OffloadPinnedMatrix<VALUE> mat_a;
+  mat_a.resize(4, 4);
+  std::vector<VALUE> A{ {2.0, 0.1}, {5.0, 0.1}, {8.0, 0.5}, {7.0, 1.0}, {5.0, 0.1}, {2.0, 0.2}, {2.0, 0.1}, {8.0, 0.5}, {7.0, 0.2}, {5.0, 1.0}, {6.0, -0.2}, {6.0, -0.2}, {5.0, 0.0}, {4.0, -0.1}, {4.0, -0.6}, {8.0, -2.0} };
+  std::copy_n(A.data(), 16, mat_a.data());
+  OffloadPinnedVector<std::complex<FullPrecReal>> log_values;
+  log_values.resize(1);
+  OffloadPinnedMatrix<VALUE> inv_mat_a;
+  inv_mat_a.resize(4, 4);
+  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
+  DiracMatrixComputeCUDA<VALUE_FP> dmcc(cuda_handles->hstream);
+
+  dmcc.invert_transpose(*cuda_handles, mat_a, inv_mat_a, log_values);
+
+  checkLogDetValue(log_values[0], std::complex<FullPrecReal>{5.6037775791955715, -6.158660333118822});
+
+  OffloadPinnedMatrix<VALUE> mat_b;
+  mat_b.resize(4, 4);
+  double invA[16]{-0.08247423, -0.26804124, 0.26804124, 0.05154639,  0.18556701,  -0.89690722, 0.39690722,  0.13402062,
+                  0.24742268,  -0.19587629, 0.19587629, -0.15463918, -0.29896907, 1.27835052,  -0.77835052, 0.06185567};
+  std::copy_n(invA, 16, mat_b.data());
+
+  auto check_matrix_result = checkMatrix(inv_mat_a, mat_b);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+}
+
 
 TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 {
@@ -211,44 +256,14 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
   Matrix<Value> inv_mat_test(n, n);
   std::complex<RealValue> det_log_value;
   dmat.invert_transpose(mat_spd, inv_mat_test, det_log_value);
-  
   auto check_matrix_result = checkMatrix(inv_mat_a, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
-
+  checkLogDetValue(det_log_value, log_values[0]);
+  
   dmat.invert_transpose(mat_spd2, inv_mat_test, det_log_value);
   check_matrix_result = checkMatrix(inv_mat_a2, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
-}
-
-TEST_CASE("DiracMatrixComputeCUDA_differentAlignment_invMat", "[wavefunction][fermion]")
-{
-  using Value = std::complex<double>;
-  
-  int n = 23;
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
-
-  DiracMatrixComputeCUDA<Value> dmcc(cuda_handles->hstream);;
-
-  Matrix<Value> mat_spd;
-  mat_spd.resize(n, n);
-  testing::MakeRngSpdMatrix<Value> makeRngSpdMatrix;
-  makeRngSpdMatrix(mat_spd);
-  // You would hope you could do this
-  // OffloadPinnedMatrix<double> mat_a(mat_spd);
-  // But you can't
-  OffloadPinnedMatrix<Value> mat_a(n, n);
-  for (int i = 0; i < n; ++i)
-    for (int j = 0; j < n; ++j)
-      mat_a(i, j) = mat_spd(i, j);
-
-  OffloadPinnedVector<std::complex<double>> log_values;
-  log_values.resize(2);
-  OffloadPinnedMatrix<Value> inv_mat_a;
-  inv_mat_a.resize(n, n);
-  OffloadPinnedMatrix<std::complex<Value>> inv_mat_a2;
-  inv_mat_a2.resize(n, n);
-
-  
+  checkLogDetValue(det_log_value, log_values[1]);
 }
 
 TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunction][fermion]")

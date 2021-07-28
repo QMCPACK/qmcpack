@@ -50,7 +50,7 @@ def print_real_col_major(a_mat):
 def print_complex_col_major(a_mat):
     for j in range (a_mat.shape[1]):
         for i in range(a_mat.shape[0]):
-            print("{}, {}, ".format(a_mat[i,j].real,a_mat[i,j].imag), end="")
+            print("{{{}, {}}}, ".format(a_mat[i,j].real,a_mat[i,j].imag), end="")
 
 # lapack and cuBLAS use 1 based indexing for pivots
 def print_pivots(pivots):
@@ -65,6 +65,7 @@ def math_log_det(lu_diag, pivots):
         log_value += complex(0,(lud < 0) * np.pi)
     return log_value
 
+
 def cmath_log_det(lu_diag, pivot):
     log_value = complex(0.0,0.0)
     for i in range(4):
@@ -74,7 +75,7 @@ def cmath_log_det(lu_diag, pivot):
 def com_cmath_log_det(lu_diag, pivot):
     log_value = complex(0.0,0.0)
     for i in range(4):
-        pivot_factor = (1 - (2 * (pivot[i] != i)))
+        pivot_factor = 1 - (2 * (pivot[i] != i))
         diag = complex(lu_diag[i].real * pivot_factor, lu_diag[i].imag * pivot_factor)
         log_value += cmath.log(diag)
     return log_value
@@ -83,10 +84,12 @@ def com_cmath_log_det(lu_diag, pivot):
 def com_math_log_det(lu_diag, pivot):
     log_value = complex(0.0,0.0)
     for i in range(4):
-        pivot_factor = (1 - (2 * (pivot[i] != i)))
+        pivot_factor =  1 - (2 * (pivot[i] != i))
         diag = complex(lu_diag[i].real * pivot_factor, lu_diag[i].imag * pivot_factor)
         log_value += complex(math.log(math.sqrt(diag.real * diag.real + diag.imag * diag.imag)), 0)
-        log_value += complex(0, math.atan2(diag.imag, diag.real))
+        theta = math.atan2(diag.imag , diag.real);
+        log_value += complex(0, theta)
+        #math.atan2(diag.imag, diag.real))
         print(math.atan2(diag.imag, diag.real))
     return log_value
 
@@ -101,6 +104,11 @@ a_mat = np.array([[2, 5, 8, 7],
                   [5, 2, 2, 8],
                   [7, 5, 6, 6],
                   [5, 4, 4, 8]])
+
+com_amat = np.array([[2-0.0j, 5-0.0j, 8-0j, 7-0j],
+                  [5-0j, 2-0j, 2-0j, 8-0j],
+                  [7-0j, 5-0j, 6-0j, 6-0j],
+                  [5-0j, 4-0j, 4-0j, 8-0j]])
 
 print("For computeLogDet real")
 print("a_mat:")
@@ -120,6 +128,13 @@ print_pivots(a_piv)
 
 print("log_det:")
 print(math_log_det(np.diag(a_lu),a_piv))
+
+print("The same calculated with complex values")
+
+com_a_lu, com_a_piv = sl.lu_factor(com_amat)
+print("log_det:")
+print(com_math_log_det(np.diag(com_a_lu),com_a_piv))
+print(cmath_log_det(np.diag(com_a_lu),com_a_piv))
 
 print("=======")
 
@@ -147,6 +162,9 @@ print_pivots(piv_LU)
 
 print("log det:")
 print(cmath_log_det(np.diag(com_LU),piv_LU))
+print(com_math_log_det(np.diag(com_LU),piv_LU))
+
+
 
 print("=======")
 

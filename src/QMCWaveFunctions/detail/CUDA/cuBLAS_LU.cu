@@ -43,6 +43,9 @@ __device__ cuDoubleComplex complexDetLog(const double lu_diag, int n_index, cons
   return log_value;
 }
 
+/** This method and std::log(std::complex) make different sign choices for the sign of the logarithm when x is negative
+ *   and y = 0.0 neither is "wrong" since the phase is 2pi cyclic.
+ */
 __device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, int n_index, const int pivot)
 {
   cuDoubleComplex diag;
@@ -51,7 +54,7 @@ __device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, int n_in
   diag.y              = lu_diag.y * pivot_factor;
   cuDoubleComplex log_value;
   log_value.x = log(sqrt(diag.x * diag.x + diag.y * diag.y));
-  log_value.y = - atan2(diag.y, diag.x);
+  log_value.y = atan2(diag.y, diag.x);
   return log_value;
 }
 
