@@ -21,8 +21,6 @@ typedef std::pair<double, double> primBasis;
 
 struct basisGroup
 {
-  std::string rid;
-  std::string type = "Gaussian";
   int l;
   int n;
   std::vector<primBasis> radfuncs;
@@ -30,15 +28,7 @@ struct basisGroup
 
 struct atBasisSet
 {
-  std::string name       = "Gaussian";
-  std::string normalized = "no";
-  std::string grid_type  = "log";
-  std::string expandYlm  = "Dirac";
   std::string elementType;
-  std::string angular = "cartesian";
-  double grid_ri      = 1e-6;
-  double grid_rf      = 100;
-  int grid_npts       = 1001;
   std::vector<basisGroup> basisGroups;
 };
 
@@ -72,9 +62,6 @@ private:
   int version;
   std::string aline;
   std::vector<atBasisSet> basisset;
-  std::vector<std::vector<std::complex<double>>> upcoeff;
-  std::vector<std::vector<std::complex<double>>> dncoeff;
-  int numAO;
   normMapType normMap;
 
   std::vector<fermIrrep> irreps;

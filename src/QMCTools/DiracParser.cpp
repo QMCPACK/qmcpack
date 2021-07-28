@@ -52,7 +52,7 @@ fermIrrep fermIrrep::generate_kramers_pair()
 
 DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
 {
-  ECP          = true;
+  ECP          = false;
   BohrUnit     = true;
   PBC          = false;
   isSpinor     = true;
@@ -234,8 +234,7 @@ void DiracParser::getGeometry(std::istream& is)
   }
   search(is, "total: ", aline);
   parsewords(aline.c_str(), currentWords);
-  numAO          = std::stoi(currentWords[4]);
-  SizeOfBasisSet = numAO;
+  SizeOfBasisSet          = std::stoi(currentWords[4]);
 
   //now overwrite charge for pseudsized atoms
   is.clear();
@@ -247,14 +246,14 @@ void DiracParser::getGeometry(std::istream& is)
     std::getline(is, aline);
     if (aline.size() == 0)
         break;
+    //found an ECP to replace 
+    ECP = true;
     getwords(currentWords, is);
     int zeff = std::stoi(currentWords[6]);
     zeffMap.find(IonName[z])->second = zeff;
   }
-
   is.clear();
   is.seekg(pivot_begin);
-
 
   search(is, "Cartesian coordinates in XYZ format", aline);
   skiplines(is, 4);
@@ -322,7 +321,6 @@ void DiracParser::getGaussianCenters(std::istream& is)
             basisGroup bas;
             bas.n   = basisset[iat].basisGroups.size();
             bas.l   = l;
-            bas.rid = basisset[iat].elementType + std::to_string(bas.n) + std::to_string(bas.l);
             bas.radfuncs.push_back(p);
             basisset[iat].basisGroups.push_back(bas);
           }
@@ -335,7 +333,6 @@ void DiracParser::getGaussianCenters(std::istream& is)
             basisGroup bg;
             bg.n   = basisset[iat].basisGroups.size();
             bg.l   = l;
-            bg.rid = basisset[iat].elementType + std::to_string(bg.n) + std::to_string(bg.l);
             basisset[iat].basisGroups.push_back(bg);
           }
           for (int n = 0; n < nprim; n++)
@@ -436,7 +433,7 @@ void DiracParser::getSpinors(std::istream& is)
       int nspinors = 0;
       for (int j = 0; j < nj; j++)
         nspinors += std::stoi(currentWords[4 + j]);
-      irreps.push_back(fermIrrep(labels[i], nspinors, numAO));
+      irreps.push_back(fermIrrep(labels[i], nspinors, SizeOfBasisSet));
     }
     else
     {
@@ -449,7 +446,7 @@ void DiracParser::getSpinors(std::istream& is)
         abort();
       }
       int nspinors = std::stoi(currentWords[1]);
-      irreps.push_back(fermIrrep(labels[i], nspinors, numAO));
+      irreps.push_back(fermIrrep(labels[i], nspinors, SizeOfBasisSet));
     }
   }
 
