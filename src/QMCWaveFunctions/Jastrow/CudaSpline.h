@@ -28,11 +28,12 @@ struct CudaSpline
   template<typename T2>
   void set(BsplineFunctor<T2>& func)
   {
-    int num_coefs = func.SplineCoefs.size();
+    const auto& spline_coefs = *func.spline_coefs_;
+    const int num_coefs = spline_coefs.size();
     gpu::host_vector<T> coefs_h(num_coefs);
     for (int i = 0; i < num_coefs; i++)
     {
-      coefs_h[i] = func.SplineCoefs[i];
+      coefs_h[i] = spline_coefs[i];
       // app_log() << "coefs_h[" << i << "] = " << coefs_h[i] << std::endl;
     }
     coefs = coefs_h;

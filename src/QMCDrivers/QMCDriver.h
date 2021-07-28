@@ -311,7 +311,7 @@ protected:
   QMCHamiltonian& H;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;

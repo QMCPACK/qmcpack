@@ -17,6 +17,8 @@
 
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+
+#include <memory>
 #include "Message/Communicate.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
@@ -29,8 +31,6 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
-
-#include <memory>
 
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
@@ -334,12 +334,14 @@ struct WaveFunctionComponent : public QMCTraits
                                     const std::vector<bool>& isAccepted,
                                     bool safe_to_delay = false) const;
 
-  /** complete all the delayed updates, must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   * Must be called at the end of each substep if p-by-p move is used.
+   * This function was initially introduced for determinant delayed updates to complete all the delayed operations.
+   * It has been extended to handle asynchronous operations on accellerators before leaving the p-by-p move region.
    */
   virtual void completeUpdates() {}
 
-  /** complete all the delayed updates for all the walkers in a batch
-   * must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations for all the walkers in a batch before leaving the p-by-p move region.
    */
   virtual void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const;
 
@@ -513,7 +515,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios of all the virtual moves of all the walkers
    */
   virtual void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<const VirtualParticleSet>& vp_list,
+                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
 
   /** evaluate ratios to evaluate the non-local PP

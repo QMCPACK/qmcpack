@@ -55,7 +55,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       W(w),
       Psi(psi),
       H(h),
-      wOut(0),
       driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
@@ -227,8 +226,8 @@ void QMCDriver::process(xmlNodePtr cur)
 #endif
   branchEngine->put(cur);
   Estimators->put(H, cur);
-  if (wOut == 0)
-    wOut = new HDFWalkerOutput(W, RootName, myComm);
+  if (!wOut)
+    wOut = std::make_unique<HDFWalkerOutput>(W, RootName, myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -338,8 +337,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
-  delete wOut;
-  wOut           = 0;
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();
