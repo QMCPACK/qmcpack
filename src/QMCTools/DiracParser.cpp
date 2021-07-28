@@ -12,6 +12,7 @@
 #include "QMCTools/DiracParser.h"
 #include "io/hdf/hdf_archive.h"
 #include <cstdio>
+#include <algorithm>
 
 typedef std::pair<double, double> primExpCoeff;
 typedef std::vector<primExpCoeff> basisFunc;
@@ -201,7 +202,17 @@ void DiracParser::parse(const std::string& fname)
   getGeometry(fin);
   getGaussianCenters(fin);
   getSpinors(fin);
-  //dumpHDF5(fname);
+
+  std::cout << "***********************" << std::endl;
+  std::cout << "WARNING: The QMCPACK files that will be generated are for a single determinant built from the lowest "
+               "energy spinors"
+            << std::endl;
+  std::cout
+      << "In most circumstances, you have run a complete open-shell CI (COSCI) calculation in DIRAC using .RESOLVE."
+      << std::endl;
+  std::cout << "The COSCI wavefunction parsing has not yet been implemented, and must therefore be modified by hand."
+            << std::endl;
+  std::cout << "***********************" << std::endl;
 }
 
 void DiracParser::getGeometry(std::istream& is)
@@ -234,22 +245,22 @@ void DiracParser::getGeometry(std::istream& is)
   }
   search(is, "total: ", aline);
   parsewords(aline.c_str(), currentWords);
-  SizeOfBasisSet          = std::stoi(currentWords[4]);
+  SizeOfBasisSet = std::stoi(currentWords[4]);
 
   //now overwrite charge for pseudsized atoms
   is.clear();
   is.seekg(pivot_begin);
-  while(lookFor(is, "Nuclear Gaussian exponent for atom",aline))
+  while (lookFor(is, "Nuclear Gaussian exponent for atom", aline))
   {
     parsewords(aline.c_str(), currentWords);
     int z = std::stoi(currentWords[7]);
     std::getline(is, aline);
     if (aline.size() == 0)
-        break;
-    //found an ECP to replace 
+      break;
+    //found an ECP to replace
     ECP = true;
     getwords(currentWords, is);
-    int zeff = std::stoi(currentWords[6]);
+    int zeff                         = std::stoi(currentWords[6]);
     zeffMap.find(IonName[z])->second = zeff;
   }
   is.clear();
@@ -319,8 +330,8 @@ void DiracParser::getGaussianCenters(std::istream& is)
             p.first  = std::stod(currentWords[0]);
             p.second = 1.0;
             basisGroup bas;
-            bas.n   = basisset[iat].basisGroups.size();
-            bas.l   = l;
+            bas.n = basisset[iat].basisGroups.size();
+            bas.l = l;
             bas.radfuncs.push_back(p);
             basisset[iat].basisGroups.push_back(bas);
           }
@@ -331,8 +342,8 @@ void DiracParser::getGaussianCenters(std::istream& is)
           for (int n = 0; n < ncont; n++)
           {
             basisGroup bg;
-            bg.n   = basisset[iat].basisGroups.size();
-            bg.l   = l;
+            bg.n = basisset[iat].basisGroups.size();
+            bg.l = l;
             basisset[iat].basisGroups.push_back(bg);
           }
           for (int n = 0; n < nprim; n++)
@@ -520,13 +531,59 @@ void DiracParser::getSpinors(std::istream& is)
     std::cout << "Generated kramers pair with irrep " << kp_irreps[i].get_label() << std::endl;
   }
 
+  std::cout << "Now we have the following spinors" << std::endl;
+  for (int i = 0; i < irreps.size(); i++)
+  {
+    std::cout << "  irrep " << irreps[i].get_label() << " with " << irreps[i].get_num_spinors() << " spinors and "
+              << irreps[i].get_num_ao() << " AO coefficients." << std::endl;
+    std::cout << "  irrep " << kp_irreps[i].get_label() << " with " << kp_irreps[i].get_num_spinors() << " spinors and "
+              << kp_irreps[i].get_num_ao() << " AO coefficients." << std::endl;
+  }
+
+  numMO = 0;
+  for (int i = 0; i < irreps.size(); i++)
+    numMO += 2 * irreps[i].get_num_spinors(); //irrep and kp
+
+  //energy order spinors across fermion irreps
+  std::cout << "Sorting spinors by energy" << std::endl;
+  std::vector<std::pair<double, std::pair<int, int>>> idx;
+  for (int ir = 0; ir < irreps.size(); ir++)
+  {
+    for (int mo = 0; mo < irreps[ir].get_num_spinors(); mo++)
+    {
+      std::pair<int, int> irmo(ir, mo);
+      std::pair<double, std::pair<int, int>> enirmo(irreps[ir].energies[mo], irmo);
+      idx.push_back(enirmo);
+    }
+  }
+  std::sort(idx.begin(), idx.end());
+
   //store in QMCGaussian data format
+  //storing in EigVec by up_real, dn_real, up_imag, dn_imag
+  //only sort energy for irrep, since kramers pairs kp_irreps are degenerate
   EigVec.clear();
   EigVal_alpha.clear();
   EigVal_beta.clear();
-  std::vector<int> idx = {0, 2, 1, 3};
+  std::vector<int> spinor_component = {0, 2, 1, 3};
   for (int d = 0; d < 4; d++)
   {
+    for (int i = 0; i < idx.size(); i++)
+    {
+      if (d == 0)
+      {
+        //store it twice, first spinor and its kramers pair
+        EigVal_alpha.push_back(idx[i].first);
+        EigVal_alpha.push_back(idx[i].first);
+      }
+      int ir = idx[i].second.first;
+      int mo = idx[i].second.second;
+      for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
+        EigVec.push_back(irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component[d]]);
+      for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
+        EigVec.push_back(kp_irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component[d]]);
+    }
+  }
+  /*
     for (int i = 0; i < irreps.size(); i++)
     {
       for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
@@ -538,6 +595,7 @@ void DiracParser::getSpinors(std::istream& is)
       }
     }
   }
+
   for (int i = 0; i < irreps.size(); i++)
   {
     for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
@@ -545,10 +603,6 @@ void DiracParser::getSpinors(std::istream& is)
       EigVal_alpha.push_back(irreps[i].energies[mo]);
       EigVal_alpha.push_back(kp_irreps[i].energies[mo]);
     }
-  }
-
-  numMO = 0;
-  for (int i = 0; i < irreps.size(); i++)
-    numMO += 2 * irreps[i].get_num_spinors(); //irrep and kp
+  }*/
 }
 
