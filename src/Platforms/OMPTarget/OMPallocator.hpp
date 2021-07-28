@@ -66,10 +66,6 @@ struct OMPallocator : public HostAllocator
    *  our < c++11 compliant containers may expect it.
    */
   OMPallocator(const OMPallocator&) : device_ptr_(nullptr) {}
-
-  // these semantics are surprising and "incorrect" considering OMPallocator is stateful.
-  OMPallocator& operator=(const OMPallocator&) { device_ptr_ = nullptr; }
-
   template<class U, class V>
   OMPallocator(const OMPallocator<U, V>&) : device_ptr_(nullptr)
   {}
@@ -97,20 +93,17 @@ struct OMPallocator : public HostAllocator
     HostAllocator::deallocate(pt, n);
   }
 
-  void attachReference(OMPallocator& from, std::ptrdiff_t ptr_offset)
+  void attachReference(const OMPallocator& from, std::ptrdiff_t ptr_offset)
   {
-    device_ptr_ = from.getDevicePtr() + ptr_offset;
+    device_ptr_ = const_cast<typename OMPallocator::pointer>(from.get_device_ptr()) + ptr_offset;
   }
 
-  T* getDevicePtr() { return device_ptr_; }
-  const T* getDevicePtr() const { return device_ptr_; }
+  T* get_device_ptr() { return device_ptr_; }
+  const T* get_device_ptr() const { return device_ptr_; }
 
 private:
   // pointee is on device.
   T* device_ptr_         = nullptr;
-
-public:
-  T* get_device_ptr() const { return device_ptr_; }
 };
 
 /** Specialization for OMPallocator which is a special DualAllocator with fused
@@ -128,7 +121,7 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
 
-  static void attachReference(OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, T* from_data, T* ref)
+  static void attachReference(const OMPallocator<T, HostAllocator>& from, OMPallocator<T, HostAllocator>& to, const T* from_data, T* ref)
   {
     std::ptrdiff_t ptr_offset = ref - from_data;
     to.attachReference(from, ptr_offset);
@@ -147,7 +140,7 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
   // Not very optimized device side copy.  Only used for testing.
   static void deviceSideCopyN(OMPallocator<T, HostAllocator>& alloc, size_t to, size_t n, size_t from)
   {
-    auto* dev_ptr = alloc.getDevicePtr();
+    auto* dev_ptr = alloc.get_device_ptr();
     PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(dev_ptr)")
     for (int i = 0; i < n; i++)
       dev_ptr[to + i] = dev_ptr[from + i];
