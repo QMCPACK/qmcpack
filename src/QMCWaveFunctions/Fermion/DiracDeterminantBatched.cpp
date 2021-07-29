@@ -50,8 +50,8 @@ void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
-                                                     OffloadPinnedValueMatrix_t& logdetT,
-                                                     OffloadPinnedValueMatrix_t& a_inv)
+                                                     DualPinnedValueMatrix_t& logdetT,
+                                                     DualPinnedValueMatrix_t& a_inv)
 {
   ScopedTimer inverse_timer(InverseTimer);
   det_engine_.invert_transpose(logdetT, a_inv, mw_res.log_values);
@@ -65,8 +65,8 @@ void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMult
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                        RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                                        RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
+                                                        RefVector<DualPinnedValueMatrix_t>& logdetT_list,
+                                                        RefVector<DualPinnedValueMatrix_t>& a_inv_list,
                                                         const std::vector<bool>& compute_mask)
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
@@ -160,9 +160,9 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
     // their association with particular walkers
     // is only clear if we do?
 
-    RefVector<OffloadPinnedValueMatrix_t> dual_psiM_temp_list;
-    UPtrVector<OffloadPinnedValueMatrix_t> dual_psiM_temps;
-    RefVector<OffloadPinnedValueMatrix_t> psiMinv_temp_list;
+    RefVector<DualPinnedValueMatrix_t> dual_psiM_temp_list;
+    UPtrVector<DualPinnedValueMatrix_t> dual_psiM_temps;
+    RefVector<DualPinnedValueMatrix_t> psiMinv_temp_list;
 
     for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
     {
@@ -172,7 +172,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       //I think this means it only updates v and g
       PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
       // dual_psiM_temps.emplace_back(
-      //     std::make_unique<OffloadPinnedValueMatrix_t>(const_cast<decltype(psiM_vgl)&>(psiM_vgl),
+      //     std::make_unique<DualPinnedValueMatrix_t>(const_cast<decltype(psiM_vgl)&>(psiM_vgl),
       //                                                  psiM_vgl.getNonConstData(), det.psiM_temp.rows(),
       //                                                  det.psiM_temp.cols()));
       dual_psiM_temp_list.push_back(det.psiM_temp); //*dual_psiM_temps[iw]);

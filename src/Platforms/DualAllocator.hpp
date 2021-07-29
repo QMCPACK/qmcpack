@@ -21,9 +21,7 @@
 #include "config.h"
 #include "allocator_traits.hpp"
 #include "PinnedAllocator.h"
-#if defined(ENABLE_CUDA)
 #include "CUDA/CUDAallocator.hpp"
-#endif
 
 namespace qmcplusplus
 {
@@ -88,11 +86,11 @@ struct DualAllocator : public HostAllocator
     host_ptr_   = nullptr;
   }
 
-  void attachReference(DualAllocator& from, T* from_data, T* ref)
+  void attachReference(const DualAllocator& from, const T* from_data, T* ref)
   {
     std::ptrdiff_t ptr_offset = ref - from_data;
     host_ptr_                 = ref;
-    device_ptr_               = from.get_device_ptr() + ptr_offset;
+    device_ptr_               = const_cast<typename DualAllocator::pointer>(from.get_device_ptr()) + ptr_offset;
   }
 
   T* get_device_ptr() { return device_ptr_; }
@@ -119,7 +117,7 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
 
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 
-  static void attachReference(DualAlloc& from, DualAlloc& to, T* from_data, T* ref)
+  static void attachReference(const DualAlloc& from, DualAlloc& to, const T* from_data, T* ref)
   {
     to.attachReference(from, from_data, ref);
   }

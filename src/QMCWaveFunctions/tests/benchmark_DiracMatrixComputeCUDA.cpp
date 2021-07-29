@@ -42,11 +42,10 @@ namespace qmcplusplus
 {
 #ifdef ENABLE_OFFLOAD
 template<typename T>
-using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#endif
-#ifdef ENABLE_CUDA
+using DualSpacePinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
+#elif  ENABLE_CUDA
 template<typename T>
-using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+using DualSpacePinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 template<typename T>
 using OffloadPinnedMatrix = Matrix<T, DualSpacePinnedAllocator<T>>;

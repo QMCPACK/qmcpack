@@ -39,11 +39,10 @@ namespace qmcplusplus
 // we do not use an ifdef'd type alias to swap the allocator.
 #ifdef ENABLE_OFFLOAD
   template<typename T>
-  using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#endif
-#ifdef ENABLE_CUDA
+  using DualSpacePinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
+#elif defined(ENABLE_CUDA)
   template<typename T>
-  using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+  using DualSpacePinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 
 template<typename T>

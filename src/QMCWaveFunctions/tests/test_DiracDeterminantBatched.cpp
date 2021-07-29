@@ -69,12 +69,10 @@ struct HandleTraits;
 class DiracDeterminantBatchedTest
 {
 public:
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   template<typename T>
-  using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
+  using DualPinnedVector = Vector<T, PinnedDualAllocator<T>>;
   template<typename T>
-  using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
+  using DualPinnedMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
   template<class DET_ENGINE>
   DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
@@ -83,8 +81,8 @@ public:
   }
   template<class DET_ENGINE>
   void invertPsiM(DiracDeterminantBatched<DET_ENGINE>& ddb,
-                  OffloadPinnedMatrix<typename DiracDeterminantBatched<DET_ENGINE>::ValueType>& logdetT,
-                  OffloadPinnedMatrix<typename DiracDeterminantBatched<DET_ENGINE>::ValueType>& a_inv)
+                  DualPinnedMatrix<typename DiracDeterminantBatched<DET_ENGINE>::ValueType>& logdetT,
+                  DualPinnedMatrix<typename DiracDeterminantBatched<DET_ENGINE>::ValueType>& a_inv)
   {
     ddb.invertPsiM(*ddb.mw_res_, logdetT, a_inv);
   }
@@ -161,7 +159,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   ddb.acquireResource(res_col);
 
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
-  using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
+  using ValueMatrix = DetType::DetEngine_t::DualPinnedValueMatrix_t;
   ValueMatrix b;
   b.resize(3, 3);
 
@@ -220,7 +218,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   testing::DiracDeterminantBatchedTest ddbt;
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
 
-  using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
+  using ValueMatrix = DetType::DetEngine_t::DualPinnedValueMatrix_t;
   ValueMatrix orig_a;
   orig_a.resize(4, 4);
   orig_a = spo->a2;
@@ -395,7 +393,7 @@ TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]"
   std::vector<ParticleSet::GradType> grads_new(nw);
   det_leader.mw_ratioGrad(det_refs, pset_refs, 0, ratios, grads_new);
 
-  // using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
+  // using ValueMatrix = DetType::DetEngine_t::DualPinnedValueMatrix_t;
   // ValueMatrix orig_a;
   // orig_a.resize(4, 4);
   // orig_a = spo->a2;

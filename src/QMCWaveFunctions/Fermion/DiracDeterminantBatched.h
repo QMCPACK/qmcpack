@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "Configuration.h"
+#include "DeterminantAllocators.hpp"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
@@ -25,8 +26,6 @@
 #if defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
 #endif
-#include "Platforms/PinnedAllocator.h"
-#include "OMPTarget/OMPallocator.hpp"
 #include "Resource.h"
 
 namespace qmcplusplus
@@ -48,12 +47,10 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   using GradType  = QMCTraits::GradType;
   using Real      = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::QTFull::RealType;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, OffloadPinnedAllocator<ValueType>>;
+  using DualVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, PinnedDualAllocator<ValueType>>;
   // I don't think its a good idea create a hard dependency all the way back to WaveFunctionComponent for this.
   using LogValue                    = std::complex<FullPrecReal>;
-  using OffloadPinnedLogValueVector = Vector<LogValue, OffloadPinnedAllocator<LogValue>>;
+  using DualPinnedLogValueVector = Vector<LogValue, PinnedDualAllocator<LogValue>>;
 
   DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
 
@@ -63,9 +60,9 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 
   Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
 
-  OffloadPinnedLogValueVector log_values;
+  DualPinnedLogValueVector log_values;
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
-  OffloadVGLVector_t phi_vgl_v;
+  DualVGLVector_t phi_vgl_v;
   // multi walker of ratio
   std::vector<ValueType> ratios_local;
   // multi walker of grads
@@ -96,16 +93,14 @@ public:
   using mGradType     = TinyVector<mValueType, DIM>;
   using DetEngine_t   = DET_ENGINE;
 
-  template<typename DT>
-  using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
-  using OffloadPinnedLogValueVector_t = Vector<LogValueType, OffloadPinnedAllocator<LogValueType>>;
-  using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
-  using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
-  using OffloadPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
-  using OffloadPinnedGradMatrix       = Matrix<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+  using DualPinnedValueVector_t    = Vector<ValueType, PinnedDualAllocator<ValueType>>;
+  using DualPinnedLogValueVector_t = Vector<LogValueType, PinnedDualAllocator<LogValueType>>;
+  using DualPinnedValueMatrix_t    = Matrix<ValueType, PinnedDualAllocator<ValueType>>;
+  using DualPinnedPsiValueVector_t = Vector<PsiValueType, PinnedDualAllocator<PsiValueType>>;
+  using DualPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType, PinnedDualAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+  using DualPinnedGradMatrix       = Matrix<OrbitalSetTraits<SPOSet::ValueType>::GradType, PinnedDualAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
 
-  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
+  using DualVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, PinnedDualAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -264,13 +259,13 @@ public:
   /// Ideally DDB should use the mw_res resources and not these duplicative values.
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
-  OffloadVGLVector_t psiM_vgl;
+  DualVGLVector_t psiM_vgl;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
-  OffloadPinnedValueMatrix_t psiM_temp;
+  DualPinnedValueMatrix_t psiM_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
-  OffloadPinnedGradMatrix dpsiM;
+  DualPinnedGradMatrix dpsiM;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
-  OffloadPinnedValueMatrix_t d2psiM;
+  DualPinnedValueMatrix_t d2psiM;
 
   /// Used for force computations
   GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
@@ -280,11 +275,11 @@ public:
   ValueMatrix_t lapl_phi_Minv;
   HessMatrix_t grad_phi_alpha_Minv;
 
-  OffloadPinnedValueVector_t psiV;
+  DualPinnedValueVector_t psiV;
   ValueVector_t psiV_host_view;
-  OffloadPinnedGradVector dpsiV;
+  DualPinnedGradVector dpsiV;
   GradVector_t dpsiV_host_view;
-  OffloadPinnedValueVector_t d2psiV;
+  DualPinnedValueVector_t d2psiV;
   ValueVector_t d2psiV_host_view;
 
   /// Delayed update engine 1 per walker.
@@ -296,8 +291,8 @@ public:
   LogValueType get_log_value() const { return LogValue; }
 
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                            RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
+                            RefVector<DualPinnedValueMatrix_t>& logdetT_list,
+                            RefVector<DualPinnedValueMatrix_t>& a_inv_list,
                             const std::vector<bool>& compute_mask);
 
   /// maximal number of delayed updates
@@ -311,7 +306,7 @@ private:
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
   /// Legacy single invert logdetT(psiM), result is stored in DDB object.
-  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv);
+  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, DualPinnedValueMatrix_t& logdetT, DualPinnedValueMatrix_t& a_inv);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

@@ -33,7 +33,7 @@ struct qmc_allocator_traits
   static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); }
 
   // So we can write generic tests that work with all QMCPACK allocators
-  static void attachReference(Allocator& from, Allocator& to, value_type* from_data, value_type* ref) {}
+  static void attachReference(const Allocator& from, Allocator& to, const value_type* from_data, value_type* ref) {}
   // These abstract synchronous transfers, async semantics are vender specific
   static void updateTo(Allocator& a, value_type* host_ptr, size_t n) {}
   static void updateFrom(Allocator& a, value_type* host_ptr, size_t n) {}
