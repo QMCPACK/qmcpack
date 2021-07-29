@@ -8,11 +8,11 @@
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
-#define QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
+#ifndef QMCPLUSPLUS_TWOBODYJASTROW_OMPTARGET_H
+#define QMCPLUSPLUS_TWOBODYJASTROW_OMPTARGET_H
 
 #include <map>
 #include <numeric>
@@ -23,11 +23,15 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include "CPU/SIMD/aligned_allocator.hpp"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 #include "J2KECorrection.h"
 
 namespace qmcplusplus
 {
+
+template<typename T>
+struct J2OMPTargetMultiWalkerMem;
+
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
@@ -35,7 +39,7 @@ namespace qmcplusplus
  * For electrons, distinct pair correlation functions are used
  * for spins up-up/down-down and up-down/down-up.
  *
- * Based on J2OrbitalSoA.h with these considerations
+ * Based on J2OMPTarget.h with these considerations
  * - DistanceTableData using SoA containers
  * - support mixed precision: FT::real_type != OHMMS_PRECISION
  * - loops over the groups: elminated PairID
@@ -44,7 +48,7 @@ namespace qmcplusplus
  * - Memory use is O(N). 
  */
 template<class FT>
-class J2OrbitalSoA : public WaveFunctionComponent
+class J2OMPTarget : public WaveFunctionComponent
 {
 public:
   ///alias FuncType
@@ -65,12 +69,16 @@ protected:
   size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
+  /// the index of the first particle in each group
+  Vector<int, OffloadPinnedAllocator<int>> g_first;
+  /// the index + 1 of the last particle in each group
+  Vector<int, OffloadPinnedAllocator<int>> g_last;
   ///diff value
   RealType DiffVal;
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  Vector<valT> Uat;
+  Vector<valT, OffloadPinnedAllocator<valT>> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
   gContainer_type dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
@@ -89,16 +97,24 @@ protected:
   // helper for compute J2 Chiesa KE correction
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
+  std::unique_ptr<J2OMPTargetMultiWalkerMem<RealType>> mw_mem_;
+
 public:
-  J2OrbitalSoA(const std::string& obj_name, ParticleSet& p);
-  J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
-  ~J2OrbitalSoA() override;
+  J2OMPTarget(const std::string& obj_name, ParticleSet& p);
+  J2OMPTarget(const J2OMPTarget& rhs) = delete;
+  ~J2OMPTarget() override;
 
   /* initialize storage */
   void init(ParticleSet& p);
 
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
+
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection) override;
+
+  void releaseResource(ResourceCollection& collection) override;
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
@@ -132,12 +148,18 @@ public:
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
+  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                         std::vector<std::vector<ValueType>>& ratios) const override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
   inline void restore(int iat) override {}
+
+  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** compute G and L after the sweep
    */

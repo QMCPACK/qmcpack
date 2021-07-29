@@ -48,11 +48,10 @@ using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
 template<typename T>
 using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
-
 template<typename T>
-using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedMatrix = Matrix<T, DualSpacePinnedAllocator<T>>;
 template<typename T>
-using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedVector = Vector<T, DualSpacePinnedAllocator<T>>;
 
 // Mechanism to pretty print benchmark names.
 struct DiracComputeBenchmarkParameters;

@@ -208,7 +208,7 @@ void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vec
 }
 
 void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                              const RefVector<const VirtualParticleSet>& vp_list,
+                                              const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                               std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());

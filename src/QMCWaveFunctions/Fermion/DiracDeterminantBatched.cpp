@@ -735,7 +735,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVector<const VirtualParticleSet>& vp_list,
+                                                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                             std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());

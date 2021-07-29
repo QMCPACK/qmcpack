@@ -34,6 +34,9 @@
 
 namespace qmcplusplus
 {
+
+// The idea is to test both of these when possible without rebuilding. So unlike other parts of the code
+// we do not use an ifdef'd type alias to swap the allocator.
 #ifdef ENABLE_OFFLOAD
   template<typename T>
   using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
@@ -44,9 +47,9 @@ namespace qmcplusplus
 #endif
 
 template<typename T>
-using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedMatrix = Matrix<T, DualSpacePinnedAllocator<T>>;
 template<typename T>
-using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
+using OffloadPinnedVector = Vector<T, DualSpacePinnedAllocator<T>>;
 
 template<typename T, IsComplex<T> = true>
 void checkLogDetValue(T val_a, T val_b) {
