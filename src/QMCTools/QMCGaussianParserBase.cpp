@@ -682,9 +682,9 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
 
       hout.write(Ctemp, "eigenset_1");
     }
+    cur = xmlAddSibling(cur, ddet);
   }
 
-  cur = xmlAddSibling(cur, ddet);
   hout.close();
   return slaterdet;
 }

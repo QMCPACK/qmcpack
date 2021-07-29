@@ -7,7 +7,6 @@
           <occupation mode="ground"/>
           <coefficient size="216" spindataset="0"/>
         </determinant>
-        <basisset/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>
