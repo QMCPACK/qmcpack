@@ -176,6 +176,12 @@ public:
                           int iat_src,
                           GradMatrix_t& grad_phi) override;
 
+  void evaluateGradSourceRow(const ParticleSet& P,
+                          int iel,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradVector_t& grad_phi) override;
+
   /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
  *  
@@ -263,6 +269,9 @@ private:
 
   //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.
   void evaluate_ionderiv_v_impl(const vgl_type& temp, int i, GradMatrix_t& dlogdet) const;
+
+  //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.
+  void evaluate_ionderiv_v_row_impl(const vgl_type& temp, GradVector_t& dlogdet) const;
 
   //Unpacks data in vgl object and calculates/places ionic gradient of value,
   //  electron gradient, and electron laplacian result into dlogdet, dglogdet, and dllogdet respectively.

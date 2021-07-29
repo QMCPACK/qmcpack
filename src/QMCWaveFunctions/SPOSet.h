@@ -415,6 +415,12 @@ public:
                                   int iat_src,
                                   GradMatrix_t& gradphi);
 
+  virtual void evaluateGradSourceRow(const ParticleSet& P,
+                                  int iel,
+                                  const ParticleSet& source,
+                                  int iat_src,
+                                  GradVector_t& gradphi);
+
   /** evaluate the gradients of values, gradients, laplacians of this single-particle orbital
    *  for [first,last) target particles with respect to the given source particle
    * @param P current ParticleSet

@@ -202,6 +202,15 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
   APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
 
+void SPOSet::evaluateGradSourceRow(const ParticleSet& P,
+                                int iel,
+                                const ParticleSet& source,
+                                int iat_src,
+                                GradVector_t& gradphi)
+{
+  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
+}
+
 void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 int first,
                                 int last,
