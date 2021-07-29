@@ -217,6 +217,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     }
     else
     {
+      assert(PtclRhoK.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
       //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
       RealType v1; //single particle energy
       RealType z;

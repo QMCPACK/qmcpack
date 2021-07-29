@@ -155,7 +155,7 @@ public:
 
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
-   * if StorePerParticle was true, this funciton is no-op
+   * if StorePerParticle was true, this function is no-op
    */
   void turnOnStorePerParticle(ParticleSet& P);
 
