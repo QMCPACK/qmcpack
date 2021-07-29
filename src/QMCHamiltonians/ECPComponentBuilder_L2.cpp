@@ -128,14 +128,14 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
     RealType r = d * i;
     new_vL2[i] = infunc.splint(r) / r;
   }
-  new_vL2[0]               = new_vL2[1];
-  new_vL2[ng - 1]          = 0.0;
-  RadialPotentialType* vL2 = new RadialPotentialType(std::move(grid), new_vL2);
+  new_vL2[0]      = new_vL2[1];
+  new_vL2[ng - 1] = 0.0;
+  auto vL2        = std::make_unique<RadialPotentialType>(std::move(grid), new_vL2);
   vL2->spline();
 
   // save the splined L2 potential
   pp_L2       = std::make_unique<L2RadialPotential>();
-  pp_L2->vL2  = vL2;
+  pp_L2->vL2  = std::move(vL2);
   pp_L2->rcut = rcut;
 
   //app_log()<<std::endl;
