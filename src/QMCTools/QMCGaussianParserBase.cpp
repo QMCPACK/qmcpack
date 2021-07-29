@@ -1671,7 +1671,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       hout.write(NumberOfEls, "NbTotElec");
       hout.write(SpinRestricted, "SpinRestricted");
       hout.write(BohrUnit, "Unit");
-      hout.write(SizeOfBasisSet, "numAO");
+      hout.write(numMO, "numAO");
       hout.write(numMO, "numMO");
       hout.write(SpinMultiplicity, "spin");
       hout.pop();
