@@ -199,7 +199,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   {
     // Compute ratios with VP
     RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
-    RefVector<const VirtualParticleSet> const_vp_list;
+    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*ecp_component_leader.VP);
     RefVector<const std::vector<PosType>> deltaV_list;
     RefVector<std::vector<ValueType>> psiratios_list;
     vp_list.reserve(ecp_component_list.size());
@@ -220,8 +220,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
       psiratios_list.push_back(component.psiratio);
     }
 
-    auto vp_to_p_list = VirtualParticleSet::RefVectorWithLeaderParticleSet(vp_list);
-    ResourceCollectionTeamLock<ParticleSet> vp_res_lock(collection, vp_to_p_list);
+    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
 
     VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
 

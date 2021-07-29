@@ -843,8 +843,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def make_movie
 
 
-    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True):
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
         if 'bands' in self:
+            success = True
             from structure import get_kpath
             if filename==None:
                 filename = 'band_structure.pdf'
@@ -877,10 +878,35 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             fig    = figure()
             ax     = gca()
-            kpath  = get_kpath(structure=self.input_structure, check_standard=False)
-            x      = kpath['explicit_path_linearcoords']
-            labels = kpath['explicit_kpoints_labels']
             nbands = self.input.system.nbnd
+
+            if k_labels is None:
+                kpath  = get_kpath(structure=self.input_structure, check_standard=False)
+                x      = kpath['explicit_path_linearcoords']
+                labels = kpath['explicit_kpoints_labels']
+            else:
+                labels = k_labels
+                # Calculate linear coordinates from self.kpoints_cart
+                x = []
+                prev_label = ''
+                ref_kpt = self.kpoints_cart[0]
+                ref_kpt_norm = np.linalg.norm(self.kpoints_cart[0])
+                for kpt_idx,kpt in enumerate(self.kpoints_cart):
+                    curr_label = labels[kpt_idx]
+                    if curr_label != '' and prev_label == '':
+                        ref_kpt_norm+=np.linalg.norm(kpt-ref_kpt)
+                        ref_kpt = kpt
+                    elif curr_label != '' and prev_label != '':
+                        ref_kpt = kpt
+                        ref_kpt_norm+=np.linalg.norm(kpt-ref_kpt)
+                    else:
+                        pass
+                    #end if
+                    x.append(ref_kpt_norm+np.linalg.norm(kpt-ref_kpt))
+                    #x.append(kpt_idx)
+                    prev_label = curr_label
+                #end for
+            #end if
             for nb in range(nbands):
                 y = []
                 for bi in self.bands.up:

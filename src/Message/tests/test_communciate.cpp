@@ -43,7 +43,7 @@ TEST_CASE("test_communicate_split_two", "[message]")
   Communicate* c = OHMMS::Controller;
   if (c->size() >= 2)
   {
-    Communicate* c2 = new Communicate(*c, 2);
+    auto c2 = std::make_unique<Communicate>(*c, 2);
 
     std::vector<int> new_size(2);
     new_size[0] = c->size() / 2;
@@ -92,7 +92,7 @@ TEST_CASE("test_communicate_split_four", "[message]")
   // For simplicity, only test the case where the number of processes is divisible by 4.
   if (c->size() % 4 == 0)
   {
-    Communicate* c2 = new Communicate(*c, 4);
+    auto c2 = std::make_unique<Communicate>(*c, 4);
 
     REQUIRE(c2->size() == c->size() / 4);
     int group_size = c->size() / 4;

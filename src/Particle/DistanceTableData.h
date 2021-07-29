@@ -55,9 +55,11 @@ protected:
   /*@{*/
   /** distances_[i][j] , [N_targets][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) is defined and up-to-date after pbyp move.
-   *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
-   *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
+   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
+   *            There is no bound check to protect j>=i terms as the nature of operator[].
+   *            When the storage of the table is allocated as a single memory segment,
+   *            out-of-bound access is still within the segment and
+   *            thus doesn't trigger an alarm by the address sanitizer.
    *        For derived AB, the full table is up-to-date after pbyp move
    */
   std::vector<DistRow> distances_;
@@ -65,7 +67,7 @@ protected:
   /** displacements_[N_targets]x[3][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
    *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined.
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
    *        For derived AB, A1=A, A2=B, the full table is allocated.
    */
   std::vector<DisplRow> displacements_;
@@ -123,6 +125,20 @@ public:
   ///returns the number of source particles
   inline IndexType sources() const { return N_sources; }
 
+  /// return multi_walker full distance table data ptr
+  virtual const RealType* getMultiWalkerDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi waler data pointer not supported");
+    return nullptr;
+  }
+
+  /// return stride of per target pctl data. full table data = stride * num of target particles
+  virtual size_t getPerTargetPctlStrideSize() const
+  {
+    throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
+    return 0;
+  }
+
   /** return full table distances
    */
   const std::vector<DistRow>& getDistances() const { return distances_; }
@@ -143,7 +159,7 @@ public:
    */
   virtual const DistRow& getOldDists() const
   {
-    APP_ABORT("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
+    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
     return temp_r_; // dummy return to avoid compiler warning.
   }
 
@@ -151,7 +167,7 @@ public:
    */
   virtual const DisplRow& getOldDispls() const
   {
-    APP_ABORT("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
+    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
     return temp_dr_; // dummy return to avoid compiler warning.
   }
 
@@ -291,13 +307,13 @@ public:
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
-    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
+    throw std::runtime_error("DistanceTableData::get_first_neighbor is not implemented in calling base class");
     return 0;
   }
 
   inline void print(std::ostream& os)
   {
-    APP_ABORT("DistanceTableData::print is not supported")
+    throw std::runtime_error("DistanceTableData::print is not supported");
     //os << "Table " << Origin->getName() << std::endl;
     //for (int i = 0; i < r_m.size(); i++)
     //  os << r_m[i] << " ";

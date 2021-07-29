@@ -14,6 +14,8 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
 #define QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
+#include "DistanceTableData.h"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
@@ -62,7 +64,7 @@ private:
 
     // initialize memory containers and views
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    const int stride_size      = N_sources_padded * (D + 1);
+    const int stride_size      = getPerTargetPctlStrideSize();
     r_dr_memorypool_.resize(stride_size * N_targets);
 
     distances_.resize(N_targets);
@@ -173,6 +175,15 @@ public:
     }
   }
 
+  const T* getMultiWalkerDataPtr() const override
+  {
+    if (!mw_mem_)
+      throw std::runtime_error("SoaDistanceTableABOMPTarget mw_mem_ is nullptr");
+    return mw_mem_->mw_r_dr.data();
+  }
+
+  size_t getPerTargetPctlStrideSize() const override { return getAlignedSize<T>(N_sources) * (D + 1); }
+
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P) override
   {
@@ -197,7 +208,7 @@ public:
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
     const int num_teams        = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-    const size_t stride_size   = N_sources_padded * (D + 1);
+    const size_t stride_size   = getPerTargetPctlStrideSize();
 
     {
       ScopedTimer offload(offload_timer_);
@@ -256,8 +267,8 @@ public:
     const int N_sources_padded = getAlignedSize<T>(N_sources);
 
 #ifndef NDEBUG
-    const int stride_size = N_sources_padded * (D + 1);
-    count_targets = 0;
+    const int stride_size = getPerTargetPctlStrideSize();
+    count_targets         = 0;
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
@@ -314,7 +325,7 @@ public:
       ScopedTimer offload(dt_leader.offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
                         map(always, to: input_ptr[:offload_input.size()]) \
-                        map(always, from: r_dr_ptr[:mw_r_dr.size()])")
+                        depend(out:r_dr_ptr[:mw_r_dr.size()]) nowait")
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -337,6 +348,15 @@ public:
             DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                           iel);
         }
+
+      if (!(modes_ & DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST))
+      {
+        PRAGMA_OFFLOAD(
+            "omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
+      }
+      // wait for computing and (optional) transfering back to host.
+      // It can potentially be moved to ParticleSet to fuse multiple similar taskwait
+      PRAGMA_OFFLOAD("omp taskwait")
     }
   }
 

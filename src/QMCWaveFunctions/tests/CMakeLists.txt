@@ -93,6 +93,7 @@ set(JASTROW_SRC
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
     test_J1OrbitalSoA.cpp
+    test_J2_bspline.cpp
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC
     FakeSPO.cpp
@@ -124,14 +125,6 @@ foreach(CATEGORY trialwf sposet jastrow determinant)
 
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  
-  set(NOASAN_LIST trialwf jastrow)
-  if("${ENABLE_SANITIZER}" STREQUAL "asan" AND ${CATEGORY} IN_LIST NOASAN_LIST)
-    set_property(
-      TEST ${UTEST_NAME}
-      APPEND
-      PROPERTY LABELS noasan)
-  endif()
 endforeach()
 
 # do not merge with test_wavefunction_determinant until all of
