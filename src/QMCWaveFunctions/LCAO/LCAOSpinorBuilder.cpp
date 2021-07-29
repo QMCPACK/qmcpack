@@ -134,9 +134,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     std::string setname;
     Matrix<RealType> upReal;
     Matrix<RealType> upImag;
-    setname = "/KPTS_0/eigenset_0";
+    setname = "/Super_Twist/eigenset_0";
     readRealMatrixFromH5(hin, setname, upReal);
-    setname = "/KPTS_0/eigenset_0_imag";
+    setname = "/Super_Twist/eigenset_0_imag";
     readRealMatrixFromH5(hin, setname, upImag);
 
     assert(upReal.rows() == upImag.rows());
@@ -153,9 +153,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 
     Matrix<RealType> dnReal;
     Matrix<RealType> dnImag;
-    setname = "/KPTS_0/eigenset_1";
+    setname = "/Super_Twist/eigenset_1";
     readRealMatrixFromH5(hin, setname, dnReal);
-    setname = "/KPTS_0/eigenset_1_imag";
+    setname = "/Super_Twist/eigenset_1_imag";
     readRealMatrixFromH5(hin, setname, dnImag);
 
     assert(dnReal.rows() == dnImag.rows());
