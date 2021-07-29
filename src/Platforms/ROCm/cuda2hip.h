@@ -95,6 +95,6 @@
 #define make_cuComplex                  make_hipComplex
 #define make_cuDoubleComplex            make_hipDoubleComplex
 
-#define cudaDeviceSetLimit(limit, falue) ;
+#define cudaDeviceSetLimit(limit, value) ;
 
 #endif /* CUDA2HIP_H */
