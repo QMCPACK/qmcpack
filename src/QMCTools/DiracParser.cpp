@@ -149,7 +149,7 @@ DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, ar
 
 void DiracParser::parse(const std::string& fname)
 {
-  std::string dirac_out = fname + ".out";
+  std::string dirac_out = fname;
   std::ifstream fin(dirac_out.c_str());
   if (fin.fail())
   {
