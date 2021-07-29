@@ -175,6 +175,22 @@ struct VectorSoaContainer
     myData  = ptr;
   }
 
+  template<typename CONTAINER>
+  __forceinline void attachReference(size_t n, size_t n_padded, const CONTAINER& other, T* ptr)
+  {
+    if (nAllocated)
+    {
+      free();
+      // This is too noisy right now.
+      // std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
+      /// \todo return this when buffer system is simplified.
+    }
+    nLocal  = n;
+    nGhosts = n_padded;
+    myData  = ptr;
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ptr);
+  }
+
   ///return the physical size
   __forceinline size_t size() const { return nLocal; }
   ///return the physical size
@@ -318,6 +334,9 @@ private:
   // We need this because of the hack propagation of the VectorSoaContainer allocator
   // to allow proper OhmmsVector based views of VectorSoAContainer elements with OMPallocator
   friend class qmcplusplus::Vector<T, Alloc>;
+
+  template<typename OtherT, unsigned OtherD, typename OtherAlloc>
+  friend struct VectorSoaContainer;
 };
 
 } // namespace qmcplusplus

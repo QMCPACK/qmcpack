@@ -60,15 +60,17 @@ public:
   ///use the same container
   using DistRow         = DistanceTableData::DistRow;
   using DisplRow        = DistanceTableData::DisplRow;
-  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
 
-protected:
+private:
+  /** initialize storage Uat,dUat, d2Uat */
+  void resizeInternalStorage();
+
   ///number of particles
-  size_t N;
+  const size_t N;
   ///number of particles + padded
-  size_t N_padded;
+  const size_t N_padded;
   ///number of groups of the target particleset
-  size_t NumGroups;
+  const size_t NumGroups;
   /// the index of the first particle in each group
   Vector<int, OffloadPinnedAllocator<int>> g_first;
   /// the index + 1 of the last particle in each group
@@ -78,11 +80,11 @@ protected:
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  Vector<valT, OffloadPinnedAllocator<valT>> Uat;
+  Vector<valT, aligned_allocator<valT>> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  gContainer_type dUat;
+  VectorSoaContainer<valT, OHMMS_DIM, aligned_allocator<valT>> dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  Vector<valT> d2Uat;
+  Vector<valT, aligned_allocator<valT>> d2Uat;
   valT cur_Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
@@ -103,9 +105,6 @@ public:
   J2OMPTarget(const std::string& obj_name, ParticleSet& p);
   J2OMPTarget(const J2OMPTarget& rhs) = delete;
   ~J2OMPTarget() override;
-
-  /* initialize storage */
-  void init(ParticleSet& p);
 
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
@@ -143,6 +142,9 @@ public:
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(const ParticleSet& P) override;
+  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    const std::vector<bool>& recompute) const override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
