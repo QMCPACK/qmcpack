@@ -70,6 +70,11 @@ public:
 
   void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B) override;
 
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
+                                         ParticleSet& source, 
+                                         TWFPrototype& psi, 
+                                         int iat, 
+                                         std::vector<std::vector<ValueMatrix_t> >& Bforce) override;
   /** set non local moves options
    * @param cur the xml input
    */
