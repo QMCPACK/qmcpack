@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 #endif
   if (argc < 2)
   {
-    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals|-dirac] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
