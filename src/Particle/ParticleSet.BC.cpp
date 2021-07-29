@@ -141,6 +141,14 @@ void ParticleSet::turnOnPerParticleSK()
         "ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
 }
 
+bool ParticleSet::getPerParticleSKState() const
+{
+  bool isPerParticleOn = false;
+  if (SK)
+    isPerParticleOn = SK->isStorePerParticle();
+  return isPerParticleOn;
+}
+
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
   if (pin.getUnit() == pout.getUnit())

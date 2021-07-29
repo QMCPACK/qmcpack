@@ -274,6 +274,9 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     Eloc.push_back(H[i]->myName);
   for (int i = 1; i < H.size(); ++i)
     Vloc.push_back(H[i]->myName);
+
+  // These contributions are based on the potential energy components.
+  // Loop starts at one to skip the kinetic energy component.
   for (int i = 1; i < H.size(); ++i)
   {
     OperatorBase& h = *H[i];
