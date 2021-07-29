@@ -840,8 +840,6 @@ struct TraceSamples
         break;
       }
     }
-    if (ts == NULL)
-      APP_ABORT("TraceSamples::get_combined_trace  failed to get trace for quantity " + name + " in domain " + domain);
     return ts;
   }
 
