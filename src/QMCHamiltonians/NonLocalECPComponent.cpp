@@ -691,14 +691,13 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
-
   IndexType gid = W.getGroupID(iel);
   IndexType detIndex = psi.get_det_id(gid); 
   IndexType thisEIndex= iel-W.first(gid);
   IndexType numptcls=psi.num_particles(detIndex);
   IndexType norbs=psi.num_orbitals(detIndex);
   SPOSet* spo=psi.get_sposet(detIndex);
-   
+
   RealType pairpot = 0;
   // Compute spherical harmonics on grid
   GradMatrix_t iongrad_phimat;
@@ -722,11 +721,23 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   for (int j = 0; j < nknot; j++)
   {
     W.makeMove(iel, deltaV[j], false);
-   
-    spo->evaluateGradSource(W,iel,iel,ions,iat,iongrad_phimat);
-    iongrad_phi = iongrad_phimat(thisEIndex);
+//    app_log()<<" iel="<<iel<<" iat="<<iat<<" j="<<j<<std::endl;
+  //  app_log()<<" BEFORE\n";
+  //  app_log()<<iongrad_phimat<<std::endl;
+    iongrad_phimat=0.0;
+    iongrad_phi=0.0;
+//    spo->evaluateGradSource(W,W.first(gid),W.last(gid),ions,iat,iongrad_phimat);
+    spo->evaluateGradSourceRow(W,iel,ions,iat,iongrad_phi);
+  //  app_log()<<" AFTER phimat\n";
+  //  app_log()<<iongrad_phimat<<std::endl;
+  //  app_log()<<" phivec\n";
+  //  app_log()<<iongrad_phi<<std::endl;
+//   for(int iorb=0;iorb<norbs;iorb++)
+//      iongrad_phi[iorb] = iongrad_phimat[thisEIndex][iorb];
+ //   app_log()<<" thisEindex="<<thisEIndex<<std::endl;
+ //   app_log()<<" iongradphi = "<<iongrad_phi<<std::endl;
     spo->evaluateVGL(W,iel,phi,gradphi,laplphi);
-    
+    W.rejectMove(iel);
       
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
@@ -746,6 +757,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     //P_0(x)=1; P'_0(x)=0.
     lpol[0]  = cone;
     dlpol[0] = czero;
+    dlpol[1] = cone;
 
     RealType lpolprev  = czero;
     RealType dlpolprev = czero;
@@ -756,11 +768,16 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
       lpol[l + 1] *= Lfactor2[l];
 
+      lpolprev  = lpol[l];
+    }
+
+    for (int l = 1; l < lmax; l++)
+    {
+
       //and for the derivative...
       dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
       dlpol[l + 1] *= Lfactor2[l];
 
-      lpolprev  = lpol[l];
       dlpolprev = dlpol[l];
     }
 
@@ -770,20 +787,22 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       //direct finite difference calculations.
       for(int iorb=0; iorb<norbs; iorb++)
       {
-        gpot[iorb]  +=  sgridweight_m[j]*vgrad[l]*lpol[angpp_m[l]]*phi[iorb];
-        glpoly[iorb]+= sgridweight_m[j]*vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * phi[iorb];  
+        gpot[iorb]  += sgridweight_m[j]*vgrad[l]*lpol[angpp_m[l]]*phi[iorb];
+        glpoly[iorb]+= sgridweight_m[j]*vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * phi[iorb]; 
         gwfn[iorb]  +=  sgridweight_m[j]*vrad[l]*lpol[angpp_m[l]]*(wfgradrow[iorb] + iongrad_phi[iorb]);     
       }
     }
-  
+   } 
+
+
     for(int idim=0; idim<OHMMS_DIM; idim++)
-    {
+    { 
       for(int iorb=0; iorb<norbs; iorb++)
       {
-        dB[idim][detIndex][thisEIndex][iorb]+=gpot[iorb][idim]+glpoly[iorb][idim]-gwfn[iorb][idim];
+        dB[idim][detIndex][thisEIndex][iorb]+= -1.0*gpot[iorb][idim]-glpoly[iorb][idim]+gwfn[iorb][idim];
       }
     }
-  }
+  
 }
 
 ///Randomly rotate sgrid_m
