@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/TWFPrototype.h"
+#include "Numerics/DeterminantOperators.h"
 #include <iostream>
 namespace qmcplusplus
 {
@@ -166,6 +167,76 @@ void TWFPrototype::get_igrad_igradelapl_M(const ParticleSet& P, const ParticleSe
           dlmat[idim][i][iptcl][iorb]+=grad_lapl_phi[iptcl][iorb][idim];
         }
   } 
+}
+
+TWFPrototype::ValueType TWFPrototype::compute_gs_derivative(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& X, const std::vector<ValueMatrix_t>& dM, const std::vector<ValueMatrix_t>& dB)
+{
+  IndexType nspecies=num_species();
+  ValueType dval=0.0;
+  for(int id=0; id<nspecies; id++)
+  {
+    int ptclnum = num_particles(id);
+    ValueType dval_id=0.0; 
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+      {
+        //Tr[M^{-1} dB - X * dM ]
+        dval_id+=Minv[id][i][j]*dB[id][j][i]-X[id][i][j]*dM[id][j][i];
+      }
+    dval+=dval_id;
+   }
+  return 0.0;
+}
+
+void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
+{
+  IndexType nspecies=num_species();
+  for(IndexType id=0; id<nspecies; id++)
+  {
+    assert(M[id].cols() == M[id].rows());
+    Minv[id]=M[id];
+    invert_matrix(Minv[id]);
+  }
+}
+
+void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& B, std::vector<ValueMatrix_t>& X)
+{
+  IndexType nspecies=num_species();
+  for(IndexType id=0; id<nspecies; id++)
+  {
+    int ptclnum = num_particles(id);
+    ValueMatrix_t tmpmat;
+    
+    tmpmat.resize(ptclnum,ptclnum);
+    //(B*A^-1)
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+        for(int k=0; k<ptclnum; k++)
+        {
+          tmpmat[i][j]+=B[id][i][k]*Minv[id][k][j];
+        } 
+    //A^{-1}*B*A^{-1}
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+        for(int k=0; k<ptclnum; k++)
+        {
+          X[id][i][j]+=Minv[id][i][k]*tmpmat[k][j];
+        } 
+  }
+}
+
+void TWFPrototype::get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
+{
+  IndexType nspecies=num_species();
+  Aslice.resize(nspecies);
+  for(IndexType id=0; id<nspecies; id++)
+  {
+    IndexType ptclnum = num_particles(id);
+    Aslice.resize(ptclnum,ptclnum);
+    for(IndexType i=0; i<ptclnum; i++)
+      for(IndexType j=0; j<ptclnum; j++)
+        Aslice[id][i][j]=A[id][i][j];
+  }
 }
 
 TWFPrototype::IndexType TWFPrototype::get_igrad_row(const ParticleSet& P, const ParticleSet& source, IndexType iel, IndexType iat_source, std::vector<ValueVector_t>& dval)

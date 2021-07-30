@@ -31,6 +31,7 @@ class TWFPrototype
     using HessMatrix_t = SPOSet::HessMatrix_t;
     using IndexType = QMCTraits::IndexType;
     using RealType = QMCTraits::RealType;
+    using ValueType = QMCTraits::ValueType;
 
     using ValueVector_t = SPOSet::ValueVector_t;
     using GradVector_t = SPOSet::GradVector_t;
@@ -49,7 +50,10 @@ class TWFPrototype
     void get_igrad_igradelapl_M(const ParticleSet& P, const ParticleSet& source, int iat, 
                                std::vector<std::vector<ValueMatrix_t> >& dmvec,  
                                std::vector<std::vector<ValueMatrix_t> >& dlmat);
-
+    ValueType compute_gs_derivative(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& X, const std::vector<ValueMatrix_t>& dM, const std::vector<ValueMatrix_t>& dB);
+    void invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
+    void get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
+    void build_X(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& B, std::vector<ValueMatrix_t>& X);   
     SPOSet* get_sposet(const IndexType sid){return spos[sid];};
     RealType evaluateLog(ParticleSet& P);
        
