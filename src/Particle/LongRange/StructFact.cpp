@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(ParticleSet& P, RealType kc)
-    : DoUpdate(false), StorePerParticle(false), SuperCellEnum(SUPERCELL_BULK)
+    : DoUpdate(false), SuperCellEnum(SUPERCELL_BULK), StorePerParticle(false)
 {
   if (qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
   {
