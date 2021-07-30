@@ -53,7 +53,9 @@ class TWFPrototype
     ValueType compute_gs_derivative(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& X, const std::vector<ValueMatrix_t>& dM, const std::vector<ValueMatrix_t>& dB);
     void invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
     void get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
-    void build_X(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& B, std::vector<ValueMatrix_t>& X);   
+    void build_X(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& B, std::vector<ValueMatrix_t>& X);
+    void wipe_matrix(std::vector<ValueMatrix_t>& A);  
+    ValueType trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B); 
     SPOSet* get_sposet(const IndexType sid){return spos[sid];};
     RealType evaluateLog(ParticleSet& P);
        

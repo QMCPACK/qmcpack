@@ -185,7 +185,7 @@ TWFPrototype::ValueType TWFPrototype::compute_gs_derivative(const std::vector<Va
       }
     dval+=dval_id;
    }
-  return 0.0;
+  return dval;
 }
 
 void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
@@ -193,6 +193,7 @@ void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<Val
   IndexType nspecies=num_species();
   for(IndexType id=0; id<nspecies; id++)
   {
+    app_log()<<" M["<<id<<"].cols()="<<M[id].cols()<<" M["<<id<<"].rows()="<<M[id].rows()<<std::endl;
     assert(M[id].cols() == M[id].rows());
     Minv[id]=M[id];
     invert_matrix(Minv[id]);
@@ -202,11 +203,12 @@ void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<Val
 void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv, const std::vector<ValueMatrix_t>& B, std::vector<ValueMatrix_t>& X)
 {
   IndexType nspecies=num_species();
+  
   for(IndexType id=0; id<nspecies; id++)
   {
     int ptclnum = num_particles(id);
     ValueMatrix_t tmpmat;
-    
+    X[id].resize(ptclnum,ptclnum); 
     tmpmat.resize(ptclnum,ptclnum);
     //(B*A^-1)
     for(int i=0; i<ptclnum; i++)
@@ -225,6 +227,38 @@ void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv, const std::ve
   }
 }
 
+void TWFPrototype::wipe_matrix(std::vector<ValueMatrix_t>& A)
+{
+  IndexType nspecies=num_species();
+  
+  for(IndexType id=0; id<nspecies; id++)
+  {
+    A[id]=0.0;
+  }
+  
+}
+
+TWFPrototype::ValueType TWFPrototype::trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B)
+{
+  IndexType nspecies=num_species();
+  ValueType val = 0.0;
+  //Now to compute the kinetic energy
+  for(IndexType id=0; id<nspecies; id++)
+  {
+    int ptclnum = num_particles(id);
+    ValueType val_id = 0.0;
+    assert(A[id].cols()==B[id].rows() && A[id].rows()==B[id].cols());
+    for(int i=0; i<A[id].rows(); i++)
+      for(int j=0; j<A[id].cols(); j++)
+      {
+        val_id+=A[id][i][j]*B[id][j][i];
+      }
+    val+=val_id;
+  }
+  
+  return val;
+}
+
 void TWFPrototype::get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
 {
   IndexType nspecies=num_species();
@@ -232,7 +266,7 @@ void TWFPrototype::get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vecto
   for(IndexType id=0; id<nspecies; id++)
   {
     IndexType ptclnum = num_particles(id);
-    Aslice.resize(ptclnum,ptclnum);
+    Aslice[id].resize(ptclnum,ptclnum);
     for(IndexType i=0; i<ptclnum; i++)
       for(IndexType j=0; j<ptclnum; j++)
         Aslice[id][i][j]=A[id][i][j];
