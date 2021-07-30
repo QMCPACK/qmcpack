@@ -177,7 +177,7 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     assert(host_ptr = alloc.get_host_ptr());
     alloc.get_device_allocator().copyFromDeviceAsync(host_ptr, alloc.get_device_ptr(), n, alloc.getSync());
   }
-  
+
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
   {
     T* device_ptr = alloc.get_device_ptr();

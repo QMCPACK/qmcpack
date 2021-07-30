@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_MATRIX_UPDATE_OMPTARGET_H
 
 #include "Configuration.h"
-#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "DeterminantAllocators.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Fermion/DiracMatrixComputeOMPTarget.hpp"
@@ -28,9 +28,9 @@ namespace qmcplusplus
 template<typename T>
 struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 {
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
+  using OffloadValueVector_t       = Vector<T, UnpinnedDualAllocator<T>>;
+  using OffloadPinnedValueVector_t = Vector<T, PinnedDualAllocator<T>>;
+  using OffloadPinnedValueMatrix_t = Matrix<T, PinnedDualAllocator<T>>;
 
   // constant array value T(1)
   OffloadValueVector_t cone_vec;
@@ -39,7 +39,7 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
   // multi walker of grads for transfer needs.
   OffloadPinnedValueMatrix_t grads_value_v;
   // pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> buffer_H2D;
+  Vector<char, PinnedDualAllocator<char>> buffer_H2D;
   /// scratch space for rank-1 update
   OffloadValueVector_t mw_temp;
   // scratch space for keeping one row of Ainv
@@ -64,16 +64,13 @@ class MatrixUpdateOMPTarget
 {
 public:
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
-  template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadValueVector_t          = Vector<T, OffloadAllocator<T>>;
+  using OffloadValueVector_t          = Vector<T, UnpinnedDualAllocator<T>>;
   using FullPrecReal = RealAlias<T_FP>;
-  using OffloadPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, OffloadPinnedAllocator<std::complex<FullPrecReal>>>;
-  using OffloadPinnedValueVector_t    = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t    = Matrix<T, OffloadPinnedAllocator<T>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, PinnedDualAllocator<std::complex<FullPrecReal>>>;
+  using OffloadPinnedValueVector_t    = Vector<T, PinnedDualAllocator<T>>;
+  using OffloadPinnedValueMatrix_t    = Matrix<T, PinnedDualAllocator<T>>;
   //using FullPrecReal = QMCTraits::FullPrecRealType;
+  using Synchro_t = typename PinnedDualAllocator<T>::Synchro_t;
 
 
   using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;

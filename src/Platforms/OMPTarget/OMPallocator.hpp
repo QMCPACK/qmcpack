@@ -133,7 +133,7 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
   }
 
   static void setSync(OMPallocator<T, HostAllocator>& alloc, Synchro& synchro) {}
-  
+
   static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
     PRAGMA_OFFLOAD("omp target update to(host_ptr[:n])");

@@ -301,19 +301,19 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031926441)).epsilon(precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031928415)).epsilon(precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032018344)).epsilon(precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(118.02653358655, -0.0022419843505538)).epsilon(precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655, -0.0022419843498631)).epsilon(precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634, 0.0022419843493758)).epsilon(precision));
+  CHECK(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031926441)).epsilon(precision));
+  CHECK(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031928415)).epsilon(precision));
+  CHECK(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032018344)).epsilon(precision));
+  CHECK(grad_old[1][0] == ComplexApprox(ValueType(118.02653358655, -0.0022419843505538)).epsilon(precision));
+  CHECK(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655, -0.0022419843498631)).epsilon(precision));
+  CHECK(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634, 0.0022419843493758)).epsilon(precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(713.69119517454).epsilon(2. * precision));
-  REQUIRE(grad_old[0][1] == Approx(713.69119517455).epsilon(2. * precision));
-  REQUIRE(grad_old[0][2] == Approx(-768.40759023681).epsilon(2. * precision));
-  REQUIRE(grad_old[1][0] == Approx(118.0287755709).epsilon(precision));
-  REQUIRE(grad_old[1][1] == Approx(118.0287755709).epsilon(precision));
-  REQUIRE(grad_old[1][2] == Approx(-118.46550094069).epsilon(precision));
+  CHECK(grad_old[0][0] == Approx(713.69119517454).epsilon(2. * precision));
+  CHECK(grad_old[0][1] == Approx(713.69119517455).epsilon(2. * precision));
+  CHECK(grad_old[0][2] == Approx(-768.40759023681).epsilon(2. * precision));
+  CHECK(grad_old[1][0] == Approx(118.0287755709).epsilon(precision));
+  CHECK(grad_old[1][1] == Approx(118.0287755709).epsilon(precision));
+  CHECK(grad_old[1][2] == Approx(-118.46550094069).epsilon(precision));
 #endif
   PosType delta_sign_changed(0.1, 0.1, -0.2);
   p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
@@ -325,17 +325,17 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
             << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
-  REQUIRE(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
-  REQUIRE(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
-  REQUIRE(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
-  REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
+  CHECK(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
+  CHECK(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
+  CHECK(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
+  CHECK(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
+  CHECK(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
 #else
-  REQUIRE(r_0 == Approx(253.71904054638).epsilon(2e-4));
-  REQUIRE(r_1 == Approx(36.915700247239));
-  REQUIRE(grad_temp[0] == Approx(1.4564444046733));
-  REQUIRE(grad_temp[1] == Approx(1.4564444046734));
-  REQUIRE(grad_temp[2] == Approx(-1.2928240654738));
+  CHECK(r_0 == Approx(253.71904054638).epsilon(2e-4));
+  CHECK(r_1 == Approx(36.915700247239));
+  CHECK(grad_temp[0] == Approx(1.4564444046733));
+  CHECK(grad_temp[1] == Approx(1.4564444046734));
+  CHECK(grad_temp[2] == Approx(-1.2928240654738));
 #endif
 
   PosType delta_zero(0, 0, 0);
@@ -347,15 +347,15 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "mixed move calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 
 #if defined(QMC_COMPLEX)
-  REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)).epsilon(5e-5));
+  CHECK(ratios[0] == ComplexApprox(PsiValueType(1, 0)).epsilon(5e-5));
 #if defined(MIXED_PRECISION)
-  REQUIRE(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(2e-5));
+  CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(2e-5));
 #else
-  REQUIRE(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)));
+  CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)));
 #endif
 #else
-  REQUIRE(ratios[0] == Approx(1).epsilon(5e-5));
-  REQUIRE(ratios[1] == Approx(0.12487384604697));
+  CHECK(ratios[0] == Approx(1).epsilon(5e-5));
+  CHECK(ratios[1] == Approx(0.12487384604697));
 #endif
 
   std::fill(ratios.begin(), ratios.end(), 0);
@@ -376,23 +376,23 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)).epsilon(5e-5));
-  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031942702)).epsilon(precision));
-  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031944677)).epsilon(precision));
-  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032035842)).epsilon(precision));
-  REQUIRE(ratios[1] == ComplexApprox(ValueType(0.12487384604679, 0)));
-  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(713.71203320656, 0.020838031892613)).epsilon(precision));
-  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(713.71203320657, 0.020838031894628)).epsilon(precision));
-  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-768.42842826892, -0.020838031981896)).epsilon(precision));
+  CHECK(ratios[0] == ComplexApprox(ValueType(1, 0)).epsilon(5e-5));
+  CHECK(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031942702)).epsilon(precision));
+  CHECK(grad_new[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031944677)).epsilon(precision));
+  CHECK(grad_new[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032035842)).epsilon(precision));
+  CHECK(ratios[1] == ComplexApprox(ValueType(0.12487384604679, 0)));
+  CHECK(grad_new[1][0] == ComplexApprox(ValueType(713.71203320656, 0.020838031892613)).epsilon(precision));
+  CHECK(grad_new[1][1] == ComplexApprox(ValueType(713.71203320657, 0.020838031894628)).epsilon(precision));
+  CHECK(grad_new[1][2] == ComplexApprox(ValueType(-768.42842826892, -0.020838031981896)).epsilon(precision));
 #else
-  REQUIRE(ratios[0] == Approx(1).epsilon(5e-5));
-  REQUIRE(grad_new[0][0] == Approx(713.69119517463).epsilon(precision));
-  REQUIRE(grad_new[0][1] == Approx(713.69119517463).epsilon(precision));
-  REQUIRE(grad_new[0][2] == Approx(-768.40759023689).epsilon(precision));
-  REQUIRE(ratios[1] == Approx(0.12487384604697));
-  REQUIRE(grad_new[1][0] == Approx(713.69119517467).epsilon(precision));
-  REQUIRE(grad_new[1][1] == Approx(713.69119517468).epsilon(precision));
-  REQUIRE(grad_new[1][2] == Approx(-768.40759023695).epsilon(precision));
+  CHECK(ratios[0] == Approx(1).epsilon(5e-5));
+  CHECK(grad_new[0][0] == Approx(713.69119517463).epsilon(precision));
+  CHECK(grad_new[0][1] == Approx(713.69119517463).epsilon(precision));
+  CHECK(grad_new[0][2] == Approx(-768.40759023689).epsilon(precision));
+  CHECK(ratios[1] == Approx(0.12487384604697));
+  CHECK(grad_new[1][0] == Approx(713.69119517467).epsilon(precision));
+  CHECK(grad_new[1][1] == Approx(713.69119517468).epsilon(precision));
+  CHECK(grad_new[1][2] == Approx(-768.40759023695).epsilon(precision));
 #endif
 
   std::vector<bool> isAccepted(2, true);
@@ -402,14 +402,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi()
             << " " << WF_list[1]->getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296886, -3.141586279081995)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
@@ -421,35 +421,35 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
 #if defined(MIXED_PRECISION)
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
+  CHECK(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
+  CHECK(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
+  CHECK(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
+  CHECK(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
+  CHECK(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
+  CHECK(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(precision));
-  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(precision));
+  CHECK(grad_old[0][0] == Approx(-114.82732467419).epsilon(precision));
+  CHECK(grad_old[0][1] == Approx(-93.98069637537).epsilon(precision));
+  CHECK(grad_old[0][2] == Approx(64.050727483593).epsilon(precision));
+  CHECK(grad_old[1][0] == Approx(-114.82732467419).epsilon(precision));
+  CHECK(grad_old[1][1] == Approx(-93.98069637537).epsilon(precision));
+  CHECK(grad_old[1][2] == Approx(64.050727483593).epsilon(precision));
 #endif
 #else
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
+  CHECK(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
+  CHECK(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
+  CHECK(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
+  CHECK(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
+  CHECK(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
+  CHECK(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(precision));
-  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(precision));
+  CHECK(grad_old[0][0] == Approx(-114.82732467419).epsilon(precision));
+  CHECK(grad_old[0][1] == Approx(-93.98069637537).epsilon(precision));
+  CHECK(grad_old[0][2] == Approx(64.050727483593).epsilon(precision));
+  CHECK(grad_old[1][0] == Approx(-114.82732467419).epsilon(precision));
+  CHECK(grad_old[1][1] == Approx(-93.98069637537).epsilon(precision));
+  CHECK(grad_old[1][2] == Approx(64.050727483593).epsilon(precision));
 #endif
 #endif
 
@@ -461,19 +461,19 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "ratioGrad next electron " << std::setprecision(14) << grad_new[0][0] << " " << grad_new[0][1] << " "
             << grad_new[0][2] << " " << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
-  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(6.3111018321898, -1.4375146510386e-05)).epsilon(8e-5));
-  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-3.2027658046121, 1.4375146020225e-05)).epsilon(8e-5));
-  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
-  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(6.3111018321898, -1.4375146510386e-05)).epsilon(8e-5));
-  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-3.2027658046121, 1.4375146020225e-05)).epsilon(8e-5));
+  CHECK(grad_new[0][0] == ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
+  CHECK(grad_new[0][1] == ComplexApprox(ValueType(6.3111018321898, -1.4375146510386e-05)).epsilon(8e-5));
+  CHECK(grad_new[0][2] == ComplexApprox(ValueType(-3.2027658046121, 1.4375146020225e-05)).epsilon(8e-5));
+  CHECK(grad_new[1][0] == ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
+  CHECK(grad_new[1][1] == ComplexApprox(ValueType(6.3111018321898, -1.4375146510386e-05)).epsilon(8e-5));
+  CHECK(grad_new[1][2] == ComplexApprox(ValueType(-3.2027658046121, 1.4375146020225e-05)).epsilon(8e-5));
 #else
-  REQUIRE(grad_new[0][0] == Approx(9.607320224603).epsilon(1e-4));
-  REQUIRE(grad_new[0][1] == Approx(6.3111162073363).epsilon(1e-4));
-  REQUIRE(grad_new[0][2] == Approx(-3.2027801797581).epsilon(1e-4));
-  REQUIRE(grad_new[1][0] == Approx(9.607320224603).epsilon(1e-4));
-  REQUIRE(grad_new[1][1] == Approx(6.3111162073363).epsilon(1e-4));
-  REQUIRE(grad_new[1][2] == Approx(-3.2027801797581).epsilon(1e-4));
+  CHECK(grad_new[0][0] == Approx(9.607320224603).epsilon(1e-4));
+  CHECK(grad_new[0][1] == Approx(6.3111162073363).epsilon(1e-4));
+  CHECK(grad_new[0][2] == Approx(-3.2027801797581).epsilon(1e-4));
+  CHECK(grad_new[1][0] == Approx(9.607320224603).epsilon(1e-4));
+  CHECK(grad_new[1][1] == Approx(6.3111162073363).epsilon(1e-4));
+  CHECK(grad_new[1][2] == Approx(-3.2027801797581).epsilon(1e-4));
 #endif
 
   isAccepted[0] = true;
@@ -489,15 +489,15 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << det_up->get_det_engine().get_psiMinv()[0][1] << " " << det_up->get_det_engine().get_psiMinv()[1][0] << " " << det_up->get_det_engine().get_psiMinv()[1][1]
             << " " << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635, -38.503358805645)).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568, 31.465077529576)).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][0] == ComplexApprox(ValueType(-27.188228530061, 27.188228530068)).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][1] == ComplexApprox(ValueType(22.759962501254, -22.75996250126)).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635, -38.503358805645)).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568, 31.465077529576)).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[1][0] == ComplexApprox(ValueType(-27.188228530061, 27.188228530068)).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[1][1] == ComplexApprox(ValueType(22.759962501254, -22.75996250126)).epsilon(1e-4));
 #else
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][0] == Approx(77.0067176113).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[0][0] == Approx(77.0067176113).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
+  CHECK(det_up->get_det_engine().get_psiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
   std::vector<LogValueType> log_values(wf_ref_list.size());
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
@@ -505,7 +505,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
     log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
+    CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
 #endif
 }

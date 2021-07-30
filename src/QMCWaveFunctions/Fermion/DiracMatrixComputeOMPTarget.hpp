@@ -23,7 +23,6 @@
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 #include "ResourceCollection.h"
-
 namespace qmcplusplus
 {
 /** helper class to compute matrix inversion and the log value of determinant

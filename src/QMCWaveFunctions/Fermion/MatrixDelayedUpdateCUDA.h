@@ -40,7 +40,8 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   using DualValueVector_t       = Vector<T, UnpinnedDualAllocator<T>>;
   using DualPinnedValueVector_t = Vector<T, PinnedDualAllocator<T>>;
   using DualPinnedValueMatrix_t = Matrix<T, PinnedDualAllocator<T>>;
-
+  using Synchro_t = typename PinnedDualAllocator<T>::Synchro_t;
+  
   // constant array value T(1)
   DualValueVector_t cone_vec;
   // constant array value T(-1)
@@ -91,7 +92,7 @@ public:
   using DualPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, PinnedDualAllocator<std::complex<FullPrecReal>>>;
   using DualPinnedValueVector_t = Vector<T, PinnedDualAllocator<T>>;
   using DualPinnedValueMatrix_t = Matrix<T, PinnedDualAllocator<T>>;
-
+  using Synchro_t = typename PinnedDualAllocator<T>::Synchro_t;
   using DiracMatrixCompute = DiracMatrixComputeCUDA<T_FP>;
 
   

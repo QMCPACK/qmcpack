@@ -29,6 +29,6 @@ void OpenMPSynchro::sync()
 {
   PRAGMA_OFFLOAD("omp taskwait")
 }
-  
+
 }
 

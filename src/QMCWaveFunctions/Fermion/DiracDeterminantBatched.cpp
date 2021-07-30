@@ -17,6 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/SIMD/simd.hpp"
+#include "Synchro.hpp"
 
 namespace qmcplusplus
 {
@@ -167,10 +168,13 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
     for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
     {
       auto& det          = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-      auto* psiM_vgl_ptr = det.psiM_vgl.data();
-      size_t stride      = wfc_leader.psiM_vgl.capacity();
+      // auto* psiM_vgl_ptr = det.psiM_vgl.data();
+      // size_t stride      = wfc_leader.psiM_vgl.capacity();
+
+      
       //I think this means it only updates v and g
-      PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
+      det.psiM_vgl.updateToAsync();
+      //PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
       // dual_psiM_temps.emplace_back(
       //     std::make_unique<DualPinnedValueMatrix_t>(const_cast<decltype(psiM_vgl)&>(psiM_vgl),
       //                                                  psiM_vgl.getNonConstData(), det.psiM_temp.rows(),
@@ -178,8 +182,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       dual_psiM_temp_list.push_back(det.psiM_temp); //*dual_psiM_temps[iw]);
       psiMinv_temp_list.push_back(det.get_det_engine().get_nonconst_psiMinv());
     }
-    // Waiting here for the psiM update in the above loop to complete
-    PRAGMA_OFFLOAD("omp taskwait")
+    // Waiting here for the psiM update in the above loop to complete    
+    
     DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(wfc_list, dual_psiM_temp_list, psiMinv_temp_list,
                                                        recompute_mask);
   }
