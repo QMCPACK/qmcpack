@@ -64,7 +64,8 @@ public:
   {
     numSamples         = nsamples;
     numParam           = nparam;
-    costFn.numSamples_ = nsamples;
+
+    costFn.rank_local_num_samples_ = nsamples;
 
     costFn.OptVariables.insert("var1", 1.0);
     costFn.NumOptimizables = numParam;
