@@ -265,19 +265,6 @@ private:
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     const std::vector<bool>& recompute) const override;
 
-  // make this class unit tests friendly without the need of setup resources.
-  void guardMultiWalkerRes()
-  {
-    if (!mw_res_)
-    {
-      std::cerr
-          << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
-             "but only unit tests (expected)."
-          << std::endl;
-      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource>();
-    }
-  }
-
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
 

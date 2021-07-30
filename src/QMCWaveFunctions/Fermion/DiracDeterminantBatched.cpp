@@ -177,7 +177,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
@@ -250,7 +249,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
   auto& mw_res       = *wfc_leader.mw_res_;
   auto& phi_vgl_v    = mw_res.phi_vgl_v;
   auto& ratios_local = mw_res.ratios_local;
@@ -532,7 +530,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
