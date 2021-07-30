@@ -79,6 +79,9 @@ protected:
 
   SampleStack& samples_;
 
+  // Number of samples local to each MPI rank
+  int rank_local_num_samples_;
+
   int opt_batch_size_;
   int opt_num_crowds_;
 
