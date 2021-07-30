@@ -79,6 +79,9 @@ protected:
 
   SampleStack& samples_;
 
+  // Number of samples local to each node
+  int numSamples_;
+
   int opt_batch_size_;
   int opt_num_crowds_;
 
