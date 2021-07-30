@@ -254,7 +254,8 @@ public:
   
   void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P, 
                                            ParticleSet& source,
-                                           int iat,  
+                                           int iat,
+                                           int iat_src,  
                                            TWFPrototype& psi,
                                            int iel,
                                            RealType r,

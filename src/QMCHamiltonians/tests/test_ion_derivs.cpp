@@ -367,6 +367,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
 
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
 
+  int IONINDEX=1;
+
   ValueMatrix_t upmat;
   ValueMatrix_t dnmat;
   upmat.resize(5,14);
@@ -432,8 +434,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
 
-  kinop->evaluateOneBodyOpMatrixForceDeriv(elec,ions,twf,0,dB);
-  twf.get_igrad_M(elec,ions,0,dM);
+  kinop->evaluateOneBodyOpMatrixForceDeriv(elec,ions,twf,IONINDEX,dB);
+  twf.get_igrad_M(elec,ions,IONINDEX,dM);
   for(int idim=0; idim<OHMMS_DIM; idim++)
     for(int id=0; id<matlist.size(); id++)
     {
@@ -508,9 +510,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
       dval+=dval_id;
       dwfn+=dwfn_id;
     }
-    app_log()<<"F[0]["<<idim<<"]="<<dval<<std::endl;
-    app_log()<<"dTWF[0]["<<idim<<"]="<<dwfn<<std::endl;
+    app_log()<<"F["<<IONINDEX<<"]["<<idim<<"]="<<dval<<std::endl;
+    app_log()<<"dTWF["<<IONINDEX<<"]["<<idim<<"]="<<dwfn<<std::endl;
   } 
+
   app_log()<<" Now evaluating nonlocalecp\n"; 
   OperatorBase* nlppop=ham->getHamiltonian(NONLOCALECP);
   app_log()<<"nlppop = "<<nlppop<<std::endl;
@@ -562,6 +565,192 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   app_log()<<" NLPPVal = "<<nlpp<<std::endl;
+
+  std::vector<ValueMatrix_t> Bplus;
+  std::vector<ValueMatrix_t> Bminus;
+  
+  for(int i=0; i<matlist.size(); i++)
+  {
+    Bplus.push_back(Bkin[i]);
+    Bminus.push_back(Bkin[i]);
+ //   app_log()<<" Species "<<i<<std::endl;
+//    app_log()<<Bkin[i]<<std::endl<<std::endl;
+  }
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+  for(int i=0; i<matlist.size(); i++)
+  {
+    Bplus[i]=0.0;
+    Bminus[i]=0.0;
+  }
+
+  RealType delta=1e-4;
+ 
+
+  RealType xold=ions.R[IONINDEX][0];
+  ions.R[IONINDEX][0]=xold+delta;
+
+  ions.update();
+  elec.update();
+
+  nlppop-> evaluateOneBodyOpMatrix(elec,twf,Bplus);
+  ions.R[IONINDEX][0]=xold-delta;
+
+  ions.update();
+  elec.update();
+  nlppop-> evaluateOneBodyOpMatrix(elec,twf,Bminus);
+  {std::vector<ValueMatrix_t> Bdiff_vec; 
+  for(int i=0; i<matlist.size(); i++)
+  {
+    ValueMatrix_t Bdiff;
+    int ptclnum = twf.num_particles(i);
+    int norbs = twf.num_orbitals(i);
+    Bdiff.resize(ptclnum,norbs);
+    Bdiff=(Bplus[i]-Bminus[i])*(1.0/2.0/delta);
+    Bdiff_vec.push_back(Bdiff);
+    app_log()<<" [0] Species BDIFF "<<i<<std::endl;
+    app_log()<<Bdiff<<std::endl;
+  }}
+  
+  ions.R[IONINDEX][0]=xold;
+  ions.update();
+  elec.update();
+
+  for(int i=0; i<matlist.size(); i++)
+  {
+    Bplus[i]=0.0;
+    Bminus[i]=0.0;
+  }
+
+ 
+  xold=ions.R[IONINDEX][1];
+  ions.R[IONINDEX][1]=xold+delta;
+
+  ions.update();
+  elec.update();
+  nlppop-> evaluateOneBodyOpMatrix(elec,twf,Bplus);
+  ions.R[IONINDEX][1]=xold-delta;
+  ions.update();
+  elec.update();
+
+  nlppop-> evaluateOneBodyOpMatrix(elec,twf,Bminus);
+  {std::vector<ValueMatrix_t> Bdiff_vec; 
+  for(int i=0; i<matlist.size(); i++)
+  {
+    ValueMatrix_t Bdiff;
+    int ptclnum = twf.num_particles(i);
+    int norbs = twf.num_orbitals(i);
+    Bdiff.resize(ptclnum,norbs);
+    Bdiff=(Bplus[i]-Bminus[i])*(1.0/2.0/delta);
+    Bdiff_vec.push_back(Bdiff);
+    app_log()<<"[1] Species BDIFF "<<i<<std::endl;
+    app_log()<<Bdiff<<std::endl;
+  }}
+  
+  ions.R[IONINDEX][1]=xold;
+  ions.update();
+  elec.update();
+  
+  xold=ions.R[IONINDEX][2];
+  ions.R[IONINDEX][2]=xold+delta;
+
+  ions.update();
+  elec.update();
+
+  nlppop-> evaluateOneBodyOpMatrix(elec,twf,Bplus);
+  ions.R[0][2]=xold-delta;
+  ions.update();
+  elec.update();
+
+  nlppop-> evaluateOneBodyOpMatrix(elec,twf,Bminus);
+  {std::vector<ValueMatrix_t> Bdiff_vec; 
+  for(int i=0; i<matlist.size(); i++)
+  {
+    ValueMatrix_t Bdiff;
+    int ptclnum = twf.num_particles(i);
+    int norbs = twf.num_orbitals(i);
+    Bdiff.resize(ptclnum,norbs);
+    Bdiff=(Bplus[i]-Bminus[i])*(1.0/2.0/delta);
+    Bdiff_vec.push_back(Bdiff);
+    app_log()<<"[2] Species BDIFF "<<i<<std::endl;
+    app_log()<<Bdiff<<std::endl;
+  }}
+   
+  ions.R[IONINDEX][2]=xold;
+  ions.update();
+  elec.update();
+
+ */ 
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+    for(int id=0; id<matlist.size(); id++)
+      dB[idim][id]=0.0;
+  
+  nlppop->evaluateOneBodyOpMatrixForceDeriv(elec,ions,twf,IONINDEX,dB);
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+    for(int id=0; id<matlist.size(); id++)
+    {
+      int ptclnum = twf.num_particles(id);
+      for(int i=0; i<ptclnum; i++)
+        for(int j=0; j<ptclnum; j++)
+        {      
+          dB_gs[idim][id][i][j] = dB[idim][id][i][j];
+          //dB_gs[0][id][i][j] = Bdiff_vec[id][i][j];
+          Bkin_gs[id][i][j] = Bkin[id][i][j];
+        }
+    }
+  
+  std::vector<ValueMatrix_t> X2;
+  for(int id=0; id<matlist.size(); id++)
+  {
+    int ptclnum = twf.num_particles(id);
+    ValueMatrix_t Xid;
+    ValueMatrix_t tmpmat;
+    Xid.resize(ptclnum,ptclnum);
+    Xid=0.0;
+    tmpmat=0.0;
+    tmpmat.resize(ptclnum,ptclnum);
+    //(B*A^-1)
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+        for(int k=0; k<ptclnum; k++)
+        {
+          tmpmat[i][j]+=Bkin_gs[id][i][k]*minv[id][k][j];
+        } 
+
+    for(int i=0; i<ptclnum; i++)
+      for(int j=0; j<ptclnum; j++)
+        for(int k=0; k<ptclnum; k++)
+        {
+          Xid[i][j]+=minv[id][i][k]*tmpmat[k][j];
+        } 
+    X2.push_back(Xid);
+  }
+
+ // int idim=0;
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+  {
+    ValueType dval=0.0;
+    ValueType dwfn=0.0;
+    for(int id=0; id<matlist.size(); id++)
+    {
+    //  app_log()<<" BDiff Species "<<id<<std::endl;
+    //  app_log()<<dB[idim][id]<<std::endl<<std::endl;
+      int ptclnum = twf.num_particles(id);
+      ValueType dval_id=0.0; 
+      ValueType dwfn_id=0.0;
+      for(int i=0; i<ptclnum; i++)
+        for(int j=0; j<ptclnum; j++)
+        {
+          dval_id+=minv[id][i][j]*dB_gs[idim][id][j][i]-X2[id][i][j]*dM_gs[idim][id][j][i];
+          dwfn_id+=minv[id][i][j]*dM_gs[idim][id][j][i];
+        }
+      dval+=dval_id;
+      dwfn+=dwfn_id;
+    }
+    app_log()<<"F["<<IONINDEX<<"]["<<idim<<"]="<<dval<<std::endl;
+    app_log()<<"dTWF["<<IONINDEX<<"]["<<idim<<"]="<<dwfn<<std::endl;
+  } 
+
    
 }
 

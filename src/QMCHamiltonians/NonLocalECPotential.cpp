@@ -476,7 +476,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& 
       const auto& displ              = myTable.getDisplRow(jel);
       std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           PP[iat]->evaluateOneBodyOpMatrixContribution(P,iat,psi, jel, dist[iat], -displ[iat], B);
           NeighborIons.push_back(iat);
@@ -490,7 +490,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& 
 void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
                                          ParticleSet& source, 
                                          TWFPrototype& psi, 
-                                         int iat, 
+                                         int iat_source, 
                                          std::vector<std::vector<ValueMatrix_t> >& Bforce)
 {
   bool keepGrid=true;
@@ -514,9 +514,9 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       const auto& displ              = myTable.getDisplRow(jel);
       std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        if (PP[iat] != nullptr  && dist[iat] < PP[iat]->getRmax())
         {
-          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P,source, iat,psi, jel, dist[iat], -displ[iat], Bforce);
+          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P,source, iat, iat_source, psi, jel, dist[iat], -displ[iat], Bforce);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
