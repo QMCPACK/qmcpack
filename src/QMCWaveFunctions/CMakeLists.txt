@@ -59,6 +59,10 @@ set(JASTROW_SRCS
     Fermion/SPOSetProxy.cpp
     Fermion/SPOSetProxyForMSD.cpp)
 
+if(NOT (ENABLE_CUDA AND NOT ENABLE_OFFLOAD) )
+  set(FERMION_SRCS ${FERMION_SRCS} Fermion/MatrixUpdateOMPTarget.cpp)
+endif()
+
 if(ENABLE_OFFLOAD)
   set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/J2OMPTarget.cpp)
 endif()
@@ -154,7 +158,6 @@ set(FERMION_SRCS
     ${FERMION_SRCS}
     Fermion/DiracDeterminant.cpp
     Fermion/DiracDeterminantBatched.cpp
-    Fermion/MatrixUpdateOMPTarget.cpp
     Fermion/SlaterDet.cpp
     Fermion/SlaterDetBuilder.cpp
     Fermion/MultiSlaterDeterminant.cpp

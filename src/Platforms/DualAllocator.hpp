@@ -21,6 +21,7 @@
 #include "config.h"
 #include "allocator_traits.hpp"
 #include "PinnedAllocator.h"
+#include "Synchro.hpp"
 #include "CUDA/CUDAallocator.hpp"
 
 namespace qmcplusplus
@@ -47,8 +48,9 @@ struct DualAllocator : public HostAllocator
   using Size         = typename HostAllocator::size_type;
   using Pointer      = typename HostAllocator::pointer;
   using ConstPointer = typename HostAllocator::const_pointer;
-
-  DualAllocator() : host_ptr_(nullptr), device_ptr_(nullptr){};
+  using Synchro_t      = typename DeviceAllocator::Synchro_t;
+  
+  DualAllocator() : host_ptr_(nullptr), device_ptr_(nullptr), synchro_(default_synchro) {};
   DualAllocator(const DualAllocator&) : host_ptr_(nullptr), device_ptr_(nullptr) {}
   DualAllocator& operator=(const DualAllocator&)
   {
@@ -101,11 +103,18 @@ struct DualAllocator : public HostAllocator
 
   T* get_host_ptr() { return host_ptr_; }
 
+  template<class SYNCHRO>
+  void setSync(SYNCHRO& synchro) { synchro_ = synchro; }  
+  Synchro& getSync() { return synchro_; }
+  void sync() { synchro_.get().sync(); }
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
   T* host_ptr_;
   T* device_ptr_;
+  // would rather std::optional I think.
+  Synchro_t default_synchro;
+  std::reference_wrapper<Synchro> synchro_;
 };
 
 template<typename T, class DeviceAllocator, class HostAllocator>
@@ -122,6 +131,10 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     to.attachReference(from, from_data, ref);
   }
 
+  static void setSync(DualAlloc& alloc, Synchro& synchro) { alloc.setSync(synchro); }
+
+  static void sync(DualAlloc& alloc, Synchro& synchro) { alloc.sync(); }
+
   /** update to the device, assumes you are copying starting with the implicit host_ptr.
    *
    *  These follow the openmp target semantics where you only provide the host
@@ -129,9 +142,13 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
    *
    *  This is primarily for testing to reduce ifdef code and single "flavor" testing
    *
+   *  In a few places in the code where transfer crept up into otherwise "Device" abstracted code
+   *  it is necessary.
+   *
    *  This a generic API and unlikely to be the best way to handle performance critical transfers,
    *  but if you have to use it or ifdef at a level above a xxxCUDA.cu or xxxOMPTarget.hpp file
-   *  thats an issue. 
+   *  thats an issue and this is the best answer if you can't factor it down into CUDA or OMPTarget specific
+   *  code.
    */
   static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n)
   {
@@ -147,6 +164,20 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.get_device_ptr(), n);
   }
 
+  static void updateToAsync(DualAlloc& alloc, T* host_ptr, size_t n)
+  {
+    assert(host_ptr = alloc.get_host_ptr());
+    alloc.get_device_allocator().copyToDeviceAsync(alloc.get_device_ptr(), host_ptr, n, alloc.getSync());
+  }
+
+  /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
+   */
+  static void updateFromAsync(DualAlloc& alloc, T* host_ptr, size_t n)
+  {
+    assert(host_ptr = alloc.get_host_ptr());
+    alloc.get_device_allocator().copyFromDeviceAsync(host_ptr, alloc.get_device_ptr(), n, alloc.getSync());
+  }
+  
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
   {
     T* device_ptr = alloc.get_device_ptr();

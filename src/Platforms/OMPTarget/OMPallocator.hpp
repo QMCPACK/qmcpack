@@ -20,6 +20,7 @@
 #include <atomic>
 #include "config.h"
 #include "allocator_traits.hpp"
+#include "Synchro.hpp"
 #ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>
 #endif
@@ -58,6 +59,7 @@ struct OMPallocator : public HostAllocator
   using size_type     = typename HostAllocator::size_type;
   using pointer       = typename HostAllocator::pointer;
   using const_pointer = typename HostAllocator::const_pointer;
+  using Synchro_t      = OpenMPSynchro;
 
   OMPallocator() = default;
   /** Gives you a OMPallocator with no state.
@@ -130,6 +132,8 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
     to.attachReference(from, ptr_offset);
   }
 
+  static void setSync(OMPallocator<T, HostAllocator>& alloc, Synchro& synchro) {}
+  
   static void updateTo(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
     PRAGMA_OFFLOAD("omp target update to(host_ptr[:n])");
@@ -138,6 +142,16 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
   static void updateFrom(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
   {
     PRAGMA_OFFLOAD("omp target update from(host_ptr[:n])");
+  }
+
+  static void updateToAsync(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  {
+    PRAGMA_OFFLOAD("omp target update to(host_ptr[:n]) nowait");
+  }
+
+  static void updateFromAsync(OMPallocator<T, HostAllocator>& alloc, T* host_ptr, size_t n)
+  {
+    PRAGMA_OFFLOAD("omp target update from(host_ptr[:n]) nowait");
   }
 
   // Not very optimized device side copy.  Only used for testing.

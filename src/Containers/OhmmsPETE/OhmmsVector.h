@@ -261,6 +261,16 @@ public:
   {
     qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, nLocal);
   }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateToAsync()
+  {
+    qmc_allocator_traits<Alloc>::updateToAsync(mAllocator, X, nLocal);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFromAsync()
+  {
+    qmc_allocator_traits<Alloc>::updateFromAsync(mAllocator, X, nLocal);
+  }
 
 private:
   ///size

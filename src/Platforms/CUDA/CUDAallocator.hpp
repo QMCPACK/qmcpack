@@ -29,6 +29,7 @@
 #include "cudaError.h"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
+#include "Synchro.hpp"
 
 namespace qmcplusplus
 {
@@ -102,6 +103,8 @@ public:
   typedef T* pointer;
   typedef const T* const_pointer;
 
+  using Synchro_t = CudaStreamSynchro;
+  
   CUDAAllocator() = default;
   template<class U>
   CUDAAllocator(const CUDAAllocator<U>&)
@@ -171,6 +174,20 @@ public:
       cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
                      "cudaMemcpy failed in copyDeviceToDevice");
   }
+
+  void copyToDeviceAsync(T* device_ptr, T* host_ptr, size_t n, const Synchro& synchro)
+  {
+    cudaStream_t stream = dynamic_cast<const CudaStreamSynchro&>(synchro).get_stream();
+    cudaErrorCheck(cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice, stream),
+                     "cudaMemcpy failed in copyToDeviceAsync");
+  }
+
+  void copyFromDeviceAsync(T* host_ptr, T* device_ptr, size_t n, const Synchro& synchro)
+  {
+    cudaStream_t stream = dynamic_cast<const CudaStreamSynchro&>(synchro).get_stream();
+    cudaErrorCheck(cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost, stream),
+                     "cudaMemcpy failed in copyFromDeviceAsync");
+  }
 };
 
 template<class T1, class T2>
@@ -190,17 +207,9 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
   static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
-  static void updateTo(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    copyToDevice(device_ptr, host_ptr, n);
-  }
 
-  static void updateFrom(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    copyFromDevice(host_ptr, device_ptr, n);
-  }
+  static void setSync(CUDAAllocator<T>& alloc, Synchro& synchro) { alloc.setSync(synchro); }
+  
 
 };
 

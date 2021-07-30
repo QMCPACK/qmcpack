@@ -375,6 +375,16 @@ public:
   {
     X.updateFrom();
   }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateToAsync()
+  {
+    X.updateToAsync();
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFromAsync()
+  {
+    X.updateFromAsync();
+  }
 
 protected:
   size_type D1, D2;
