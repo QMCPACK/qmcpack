@@ -350,11 +350,11 @@ struct OperatorBase : public QMCTraits
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const {}
 
   virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 

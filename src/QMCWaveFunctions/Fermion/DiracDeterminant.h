@@ -172,8 +172,8 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection) override;
-  void releaseResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
 
   /** cloning function
    * @param tqp target particleset

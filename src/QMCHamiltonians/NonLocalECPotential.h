@@ -106,11 +106,11 @@ public:
 
   /** acquire a shared resource from a collection
    */
-  void acquireResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const override;
 
   /** return a shared resource to a collection
    */
-  void releaseResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const override;
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 

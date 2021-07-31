@@ -78,95 +78,90 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                                                 crowd.get_walker_hamiltonians());
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+  ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
+  ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
 
   {
-    DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
-                                                 crowd.get_walker_hamiltonians()[0]);
-
-    int nnode_crossing(0);
-
-    {
-      ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
-      std::vector<bool> recompute_mask;
-      recompute_mask.reserve(walkers.size());
-      for (MCPWalker& awalker : walkers)
-        if (awalker.wasTouched)
-        {
-          recompute_mask.push_back(true);
-          awalker.wasTouched = false;
-        }
-        else
-          recompute_mask.push_back(false);
-      ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
-      twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_mask);
-    }
-
-    const int num_walkers = crowd.size();
-
-    //This generates an entire steps worth of deltas.
-    step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
-    auto it_delta_r = step_context.deltaRsBegin();
-
-    std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, TrialWaveFunction::GradType(0.0));
-    std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, TrialWaveFunction::GradType(0.0));
-    std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
-    std::vector<PosType> drifts(num_walkers, 0.0);
-    std::vector<RealType> log_gf(num_walkers, 0.0);
-    std::vector<RealType> log_gb(num_walkers, 0.0);
-    std::vector<RealType> prob(num_walkers, 0.0);
-
-    // local list to handle accept/reject
-    std::vector<bool> isAccepted;
-    isAccepted.reserve(num_walkers);
-
-    //save the old energies for branching needs.
-    std::vector<FullPrecRealType> old_energies(num_walkers);
-    for (int iw = 0; iw < num_walkers; ++iw)
-      old_energies[iw] = walkers[iw].get().Properties(WP::LOCALENERGY);
-
-    std::vector<RealType> rr_proposed(num_walkers, 0.0);
-    std::vector<RealType> rr_accepted(num_walkers, 0.0);
-
-    {
-      ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
-      for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
+    ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
+    std::vector<bool> recompute_mask;
+    recompute_mask.reserve(walkers.size());
+    for (MCPWalker& awalker : walkers)
+      if (awalker.wasTouched)
       {
-        RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
-        RealType oneover2tau = 0.5 / (tauovermass);
-        RealType sqrttau     = std::sqrt(tauovermass);
+        recompute_mask.push_back(true);
+        awalker.wasTouched = false;
+      }
+      else
+        recompute_mask.push_back(false);
+    ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
+    twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_mask);
+  }
 
-        twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
+  const int num_walkers = crowd.size();
 
-        int start_index = step_context.getPtclGroupStart(ig);
-        int end_index   = step_context.getPtclGroupEnd(ig);
-        for (int iat = start_index; iat < end_index; ++iat)
-        {
-          auto delta_r_start = it_delta_r + iat * num_walkers;
-          auto delta_r_end   = delta_r_start + num_walkers;
+  //This generates an entire steps worth of deltas.
+  step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
+  auto it_delta_r = step_context.deltaRsBegin();
 
-          //This is very useful thing to be able to look at in the debugger
+  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, TrialWaveFunction::GradType(0.0));
+  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, TrialWaveFunction::GradType(0.0));
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
+  std::vector<PosType> drifts(num_walkers, 0.0);
+  std::vector<RealType> log_gf(num_walkers, 0.0);
+  std::vector<RealType> log_gb(num_walkers, 0.0);
+  std::vector<RealType> prob(num_walkers, 0.0);
+
+  // local list to handle accept/reject
+  std::vector<bool> isAccepted;
+  isAccepted.reserve(num_walkers);
+
+  //save the old energies for branching needs.
+  std::vector<FullPrecRealType> old_energies(num_walkers);
+  for (int iw = 0; iw < num_walkers; ++iw)
+    old_energies[iw] = walkers[iw].get().Properties(WP::LOCALENERGY);
+
+  std::vector<RealType> rr_proposed(num_walkers, 0.0);
+  std::vector<RealType> rr_accepted(num_walkers, 0.0);
+
+  {
+    ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
+    for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
+    {
+      RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
+      RealType oneover2tau = 0.5 / (tauovermass);
+      RealType sqrttau     = std::sqrt(tauovermass);
+
+      twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
+
+      int start_index = step_context.getPtclGroupStart(ig);
+      int end_index   = step_context.getPtclGroupEnd(ig);
+      for (int iat = start_index; iat < end_index; ++iat)
+      {
+        auto delta_r_start = it_delta_r + iat * num_walkers;
+        auto delta_r_end   = delta_r_start + num_walkers;
+
+        //This is very useful thing to be able to look at in the debugger
 #ifndef NDEBUG
-          std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);
-          ;
-          for (int iw = 0; iw < walkers.size(); ++iw)
-          {
-            walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1
-                                                     : walkers_who_have_been_on_wire[iw] = 0;
-          }
+        std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);
+        for (int iw = 0; iw < walkers.size(); ++iw)
+        {
+          walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1
+                                                   : walkers_who_have_been_on_wire[iw] = 0;
+        }
 #endif
-          //get the displacement
-          twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-          sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
+        //get the displacement
+        twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+        sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
-          std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
-                         [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
+        std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
+                       [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
 
-          // only DMC does this
-          // TODO: rr needs a real name
-          std::vector<RealType> rr(num_walkers, 0.0);
-          assert(rr.size() == delta_r_end - delta_r_start);
-          std::transform(delta_r_start, delta_r_end, rr.begin(),
-                         [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
+        // only DMC does this
+        // TODO: rr needs a real name
+        std::vector<RealType> rr(num_walkers, 0.0);
+        assert(rr.size() == delta_r_end - delta_r_start);
+        std::transform(delta_r_start, delta_r_end, rr.begin(),
+                       [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -175,120 +170,113 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 //   continue;
 // }
 #ifndef NDEBUG
-          for (int i = 0; i < rr.size(); ++i)
-            assert(std::isfinite(rr[i]));
+        for (int i = 0; i < rr.size(); ++i)
+          assert(std::isfinite(rr[i]));
 #endif
-          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
 
-          twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
+        twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-          // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
-          auto checkPhaseChanged = [&sft, &nnode_crossing](const TrialWaveFunction& twf, int& is_reject) {
-            if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
-            {
-              ++nnode_crossing;
-              is_reject = 1;
-            }
-            else
-              is_reject = 0;
-          };
+        auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
+          if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
+            is_reject = 1;
+          else
+            is_reject = 0;
+        };
 
-          // Hopefully a phase change doesn't make any of these transformations fail.
-          std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
-          for (int iw = 0; iw < num_walkers; ++iw)
-          {
-            checkPhaseChanged(walker_twfs[iw], rejects[iw]);
-            //This is just convenient to do here
-            rr_proposed[iw] += rr[iw];
-          }
-
-          std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
-            constexpr RealType mhalf(-0.5);
-            return mhalf * dot(delta_r, delta_r);
-          });
-
-          sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
-
-          std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                         [iat](auto& elecs, auto& drift) {
-                           return elecs.get().R[iat] - elecs.get().activePos - drift;
-                         });
-
-          std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
-                         [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
-
-          for (int iw = 0; iw < num_walkers; ++iw)
-            prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
-
-          isAccepted.clear();
-
-          for (int iw = 0; iw < num_walkers; ++iw)
-          {
-            if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
-                step_context.get_random_gen()() < prob[iw])
-            {
-              crowd.incAccept();
-              isAccepted.push_back(true);
-              rr_accepted[iw] += rr[iw];
-            }
-            else
-            {
-              crowd.incReject();
-              isAccepted.push_back(false);
-            }
-          }
-
-          twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
-
-          ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
+        // Hopefully a phase change doesn't make any of these transformations fail.
+        std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
+        for (int iw = 0; iw < num_walkers; ++iw)
+        {
+          checkPhaseChanged(walker_twfs[iw], rejects[iw]);
+          //This is just convenient to do here
+          rr_proposed[iw] += rr[iw];
         }
+
+        std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
+          constexpr RealType mhalf(-0.5);
+          return mhalf * dot(delta_r, delta_r);
+        });
+
+        sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
+
+        std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
+                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
+
+        std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
+                       [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
+
+        for (int iw = 0; iw < num_walkers; ++iw)
+          prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
+
+        isAccepted.clear();
+
+        for (int iw = 0; iw < num_walkers; ++iw)
+        {
+          if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
+              step_context.get_random_gen()() < prob[iw])
+          {
+            crowd.incAccept();
+            isAccepted.push_back(true);
+            rr_accepted[iw] += rr[iw];
+          }
+          else
+          {
+            crowd.incReject();
+            isAccepted.push_back(false);
+          }
+        }
+
+        twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
+
+        ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
       }
-
-      twf_dispatcher.flex_completeUpdates(walker_twfs);
-      ps_dispatcher.flex_donePbyP(walker_elecs);
     }
 
-    { // collect GL for KE.
-      ScopedTimer buffer_local(timers.buffer_timer);
-      twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
-      ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
+    twf_dispatcher.flex_completeUpdates(walker_twfs);
+    ps_dispatcher.flex_donePbyP(walker_elecs);
+  }
+
+  { // collect GL for KE.
+    ScopedTimer buffer_local(timers.buffer_timer);
+    twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
+    ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
+  }
+
+  { // hamiltonian
+    ScopedTimer ham_local(timers.hamiltonian_timer);
+
+    std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
+        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
+    assert(QMCDriverNew::checkLogAndGL(crowd));
+
+    auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
+                                   auto rr_prop) {
+      walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy, rr_acc, rr_prop, 1.0);
+    };
+
+    for (int iw = 0; iw < walkers.size(); ++iw)
+    {
+      resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], new_energies[iw], rr_accepted[iw], rr_proposed[iw]);
+      FullPrecRealType branch_weight = sft.branch_engine.branchWeight(new_energies[iw], old_energies[iw]);
+      walkers[iw].get().Weight *= branch_weight;
+      if (rr_proposed[iw] > 0)
+        walkers[iw].get().Age = 0;
+      else
+        walkers[iw].get().Age++;
     }
+  }
 
-    { // hamiltonian
-      ScopedTimer ham_local(timers.hamiltonian_timer);
+  { // estimator collectables
+    ScopedTimer collectable_local(timers.collectables_timer);
 
-      std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
-          ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
-      assert(QMCDriverNew::checkLogAndGL(crowd));
+    // evaluate non-physical hamiltonian elements
+    for (int iw = 0; iw < walkers.size(); ++iw)
+      walker_hamiltonians[iw].auxHevaluate(walker_elecs[iw], walkers[iw]);
 
-      auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
-                                     auto rr_prop) {
-        walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy, rr_acc, rr_prop, 1.0);
-      };
-
-      for (int iw = 0; iw < walkers.size(); ++iw)
-      {
-        resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], new_energies[iw], rr_accepted[iw], rr_proposed[iw]);
-        FullPrecRealType branch_weight = sft.branch_engine.branchWeight(new_energies[iw], old_energies[iw]);
-        walkers[iw].get().Weight *= branch_weight;
-        if (rr_proposed[iw] > 0)
-          walkers[iw].get().Age = 0;
-        else
-          walkers[iw].get().Age++;
-      }
-    }
-
-    { // estimator collectables
-      ScopedTimer collectable_local(timers.collectables_timer);
-
-      // evaluate non-physical hamiltonian elements
-      for (int iw = 0; iw < walkers.size(); ++iw)
-        walker_hamiltonians[iw].auxHevaluate(walker_elecs[iw], walkers[iw]);
-
-      // save properties into walker
-      for (int iw = 0; iw < walkers.size(); ++iw)
-        walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
-    }
+    // save properties into walker
+    for (int iw = 0; iw < walkers.size(); ++iw)
+      walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
   }
 
   { // T-moves
@@ -305,8 +293,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[iw],
-                                                    crowd.get_walker_hamiltonians()[iw]);
       walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
 
       if (walker_non_local_moves_accepted[iw] > 0)
@@ -320,9 +306,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     if (moved_nonlocal_walkers.size())
     {
-      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
-                                                    crowd.get_walker_hamiltonians()[0]);
-
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       assert(QMCDriverNew::checkLogAndGL(crowd));
       ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);

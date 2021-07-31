@@ -1185,16 +1185,28 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
     Z[i]->createResource(collection);
 }
 
-void TrialWaveFunction::acquireResource(ResourceCollection& collection)
+void TrialWaveFunction::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  for (int i = 0; i < Z.size(); ++i)
-    Z[i]->acquireResource(collection);
+  auto& wf_leader = wf_list.getLeader();
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wf_leader.Z.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->acquireResource(collection, wfc_list);
+  }
 }
 
-void TrialWaveFunction::releaseResource(ResourceCollection& collection)
+void TrialWaveFunction::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  for (int i = 0; i < Z.size(); ++i)
-    Z[i]->releaseResource(collection);
+  auto& wf_leader = wf_list.getLeader();
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wf_leader.Z.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->releaseResource(collection, wfc_list);
+  }
 }
 
 RefVectorWithLeader<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
