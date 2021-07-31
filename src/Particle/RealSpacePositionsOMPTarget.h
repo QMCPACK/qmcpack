@@ -92,7 +92,7 @@ public:
     // multi walker resource must have been acquired
     assert(coords_leader.mw_mem_);
 
-    const auto nw = coords_list.size();
+    const auto nw    = coords_list.size();
     auto& mw_new_pos = coords_leader.mw_mem_->mw_new_pos;
     mw_new_pos.resize(nw);
 

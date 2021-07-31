@@ -418,7 +418,6 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
   REQUIRE(ions.getName() == "ion0");
   REQUIRE(ions.SameMass);
   REQUIRE(electrons.SameMass);
-
 }
 
 TEST_CASE("distance_pbc_z", "[distance_table][xml]")

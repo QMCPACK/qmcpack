@@ -134,13 +134,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
     dt_leader.mw_mem_.reset(res_ptr);
-    auto& mw_mem      = *dt_leader.mw_mem_;
+    auto& mw_mem             = *dt_leader.mw_mem_;
     const size_t nw          = dt_list.size();
     const size_t stride_size = Ntargets_padded * (D + 1);
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
       dt.temp_r_.free();
       dt.temp_dr_.free();
       dt.old_r_.free();
@@ -151,7 +151,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     nw_new_old_dist_displ.resize(nw * 2 * stride_size);
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
       dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, Ntargets_padded);
       dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
                                   nw_new_old_dist_displ.data() + stride_size * iw + Ntargets_padded);
@@ -165,10 +165,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                        const RefVectorWithLeader<DistanceTableData>& dt_list) const override
   {
     collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
-    const size_t nw          = dt_list.size();
+    const size_t nw = dt_list.size();
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
       dt.temp_r_.free();
       dt.temp_dr_.free();
       dt.old_r_.free();
@@ -240,8 +240,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     {
       auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
       dt.old_prepared_elec_id = prepare_old ? iat : -1;
-      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
-      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
+      auto& coordinates_soa   = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      rsoa_dev_list[iw]       = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;

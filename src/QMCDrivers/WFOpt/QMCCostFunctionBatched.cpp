@@ -496,9 +496,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  const bool nlpp         = (includeNonlocalH != "no");
-  Return_rt wgt_tot       = 0.0;
-  Return_rt wgt_tot2      = 0.0;
+  const bool nlpp    = (includeNonlocalH != "no");
+  Return_rt wgt_tot  = 0.0;
+  Return_rt wgt_tot2 = 0.0;
 
   // Ensure number of samples did not change after getConfiguration
   assert(rank_local_num_samples_ == samples_.getNumSamples());
