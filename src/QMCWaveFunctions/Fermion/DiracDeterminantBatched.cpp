@@ -173,7 +173,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
 
       
       //I think this means it only updates v and g
-      det.psiM_vgl.updateToAsync();
+      det.psiM_vgl.updateToAsync(1,3, wfc_leader.get_det_engine().getHandles());
       //PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
       // dual_psiM_temps.emplace_back(
       //     std::make_unique<DualPinnedValueMatrix_t>(const_cast<decltype(psiM_vgl)&>(psiM_vgl),
@@ -182,8 +182,9 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       dual_psiM_temp_list.push_back(det.psiM_temp); //*dual_psiM_temps[iw]);
       psiMinv_temp_list.push_back(det.get_det_engine().get_nonconst_psiMinv());
     }
-    // Waiting here for the psiM update in the above loop to complete    
-    
+    // Waiting here for the psiM update in the above loop to complete
+    wfc_leader.get_det_engine().wait();
+    // PRAGMA_OFFLOAD("omp taskwait")
     DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(wfc_list, dual_psiM_temp_list, psiMinv_temp_list,
                                                        recompute_mask);
   }
@@ -430,9 +431,10 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
 
   if (!Phi->isOMPoffload() && n_accepted > 0)
   {
-    auto* phi_vgl_v_ptr = phi_vgl_v.data();
-    // transfer host to device, total size 5, v(1) + g(3) + l(1)
-    PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
+    phi_vgl_v.updateTo();
+    // auto* phi_vgl_v_ptr = phi_vgl_v.data();
+    // // transfer host to device, total size 5, v(1) + g(3) + l(1)
+    // PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
   DET_ENGINE::mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted,
@@ -459,7 +461,8 @@ void DiracDeterminantBatched<DET_ENGINE>::completeUpdates()
     // dpsiM, d2psiM on the device needs to be aligned as host.
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
-    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
+    psiM_vgl.updateTo(1,3);
+    //PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
 }
 
@@ -495,12 +498,14 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
       {
         auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
         auto& my_psiM_vgl  = det.psiM_vgl;
-        auto* psiM_vgl_ptr = my_psiM_vgl.data();
+        //auto* psiM_vgl_ptr = my_psiM_vgl.data();
         // transfer device to host, total size 4, g(3) + l(1)
-        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
+        my_psiM_vgl.updateToAsync(1,3, wfc_leader.get_det_engine().getHandles());
+        // PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
       }
       // As far as I know the only tasks being waited on here are the psiM_vgl updates
-      PRAGMA_OFFLOAD("omp taskwait")
+      wfc_leader.get_det_engine().wait();
+      //PRAGMA_OFFLOAD("omp taskwait")
     }
   }
 }
@@ -643,11 +648,13 @@ void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBuffe
   buf.get(dpsiM.first_address(), dpsiM.last_address());
   buf.get(d2psiM.first_address(), d2psiM.last_address());
   auto* psiMinv_ptr = psiMinv.data();
-  PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
+  psiMinv.updateTo();
+  //PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
   auto* psiM_vgl_ptr           = psiM_vgl.data();
   const size_t psiM_vgl_stride = psiM_vgl.capacity();
   // transfer host to device, total size 4, g(3) + l(1)
-  PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
+  psiM_vgl.updateTo(1,3);
+  //PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
   buf.get(LogValue);
 }
 
@@ -1004,7 +1011,8 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMulti
 
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
-    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
+    psiM_vgl.updateTo(1,3);
+    //PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
   mw_res.log_values.resize(1);
   invertPsiM(mw_res, psiM_temp, det_engine_.get_nonconst_psiMinv());

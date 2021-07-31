@@ -24,6 +24,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsSoA/PosTransformer.h"
+#include "Utilities/Resource.h"
 
 namespace qmcplusplus
 {
@@ -290,24 +291,40 @@ struct VectorSoaContainer
   }
 
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateToAsync()
+  void updateTo(int start, int end)
   {
-    qmc_allocator_traits<Alloc>::updateToAsync(mAllocator, myData, nGhosts * D);
-  }
-  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void updateFromAsync()
-  {
-    qmc_allocator_traits<Alloc>::updateFromAsync(mAllocator, myData, nGhosts * D);
+    qmc_allocator_traits<Alloc>::updateTo(mAllocator, myData + nGhosts * start, nGhosts * (end - start + 1));
   }
 
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  void wait()
+  void updateFrom(int start, int end)
   {
-    qmc_allocator_traits<Alloc>::sync(mAllocator, myData, nGhosts * D);
+    qmc_allocator_traits<Alloc>::updateTo(mAllocator, myData + nGhosts * start, nGhosts * (end - start + 1));
   }
 
-  
-  
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateToAsync(Resource& sync)
+  {
+    qmc_allocator_traits<Alloc>::updateToAsync(mAllocator, myData, nGhosts * D, sync);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFromAsync(Resource& sync)
+  {
+    qmc_allocator_traits<Alloc>::updateFromAsync(mAllocator, myData, nGhosts * D, sync);
+  }
+
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateToAsync(int start, int end, Resource& sync)
+  {
+    qmc_allocator_traits<Alloc>::updateToAsync(mAllocator, myData + nGhosts * start, nGhosts * (end - start + 1), sync);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFromAsync(int start, int end, Resource& sync)
+  {
+    qmc_allocator_traits<Alloc>::updateFromAsync(mAllocator, myData + nGhosts * start, nGhosts * (end - start + 1),
+                                                 sync);
+  }
+
   // For tesing copy on device side from one data index to another
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   void copyDeviceDataByIndex(unsigned to, unsigned from)

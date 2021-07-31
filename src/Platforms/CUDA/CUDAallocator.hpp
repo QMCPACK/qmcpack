@@ -25,11 +25,12 @@
 #include <atomic>
 #include <limits>
 #include <cuda_runtime_api.h>
+#include "CUDALinearAlgebraHandles.h"
 #include "config.h"
 #include "cudaError.h"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
-#include "Synchro.hpp"
+#include "Utilities/Resource.h"
 
 namespace qmcplusplus
 {
@@ -102,8 +103,6 @@ public:
   typedef size_t size_type;
   typedef T* pointer;
   typedef const T* const_pointer;
-
-  using Synchro_t = CudaStreamSynchro;
   
   CUDAAllocator() = default;
   template<class U>
@@ -175,16 +174,16 @@ public:
                      "cudaMemcpy failed in copyDeviceToDevice");
   }
 
-  void copyToDeviceAsync(T* device_ptr, T* host_ptr, size_t n, const Synchro& synchro)
+  void copyToDeviceAsync(T* device_ptr, T* host_ptr, size_t n, const Resource& sync)
   {
-    cudaStream_t stream = dynamic_cast<const CudaStreamSynchro&>(synchro).get_stream();
+    cudaStream_t stream = dynamic_cast<const CUDALinearAlgebraHandles&>(sync).hstream;
     cudaErrorCheck(cudaMemcpyAsync(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice, stream),
                      "cudaMemcpy failed in copyToDeviceAsync");
   }
 
-  void copyFromDeviceAsync(T* host_ptr, T* device_ptr, size_t n, const Synchro& synchro)
+  void copyFromDeviceAsync(T* host_ptr, T* device_ptr, size_t n, const Resource& sync)
   {
-    cudaStream_t stream = dynamic_cast<const CudaStreamSynchro&>(synchro).get_stream();
+    cudaStream_t stream = dynamic_cast<const CUDALinearAlgebraHandles&>(sync).hstream;
     cudaErrorCheck(cudaMemcpyAsync(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost, stream),
                      "cudaMemcpy failed in copyFromDeviceAsync");
   }
@@ -207,10 +206,6 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
   static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
-
-  static void setSync(CUDAAllocator<T>& alloc, Synchro& synchro) { alloc.setSync(synchro); }
-  
-
 };
 
 /** allocator for CUDA host pinned memory

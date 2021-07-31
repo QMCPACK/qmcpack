@@ -90,6 +90,8 @@ private:
   // multi walker memory buffers
   std::unique_ptr<MatrixUpdateOMPTargetMultiWalkerMem<T>> mw_mem_;
 
+  DummyResource dummy_res_;
+  
   void resize_fill_constant_arrays(size_t nw)
   {
     if (mw_mem_->cone_vec.size() < nw)
@@ -150,6 +152,11 @@ public:
     collection.takebackResource(std::move(det_inverter_));
   }
 
+  inline void wait()
+  {
+    PRAGMA_OFFLOAD("omp taskwait")
+  }
+
   const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
   OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
 
@@ -192,7 +199,7 @@ public:
     PRAGMA_OFFLOAD("omp taskwait")
     det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_),logdetT_list, a_inv_refs, log_values, compute_mask);
   }
-
+  
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
                                  RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
                                  RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
@@ -447,6 +454,8 @@ public:
 
   const T get_cur_ratio() const { return cur_ratio_; }
   T& cur_ratio() { return cur_ratio_; }
+
+  Resource& getHandles() { return dummy_res_; }
 
 };
 

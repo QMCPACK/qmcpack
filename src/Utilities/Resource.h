@@ -16,6 +16,8 @@
 
 namespace qmcplusplus
 {
+class ResourceCollection;
+
 class Resource
 {
 public:

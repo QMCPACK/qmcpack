@@ -67,9 +67,6 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   std::vector<ValueType> ratios_local;
   // multi walker of grads
   std::vector<GradType> grad_new_local;
-
-  typename DET_ENGINE::Synchro_t default_synchro;
-  std::reference_wrapper<Synchro> synchro_t = default_synchro;
 };
 
 /** Currently DiracDeterminantBatched (DDB) is an object managing batched computation and update of DiracDeterminants,

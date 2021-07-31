@@ -40,7 +40,6 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   using DualValueVector_t       = Vector<T, UnpinnedDualAllocator<T>>;
   using DualPinnedValueVector_t = Vector<T, PinnedDualAllocator<T>>;
   using DualPinnedValueMatrix_t = Matrix<T, PinnedDualAllocator<T>>;
-  using Synchro_t = typename PinnedDualAllocator<T>::Synchro_t;
   
   // constant array value T(1)
   DualValueVector_t cone_vec;
@@ -92,11 +91,8 @@ public:
   using DualPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, PinnedDualAllocator<std::complex<FullPrecReal>>>;
   using DualPinnedValueVector_t = Vector<T, PinnedDualAllocator<T>>;
   using DualPinnedValueMatrix_t = Matrix<T, PinnedDualAllocator<T>>;
-  using Synchro_t = typename PinnedDualAllocator<T>::Synchro_t;
   using DiracMatrixCompute = DiracMatrixComputeCUDA<T_FP>;
 
-  
-  
   // This facilitates generic testing code don't use to obscure the handle type 
   using Handles = CUDALinearAlgebraHandles;
 private:
@@ -146,11 +142,6 @@ private:
   /**}@ */
 
   std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem<T>> mw_mem_;
-
-  inline void waitStream()
-  {
-    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
-  }
 
   /** ensure no previous delay left.
    *  This looks like it should be an assert
@@ -393,7 +384,12 @@ public:
     collection.takebackResource(std::move(mw_mem_));
   }
 
-  Handles& getHandles() { return *cuda_handles_; }
+  inline void wait()
+  {
+    cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
+  }
+
+  Resource& getHandles() { return *cuda_handles_; }
 
   /** Why do you need to modify another classes data member?
    */
@@ -522,7 +518,7 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_v.device_data(), grads_value_v.size() * sizeof(T),
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync grads_value_v failed!");
-    engine_leader.waitStream();
+    engine_leader.wait();
 
     for (int iw = 0; iw < nw; iw++)
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
@@ -774,12 +770,12 @@ public:
   {
     auto& engine_leader = engines.getLeader();
     if (engine_leader.isSM1())
-      engine_leader.waitStream();
+      engine_leader.wait();
     else if (engine_leader.invRow_id != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
       mw_prepareInvRow(engines, row_id);
-      engine_leader.waitStream();
+      engine_leader.wait();
     }
 
     const size_t ncols = engines.getLeader().psiMinv.cols();
@@ -825,7 +821,7 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv.data(), engine.psiMinv.device_data(),
                                      engine.psiMinv.size() * sizeof(T), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync Ainv failed!");
-    engine_leader.waitStream();
+    engine_leader.wait();
   }
 
   DiracMatrixComputeCUDA<T_FP>& get_det_inverter()

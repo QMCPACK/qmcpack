@@ -21,8 +21,8 @@
 #include "config.h"
 #include "allocator_traits.hpp"
 #include "PinnedAllocator.h"
-#include "Synchro.hpp"
 #include "CUDA/CUDAallocator.hpp"
+#include "Utilities/Resource.h"
 
 namespace qmcplusplus
 {
@@ -48,9 +48,8 @@ struct DualAllocator : public HostAllocator
   using Size         = typename HostAllocator::size_type;
   using Pointer      = typename HostAllocator::pointer;
   using ConstPointer = typename HostAllocator::const_pointer;
-  using Synchro_t      = typename DeviceAllocator::Synchro_t;
   
-  DualAllocator() : host_ptr_(nullptr), device_ptr_(nullptr), synchro_(default_synchro) {};
+  DualAllocator() : host_ptr_(nullptr), device_ptr_(nullptr) {};
   DualAllocator(const DualAllocator&) : host_ptr_(nullptr), device_ptr_(nullptr) {}
   DualAllocator& operator=(const DualAllocator&)
   {
@@ -103,18 +102,12 @@ struct DualAllocator : public HostAllocator
 
   T* get_host_ptr() { return host_ptr_; }
 
-  template<class SYNCHRO>
-  void setSync(SYNCHRO& synchro) { synchro_ = synchro; }  
-  Synchro& getSync() { return synchro_; }
-  void sync() { synchro_.get().sync(); }
 private:
   HostAllocator allocator_;
   DeviceAllocator device_allocator_;
   T* host_ptr_;
   T* device_ptr_;
   // would rather std::optional I think.
-  Synchro_t default_synchro;
-  std::reference_wrapper<Synchro> synchro_;
 };
 
 template<typename T, class DeviceAllocator, class HostAllocator>
@@ -130,10 +123,6 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
   {
     to.attachReference(from, from_data, ref);
   }
-
-  static void setSync(DualAlloc& alloc, Synchro& synchro) { alloc.setSync(synchro); }
-
-  static void sync(DualAlloc& alloc, Synchro& synchro) { alloc.sync(); }
 
   /** update to the device, assumes you are copying starting with the implicit host_ptr.
    *
@@ -164,18 +153,18 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.get_device_ptr(), n);
   }
 
-  static void updateToAsync(DualAlloc& alloc, T* host_ptr, size_t n)
+  static void updateToAsync(DualAlloc& alloc, T* host_ptr, size_t n, Resource& handles)
   {
     assert(host_ptr = alloc.get_host_ptr());
-    alloc.get_device_allocator().copyToDeviceAsync(alloc.get_device_ptr(), host_ptr, n, alloc.getSync());
+    alloc.get_device_allocator().copyToDeviceAsync(alloc.get_device_ptr(), host_ptr, n, handles);
   }
 
   /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
    */
-  static void updateFromAsync(DualAlloc& alloc, T* host_ptr, size_t n)
+  static void updateFromAsync(DualAlloc& alloc, T* host_ptr, size_t n, Resource& handles)
   {
     assert(host_ptr = alloc.get_host_ptr());
-    alloc.get_device_allocator().copyFromDeviceAsync(host_ptr, alloc.get_device_ptr(), n, alloc.getSync());
+    alloc.get_device_allocator().copyFromDeviceAsync(host_ptr, alloc.get_device_ptr(), n, handles);
   }
 
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
