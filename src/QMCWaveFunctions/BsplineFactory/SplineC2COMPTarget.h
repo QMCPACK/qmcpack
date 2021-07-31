@@ -138,15 +138,22 @@ public:
     auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, ComplexT>>());
   }
 
-  void acquireResource(ResourceCollection& collection) override
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
+    assert(this == &spo_list.getLeader());
+    auto& phi_leader = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
     auto res_ptr = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, ComplexT>*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SplineC2COMPTarget::acquireResource dynamic_cast failed");
-    mw_mem_.reset(res_ptr);
+    phi_leader.mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
+  {
+    assert(this == &spo_list.getLeader());
+    auto& phi_leader = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
+    collection.takebackResource(std::move(phi_leader.mw_mem_));
+  }
 
   virtual SPOSet* makeClone() const override { return new SplineC2COMPTarget(*this); }
 

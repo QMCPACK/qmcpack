@@ -984,16 +984,24 @@ void QMCHamiltonian::createResource(ResourceCollection& collection) const
     H[i]->createResource(collection);
 }
 
-void QMCHamiltonian::acquireResource(ResourceCollection& collection)
+void QMCHamiltonian::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
-  for (int i = 0; i < H.size(); ++i)
-    H[i]->acquireResource(collection);
+  auto& ham_leader = ham_list.getLeader();
+  for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
+  {
+    const auto HC_list(extract_HC_list(ham_list, i_ham_op));
+    ham_leader.H[i_ham_op]->acquireResource(collection, HC_list);
+  }
 }
 
-void QMCHamiltonian::releaseResource(ResourceCollection& collection)
+void QMCHamiltonian::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
-  for (int i = 0; i < H.size(); ++i)
-    H[i]->releaseResource(collection);
+  auto& ham_leader = ham_list.getLeader();
+  for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
+  {
+    const auto HC_list(extract_HC_list(ham_list, i_ham_op));
+    ham_leader.H[i_ham_op]->releaseResource(collection, HC_list);
+  }
 }
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

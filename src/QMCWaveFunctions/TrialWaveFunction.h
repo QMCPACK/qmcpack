@@ -409,11 +409,11 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   RealType KECorrection() const;
 

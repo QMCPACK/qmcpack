@@ -429,11 +429,11 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
 
   /** make clone
    * @param tqp target Quantum ParticleSet

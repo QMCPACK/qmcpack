@@ -208,16 +208,22 @@ void SlaterDet::createResource(ResourceCollection& collection) const
     Dets[i]->createResource(collection);
 }
 
-void SlaterDet::acquireResource(ResourceCollection& collection)
+void SlaterDet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->acquireResource(collection);
+  {
+    const auto det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->acquireResource(collection, det_list);
+  }
 }
 
-void SlaterDet::releaseResource(ResourceCollection& collection)
+void SlaterDet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->releaseResource(collection);
+  {
+    const auto det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->releaseResource(collection, det_list);
+  }
 }
 
 void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
