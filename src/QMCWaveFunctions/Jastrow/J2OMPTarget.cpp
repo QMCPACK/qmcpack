@@ -46,18 +46,20 @@ void J2OMPTarget<FT>::createResource(ResourceCollection& collection) const
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection)
+void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
+  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   auto res_ptr = dynamic_cast<J2OMPTargetMultiWalkerMem<RealType>*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
-  mw_mem_.reset(res_ptr);
+  wfc_leader.mw_mem_.reset(res_ptr);
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection)
+void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  collection.takebackResource(std::move(mw_mem_));
+  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  collection.takebackResource(std::move(wfc_leader.mw_mem_));
 }
 
 template<typename FT>
