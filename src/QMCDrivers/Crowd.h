@@ -117,6 +117,7 @@ private:
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
 
+  // proivides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 
   EstimatorManagerCrowd estimator_manager_crowd_;

@@ -311,6 +311,10 @@ void QMCCostFunctionBatched::checkConfigurations()
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
+      ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
+      ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h_list);
+
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
       auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
 
@@ -541,6 +545,10 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
+
+      ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
+      ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h0_list);
 
       // Load this batch of samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
