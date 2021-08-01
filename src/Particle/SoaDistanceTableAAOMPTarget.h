@@ -120,6 +120,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   const DistRow& getOldDists() const override { return old_r_; }
   const DisplRow& getOldDispls() const override { return old_dr_; }
 
+  const RealType* getMultiWalkerTempDataPtr() const override
+  {
+    if (!mw_mem_)
+      throw std::runtime_error("SoaDistanceTableAAOMPTarget mw_mem_ is nullptr");
+    return mw_mem_->nw_new_old_dist_displ.data();
+  }
+
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
