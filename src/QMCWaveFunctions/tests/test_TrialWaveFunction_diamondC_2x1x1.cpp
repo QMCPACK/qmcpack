@@ -46,8 +46,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+#if defined(ENABLE_OFFLOAD)
+  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS_OFFLOAD;
+#else
+  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
+#endif
+  auto ions_uptr = std::make_unique<ParticleSet>(kind_selected);
+  auto elec_uptr = std::make_unique<ParticleSet>(kind_selected);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
