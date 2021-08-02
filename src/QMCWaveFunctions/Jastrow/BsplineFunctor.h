@@ -309,7 +309,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     }
   }
 
-  inline static real_type evaluate_impl(real_type r, const T* coefs, const real_type DeltaRInv)
+  inline static real_type evaluate_impl(real_type r, const real_type* coefs, const real_type DeltaRInv)
   {
     r *= DeltaRInv;
     T ipart;
@@ -338,7 +338,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
   inline void evaluateAll(real_type r, real_type rinv) { Y = evaluate(r, dY, d2Y); }
 
   inline static real_type evaluate_impl(real_type r,
-                                        const T* coefs,
+                                        const real_type* coefs,
                                         const real_type DeltaRInv,
                                         real_type& dudr,
                                         real_type& d2udr2)
