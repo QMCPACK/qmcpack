@@ -479,16 +479,16 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices");
-  m_param.add(OutputMatricesHDF, "output_matrices_hdf");
-  m_param.add(FreezeParameters, "freeze_parameters");
+  m_param.add(OutputMatrices, "output_matrices", {"no", "yes"});
+  m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
+  m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
 
   oAttrib.put(q);
   m_param.put(q);
 
-  do_output_matrices_csv_     = (OutputMatrices != "no");
-  do_output_matrices_hdf_ = (OutputMatricesHDF != "no");
-  freeze_parameters_      = (FreezeParameters != "no");
+  do_output_matrices_csv_ = (OutputMatrices == "yes");
+  do_output_matrices_hdf_ = (OutputMatricesHDF == "yes");
+  freeze_parameters_      = (FreezeParameters == "yes");
 
   // Use freeze_parameters with output_matrices to generate multiple lines in the output with
   // the same parameters so statistics can be computed in post-processing.
