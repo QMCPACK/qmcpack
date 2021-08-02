@@ -86,7 +86,7 @@ class MatrixDelayedUpdateCUDA
 {
 public:
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
-  using FullPrecReal = RealAlias<T_FP>; //QMCTraits::FullPrecRealType;
+  using FullPrecReal = RealAlias<T_FP>;
   using DualValueVector_t       = Vector<T, UnpinnedDualAllocator<T>>;
   using DualPinnedLogValueVector_t = Vector<std::complex<FullPrecReal>, PinnedDualAllocator<std::complex<FullPrecReal>>>;
   using DualPinnedValueVector_t = Vector<T, PinnedDualAllocator<T>>;
@@ -130,7 +130,7 @@ private:
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-  // psi(r')/psi(r) during a PbyP move
+  /// psi(r')/psi(r) during a PbyP move, should be T_FP?
   T cur_ratio_;
   
   /** @ingroup Resources

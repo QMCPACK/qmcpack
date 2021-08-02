@@ -121,12 +121,9 @@ struct HandleTraits<false>
 // unit test these.
 TEST_CASE("DiracDeterminantBatched_resources", "[wavefunction][fermion]")
 {
-  int count = 0;
-
   auto spo_init = std::make_unique<FakeSPO>();
   spo_init->setOrbitalSetSize(3);
   DetType ddb(std::move(spo_init));
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   ResourceCollection res_col("test resources");
   ddb.createResource(res_col);
@@ -268,10 +265,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   auto& mw_res              = ddbt.get_mw_res(ddb);
   LogValueType original_log = ddb.get_log_value();
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
   ddbt.invertPsiM(ddb, a_update1, scratchT);
   det_update1 = ddb.LogValue;
-#elif defined(ENABLE_OFFLOAD)
+#else
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   dm.invert_transpose(scratchT, a_update1, det_update1);
@@ -310,10 +307,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 
   PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   LogValueType det_update3;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
   ddbt.invertPsiM(ddb, a_update3, scratchT);
   det_update3 = mw_res.log_values[0];
-#elif defined(ENABLE_OFFLOAD)
+#else
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   dm.invert_transpose(scratchT, a_update3, det_update3);
@@ -330,10 +327,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
   ddbt.invertPsiM(ddb, orig_a, scratchT);
   det_update3 = mw_res.log_values[0];
-#elif defined(ENABLE_OFFLOAD)
+#else
   dm.invert_transpose(scratchT, orig_a, det_update3);
 #endif
 
