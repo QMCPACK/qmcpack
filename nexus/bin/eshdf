@@ -74,7 +74,7 @@ def user_error(msg):
 
 
 
-def read_eshdf_nofk_data(filename,Ef):
+def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
     from numpy import array,pi,dot,sqrt,abs,zeros
     from numpy.linalg import inv,det
     from unit_converter import convert
@@ -119,7 +119,10 @@ def read_eshdf_nofk_data(filename,Ef):
             spin = h.get_path(path)
             eig = convert(array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
-            for st in range(nst):
+            nlast = nst
+            if nval > 0:
+              nlast = ncore + nval
+            for st in range(ncore, nlast):
                 e = eig[st]
                 if e<E_fermi:
                     stpath = path+'/state_{0}/psi_g'.format(st)
@@ -183,6 +186,19 @@ def kinetic():
                       action='store_true',default=False,
                       help='Print per orbital kinetic energies (default=%default).'
                       )
+    parser.add_option('--ispin',dest='ispin',default=0,
+                      help='spin channel (default=%default).'
+                      )
+    parser.add_option('--ncore',dest='ncore',default=0,
+                      help='number of core states to exclude (default=%default).'
+                      )
+    parser.add_option('--nval',dest='nval',default=-1,
+                      help='number of valence states to include (default=%default, i.e. all).'
+                      )
+    parser.add_option('--fnk3d',dest='fnk3d',
+                      default=None,
+                      help='Output 3D momentum distribution'
+                      )
 
 
     options,args = parser.parse_args()
@@ -221,8 +237,10 @@ def kinetic():
             user_error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi))
         #end try
     #end if
+    opt.ncore = int(opt.ncore)
+    opt.nval = int(opt.nval)
 
-    d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi)
+    d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
 
     nkpoints = d.nkpoints
     nspins   = d.nspins
@@ -296,6 +314,28 @@ def kinetic():
                 log('    {:>3}      {:>3}        {: 10.6f}   {: 10.6f}'.format(i,kpi,eig,kin))
             #end for
         #end for
+    #end if
+
+    if opt.fnk3d is not None:
+        ispin0 = int(opt.ispin)
+        log('Writing n(k) to HDF5 {}'.format(opt.fnk3d))
+        import tables
+        klist = []
+        nklist = []
+        for key, val in d.data.items():
+            ik, ispin = key
+            if ispin != ispin0: continue
+            klist.append(val.k)
+            nklist.append(val.nk)
+        kvecs = np.concatenate(klist, axis=0)
+        nk = np.concatenate(nklist, axis=0)
+        data = np.c_[kvecs, nk]
+        filters = tables.Filters(complevel=5, complib='zlib')
+        fp = tables.open_file(opt.fnk3d, mode='w', filter=filters)
+        atom = tables.Atom.from_dtype(data.dtype)
+        ca = fp.create_carray(fp.root, 'data', atom, data.shape)
+        ca[:] = data
+        fp.close()
     #end if
 #end def kinetic
 
