@@ -203,6 +203,7 @@ void DiracParser::parse(const std::string& fname)
   getGaussianCenters(fin);
   getSpinors(fin);
 
+
   std::cout << "***********************" << std::endl;
   std::cout << "WARNING: The QMCPACK files that will be generated are for a single determinant built from the lowest "
                "energy spinors"
@@ -487,7 +488,9 @@ void DiracParser::getSpinors(std::istream& is)
           break;
         if (std::string(aline).find("*********") != std::string::npos)
         {
-          std::cerr << "ERROR: One of the printed AO coefficients is outside the default DIRAC print format"
+          std::cerr << "ERROR parsing line: " << std::endl;
+          std::cerr << aline << std::endl;
+          std::cerr << "One of the printed AO coefficients is outside the default DIRAC print format"
                     << std::endl;
           std::cerr << "In order to continue, please change the following in DIRAC/src/dirac/dirout.F (around line 427)"
                     << std::endl;
@@ -499,17 +502,23 @@ void DiracParser::getSpinors(std::istream& is)
               << std::endl;
           abort();
         }
-        char sp[4];
-        char info[12];
-        double up_r, up_i, dn_r, dn_i;
-        int bidx;
-        std::sscanf(aline.c_str(), "%3c%5d%2c%12c%2c%lf%lf%lf%lf", sp, &bidx, sp, info, sp, &up_r, &up_i, &dn_r, &dn_i);
-        bidx -= 1; //count from 0
-        assert(bidx >= 0);
-        parsewords(info, currentWords);
+        parsewords(aline.c_str(), currentWords);
+        if (currentWords.size() != 9)
+        {
+          std::cerr << "ERROR parsing line: " << std::endl;
+          std::cerr << aline << std::endl;
+          std::cerr << "Expected line to be parsed into vector<string> of length 9" << std::endl;
+          std::cerr << "Either recompile DIRAC in DIRAC/src/dirac/dirout.F (around line 427) to avoid this issue from now on" << std::endl;
+          std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F14.10)" << std::endl;
+          std::cerr << " to " << std::endl;
+          std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F20.10)" << std::endl;
+          std::cerr << " or just add a space appropriately to this line" << std::endl;
+          abort();
+        }
+        int bidx = std::stoi(currentWords[0]) - 1;
 
         double norm              = 1.0;
-        std::string label        = currentWords[3];
+        std::string label        = currentWords[4];
         normMapType::iterator it = normMap.find(label);
         if (it != normMap.end())
           norm = it->second;
@@ -518,6 +527,11 @@ void DiracParser::getSpinors(std::istream& is)
           std::cerr << "Unknown basis function type. Aborting" << std::endl;
           abort();
         }
+
+        double up_r = std::stod(currentWords[5]);
+        double up_i = std::stod(currentWords[6]);
+        double dn_r = std::stod(currentWords[7]);
+        double dn_i = std::stod(currentWords[8]);
 
         irreps[i].spinor_mo_coeffs[mo][bidx][0] = up_r * norm;
         irreps[i].spinor_mo_coeffs[mo][bidx][1] = up_i * norm;
