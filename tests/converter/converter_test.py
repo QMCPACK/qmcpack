@@ -87,7 +87,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
             # some MPI output on stderr is okay
             # TODO - more general way of checking acceptable stderr strings
             if not stderr.startswith('Rank'):
-                print("Stderr not emptry ")
+                print("Stderr not empty")
                 print(stderr)
                 okay = False
 
@@ -98,7 +98,8 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
             if (code != 'generic'): 
                 if '-hdf5' in extra_cmd_args:
                    ret = os.system(h5diff_exe + ' -d 0.000001 gold.orbs.h5 test.orbs.h5')
-                   if ret==0:
+                   # if it's okay up to this point
+                   if ret==0 and okay:
                       print("  pass")
                       return True
                    else:
@@ -106,7 +107,10 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
                       print("  FAIL")
                       return False
             test_file = gold_file.replace('gold', 'test')
-            okay = compare(gold_file, test_file)
+            okay_compare = compare(gold_file, test_file) 
+            # test compare always, but only report if it fails
+            if okay:
+                okay = okay_compare
 
     if okay:
         print("  pass")
