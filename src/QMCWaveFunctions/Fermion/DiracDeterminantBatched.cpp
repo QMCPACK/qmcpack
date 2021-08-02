@@ -17,7 +17,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/SIMD/simd.hpp"
-#include "Synchro.hpp"
 
 namespace qmcplusplus
 {

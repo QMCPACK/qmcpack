@@ -112,9 +112,6 @@ endif()
 
 include_directories("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
-set(RES_SRC
-  Utiltites/ResourceCollection.cpp)
-
 ####################################
 # create libqmcutil
 ####################################
