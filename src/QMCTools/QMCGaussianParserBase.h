@@ -119,6 +119,8 @@ struct QMCGaussianParserBase
   QMCGaussianParserBase();
   QMCGaussianParserBase(int argc, char** argv);
 
+  virtual ~QMCGaussianParserBase() = default;
+
   void setOccupationNumbers();
 
   void createGridNode(int argc, char** argv);
