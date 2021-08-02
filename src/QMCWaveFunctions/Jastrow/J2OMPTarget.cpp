@@ -277,7 +277,7 @@ J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
       N(p.getTotalNum()),
       N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),
-      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      my_table_ID_(p.addTable(p)),
       j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
@@ -428,9 +428,9 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, in
 
 template<typename FT>
 void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVectorWithLeader<ParticleSet>& p_list,
-                    int iat,
-                    std::vector<PsiValueType>& ratios) const
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   std::vector<PsiValueType>& ratios) const
 {
   //right now. Directly use FT::mw_evaluateVGL implementation.
   assert(this == &wfc_list.getLeader());

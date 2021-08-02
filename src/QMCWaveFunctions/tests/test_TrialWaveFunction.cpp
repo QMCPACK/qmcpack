@@ -266,6 +266,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   std::vector<PosType> displs{delta_sign_changed, delta_sign_changed};
   ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
+  if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
   ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
   ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
@@ -282,6 +284,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(grad_temp[1] == Approx(19.854257889369));
   REQUIRE(grad_temp[2] == Approx(-2.9669578650441));
 #endif
+  }
 
   PosType delta_zero(0, 0, 0);
   displs = {delta_zero, delta};
@@ -301,13 +304,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
 
+  if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
   ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
   ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
   std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
-
+  }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
 
