@@ -70,9 +70,6 @@ public:
   using OffloadPinnedValueVector_t    = Vector<T, PinnedDualAllocator<T>>;
   using OffloadPinnedValueMatrix_t    = Matrix<T, PinnedDualAllocator<T>>;
   //using FullPrecReal = QMCTraits::FullPrecRealType;
-  using Synchro_t = typename PinnedDualAllocator<T>::Synchro_t;
-
-
   using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;
 
 private:
