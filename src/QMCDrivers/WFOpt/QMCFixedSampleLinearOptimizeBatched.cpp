@@ -99,7 +99,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE),
-      do_output_matrices_(false),
+      do_output_matrices_csv_(false),
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false)
@@ -208,7 +208,7 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
 
 bool QMCFixedSampleLinearOptimizeBatched::run()
 {
-  if (do_output_matrices_ && !output_matrices_initialized_)
+  if (do_output_matrices_csv_ && !output_matrices_initialized_)
   {
     numParams = optTarget->getNumParams();
     int N     = numParams + 1;
@@ -486,7 +486,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   oAttrib.put(q);
   m_param.put(q);
 
-  do_output_matrices_     = (OutputMatrices != "no");
+  do_output_matrices_csv_     = (OutputMatrices != "no");
   do_output_matrices_hdf_ = (OutputMatricesHDF != "no");
   freeze_parameters_      = (FreezeParameters != "no");
 
@@ -1286,7 +1286,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
-  if (do_output_matrices_)
+  if (do_output_matrices_csv_)
   {
     output_overlap_.output(ovlMat);
     output_hamiltonian_.output(hamMat);
