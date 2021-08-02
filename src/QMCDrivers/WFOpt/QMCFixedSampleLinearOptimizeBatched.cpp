@@ -479,7 +479,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices", {"no", "yes"});
+  m_param.add(OutputMatrices, "output_matrices_csv", {"no", "yes"});
   m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
 
