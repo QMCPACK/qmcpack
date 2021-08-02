@@ -56,7 +56,7 @@ public:
   ///type of each component U, dU, d2U;
   using valT = typename FT::real_type;
   ///element position type
-  using posT = TinyVector<valT, OHMMS_DIM>;
+  using posT = TinyVector<valT, DIM>;
   ///use the same container
   using DistRow         = DistanceTableData::DistRow;
   using DisplRow        = DistanceTableData::DisplRow;
@@ -82,7 +82,7 @@ private:
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
   Vector<valT, aligned_allocator<valT>> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  VectorSoaContainer<valT, OHMMS_DIM, aligned_allocator<valT>> dUat;
+  VectorSoaContainer<valT, DIM, aligned_allocator<valT>> dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT, aligned_allocator<valT>> d2Uat;
   valT cur_Uat;
@@ -157,6 +157,11 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios,
+                    std::vector<GradType>& grad_new) const override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
   inline void restore(int iat) override {}

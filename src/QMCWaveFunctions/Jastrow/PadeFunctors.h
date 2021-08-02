@@ -160,6 +160,21 @@ struct PadeFunctor : public OptimizableFunctorBase
       valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
   }
 
+  static void mw_evaluateVGL(const int iat,
+                           const int num_groups,
+                           const PadeFunctor* const functors[],
+                           const int iStart[],
+                           const int iEnd[],
+                           const int nw,
+                           T* mw_vg, // [nw][DIM+1]
+                           const int n_padded,
+                           const T* mw_dist, // [nw][DIM+1][n_padded]
+                           T* mw_allUat, // [nw][DIM+2][n_padded]
+                           T* mw_cur_allu, // [nw][3][n_padded]
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+  }
+
   inline real_type f(real_type r) override { return evaluate(r) - AoverB; }
 
   inline real_type df(real_type r) override

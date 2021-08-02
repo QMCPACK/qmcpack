@@ -140,6 +140,114 @@ struct BsplineFunctor : public OptimizableFunctorBase
                    T* restrict distArrayCompressed,
                    int* restrict distIndices) const;
 
+  static void mw_evaluateVGL(const int iat,
+                           const int num_groups,
+                           const BsplineFunctor* const functors[],
+                           const int iStart[],
+                           const int iEnd[],
+                           const int nw,
+                           T* mw_vg, // [nw][DIM+1]
+                           const int n_padded,
+                           const T* mw_dist, // [nw][DIM+1][n_padded]
+                           T* mw_allUat, // [nw][DIM+2][n_padded]
+                           T* mw_cur_allu, // [nw][3][n_padded]
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    constexpr unsigned DIM = OHMMS_DIM;
+    static_assert(DIM == 3, "only support 3D due to explicit x,y,z coded.");
+    const size_t dist_stride = n_padded * (DIM + 1);
+
+    transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2)*num_groups);
+    T** mw_coefs_ptr = reinterpret_cast<T**>(transfer_buffer.data());
+    T* mw_DeltaRInv_ptr = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
+    T* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
+    for (int ig = 0; ig < num_groups; ig++)
+    {
+      mw_coefs_ptr[ig] = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig] = functors[ig]->DeltaRInv;
+      mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+    }
+
+    auto* transfer_buffer_ptr = transfer_buffer.data();
+
+    PRAGMA_OFFLOAD("omp target teams distribute map(always, to: transfer_buffer_ptr[:transfer_buffer.size()]) \
+                    map(to: iStart[:num_groups], iEnd[:num_groups]) \
+                    map(to: mw_dist[:dist_stride*nw]) \
+                    map(from: mw_cur_allu[:n_padded*3*nw]) \
+                    map(always, from: mw_vg[:(DIM+1)*nw])")
+    for(int ip = 0; ip < nw; ip++)
+    {
+      T val_sum(0);
+      T grad_x(0);
+      T grad_y(0);
+      T grad_z(0);
+
+      const T* dist = mw_dist + ip * dist_stride;
+      const T* dipl_x = mw_dist + ip * dist_stride + n_padded;
+      const T* dipl_y = mw_dist + ip * dist_stride + n_padded * 2;
+      const T* dipl_z = mw_dist + ip * dist_stride + n_padded * 3;
+
+      T** mw_coefs = reinterpret_cast<T**>(transfer_buffer_ptr);
+      T* mw_DeltaRInv = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
+      T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
+
+      T* cur_allu = mw_cur_allu + ip * n_padded * 3;
+
+      for(int ig = 0; ig < num_groups; ig++)
+      {
+        const T* coefs = mw_coefs[ig];
+        T DeltaRInv = mw_DeltaRInv[ig];
+        T cutoff_radius = mw_cutoff_radius[ig];
+        PRAGMA_OFFLOAD("omp parallel for reduction(+: val_sum, grad_x, grad_y, grad_z)")
+        for (int j = iStart[ig]; j < iEnd[ig]; j++)
+        {
+          T r = dist[j];
+          T val(0);
+          T grad(0);
+          T lapl(0);
+          if (j != iat && r < cutoff_radius)
+          {
+            T rinv = T(1) / r;
+            r *= DeltaRInv;
+            T ipart;
+            const T t = std::modf(r, &ipart);
+            const int i = (int)ipart;
+
+            real_type sCoef0 = coefs[i + 0];
+            real_type sCoef1 = coefs[i + 1];
+            real_type sCoef2 = coefs[i + 2];
+            real_type sCoef3 = coefs[i + 3];
+
+            lapl = DeltaRInv * DeltaRInv *
+                (sCoef0 * (d2A2 * t + d2A3) + sCoef1 * (d2A6 * t + d2A7) + sCoef2 * (d2A10 * t + d2A11) +
+                 sCoef3 * (d2A14 * t + d2A15));
+
+            grad = DeltaRInv * rinv *
+                (sCoef0 * ((dA1 * t + dA2) * t + dA3) + sCoef1 * ((dA5 * t + dA6) * t + dA7) +
+                 sCoef2 * ((dA9 * t + dA10) * t + dA11) + sCoef3 * ((dA13 * t + dA14) * t + dA15));
+
+            val =
+                (sCoef0 * (((A0 * t + A1) * t + A2) * t + A3) + sCoef1 * (((A4 * t + A5) * t + A6) * t + A7) +
+                 sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
+          }
+          mw_cur_allu[j] = val;
+          mw_cur_allu[j + n_padded] = grad;
+          mw_cur_allu[j + n_padded * 2] = lapl;
+          val_sum += val;
+          grad_x += grad * dipl_x[j];
+          grad_y += grad * dipl_y[j];
+          grad_z += grad * dipl_z[j];
+        }
+      }
+
+      T* vg = mw_vg + ip * (DIM + 1);
+      vg[0] = val_sum;
+      vg[1] = grad_x;
+      vg[2] = grad_y;
+      vg[3] = grad_z;
+    }
+  }
+
   /** evaluate sum of the pair potentials for [iStart,iEnd)
    * @param iat dummy
    * @param iStart starting particle index
@@ -204,13 +312,13 @@ struct BsplineFunctor : public OptimizableFunctorBase
           if (j != ref_at[ip] && r < cutoff_radius)
           {
             r *= DeltaRInv;
-            real_type ipart, t;
-            t     = std::modf(r, &ipart);
-            int i = (int)ipart;
+            T ipart;
+            const T t = std::modf(r, &ipart);
+            const int i = (int)ipart;
             sum += coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3) +
-            coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
-            coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
-            coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
+                   coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
+                   coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
+                   coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
           }
         }
       }
@@ -713,16 +821,12 @@ inline T BsplineFunctor<T>::evaluateV(const int iat,
   {
     real_type r = distArrayCompressed[jat];
     r *= DeltaRInv;
-    int i         = (int)r;
-    real_type t   = r - real_type(i);
-    real_type tp0 = t * t * t;
-    real_type tp1 = t * t;
-    real_type tp2 = t;
-
-    real_type d1 = coefs[i + 0] * (A0 * tp0 + A1 * tp1 + A2 * tp2 + A3);
-    real_type d2 = coefs[i + 1] * (A4 * tp0 + A5 * tp1 + A6 * tp2 + A7);
-    real_type d3 = coefs[i + 2] * (A8 * tp0 + A9 * tp1 + A10 * tp2 + A11);
-    real_type d4 = coefs[i + 3] * (A12 * tp0 + A13 * tp1 + A14 * tp2 + A15);
+    const int i = (int)r;
+    const real_type t = r - real_type(i);
+    real_type d1 = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
+    real_type d2 = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
+    real_type d3 = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
+    real_type d4 = coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
     d += (d1 + d2 + d3 + d4);
   }
   return d;
@@ -773,11 +877,8 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iat,
     int iScatter   = distIndices[j];
     real_type rinv = cOne / r;
     r *= DeltaRInv;
-    int iGather   = (int)r;
-    real_type t   = r - real_type(iGather);
-    real_type tp0 = t * t * t;
-    real_type tp1 = t * t;
-    real_type tp2 = t;
+    const int iGather = (int)r;
+    const real_type t = r - real_type(iGather);
 
     real_type sCoef0 = coefs[iGather + 0];
     real_type sCoef1 = coefs[iGather + 1];
@@ -785,16 +886,16 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iat,
     real_type sCoef3 = coefs[iGather + 3];
 
     laplArray[iScatter] = dSquareDeltaRinv *
-        (sCoef0 * (d2A2 * tp2 + d2A3) + sCoef1 * (d2A6 * tp2 + d2A7) + sCoef2 * (d2A10 * tp2 + d2A11) +
-         sCoef3 * (d2A14 * tp2 + d2A15));
+        (sCoef0 * (d2A2 * t + d2A3) + sCoef1 * (d2A6 * t + d2A7) + sCoef2 * (d2A10 * t + d2A11) +
+         sCoef3 * (d2A14 * t + d2A15));
 
     gradArray[iScatter] = DeltaRInv * rinv *
-        (sCoef0 * (dA1 * tp1 + dA2 * tp2 + dA3) + sCoef1 * (dA5 * tp1 + dA6 * tp2 + dA7) +
-         sCoef2 * (dA9 * tp1 + dA10 * tp2 + dA11) + sCoef3 * (dA13 * tp1 + dA14 * tp2 + dA15));
+        (sCoef0 * ((dA1 * t + dA2) * t + dA3) + sCoef1 * ((dA5 * t + dA6) * t + dA7) +
+         sCoef2 * ((dA9 * t + dA10) * t + dA11) + sCoef3 * ((dA13 * t + dA14) * t + dA15));
 
     valArray[iScatter] =
-        (sCoef0 * (A0 * tp0 + A1 * tp1 + A2 * tp2 + A3) + sCoef1 * (A4 * tp0 + A5 * tp1 + A6 * tp2 + A7) +
-         sCoef2 * (A8 * tp0 + A9 * tp1 + A10 * tp2 + A11) + sCoef3 * (A12 * tp0 + A13 * tp1 + A14 * tp2 + A15));
+        (sCoef0 * (((A0 * t + A1) * t + A2) * t + A3) + sCoef1 * (((A4 * t + A5) * t + A6) * t + A7) +
+         sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
   }
 }
 } // namespace qmcplusplus
