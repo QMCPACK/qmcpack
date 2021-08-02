@@ -92,11 +92,11 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableData(const ParticleSet& source, const ParticleSet& target)
+  DistanceTableData(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : Origin(&source),
         N_sources(source.getTotalNum()),
         N_targets(target.getTotalNum()),
-        modes_(DTModes::ALL_OFF),
+        modes_(modes),
         old_prepared_elec_id(-1),
         name_(source.getName() + "_" + target.getName())
   {}

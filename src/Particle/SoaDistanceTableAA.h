@@ -39,7 +39,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableData(target, target),
+        DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
                                                        "_" + target.getName(),
                                                    timer_level_fine)),
