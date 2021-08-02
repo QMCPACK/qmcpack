@@ -14,7 +14,10 @@ function(ADD_CONVERTER_TEST test_name)
   add_test(NAME converter_${test_name}
            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
-  set_tests_properties(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter;deterministic")
+  set_tests_properties(converter_${test_name} PROPERTIES 
+                       FAIL_REGULAR_EXPRESSION "  FAIL"
+                       PASS_REGULAR_EXPRESSION "  pass"
+                       TIMEOUT 120 LABELS "converter;deterministic")
 endfunction()
 
 function(ADD_PWCONVERTER_TEST test_name)
@@ -24,8 +27,10 @@ function(ADD_PWCONVERTER_TEST test_name)
   add_test(NAME converter_${test_name}
            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
-  set_tests_properties(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter;deterministic"
-                                                         PASS_REGULAR_EXPRESSION "  pass")
+  set_tests_properties(converter_${test_name} PROPERTIES 
+                       FAIL_REGULAR_EXPRESSION "  FAIL"
+                       PASS_REGULAR_EXPRESSION "  pass" 
+                       TIMEOUT 120 LABELS "converter;deterministic")
 endfunction()
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py"
