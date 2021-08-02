@@ -105,9 +105,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
   {
     const int numCoefs = NumParams + 4;
     const int numKnots = numCoefs - 2;
-    DeltaR       = cutoff_radius / (real_type)(numKnots - 1);
-    DeltaRInv    = 1.0 / DeltaR;
-    auto& coefs = *spline_coefs_;
+    DeltaR             = cutoff_radius / (real_type)(numKnots - 1);
+    DeltaRInv          = 1.0 / DeltaR;
+    auto& coefs        = *spline_coefs_;
     for (int i = 0; i < coefs.size(); i++)
       coefs[i] = 0.0;
     // Ensure that cusp conditions is satisfied at the origin
@@ -141,30 +141,30 @@ struct BsplineFunctor : public OptimizableFunctorBase
                    int* restrict distIndices) const;
 
   static void mw_evaluateVGL(const int iat,
-                           const int num_groups,
-                           const BsplineFunctor* const functors[],
-                           const int iStart[],
-                           const int iEnd[],
-                           const int nw,
-                           T* mw_vg, // [nw][DIM+1]
-                           const int n_padded,
-                           const T* mw_dist, // [nw][DIM+1][n_padded]
-                           T* mw_allUat, // [nw][DIM+2][n_padded]
-                           T* mw_cur_allu, // [nw][3][n_padded]
-                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+                             const int num_groups,
+                             const BsplineFunctor* const functors[],
+                             const int iStart[],
+                             const int iEnd[],
+                             const int nw,
+                             T* mw_vg, // [nw][DIM+1]
+                             const int n_padded,
+                             const T* mw_dist, // [nw][DIM+1][n_padded]
+                             T* mw_allUat,     // [nw][DIM+2][n_padded]
+                             T* mw_cur_allu,   // [nw][3][n_padded]
+                             Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
     constexpr unsigned DIM = OHMMS_DIM;
     static_assert(DIM == 3, "only support 3D due to explicit x,y,z coded.");
     const size_t dist_stride = n_padded * (DIM + 1);
 
-    transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2)*num_groups);
-    T** mw_coefs_ptr = reinterpret_cast<T**>(transfer_buffer.data());
-    T* mw_DeltaRInv_ptr = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
+    transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2) * num_groups);
+    T** mw_coefs_ptr        = reinterpret_cast<T**>(transfer_buffer.data());
+    T* mw_DeltaRInv_ptr     = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
     T* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
     for (int ig = 0; ig < num_groups; ig++)
     {
-      mw_coefs_ptr[ig] = functors[ig]->spline_coefs_->device_data();
-      mw_DeltaRInv_ptr[ig] = functors[ig]->DeltaRInv;
+      mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
       mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
     }
 
@@ -175,68 +175,49 @@ struct BsplineFunctor : public OptimizableFunctorBase
                     map(to: mw_dist[:dist_stride*nw]) \
                     map(from: mw_cur_allu[:n_padded*3*nw]) \
                     map(always, from: mw_vg[:(DIM+1)*nw])")
-    for(int ip = 0; ip < nw; ip++)
+    for (int ip = 0; ip < nw; ip++)
     {
       T val_sum(0);
       T grad_x(0);
       T grad_y(0);
       T grad_z(0);
 
-      const T* dist = mw_dist + ip * dist_stride;
+      const T* dist   = mw_dist + ip * dist_stride;
       const T* dipl_x = mw_dist + ip * dist_stride + n_padded;
       const T* dipl_y = mw_dist + ip * dist_stride + n_padded * 2;
       const T* dipl_z = mw_dist + ip * dist_stride + n_padded * 3;
 
-      T** mw_coefs = reinterpret_cast<T**>(transfer_buffer_ptr);
-      T* mw_DeltaRInv = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
+      T** mw_coefs        = reinterpret_cast<T**>(transfer_buffer_ptr);
+      T* mw_DeltaRInv     = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
       T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
 
       T* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
-      for(int ig = 0; ig < num_groups; ig++)
+      for (int ig = 0; ig < num_groups; ig++)
       {
-        const T* coefs = mw_coefs[ig];
-        T DeltaRInv = mw_DeltaRInv[ig];
+        const T* coefs  = mw_coefs[ig];
+        T DeltaRInv     = mw_DeltaRInv[ig];
         T cutoff_radius = mw_cutoff_radius[ig];
         PRAGMA_OFFLOAD("omp parallel for reduction(+: val_sum, grad_x, grad_y, grad_z)")
         for (int j = iStart[ig]; j < iEnd[ig]; j++)
         {
           T r = dist[j];
-          T val(0);
-          T grad(0);
-          T lapl(0);
+          T u(0);
+          T dudr(0);
+          T d2udr2(0);
           if (j != iat && r < cutoff_radius)
           {
-            T rinv = T(1) / r;
-            r *= DeltaRInv;
-            T ipart;
-            const T t = std::modf(r, &ipart);
-            const int i = (int)ipart;
-
-            real_type sCoef0 = coefs[i + 0];
-            real_type sCoef1 = coefs[i + 1];
-            real_type sCoef2 = coefs[i + 2];
-            real_type sCoef3 = coefs[i + 3];
-
-            lapl = DeltaRInv * DeltaRInv *
-                (sCoef0 * (d2A2 * t + d2A3) + sCoef1 * (d2A6 * t + d2A7) + sCoef2 * (d2A10 * t + d2A11) +
-                 sCoef3 * (d2A14 * t + d2A15));
-
-            grad = DeltaRInv * rinv *
-                (sCoef0 * ((dA1 * t + dA2) * t + dA3) + sCoef1 * ((dA5 * t + dA6) * t + dA7) +
-                 sCoef2 * ((dA9 * t + dA10) * t + dA11) + sCoef3 * ((dA13 * t + dA14) * t + dA15));
-
-            val =
-                (sCoef0 * (((A0 * t + A1) * t + A2) * t + A3) + sCoef1 * (((A4 * t + A5) * t + A6) * t + A7) +
-                 sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
+            u = evaluate_impl(dist[j], coefs, DeltaRInv, dudr, d2udr2);
+            dudr *= T(1)/r;
           }
-          mw_cur_allu[j] = val;
-          mw_cur_allu[j + n_padded] = grad;
-          mw_cur_allu[j + n_padded * 2] = lapl;
-          val_sum += val;
-          grad_x += grad * dipl_x[j];
-          grad_y += grad * dipl_y[j];
-          grad_z += grad * dipl_z[j];
+          // save u, dudr/r and d2udr2 to mw_cur_allu
+          mw_cur_allu[j]                = u;
+          mw_cur_allu[j + n_padded]     = dudr;
+          mw_cur_allu[j + n_padded * 2] = d2udr2;
+          val_sum += u;
+          grad_x += dudr * dipl_x[j];
+          grad_y += dudr * dipl_y[j];
+          grad_z += dudr * dipl_z[j];
         }
       }
 
@@ -276,14 +257,14 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            T* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
-    transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2)*num_groups);
-    T** mw_coefs_ptr = reinterpret_cast<T**>(transfer_buffer.data());
-    T* mw_DeltaRInv_ptr = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
+    transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2) * num_groups);
+    T** mw_coefs_ptr        = reinterpret_cast<T**>(transfer_buffer.data());
+    T* mw_DeltaRInv_ptr     = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
     T* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
     for (int ig = 0; ig < num_groups; ig++)
     {
-      mw_coefs_ptr[ig] = functors[ig]->spline_coefs_->device_data();
-      mw_DeltaRInv_ptr[ig] = functors[ig]->DeltaRInv;
+      mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
       mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
     }
 
@@ -293,17 +274,17 @@ struct BsplineFunctor : public OptimizableFunctorBase
                     map(to:iStart[:num_groups], iEnd[:num_groups]) \
                     map(to:ref_at[:num_pairs], mw_dist[:dist_stride*num_pairs]) \
                     map(always, from:mw_vals[:num_pairs])")
-    for(int ip = 0; ip < num_pairs; ip++)
+    for (int ip = 0; ip < num_pairs; ip++)
     {
-      T sum = 0;
-      const T* dist = mw_dist + ip * dist_stride;
-      T** mw_coefs = reinterpret_cast<T**>(transfer_buffer_ptr);
-      T* mw_DeltaRInv = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
+      T sum               = 0;
+      const T* dist       = mw_dist + ip * dist_stride;
+      T** mw_coefs        = reinterpret_cast<T**>(transfer_buffer_ptr);
+      T* mw_DeltaRInv     = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
       T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
-      for(int ig = 0; ig < num_groups; ig++)
+      for (int ig = 0; ig < num_groups; ig++)
       {
-        const T* coefs = mw_coefs[ig];
-        T DeltaRInv = mw_DeltaRInv[ig];
+        const T* coefs  = mw_coefs[ig];
+        T DeltaRInv     = mw_DeltaRInv[ig];
         T cutoff_radius = mw_cutoff_radius[ig];
         PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
         for (int j = iStart[ig]; j < iEnd[ig]; j++)
@@ -313,12 +294,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
           {
             r *= DeltaRInv;
             T ipart;
-            const T t = std::modf(r, &ipart);
+            const T t   = std::modf(r, &ipart);
             const int i = (int)ipart;
             sum += coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3) +
-                   coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
-                   coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
-                   coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
+                coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
+                coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
+                coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
           }
         }
       }
@@ -326,70 +307,74 @@ struct BsplineFunctor : public OptimizableFunctorBase
     }
   }
 
+  inline static real_type evaluate_impl(real_type r,
+                                        const T* coefs,
+                                        const real_type DeltaRInv)
+  {
+    r *= DeltaRInv;
+    T ipart;
+    const T t   = std::modf(r, &ipart);
+    const int i = (int)ipart;
+
+    real_type sCoef0 = coefs[i + 0];
+    real_type sCoef1 = coefs[i + 1];
+    real_type sCoef2 = coefs[i + 2];
+    real_type sCoef3 = coefs[i + 3];
+
+    return (sCoef0 * (((A0 * t + A1) * t + A2) * t + A3) + sCoef1 * (((A4 * t + A5) * t + A6) * t + A7) +
+                   sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
+  }
+
   inline real_type evaluate(real_type r) const
   {
-    if (r >= cutoff_radius)
-      return 0.0;
-    r *= DeltaRInv;
-    real_type ipart, t;
-    t     = std::modf(r, &ipart);
-    int i = (int)ipart;
-    real_type tp[4];
-    tp[0] = t * t * t;
-    tp[1] = t * t;
-    tp[2] = t;
-    tp[3] = 1.0;
-    auto& coefs = *spline_coefs_;
-    return (coefs[i + 0] * (A0 * tp[0] + A1 * tp[1] + A2 * tp[2] + A3 * tp[3]) +
-            coefs[i + 1] * (A4 * tp[0] + A5 * tp[1] + A6 * tp[2] + A7 * tp[3]) +
-            coefs[i + 2] * (A8 * tp[0] + A9 * tp[1] + A10 * tp[2] + A11 * tp[3]) +
-            coefs[i + 3] * (A12 * tp[0] + A13 * tp[1] + A14 * tp[2] + A15 * tp[3]));
+    real_type u(0);
+    if (r < cutoff_radius)
+      u = evaluate_impl(r, spline_coefs_->data(), DeltaRInv);
+    return u;
   }
 
   inline real_type evaluate(real_type r, real_type rinv) { return Y = evaluate(r, dY, d2Y); }
 
   inline void evaluateAll(real_type r, real_type rinv) { Y = evaluate(r, dY, d2Y); }
 
+  inline static real_type evaluate_impl(real_type r,
+                                        const T* coefs,
+                                        const real_type DeltaRInv,
+                                        real_type& dudr,
+                                        real_type& d2udr2)
+  {
+    r *= DeltaRInv;
+    T ipart;
+    const T t   = std::modf(r, &ipart);
+    const int i = (int)ipart;
+
+    real_type sCoef0 = coefs[i + 0];
+    real_type sCoef1 = coefs[i + 1];
+    real_type sCoef2 = coefs[i + 2];
+    real_type sCoef3 = coefs[i + 3];
+
+    d2udr2 = DeltaRInv * DeltaRInv *
+        (sCoef0 * (d2A2 * t + d2A3) + sCoef1 * (d2A6 * t + d2A7) + sCoef2 * (d2A10 * t + d2A11) +
+         sCoef3 * (d2A14 * t + d2A15));
+
+    dudr = DeltaRInv *
+        (sCoef0 * ((dA1 * t + dA2) * t + dA3) + sCoef1 * ((dA5 * t + dA6) * t + dA7) +
+         sCoef2 * ((dA9 * t + dA10) * t + dA11) + sCoef3 * ((dA13 * t + dA14) * t + dA15));
+
+    real_type u = (sCoef0 * (((A0 * t + A1) * t + A2) * t + A3) + sCoef1 * (((A4 * t + A5) * t + A6) * t + A7) +
+                   sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
+    return u;
+  }
+
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
   {
-    if (r >= cutoff_radius)
-    {
-      dudr = d2udr2 = 0.0;
-      return 0.0;
-    }
-    //       real_type eps = 1.0e-5;
-    //       real_type dudr_FD = (evaluate(r+eps)-evaluate(r-eps))/(2.0*eps);
-    //       real_type d2udr2_FD = (evaluate(r+eps)+evaluate(r-eps)-2.0*evaluate(r))/(eps*eps);
-    r *= DeltaRInv;
-    real_type ipart, t;
-    t     = std::modf(r, &ipart);
-    int i = (int)ipart;
-    real_type tp[4];
-    tp[0]  = t * t * t;
-    tp[1]  = t * t;
-    tp[2]  = t;
-    tp[3]  = 1.0;
-    auto& coefs = *spline_coefs_;
-    d2udr2 = DeltaRInv * DeltaRInv *
-        (coefs[i + 0] * (d2A0 * tp[0] + d2A1 * tp[1] + d2A2 * tp[2] + d2A3 * tp[3]) +
-         coefs[i + 1] * (d2A4 * tp[0] + d2A5 * tp[1] + d2A6 * tp[2] + d2A7 * tp[3]) +
-         coefs[i + 2] * (d2A8 * tp[0] + d2A9 * tp[1] + d2A10 * tp[2] + d2A11 * tp[3]) +
-         coefs[i + 3] * (d2A12 * tp[0] + d2A13 * tp[1] + d2A14 * tp[2] + d2A15 * tp[3]));
-    dudr = DeltaRInv *
-        (coefs[i + 0] * (dA0 * tp[0] + dA1 * tp[1] + dA2 * tp[2] + dA3 * tp[3]) +
-         coefs[i + 1] * (dA4 * tp[0] + dA5 * tp[1] + dA6 * tp[2] + dA7 * tp[3]) +
-         coefs[i + 2] * (dA8 * tp[0] + dA9 * tp[1] + dA10 * tp[2] + dA11 * tp[3]) +
-         coefs[i + 3] * (dA12 * tp[0] + dA13 * tp[1] + dA14 * tp[2] + dA15 * tp[3]));
-    //       if (std::abs(dudr_FD-dudr) > 1.0e-8)
-    //  std::cerr << "Error in BsplineFunction:  dudr = " << dudr
-    //       << "  dudr_FD = " << dudr_FD << std::endl;
-    //       if (std::abs(d2udr2_FD-d2udr2) > 1.0e-4)
-    //  std::cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
-    //       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << std::endl;
-    return (coefs[i + 0] * (A0 * tp[0] + A1 * tp[1] + A2 * tp[2] + A3 * tp[3]) +
-            coefs[i + 1] * (A4 * tp[0] + A5 * tp[1] + A6 * tp[2] + A7 * tp[3]) +
-            coefs[i + 2] * (A8 * tp[0] + A9 * tp[1] + A10 * tp[2] + A11 * tp[3]) +
-            coefs[i + 3] * (A12 * tp[0] + A13 * tp[1] + A14 * tp[2] + A15 * tp[3]));
+    real_type u(0);
+    dudr   = real_type(0);
+    d2udr2 = real_type(0);
+
+    if (r < cutoff_radius)
+      u = evaluate_impl(r, spline_coefs_->data(), DeltaRInv, dudr, d2udr2);
+    return u;
   }
 
 
@@ -412,12 +397,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
     t     = std::modf(r, &ipart);
     int i = (int)ipart;
     real_type tp[4];
-    tp[0]  = t * t * t;
-    tp[1]  = t * t;
-    tp[2]  = t;
-    tp[3]  = 1.0;
+    tp[0]       = t * t * t;
+    tp[1]       = t * t;
+    tp[2]       = t;
+    tp[3]       = 1.0;
     auto& coefs = *spline_coefs_;
-    d3udr3 = DeltaRInv * DeltaRInv * DeltaRInv *
+    d3udr3      = DeltaRInv * DeltaRInv * DeltaRInv *
         (coefs[i + 0] * (d3A0 * tp[0] + d3A1 * tp[1] + d3A2 * tp[2] + d3A3 * tp[3]) +
          coefs[i + 1] * (d3A4 * tp[0] + d3A5 * tp[1] + d3A6 * tp[2] + d3A7 * tp[3]) +
          coefs[i + 2] * (d3A8 * tp[0] + d3A9 * tp[1] + d3A10 * tp[2] + d3A11 * tp[3]) +
@@ -462,7 +447,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     tp[2] = t;
     tp[3] = 1.0;
 
-    auto& coefs = *spline_coefs_;
+    auto& coefs     = *spline_coefs_;
     SplineDerivs[0] = TinyVector<real_type, 3>(0.0);
     // d/dp_i u(r)
     SplineDerivs[i + 0][0] = A0 * tp[0] + A1 * tp[1] + A2 * tp[2] + A3 * tp[3];
@@ -821,12 +806,12 @@ inline T BsplineFunctor<T>::evaluateV(const int iat,
   {
     real_type r = distArrayCompressed[jat];
     r *= DeltaRInv;
-    const int i = (int)r;
+    const int i       = (int)r;
     const real_type t = r - real_type(i);
-    real_type d1 = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
-    real_type d2 = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
-    real_type d3 = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
-    real_type d4 = coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
+    real_type d1      = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
+    real_type d2      = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
+    real_type d3      = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
+    real_type d4      = coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
     d += (d1 + d2 + d3 + d4);
   }
   return d;
