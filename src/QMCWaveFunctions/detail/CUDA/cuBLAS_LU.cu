@@ -34,7 +34,7 @@ namespace cuBLAS_LU
 /** because atan2(y, x) = pi for (0, -x)
  *  we use a short cut for the real valued matrices
  */
-__device__ cuDoubleComplex complexDetLog(const double lu_diag, int n_index, const int pivot)
+__device__ cuDoubleComplex complexDetLog(const double lu_diag, const int n_index, const int pivot)
 {
   cuDoubleComplex log_value;
   double lud  = lu_diag * (1 - 2 * (pivot != n_index + 1));
