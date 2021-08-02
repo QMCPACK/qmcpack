@@ -163,6 +163,7 @@ public:
     return G;
   }
 
+  void register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf);
   inline void restore(int iat) override { return Dets[getDetID(iat)]->restore(iat); }
 
   inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override

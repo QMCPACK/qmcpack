@@ -29,6 +29,7 @@
 #include "Utilities/TimerManager.h"
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"
+#include "QMCWaveFunctions/TWFPrototype.h"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -143,6 +144,7 @@ public:
    */
   void reportStatus(std::ostream& os);
 
+  void initialize_TWF_Prototype(ParticleSet& P,TWFPrototype& twf);
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -489,6 +491,7 @@ private:
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
+  TWFPrototype twf_prototype;
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level

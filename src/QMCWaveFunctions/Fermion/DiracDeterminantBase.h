@@ -86,7 +86,7 @@ public:
   void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
   inline void reportStatus(std::ostream& os) final {}
-
+  inline virtual void register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf){APP_ABORT("SHOULD HAVE OVERRIDDEN ME\n");}
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
   using WaveFunctionComponent::evaluateGL;

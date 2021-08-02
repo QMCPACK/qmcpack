@@ -22,7 +22,7 @@
 #include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
-
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 namespace qmcplusplus
 {
 typedef enum
@@ -49,7 +49,8 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
       PhaseDiff(0.0),
       LogValue(0.0),
       OneOverM(1.0),
-      use_tasking_(tasking)
+      use_tasking_(tasking),
+      twf_prototype()
 {
   if (suffixes.size() != TIMER_SKIP)
     throw std::runtime_error("TrialWaveFunction::TrialWaveFunction mismatched timer enums and suffixes");
@@ -1047,6 +1048,25 @@ void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
       ratios[j] *= t[j];
   }
 #endif
+}
+
+//I'm playing fast and loose with pointers here.  This needs to be cleaned up.  Majorly.  
+void TrialWaveFunction::initialize_TWF_Prototype(ParticleSet& P,TWFPrototype& twf)
+{
+  for (int i = 0; i < Z.size(); ++i)
+  {
+    if(Z[i]->is_fermionic)
+    {
+      //OK, so this is a hack only for SlaterDeterminant objects.  
+      SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
+      det->register_TWF_Prototype(P,twf);
+    }
+    else //Is Jastrow, so do nothing right now.
+    {
+   
+    }
+
+  }
 }
 
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }

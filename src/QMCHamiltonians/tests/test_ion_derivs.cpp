@@ -296,6 +296,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   ParticleSet elec;
 
   create_CN_particlesets(elec,ions);
+  //////////////////////////////////
+  /////////////////////////////////
     
   Libxml2Document doc2;
   bool okay = doc2.parse("cn.wfnoj.xml");
@@ -310,24 +312,30 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
-  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+  wff.put(root2);
 
-  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
-  REQUIRE(MO_base.size() == 1);
+  TrialWaveFunction* psi = wff.getTWF();
+  REQUIRE(psi != nullptr);
+
+//  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+
+//  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+//  REQUIRE(MO_base.size() == 1);
 
 
-  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
-  REQUIRE(bb != NULL);
+//  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
+//  REQUIRE(bb != NULL);
 
-  OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-  SPOSet* sposet_up = bb->createSPOSet(slater_base[0]);
-  SPOSet* sposet_dn = bb->createSPOSet(slater_base[1]);
+//  OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
+//  SPOSet* sposet_up = bb->createSPOSet(slater_base[0]);
+//  SPOSet* sposet_dn = bb->createSPOSet(slater_base[1]);
 
     
   TWFPrototype twf;
-  twf.add_determinant(elec,0,sposet_up);
-  twf.add_determinant(elec,1,sposet_dn);
+ // twf.add_determinant(elec,0,sposet_up);
+//  twf.add_determinant(elec,1,sposet_dn);
 
+  psi->initialize_TWF_Prototype(elec,twf);
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
   SPOSet::ValueVector_t d2psi;

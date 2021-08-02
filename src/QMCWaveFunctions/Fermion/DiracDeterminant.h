@@ -80,6 +80,7 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
+  void register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf) override;
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved

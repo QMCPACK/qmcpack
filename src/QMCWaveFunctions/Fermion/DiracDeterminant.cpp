@@ -368,6 +368,14 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   updateEng.initializeInv(psiM);
 }
 
+//I'm playing fast and loose with pointers here.  FIX ME FIX ME FIX ME
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+{
+  twf.add_determinant(P,P.getGroupID(FirstIndex),Phi.get());
+}
+
+
 /** return the ratio only for the  iat-th partcle move
  * @param P current configuration
  * @param iat the particle thas is being moved

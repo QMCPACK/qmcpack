@@ -246,6 +246,14 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ", buf.current());
 }
 
+void SlaterDet::register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+{
+  for (int i=0; i<Dets.size(); ++i)
+  {
+    Dets[i]->register_TWF_Prototype(P,twf);
+  }
+}
+
 std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) const
 {
   auto myclone         = std::make_unique<SlaterDet>(tqp);
