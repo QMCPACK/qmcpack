@@ -12,6 +12,7 @@
 
 #include "catch.hpp"
 
+#include <complex>
 #include "type_traits/template_types.hpp"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/tests/MinimalParticlePool.h"
@@ -94,7 +95,8 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
-
+  using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+  
   Communicate* c;
   c = OHMMS::Controller;
 
@@ -152,9 +154,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.384955836167661225e+01
 
+  ResourceCollection res_col("test_determinant");
+  psi->createResource(res_col);
+  psi->acquireResource(res_col);
 
-  RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-14.233853149));
+  LogValueType logpsi = psi->evaluateLog(elec);
+  REQUIRE(logpsi == LogComplexApprox(std::complex<decltype(logpsi)::value_type>{-14.233853149, 0.0}));
 
   QMCHamiltonian* ham = hf.getH();
 
@@ -338,6 +343,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //  HamTest IonIon 9.621404531608845900e+00
   //  HamTest LocalECP -6.783942829945100073e+01
   //  HamTest NonLocalECP 1.373654152480333224e+01
+
+  ResourceCollection res_col("test_determinant");
+  psi->createResource(res_col);
+  psi->acquireResource(res_col);
 
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-8.9455094611e+00));
@@ -524,6 +533,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.269054876473223636e+01
 
+  ResourceCollection res_col("test_determinant");
+  psi->createResource(res_col);
+  psi->acquireResource(res_col);
+  
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-1.41149961982e+01));
 
@@ -679,7 +692,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.249362906275283969e+01
 
-
+  ResourceCollection res_col("test_determinant");
+  psi->createResource(res_col);
+  psi->acquireResource(res_col);
+  
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-8.69329994846e+00));
 

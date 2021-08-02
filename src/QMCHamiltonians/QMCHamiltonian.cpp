@@ -884,7 +884,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(
   RealType localEnergy = 0.0;
 
   for (int i = 0; i < H.size(); ++i)
+  {
     localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi, hf_term, pulay_terms);
+    assert(!std::isnan(dot(hf_term[0],hf_term[0])));
+  }
 
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
