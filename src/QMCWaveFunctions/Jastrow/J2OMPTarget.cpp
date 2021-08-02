@@ -427,6 +427,38 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, in
 }
 
 template<typename FT>
+void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) const
+{
+  //right now. Directly use FT::mw_evaluateVGL implementation.
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& p_leader        = p_list.getLeader();
+  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const int nw          = wfc_list.size();
+
+  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+  mw_vgl.resize(nw, DIM + 2);
+
+  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+
+  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, g_first.data(), g_last.data(), nw,
+                     mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
+                     wfc_leader.mw_mem_->mw_ratiograd_buffer);
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& wfc   = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.cur_Uat = mw_vgl[iw][0];
+    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+  }
+}
+
+
+template<typename FT>
 void J2OMPTarget<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);

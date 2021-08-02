@@ -151,6 +151,11 @@ public:
                     const std::vector<bool>& recompute) const override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
+  void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) const override;
+
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
