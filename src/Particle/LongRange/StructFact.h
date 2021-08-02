@@ -42,8 +42,6 @@ public:
    * unless Hamiltonian uses pbyp.
    */
   bool DoUpdate;
-  /// default false, the per particle data is not saved
-  bool StorePerParticle;
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
@@ -156,13 +154,16 @@ public:
   }
 
   /** @brief switch on the storage per particle
-   *
-   * allocate the memory and precompute the data
+   * if StorePerParticle was false, this function allocates memory and precompute data
+   * if StorePerParticle was true, this function is no-op
    */
   void turnOnStorePerParticle(ParticleSet& P);
 
+  /// accessor of StorePerParticle
+  bool isStorePerParticle() const { return StorePerParticle; }
+
 private:
-  ///Compute all rhok elements from the start
+  /// Compute all rhok elements from the start
   void FillRhok(ParticleSet& P);
   /** resize the internal data
    * @param np number of species
@@ -170,6 +171,12 @@ private:
    * @param nkpts
    */
   void resize(int ns, int nptcl, int nkpts);
+
+  /** Whether intermediate data is stored per particle. default false
+   * storing data per particle needs significant amount of memory but some calculation may request it.
+   * storing data per particle specie is more cost-effective
+   */
+  bool StorePerParticle;
 };
 } // namespace qmcplusplus
 
