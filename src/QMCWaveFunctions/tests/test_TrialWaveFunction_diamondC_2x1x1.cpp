@@ -484,7 +484,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_completeUpdates(wf_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
 
-  
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->get_det_engine().get_psiMinv()[0][0] << " "
             << det_up->get_det_engine().get_psiMinv()[0][1] << " " << det_up->get_det_engine().get_psiMinv()[1][0] << " " << det_up->get_det_engine().get_psiMinv()[1][1]
             << " " << std::endl;
@@ -516,7 +515,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   using FPVT = QMCTraits::QTFull::ValueType;
 
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1);
@@ -532,6 +531,9 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2);
+#ifdef ENABLE_CUDA
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdateCUDA<VT, FPVT>>, float_tag>(1);
+#endif
 }
 
 } // namespace qmcplusplus

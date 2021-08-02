@@ -140,6 +140,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #if !defined(QMC_CUDA)
   // initialize distance tables.
   elec_.update();
+  // I though evaluate log was always defined as std::complex<FullPrecReal>
   double logpsi = psi.evaluateLog(elec_);
 
   //std::cout << "debug before YYY " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;

@@ -66,14 +66,16 @@ if(NOT QMC_CUDA)
   endif()
 endif()
 
+
 set(TRIALWF_SRC
     test_TrialWaveFunction.cpp
     test_wavefunction_factory.cpp
-    test_TrialWaveFunction_diamondC_2x1x1.cpp
     test_TrialWaveFunction_He.cpp
+    test_TrialWaveFunction_diamondC_2x1x1.cpp
     test_wavefunction_pool.cpp
     test_example_he.cpp
     test_lattice_gaussian.cpp)
+
 set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
