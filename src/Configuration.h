@@ -105,6 +105,8 @@ struct PtclOnLatticeTraits
 #else
   using ValueApprox = Catch::Detail::Approx;
 #endif
+  using ComplexApprox = Catch::Detail::ComplexApprox;
+  using LogComplexApprox = Catch::Detail::LogComplexApprox;
 #endif
 
 } // namespace qmcplusplus
