@@ -484,8 +484,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
     log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
-  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-5.5011162672993,9.4247779607694});
-  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-8.0131646238354,6.2831853071796});
+#if defined(QMC_COMPLEX)
+  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-4.1148130068943, -6.2831779860047});
+  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-6.6269077659586, -3.1416312090662});
+#else
+  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-5.5011162672993, 9.4247779607694});
+  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-8.0131646238354, 6.2831853071796});
+#endif
 
   // This test has 4 electrons but only 2 particle moves are attempted.
   // Force update of all distance tables before mw_evaluateGL with recompute
