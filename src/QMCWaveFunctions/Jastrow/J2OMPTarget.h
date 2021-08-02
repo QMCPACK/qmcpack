@@ -137,6 +137,10 @@ public:
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
+  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
@@ -164,6 +168,12 @@ public:
                     std::vector<GradType>& grad_new) const override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            const std::vector<bool>& isAccepted,
+                            bool safe_to_delay = false) const override;
+
   inline void restore(int iat) override {}
 
   void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
@@ -174,6 +184,11 @@ public:
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch = false) override;
+  void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                     const RefVectorWithLeader<ParticleSet>& p_list,
+                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     bool fromscratch) const override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -202,6 +217,9 @@ public:
   inline RealType KECorrection() override { return KEcorr; }
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
+
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L) const;
 };
 
 } // namespace qmcplusplus

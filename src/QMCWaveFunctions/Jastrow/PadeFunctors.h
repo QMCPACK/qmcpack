@@ -128,10 +128,10 @@ struct PadeFunctor : public OptimizableFunctorBase
                            T* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
-    for(int ip = 0; ip < num_pairs; ip++)
+    for (int ip = 0; ip < num_pairs; ip++)
     {
       mw_vals[ip] = 0;
-      for(int ig = 0; ig < num_groups; ig++)
+      for (int ig = 0; ig < num_groups; ig++)
       {
         auto& functor(*functors[ig]);
         for (int j = iStart[ig]; j < iEnd[ig]; j++)
@@ -161,18 +161,18 @@ struct PadeFunctor : public OptimizableFunctorBase
   }
 
   static void mw_evaluateVGL(const int iat,
-                           const int num_groups,
-                           const PadeFunctor* const functors[],
-                           const int iStart[],
-                           const int iEnd[],
-                           const int nw,
-                           T* mw_vg, // [nw][DIM+1]
-                           const int n_padded,
-                           const T* mw_dist, // [nw][DIM+1][n_padded]
-                           T* mw_allUat, // [nw][DIM+2][n_padded]
-                           T* mw_cur_allu, // [nw][3][n_padded]
-                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+                             const int num_groups,
+                             const PadeFunctor* const functors[],
+                             const int iStart[],
+                             const int iEnd[],
+                             const int nw,
+                             T* mw_vgl, // [nw][DIM+2]
+                             const int n_padded,
+                             const T* mw_dist, // [nw][DIM+1][n_padded]
+                             T* mw_cur_allu,   // [nw][3][n_padded]
+                             Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
+    throw std::runtime_error("PadeFunctor mw_evaluateVGL not implemented!");
   }
 
   inline real_type f(real_type r) override { return evaluate(r) - AoverB; }
@@ -182,6 +182,23 @@ struct PadeFunctor : public OptimizableFunctorBase
     real_type dudr, d2udr2;
     real_type res = evaluate(r, dudr, d2udr2);
     return dudr;
+  }
+
+  static void mw_updateVGL(const int iat,
+                           const std::vector<bool>& isAccepted,
+                           const int num_groups,
+                           const PadeFunctor* const functors[],
+                           const int iStart[],
+                           const int iEnd[],
+                           const int nw,
+                           T* mw_vgl, // [nw][DIM+2]
+                           const int n_padded,
+                           const T* mw_dist, // [nw][DIM+1][n_padded]
+                           T* mw_allUat,     // [nw][DIM+2][n_padded]
+                           T* mw_cur_allu,   // [nw][3][n_padded]
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    throw std::runtime_error("PadeFunctor mw_updateVGL not implemented!");
   }
 
   /// compute derivatives with respect to A and B
