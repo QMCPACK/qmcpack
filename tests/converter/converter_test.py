@@ -52,6 +52,8 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
         cmd.extend(['-nojastrow', '-prefix', 'test', '-orbitals', conv_inp])
     if code=='gamess':
         cmd.extend(['-nojastrow', '-prefix', 'test', '-gamess', conv_inp])
+    if code=='dirac':
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-dirac', conv_inp])
 
     for ex_arg in extra_cmd_args:
         if ex_arg == '-ci':
@@ -96,7 +98,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
             okay = False
         else:
             if (code != 'generic'): 
-                if '-hdf5' in extra_cmd_args:
+                if '-hdf5' in extra_cmd_args or code=='dirac':
                    ret = os.system(h5diff_exe + ' -d 0.000001 gold.orbs.h5 test.orbs.h5')
                    # if it's okay up to this point
                    if ret==0 and okay:
@@ -137,8 +139,11 @@ def run_one_converter_test(c4q_exe, h5diff_exe):
        code='generic'
     
     test_name = os.path.split(os.getcwd())[-1]
-    
-    if code=='gamess': 
+
+    if 'dirac' in test_name:
+        code='dirac'
+
+    if code=='gamess' or code=='dirac': 
        conv_input_files = glob.glob('*.out')
 
     if code=='generic': 

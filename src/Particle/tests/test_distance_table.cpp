@@ -19,6 +19,7 @@
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "Particle/DistanceTableData.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -417,7 +418,6 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
   REQUIRE(ions.getName() == "ion0");
   REQUIRE(ions.SameMass);
   REQUIRE(electrons.SameMass);
-
 }
 
 TEST_CASE("distance_pbc_z", "[distance_table][xml]")
@@ -574,6 +574,10 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   p_list.push_back(electrons);
   p_list.push_back(electrons_clone);
 
+  ResourceCollection pset_res("test_pset_res");
+  electrons.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+
   std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
   ParticleSet::mw_makeMove(p_list, 0, disp);
@@ -622,6 +626,10 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   RefVectorWithLeader<ParticleSet> p_list(electrons);
   p_list.push_back(electrons);
   p_list.push_back(electrons_clone);
+
+  ResourceCollection pset_res("test_pset_res");
+  electrons.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
   std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 

@@ -47,6 +47,7 @@ add_converter_test(test_aldet6)
 if(HDF5_DIFF_EXECUTABLE)
   add_converter_test(test_HDF5_FeCO6)
   add_converter_test(test_HDF5_Be_ccd)
+  add_converter_test(test_Bi_dirac)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pwconverter_test.py"
                           "${CMAKE_CURRENT_BINARY_DIR}")
   add_pwconverter_test(test_NaCl_qbox)

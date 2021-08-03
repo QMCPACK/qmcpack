@@ -242,16 +242,8 @@ public:
   {
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
-    // make this class unit tests friendly without the need of setup resources.
-    if (!dt_leader.mw_mem_)
-    {
-      app_warning()
-          << "SoaDistanceTableABOMPTarget: This message should not be seen in production (performance bug) runs but "
-             "only unit tests (expected)."
-          << std::endl;
-      dt_leader.mw_mem_ = std::make_unique<DTABMultiWalkerMem>();
-      associateResource(dt_list);
-    }
+    // multi walker resource must have been acquired
+    assert(dt_leader.mw_mem_);
 
     ScopedTimer local_timer(evaluate_timer_);
 

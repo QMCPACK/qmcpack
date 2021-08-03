@@ -18,7 +18,8 @@
 project(qmctools)
 
 add_executable(convert4qmc convert4qmc.cpp QMCGaussianParserBase.cpp GaussianFCHKParser.cpp GamesAsciiParser.cpp
-                           LCAOHDFParser.cpp)
+    LCAOHDFParser.cpp DiracParser.cpp)
+
 target_link_libraries(convert4qmc PUBLIC qmcparticle)
 if(USE_OBJECT_TARGET)
   target_link_libraries(convert4qmc PUBLIC qmcutil containers platform_omptarget)
