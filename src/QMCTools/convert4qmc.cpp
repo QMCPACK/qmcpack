@@ -100,7 +100,7 @@ int main(int argc, char** argv)
         }
         else if (a == "-dirac")
         {
-          parser  = new DiracParser(argc, argv);
+          parser  = std::make_unique<DiracParser>(argc, argv);
           in_file = argv[++iargc];
           usehdf5 = true;
         }
