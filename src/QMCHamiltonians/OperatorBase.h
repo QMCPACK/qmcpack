@@ -133,6 +133,8 @@ struct OperatorBase : public QMCTraits
   ///name of dependent object: to be removed
   std::string depName;
 
+  //If the operator is diagonal in position space, everything is simple.
+  bool is_nondiag;
 #if !defined(REMOVE_TRACEMANAGER)
   ///whether traces are being collected
   TraceRequest request;

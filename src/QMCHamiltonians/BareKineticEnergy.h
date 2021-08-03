@@ -146,6 +146,7 @@ struct BareKineticEnergy : public OperatorBase
     streaming_kinetic_comp = false;
     streaming_momentum     = false;
     UpdateMode.set(OPTIMIZABLE, 1);
+    is_nondiag=true;
   }
 
   /** constructor with particleset
@@ -173,6 +174,7 @@ struct BareKineticEnergy : public OperatorBase
       SameMass &= (std::abs(tspecies(massind, i) - M) < 1e-6);
       MinusOver2M[i] = -1.0 / (2.0 * tspecies(massind, i));
     }
+    is_nondiag=true;
   }
   ///destructor
   ~BareKineticEnergy() override {}

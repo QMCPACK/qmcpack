@@ -14,9 +14,10 @@
 #include <iostream>
 namespace qmcplusplus
 {
-TWFPrototype::TWFPrototype()
+TWFPrototype::TWFPrototype():
+initialized(false)
 {
-  std::cout<<"TWFPrototype initialized\n"; 
+  std::cout<<"TWFPrototype Constructed\n"; 
 }
 
 TWFPrototype::IndexType TWFPrototype::get_group_index(const IndexType gid)
@@ -29,10 +30,8 @@ TWFPrototype::IndexType TWFPrototype::get_group_index(const IndexType gid)
 }
 void TWFPrototype::add_determinant(const ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
-  app_log()<<" Gonna add a determinant with "<<gid<<" "<<spo<<std::endl;
   if( std::find(groups.begin(), groups.end(), gid) == groups.end())
   {
-    app_log()<<"adding the determinant\n";
     groups.push_back(gid);
     spos.push_back(spo);
     IndexType first = P.first(gid);
@@ -40,7 +39,8 @@ void TWFPrototype::add_determinant(const ParticleSet& P, const IndexType gid, SP
     IndexType norbs = spo->getOrbitalSetSize();
     num_orbs.push_back(norbs);
     num_ptcls.push_back(last-first);
-  } 
+  }
+  initialized=true; 
 }
 
 TWFPrototype::IndexType TWFPrototype::get_det_id(const IndexType species_id)
@@ -57,7 +57,8 @@ TWFPrototype::IndexType TWFPrototype::get_det_id(const IndexType species_id)
 
 void TWFPrototype::get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
 {
-  IndexType ndets=mvec.size();
+  
+  IndexType ndets=spos.size();
   IndexType norbs=0;
   IndexType nptcls=0;
   IndexType gid=0;
@@ -193,7 +194,6 @@ void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<Val
   IndexType nspecies=num_species();
   for(IndexType id=0; id<nspecies; id++)
   {
-    app_log()<<" M["<<id<<"].cols()="<<M[id].cols()<<" M["<<id<<"].rows()="<<M[id].rows()<<std::endl;
     assert(M[id].cols() == M[id].rows());
     Minv[id]=M[id];
     invert_matrix(Minv[id]);

@@ -897,12 +897,152 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
                                                                                 ParticleSet& ions,
-                                                                                TWFPrototype& psi,
-                                                                                ParticleSet::ParticlePos_t& hf_term,
-                                                                                ParticleSet::ParticlePos_t& pulay_terms,
+                                                                                TrialWaveFunction& psi_in,
+                                                                                ParticleSet::ParticlePos_t& dEdR,
                                                                                 ParticleSet::ParticlePos_t& wf_grad)
 {
-  return 0.0;
+  if (!psi.initialized)
+  {
+    psi_in.initialize_TWF_Prototype(P,psi);
+  }
+  //resize everything;
+  int nspecies=psi.num_species();
+  M.resize(nspecies);
+  M_gs.resize(nspecies);
+  X.resize(nspecies);
+  B.resize(nspecies);
+  B_gs.resize(nspecies);
+  Minv.resize(nspecies);
+
+  for(int gid=0; gid<nspecies; gid++)
+  {
+    int norbs=psi.num_orbitals(gid);
+    int nptcls=psi.num_particles(gid);
+    M[gid].resize(nptcls,norbs);
+    B[gid].resize(nptcls,norbs);
+
+    M_gs[gid].resize(nptcls,nptcls);
+    Minv[gid].resize(nptcls,nptcls);
+    B_gs[gid].resize(nptcls,nptcls);
+    X[gid].resize(nptcls,nptcls);
+  }
+
+  dM.resize(OHMMS_DIM);
+  dM_gs.resize(OHMMS_DIM);
+  dB.resize(OHMMS_DIM);
+  dB_gs.resize(OHMMS_DIM);
+ 
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+  {
+    dM[idim].resize(nspecies);
+    dB[idim].resize(nspecies);
+    dM_gs[idim].resize(nspecies);
+    dB_gs[idim].resize(nspecies);
+
+    for(int gid=0; gid<nspecies; gid++)
+    {
+      int norbs=psi.num_orbitals(gid);
+      int nptcls=psi.num_particles(gid);
+      dM[idim][gid].resize(nptcls,norbs);
+      dB[idim][gid].resize(nptcls,norbs);
+      dM_gs[idim][gid].resize(nptcls,nptcls);
+      dB_gs[idim][gid].resize(nptcls,nptcls);
+    }
+  }
+  psi.wipe_matrix(M);
+  psi.wipe_matrix(M_gs);
+  psi.wipe_matrix(X);
+  psi.wipe_matrix(B);
+  psi.wipe_matrix(Minv);
+  psi.wipe_matrix(B_gs);
+
+  for(int idim=0; idim<OHMMS_DIM; idim++)
+  {
+    psi.wipe_matrix(dM[idim]);
+    psi.wipe_matrix(dM_gs[idim]);
+    psi.wipe_matrix(dB[idim]);
+    psi.wipe_matrix(dB_gs[idim]);
+  }
+
+
+  ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
+  ParticleSet::ParticleGradient_t pulay_(ions.getTotalNum());
+  ParticleSet::ParticleGradient_t hf_(ions.getTotalNum());
+  ParticleSet::ParticleGradient_t dedr_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos_t pulayterms_(ions.getTotalNum());
+  ParticleSet::ParticlePos_t hfdiag_(ions.getTotalNum());
+  wfgradraw_           = 0.0;
+  RealType localEnergy = 0.0;
+  
+  psi.get_M(P,M);
+  psi.get_gs_matrix(M,M_gs);
+  psi.invert_M(M_gs,Minv);
+ 
+  //Build B-matrices.  Only for non-diagonal observables right now.
+  for (int i=0; i < H.size(); ++i)
+  {
+    if(H[i]->is_nondiag)
+    {
+      H[i]->evaluateOneBodyOpMatrix(P,psi,B);
+    }
+    else
+    {
+      localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi_in, hfdiag_, pulayterms_);
+    }
+  }
+
+  ValueType nondiag_cont=0.0;
+  RealType nondiag_cont_re=0.0;
+  
+  psi.get_gs_matrix(B,B_gs);
+  nondiag_cont= psi.trAB(Minv,B_gs);
+  convert(nondiag_cont,nondiag_cont_re);
+  localEnergy+=nondiag_cont_re;
+
+  psi.build_X(Minv,B_gs,X);
+
+  //And now we compute the 3N force derivatives.  3 at a time for each atom.  
+  for(int iat=0; iat<ions.getTotalNum(); iat++)
+  {
+    for(int idim=0; idim<OHMMS_DIM; idim++)
+    {
+      psi.wipe_matrix(dM[idim]);
+      psi.wipe_matrix(dM_gs[idim]);
+      psi.wipe_matrix(dB[idim]);
+      psi.wipe_matrix(dB_gs[idim]);
+    }
+
+    //ion derivative of slater matrix.
+    psi.get_igrad_M(P,ions,iat,dM);
+    
+    
+    for(int i=0; i < H.size(); ++i)
+    {
+      if(H[i]->is_nondiag)
+      {
+        H[i]->evaluateOneBodyOpMatrixForceDeriv(P,ions,psi,iat,dB);
+      }
+    } 
+    
+    for(int idim=0; idim<OHMMS_DIM; idim++)
+    {
+      psi.get_gs_matrix(dB[idim],dB_gs[idim]);
+      psi.get_gs_matrix(dM[idim],dM_gs[idim]);
+
+      ValueType fval=0.0;
+      fval=psi.compute_gs_derivative(Minv,X,dM_gs[idim],dB_gs[idim]);
+      dedr_complex[iat][idim]=fval;
+
+      ValueType wfcomp=0.0;
+      wfcomp=psi.trAB(Minv,dM_gs[idim]);
+      wfgradraw_[iat][idim]=wfcomp;
+    }
+    convert(dedr_complex[iat],dEdR[iat]);
+    convert(wfgradraw_[iat],wf_grad[iat]);
+   
+  } 
+  dEdR+=hfdiag_;
+  return localEnergy;
 }
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()

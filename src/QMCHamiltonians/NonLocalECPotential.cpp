@@ -67,6 +67,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
+  is_nondiag=true;
   for (size_t ig = 0; ig < els.groups(); ig++)
   {
     // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.

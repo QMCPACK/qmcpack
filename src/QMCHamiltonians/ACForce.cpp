@@ -92,8 +92,9 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   sw_grad     = 0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
+//  Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
 
+  Value =  ham.evaluateIonDerivsDeterministicFast(P,ions,psi, hf_force, wf_grad);
   if (useSpaceWarp)
   {
     Force_t el_grad;
@@ -154,7 +155,8 @@ void ACForce::setObservables(PropertySetType& plist)
       //Flipping the sign, since these terms currently store d/dR values.
       // add the minus one to be a force.
       plist[myindex++] = -hf_force[iat][iondim];
-      plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
+//      plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
+      plist[myindex++] = Value;
       plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
 
@@ -176,7 +178,8 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
     {
       plist[myindex++] = -hf_force[iat][iondim];
-      plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
+      plist[myindex++] = Value; //-(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
+    //  plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
       plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       //TODO: Remove when ACForce is production ready

@@ -68,15 +68,16 @@ class TWFPrototype
     IndexType get_det_id(const IndexType speciesid);
     //This takes a particle set group index, and returns the "determinant" this refers to. 
     IndexType get_group_index(const IndexType gid);
+    bool initialized;
   private:
  
-  std::vector<IndexType> num_ptcls;
-  std::vector<IndexType> num_orbs; 
-  std::vector<SPOSet*> spos;
-  std::vector<IndexType> groups;
-  std::vector<ValueMatrix_t> psiM;
-  std::vector<ValueMatrix_t> psiMinv;
-  std::vector<WaveFunctionComponent*> J;  
+    std::vector<IndexType> num_ptcls;
+    std::vector<IndexType> num_orbs; 
+    std::vector<SPOSet*> spos;
+    std::vector<IndexType> groups;
+    std::vector<ValueMatrix_t> psiM;
+    std::vector<ValueMatrix_t> psiMinv;
+    std::vector<WaveFunctionComponent*> J;  
 
 };
 
