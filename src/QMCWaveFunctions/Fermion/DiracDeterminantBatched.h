@@ -36,7 +36,6 @@ class DiracDeterminantBatchedTest;
 struct SetupDiracDetResources;
 } // namespace testing
 
-template<typename DET_ENGINE>
 struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
   using ValueType = QMCTraits::ValueType;
@@ -203,7 +202,7 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, const ParticleSet& P);
+  void recompute(DiracDeterminantBatchedMultiWalkerResource& mw_res, const ParticleSet& P);
 
   void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
@@ -278,7 +277,7 @@ public:
   DET_ENGINE det_engine_;
   /**@}*/
 
-  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>> mw_res_;
+  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
 
   LogValueType get_log_value() const { return LogValue; }
 
@@ -298,7 +297,7 @@ private:
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
   /// Legacy single invert logdetT(psiM), result is stored in DDB object.
-  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv);
+  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource& mw_res, OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

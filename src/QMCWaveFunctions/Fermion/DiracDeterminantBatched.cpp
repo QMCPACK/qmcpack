@@ -49,7 +49,7 @@ void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource& mw_res,
                                                      OffloadPinnedValueMatrix_t& logdetT,
                                                      OffloadPinnedValueMatrix_t& a_inv)
 {
@@ -1006,7 +1006,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMultiWalkerResource& mw_res,
                                                     const ParticleSet& P)
 {
   {
@@ -1044,7 +1044,7 @@ DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCo
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::createResource(ResourceCollection& collection) const
 {
-  collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>());
+  collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   Phi->createResource(collection);
   det_engine_.createResource(collection);
 }
@@ -1084,14 +1084,10 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(ResourceCollection& co
   wfc_leader.det_engine_.releaseResource(collection);
 }
 
-#if defined(ENABLE_CUDA)
-template struct DiracDeterminantBatchedMultiWalkerResource<
-    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 #if defined(ENABLE_OFFLOAD)
-template struct DiracDeterminantBatchedMultiWalkerResource<
-    MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 template class DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
