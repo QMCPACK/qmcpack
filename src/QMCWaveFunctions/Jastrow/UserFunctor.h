@@ -125,8 +125,8 @@ struct UserFunctor : public OptimizableFunctorBase
    */
   static void mw_evaluateV(const int num_groups,
                            const UserFunctor* const functors[],
-                           const int iStart[],
-                           const int iEnd[],
+                           const int n_src,
+                           const int* grp_ids,
                            const int num_pairs,
                            const int* ref_at,
                            const T* mw_dist,
@@ -137,12 +137,12 @@ struct UserFunctor : public OptimizableFunctorBase
     for (int ip = 0; ip < num_pairs; ip++)
     {
       mw_vals[ip] = 0;
-      for (int ig = 0; ig < num_groups; ig++)
+      for (int j = 0; j < n_src; j++)
       {
+        const int ig = grp_ids[j];
         auto& functor(*functors[ig]);
-        for (int j = iStart[ig]; j < iEnd[ig]; j++)
-          if (j != ref_at[ip])
-            mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+        if (j != ref_at[ip])
+          mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
       }
     }
   }
@@ -170,8 +170,8 @@ struct UserFunctor : public OptimizableFunctorBase
   static void mw_evaluateVGL(const int iat,
                              const int num_groups,
                              const UserFunctor* const functors[],
-                             const int iStart[],
-                             const int iEnd[],
+                             const int n_src,
+                             const int* grp_ids,
                              const int nw,
                              T* mw_vgl, // [nw][DIM+2]
                              const int n_padded,
@@ -195,8 +195,8 @@ struct UserFunctor : public OptimizableFunctorBase
                            const std::vector<bool>& isAccepted,
                            const int num_groups,
                            const UserFunctor* const functors[],
-                           const int iStart[],
-                           const int iEnd[],
+                           const int n_src,
+                           const int* grp_ids,
                            const int nw,
                            T* mw_vgl, // [nw][DIM+2]
                            const int n_padded,

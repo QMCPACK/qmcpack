@@ -185,7 +185,7 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
   const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
   const auto& dt_leader(vp_leader.getDistTable(wfc_leader.my_table_ID_));
 
-  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, g_first.data(), g_last.data(), nVPs, mw_refPctls.data(),
+  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, wfc_leader.N, grp_ids.data(), nVPs, mw_refPctls.data(),
                    dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
                    wfc_leader.mw_mem_->transfer_buffer);
 
@@ -285,16 +285,14 @@ J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
 
   F.resize(NumGroups * NumGroups, nullptr);
 
-  // set up g_first, g_last
-  g_first.resize(NumGroups);
-  g_last.resize(NumGroups);
+  // set up grp_ids
+  grp_ids.resize(N);
+  int count = 0;
   for (int ig = 0; ig < NumGroups; ig++)
-  {
-    g_first[ig] = p.first(ig);
-    g_last[ig]  = p.last(ig);
-  }
-  g_first.updateTo();
-  g_last.updateTo();
+    for (int j = p.first(ig); j < p.last(ig); j++)
+      grp_ids[count++] = ig;
+  assert(count == N);
+  grp_ids.updateTo();
 
   resizeInternalStorage();
 
@@ -445,7 +443,7 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
   auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
   auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
 
-  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, g_first.data(), g_last.data(), nw,
+  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
                      mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
                      wfc_leader.mw_mem_->mw_ratiograd_buffer);
 
@@ -522,7 +520,7 @@ void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionCompone
   auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
   auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
 
-  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, g_first.data(), g_last.data(), nw,
+  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
                      mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
                      wfc_leader.mw_mem_->mw_ratiograd_buffer);
 
@@ -612,8 +610,8 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
   }
 
   /* this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates */
-  FT::mw_updateVGL(iat, isAccepted, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, g_first.data(),
-                   g_last.data(), nw, mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_allUat.data(),
+  FT::mw_updateVGL(iat, isAccepted, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N,
+                   grp_ids.data(), nw, mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_allUat.data(),
                    mw_cur_allu.data(), wfc_leader.mw_mem_->mw_update_buffer);
 }
 

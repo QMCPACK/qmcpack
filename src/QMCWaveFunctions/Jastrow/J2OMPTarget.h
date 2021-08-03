@@ -58,8 +58,8 @@ public:
   ///element position type
   using posT = TinyVector<valT, DIM>;
   ///use the same container
-  using DistRow         = DistanceTableData::DistRow;
-  using DisplRow        = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTableData::DistRow;
+  using DisplRow = DistanceTableData::DisplRow;
 
 private:
   /** initialize storage Uat,dUat, d2Uat */
@@ -71,10 +71,8 @@ private:
   const size_t N_padded;
   ///number of groups of the target particleset
   const size_t NumGroups;
-  /// the index of the first particle in each group
-  Vector<int, OffloadPinnedAllocator<int>> g_first;
-  /// the index + 1 of the last particle in each group
-  Vector<int, OffloadPinnedAllocator<int>> g_last;
+  /// the group_id of each particle
+  Vector<int, OffloadPinnedAllocator<int>> grp_ids;
   ///diff value
   RealType DiffVal;
   ///Correction
@@ -111,9 +109,11 @@ public:
 
   void createResource(ResourceCollection& collection) const override;
 
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
@@ -223,8 +223,7 @@ public:
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
 
-  QTFull::RealType computeGL(ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L) const;
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 };
 
 } // namespace qmcplusplus

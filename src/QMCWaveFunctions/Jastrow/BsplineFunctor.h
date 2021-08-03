@@ -143,8 +143,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
   static void mw_evaluateVGL(const int iat,
                              const int num_groups,
                              const BsplineFunctor* const functors[],
-                             const int iStart[],
-                             const int iEnd[],
+                             const int n_src,
+                             const int* grp_ids,
                              const int nw,
                              T* mw_vgl, // [nw][DIM+2]
                              const int n_padded,
@@ -170,7 +170,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     auto* transfer_buffer_ptr = transfer_buffer.data();
 
     PRAGMA_OFFLOAD("omp target teams distribute map(always, to: transfer_buffer_ptr[:transfer_buffer.size()]) \
-                    map(to: iStart[:num_groups], iEnd[:num_groups]) \
+                    map(to: grp_ids[:n_src]) \
                     map(to: mw_dist[:dist_stride*nw]) \
                     map(from: mw_cur_allu[:n_padded*3*nw]) \
                     map(always, from: mw_vgl[:(DIM+2)*nw])")
@@ -193,33 +193,32 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
       T* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
-      for (int ig = 0; ig < num_groups; ig++)
+      PRAGMA_OFFLOAD("omp parallel for reduction(+: val_sum, grad_x, grad_y, grad_z, lapl)")
+      for (int j = 0; j < n_src; j++)
       {
+        const int ig    = grp_ids[j];
         const T* coefs  = mw_coefs[ig];
         T DeltaRInv     = mw_DeltaRInv[ig];
         T cutoff_radius = mw_cutoff_radius[ig];
-        PRAGMA_OFFLOAD("omp parallel for reduction(+: val_sum, grad_x, grad_y, grad_z, lapl)")
-        for (int j = iStart[ig]; j < iEnd[ig]; j++)
+
+        T r = dist[j];
+        T u(0);
+        T dudr(0);
+        T d2udr2(0);
+        if (j != iat && r < cutoff_radius)
         {
-          T r = dist[j];
-          T u(0);
-          T dudr(0);
-          T d2udr2(0);
-          if (j != iat && r < cutoff_radius)
-          {
-            u = evaluate_impl(dist[j], coefs, DeltaRInv, dudr, d2udr2);
-            dudr *= T(1) / r;
-          }
-          // save u, dudr/r and d2udr2 to cur_allu
-          cur_allu[j]                = u;
-          cur_allu[j + n_padded]     = dudr;
-          cur_allu[j + n_padded * 2] = d2udr2;
-          val_sum += u;
-          lapl += d2udr2 + (DIM - 1) * dudr;
-          grad_x += dudr * dipl_x[j];
-          grad_y += dudr * dipl_y[j];
-          grad_z += dudr * dipl_z[j];
+          u = evaluate_impl(dist[j], coefs, DeltaRInv, dudr, d2udr2);
+          dudr *= T(1) / r;
         }
+        // save u, dudr/r and d2udr2 to cur_allu
+        cur_allu[j]                = u;
+        cur_allu[j + n_padded]     = dudr;
+        cur_allu[j + n_padded * 2] = d2udr2;
+        val_sum += u;
+        lapl += d2udr2 + (DIM - 1) * dudr;
+        grad_x += dudr * dipl_x[j];
+        grad_y += dudr * dipl_y[j];
+        grad_z += dudr * dipl_z[j];
       }
 
       T* vgl = mw_vgl + ip * (DIM + 2);
@@ -250,8 +249,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
    */
   static void mw_evaluateV(const int num_groups,
                            const BsplineFunctor* const functors[],
-                           const int iStart[],
-                           const int iEnd[],
+                           const int n_src,
+                           const int* grp_ids,
                            const int num_pairs,
                            const int* ref_at,
                            const T* mw_dist,
@@ -273,7 +272,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     auto* transfer_buffer_ptr = transfer_buffer.data();
 
     PRAGMA_OFFLOAD("omp target teams distribute map(always, to:transfer_buffer_ptr[:transfer_buffer.size()]) \
-                    map(to:iStart[:num_groups], iEnd[:num_groups]) \
+                    map(to: grp_ids[:n_src]) \
                     map(to:ref_at[:num_pairs], mw_dist[:dist_stride*num_pairs]) \
                     map(always, from:mw_vals[:num_pairs])")
     for (int ip = 0; ip < num_pairs; ip++)
@@ -283,26 +282,25 @@ struct BsplineFunctor : public OptimizableFunctorBase
       T** mw_coefs        = reinterpret_cast<T**>(transfer_buffer_ptr);
       T* mw_DeltaRInv     = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
       T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
-      for (int ig = 0; ig < num_groups; ig++)
+      PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
+      for (int j = 0; j < n_src; j++)
       {
+        const int ig    = grp_ids[j];
         const T* coefs  = mw_coefs[ig];
         T DeltaRInv     = mw_DeltaRInv[ig];
         T cutoff_radius = mw_cutoff_radius[ig];
-        PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
-        for (int j = iStart[ig]; j < iEnd[ig]; j++)
+
+        T r = dist[j];
+        if (j != ref_at[ip] && r < cutoff_radius)
         {
-          T r = dist[j];
-          if (j != ref_at[ip] && r < cutoff_radius)
-          {
-            r *= DeltaRInv;
-            T ipart;
-            const T t   = std::modf(r, &ipart);
-            const int i = (int)ipart;
-            sum += coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3) +
-                coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
-                coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
-                coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
-          }
+          r *= DeltaRInv;
+          T ipart;
+          const T t   = std::modf(r, &ipart);
+          const int i = (int)ipart;
+          sum += coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3) +
+              coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7) +
+              coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11) +
+              coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
         }
       }
       mw_vals[ip] = sum;
@@ -436,8 +434,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            const std::vector<bool>& isAccepted,
                            const int num_groups,
                            const BsplineFunctor* const functors[],
-                           const int iStart[],
-                           const int iEnd[],
+                           const int n_src,
+                           const int* grp_ids,
                            const int nw,
                            T* mw_vgl, // [nw][DIM+2]
                            const int n_padded,
@@ -471,7 +469,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     auto* transfer_buffer_ptr = transfer_buffer.data();
 
     PRAGMA_OFFLOAD("omp target teams distribute map(always, to: transfer_buffer_ptr[:transfer_buffer.size()]) \
-                    map(to: iStart[:num_groups], iEnd[:num_groups]) \
+                    map(to: grp_ids[:n_src]) \
                     map(to: mw_dist[:dist_stride*nw]) \
                     map(to: mw_vgl[:(DIM+2)*nw]) \
                     map(always, from: mw_allUat[:nw * n_padded * (DIM + 2)])")
@@ -501,34 +499,33 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
       T* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
-      for (int ig = 0; ig < num_groups; ig++)
+      PRAGMA_OFFLOAD("omp parallel for")
+      for (int j = 0; j < n_src; j++)
       {
+        const int ig    = grp_ids[j];
         const T* coefs  = mw_coefs[ig];
         T DeltaRInv     = mw_DeltaRInv[ig];
         T cutoff_radius = mw_cutoff_radius[ig];
-        PRAGMA_OFFLOAD("omp parallel for")
-        for (int j = iStart[ig]; j < iEnd[ig]; j++)
+
+        T r = dist_old[j];
+        T u(0);
+        T dudr(0);
+        T d2udr2(0);
+        if (j != iat && r < cutoff_radius)
         {
-          T r = dist_old[j];
-          T u(0);
-          T dudr(0);
-          T d2udr2(0);
-          if (j != iat && r < cutoff_radius)
-          {
-            u = evaluate_impl(dist_old[j], coefs, DeltaRInv, dudr, d2udr2);
-            dudr *= T(1) / r;
-          }
-          // update Uat, dUat, d2Uat
-          T cur_u      = cur_allu[j];
-          T cur_dudr   = cur_allu[j + n_padded];
-          T cur_d2udr2 = cur_allu[j + n_padded * 2];
-          Uat[j] += cur_u - u;
-          dUat_x[j] -= dipl_x_new[j] * cur_dudr - dipl_x_old[j] * dudr;
-          dUat_y[j] -= dipl_y_new[j] * cur_dudr - dipl_y_old[j] * dudr;
-          dUat_z[j] -= dipl_z_new[j] * cur_dudr - dipl_z_old[j] * dudr;
-          constexpr T lapfac(DIM - 1);
-          d2Uat[j] -= cur_d2udr2 + lapfac * cur_dudr - (d2udr2 + lapfac * dudr);
+          u = evaluate_impl(dist_old[j], coefs, DeltaRInv, dudr, d2udr2);
+          dudr *= T(1) / r;
         }
+        // update Uat, dUat, d2Uat
+        T cur_u      = cur_allu[j];
+        T cur_dudr   = cur_allu[j + n_padded];
+        T cur_d2udr2 = cur_allu[j + n_padded * 2];
+        Uat[j] += cur_u - u;
+        dUat_x[j] -= dipl_x_new[j] * cur_dudr - dipl_x_old[j] * dudr;
+        dUat_y[j] -= dipl_y_new[j] * cur_dudr - dipl_y_old[j] * dudr;
+        dUat_z[j] -= dipl_z_new[j] * cur_dudr - dipl_z_old[j] * dudr;
+        constexpr T lapfac(DIM - 1);
+        d2Uat[j] -= cur_d2udr2 + lapfac * cur_dudr - (d2udr2 + lapfac * dudr);
       }
       T* vgl      = mw_vgl + ip * (DIM + 2);
       Uat[iat]    = vgl[0];
