@@ -125,14 +125,14 @@ public:
   ///returns the number of source particles
   inline IndexType sources() const { return N_sources; }
 
-  /// return multi_walker full distance table data ptr
+  /// return multi walker temporary pair distance table data pointer
   virtual const RealType* getMultiWalkerTempDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
     return nullptr;
   }
 
-  /// return multi_walker full distance table data ptr
+  /// return multi-walker full (all pairs) distance table data pointer
   virtual const RealType* getMultiWalkerDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer not supported");
