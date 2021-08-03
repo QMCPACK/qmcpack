@@ -160,9 +160,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
-  ResourceCollection res_col("test_determinant");
-  psi.createResource(res_col);
-  psi.acquireResource(res_col);
+    // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  elec_.createResource(pset_res);
+  ResourceCollection twf_res("test_twf_res");
+  psi.createResource(twf_res);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{psi, {psi}};
+  auto wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.
@@ -196,11 +200,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   elec_clone.update();
 
-  res_col.rewind();
-  psi.releaseResource(res_col);
-  res_col.rewind();
-  psi_clone->acquireResource(res_col);
-  
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list_clone{*psi_clone, {*psi_clone}};
+  wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list_clone);    
   
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
@@ -218,10 +219,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   elec_.makeMove(moved_elec_id, delta);
 
-  res_col.rewind();
-  psi_clone->releaseResource(res_col);
-  res_col.rewind();
-  psi.acquireResource(res_col);
+  wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
@@ -257,20 +255,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
-  // testing batched interfaces
-  ResourceCollection pset_res("test_pset_res");
-  ResourceCollection twf_res("test_twf_res");
-
-  elec_.createResource(pset_res);
-  psi.createResource(twf_res);
-
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
-  RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
+  wf_ref_list = {psi, {psi, *psi_clone}};
 
-  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
-  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
+  auto pset_lock = std::make_unique<ResourceCollectionTeamLock<ParticleSet>>(pset_res, p_ref_list);
+  wf_lock =std::make_unique< ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
@@ -362,8 +353,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::vector<GradType> grad_new(2);
 
   ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+  wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list_clone);
   ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
-
+  wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
   std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;

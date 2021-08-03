@@ -402,8 +402,7 @@ public:
   T& cur_ratio() {return cur_ratio_; }
   T get_cur_ratio() const { return cur_ratio_; }
   
-  /** make this class unit tests friendly without the need of setup resources.
-   *  belongs in a friend class in test
+  /** Not sure this is worth maintaining it will segfault if there are null 
    */
   inline void checkResourcesForTest()
   {
@@ -420,7 +419,6 @@ public:
     }
   }
 
-
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    *
    *  This does not get called constantly so to get real benchmark data that redirection to mw
@@ -433,11 +431,6 @@ public:
   {
     guard_no_delay(); 
     det_inverter_->invert_transpose(*cuda_handles_, log_det, a_inv, log_values);
-    // RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>> engines(*this);
-    // RefVector<DualPinnedValueMatrix_t> log_dets;
-    // engines.push_back(*this);
-    // log_dets.push_back(std::ref(log_det));
-    // mw_invertTranspose(engines, log_dets, log_values);
   }
 
   /** Compute the inversions of the transpose of matrices logdetT_list and calculate

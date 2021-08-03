@@ -75,7 +75,7 @@ public:
   using DualPinnedMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
   template<class DET_ENGINE>
-  DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
+  DiracDeterminantBatchedMultiWalkerResource& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
   {
     return *(ddb.mw_res_);
   }
@@ -125,11 +125,10 @@ TEST_CASE("DiracDeterminantBatched_resources", "[wavefunction][fermion]")
   spo_init->setOrbitalSetSize(3);
   DetType ddb(std::move(spo_init));
 
-  ResourceCollection res_col("test resources");
-  ddb.createResource(res_col);
-  ddb.acquireResource(res_col);
-  res_col.rewind();
-  ddb.releaseResource(res_col);
+  ResourceCollection det_res("test resources");
+  ddb.createResource(det_res);
+  RefVectorWithLeader<WaveFunctionComponent> det_ref_list{ddb, {ddb}};
+  ResourceCollectionTeamLock<WaveFunctionComponent> lock{det_res, det_ref_list};
 }
 
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
@@ -151,9 +150,10 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 
   testing::DiracDeterminantBatchedTest ddbt;
 
-  ResourceCollection res_col("test_determinant");
-  ddb.createResource(res_col);
-  ddb.acquireResource(res_col);
+  ResourceCollection det_res("test_determinant");
+  ddb.createResource(det_res);
+  RefVectorWithLeader<WaveFunctionComponent> det_ref_list{ddb,{ddb}};
+  ResourceCollectionTeamLock<WaveFunctionComponent>(det_res, det_ref_list);
 
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
   using ValueMatrix = DetType::DetEngine_t::DualPinnedValueMatrix_t;
@@ -208,9 +208,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   ParticleSet elec;
   elec.create(4);
 
-  ResourceCollection res_col("test_determinant");
-  ddb.createResource(res_col);
-  ddb.acquireResource(res_col);
+  ResourceCollection det_res("test_determinant");
+  ddb.createResource(det_res);
+  RefVectorWithLeader<WaveFunctionComponent> det_ref_list{ddb,{ddb}};
+  ResourceCollectionTeamLock<WaveFunctionComponent> det_lock{det_res, det_ref_list};
 
   testing::DiracDeterminantBatchedTest ddbt;
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
@@ -227,9 +228,6 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
       orig_a(j, i) = spo->v2(i, j);
     }
   }
-
-  //checkMatrix(ddb.psiMinv, b);
-  //DetType::DetEngine_t::DiracMatrixCompute& dm = ddb.get_det_engine().get_det_inverter();
 
   ValueMatrix a_update1, scratchT;
   a_update1.resize(4, 4);
@@ -344,7 +342,6 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   checkMatrix(ddb.get_det_engine().get_psiMinv(), orig_a);
 }
 
-
 TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]")
 {
   UPtrVector<DetType> dets;
@@ -368,10 +365,10 @@ TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]"
   }
 
   testing::DiracDeterminantBatchedTest ddbt;
-  ResourceCollection collection("test resources");
-
-  dets[0]->createResource(collection);
-  dets[0]->acquireResource(collection);
+  ResourceCollection det_res("test resources");
+  dets[0]->createResource(det_res);
+  RefVectorWithLeader<WaveFunctionComponent> det_ref_list{*dets[0], convertUPtrToRefVector<WaveFunctionComponent>(dets)};
+  ResourceCollectionTeamLock<WaveFunctionComponent> det_lock{det_res, det_ref_list};
   auto& mw_res = ddbt.get_mw_res(*(dets[0]));
   mw_res.log_values.resize(4);
 

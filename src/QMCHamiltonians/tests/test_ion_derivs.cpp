@@ -154,9 +154,10 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.384955836167661225e+01
 
-  ResourceCollection res_col("test_determinant");
-  psi->createResource(res_col);
-  psi->acquireResource(res_col);
+  ResourceCollection twf_res("test_determinant");
+  psi->createResource(twf_res);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{std::ref(*psi), {std::ref(*psi)}};
+  ResourceCollectionTeamLock<TrialWaveFunction> twf_lock(twf_res, wf_ref_list);
 
   LogValueType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == LogComplexApprox(std::complex<decltype(logpsi)::value_type>{-14.233853149, 0.0}));
@@ -344,9 +345,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //  HamTest LocalECP -6.783942829945100073e+01
   //  HamTest NonLocalECP 1.373654152480333224e+01
 
-  ResourceCollection res_col("test_determinant");
-  psi->createResource(res_col);
-  psi->acquireResource(res_col);
+  ResourceCollection twf_res("test_determinant");
+  psi->createResource(twf_res);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{std::ref(*psi), {std::ref(*psi)}};
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
 
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-8.9455094611e+00));
@@ -533,9 +535,11 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.269054876473223636e+01
 
-  ResourceCollection res_col("test_determinant");
-  psi->createResource(res_col);
-  psi->acquireResource(res_col);
+  ResourceCollection twf_res("test_determinant");
+  psi->createResource(twf_res);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{std::ref(*psi), {std::ref(*psi)}};
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
+
   
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-1.41149961982e+01));
@@ -692,9 +696,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.249362906275283969e+01
 
-  ResourceCollection res_col("test_determinant");
-  psi->createResource(res_col);
-  psi->acquireResource(res_col);
+  ResourceCollection twf_res("test_determinant");
+  psi->createResource(twf_res);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{std::ref(*psi), {std::ref(*psi)}};
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
   
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-8.69329994846e+00));

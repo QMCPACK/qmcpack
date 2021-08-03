@@ -49,7 +49,7 @@ void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource& mw_res,
                                                      DualPinnedValueMatrix_t& logdetT,
                                                      DualPinnedValueMatrix_t& a_inv)
 {
@@ -998,7 +998,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMultiWalkerResource& mw_res,
                                                     const ParticleSet& P)
 {
   {
@@ -1008,12 +1008,10 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMulti
     ValueMatrix_t d2psiM_temp_host(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_temp_host, d2psiM_temp_host);
 
-    auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
     psiM_vgl.updateTo(1,3);
-    //PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
-  mw_res.log_values.resize(1);
+  mw_res_->log_values.resize(1);
   invertPsiM(mw_res, psiM_temp, det_engine_.get_nonconst_psiMinv());
 }
 
@@ -1037,7 +1035,7 @@ DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCo
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::createResource(ResourceCollection& collection) const
 {
-  collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>());
+  collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   Phi->createResource(collection);
   det_engine_.createResource(collection);
 }
@@ -1078,13 +1076,9 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(ResourceCollection& co
 }
 
 #if defined(ENABLE_CUDA)
-template struct DiracDeterminantBatchedMultiWalkerResource<
-    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 #if defined(ENABLE_OFFLOAD)
-template struct DiracDeterminantBatchedMultiWalkerResource<
-    MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 template class DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

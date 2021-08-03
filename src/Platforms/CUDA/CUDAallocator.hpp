@@ -103,7 +103,7 @@ public:
   typedef size_t size_type;
   typedef T* pointer;
   typedef const T* const_pointer;
-  
+
   CUDAAllocator() = default;
   template<class U>
   CUDAAllocator(const CUDAAllocator<U>&)

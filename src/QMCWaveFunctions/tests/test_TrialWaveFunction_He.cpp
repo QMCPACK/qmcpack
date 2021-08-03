@@ -133,7 +133,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   ResourceCollection res_col("test_determinant");
   psi.createResource(res_col);
-  psi.acquireResource(res_col);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{psi, {psi}};
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(res_col, wf_ref_list);
 
   ions.update();
   elec.update();
@@ -226,9 +227,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // The Jastrow factor does have an optimizable parameter.
   setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*wff->getTWF());
-  ResourceCollection res_col("test_determinant");
+  ResourceCollection twf_res("test_determinant");
   psi.createResource(res_col);
-  psi.acquireResource(res_col);
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list{psi, {psi}};
+  auto lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
   ions.update();
   elec1.update();
@@ -322,12 +324,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r1b;
   RealType logpsi_opt_r1b;
-
-  res_col.rewind();
-  psi.releaseResource(res_col);
-  res_col.rewind();
-  psi2.acquireResource(res_col);
-
+  lock.reset(nullptr);
+  wf_ref_list = {psi2, {psi2}};
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
+  
   psi2.evaluateDeltaLog(elec1, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
@@ -338,16 +338,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list2     = convertUPtrToRefVector(fixedG_list2_ptr);
   auto fixedL_list2     = convertUPtrToRefVector(fixedL_list2_ptr);
 
-  res_col.rewind();
-  psi2.releaseResource(res_col);
-  res_col.rewind();
-  psi.acquireResource(res_col);
-
+  lock.reset(nullptr);
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_list);
   TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2,
                                               fixedL_list2);
-
   // Evaluate old (single item) evaluateDeltaLog corresponding to the second wavefunction/particleset
-
   RealType logpsi_fixed_r2;
   RealType logpsi_opt_r2;
   ParticleSet::ParticleGradient_t fixedG2;
@@ -355,10 +350,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   fixedG2.resize(nelec);
   fixedL2.resize(nelec);
 
-  res_col.rewind();
-  psi.releaseResource(res_col);
-  res_col.rewind();
-  psi2.acquireResource(res_col);
+  lock.reset(nullptr);
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
   
   psi2.setLogPsi(0.0);
   psi2.evaluateDeltaLog(elec2, logpsi_fixed_r2, logpsi_opt_r2, fixedG2, fixedL2);
@@ -418,10 +411,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
   RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
 
-  res_col.rewind();
-  psi2.releaseResource(res_col);
-  res_col.rewind();
-  psi.acquireResource(res_col);
+  lock.reset(nullptr);
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_list);
   
   std::vector<RealType> logpsi_variable_list(nentry);
   TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list, dummyG_list, dummyL_list, false);
@@ -429,10 +420,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   RealType logpsi1 = psi.evaluateDeltaLog(p_list[0], false);
   CHECK(logpsi1 == Approx(logpsi_variable_list[0]));
 
-  res_col.rewind();
-  psi.releaseResource(res_col);
-  res_col.rewind();
-  psi2.acquireResource(res_col);
+  lock.reset(nullptr);
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
   
   RealType logpsi2 = psi2.evaluateDeltaLog(p_list[1], false);
   CHECK(logpsi2 == Approx(logpsi_variable_list[1]));
@@ -446,21 +435,17 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   std::vector<RealType> logpsi_variable_list2(nentry);
 
-  res_col.rewind();
-  psi2.releaseResource(res_col);
-  res_col.rewind();
-  psi.acquireResource(res_col);
-
+  lock.reset(nullptr);
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_list);
+  
   TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list2, dummyG_list2, dummyL_list2, true);
 
   RealType logpsi1b = psi.evaluateDeltaLog(p_list[0], true);
   CHECK(logpsi1b == Approx(logpsi_variable_list2[0]));
 
-  res_col.rewind();
-  psi.releaseResource(res_col);
-  res_col.rewind();
-  psi2.acquireResource(res_col);
-
+  lock.reset(nullptr);
+  lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
+  
   RealType logpsi2b = psi2.evaluateDeltaLog(p_list[1], true);
   CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
 }
