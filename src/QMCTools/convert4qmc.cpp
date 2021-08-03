@@ -19,6 +19,7 @@
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/LCAOHDFParser.h"
+#include "QMCTools/DiracParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
@@ -33,7 +34,7 @@ int main(int argc, char** argv)
 #endif
   if (argc < 2)
   {
-    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals|-dirac] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
@@ -71,7 +72,6 @@ int main(int argc, char** argv)
       std::string jastrow("j");
       std::string prefix;
 
-
       int TargetState = 0;
       bool addJastrow = true;
       bool usehdf5    = false;
@@ -97,6 +97,12 @@ int main(int argc, char** argv)
         {
           parser  = new GamesAsciiParser(argc, argv);
           in_file = argv[++iargc];
+        }
+        else if (a == "-dirac")
+        {
+          parser  = new DiracParser(argc, argv);
+          in_file = argv[++iargc];
+          usehdf5 = true;
         }
         else if (a == "-orbitals")
         {

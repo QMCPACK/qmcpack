@@ -12,6 +12,7 @@
 
 #include "catch.hpp"
 
+#include <regex>
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
@@ -21,8 +22,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
-
-#include <regex>
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
@@ -258,42 +258,42 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   // testing batched interfaces
-  std::vector<ParticleSet*> P_list(2, nullptr);
-  P_list[0] = &elec_;
-  P_list[1] = &elec_clone;
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection twf_res("test_twf_res");
 
-  std::vector<TrialWaveFunction*> WF_list(2, nullptr);
-  WF_list[0] = &psi;
-  WF_list[1] = psi_clone.get();
+  elec_.createResource(pset_res);
+  psi.createResource(twf_res);
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
+
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
-  std::cout << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " "
-            << WF_list[0]->getPhase() << std::endl;
-  std::cout << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " "
-            << WF_list[1]->getPhase() << std::endl;
+  std::cout << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[0].getLogPsi() << " "
+            << wf_ref_list[0].getPhase() << std::endl;
+  std::cout << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[1].getLogPsi() << " "
+            << wf_ref_list[1].getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
-  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
-  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-4.546410485374186, -3.141586279080522)));
 #else
-  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
-  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
 #endif
 
-
   std::vector<GradType> grad_old(2);
 
-  grad_old[0] = WF_list[0]->evalGrad(*P_list[0], moved_elec_id);
-  grad_old[1] = WF_list[1]->evalGrad(*P_list[1], moved_elec_id);
+  grad_old[0] = wf_ref_list[0].evalGrad(p_ref_list[0], moved_elec_id);
+  grad_old[1] = wf_ref_list[1].evalGrad(p_ref_list[1], moved_elec_id);
 
   std::cout << "evalGrad " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2]
             << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
@@ -316,8 +316,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   CHECK(grad_old[1][2] == Approx(-118.46550094069).epsilon(precision));
 #endif
   PosType delta_sign_changed(0.1, 0.1, -0.2);
-  p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
-  p_ref_list[1].makeMove(moved_elec_id, delta_sign_changed);
+  std::vector<PosType> displs{delta_sign_changed, delta_sign_changed};
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
   ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
@@ -339,8 +339,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   PosType delta_zero(0, 0, 0);
-  p_ref_list[0].makeMove(moved_elec_id, delta_zero);
-  p_ref_list[1].makeMove(moved_elec_id, delta);
+  displs = {delta_zero, delta};
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
   std::vector<PsiValueType> ratios(2);
   TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
@@ -361,8 +361,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
 
-  ratios[0] = WF_list[0]->calcRatioGrad(*P_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = WF_list[1]->calcRatioGrad(*P_list[1], moved_elec_id, grad_new[1]);
+  ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+  ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
   std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
@@ -370,7 +370,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
-
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
   std::cout << "flex_calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
@@ -397,19 +396,19 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   std::vector<bool> isAccepted(2, true);
   TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
-  std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi()
-            << " " << WF_list[0]->getPhase() << std::endl;
-  std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi()
-            << " " << WF_list[1]->getPhase() << std::endl;
+  std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[0].getLogPsi()
+            << " " << wf_ref_list[0].getPhase() << std::endl;
+  std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[1].getLogPsi()
+            << " " << wf_ref_list[1].getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
-  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
-  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296886, -3.141586279081995)));
 #else
-  CHECK(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
-  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 

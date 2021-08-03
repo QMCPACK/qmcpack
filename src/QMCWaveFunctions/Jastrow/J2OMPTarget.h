@@ -112,9 +112,9 @@ public:
 
   void createResource(ResourceCollection& collection) const override;
 
-  void acquireResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void releaseResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables

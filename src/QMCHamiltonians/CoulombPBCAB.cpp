@@ -76,6 +76,8 @@ void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
   streaming_particles = request.streaming_array(myName);
   if (streaming_particles)
   {
+    Pion.turnOnPerParticleSK();
+    Peln.turnOnPerParticleSK();
     Ve_sample = tm.checkout_real<1>(myName, Peln);
     Vi_sample = tm.checkout_real<1>(myName, Pion);
   }
@@ -166,6 +168,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     }
     else
     {
+      assert(RhoKA.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
+      assert(RhoKB.isStorePerParticle());
       //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
       //          will likely require new function definitions
       RealType v1; //single particle energy

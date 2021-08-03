@@ -141,6 +141,7 @@ void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
   streaming_particles = request.streaming_array(myName);
   if (streaming_particles)
   {
+    Ps.turnOnPerParticleSK();
     V_sample = tm.checkout_real<1>(myName, Ps);
     if (!is_active)
       evaluate_sp(Ps);
@@ -216,6 +217,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     }
     else
     {
+      assert(PtclRhoK.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
       //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
       RealType v1; //single particle energy
       RealType z;

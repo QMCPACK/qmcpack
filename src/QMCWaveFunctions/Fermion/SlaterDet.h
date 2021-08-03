@@ -99,9 +99,9 @@ public:
 
   void createResource(ResourceCollection& collection) const override;
 
-  void acquireResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void releaseResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
