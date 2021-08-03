@@ -92,11 +92,11 @@ struct DualAllocator : public HostAllocator
   {
     std::ptrdiff_t ptr_offset = ref - from_data;
     host_ptr_                 = ref;
-    device_ptr_               = from.getDevicePtr() + ptr_offset;
+    device_ptr_               = from.get_device_ptr() + ptr_offset;
   }
 
-  T* getDevicePtr() { return device_ptr_; }
-  const T* getDevicePtr() const { return device_ptr_; }
+  T* get_device_ptr() { return device_ptr_; }
+  const T* get_device_ptr() const { return device_ptr_; }
 
   DeviceAllocator& get_device_allocator() { return device_allocator_; }
   const DeviceAllocator& get_device_allocator() const { return device_allocator_; }
@@ -138,7 +138,7 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
   static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n)
   {
     assert(host_ptr = alloc.get_host_ptr());
-    alloc.get_device_allocator().copyToDevice(alloc.getDevicePtr(), host_ptr, n);
+    alloc.get_device_allocator().copyToDevice(alloc.get_device_ptr(), host_ptr, n);
   }
 
   /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
@@ -146,12 +146,12 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
   static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n)
   {
     assert(host_ptr = alloc.get_host_ptr());
-    alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.getDevicePtr(), n);
+    alloc.get_device_allocator().copyFromDevice(host_ptr, alloc.get_device_ptr(), n);
   }
 
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
   {
-    T* device_ptr = alloc.getDevicePtr();
+    T* device_ptr = alloc.get_device_ptr();
     T* to_ptr     = device_ptr + to;
     T* from_ptr   = device_ptr + from;
     alloc.get_device_allocator().copyDeviceToDevice(to_ptr, n, from_ptr);

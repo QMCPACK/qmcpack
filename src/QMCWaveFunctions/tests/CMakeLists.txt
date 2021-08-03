@@ -23,7 +23,7 @@ set(UTEST_HDF_INPUT4 ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1
 set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5)
 set(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5)
 set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h5)
-set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/Bi.orbs.h5)
+set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -93,6 +93,7 @@ set(JASTROW_SRC
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
     test_J1OrbitalSoA.cpp
+    test_J2_bspline.cpp
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC
   FakeSPO.cpp
@@ -125,14 +126,6 @@ foreach(CATEGORY trialwf sposet jastrow determinant)
 
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  
-  set(NOASAN_LIST trialwf jastrow)
-  if("${ENABLE_SANITIZER}" STREQUAL "asan" AND ${CATEGORY} IN_LIST NOASAN_LIST)
-    set_property(
-      TEST ${UTEST_NAME}
-      APPEND
-      PROPERTY LABELS noasan)
-  endif()
 endforeach()
 
 # do not merge with test_wavefunction_determinant until all of

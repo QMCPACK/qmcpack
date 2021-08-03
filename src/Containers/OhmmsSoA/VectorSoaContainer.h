@@ -256,25 +256,25 @@ struct VectorSoaContainer
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   __forceinline T* device_data()
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   __forceinline const T* device_data() const
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
   ///return the pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   __forceinline T* restrict device_data(size_t i)
   {
-    return mAllocator.getDevicePtr() + i * nGhosts;
+    return mAllocator.get_device_ptr() + i * nGhosts;
   }
   ///return the const pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   __forceinline const T* restrict device_data(size_t i) const
   {
-    return mAllocator.getDevicePtr() + i * nGhosts;
+    return mAllocator.get_device_ptr() + i * nGhosts;
   }
 
   // Abstract Dual Space Transfers

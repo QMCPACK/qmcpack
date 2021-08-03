@@ -22,8 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-          gcc-real-gpu-cuda,
-          gcc-complex-gpu-cuda,
+          gcc-real-gpu-cuda-mixed,  # mixed precision
+          gcc-complex-gpu-cuda-mixed,
+          gcc-real-gpu-cuda-full,   # full precision
+          gcc-complex-gpu-cuda-full,
         ]
 
     steps:

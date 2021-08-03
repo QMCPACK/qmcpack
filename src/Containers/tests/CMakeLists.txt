@@ -38,10 +38,3 @@ set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} platform_omptarget)
 endif()
-
-if("${ENABLE_SANITIZER}" STREQUAL "asan")
-  set_property(
-    TEST ${UTEST_NAME}
-    APPEND
-    PROPERTY LABELS noasan)
-endif()

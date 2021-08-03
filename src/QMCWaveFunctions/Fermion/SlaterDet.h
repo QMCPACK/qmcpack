@@ -99,9 +99,9 @@ public:
 
   void createResource(ResourceCollection& collection) const override;
 
-  void acquireResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void releaseResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
@@ -109,12 +109,15 @@ public:
   }
 
   inline void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                const RefVector<const VirtualParticleSet>& vp_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                 std::vector<std::vector<ValueType>>& ratios) const override
   {
-    // assuming all the VP.refPtcl are identical
-    const int det_id = getDetID(vp_list[0].get().refPtcl);
-    return Dets[det_id]->mw_evaluateRatios(extract_DetRef_list(wfc_list, det_id), vp_list, ratios);
+    if (wfc_list.size())
+    {
+      // assuming all the VP.refPtcl are identical
+      const int det_id = getDetID(vp_list[0].refPtcl);
+      Dets[det_id]->mw_evaluateRatios(extract_DetRef_list(wfc_list, det_id), vp_list, ratios);
+    }
   }
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
