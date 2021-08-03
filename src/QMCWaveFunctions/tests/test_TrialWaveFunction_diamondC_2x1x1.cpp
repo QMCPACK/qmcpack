@@ -404,7 +404,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, true);
 
   const int moved_elec_id_next = 1;
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
@@ -470,11 +470,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   isAccepted[0] = true;
   isAccepted[1] = false;
   TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, true);
 
-  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, false);
   TrialWaveFunction::mw_completeUpdates(wf_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
-
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->get_det_engine().get_psiMinv()[0][0] << " "
             << det_up->get_det_engine().get_psiMinv()[0][1] << " " << det_up->get_det_engine().get_psiMinv()[1][0] << " " << det_up->get_det_engine().get_psiMinv()[1][1]
             << " " << std::endl;
@@ -493,6 +492,18 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
     log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
+#if defined(QMC_COMPLEX)
+  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-4.1148130068943, -6.2831779860047});
+  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-6.6269077659586, -3.1416312090662});
+#else
+  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-5.5011162672993, 9.4247779607694});
+  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-8.0131646238354, 6.2831853071796});
+#endif
+
+  // This test has 4 electrons but only 2 particle moves are attempted.
+  // Force update of all distance tables before mw_evaluateGL with recompute
+  // needed as the above ParticleSet::mw_accept_rejectMove calls are in forward mode.
+  ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
     CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
