@@ -50,7 +50,6 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
   {
     return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref_[0]), xfer_plist);
   }
-
 };
 
 /** specialization for std::bitset<N>
@@ -98,12 +97,23 @@ struct h5data_proxy<std::string>
   {
     hid_t str80 = H5Tcopy(H5T_C_S1);
     H5Tset_size(str80, ref.size());
-    hsize_t dim     = 1;
-    hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT);
-    herr_t ret      = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
+    hsize_t dim = 1;
+
+    herr_t ret = -1;
+    hid_t h1   = H5Dopen(grp, aname.c_str());
+    if (h1 < 0) // missing create one
+    {
+      hid_t dataspace = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT);
+      ret             = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    else
+    {
+      ret = H5Dwrite(h1, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
+    }
+    H5Dclose(h1);
     return ret != -1;
   }
 
