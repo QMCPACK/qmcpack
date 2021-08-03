@@ -16,16 +16,10 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-// #ifdef ENABLE_OFFLOAD
-// #include "OMPTarget/OMPallocator.hpp"
-// #elif ENABLE_CUDA
-// #include "DualAllocator.hpp"
-// #endif
 #include "Platforms/PinnedAllocator.h"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
-#include "Platforms/DeviceValue.hpp"
 #include "type_traits/scalar_traits.h"
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
@@ -33,26 +27,20 @@
 
 namespace qmcplusplus
 {
-/** helper class to compute matrix inversion and the log value of determinant
- *  of a batch of DiracMatrixes.
- * @tparam T_FP the datatype used in the actual computation of matrix inversion
- *  
+/** class defining a compute and memory resource to compute matrix inversion and 
+ *  the log value of determinant of a batch of DiracMatrixes.
  *  Multiplicty is one per crowd not one per MatrixUpdateEngine.
  *  Matching the multiplicity of the call and resource requirement.
+ *  At least for CUDA this is useful since memory movement
+ *  and computation can be handled on the same stream which is idea for maximum async.
+ *
+ *  @tparam VALUE_FP the datatype used in the actual computation of matrix inversion
+ *              currently we only support std::complex<double>
  */
-template<typename T_FP>
+template<typename VALUE_FP>
 class DiracMatrixComputeCUDA : public Resource
 {
-  // Why not just use QMCTraits::FullPrecRealType?
-  using FullPrecReal = typename scalar_traits<T_FP>::real_type;
-
-  // #ifdef ENABLE_OFFLOAD
-  //   template<typename T>
-  //   using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-  // #elif ENABLE_CUDA
-  //   template<typename T>
-  //   using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-  // #endif
+  using FullPrecReal = QMCTraits::FullPrecRealType;
 
   template<typename T>
   using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
@@ -63,11 +51,11 @@ class DiracMatrixComputeCUDA : public Resource
   cudaStream_t hstream_;
 
   // Contiguous memory for fp precision Matrices for each walker, n^2 * nw elements
-  OffloadPinnedVector<T_FP> psiM_fp_;
-  OffloadPinnedVector<T_FP> invM_fp_;
+  OffloadPinnedVector<VALUE_FP> psiM_fp_;
+  OffloadPinnedVector<VALUE_FP> invM_fp_;
 
   // working vectors
-  OffloadPinnedVector<T_FP> LU_diags_fp_;
+  OffloadPinnedVector<VALUE_FP> LU_diags_fp_;
   OffloadPinnedVector<int> pivots_;
   OffloadPinnedVector<int> infos_;
 
@@ -78,8 +66,8 @@ class DiracMatrixComputeCUDA : public Resource
   Vector<char, OffloadPinnedAllocator<char>> invM_ptrs_;
 
   // cuBLAS geam wants these.
-  DeviceValue<T_FP, OffloadPinnedAllocator<T_FP>> dev_one{1.0};
-  DeviceValue<T_FP, OffloadPinnedAllocator<T_FP>> dev_zero{0.0};
+  VALUE_FP host_one{1.0};
+  VALUE_FP host_zero{0.0};
 
   /** Calculates the actual inv and log determinant on accelerator
    *
@@ -90,7 +78,7 @@ class DiracMatrixComputeCUDA : public Resource
    *  \param[in]      lda         leading dimension of each matrix					
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
    *
-   *  This is the prefered interface for calling computeInvertAndLog when the T_FP and TMAT are equal.
+   *  This is the prefered interface for calling computeInvertAndLog when the VALUE_FP and TMAT are equal.
    *  On Volta so far little seems to be achieved by having the mats continuous.
    */
   template<typename TMAT, typename TREAL>
@@ -106,16 +94,10 @@ class DiracMatrixComputeCUDA : public Resource
     psiM_ptrs_.resize(sizeof(TMAT*) * nw);
     invM_ptrs_.resize(sizeof(TMAT*) * nw);
     //temp_mat_.resize(n,lda);
-    Vector<const T_FP*> M_ptr_buffer(reinterpret_cast<const TMAT**>(psiM_ptrs_.data()), nw);
-    Vector<const T_FP*> invM_ptr_buffer(reinterpret_cast<const TMAT**>(invM_ptrs_.data()), nw);
+    Vector<const VALUE_FP*> M_ptr_buffer(reinterpret_cast<const TMAT**>(psiM_ptrs_.data()), nw);
+    Vector<const VALUE_FP*> invM_ptr_buffer(reinterpret_cast<const TMAT**>(invM_ptrs_.data()), nw);
     cudaStream_t hstream;
     cublasErrorCheck(cublasGetStream(h_cublas, &hstream), "cublasGetStream failed!");
-    // I think we want to only be using device side pointers how else can we
-    // be sure what the data transfer pattern is.
-    // But i don't know what the other cuBLAS code assumes.
-    cublasPointerMode_t previous_pointer_mode;
-    cublasErrorCheck(cublasGetPointerMode(h_cublas, &previous_pointer_mode), "cublasGetPointerMode failed");
-    cublasErrorCheck(cublasSetPointerMode(h_cublas, CUBLAS_POINTER_MODE_DEVICE), "cublasSetPointerMode failed");
 
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -126,8 +108,8 @@ class DiracMatrixComputeCUDA : public Resource
                                      a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM to device");
       // On the device Here we transpose to a_mat;
-      cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, dev_one.getDevicePtr(),
-                                    inv_a_mats[iw].get().device_data(), lda, dev_zero.getDevicePtr(),
+      cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
+                                    inv_a_mats[iw].get().device_data(), lda, &host_zero,
                                     a_mats[iw].get().device_data(), lda, a_mats[iw].get().device_data(), lda),
                        "cuBLAS::geam failed.");
     }
@@ -155,12 +137,11 @@ class DiracMatrixComputeCUDA : public Resource
                                    log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
-    // restore the pointer mode for this cublas handle.
-    cublasErrorCheck(cublasSetPointerMode(h_cublas, previous_pointer_mode), "cublasSetPointerMode failed");
   }
 
 
-  /** Calculates the actual inv and log determinant on accelerator
+  /** Calculates the actual inv and log determinant on accelerator with psiMs and invMs widened to full precision
+   *  and copied into continuous vectors.
    *
    *  \param[in]      h_cublas    cublas handle, hstream handle is retrieved from it.			
    *  \param[in,out]  psi_Ms      matrices flattened into single pinned vector, returned with LU matrices.
@@ -170,20 +151,19 @@ class DiracMatrixComputeCUDA : public Resource
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
    *
    */
-  template<typename TREAL>
   inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
-                                     OffloadPinnedVector<TREAL>& psi_Ms,
-                                     OffloadPinnedVector<TREAL>& inv_Ms,
+                                     OffloadPinnedVector<VALUE_FP>& psi_Ms,
+                                     OffloadPinnedVector<VALUE_FP>& inv_Ms,
                                      const int n,
                                      const int lda,
-                                     OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                                     OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
-    psiM_ptrs_.resize(sizeof(TREAL*) * nw);
-    invM_ptrs_.resize(sizeof(TREAL*) * nw);
-    Vector<const T_FP*> M_ptr_buffer(reinterpret_cast<const TREAL**>(psiM_ptrs_.data()), nw);
-    Vector<const T_FP*> invM_ptr_buffer(reinterpret_cast<const TREAL**>(invM_ptrs_.data()), nw);
+    psiM_ptrs_.resize(sizeof(VALUE_FP*) * nw);
+    invM_ptrs_.resize(sizeof(VALUE_FP*) * nw);
+    Vector<const VALUE_FP*> M_ptr_buffer(reinterpret_cast<const VALUE_FP**>(psiM_ptrs_.data()), nw);
+    Vector<const VALUE_FP*> invM_ptr_buffer(reinterpret_cast<const VALUE_FP**>(invM_ptrs_.data()), nw);
     for (int iw = 0; iw < nw; ++iw)
     {
       M_ptr_buffer[iw]    = psi_Ms.device_data() + iw * n * lda;
@@ -195,7 +175,7 @@ class DiracMatrixComputeCUDA : public Resource
     cudaStream_t hstream;
     cublasErrorCheck(cublasGetStream(h_cublas, &hstream), "cublasGetStream failed!");
     assert(hstream == hstream_);
-    cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(T_FP),
+    cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     cudaErrorCheck(cudaMemcpyAsync(psiM_ptrs_.device_data(), psiM_ptrs_.data(), psiM_ptrs_.size(),
@@ -204,8 +184,8 @@ class DiracMatrixComputeCUDA : public Resource
     cudaErrorCheck(cudaMemcpyAsync(invM_ptrs_.device_data(), invM_ptrs_.data(), invM_ptrs_.size(),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync invM_ptrs_ failed!");
-    TREAL** psiM_mw_ptr = reinterpret_cast<TREAL**>(psiM_ptrs_.device_data());
-    TREAL** invM_mw_ptr = reinterpret_cast<TREAL**>(invM_ptrs_.device_data());
+    VALUE_FP** psiM_mw_ptr = reinterpret_cast<VALUE_FP**>(psiM_ptrs_.device_data());
+    VALUE_FP** invM_mw_ptr = reinterpret_cast<VALUE_FP**>(invM_ptrs_.device_data());
 
     cuBLAS_LU::computeInverseAndDetLog_batched(h_cublas, hstream, n, lda, psiM_mw_ptr, invM_mw_ptr,
                                                LU_diags_fp_.device_data(), pivots_.device_data(), infos_.data(),
@@ -218,11 +198,11 @@ class DiracMatrixComputeCUDA : public Resource
     cudaErrorCheck(cudaMemcpyAsync(invM_ptrs_.data(), invM_ptrs_.device_data(), invM_ptrs_.size(),
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync invM_ptrs_ failed!");
-    cudaErrorCheck(cudaMemcpyAsync(inv_Ms.data(), inv_Ms.device_data(), inv_Ms.size() * sizeof(TREAL),
+    cudaErrorCheck(cudaMemcpyAsync(inv_Ms.data(), inv_Ms.device_data(), inv_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed copying back DiracMatrixBatch::invM_fp from device");
     cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),
-                                   log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyDeviceToHost, hstream),
+                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
   }
@@ -246,33 +226,35 @@ public:
    *  vector is used to match the primary batched interface to the accelerated routings.
    *  There is no optimization (yet) for TMAT same type as TREAL
    */
-  template<typename TMAT, typename TREAL>
+  template<typename TMAT>
   void invert_transpose(Resource& resource,
                         OffloadPinnedMatrix<TMAT>& a_mat,
                         OffloadPinnedMatrix<TMAT>& inv_a_mat,
-                        OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                        OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
   {
     auto& cuda_handles = dynamic_cast<CUDALinearAlgebraHandles&>(resource);
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
-    std::fill(log_values.begin(), log_values.end(), std::complex<TREAL>{0.0, 0.0});
+    std::fill(log_values.begin(), log_values.end(), std::complex<FullPrecReal>{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(),
-                                   log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyHostToDevice,
+                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyHostToDevice,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
-    cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(T_FP),
+    cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
-    OffloadPinnedMatrix<T_FP> data_ref_matrix;
+    OffloadPinnedMatrix<VALUE_FP> data_ref_matrix;
 
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
-    // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
-    inv_a_mat = data_ref_matrix;
+
+    // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
+    // smaller of the two's dimensions
+    inv_a_mat.assignUpperRight(data_ref_matrix);
     cudaErrorCheck(cudaMemcpyAsync(inv_a_mat.device_data(), inv_a_mat.data(), inv_a_mat.size() * sizeof(TMAT),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync of inv_a_mat to device failed!");
@@ -282,12 +264,12 @@ public:
    *  When TMAT is not full precision we need to still do the inversion and log
    *  at full precision. This is not yet optimized to transpose on the GPU
    */
-  template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> mw_invertTranspose(
+  template<typename TMAT>
+  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       Resource& resource,
       RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
       RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-      OffloadPinnedVector<std::complex<TREAL>>& log_values,
+      OffloadPinnedVector<std::complex<FullPrecReal>>& log_values,
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
@@ -295,14 +277,13 @@ public:
     int nw             = a_mats.size();
     const int n        = a_mats[0].get().rows();
     const int lda      = a_mats[0].get().cols();
-    const int ldb      = inv_a_mats[0].get().cols();
     size_t nsqr        = n * n;
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);
-    std::fill(log_values.begin(), log_values.end(), std::complex<TREAL>{0.0, 0.0});
+    std::fill(log_values.begin(), log_values.end(), std::complex<FullPrecReal>{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(),
-                                   log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyHostToDevice,
+                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyHostToDevice,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
@@ -310,10 +291,11 @@ public:
     mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
-      OffloadPinnedMatrix<T_FP> data_ref_matrix;
-      data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, n);
-      // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
-      inv_a_mats[iw].get() = data_ref_matrix;
+      OffloadPinnedMatrix<VALUE_FP> data_ref_matrix;
+      data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, lda);
+      // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
+      // smaller of the two's dimensions
+      inv_a_mats[iw].get().assignUpperRight(data_ref_matrix);
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().device_data(), inv_a_mats[iw].get().data(),
                                      inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice,
                                      cuda_handles.hstream),
@@ -326,20 +308,18 @@ public:
    *  Side effect of this is after this call a_mats contains the LU factorization
    *  matrix.
    */
-  template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> mw_invertTranspose(
+  template<typename TMAT>
+  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       Resource& resource,
       RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
       RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-      OffloadPinnedVector<std::complex<TREAL>>& log_values,
+      OffloadPinnedVector<std::complex<FullPrecReal>>& log_values,
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
     auto& cuda_handles = dynamic_cast<CUDALinearAlgebraHandles&>(resource);
     const int n        = a_mats[0].get().rows();
     const int lda      = a_mats[0].get().cols();
-    const int ldb      = inv_a_mats[0].get().cols();
-    size_t nsqr        = n * n;
     mw_computeInvertAndLog(cuda_handles.h_cublas, a_mats, inv_a_mats, n, lda, log_values);
   }
 };

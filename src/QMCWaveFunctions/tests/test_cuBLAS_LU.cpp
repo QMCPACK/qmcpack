@@ -165,51 +165,6 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   CHECK(log_values[0] == ComplexApprox(StdComp{5.603777579195571, -6.1586603331188225}));
 }
 
-/** while this working is a good test, in production code its likely we want to
- *  widen the matrix M to double and thereby the LU matrix as well.
- */
-TEST_CASE("cuBLAS_LU::computeLogDet_float", "[wavefunction][CUDA]")
-{
-  auto cuda_handles = std::make_unique<testing::CUDAHandles>();
-  int n             = 4;
-  int lda           = 4;
-  int batch_size    = 1;
-  auto& hstream     = cuda_handles->hstream;
-
-  // clang-format off
-  std::vector<float, CUDAHostAllocator<float>> lu = {7.,      0.28571429,  0.71428571, 0.71428571,
-                                                       5.,      3.57142857,  0.12,       -0.44,
-                                                       6.,      6.28571429,  -1.04,      -0.46153846,
-                                                       6.,      5.28571429,  3.08,       7.46153846};
-  // clang-format on
-  std::vector<float, CUDAAllocator<float>> dev_lu(lu.size());
-
-  std::vector<float*, CUDAHostAllocator<float*>> lus(batch_size, nullptr);
-  lus[0] = dev_lu.data();
-  std::vector<float*, CUDAAllocator<float*>> dev_lus(batch_size);
-
-  using StdComp = std::complex<double>;
-  std::vector<StdComp, CUDAHostAllocator<StdComp>> log_values(batch_size, 0.0);
-  std::vector<StdComp, CUDAAllocator<StdComp>> dev_log_values(batch_size, 0.0);
-
-  std::vector<int, CUDAHostAllocator<int>> pivots = {3, 3, 4, 4};
-  std::vector<int, CUDAAllocator<int>> dev_pivots(4);
-
-  // Transfer and run kernel.
-  cudaCheck(cudaMemcpyAsync(dev_lu.data(), lu.data(), sizeof(float) * 16, cudaMemcpyHostToDevice, hstream));
-  cudaCheck(cudaMemcpyAsync(dev_lus.data(), lus.data(), sizeof(float**), cudaMemcpyHostToDevice, hstream));
-  cudaCheck(cudaMemcpyAsync(dev_pivots.data(), pivots.data(), sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
-
-  // The types of the pointers passed here matter
-  cuBLAS_LU::computeLogDet_batched(hstream, n, lda, dev_lus.data(), dev_pivots.data(), dev_log_values.data(),
-                                   batch_size);
-
-  cudaCheck(cudaMemcpyAsync(log_values.data(), dev_log_values.data(), sizeof(std::complex<double>) * batch_size,
-                            cudaMemcpyDeviceToHost, hstream));
-  cudaCheck(cudaStreamSynchronize(hstream));
-  CHECK(log_values[0] == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
-}
-
 TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
 {
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();

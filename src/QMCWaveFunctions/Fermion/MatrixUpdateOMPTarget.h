@@ -73,7 +73,7 @@ public:
   using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
   using OffloadPinnedValueVector_t    = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t    = Matrix<T, OffloadPinnedAllocator<T>>;
-  using FullPrecReal = QMCTraits::FullPrecRealType;
+  //using FullPrecReal = QMCTraits::FullPrecRealType;
 
 
   using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;
@@ -88,7 +88,7 @@ private:
   // scratch space for keeping one row of Ainv
   OffloadValueVector_t rcopy;
   // psi(r')/psi(r) during a PbyP move
-  FullPrecReal cur_ratio_;
+  T_FP cur_ratio_;
 
   // multi walker memory buffers
   std::unique_ptr<MatrixUpdateOMPTargetMultiWalkerMem<T>> mw_mem_;

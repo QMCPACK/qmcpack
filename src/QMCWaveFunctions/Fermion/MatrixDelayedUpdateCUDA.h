@@ -88,7 +88,7 @@ public:
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
   using FullPrecReal = QMCTraits::FullPrecRealType;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedLogValueVector_t = Vector<std::complex<T>, OffloadPinnedAllocator<std::complex<T>>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
@@ -443,6 +443,11 @@ public:
     // mw_invertTranspose(engines, log_dets, log_values);
   }
 
+  /** Compute the inversions of the transpose of matrices logdetT_list and calculate
+   *  the log determinants of the logdetTs.
+   *  if logdetT is of element type T_FP it will be returned fille with the LU matrix
+   *  compute_mask is in the API to reserve the right to reduce transfers to/from device.
+   */
   static void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
                                  RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
                                  OffloadPinnedLogValueVector_t& log_values,
@@ -455,13 +460,7 @@ public:
     RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
     a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
-    {
       a_inv_refs.emplace_back(engines[iw].psiMinv);
-      T* a_inv_ptr = a_inv_refs.back().get().data();
-      // This seems likely to be inefficient
-      PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
-    }
-    PRAGMA_OFFLOAD("omp taskwait")
     engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs,
                                                         log_values, compute_mask);
   }
@@ -473,9 +472,7 @@ public:
                                  const std::vector<bool>& compute_mask)
   {
     auto& engine_leader = engines.getLeader();
-
     engine_leader.guard_no_delay();
-    size_t a_inv_size = a_inv_list[0].get().size();
     engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_list,
                                                         log_values, compute_mask);
   }

@@ -42,11 +42,12 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   using ValueType = QMCTraits::ValueType;
   using GradType  = QMCTraits::GradType;
   using Real      = QMCTraits::RealType;
+  using FullPrecReal = QMCTraits::FullPrecRealType;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, OffloadPinnedAllocator<ValueType>>;
   // I don't think its a good idea create a hard dependency all the way back to WaveFunctionComponent for this.
-  using LogValue                    = std::complex<Real>;
+  using LogValue                    = std::complex<FullPrecReal>;
   using OffloadPinnedLogValueVector = Vector<LogValue, OffloadPinnedAllocator<LogValue>>;
 
   DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}

@@ -192,7 +192,8 @@ public:
 
     psiM_fp_.resize(n * lda);
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
-    computeInvertAndLog(psiM_fp_, n, lda, log_values[0]);
+    OffloadPinnedMatrix<T_FP> psiM_fp_view(psiM_fp_, psiM_fp_.data() , n, lda);
+    computeInvertAndLog(psiM_fp_view, n, lda, log_values[0]);
 
     //Matrix<TMAT> data_ref_matrix;
     //maybe n, lda
