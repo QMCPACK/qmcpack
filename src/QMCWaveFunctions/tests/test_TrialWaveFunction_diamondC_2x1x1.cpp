@@ -201,6 +201,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   elec_clone.update();
 
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list_clone{*psi_clone, {*psi_clone}};
+
+  wf_lock.reset(nullptr);
   wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list_clone);    
   
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
@@ -219,6 +221,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   elec_.makeMove(moved_elec_id, delta);
 
+  wf_lock.reset(nullptr);
   wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
@@ -261,6 +264,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   wf_ref_list = {psi, {psi, *psi_clone}};
 
   auto pset_lock = std::make_unique<ResourceCollectionTeamLock<ParticleSet>>(pset_res, p_ref_list);
+  wf_lock.reset(nullptr);
   wf_lock =std::make_unique< ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
   ParticleSet::mw_update(p_ref_list);
@@ -353,8 +357,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::vector<GradType> grad_new(2);
 
   ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+  wf_lock.reset(nullptr);
   wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list_clone);
   ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
+  wf_lock.reset(nullptr);
   wf_lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
   std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
@@ -507,8 +513,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
     CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
-
 #endif
+  wf_lock.reset(nullptr);
 }
 
 TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")

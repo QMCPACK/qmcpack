@@ -228,7 +228,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*wff->getTWF());
   ResourceCollection twf_res("test_determinant");
-  psi.createResource(res_col);
+  psi.createResource(twf_res);
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list{psi, {psi}};
   auto lock = std::make_unique<ResourceCollectionTeamLock<TrialWaveFunction>>(twf_res, wf_ref_list);
 
@@ -448,6 +448,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   
   RealType logpsi2b = psi2.evaluateDeltaLog(p_list[1], true);
   CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
+
+  lock.reset(nullptr);
 }
 #endif
 
