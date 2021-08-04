@@ -62,10 +62,10 @@ public:
 
   void set_samples_and_param(int nsamples, int nparam)
   {
-    numSamples = nsamples;
-    numParam   = nparam;
-    samples.setTotalNum(1);
-    samples.setMaxSamples(numSamples);
+    numSamples         = nsamples;
+    numParam           = nparam;
+
+    costFn.rank_local_num_samples_ = nsamples;
 
     costFn.OptVariables.insert("var1", 1.0);
     costFn.NumOptimizables = numParam;

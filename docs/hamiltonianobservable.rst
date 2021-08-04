@@ -331,7 +331,7 @@ attributes:
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation       |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``physicalSO``:math:`^o`    | boolean      | yes/no                | no                     | Include the SO contribution in the local energy  |
+  | ``physicalSO``:math:`^o`    | boolean      | yes/no                | yes                    | Include the SO contribution in the local energy  |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
 
 Additional information:
@@ -386,7 +386,7 @@ Additional information:
     <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="psf"/>
 
 .. code-block::
-  :caption: QMCPXML element for pseudopotential electron-ion interaction (xml files).
+  :caption: QMCPXML element for pseudopotential electron-ion interaction (xml files). If SOC terms present in xml, they are added to local energy
   :name: Listing 20
 
     <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
@@ -395,13 +395,12 @@ Additional information:
     </pairpot>
 
 .. code-block::
-  :caption: QMCPXML element for pseudopotential including the spin-orbit interaction.
+  :caption: QMCPXML element for pseudopotential to accumulate the spin-orbit energy, but do not include in local energy
   :name: Listing 21
   
-    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="yes">
+    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="no">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
-
 Details of ``<pseudo/>`` input elements are shown in the following. It
 is possible to include (or construct) a full pseudopotential directly in
 the input file without providing an external file via ``href``. The full

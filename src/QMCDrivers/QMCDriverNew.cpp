@@ -151,7 +151,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i].reset(new Crowd(*estimator_manager_, golden_resource_, dispatchers_));
+    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
   }
 
   //now give walkers references to their walkers
@@ -315,16 +315,16 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
-  auto& walkers = crowd.get_walkers();
-  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
-                                               crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+  ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
+  ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
 
+  auto& walkers = crowd.get_walkers();
   std::vector<bool> recompute_mask(walkers.size(), true);
   ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
   ps_dispatcher.flex_donePbyP(walker_elecs);

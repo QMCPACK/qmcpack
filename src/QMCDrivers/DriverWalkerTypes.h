@@ -35,22 +35,5 @@ struct DriverWalkerResourceCollection
 
   DriverWalkerResourceCollection() : pset_res("ParticleSet"), twf_res("TrialWaveFunction"), ham_res("Hamiltonian") {}
 };
-
-/** DriverWalkerResourceCollection locks
- * Helper class for acquiring and releasing multi walker resources
- */
-class DriverWalkerResourceCollectionLock
-{
-public:
-  DriverWalkerResourceCollectionLock(DriverWalkerResourceCollection& driverwalker_res,
-                                     TrialWaveFunction& twf,
-                                     QMCHamiltonian& ham)
-      : twf_res_lock_(driverwalker_res.twf_res, twf), ham_res_lock_(driverwalker_res.ham_res, ham)
-  {}
-
-private:
-  ResourceCollectionLock<TrialWaveFunction> twf_res_lock_;
-  ResourceCollectionLock<QMCHamiltonian> ham_res_lock_;
-};
 } // namespace qmcplusplus
 #endif

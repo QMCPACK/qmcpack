@@ -81,7 +81,8 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  //     if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
+  if (m_doc_out != NULL)
+    xmlFreeDoc(m_doc_out);
   if (debug_stream)
     delete debug_stream;
 }
@@ -522,7 +523,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   {
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root, m_wfPtr);
+    xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
@@ -530,11 +531,12 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      xmlChar* iptr  = xmlGetProp(cur, (const xmlChar*)"id");
       if (iptr == NULL)
         continue;
       std::string aname((const char*)iptr);
+      xmlFree(iptr);
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
       if (oit != OptVariablesForPsi.end())
       {

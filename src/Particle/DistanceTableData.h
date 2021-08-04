@@ -126,9 +126,16 @@ public:
   inline IndexType sources() const { return N_sources; }
 
   /// return multi_walker full distance table data ptr
+  virtual const RealType* getMultiWalkerTempDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  /// return multi_walker full distance table data ptr
   virtual const RealType* getMultiWalkerDataPtr() const
   {
-    throw std::runtime_error(name_ + " multi waler data pointer not supported");
+    throw std::runtime_error(name_ + " multi walker data pointer not supported");
     return nullptr;
   }
 
