@@ -160,10 +160,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
-  ResourceCollection res_col("test_determinant");
-  psi.createResource(res_col);
-  psi.acquireResource(res_col);
-
 #if !defined(QMC_CUDA)
   // initialize distance tables.
   elec_.update();
@@ -195,13 +191,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
 
   elec_clone.update();
-
-  res_col.rewind();
-  psi.releaseResource(res_col);
-  res_col.rewind();
-  psi_clone->acquireResource(res_col);
-  
-  
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
   REQUIRE(logpsi_clone == Approx(-4.546410485374186));
@@ -217,11 +206,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   PosType delta(0.1, 0.1, 0.2);
 
   elec_.makeMove(moved_elec_id, delta);
-
-  res_col.rewind();
-  psi_clone->releaseResource(res_col);
-  res_col.rewind();
-  psi.acquireResource(res_col);
 
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
@@ -486,15 +470,15 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
             << " " << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635, -38.503358805645)).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568, 31.465077529576)).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][0] == ComplexApprox(ValueType(-27.188228530061, 27.188228530068)).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][1] == ComplexApprox(ValueType(22.759962501254, -22.75996250126)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635, -38.503358805645)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568, 31.465077529576)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][0] == ComplexApprox(ValueType(-27.188228530061, 27.188228530068)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][1] == ComplexApprox(ValueType(22.759962501254, -22.75996250126)).epsilon(1e-4));
 #else
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][0] == Approx(77.0067176113).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
-  REQUIRE(det_up->get_det_engine().get_psiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][0] == Approx(77.0067176113).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
   std::vector<LogValueType> log_values(wf_ref_list.size());
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);

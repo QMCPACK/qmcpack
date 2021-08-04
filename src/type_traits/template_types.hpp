@@ -72,6 +72,17 @@ static RefVector<T> convertPtrToRefVector(const std::vector<T*>& ptr_list)
 }
 
 // temporary helper function
+template<class T2, class T>
+static RefVector<T2> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
+{
+  RefVector<T2> ref_list;
+  ref_list.reserve(ptr_list.size());
+  for (const UPtr<T>& ptr : ptr_list)
+    ref_list.push_back(*ptr);
+  return ref_list;
+}
+  
+// temporary helper function
 template<class T>
 static std::vector<T*> convert_ref_to_ptr_list(const std::vector<std::reference_wrapper<T>>& ref_list)
 {

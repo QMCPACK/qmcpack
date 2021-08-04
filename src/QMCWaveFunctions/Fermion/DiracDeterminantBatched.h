@@ -38,9 +38,9 @@ struct SetupDiracDetResources;
 
 struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
-  using ValueType = QMCTraits::ValueType;
-  using GradType  = QMCTraits::GradType;
-  using Real      = QMCTraits::RealType;
+  using ValueType    = QMCTraits::ValueType;
+  using GradType     = QMCTraits::GradType;
+  using Real         = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::FullPrecRealType;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
@@ -88,10 +88,12 @@ public:
   using OffloadPinnedLogValueVector_t = Vector<LogValueType, OffloadPinnedAllocator<LogValueType>>;
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
-  using OffloadPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
-  using OffloadPinnedGradMatrix       = Matrix<OrbitalSetTraits<SPOSet::ValueType>::GradType, OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+  using OffloadPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType,
+                                         OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+  using OffloadPinnedGradMatrix       = Matrix<OrbitalSetTraits<SPOSet::ValueType>::GradType,
+                                         OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
 
-  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
+  using OffloadVGLVector_t = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -207,7 +209,7 @@ public:
   void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     const std::vector<bool>& recompute) const override;
-  
+
   LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
@@ -222,8 +224,10 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** cloning function
    * @param tqp target particleset
@@ -237,6 +241,17 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   DET_ENGINE& get_det_engine() { return det_engine_; }
+
+  /// Don't be a dummy and use this for anything but testing.
+  ValueMatrix_t psiMinv_host_;
+  ValueMatrix_t& getPsiMinv() override
+  {
+    auto& psiMinv_actual = det_engine_.get_psiMinv();
+    psiMinv_host_.resize(psiMinv_actual.cols(), psiMinv_actual.rows());
+    // make a copy to prevent damage to the actual psiMinv in the det_engine_;
+    psiMinv_host_ = psiMinv_actual;
+    return psiMinv_host_;
+  }
 
   /** @defgroup LegacySingleData Single Walker Data Members of Legacy OO design
    *  @brief    Deprecated as high throughput of walkers requires a division between
@@ -277,6 +292,9 @@ public:
   DET_ENGINE det_engine_;
   /**@}*/
 
+  /// We still need one of these per DDB because single calls obviously shouldn't have resources
+  DiracMatrix<mValueType> single_walker_dm_;
+
   std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
 
   LogValueType get_log_value() const { return LogValue; }
@@ -285,6 +303,16 @@ public:
                             RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
                             RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
                             const std::vector<bool>& compute_mask);
+
+  // make this class unit tests friendly without the need of setup resources.
+  void guardMultiWalkerRes()
+  {
+    if (!mw_res_)
+    {
+      throw std::runtime_error("You are responsible for acquiring resources in tests. If you are seeing this in "
+                               "production, someone has made a horrible mistake.");
+    }
+  }
 
   /// maximal number of delayed updates
   int ndelay;
@@ -296,8 +324,10 @@ private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
-  /// Legacy single invert logdetT(psiM), result is stored in DDB object.
-  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource& mw_res, OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv);
+  /// single invert logdetT(psiM), result is stored in DDB object.
+  /// DiracDeterminantBatchedMultiWalkerResource& mw_res
+  void invertPsiM(OffloadPinnedValueMatrix_t& logdetT,
+                  OffloadPinnedValueMatrix_t& a_inv);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
@@ -306,7 +336,6 @@ private:
   friend struct qmcplusplus::testing::SetupDiracDetResources;
   friend class qmcplusplus::testing::DiracDeterminantBatchedTest;
 };
-
 
 
 } // namespace qmcplusplus

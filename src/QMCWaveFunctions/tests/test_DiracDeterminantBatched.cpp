@@ -77,7 +77,7 @@ public:
   using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 
   template<class DET_ENGINE>
-  DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
+  DiracDeterminantBatchedMultiWalkerResource& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
   {
     return *(ddb.mw_res_);
   }
@@ -130,225 +130,11 @@ TEST_CASE("DiracDeterminantBatched_resources", "[wavefunction][fermion]")
   DetType ddb(std::move(spo_init));
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
-  ResourceCollection res_col("test resources");
-  ddb.createResource(res_col);
-  ddb.acquireResource(res_col);
-  res_col.rewind();
-  ddb.releaseResource(res_col);
+  ResourceCollection det_res("test resources");
+  ddb.createResource(det_res);
+  RefVectorWithLeader<WaveFunctionComponent> det_ref_list{ddb, {ddb}};
+  ResourceCollectionTeamLock<WaveFunctionComponent> lock{det_res, det_ref_list};
 }
-
-TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
-{
-  auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(3);
-  DetType ddb(std::move(spo_init));
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 3;
-  ddb.set(0, norb);
-
-  // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
-
-  ParticleSet elec;
-  elec.create(3);
-
-  testing::DiracDeterminantBatchedTest ddbt;
-
-  ResourceCollection res_col("test_determinant");
-  ddb.createResource(res_col);
-  ddb.acquireResource(res_col);
-
-  ddb.recompute(ddbt.get_mw_res(ddb), elec);
-  using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
-  ValueMatrix b;
-  b.resize(3, 3);
-
-  b(0, 0) = 0.6159749342;
-  b(0, 1) = -0.2408954682;
-  b(0, 2) = -0.1646081192;
-  b(1, 0) = 0.07923894288;
-  b(1, 1) = 0.1496231042;
-  b(1, 2) = -0.1428117337;
-  b(2, 0) = -0.2974298429;
-  b(2, 1) = -0.04586322768;
-  b(2, 2) = 0.3927890292;
-
-  checkMatrix(ddb.get_det_engine().get_psiMinv(), b);
-
-
-  ParticleSet::GradType grad;
-  PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
-  PsiValueType det_ratio1 = 0.178276269185;
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
-
-  ddb.acceptMove(elec, 0);
-
-  b(0, 0) = 3.455170657;
-  b(0, 1) = -1.35124809;
-  b(0, 2) = -0.9233316353;
-  b(1, 0) = 0.05476311768;
-  b(1, 1) = 0.1591951095;
-  b(1, 2) = -0.1362710138;
-  b(2, 0) = -2.235099338;
-  b(2, 1) = 0.7119205298;
-  b(2, 2) = 0.9105960265;
-
-  checkMatrix(ddb.get_det_engine().get_psiMinv(), b);
-}
-
-//#define DUMP_INFO
-
-TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
-{
-  auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddb(std::move(spo_init));
-  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 4;
-  ddb.set(0, norb);
-
-  ParticleSet elec;
-  elec.create(4);
-
-  ResourceCollection res_col("test_determinant");
-  ddb.createResource(res_col);
-  ddb.acquireResource(res_col);
-
-  testing::DiracDeterminantBatchedTest ddbt;
-  ddb.recompute(ddbt.get_mw_res(ddb), elec);
-
-  using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
-  ValueMatrix orig_a;
-  orig_a.resize(4, 4);
-  orig_a = spo->a2;
-
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0; j < norb; j++)
-    {
-      orig_a(j, i) = spo->v2(i, j);
-    }
-  }
-
-  //checkMatrix(ddb.psiMinv, b);
-  //DetType::DetEngine_t::DiracMatrixCompute& dm = ddb.get_det_engine().get_det_inverter();
-
-  ValueMatrix a_update1, scratchT;
-  a_update1.resize(4, 4);
-  scratchT.resize(4, 4);
-  a_update1 = spo->a2;
-  for (int j = 0; j < norb; j++)
-  {
-    a_update1(j, 0) = spo->v2(0, j);
-  }
-
-  ValueMatrix a_update2;
-  a_update2.resize(4, 4);
-  a_update2 = spo->a2;
-  for (int j = 0; j < norb; j++)
-  {
-    a_update2(j, 0) = spo->v2(0, j);
-    a_update2(j, 1) = spo->v2(1, j);
-  }
-
-  ValueMatrix a_update3;
-  a_update3.resize(4, 4);
-  a_update3 = spo->a2;
-  for (int j = 0; j < norb; j++)
-  {
-    a_update3(j, 0) = spo->v2(0, j);
-    a_update3(j, 1) = spo->v2(1, j);
-    a_update3(j, 2) = spo->v2(2, j);
-  }
-
-  ParticleSet::GradType grad;
-  PsiValueType det_ratio1 = ddb.ratioGrad(elec, 0, grad);
-  LogValueType det_update1;
-  auto& mw_res              = ddbt.get_mw_res(ddb);
-  LogValueType original_log = ddb.get_log_value();
-
-#if defined(ENABLE_CUDA)
-  ddbt.invertPsiM(ddb, a_update1, scratchT);
-  det_update1 = ddb.LogValue;
-#elif defined(ENABLE_OFFLOAD)
-  simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
-                  scratchT.cols());
-  dm.invert_transpose(scratchT, a_update1, det_update1);
-#endif
-
-  PsiValueType det_ratio1_val = LogToValue<ValueType>::convert(det_update1 - original_log);
-#ifdef DUMP_INFO
-  std::cout << "det 0 = " << std::exp(original_log) << std::endl;
-  std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
-  std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
-#endif
-  CHECK(det_ratio1 == ValueApprox(det_ratio1_val));
-
-  ddb.acceptMove(elec, 0);
-
-  PsiValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
-  LogValueType det_update2;
-
-#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
-  ddbt.invertPsiM(ddb, a_update2, scratchT);
-  det_update2 = ddb.LogValue;
-#else
-  simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
-                  scratchT.cols());
-  dm.invert_transpose(scratchT, a_update2, det_update2);
-#endif
-  PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
-#ifdef DUMP_INFO
-  std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
-  std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
-  std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
-#endif
-  CHECK(det_ratio2 == ValueApprox(det_ratio2_val));
-
-  ddb.acceptMove(elec, 1);
-
-  PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
-  LogValueType det_update3;
-#if defined(ENABLE_CUDA)
-  ddbt.invertPsiM(ddb, a_update3, scratchT);
-  det_update3 = mw_res.log_values[0];
-#elif defined(ENABLE_OFFLOAD)
-  simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
-                  scratchT.cols());
-  dm.invert_transpose(scratchT, a_update3, det_update3);
-#endif
-  PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
-#ifdef DUMP_INFO
-  std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
-  std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
-  std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
-#endif
-  CHECK(det_ratio3 == ValueApprox(det_ratio3_val));
-
-  ddb.acceptMove(elec, 2);
-
-  simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
-
-#if defined(ENABLE_CUDA)
-  ddbt.invertPsiM(ddb, orig_a, scratchT);
-  det_update3 = mw_res.log_values[0];
-#elif defined(ENABLE_OFFLOAD)
-  dm.invert_transpose(scratchT, orig_a, det_update3);
-#endif
-
-#ifdef DUMP_INFO
-  std::cout << "original " << std::endl;
-  std::cout << orig_a << std::endl;
-  std::cout << "block update " << std::endl;
-  std::cout << ddb.get_det_engine().get_psiMinv() << std::endl;
-#endif
-
-  checkMatrix(ddb.get_det_engine().get_psiMinv(), orig_a);
-}
-
 
 TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]")
 {
@@ -373,10 +159,10 @@ TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]"
   }
 
   testing::DiracDeterminantBatchedTest ddbt;
-  ResourceCollection collection("test resources");
-
-  dets[0]->createResource(collection);
-  dets[0]->acquireResource(collection);
+  ResourceCollection det_res("test resources");
+  dets[0]->createResource(det_res);
+  RefVectorWithLeader<WaveFunctionComponent> det_ref_list{*dets[0], convertUPtrToRefVector<WaveFunctionComponent>(dets)};
+  ResourceCollectionTeamLock<WaveFunctionComponent> det_lock{det_res, det_ref_list};
   auto& mw_res = ddbt.get_mw_res(*(dets[0]));
   mw_res.log_values.resize(4);
 

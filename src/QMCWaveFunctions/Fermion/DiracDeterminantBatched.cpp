@@ -49,13 +49,16 @@ void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource& mw_res,
-                                                     OffloadPinnedValueMatrix_t& logdetT,
+void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(OffloadPinnedValueMatrix_t& logdetT,
                                                      OffloadPinnedValueMatrix_t& a_inv)
 {
   ScopedTimer inverse_timer(InverseTimer);
-  det_engine_.invert_transpose(logdetT, a_inv, mw_res.log_values);
-  LogValue = mw_res.log_values[0];
+  ValueMatrix_t logdet_host(logdetT.data(), logdetT.cols(), logdetT.rows());
+  ValueMatrix_t a_inv_host(a_inv.data(), a_inv.cols(), a_inv.rows());
+  single_walker_dm_.invert_transpose(logdet_host, a_inv_host, LogValue);
+
+  //det_engine_.invert_transpose(logdetT, a_inv, mw_res.log_values);
+  //LogValue = mw_res.log_values[0];
 
 #ifndef NDEBUG
   auto& engine_psiMinv = det_engine_.get_nonconst_psiMinv();
@@ -317,7 +320,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  //  wfc_leader.guardMultiWalkerRes();
+  wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
@@ -390,7 +393,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  // wfc_leader.guardMultiWalkerRes();
+  wfc_leader.guardMultiWalkerRes();
   auto& mw_res       = *wfc_leader.mw_res_;
   auto& phi_vgl_v    = mw_res.phi_vgl_v;
   auto& ratios_local = mw_res.ratios_local;
@@ -692,7 +695,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
                                                        std::vector<PsiValueType>& ratios) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  // wfc_leader.guardMultiWalkerRes();
+  wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
@@ -844,7 +847,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVe
   ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
   GradMatrix_t dpsiM_host(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_host, grad_grad_source_psiM);
-  invertPsiM(*(this->mw_res_), psiM_temp, det_engine_.get_nonconst_psiMinv());
+  invertPsiM(psiM_temp, det_engine_.get_nonconst_psiMinv());
 
   phi_alpha_Minv      = 0.0;
   grad_phi_Minv       = 0.0;
@@ -1020,8 +1023,8 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMulti
     // transfer host to device, total size 4, g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
-  mw_res.log_values.resize(1);
-  invertPsiM(mw_res, psiM_temp, det_engine_.get_nonconst_psiMinv());
+  //mw_res.log_values.resize(1);
+  invertPsiM(psiM_temp, det_engine_.get_nonconst_psiMinv());
 }
 
 template<typename DET_ENGINE>

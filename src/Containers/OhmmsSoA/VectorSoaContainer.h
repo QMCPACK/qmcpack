@@ -288,7 +288,7 @@ struct VectorSoaContainer
   {
     qmc_allocator_traits<Alloc>::updateFrom(mAllocator, myData, nGhosts * D);
   }
-  
+
   // For tesing copy on device side from one data index to another
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   void copyDeviceDataByIndex(unsigned to, unsigned from)
