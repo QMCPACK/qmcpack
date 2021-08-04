@@ -37,9 +37,9 @@ struct J2OMPTargetMultiWalkerMem : public Resource
   Vector<T, OffloadPinnedAllocator<T>> mw_vals;
   // multi walker result for V and G
   Matrix<T, OffloadPinnedAllocator<T>> mw_vgl;
-  /// memory pool for Uat, dUat, d2Uat [Nw][N_padded] + [Nw][3][N_padded] + [Nw][N_padded]
+  /// memory pool for Uat, dUat, d2Uat [Nw][N_padded] + [Nw][DIM][N_padded] + [Nw][N_padded]
   Vector<T, OffloadPinnedAllocator<T>> mw_allUat;
-  /// memory pool for cur_u, cur_du, cur_d2u [3][Nw][N_padded]
+  /// memory pool for cur_u, cur_du, cur_d2u [3][Nw][N_padded]. 3 is for value, first and second derivatives.
   Vector<T, OffloadPinnedAllocator<T>> mw_cur_allu;
 
   J2OMPTargetMultiWalkerMem() : Resource("J2OMPTargetMultiWalkerMem") {}
