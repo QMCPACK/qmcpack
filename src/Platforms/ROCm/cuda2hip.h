@@ -15,23 +15,23 @@
 #define CUBLAS_STATUS_SUCCESS           HIPBLAS_STATUS_SUCCESS
 
 #define cublasCgemmBatched      hipblasCgemmBatched
-#define cublasCgetrfBatched     hipblasCgetrfBatched
-#define cublasCgetriBatched     hipblasCgetriBatched
+#define cublasCgetrfBatched     hipblasCgetrfBatched_
+#define cublasCgetriBatched     hipblasCgetriBatched_
 #define cublasComplex           hipblasComplex
 #define cublasCreate            hipblasCreate
 #define cublasDestroy           hipblasDestroy
 #define cublasDgemmBatched      hipblasDgemmBatched
-#define cublasDgetrfBatched     hipblasDgetrfBatched
-#define cublasDgetriBatched     hipblasDgetriBatched
+#define cublasDgetrfBatched     hipblasDgetrfBatched_
+#define cublasDgetriBatched     hipblasDgetriBatched_
 #define cublasDoubleComplex     hipblasDoubleComplex
 #define cublasHandle_t          hipblasHandle_t
 #define cublasSgemmBatched      hipblasSgemmBatched
-#define cublasSgetrfBatched     hipblasSgetrfBatched
-#define cublasSgetriBatched     hipblasSgetriBatched
+#define cublasSgetrfBatched     hipblasSgetrfBatched_
+#define cublasSgetriBatched     hipblasSgetriBatched_
 #define cublasStatus_t          hipblasStatus_t
 #define cublasZgemmBatched      hipblasZgemmBatched
-#define cublasZgetrfBatched     hipblasZgetrfBatched
-#define cublasZgetriBatched     hipblasZgetriBatched
+#define cublasZgetrfBatched     hipblasZgetrfBatched_
+#define cublasZgetriBatched     hipblasZgetriBatched_
 
 #define cuComplex                       hipComplex
 #define cudaAddressModeClamp            hipAddressModeClamp
@@ -95,6 +95,6 @@
 #define make_cuComplex                  make_hipComplex
 #define make_cuDoubleComplex            make_hipDoubleComplex
 
-#define cudaDeviceSetLimit(limit, falue) ;
+#define cudaDeviceSetLimit(limit, value) ;
 
 #endif /* CUDA2HIP_H */
