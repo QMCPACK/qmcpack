@@ -175,8 +175,16 @@ struct VectorSoaContainer
     myData  = ptr;
   }
 
+  /** attach to pre-allocated data
+   * @param n new nLocal
+   * @param n_padded new nGhosts
+   * @param other the container that owns the memory that ptr points to
+   * @param ptr new myData
+   *
+   * To attach to existing memory, currently owned memory must be freed before calling attachReference
+   */
   template<typename CONTAINER>
-  __forceinline void attachReference(size_t n, size_t n_padded, const CONTAINER& other, T* ptr)
+  void attachReference(size_t n, size_t n_padded, const CONTAINER& other, T* ptr)
   {
     if (nAllocated)
     {

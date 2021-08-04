@@ -679,14 +679,6 @@ void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionCompone
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
-  assert(this == &wfc_leader);
-  //wfc_leader.mw_mem_->mw_allUat.updateFrom();
-}
-
-template<typename FT>
 typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const ParticleSet& P,
                                                                     ParticleSet::ParticleGradient_t& G,
                                                                     ParticleSet::ParticleLaplacian_t& L)

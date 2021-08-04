@@ -181,8 +181,6 @@ public:
 
   inline void restore(int iat) override {}
 
-  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
-
   /** compute G and L after the sweep
    */
   LogValueType evaluateGL(const ParticleSet& P,

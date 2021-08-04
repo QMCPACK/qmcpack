@@ -119,8 +119,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
     coefs.updateTo();
   }
 
-  /** compute value, gradient and laplacian for [iStart, iEnd) pairs
-   * @param iat dummy
+  /** compute value, first and second derivatives for [iStart, iEnd) pairs
+   * @param iat the source particle that should be avoided (self pairs)
    * @param iStart starting particle index
    * @param iEnd ending particle index
    * @param _distArray distance arrUay
@@ -140,6 +140,24 @@ struct BsplineFunctor : public OptimizableFunctorBase
                    T* restrict distArrayCompressed,
                    int* restrict distIndices) const;
 
+  /** compute value, gradient and laplacian for target particles
+   * This more than just a batched call of evaluateVGL
+   * @param iat the source particle that should be avoided (self pairs)
+   * @param num_groups the number of source particle groups
+   * @param functors for the num_groups of source particles
+   * @param n_src the number of source particles
+   * @param grp_ids the group ids of the n_src source particles
+   * @param nw batch size (number of walkers)
+   * @param mw_vgl return resutls. Multi walker value, gradient and laplacian [nw][1(v)+DIM(g)+1(l)]
+   * @param n_padded the padded size of source particles
+   * @param mw_dist Multi walker distance table [nw][1(distance)+DIM(displacements)][n_padded]
+   * @param mw_cur_allu Multi walker value, first and second derivatives of pair potentials [nw][DIM][n_padded]. if mw_cur_allu is dual space, only update device side.
+   * @param transfer_buffer temporary transfer buffer.
+   *
+   * If mw_dist is dual space, up-to-date data is assumed on device.
+   * If mw_cur_allu is dual space, data is created on the device and there is no transfer to the host
+   * because it will be consumed by mw_updateVGL on the device.
+   */
   static void mw_evaluateVGL(const int iat,
                              const int num_groups,
                              const BsplineFunctor* const functors[],
@@ -156,6 +174,10 @@ struct BsplineFunctor : public OptimizableFunctorBase
     static_assert(DIM == 3, "only support 3D due to explicit x,y,z coded.");
     const size_t dist_stride = n_padded * (DIM + 1);
 
+    /* transfer buffer used for
+     * Bspline coefs device pointer sizeof(T*), DeltaRInv sizeof(T) and cutoff_radius sizeof(T)
+     * these contents change based on the group of the target particle, so it is prepared per call.
+     */
     transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2) * num_groups);
     T** mw_coefs_ptr        = reinterpret_cast<T**>(transfer_buffer.data());
     T* mw_DeltaRInv_ptr     = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
@@ -244,8 +266,20 @@ struct BsplineFunctor : public OptimizableFunctorBase
               const T* restrict _distArray,
               T* restrict distArrayCompressed) const;
 
-  /** evaluate sum of the pair potentials FIXME
-   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+  /** compute value for target-source particle pair potentials
+   * This more than just a batched call of evaluateV
+   * @param num_groups the number of source particle groups
+   * @param functors for the num_groups of source particles
+   * @param n_src the number of source particles
+   * @param grp_ids the group ids of the n_src source particles
+   * @param nnum_pairs the number of particle pairs
+   * @param ref_at the source particles that should be avoided (self pairs)
+   * @param mw_vgl return resutls. Multi walker value, gradient and laplacian [nw][1(v)+DIM(g)+1(l)]
+   * @param dist_stride the offset of distance pointers beween to consecutive walkers
+   * @param mw_dist Multi walker distance table [nw][1(distance)+DIM(displacements)][n_padded]
+   * @param transfer_buffer temporary transfer buffer.
+   *
+   * If mw_dist is dual space, up-to-date data is assumed on device.
    */
   static void mw_evaluateV(const int num_groups,
                            const BsplineFunctor* const functors[],
@@ -258,6 +292,10 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            T* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
   {
+    /* transfer buffer used for
+     * Bspline coefs device pointer sizeof(T*), DeltaRInv sizeof(T), cutoff_radius sizeof(T)
+     * these contents change based on the group of the target particle, so it is prepared per call.
+     */
     transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2) * num_groups);
     T** mw_coefs_ptr        = reinterpret_cast<T**>(transfer_buffer.data());
     T* mw_DeltaRInv_ptr     = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
@@ -430,6 +468,25 @@ struct BsplineFunctor : public OptimizableFunctorBase
             coefs[i + 3] * (A12 * tp[0] + A13 * tp[1] + A14 * tp[2] + A15 * tp[3]));
   }
 
+  /** update value, gradient and laplacian for target particles
+   * It serves multile walkers and handles update in a batched fashion
+   * @param iat the source particle that should be avoided (self pairs)
+   * @param isAccepted accept/reject status
+   * @param num_groups the number of source particle groups
+   * @param functors for the num_groups of source particles
+   * @param n_src the number of source particles
+   * @param grp_ids the group ids of the n_src source particles
+   * @param nw batch size (number of walkers)
+   * @param mw_vgl Multi walker value, gradient and laplacian [nw][1(v)+DIM(g)+1(l)]
+   * @param n_padded the padded size of source particles
+   * @param mw_dist Multi walker distance table [new + old][nw][1(distance)+DIM(displacements)][n_padded]
+   * @param mw_allUat, returned results. Multi walker value, gradient and laplacian of pair potentials [nw][1(v)+DIM(g)+1(l)][n_padded]
+   * @param mw_cur_allu Multi walker value, first and second derivatives of pair potentials [nw][DIM][n_padded]
+   * @param transfer_buffer temporary transfer buffer
+   *
+   * If mw_dist is dual space, up-to-date data is assumed on device.
+   * If mw_cur_allu is dual space, data on the device is consumed and no transfer is needed.
+   */
   static void mw_updateVGL(const int iat,
                            const std::vector<bool>& isAccepted,
                            const int num_groups,
@@ -448,6 +505,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
     static_assert(DIM == 3, "only support 3D due to explicit x,y,z coded.");
     const size_t dist_stride = n_padded * (DIM + 1);
 
+    /* transfer buffer used for
+     * Bspline coefs device pointer sizeof(T*), DeltaRInv sizeof(T), cutoff_radius sizeof(T)
+     * and packed accept list at most nw * sizeof(int)
+     * these contents change based on the group of the target particle, so it is prepared per call.
+     */
     transfer_buffer.resize((sizeof(T*) + sizeof(T) * 2) * num_groups + nw * sizeof(int));
     T** mw_coefs_ptr        = reinterpret_cast<T**>(transfer_buffer.data());
     T* mw_DeltaRInv_ptr     = reinterpret_cast<T*>(transfer_buffer.data() + sizeof(T*) * num_groups);
