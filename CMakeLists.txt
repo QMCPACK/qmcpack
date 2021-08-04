@@ -786,6 +786,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
     find_package(HIP REQUIRED)
     find_package(hipblas REQUIRED)
+    find_package(rocsolver REQUIRED)
     # architecture flags
     set(HIP_ARCH
         "gfx906,gfx908"
