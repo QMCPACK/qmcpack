@@ -523,7 +523,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
   aAttrib.add(Jastfunction, "function");
   aAttrib.add(SpinOpt, "spin");
 #if defined(ENABLE_OFFLOAD)
-  aAttrib.add(useGPU, "gpu", {"yes", "no"});
+  aAttrib.add(useGPU, "gpu", {"no", "yes"});
 #endif
   aAttrib.put(cur);
   tolower(NameOpt);
