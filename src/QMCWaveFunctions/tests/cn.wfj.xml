@@ -447,7 +447,7 @@
         </determinant>
       </slaterdeterminant>
     </determinantset>
-    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
       <correlation rcut="10" size="10" speciesA="u" speciesB="u">
         <coefficients id="uu" type="Array"> 0.3376320207 0.1624731594 0.04351990586 -0.04035806887 -0.09603443292 -0.1304825426 -0.1519114572 -0.158184365 -0.1434888111 -0.08433161461</coefficients>
       </correlation>
