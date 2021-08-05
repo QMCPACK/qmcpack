@@ -191,11 +191,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
     auto* transfer_buffer_ptr = transfer_buffer.data();
 
-    PRAGMA_OFFLOAD("omp target teams distribute map(always, to: transfer_buffer_ptr[:transfer_buffer.size()]) \
-                    map(to: grp_ids[:n_src]) \
-                    map(to: mw_dist[:dist_stride*nw]) \
-                    map(from: mw_cur_allu[:n_padded*3*nw]) \
-                    map(always, from: mw_vgl[:(DIM+2)*nw])")
+    // PRAGMA_OFFLOAD("omp target teams distribute map(always, to: transfer_buffer_ptr[:transfer_buffer.size()]) \
+    //                 map(to: grp_ids[:n_src]) \
+    //                 map(to: mw_dist[:dist_stride*nw]) \
+    //                 map(from: mw_cur_allu[:n_padded*3*nw]) \
+    //                 map(always, from: mw_vgl[:(DIM+2)*nw])")
     for (int ip = 0; ip < nw; ip++)
     {
       T val_sum(0);

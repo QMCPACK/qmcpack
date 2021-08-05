@@ -344,7 +344,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
 
 
 /** process determiment element
- *
+ * 
  * determinant has
  * - id unique name
  * - sposet reference to the pre-defined sposet; when missing, use id
@@ -484,7 +484,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     if (use_batch == "yes")
     {
       app_summary() << "      Using walker batching." << std::endl;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
@@ -499,30 +499,33 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
         app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
                          "delay_rank is ignored."
                       << std::endl;
-        adet = new DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex);
+        adet = new DiracDeterminantBatched<
+            MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                       firstIndex);
 #else
         {
-          myComm->barrier_and_abort("Batching requires ENABLE_CUDA and/or ENABLE_OFFLOAD");
-#endif
+        myComm->barrier_and_abort("Batching requires ENABLE_CUDA and ENABLE_OFFLOAD");
         }
-    }
-    else
-    {
-#if defined(ENABLE_CUDA)
-      if (useGPU == "yes")
-      {
-        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
-        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
-                                                                                                firstIndex);
-      }
-      else
 #endif
-      {
-        app_summary() << "      Running on CPU." << std::endl;
-        adet = new DiracDeterminant<>(std::move(psi_clone), firstIndex);
       }
     }
-  }
+      else
+      {
+#if defined(ENABLE_CUDA)
+        if (useGPU == "yes")
+        {
+          app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
+          adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                                  firstIndex);
+        }
+        else
+#endif
+        {
+          app_summary() << "      Running on CPU." << std::endl;
+          adet = new DiracDeterminant<>(std::move(psi_clone), firstIndex);
+        }
+      }
+    }
 #endif
 
   adet->set(firstIndex, lastIndex - firstIndex, delay_rank);
@@ -969,10 +972,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 #ifdef QMC_COMPLEX
         ci = ValueType(ci_real, ci_imag);
 #else
-        if (ci_imag != RealType(0))
-          myComm->barrier_and_abort(
-              "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
-        ci = ci_real;
+          if (ci_imag != RealType(0))
+            myComm->barrier_and_abort(
+                "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
+          ci = ci_real;
 #endif
         //Can discriminate based on any of 3 criterion
         if (((std::abs(qc_ci) < cutoff) && (CSFChoice == "qchem_coeff")) ||
@@ -1131,10 +1134,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 #ifdef QMC_COMPLEX
         ci = ValueType(ci_real, ci_imag);
 #else
-        if (ci_imag != RealType(0))
-          myComm->barrier_and_abort(
-              "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
-        ci = ci_real;
+          if (ci_imag != RealType(0))
+            myComm->barrier_and_abort(
+                "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
+          ci = ci_real;
 #endif
 
         //Will always loop through the whole determinant set as no assumption on the order of the determinant is made

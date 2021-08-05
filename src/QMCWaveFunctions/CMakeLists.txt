@@ -154,7 +154,6 @@ set(FERMION_SRCS
     ${FERMION_SRCS}
     Fermion/DiracDeterminant.cpp
     Fermion/DiracDeterminantBatched.cpp
-    Fermion/MatrixUpdateOMPTarget.cpp
     Fermion/SlaterDet.cpp
     Fermion/SlaterDetBuilder.cpp
     Fermion/MultiSlaterDeterminant.cpp
@@ -170,6 +169,11 @@ set(FERMION_SRCS
     TWFdispatcher.cpp
     WaveFunctionFactory.cpp)
 
+if(ENABLE_OFFLOAD)
+  set(FERMION_SRCS ${FERMION_SRCS}
+      Fermion/MatrixUpdateOMPTarget.cpp)
+endif()
+  
 if(ENABLE_CUDA)
   set(WFSSRCS_CUDA ${WFSSRCS_CUDA} detail/CUDA/cuBLAS_LU.cu detail/CUDA/delayed_update_helper.cu
                    detail/CUDA/matrix_update_helper.cu)
