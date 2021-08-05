@@ -450,9 +450,11 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
+  
+  ParticleSet::ParticleGradient_t fkin_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos_t fkin(ions.getTotalNum());
 
-//  twf.get_igrad_M(elec,ions,IONINDEX,dM);
-
+  
   for(int ionid=0; ionid<ions.getTotalNum(); ionid++)
   {
     for(int idim=0; idim<OHMMS_DIM; idim++)
@@ -468,23 +470,33 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
     {
       twf.get_gs_matrix(dB[idim],dB_gs[idim]); 
       twf.get_gs_matrix(dM[idim],dM_gs[idim]);
-      app_log()<<"F["<<ionid<<"]["<<idim<<"]="<<twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim])<<std::endl;
+      fkin_complex[ionid][idim]=twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim]);
     }
-  }
-  ValueType keval = 0.0;
-  //Now to compute the kinetic energy
-  for(int id=0; id<matlist.size(); id++)
-  {
-    int ptclnum = twf.num_particles(id);
-    ValueType ke_id = 0.0;
-    for(int i=0; i<ptclnum; i++)
-      for(int j=0; j<ptclnum; j++)
-      {
-        ke_id+=minv[id][i][j]*B_gs[id][j][i];
-      }
-    keval+=ke_id;
+    convert(fkin_complex[ionid],fkin[ionid]);
   }
 
+ 
+  ValueType keval = 0.0;
+  RealType keobs=0.0;
+  keval=twf.trAB(minv,B_gs);
+  convert(keval,keobs);
+  REQUIRE(keobs == Approx(9.1821937928e+00));
+#if defined(MIXED_PRECISION)
+  REQUIRE(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
+  REQUIRE(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
+  REQUIRE(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
+  REQUIRE(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
+  REQUIRE(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
+  REQUIRE(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
+#else
+  REQUIRE(fkin[0][0] == Approx(1.0852823603357820));
+  REQUIRE(fkin[0][1] == Approx(24.2154119471038562));
+  REQUIRE(fkin[0][2] == Approx(111.8849364775797852));
+  REQUIRE(fkin[1][0] == Approx(2.1572063443997536));
+  REQUIRE(fkin[1][1] == Approx(-3.3743242489947529));
+  REQUIRE(fkin[1][2] == Approx(7.5625192454964454));
+#endif
+  
   app_log()<<" KEVal = "<<keval<<std::endl;
 /* 
   for(int idim=0; idim<OHMMS_DIM; idim++)
@@ -504,11 +516,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
     app_log()<<"dTWF["<<IONINDEX<<"]["<<idim<<"]="<<dwfn<<std::endl;
   }
 */
-//  for(int idim=0; idim<OHMMS_DIM; idim++)
-//  {
-//    app_log()<<"F["<<IONINDEX<<"]["<<idim<<"]="<<twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim])<<std::endl;
-//  } 
 
+  
   app_log()<<" Now evaluating nonlocalecp\n"; 
   OperatorBase* nlppop=ham->getHamiltonian(NONLOCALECP);
   app_log()<<"nlppop = "<<nlppop<<std::endl;
@@ -523,20 +532,16 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   twf.build_X(minv,B_gs,X);
   
   ValueType nlpp = 0.0;
-  //Now to compute the kinetic energy
-  for(int id=0; id<matlist.size(); id++)
-  {
-    int ptclnum = twf.num_particles(id);
-    ValueType nlpp_id = 0.0;
-    for(int i=0; i<ptclnum; i++)
-      for(int j=0; j<ptclnum; j++)
-      {
-        nlpp_id+=minv[id][i][j]*B_gs[id][j][i];
-      }
-    nlpp+=nlpp_id;
-  }
+  RealType nlpp_obs=0.0;
+  nlpp=twf.trAB(minv,B_gs);
+  convert(nlpp,nlpp_obs);
+
   app_log()<<"NLPP = "<<nlpp<<std::endl;
-   
+  
+  REQUIRE( nlpp_obs == Approx(1.3849558361e+01));  
+
+  ParticleSet::ParticleGradient_t fnlpp_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos_t fnlpp(ions.getTotalNum());
   for(int ionid=0; ionid<ions.getTotalNum(); ionid++)
   {
     for(int idim=0; idim<OHMMS_DIM; idim++)
@@ -552,9 +557,26 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
     {
       twf.get_gs_matrix(dB[idim],dB_gs[idim]); 
       twf.get_gs_matrix(dM[idim],dM_gs[idim]);
-      app_log()<<"F["<<ionid<<"]["<<idim<<"]="<<twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim])<<std::endl;
+      fnlpp_complex[ionid][idim]=twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim]);
     }
+    convert(fnlpp_complex[ionid],fnlpp[ionid]);
   }
+
+#if defined(MIXED_PRECISION)
+  REQUIRE(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
+  REQUIRE(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
+  REQUIRE(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
+  REQUIRE(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
+  REQUIRE(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
+  REQUIRE(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
+#else
+  REQUIRE(fnlpp[0][0] == Approx(24.2239540340527491));
+  REQUIRE(fnlpp[0][1] == Approx(-41.9981344310649263));
+  REQUIRE(fnlpp[0][2] == Approx(-98.9123955744908159));
+  REQUIRE(fnlpp[1][0] == Approx(2.5105943834091704));
+  REQUIRE(fnlpp[1][1] == Approx(1.1345766918857692));
+  REQUIRE(fnlpp[1][2] == Approx(-5.2293234395150989));
+#endif
 }
 
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
