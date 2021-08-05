@@ -53,8 +53,8 @@ void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(OffloadPinnedValueMatrix_t&
                                                      OffloadPinnedValueMatrix_t& a_inv)
 {
   ScopedTimer inverse_timer(InverseTimer);
-  ValueMatrix_t logdet_host(logdetT.data(), logdetT.cols(), logdetT.rows());
-  ValueMatrix_t a_inv_host(a_inv.data(), a_inv.cols(), a_inv.rows());
+  ValueMatrix_t logdet_host(logdetT.data(), logdetT.rows(), logdetT.cols());
+  ValueMatrix_t a_inv_host(a_inv.data(), a_inv.rows(), a_inv.cols());
   single_walker_dm_.invert_transpose(logdet_host, a_inv_host, LogValue);
 
   //det_engine_.invert_transpose(logdetT, a_inv, mw_res.log_values);
@@ -967,7 +967,6 @@ typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<D
   return gradPsi;
 }
 
-
 /** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients
@@ -984,9 +983,10 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
-  recompute(*mw_res_, P);
+  recompute(//*mw_res_,
+            P);
   computeGL(G, L);
-  LogValue = mw_res_->log_values[0];
+  //LogValue = mw_res_->log_values[0];
   return LogValue;
 }
 
@@ -1009,7 +1009,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMultiWalkerResource& mw_res,
+void DiracDeterminantBatched<DET_ENGINE>::recompute(//DiracDeterminantBatchedMultiWalkerResource& mw_res,
                                                     const ParticleSet& P)
 {
   {

@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -258,6 +259,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
   auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
+  ResourceCollection twf_res("test_twf_res");
+  wf_list.getLeader().createResource(twf_res);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_list);
+  
   TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list,
                                               fixedL_list);
 

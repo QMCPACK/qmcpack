@@ -193,7 +193,9 @@ public:
   void restore(int iat) override;
 
   /** evaluate log of a determinant for a particle set
-   * This is the most defensive call. The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
+   * This is the mostly a defensive call. The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
+   * calls recompute, which calls invertpsiM, which sets LogValue member to log determinant of M
+   * as a side effect. *sigh*
    */
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
@@ -204,7 +206,8 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(DiracDeterminantBatchedMultiWalkerResource& mw_res, const ParticleSet& P);
+  void recompute(//DiracDeterminantBatchedMultiWalkerResource& mw_res,
+                 const ParticleSet& P) override;
 
   void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
@@ -247,7 +250,7 @@ public:
   ValueMatrix_t& getPsiMinv() override
   {
     auto& psiMinv_actual = det_engine_.get_psiMinv();
-    psiMinv_host_.resize(psiMinv_actual.cols(), psiMinv_actual.rows());
+    psiMinv_host_.resize(psiMinv_actual.rows(), psiMinv_actual.cols());
     // make a copy to prevent damage to the actual psiMinv in the det_engine_;
     psiMinv_host_ = psiMinv_actual;
     return psiMinv_host_;
@@ -324,9 +327,10 @@ private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
-  /// single invert logdetT(psiM), result is stored in DDB object.
-  /// DiracDeterminantBatchedMultiWalkerResource& mw_res
-  void invertPsiM(OffloadPinnedValueMatrix_t& logdetT,
+  /// single invert logdetT(psiM)
+  /// as a side effect LogValue gets the log determinant of logdetT
+  void invertPsiM(//DiracDeterminantBatchedMultiWalkerResource& mw_res,
+                  OffloadPinnedValueMatrix_t& logdetT,
                   OffloadPinnedValueMatrix_t& a_inv);
 
   /// Resize all temporary arrays required for force computation.
