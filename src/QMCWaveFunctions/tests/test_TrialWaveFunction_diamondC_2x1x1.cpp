@@ -41,7 +41,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #if defined(MIXED_PRECISION)
   const double precision = 1e-4;
 #else
-  const double precision = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
+  const double precision                    = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
 #endif
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
@@ -269,14 +269,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << wf_ref_list[1].getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
+        LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
   CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-4.546410485374186, -3.141586279080522)));
+        LogComplexApprox(std::complex<RealType>(-4.546410485374186, -3.141586279080522)));
 #else
   CHECK(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
+        LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
   CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
+        LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
 #endif
 
   std::vector<GradType> grad_old(2);
@@ -310,23 +310,23 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
-  GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
-  std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
-            << grad_temp[1] << " " << grad_temp[2] << std::endl;
+    ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
+    GradType grad_temp;
+    ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
+    std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
+              << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
-  CHECK(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
-  CHECK(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
-  CHECK(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
-  CHECK(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
-  CHECK(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
+    CHECK(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
+    CHECK(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
+    CHECK(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
+    CHECK(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
+    CHECK(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
 #else
-  CHECK(r_0 == Approx(253.71904054638).epsilon(2e-4));
-  CHECK(r_1 == Approx(36.915700247239));
-  CHECK(grad_temp[0] == Approx(1.4564444046733));
-  CHECK(grad_temp[1] == Approx(1.4564444046734));
-  CHECK(grad_temp[2] == Approx(-1.2928240654738));
+    CHECK(r_0 == Approx(253.71904054638).epsilon(2e-4));
+    CHECK(r_1 == Approx(36.915700247239));
+    CHECK(grad_temp[0] == Approx(1.4564444046733));
+    CHECK(grad_temp[1] == Approx(1.4564444046734));
+    CHECK(grad_temp[2] == Approx(-1.2928240654738));
 #endif
   }
 
@@ -355,12 +355,12 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
+    ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+    ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
-            << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
+    std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+              << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
+              << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
@@ -396,14 +396,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << " " << wf_ref_list[1].getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
+        LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
   CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-6.626861768296886, -3.141586279081995)));
+        LogComplexApprox(std::complex<RealType>(-6.626861768296886, -3.141586279081995)));
 #else
   CHECK(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
+        LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
   CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
+        LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
   ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, true);
@@ -476,6 +476,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   TrialWaveFunction::mw_completeUpdates(wf_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
+
+#ifndef NDEBUG
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
             << " " << std::endl;
@@ -489,6 +491,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   CHECK(det_up->getPsiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
   CHECK(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
   CHECK(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
+#endif
 #endif
   std::vector<LogValueType> log_values(wf_ref_list.size());
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);

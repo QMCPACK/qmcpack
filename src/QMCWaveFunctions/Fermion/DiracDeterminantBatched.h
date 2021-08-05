@@ -206,8 +206,8 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(//DiracDeterminantBatchedMultiWalkerResource& mw_res,
-                 const ParticleSet& P) override;
+  void recompute( //DiracDeterminantBatchedMultiWalkerResource& mw_res,
+      const ParticleSet& P) override;
 
   void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
@@ -247,6 +247,7 @@ public:
 
   /// Don't be a dummy and use this for anything but testing.
   ValueMatrix_t psiMinv_host_;
+#ifndef NDEBUG
   ValueMatrix_t& getPsiMinv() override
   {
     auto& psiMinv_actual = det_engine_.get_psiMinv();
@@ -255,7 +256,7 @@ public:
     psiMinv_host_ = psiMinv_actual;
     return psiMinv_host_;
   }
-
+#endif
   /** @defgroup LegacySingleData Single Walker Data Members of Legacy OO design
    *  @brief    Deprecated as high throughput of walkers requires a division between
    *            walker data which should be "SoA" and traditional OO design which is generally AoS with
@@ -329,9 +330,9 @@ private:
 
   /// single invert logdetT(psiM)
   /// as a side effect LogValue gets the log determinant of logdetT
-  void invertPsiM(//DiracDeterminantBatchedMultiWalkerResource& mw_res,
-                  OffloadPinnedValueMatrix_t& logdetT,
-                  OffloadPinnedValueMatrix_t& a_inv);
+  void invertPsiM( //DiracDeterminantBatchedMultiWalkerResource& mw_res,
+      OffloadPinnedValueMatrix_t& logdetT,
+      OffloadPinnedValueMatrix_t& a_inv);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
