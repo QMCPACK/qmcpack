@@ -151,7 +151,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i].reset(new Crowd(*estimator_manager_, golden_resource_, dispatchers_));
+    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
   }
 
   //now give walkers references to their walkers

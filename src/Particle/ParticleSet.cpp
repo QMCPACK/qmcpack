@@ -783,15 +783,13 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
     }
   }
   else
-#pragma omp parallel for
-    for (int iw = 0; iw < p_list.size(); iw++)
-    {
-      if (isAccepted[iw])
-        p_list[iw].acceptMove(iat);
-      else
-        p_list[iw].rejectMove(iat);
-      assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
-    }
+  {
+    // loop over single walker acceptMove/rejectMove doesn't work safely.
+    // need to code carefully for both coordinate and distance table updates
+    // disable non-forward mode cases
+    if (!forward_mode)
+      throw std::runtime_error("BUG calling mw_accept_rejectMove in non-forward mode");
+  }
 }
 
 void ParticleSet::donePbyP()

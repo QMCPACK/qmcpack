@@ -27,10 +27,20 @@ namespace qmcplusplus
 template<typename T>
 struct J2OMPTargetMultiWalkerMem : public Resource
 {
+  // fused buffer for fast transfer in mw_accept
+  Vector<char, OffloadPinnedAllocator<char>> mw_update_buffer;
+  // fused buffer for fast transfer in mw_ratioGrad
+  Vector<char, OffloadPinnedAllocator<char>> mw_ratiograd_buffer;
   // fused buffer for fast transfer
   Vector<char, OffloadPinnedAllocator<char>> transfer_buffer;
   // multi walker result
   Vector<T, OffloadPinnedAllocator<T>> mw_vals;
+  // multi walker result for V and G
+  Matrix<T, OffloadPinnedAllocator<T>> mw_vgl;
+  /// memory pool for Uat, dUat, d2Uat [Nw][N_padded] + [Nw][DIM][N_padded] + [Nw][N_padded]
+  Vector<T, OffloadPinnedAllocator<T>> mw_allUat;
+  /// memory pool for cur_u, cur_du, cur_d2u [3][Nw][N_padded]. 3 is for value, first and second derivatives.
+  Vector<T, OffloadPinnedAllocator<T>> mw_cur_allu;
 
   J2OMPTargetMultiWalkerMem() : Resource("J2OMPTargetMultiWalkerMem") {}
 
@@ -46,20 +56,44 @@ void J2OMPTarget<FT>::createResource(ResourceCollection& collection) const
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection,
+                                      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
-  auto res_ptr = dynamic_cast<J2OMPTargetMultiWalkerMem<RealType>*>(collection.lendResource().release());
+  auto res_ptr     = dynamic_cast<J2OMPTargetMultiWalkerMem<RealType>*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
   wfc_leader.mw_mem_.reset(res_ptr);
+  const size_t nw = wfc_list.size();
+  auto& mw_allUat = wfc_leader.mw_mem_->mw_allUat;
+  mw_allUat.resize(N_padded * (DIM + 2) * nw);
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    size_t offset = N_padded * (DIM + 2) * iw;
+    auto& wfc     = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.Uat.free();
+    wfc.Uat.attachReference(mw_allUat.data() + iw * N_padded, N);
+    wfc.dUat.free();
+    wfc.dUat.attachReference(N, N_padded, mw_allUat.data() + nw * N_padded + iw * N_padded * DIM);
+    wfc.d2Uat.free();
+    wfc.d2Uat.attachReference(mw_allUat.data() + nw * N_padded * (DIM + 1) + iw * N_padded, N);
+  }
+  wfc_leader.mw_mem_->mw_cur_allu.resize(N_padded * 3 * nw);
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
+                                      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   collection.takebackResource(std::move(wfc_leader.mw_mem_));
+  for (size_t iw = 0; iw < wfc_list.size(); iw++)
+  {
+    auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.Uat.free();
+    wfc.dUat.free();
+    wfc.d2Uat.free();
+  }
 }
 
 template<typename FT>
@@ -151,7 +185,7 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
   const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
   const auto& dt_leader(vp_leader.getDistTable(wfc_leader.my_table_ID_));
 
-  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, g_first.data(), g_last.data(), nVPs, mw_refPctls.data(),
+  FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, wfc_leader.N, grp_ids.data(), nVPs, mw_refPctls.data(),
                    dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
                    wfc_leader.mw_mem_->transfer_buffer);
 
@@ -191,7 +225,7 @@ template<typename FT>
 void J2OMPTarget<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   Uat.attachReference(buf.lendReference<valT>(N), N);
-  dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded * OHMMS_DIM));
+  dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded * DIM));
   d2Uat.attachReference(buf.lendReference<valT>(N), N);
 }
 
@@ -224,7 +258,7 @@ template<typename FT>
 typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
 {
   posT grad;
-  for (int idim = 0; idim < OHMMS_DIM; ++idim)
+  for (int idim = 0; idim < DIM; ++idim)
   {
     const valT* restrict dX = displ.data(idim);
     valT s                  = valT();
@@ -240,12 +274,28 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 template<typename FT>
 J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
     : WaveFunctionComponent("J2OMPTarget", obj_name),
-      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      N(p.getTotalNum()),
+      N_padded(getAlignedSize<valT>(N)),
+      NumGroups(p.groups()),
+      my_table_ID_(p.addTable(p)),
       j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
     throw std::runtime_error("J2OMPTarget object name cannot be empty!");
-  init(p);
+
+  F.resize(NumGroups * NumGroups, nullptr);
+
+  // set up grp_ids
+  grp_ids.resize(N);
+  int count = 0;
+  for (int ig = 0; ig < NumGroups; ig++)
+    for (int j = p.first(ig); j < p.last(ig); j++)
+      grp_ids[count++] = ig;
+  assert(count == N);
+  grp_ids.updateTo();
+
+  resizeInternalStorage();
+
   KEcorr = 0.0;
 }
 
@@ -253,34 +303,20 @@ template<typename FT>
 J2OMPTarget<FT>::~J2OMPTarget() = default;
 
 template<typename FT>
-void J2OMPTarget<FT>::init(ParticleSet& p)
+void J2OMPTarget<FT>::resizeInternalStorage()
 {
-  N         = p.getTotalNum();
-  N_padded  = getAlignedSize<valT>(N);
-  NumGroups = p.groups();
-
   Uat.resize(N);
   dUat.resize(N);
   d2Uat.resize(N);
+  // resize scratch compute
   cur_u.resize(N);
   cur_du.resize(N);
   cur_d2u.resize(N);
   old_u.resize(N);
   old_du.resize(N);
   old_d2u.resize(N);
-  F.resize(NumGroups * NumGroups, nullptr);
   DistCompressed.resize(N);
   DistIndice.resize(N);
-
-  g_first.resize(NumGroups);
-  g_last.resize(NumGroups);
-  for (int ig = 0; ig < NumGroups; ig++)
-  {
-    g_first[ig] = p.first(ig);
-    g_last[ig]  = p.last(ig);
-  }
-  g_first.updateTo();
-  g_last.updateTo();
 }
 
 template<typename FT>
@@ -389,6 +425,38 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, in
 }
 
 template<typename FT>
+void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   std::vector<PsiValueType>& ratios) const
+{
+  //right now. Directly use FT::mw_evaluateVGL implementation.
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& p_leader        = p_list.getLeader();
+  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const int nw          = wfc_list.size();
+
+  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+  mw_vgl.resize(nw, DIM + 2);
+
+  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+
+  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
+                     mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
+                     wfc_leader.mw_mem_->mw_ratiograd_buffer);
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& wfc   = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.cur_Uat = mw_vgl[iw][0];
+    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+  }
+}
+
+
+template<typename FT>
 void J2OMPTarget<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
@@ -434,6 +502,39 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratioGrad(ParticleSet& P
 }
 
 template<typename FT>
+void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   std::vector<PsiValueType>& ratios,
+                                   std::vector<GradType>& grad_new) const
+{
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& p_leader        = p_list.getLeader();
+  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const int nw          = wfc_list.size();
+
+  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+  mw_vgl.resize(nw, DIM + 2);
+
+  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+
+  FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
+                     mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
+                     wfc_leader.mw_mem_->mw_ratiograd_buffer);
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& wfc   = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.cur_Uat = mw_vgl[iw][0];
+    ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
+    for (int idim = 0; idim < DIM; idim++)
+      grad_new[iw][idim] += mw_vgl[iw][idim + 1];
+  }
+}
+
+template<typename FT>
 void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // get the old u, du, d2u
@@ -448,7 +549,7 @@ void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
   valT cur_d2Uat(0);
   const auto& new_dr    = d_table.getTempDispls();
   const auto& old_dr    = d_table.getOldDispls();
-  constexpr valT lapfac = OHMMS_DIM - RealType(1);
+  constexpr valT lapfac = DIM - RealType(1);
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
   {
@@ -460,7 +561,7 @@ void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     cur_d2Uat -= newl;
   }
   posT cur_dUat;
-  for (int idim = 0; idim < OHMMS_DIM; ++idim)
+  for (int idim = 0; idim < DIM; ++idim)
   {
     const valT* restrict new_dX    = new_dr.data(idim);
     const valT* restrict old_dX    = old_dr.data(idim);
@@ -485,6 +586,36 @@ void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 }
 
 template<typename FT>
+void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           int iat,
+                                           const std::vector<bool>& isAccepted,
+                                           bool safe_to_delay) const
+{
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& p_leader        = p_list.getLeader();
+  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const int nw          = wfc_list.size();
+
+  auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
+
+  auto& mw_allUat   = wfc_leader.mw_mem_->mw_allUat;
+  auto& mw_cur_allu = wfc_leader.mw_mem_->mw_cur_allu;
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.LogValue += wfc.Uat[iat] - mw_vgl[iw][0];
+  }
+
+  /* this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates */
+  FT::mw_updateVGL(iat, isAccepted, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N,
+                   grp_ids.data(), nw, mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_allUat.data(),
+                   mw_cur_allu.data(), wfc_leader.mw_mem_->mw_update_buffer);
+}
+
+template<typename FT>
 void J2OMPTarget<FT>::recompute(const ParticleSet& P)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
@@ -500,11 +631,11 @@ void J2OMPTarget<FT>::recompute(const ParticleSet& P)
       const valT* restrict du  = cur_du.data();
       const valT* restrict d2u = cur_d2u.data();
       const auto& displ        = d_table.getDisplRow(iat);
-      constexpr valT lapfac    = OHMMS_DIM - RealType(1);
+      constexpr valT lapfac    = DIM - RealType(1);
 #pragma omp simd reduction(+ : lap) aligned(du, d2u : QMC_SIMD_ALIGNMENT)
       for (int jat = 0; jat < iat; ++jat)
         lap += d2u[jat] + lapfac * du[jat];
-      for (int idim = 0; idim < OHMMS_DIM; ++idim)
+      for (int idim = 0; idim < DIM; ++idim)
       {
         const valT* restrict dX = displ.data(idim);
         valT s                  = valT();
@@ -522,7 +653,7 @@ void J2OMPTarget<FT>::recompute(const ParticleSet& P)
         Uat[jat] += u[jat];
         d2Uat[jat] -= d2u[jat] + lapfac * du[jat];
       }
-      for (int idim = 0; idim < OHMMS_DIM; ++idim)
+      for (int idim = 0; idim < DIM; ++idim)
       {
         valT* restrict save_g   = dUat.data(idim);
         const valT* restrict dX = displ.data(idim);
@@ -535,8 +666,17 @@ void J2OMPTarget<FT>::recompute(const ParticleSet& P)
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{}
+void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   const std::vector<bool>& recompute) const
+{
+  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  assert(this == &wfc_leader);
+#pragma omp parallel for
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    wfc_list[iw].recompute(p_list[iw]);
+  wfc_leader.mw_mem_->mw_allUat.updateTo();
+}
 
 template<typename FT>
 typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const ParticleSet& P,
@@ -547,6 +687,31 @@ typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const Partic
 }
 
 template<typename FT>
+void J2OMPTarget<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
+
+{
+  mw_evaluateGL(wfc_list, p_list, G_list, L_list, true);
+}
+
+
+template<typename FT>
+typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSet::ParticleGradient_t& G,
+                                                                      ParticleSet::ParticleLaplacian_t& L) const
+{
+  QTFull::RealType log_val(0);
+  for (int iat = 0; iat < N; ++iat)
+  {
+    log_val += Uat[iat];
+    G[iat] += dUat[iat];
+    L[iat] += d2Uat[iat];
+  }
+  return -0.5 * log_val;
+}
+
+template<typename FT>
 WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSet& P,
                                                                 ParticleSet::ParticleGradient_t& G,
                                                                 ParticleSet::ParticleLaplacian_t& L,
@@ -554,15 +719,28 @@ WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSe
 {
   if (fromscratch)
     recompute(P);
-  LogValue = valT(0);
-  for (int iat = 0; iat < N; ++iat)
+  return LogValue = computeGL(G, L);
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                    const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                    bool fromscratch) const
+{
+  assert(this == &wfc_list.getLeader());
+  if (fromscratch)
   {
-    LogValue += Uat[iat];
-    G[iat] += dUat[iat];
-    L[iat] += d2Uat[iat];
+    const std::vector<bool> recompute_all(wfc_list.size(), true);
+    mw_recompute(wfc_list, p_list, recompute_all);
   }
 
-  return LogValue = -LogValue * 0.5;
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    auto& wfc    = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.LogValue = wfc.computeGL(G_list[iw], L_list[iw]);
+  }
 }
 
 template<typename FT>

@@ -19,6 +19,7 @@
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/LCAOHDFParser.h"
+#include "QMCTools/DiracParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
@@ -33,7 +34,7 @@ int main(int argc, char** argv)
 #endif
   if (argc < 2)
   {
-    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals|-dirac] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
@@ -60,8 +61,8 @@ int main(int argc, char** argv)
       std::cout.setf(std::ios::right, std::ios::adjustfield);
       std::cout.precision(12);
       QMCGaussianParserBase::init();
-      QMCGaussianParserBase* parser = 0;
-      int iargc                     = 0;
+      std::unique_ptr<QMCGaussianParserBase> parser;
+      int iargc = 0;
       std::string in_file(argv[1]);
 
 
@@ -70,7 +71,6 @@ int main(int argc, char** argv)
       std::string ion_tag("ion0");
       std::string jastrow("j");
       std::string prefix;
-
 
       int TargetState = 0;
       bool addJastrow = true;
@@ -90,17 +90,23 @@ int main(int argc, char** argv)
         std::string a(argv[iargc]);
         if (a == "-gaussian")
         {
-          parser  = new GaussianFCHKParser(argc, argv);
+          parser  = std::make_unique<GaussianFCHKParser>(argc, argv);
           in_file = argv[++iargc];
         }
         else if (a == "-gamess")
         {
-          parser  = new GamesAsciiParser(argc, argv);
+          parser  = std::make_unique<GamesAsciiParser>(argc, argv);
           in_file = argv[++iargc];
+        }
+        else if (a == "-dirac")
+        {
+          parser  = std::make_unique<DiracParser>(argc, argv);
+          in_file = argv[++iargc];
+          usehdf5 = true;
         }
         else if (a == "-orbitals")
         {
-          parser  = new LCAOHDFParser(argc, argv);
+          parser  = std::make_unique<LCAOHDFParser>(argc, argv);
           h5      = true;
           in_file = argv[++iargc];
         }
@@ -207,17 +213,17 @@ int main(int argc, char** argv)
         if (ext == "Fchk")
         {
           WARNMSG("Creating GaussianFCHKParser")
-          parser = new GaussianFCHKParser(argc, argv);
+          parser = std::make_unique<GaussianFCHKParser>(argc, argv);
         }
         else if (ext == "h5")
         {
           WARNMSG("Creating LCAOHDFParser")
-          parser = new LCAOHDFParser(argc, argv);
+          parser = std::make_unique<LCAOHDFParser>(argc, argv);
         }
         else if (ext == "out")
         {
           WARNMSG("Creating GamesAsciiParser")
-          parser = new GamesAsciiParser(argc, argv);
+          parser = std::make_unique<GamesAsciiParser>(argc, argv);
         }
         else
         {

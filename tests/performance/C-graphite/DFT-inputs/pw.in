@@ -1,0 +1,26 @@
+&control
+    prefix='lda',
+    pseudo_dir = '.',
+    outdir='.',
+    wf_collect=.true.,
+    tprnfor=.true.,
+    tstress=.true.,
+/
+&system    
+  ibrav=4, a=2.4612, c=6.7079, nat=  4, ntyp= 1,
+  ecutwfc =100, nbnd=16,
+  nosym=.true.,
+  noinv=.true.,
+occupations='smearing', smearing='marzari-vanderbilt', degauss=0.01
+/
+&electrons
+/
+ATOMIC_SPECIES
+ C  12.011 C.BFD.1s2p.upf
+ATOMIC_POSITIONS crystal
+C  0.000000000000  0.000000000000  0
+C  0.333333333333  0.666666666667  0
+C  0.000000000000  0.000000000000  0.5
+C  0.666666666667  0.333333333333  0.5
+K_POINTS automatic
+  24 24 4 0 0 0
