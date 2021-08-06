@@ -407,11 +407,7 @@ include(CMake/Testlibstdc++.cmake)
 #---------------------------------------------------------
 # Check that a C++ standard library is configured properly
 #---------------------------------------------------------
-if(QMC_CXX_STANDARD GREATER_EQUAL 17)
-  include(CMake/TestCxx17Library.cmake)
-else()
-  message(FATAL_ERROR "QMCPACK requires compiler support of c++17 or greater.")
-endif()
+include(CMake/TestCxx17Library.cmake)
 
 if(ENABLE_GCOV)
   if(NOT GCOV_SUPPORTED)
