@@ -18,3 +18,7 @@ if(NOT LIBSTDCXX_OKAY)
 else()
   message(STATUS "libstdc++/C++ compiler version compatibility check pass")
 endif()
+
+find_package(Filesystem
+  COMPONENTS Experimental Final
+  REQUIRED)
