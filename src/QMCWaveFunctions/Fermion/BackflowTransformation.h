@@ -131,7 +131,7 @@ public:
   HessType HESS_ID;
   HessType DummyHess;
 
-  std::vector<BackflowFunctionBase*> bfFuns;
+  std::vector<std::unique_ptr<BackflowFunctionBase>> bfFuns;
 
   std::map<std::string, int> sources;
   std::vector<std::string> names;
@@ -175,9 +175,9 @@ public:
   }
 
   // FIX FIX FIX
-  BackflowTransformation* makeClone(ParticleSet& tqp)
+  std::unique_ptr<BackflowTransformation> makeClone(ParticleSet& tqp)
   {
-    BackflowTransformation* clone = new BackflowTransformation(tqp);
+    auto clone = std::make_unique<BackflowTransformation>(tqp);
     clone->copyFrom(*this, tqp);
     //       std::vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
     //       for(int i=0; i<(bfFuns).size() ; i++,it++)

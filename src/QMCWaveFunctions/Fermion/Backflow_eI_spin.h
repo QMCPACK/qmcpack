@@ -101,9 +101,9 @@ public:
     }
   }
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_eI_spin<FT>* clone = new Backflow_eI_spin<FT>(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_eI_spin<FT>>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);
     clone->indexOfFirstParam = indexOfFirstParam;
     clone->offsetPrms        = offsetPrms;

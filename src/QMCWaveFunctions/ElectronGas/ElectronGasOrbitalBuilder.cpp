@@ -39,7 +39,7 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
 }
 
 ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els)
-    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(nullptr)
+    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false)
 {}
 
 std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
@@ -114,50 +114,46 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
   }
 
   //create a Slater determinant
-  auto sdet = UseBackflow ? std::make_unique<SlaterDetWithBackflow>(targetPtcl, BFTrans)
-                          : std::make_unique<SlaterDeterminant_t>(targetPtcl);
 
   if (UseBackflow)
   {
-    DiracDeterminantWithBackflow *updet, *downdet;
     app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
     //create up determinant
-    updet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psiu), BFTrans, 0);
+    auto updet = std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psiu), nullptr, 0);
     updet->set(0, nup);
+    PtclPoolType dummy;
+    BackflowBuilder bfbuilder(targetPtcl, dummy);
+    auto BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
+    auto sdet    = std::make_unique<SlaterDetWithBackflow>(targetPtcl, nullptr);
+    sdet->add(std::move(updet), 0);
     if (ndn > 0)
     {
       //create down determinant
-      downdet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psid), BFTrans, nup);
+      auto downdet = std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psid), nullptr, nup);
       downdet->set(nup, ndn);
+      sdet->add(std::move(downdet), 1);
     }
-    PtclPoolType dummy;
-    BackflowBuilder bfbuilder(targetPtcl, dummy);
-    BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
-    sdet->add(updet, 0);
-    if (ndn > 0)
-      sdet->add(downdet, 1);
-    sdet->setBF(BFTrans);
     if (BFTrans->isOptimizable())
       sdet->Optimizable = true;
+    sdet->setBF(std::move(BFTrans));
+    return sdet;
   }
   else
   {
-    DiracDeterminant<>*updet, *downdet;
     //create up determinant
-    updet = new DiracDeterminant<>(std::move(psiu));
+    auto updet = std::make_unique<DiracDeterminant<>>(std::move(psiu));
     updet->set(0, nup);
+    auto sdet = std::make_unique<SlaterDeterminant_t>(targetPtcl);
+    sdet->add(std::move(updet), 0);
     if (ndn > 0)
     {
       //create down determinant
-      downdet = new DiracDeterminant<>(std::move(psid));
+      auto downdet = std::make_unique<DiracDeterminant<>>(std::move(psid));
       downdet->set(nup, ndn);
+      sdet->add(std::move(downdet), 1);
     }
-    sdet->add(updet, 0);
-    if (ndn > 0)
-      sdet->add(downdet, 1);
+    return sdet;
   }
-
-  return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)

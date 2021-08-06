@@ -46,10 +46,10 @@ public:
   ~SlaterDet() override;
 
   ///add a new DiracDeterminant to the list of determinants
-  virtual void add(Determinant_t* det, int ispin);
+  virtual void add(std::unique_ptr<Determinant_t> det, int ispin);
 
   ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
+  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   void checkInVariables(opt_variables_type& active) override;
 

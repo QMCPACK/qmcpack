@@ -86,7 +86,7 @@ public:
    */
   void set(int first, int nel, int ref_det_id);
 
-  void setBF(BackflowTransformation* bf) {}
+  void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }

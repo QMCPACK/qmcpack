@@ -49,11 +49,9 @@ public:
       RadFun.push_back(RF);
   }
 
-  ~Backflow_eI() override{};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_eI<FT>>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);
     clone->indexOfFirstParam = indexOfFirstParam;
     clone->offsetPrms        = offsetPrms;

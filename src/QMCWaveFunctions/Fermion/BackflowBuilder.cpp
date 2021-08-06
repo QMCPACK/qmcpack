@@ -38,15 +38,15 @@
 namespace qmcplusplus
 {
 BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
-    : cutOff(1.0), targetPtcl(els), ptclPool(pool), BFTrans(0)
+    : cutOff(1.0), targetPtcl(els), ptclPool(pool)
 {
 }
 
-BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
+std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
   xmlNodePtr curRoot = cur;
   std::string cname;
-  BFTrans = new BackflowTransformation(targetPtcl);
+  auto BFTrans = std::make_unique<BackflowTransformation>(targetPtcl);
   cur     = curRoot->children;
   while (cur != NULL)
   {
@@ -65,7 +65,7 @@ BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr 
       BFTrans->names.push_back(name);
       if (type == "e-e")
       {
-        addTwoBody(cur);
+        BFTrans->bfFuns.push_back(addTwoBody(cur));
       }
       else if (type == "e-e-I")
       {
@@ -73,12 +73,12 @@ BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr 
       }
       else if (type == "e-I")
       {
-        addOneBody(cur);
+        BFTrans->bfFuns.push_back(addOneBody(cur));
       }
       else if (type == "rpa")
       {
         app_log() << "Adding RPA backflow functions. \n";
-        addRPA(cur);
+        BFTrans->bfFuns.push_back(addRPA(cur));
       }
       else
       {
@@ -91,7 +91,7 @@ BackflowTransformation* BackflowBuilder::buildBackflowTransformation(xmlNodePtr 
   return BFTrans;
 }
 
-void BackflowBuilder::addOneBody(xmlNodePtr cur)
+std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur)
 {
   OhmmsAttributeSet spoAttrib;
   std::string source("none");
@@ -118,7 +118,7 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
     ions = (*pit).second;
   }
   app_log() << "Adding electron-Ion backflow for source:" << source << " \n";
-  BackflowFunctionBase* tbf = 0;
+  std::unique_ptr<BackflowFunctionBase> tbf;
   int nIons                 = ions->getTotalNum();
   SpeciesSet& sSet          = ions->getSpeciesSet();
   SpeciesSet& tSet          = targetPtcl.getSpeciesSet();
@@ -246,8 +246,8 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
     if (funct == "Bspline")
     {
       app_log() << "Using BsplineFunctor type. \n";
-      tbf = (BackflowFunctionBase*)new Backflow_eI<BsplineFunctor<RealType>>(*ions, targetPtcl);
-      Backflow_eI<BsplineFunctor<RealType>>* dum = (Backflow_eI<BsplineFunctor<RealType>>*)tbf;
+      tbf       = std::make_unique<Backflow_eI<BsplineFunctor<RealType>>>(*ions, targetPtcl);
+      auto* dum = (Backflow_eI<BsplineFunctor<RealType>>*)tbf.get();
       tbf->numParams                             = 0;
       std::vector<int> offsets;
       for (int i = 0; i < funs.size(); i++)
@@ -282,11 +282,10 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
       APP_ABORT("Unknown function type in e-I BF Transformation.\n");
     }
   } //spin="no"
-  BFTrans->bfFuns.push_back(tbf);
-  //      tbf->reportStatus(cerr);
+  return tbf;
 }
 
-void BackflowBuilder::addTwoBody(xmlNodePtr cur)
+std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur)
 {
   app_log() << "Adding electron-electron backflow. \n";
   OhmmsAttributeSet trAttrib;
@@ -299,7 +298,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
   trAttrib.put(cur);
   xmlNodePtr curRoot = cur;
   //BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<RealType> >(targetPtcl,targetPtcl);
-  Backflow_ee<BsplineFunctor<RealType>>* tbf = new Backflow_ee<BsplineFunctor<RealType>>(targetPtcl, targetPtcl);
+  auto tbf = std::make_unique<Backflow_ee<BsplineFunctor<RealType>>>(targetPtcl, targetPtcl);
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   std::vector<int> offsets;
   if (funct == "Bspline")
@@ -330,15 +329,16 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
         }
         app_log() << "Adding radial component for species: " << spA << " " << spB << " " << ia << "  " << ib
                   << std::endl;
-        BsplineFunctor<RealType>* bsp = new BsplineFunctor<RealType>();
-        bsp->cutoff_radius            = targetPtcl.Lattice.WignerSeitzRadius;
+        auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
+        bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
         bsp->put(cur);
         if (bsp->cutoff_radius > cutOff)
           cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::BACKFLOW_P);
-        tbf->addFunc(ia, ib, bsp);
         offsets.push_back(tbf->numParams);
         tbf->numParams += bsp->NumParams;
+        tbf->addFunc(ia, ib, std::move(bsp));
+
         //            if(OHMMS::Controller->rank()==0)
         //            {
         //              char fname[64];
@@ -360,7 +360,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
       bool done = false;
       for (int k = 0; k < tbf->uniqueRadFun.size(); k++)
       {
-        if (tbf->RadFun[i] == tbf->uniqueRadFun[k])
+        if (tbf->RadFun[i] == tbf->uniqueRadFun[k].get())
         {
           done               = true;
           tbf->offsetPrms[i] = offsets[k];
@@ -372,15 +372,15 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
         APP_ABORT("Error creating Backflow_ee object. \n");
       }
     }
-    BFTrans->bfFuns.push_back((BackflowFunctionBase*)tbf);
   }
   else
   {
     APP_ABORT("Unknown function type in e-e BF Transformation.\n");
   }
+  return tbf;
 }
 
-void BackflowBuilder::addRPA(xmlNodePtr cur)
+std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addRPA(xmlNodePtr cur)
 {
   ReportEngine PRE("BackflowBuilder", "addRPA");
   /*
@@ -438,7 +438,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
   std::vector<int> offsetsSR;
   std::vector<int> offsetsLR;
-  Backflow_ee<BsplineFunctor<RealType>>* tbf = 0;
+  std::unique_ptr<Backflow_ee<BsplineFunctor<RealType>>> tbf;
   Backflow_ee_kSpace* tbfks                  = 0;
   // now look for components
   std::string cname;
@@ -454,11 +454,11 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
       anAttrib.put(cur);
       if (type == "shortrange")
       {
-        if (tbf == 0)
+        if (tbf == nullptr)
         {
-          tbf = new Backflow_ee<BsplineFunctor<RealType>>(targetPtcl, targetPtcl);
+          tbf = std::make_unique<Backflow_ee<BsplineFunctor<RealType>>>(targetPtcl, targetPtcl);
         }
-        makeShortRange_twoBody(cur, tbf, offsetsSR);
+        makeShortRange_twoBody(cur, tbf.get(), offsetsSR);
       }
       else if (type == "longrange")
       {
@@ -479,7 +479,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-  if (tbf != 0)
+  if (tbf != nullptr)
   {
     tbf->derivs.resize(tbf->numParams);
     // setup offsets
@@ -489,7 +489,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
       bool done = false;
       for (int k = 0; k < tbf->uniqueRadFun.size(); k++)
       {
-        if (tbf->RadFun[i] == tbf->uniqueRadFun[k])
+        if (tbf->RadFun[i] == tbf->uniqueRadFun[k].get())
         {
           done = true;
           // how do I calculate the offset now???
@@ -502,8 +502,8 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
         APP_ABORT("Error creating Backflow_ee object in addRPA. \n");
       }
     }
-    BFTrans->bfFuns.push_back((BackflowFunctionBase*)tbf);
   }
+  return tbf;
 }
 
 void BackflowBuilder::makeLongRange_oneBody() {}
@@ -629,7 +629,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       {
         APP_ABORT("Unknown correlation type " + type + " in Backflow.");
       }
-      BsplineFunctor<RealType>* bsp = new BsplineFunctor<RealType>();
+      auto bsp = std::make_unique<BsplineFunctor<RealType>>();
       if (init == "true" || init == "yes")
       {
         app_log() << "Initializing backflow radial functions with RPA.";
@@ -674,14 +674,13 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
         //              for (int j=0; j<nfitgaussians; j++) y1_c+=gb[j]*(std::exp(-x[1]*x[1]/((j+1)*Rcut*Rcut)));
         //              for (int j=0; j<nfitgaussians; j++) y2_c+=gb[j]*(std::exp(-x[2]*x[2]/((j+1)*Rcut*Rcut)));
         //make a temp functor to ensure right BC's (Necessary?)
-        BsplineFunctor<RealType>* tmp_bsp = new BsplineFunctor<RealType>();
+        auto tmp_bsp = std::make_unique<BsplineFunctor<RealType>>();
         tmp_bsp->initialize(12, x, y, cusp, Rcut, id, optimize);
         //              tmp_bsp->print(app_log());
         for (int i = 0; i < myGrid->size(); i++)
         {
           y[i] = tmp_bsp->f(x[i]);
         }
-        delete tmp_bsp;
         //make functor for backflow
         bsp->initialize(size, x, y, cusp, Rcut, id, optimize);
       }
@@ -692,7 +691,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       if (bsp->cutoff_radius > cutOff)
         cutOff = bsp->cutoff_radius;
       bsp->myVars.setParameterType(optimize::BACKFLOW_P);
-      tbf->addFunc(ia, ib, bsp);
+      tbf->addFunc(ia, ib, std::move(bsp));
       offsets.push_back(tbf->numParams);
       tbf->numParams += bsp->NumParams;
       //            if(OHMMS::Controller->rank()==0)
