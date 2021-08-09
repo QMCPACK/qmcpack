@@ -171,6 +171,8 @@ struct QMCGaussianParserBase
   static std::vector<std::string> gShellType;
   static std::vector<int> gShellID;
 
+  static const std::vector<double> gCoreTable;
+
   static void init();
 };
 #endif

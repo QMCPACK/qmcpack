@@ -35,6 +35,17 @@ std::map<int, std::string> QMCGaussianParserBase::IonName;
 std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
 
+const std::vector<double> QMCGaussianParserBase::gCoreTable = {
+    0,                                      /* index zero*/
+    1,  2,                                  /*H He */
+    2,  2,  2,  2,  2,  2,  2,  10,         /*Li-Ne*/
+    10, 10, 10, 10, 10, 10, 10, 18,         /*Na-Ar*/
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
+    28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
+    46, 46, 46, 46, 46, 54                  /*In-Xe*/
+};
+
 QMCGaussianParserBase::QMCGaussianParserBase()
     : multideterminant(false),
       multidetH5(false),
@@ -425,23 +436,13 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     IonSystem.R *= ang_to_bohr;
   }
-  double CoreTable[] = {
-      0,                                      /* index zero*/
-      1,  2,                                  /*H He */
-      2,  2,  2,  2,  2,  2,  2,  10,         /*Li-Ne*/
-      10, 10, 10, 10, 10, 10, 10, 18,         /*Na-Ar*/
-      18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
-      28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
-      36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
-      46, 46, 46, 46, 46, 54                  /*In-Xe*/
-  };
-  SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+  SpeciesSet& ionSpecies = IonSystem.getSpeciesSet();
   for (int i = 0; i < ionSpecies.getTotalNum(); i++)
   {
     int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
     double valence = ionSpecies(IonChargeIndex, i);
-    if (valence > CoreTable[z] && FixValence != true)
-      valence -= CoreTable[z];
+    if (valence > gCoreTable[z] && !FixValence)
+      valence -= gCoreTable[z];
     ionSpecies(ValenceChargeIndex, i) = valence;
     ionSpecies(AtomicNumberIndex, i)  = z;
   }
@@ -475,8 +476,8 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
       hout.push(SpecieID.str().c_str(), true);
       int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
       double valence = ionSpecies(IonChargeIndex, i);
-      if (valence > CoreTable[z] && FixValence != true)
-        valence -= CoreTable[z];
+      if (valence > gCoreTable[z] && FixValence != true)
+        valence -= gCoreTable[z];
       hout.write(z, "charge");
       hout.write(z, "atomic_number");
       hout.write(valence, "core");
