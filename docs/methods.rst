@@ -1160,7 +1160,7 @@ Use the following parameters to the linear optimizers to output intermediate val
 
   The ``output_matrices_csv`` parameter will write to <base name>.ham.s000.scalar.dat and <base name>.ovl.scalar.dat.  One line per iteration of the optimizer loop.  Combined with ``freeze_parameters``, this allows computing error bars on the matrices for use in regression testing.
 
-  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
+  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
 
 
 .. _dmc:

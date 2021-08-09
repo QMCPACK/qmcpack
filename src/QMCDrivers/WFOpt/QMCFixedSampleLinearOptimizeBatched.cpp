@@ -1295,7 +1295,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   hdf_archive hout;
   if (do_output_matrices_hdf_)
   {
-    std::string newh5 = "linear_matrices.h5";
+    std::string newh5 = get_root_name() + ".linear_matrices.h5";
     hout.create(newh5, H5F_ACC_TRUNC);
     hout.write(ovlMat, "overlap");
     hout.write(hamMat, "Hamiltonian");
