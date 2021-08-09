@@ -73,7 +73,7 @@ public:
                        bool fromscratch) const;
 
   void flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                           const RefVector<const VirtualParticleSet>& vp_list,
+                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                            const RefVector<std::vector<ValueType>>& ratios_list,
                            ComputeType ct) const;
 

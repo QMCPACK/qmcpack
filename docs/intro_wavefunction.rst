@@ -37,72 +37,29 @@ standard trial wavefunction for an electronic structure problem
 
 where :math:`\textit{A}(\vec{r})`
 is one of the antisymmetric functions: (1) slater determinant, (2) multislater determinant, or (3) pfaffian and :math:`\textit{J}_k`
-is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetric functions are built from a set of single particle orbitals ``(sposet)``. QMCPACK implements four different types of ``sposet``, described in the following section. Each ``sposet`` is designed for a different type of calculation, so their definition and generation varies accordingly.
-
-.. _singledeterminant:
-
-Single determinant wavefunctons
--------------------------------
-
-Placing a single determinant for each spin is the most used ansatz for the antisymmetric part of a trial wavefunction.
-The input xml block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listing 1>`. A list of options is given in
-:numref:`Table2`.
-
-``slaterdeterminant`` element:
-
-
-.. _Table2:
-.. table::
-
-     +-----------------+--------------------+
-     | Parent elements | ``determinantset`` |
-     +-----------------+--------------------+
-     | Child elements  | ``determinant``    |
-     +-----------------+--------------------+
-
-Attribute:
-
-+-----------------+----------+--------+---------+------------------------------+
-| Name            | Datatype | Values | Default | Description                  |
-+=================+==========+========+=========+==============================+
-| ``delay_rank``  | Integer  | >=0    | 1       | Number of delayed updates.   |
-+-----------------+----------+--------+---------+------------------------------+
-| ``optimize``    | Text     | yes/no | yes     | Enable orbital optimization. |
-+-----------------+----------+--------+---------+------------------------------+
-
-
-.. centered:: Table 2 Options for the ``slaterdeterminant`` xml-block.
+is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetric functions are built from a set of single particle orbitals (SPO) ``(sposet)``. QMCPACK implements four different types of ``sposet``, described in the following section. Each ``sposet`` is designed for a different type of calculation, so their definition and generation varies accordingly.
 
 .. code-block::
-      :caption: Slaterdeterminant set XML element.
-      :name: Listing 1
+   :caption: wavefunction XML element skeleton.
+   :name: wavefunction.skeleton.xml
 
-      <slaterdeterminant delay_rank="32">
-         <determinant id="updet" size="208">
-           <occupation mode="ground" spindataset="0">
-           </occupation>
-         </determinant>
-         <determinant id="downdet" size="208">
-           <occupation mode="ground" spindataset="0">
-           </occupation>
-         </determinant>
+   <wavefunction>
+     <sposet_collection ...>
+       <sposet ...>
+         ...
+       </sposet>
+     </sposet_collection>
+     <determinantset>
+       <slaterdeterminant ...>
+         ...
        </slaterdeterminant>
-
-
-Additional information:
-
-- ``delay_rank`` This option enables delayed updates of the Slater matrix inverse when particle-by-particle move is used.
-  By default or if ``delay_rank=0`` given in the input file, QMCPACK sets 1 for Slater matrices with a leading dimension :math:`<192` and 32 otherwise.
-  ``delay_rank=1`` uses the Fahy's variant :cite:`Fahy1990` of the Sherman-Morrison rank-1 update, which is mostly using memory bandwidth-bound BLAS-2 calls.
-  With ``delay_rank>1``, the delayed update algorithm :cite:`Luo2018delayedupdate,McDaniel2017` turns most of the computation to compute bound BLAS-3 calls.
-  Tuning this parameter is highly recommended to gain the best performance on medium-to-large problem sizes (:math:`>200` electrons).
-  We have seen up to an order of magnitude speedup on large problem sizes.
-  When studying the performance of QMCPACK, a scan of this parameter is required and we recommend starting from 32.
-  The best ``delay_rank`` giving the maximal speedup depends on the problem size.
-  Usually the larger ``delay_rank`` corresponds to a larger problem size.
-  On CPUs, ``delay_rank`` must be chosen as a multiple of SIMD vector length for good performance of BLAS libraries.
-  The best ``delay_rank`` depends on the processor microarchitecture.
-  GPU support is under development.
+       <backflow>
+         ...
+       </backflow>
+     </determinantset>
+     <jastrow ...>
+     </jastrow>
+   </wavefunction>
 
 .. _singleparticle:
 
@@ -161,35 +118,32 @@ The input xml block for the spline SPOs is given in :ref:`Listing 2 <Listing 2>`
 :numref:`table3`.
 
 .. code-block::
-  :caption: Determinant set XML element.
+  :caption: Spline SPO XML element.
   :name: Listing 2
 
-  <determinantset type="bspline" source="i" href="pwscf.h5"
+  <sposet_collection type="bspline" source="i" href="pwscf.h5"
                   tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
                   twist="0  0  0" precision="double">
-    <slaterdeterminant>
-      <determinant id="updet" size="208">
-        <occupation mode="ground" spindataset="0">
-        </occupation>
-      </determinant>
-      <determinant id="downdet" size="208">
-        <occupation mode="ground" spindataset="0">
-        </occupation>
-      </determinant>
-    </slaterdeterminant>
-  </determinantset>
+    <sposet name="spo-up" size="208">
+      <occupation mode="ground" spindataset="0"/>
+    </sposet>
+    <!-- spin polarized case needs two sposets /-->
+    <sposet name="spo-dn" size="208">
+      <occupation mode="ground" spindataset="1"/>
+    </sposet>
+  </sposet_collection>
 
 
-``determinantset`` element:
+``sposet_collection`` element:
 
 .. _table3:
 .. table::
 
-  +-----------------+-----------------------+
-  | Parent elements | ``wavefunction``      |
-  +-----------------+-----------------------+
-  | Child elements  | ``slaterdeterminant`` |
-  +-----------------+-----------------------+
+  +-----------------+------------------+
+  | Parent elements | ``wavefunction`` |
+  +-----------------+------------------+
+  | Child elements  | ``sposet``       |
+  +-----------------+------------------+
 
 attribute:
 
@@ -311,31 +265,32 @@ A list of options for ``determinantset`` associated with this ``sposet`` is give
    :caption: Basic input block for a single determinant trial wavefunction using a ``sposet`` expanded on an atom-centered basis set.
    :name: Listing 3
 
-    <wavefunction id="psi0" target="e">
-      <determinantset>
-        <basisset>
-          ...
-        </basisset>
-        <slaterdeterminant>
-          ...
-        </slaterdeterminant>
-      </determinantset>
-    </wavefunction>
+   <sposet_collection type="MolecularOrbital" source="ion0" cuspCorrection="no">
+     <basisset name="LCAOBSet" transform="yes">
+       ...
+     </basisset>
+     <sposet name="spo" basisset="LCAOBSet" size="1">
+       <occupation mode="ground"/>
+       <coefficient size="1" id="updetC">
+         1.00000000000000e+00
+       </coefficient>
+     </sposet>
+   </sposet_collection>
 
 
 The definition of the set of atom-centered basis functions is given by the ``basisset`` block, and the ``sposet`` is defined within ``slaterdeterminant``. The ``basisset`` input block is composed from a collection of ``atomicBasisSet`` input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for ``basisset`` and ``atomicBasisSet`` are given in :ref:`Listing 4 <Listing 4>`, and the corresponding lists of options are given in
 :numref:`table5` and :numref:`table6`.
 
-``determinantset`` element:
+``sposet_collection`` element:
 
 .. _table4:
 .. table::
 
-  +-----------------+--------------------------------------------------------------------------+
-  | Parent elements | ``wavefunction``                                                         |
-  +-----------------+--------------------------------------------------------------------------+
-  | Child elements  | ``basisset`` , ``slaterdeterminant`` , ``sposet`` , ``multideterminant`` |
-  +-----------------+--------------------------------------------------------------------------+
+  +-----------------+---------------------------+
+  | Parent elements | ``wavefunction``          |
+  +-----------------+---------------------------+
+  | Child elements  | ``basisset`` , ``sposet`` |
+  +-----------------+---------------------------+
 
 Attribute:
 
@@ -583,11 +538,11 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :caption: Hybrid orbital representation input example.
   :name: Listing 6
 
-  <determinantset type="bspline" source="i" href="pwscf.h5"
+  <sposet_collection type="bspline" source="i" href="pwscf.h5"
                 tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
-  </determinantset>
+  </sposet_collection>
 
 Second, the information describing the atomic regions is required in the particle set, shown in :ref:`Listing 7 <Listing 7>`.
 
@@ -660,40 +615,344 @@ proper pair interaction in the Hamiltonian section.
   :caption: 2D Fermi liquid example: particle specification
   :name: Listing 8
 
-  <qmcsystem>
   <simulationcell name="global">
-  <parameter name="rs" pol="0" condition="74">6.5</parameter>
-  <parameter name="bconds">p p p</parameter>
-  <parameter name="LR_dim_cutoff">15</parameter>
+    <parameter name="rs" pol="0" condition="74">6.5</parameter>
+    <parameter name="bconds">p p p</parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
   </simulationcell>
   <particleset name="e" random="yes">
-  <group name="u" size="37">
-  <parameter name="charge">-1</parameter>
-  <parameter name="mass">1</parameter>
-  </group>
-  <group name="d" size="37">
-  <parameter name="charge">-1</parameter>
-  <parameter name="mass">1</parameter>
-  </group>
+    <group name="u" size="37">
+      <parameter name="charge">-1</parameter>
+      <parameter name="mass">1</parameter>
+    </group>
+    <group name="d" size="37">
+      <parameter name="charge">-1</parameter>
+      <parameter name="mass">1</parameter>
+    </group>
   </particleset>
-  </qmcsystem>
 
 .. code-block::
   :caption: 2D Fermi liquid example (Slater Jastrow wavefunction)
   :name: Listing 9
 
-  <qmcsystem>
-    <wavefunction name="psi0" target="e">
-      <determinantset type="electron-gas" shell="7" shell2="7" randomize="true">
-    </determinantset>
-      <jastrow name="J2" type="Two-Body" function="Bspline" print="no">
-        <correlation speciesA="u" speciesB="u" size="8" cusp="0">
-          <coefficients id="uu" type="Array" optimize="yes">
-        </correlation>
-        <correlation speciesA="u" speciesB="d" size="8" cusp="0">
-          <coefficients id="ud" type="Array" optimize="yes">
-        </correlation>
-      </jastrow>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="electron-gas" shell="7" shell2="7" randomize="true">
+  </determinantset>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="no">
+    <correlation speciesA="u" speciesB="u" size="8" cusp="0">
+      <coefficients id="uu" type="Array" optimize="yes">
+    </correlation>
+    <correlation speciesA="u" speciesB="d" size="8" cusp="0">
+      <coefficients id="ud" type="Array" optimize="yes">
+    </correlation>
+  </jastrow>
+  </wavefunction>
+
+.. _singledeterminant:
+
+Single determinant wavefunctons
+-------------------------------
+
+Placing a single determinant for each spin is the most used ansatz for the antisymmetric part of a trial wavefunction.
+The input xml block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listing 1>`. A list of options is given in
+:numref:`Table2`.
+
+``slaterdeterminant`` element:
+
+
+.. _Table2:
+.. table::
+
+     +-----------------+--------------------+
+     | Parent elements | ``determinantset`` |
+     +-----------------+--------------------+
+     | Child elements  | ``determinant``    |
+     +-----------------+--------------------+
+
+Attribute:
+
++-----------------+----------+--------+---------+------------------------------+
+| Name            | Datatype | Values | Default | Description                  |
++=================+==========+========+=========+==============================+
+| ``delay_rank``  | Integer  | >=0    | 1       | Number of delayed updates.   |
++-----------------+----------+--------+---------+------------------------------+
+| ``optimize``    | Text     | yes/no | yes     | Enable orbital optimization. |
++-----------------+----------+--------+---------+------------------------------+
+
+
+.. centered:: Table 2 Options for the ``slaterdeterminant`` xml-block.
+
+.. code-block::
+   :caption: Slaterdeterminant set XML element.
+   :name: Listing 1
+
+   <sposet_collection ...>
+     <sposet name="spo" size="8">
+       ...
+     </sposet>
+   </sposet_collection>
+   <determinantset>
+     <slaterdeterminant delay_rank="32">
+       <determinant sposet="spo"/>
+       <determinant sposet="spo"/>
+     </slaterdeterminant>
+   </determinantset>
+
+
+Additional information:
+
+- ``delay_rank`` This option enables delayed updates of the Slater matrix inverse when particle-by-particle move is used.
+  By default or if ``delay_rank=0`` given in the input file, QMCPACK sets 1 for Slater matrices with a leading dimension :math:`<192` and 32 otherwise.
+  ``delay_rank=1`` uses the Fahy's variant :cite:`Fahy1990` of the Sherman-Morrison rank-1 update, which is mostly using memory bandwidth-bound BLAS-2 calls.
+  With ``delay_rank>1``, the delayed update algorithm :cite:`Luo2018delayedupdate,McDaniel2017` turns most of the computation to compute bound BLAS-3 calls.
+  Tuning this parameter is highly recommended to gain the best performance on medium-to-large problem sizes (:math:`>200` electrons).
+  We have seen up to an order of magnitude speedup on large problem sizes.
+  When studying the performance of QMCPACK, a scan of this parameter is required and we recommend starting from 32.
+  The best ``delay_rank`` giving the maximal speedup depends on the problem size.
+  Usually the larger ``delay_rank`` corresponds to a larger problem size.
+  On CPUs, ``delay_rank`` must be chosen as a multiple of SIMD vector length for good performance of BLAS libraries.
+  The best ``delay_rank`` depends on the processor microarchitecture.
+  GPU support is under development.
+
+.. _multideterminants:
+
+Multideterminant wavefunctions
+------------------------------
+
+.. code-block::
+   :caption: multideterminant set XML element.
+   :name: multideterminant.xml
+
+   <sposet_collection ...>
+     <sposet name="spo" size="85">
+       ...
+     </sposet>
+   </sposet_collection>
+   <determinantset>
+     <multideterminant optimize="yes" spo_up="spo" spo_dn="spo">
+       <detlist size="1487" type="DETS" nca="0" ncb="0" nea="2" neb="2" nstates="85" cutoff="1e-20" href="LiH.orbs.h5">
+     </multideterminant>
+   </determinantset>
+
+Multiple schemes to generate a multideterminant wavefunction are
+possible, from CASSF to full CI or selected CI. The QMCPACK converter can
+convert MCSCF multideterminant wavefunctions from
+GAMESS :cite:`schmidt93` and CIPSI :cite:`Caffarel2013` wavefunctions from
+Quantum Package :cite:`QP` (QP). Full details of how to run a CIPSI
+calculation and convert the wavefunction for QMCPACK are given in
+:ref:`cipsi`.
+
+The script ``utils/determinants_tools.py`` can be used to generate
+useful information about the multideterminant wavefunction. This script takes, as a required argument, the path of an h5 file corresponding to the wavefunction. Used without optional arguments, it prints the number of determinants, the number of CSFs, and a histogram of the excitation degree.
+
+::
+
+  > determinants_tools.py ./tests/molecules/C2_pp/C2.h5
+  Summary:
+  excitation degree 0 count: 1
+  excitation degree 1 count: 6
+  excitation degree 2 count: 148
+  excitation degree 3 count: 27
+  excitation degree 4 count: 20
+
+  n_det 202
+  n_csf 104
+
+If the ``--verbose`` argument is used, the script will print each determinant,
+the associated CSF, and the excitation degree relative to the first determinant.
+
+::
+
+  > determinants_tools.py -v ./tests/molecules/C2_pp/C2.h5 | head
+  1
+  alpha  1111000000000000000000000000000000000000000000000000000000
+  beta   1111000000000000000000000000000000000000000000000000000000
+  scf    2222000000000000000000000000000000000000000000000000000000
+  excitation degree  0
+
+  2
+  alpha  1011100000000000000000000000000000000000000000000000000000
+  beta   1011100000000000000000000000000000000000000000000000000000
+  scf    2022200000000000000000000000000000000000000000000000000000
+  excitation degree  2
+
+.. _backflow:
+
+Backflow Wavefunctions
+----------------------
+
+One can perturb the nodal surface of a single-Slater/multi-Slater
+wavefunction through use of a backflow transformation. Specifically, if
+we have an antisymmetric function
+:math:`D(\mathbf{x}_{0\uparrow},\cdots,\mathbf{x}_{N\uparrow}, \mathbf{x}_{0\downarrow},\cdots,\mathbf{x}_{N\downarrow})`,
+and if :math:`i_\alpha` is the :math:`i`-th particle of species type
+:math:`\alpha`, then the backflow transformation works by making the
+coordinate transformation
+:math:`\mathbf{x}_{i_\alpha} \to \mathbf{x}'_{i_\alpha}` and evaluating
+:math:`D` at these new “quasiparticle" coordinates. QMCPACK currently
+supports quasiparticle transformations given by
+
+.. math::
+  :label: eq24
+
+  \mathbf{x}'_{i_\alpha}=\mathbf{x}_{i_\alpha}+\sum_{\alpha \leq \beta} \sum_{i_\alpha \neq j_\beta} \eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)(\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta})\:.
+
+Here, :math:`\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)`
+is a radially symmetric backflow transformation between species
+:math:`\alpha` and :math:`\beta`. In QMCPACK, particle :math:`i_\alpha`
+is known as the “target" particle and :math:`j_\beta` is known as the
+“source." The main types of transformations are so-called one-body
+terms, which are between an electron and an ion
+:math:`\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)` and two-body
+terms. Two-body terms are distinguished as those between like and
+opposite spin electrons:
+:math:`\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)`
+and
+:math:`\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)`.
+Henceforth, we will assume that
+:math:`\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}`.
+
+In the following, we explain how to describe general terms such as
+:eq:`eq24` in a QMCPACK XML file. For specificity, we will
+consider a particle set consisting of H and He (in that order). This
+ordering will be important when we build the XML file, so you can find
+this out either through your specific declaration of <particleset>, by
+looking at the hdf5 file in the case of plane waves, or by looking at
+the QMCPACK output file in the section labeled “Summary of QMC systems."
+
+Input specifications
+~~~~~~~~~~~~~~~~~~~~
+
+All backflow declarations occur within a single ``<backflow> ... </backflow>`` block.  Backflow transformations occur in ``<transformation>`` blocks and have the following input parameters:
+
+Transformation element:
+
+  +----------+--------------+------------+-------------+----------------------------------------------------------+
+  | **Name** | **Datatype** | **Values** | **Default** | **Description**                                          |
+  +==========+==============+============+=============+==========================================================+
+  | name     | Text         |            | (Required)  | Unique name for this Jastrow function.                   |
+  +----------+--------------+------------+-------------+----------------------------------------------------------+
+  | type     | Text         | "e-I"      | (Required)  | Define a one-body backflow transformation.               |
+  +----------+--------------+------------+-------------+----------------------------------------------------------+
+  |          | Text         | "e-e"      |             | Define a two-body backflow transformation.               |
+  +----------+--------------+------------+-------------+----------------------------------------------------------+
+  | function | Text         | B-spline   | (Required)  | B-spline type transformation (no other types supported). |
+  +----------+--------------+------------+-------------+----------------------------------------------------------+
+  | source   | Text         |            |             | "e" if two body, ion particle set if one body.           |
+  +----------+--------------+------------+-------------+----------------------------------------------------------+
+
+Just like one- and two-body jastrows, parameterization of the backflow transformations are specified within the ``<transformation>`` blocks by  ``<correlation>`` blocks.  Please refer to :ref:`onebodyjastrowspline` for more information.
+
+Example Use Case
+~~~~~~~~~~~~~~~~
+
+Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The hydrogen and helium ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order they appear in the particle set.  If in our example, helium is listed first and hydrogen is listed second, the following example would be correct.  However, switching backflow declaration to hydrogen first then helium, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks are not sensitive to ordering.
+
+::
+
+  <backflow>
+  <!--The One-Body term with independent e-He and e-H terms. IN THAT ORDER -->
+  <transformation name="eIonB" type="e-I" function="Bspline" source="ion0">
+      <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="He" rcut="3.0">
+          <coefficients id="eHeC" type="Array" optimize="yes">
+              0 0 0 0 0 0 0 0
+          </coefficients>
+      </correlation>
+      <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="H" rcut="3.0">
+          <coefficients id="eHC" type="Array" optimize="yes">
+              0 0 0 0 0 0 0 0
+          </coefficients>
+      </correlation>
+  </transformation>
+
+  <!--The Two-Body Term with Like and Unlike Spins -->
+  <transformation name="eeB" type="e-e" function="Bspline" >
+      <correlation cusp="0.0" size="7" type="shortrange" init="no" speciesA="u" speciesB="u" rcut="1.2">
+          <coefficients id="uuB1" type="Array" optimize="yes">
+              0 0 0 0 0 0 0
+          </coefficients>
+      </correlation>
+      <correlation cusp="0.0" size="7" type="shortrange" init="no" speciesA="d" speciesB="u" rcut="1.2">
+          <coefficients id="udB1" type="Array" optimize="yes">
+              0 0 0 0 0 0 0
+          </coefficients>
+      </correlation>
+  </transformation>
+  </backflow>
+
+Currently, backflow works only with single-Slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the ``<determinantset>`` block, but outside of the ``<slaterdeterminant>`` blocks, like so:
+
+::
+
+  <determinantset ... >
+      <!--basis set declarations go here, if there are any -->
+
+      <backflow>
+          <transformation ...>
+            <!--Here is where one and two-body terms are defined -->
+           </transformation>
+       </backflow>
+
+       <slaterdeterminant>
+           <!--Usual determinant definitions -->
+       </slaterdeterminant>
+   </determinantset>
+
+Optimization Tips
+~~~~~~~~~~~~~~~~~
+
+Backflow is notoriously difficult to optimize---it is extremely nonlinear in the variational parameters and moves the nodal surface around.  As such, it is likely that a full Jastrow+Backflow optimization with all parameters initialized to zero might not converge in a reasonable time.  If you are experiencing this problem, the following pointers are suggested (in no particular order).
+
+Get a good starting guess for :math:`\Psi_T`:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. Try optimizing the Jastrow first without backflow.
+
+#. Freeze the Jastrow parameters, introduce only the e-e terms in the
+   backflow transformation, and optimize these parameters.
+
+#. Freeze the e-e backflow parameters, and then optimize the e-I terms.
+
+   -  If difficulty is encountered here, try optimizing each species
+      independently.
+
+
+#. Unfreeze all Jastrow, e-e backflow, and e-I backflow parameters, and
+   reoptimize.
+
+Optimizing Backflow Terms
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible that the previous prescription might grind to a halt in steps 2 or 3 with the inability to optimize the e-e or e-I backflow transformation independently, especially if it is initialized to zero.  One way to get around this is to build a good starting guess for the e-e or e-I backflow terms iteratively as follows:
+
+#. Start off with a small number of knots initialized to zero. Set
+   :math:`r_{cut}` to be small (much smaller than an interatomic distance).
+
+#. Optimize the backflow function.
+
+#. If this works, slowly increase :math:`r_{cut}` and/or the number of
+   knots.
+
+#. Repeat steps 2 and 3 until there is no noticeable change in energy or
+   variance of :math:`\Psi_T`.
+
+Tweaking the Optimization Run
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following modifications are worth a try in the optimization block:
+
+-  Try setting “useDrift" to “no." This eliminates the use of
+   wavefunction gradients and force biasing in the VMC algorithm. This
+   could be an issue for poorly optimized wavefunctions with
+   pathological gradients.
+
+-  Try increasing “exp0" in the optimization block. Larger values of
+   exp0 cause the search directions to more closely follow those
+   predicted by steepest-descent than those by the linear method.
+
+Note that the new adaptive shift optimizer has not yet been tried with
+backflow wavefunctions. It should perform better than the older
+optimizers, but a considered optimization process is still recommended.
 
 .. _jastrow:
 
@@ -1706,231 +1965,6 @@ The coefficients will be filled zero automatically if not given.
       <coefficients id="udH" type="Array" optimize="yes"> </coefficients>
     </correlation>
   </jastrow>
-
-.. _multideterminants:
-
-Multideterminant wavefunctions
-------------------------------
-
-Multiple schemes to generate a multideterminant wavefunction are
-possible, from CASSF to full CI or selected CI. The QMCPACK converter can
-convert MCSCF multideterminant wavefunctions from
-GAMESS :cite:`schmidt93` and CIPSI :cite:`Caffarel2013` wavefunctions from
-Quantum Package :cite:`QP` (QP). Full details of how to run a CIPSI
-calculation and convert the wavefunction for QMCPACK are given in
-:ref:`cipsi`.
-
-The script ``utils/determinants_tools.py`` can be used to generate
-useful information about the multideterminant wavefunction. This script takes, as a required argument, the path of an h5 file corresponding to the wavefunction. Used without optional arguments, it prints the number of determinants, the number of CSFs, and a histogram of the excitation degree.
-
-::
-
-  > determinants_tools.py ./tests/molecules/C2_pp/C2.h5
-  Summary:
-  excitation degree 0 count: 1
-  excitation degree 1 count: 6
-  excitation degree 2 count: 148
-  excitation degree 3 count: 27
-  excitation degree 4 count: 20
-
-  n_det 202
-  n_csf 104
-
-If the ``--verbose`` argument is used, the script will print each determinant,
-the associated CSF, and the excitation degree relative to the first determinant.
-
-::
-
-  > determinants_tools.py -v ./tests/molecules/C2_pp/C2.h5 | head
-  1
-  alpha  1111000000000000000000000000000000000000000000000000000000
-  beta   1111000000000000000000000000000000000000000000000000000000
-  scf    2222000000000000000000000000000000000000000000000000000000
-  excitation degree  0
-
-  2
-  alpha  1011100000000000000000000000000000000000000000000000000000
-  beta   1011100000000000000000000000000000000000000000000000000000
-  scf    2022200000000000000000000000000000000000000000000000000000
-  excitation degree  2
-
-.. _backflow:
-
-Backflow Wavefunctions
-----------------------
-
-One can perturb the nodal surface of a single-Slater/multi-Slater
-wavefunction through use of a backflow transformation. Specifically, if
-we have an antisymmetric function
-:math:`D(\mathbf{x}_{0\uparrow},\cdots,\mathbf{x}_{N\uparrow}, \mathbf{x}_{0\downarrow},\cdots,\mathbf{x}_{N\downarrow})`,
-and if :math:`i_\alpha` is the :math:`i`-th particle of species type
-:math:`\alpha`, then the backflow transformation works by making the
-coordinate transformation
-:math:`\mathbf{x}_{i_\alpha} \to \mathbf{x}'_{i_\alpha}` and evaluating
-:math:`D` at these new “quasiparticle" coordinates. QMCPACK currently
-supports quasiparticle transformations given by
-
-.. math::
-  :label: eq24
-
-  \mathbf{x}'_{i_\alpha}=\mathbf{x}_{i_\alpha}+\sum_{\alpha \leq \beta} \sum_{i_\alpha \neq j_\beta} \eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)(\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta})\:.
-
-Here, :math:`\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)`
-is a radially symmetric backflow transformation between species
-:math:`\alpha` and :math:`\beta`. In QMCPACK, particle :math:`i_\alpha`
-is known as the “target" particle and :math:`j_\beta` is known as the
-“source." The main types of transformations are so-called one-body
-terms, which are between an electron and an ion
-:math:`\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)` and two-body
-terms. Two-body terms are distinguished as those between like and
-opposite spin electrons:
-:math:`\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)`
-and
-:math:`\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)`.
-Henceforth, we will assume that
-:math:`\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}`.
-
-In the following, we explain how to describe general terms such as
-:eq:`eq24` in a QMCPACK XML file. For specificity, we will
-consider a particle set consisting of H and He (in that order). This
-ordering will be important when we build the XML file, so you can find
-this out either through your specific declaration of <particleset>, by
-looking at the hdf5 file in the case of plane waves, or by looking at
-the QMCPACK output file in the section labeled “Summary of QMC systems."
-
-Input specifications
-~~~~~~~~~~~~~~~~~~~~
-
-All backflow declarations occur within a single ``<backflow> ... </backflow>`` block.  Backflow transformations occur in ``<transformation>`` blocks and have the following input parameters:
-
-Transformation element:
-
-  +----------+--------------+------------+-------------+----------------------------------------------------------+
-  | **Name** | **Datatype** | **Values** | **Default** | **Description**                                          |
-  +==========+==============+============+=============+==========================================================+
-  | name     | Text         |            | (Required)  | Unique name for this Jastrow function.                   |
-  +----------+--------------+------------+-------------+----------------------------------------------------------+
-  | type     | Text         | "e-I"      | (Required)  | Define a one-body backflow transformation.               |
-  +----------+--------------+------------+-------------+----------------------------------------------------------+
-  |          | Text         | "e-e"      |             | Define a two-body backflow transformation.               |
-  +----------+--------------+------------+-------------+----------------------------------------------------------+
-  | function | Text         | B-spline   | (Required)  | B-spline type transformation (no other types supported). |
-  +----------+--------------+------------+-------------+----------------------------------------------------------+
-  | source   | Text         |            |             | "e" if two body, ion particle set if one body.           |
-  +----------+--------------+------------+-------------+----------------------------------------------------------+
-
-Just like one- and two-body jastrows, parameterization of the backflow transformations are specified within the ``<transformation>`` blocks by  ``<correlation>`` blocks.  Please refer to :ref:`onebodyjastrowspline` for more information.
-
-Example Use Case
-~~~~~~~~~~~~~~~~
-
-Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The hydrogen and helium ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order they appear in the particle set.  If in our example, helium is listed first and hydrogen is listed second, the following example would be correct.  However, switching backflow declaration to hydrogen first then helium, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks are not sensitive to ordering.
-
-::
-
-  <backflow>
-  <!--The One-Body term with independent e-He and e-H terms. IN THAT ORDER -->
-  <transformation name="eIonB" type="e-I" function="Bspline" source="ion0">
-      <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="He" rcut="3.0">
-          <coefficients id="eHeC" type="Array" optimize="yes">
-              0 0 0 0 0 0 0 0
-          </coefficients>
-      </correlation>
-      <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="H" rcut="3.0">
-          <coefficients id="eHC" type="Array" optimize="yes">
-              0 0 0 0 0 0 0 0
-          </coefficients>
-      </correlation>
-  </transformation>
-
-  <!--The Two-Body Term with Like and Unlike Spins -->
-  <transformation name="eeB" type="e-e" function="Bspline" >
-      <correlation cusp="0.0" size="7" type="shortrange" init="no" speciesA="u" speciesB="u" rcut="1.2">
-          <coefficients id="uuB1" type="Array" optimize="yes">
-              0 0 0 0 0 0 0
-          </coefficients>
-      </correlation>
-      <correlation cusp="0.0" size="7" type="shortrange" init="no" speciesA="d" speciesB="u" rcut="1.2">
-          <coefficients id="udB1" type="Array" optimize="yes">
-              0 0 0 0 0 0 0
-          </coefficients>
-      </correlation>
-  </transformation>
-  </backflow>
-
-Currently, backflow works only with single-Slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the ``<determinantset>`` block, but outside of the ``<slaterdeterminant>`` blocks, like so:
-
-::
-
-  <determinantset ... >
-      <!--basis set declarations go here, if there are any -->
-
-      <backflow>
-          <transformation ...>
-            <!--Here is where one and two-body terms are defined -->
-           </transformation>
-       </backflow>
-
-       <slaterdeterminant>
-           <!--Usual determinant definitions -->
-       </slaterdeterminant>
-   </determinantset>
-
-Optimization Tips
-~~~~~~~~~~~~~~~~~
-
-Backflow is notoriously difficult to optimize---it is extremely nonlinear in the variational parameters and moves the nodal surface around.  As such, it is likely that a full Jastrow+Backflow optimization with all parameters initialized to zero might not converge in a reasonable time.  If you are experiencing this problem, the following pointers are suggested (in no particular order).
-
-Get a good starting guess for :math:`\Psi_T`:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-#. Try optimizing the Jastrow first without backflow.
-
-#. Freeze the Jastrow parameters, introduce only the e-e terms in the
-   backflow transformation, and optimize these parameters.
-
-#. Freeze the e-e backflow parameters, and then optimize the e-I terms.
-
-   -  If difficulty is encountered here, try optimizing each species
-      independently.
-
-
-#. Unfreeze all Jastrow, e-e backflow, and e-I backflow parameters, and
-   reoptimize.
-
-Optimizing Backflow Terms
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-It is possible that the previous prescription might grind to a halt in steps 2 or 3 with the inability to optimize the e-e or e-I backflow transformation independently, especially if it is initialized to zero.  One way to get around this is to build a good starting guess for the e-e or e-I backflow terms iteratively as follows:
-
-#. Start off with a small number of knots initialized to zero. Set
-   :math:`r_{cut}` to be small (much smaller than an interatomic distance).
-
-#. Optimize the backflow function.
-
-#. If this works, slowly increase :math:`r_{cut}` and/or the number of
-   knots.
-
-#. Repeat steps 2 and 3 until there is no noticeable change in energy or
-   variance of :math:`\Psi_T`.
-
-Tweaking the Optimization Run
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following modifications are worth a try in the optimization block:
-
--  Try setting “useDrift" to “no." This eliminates the use of
-   wavefunction gradients and force biasing in the VMC algorithm. This
-   could be an issue for poorly optimized wavefunctions with
-   pathological gradients.
-
--  Try increasing “exp0" in the optimization block. Larger values of
-   exp0 cause the search directions to more closely follow those
-   predicted by steepest-descent than those by the linear method.
-
-Note that the new adaptive shift optimizer has not yet been tried with
-backflow wavefunctions. It should perform better than the older
-optimizers, but a considered optimization process is still recommended.
 
 .. _ionwf:
 

@@ -56,7 +56,7 @@ public:
    *
    * Builder takes care of who owns what
    */
-  ~PWRealOrbitalSet();
+  ~PWRealOrbitalSet() override;
 
   SPOSet* makeClone() const override;
 

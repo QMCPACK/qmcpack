@@ -81,7 +81,8 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  //     if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
+  if (m_doc_out != NULL)
+    xmlFreeDoc(m_doc_out);
   if (debug_stream)
     delete debug_stream;
 }
@@ -162,8 +163,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
   // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << std::endl;
   // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
-  Return_rt wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
-  wgt_var *= wgtinv;
   CostValue             = 0.0;
   const Return_rt small = 1.0e-10;
   if (std::abs(w_abs) > small)
@@ -180,14 +179,13 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   if (NumWalkersEff < NumSamples * MinNumWalkers)
   //    if (NumWalkersEff < MinNumWalkers)
   {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! "
+    WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
              << std::endl
              << "  Number of effective walkers (samples) / total number of samples = "
              << (1.0 * NumWalkersEff) / NumSamples << std::endl
              << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
              << "  If this message appears frequently. You might have to be cautious. " << std::endl
              << "  Find info about parameter \"minwalkers\" in the user manual!");
-    // ERRORMSG("Going to stop now.")
     IsValid = false;
   }
   return CostValue;
@@ -525,7 +523,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   {
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root, m_wfPtr);
+    xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
@@ -533,11 +531,12 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      xmlChar* iptr  = xmlGetProp(cur, (const xmlChar*)"id");
       if (iptr == NULL)
         continue;
       std::string aname((const char*)iptr);
+      xmlFree(iptr);
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
       if (oit != OptVariablesForPsi.end())
       {

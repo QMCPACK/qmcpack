@@ -34,21 +34,21 @@ public:
 
   //constructor/destructor
   StaticStructureFactor(ParticleSet& P);
-  ~StaticStructureFactor() {}
+  ~StaticStructureFactor() override {}
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
-  bool put(xmlNodePtr cur);
-  Return_t evaluate(ParticleSet& P);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  bool put(xmlNodePtr cur) override;
+  Return_t evaluate(ParticleSet& P) override;
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) {}
-  void setObservables(PropertySetType& plist) {}
-  void setParticlePropertyList(PropertySetType& plist, int offset) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
+  void setObservables(PropertySetType& plist) override {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 
 #if !defined(REMOVE_TRACEMANAGER)
   void checkout_scalar_arrays(TraceManager& tm) {}
@@ -57,7 +57,7 @@ public:
 #endif
 
   //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  bool get(std::ostream& os) const override { return false; }
 
   //local functions
   void reset();

@@ -79,7 +79,7 @@ void EwaldHandler3D::fillFk(KContainer& KList)
   app_log().flush();
 }
 
-EwaldHandler3D::mRealType EwaldHandler3D::evaluate_vlr_k(mRealType k)
+EwaldHandler3D::mRealType EwaldHandler3D::evaluate_vlr_k(mRealType k) const
 {
   mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
   mRealType knorm  = 4 * M_PI / Volume;

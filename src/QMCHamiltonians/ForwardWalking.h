@@ -37,11 +37,11 @@ struct ForwardWalking : public OperatorBase
   ForwardWalking() { UpdateMode.set(OPTIMIZABLE, 1); }
 
   ///destructor
-  ~ForwardWalking() {}
+  ~ForwardWalking() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
-  inline Return_t rejectedMove(ParticleSet& P)
+  inline Return_t rejectedMove(ParticleSet& P) override
   {
     for (int i = 0; i < nObservables; i++)
     {
@@ -76,7 +76,7 @@ struct ForwardWalking : public OperatorBase
   }
 
 
-  inline Return_t evaluate(ParticleSet& P)
+  inline Return_t evaluate(ParticleSet& P) override
   {
     for (int i = 0; i < nObservables; i++)
       tWalker->addPropertyHistoryPoint(Pindices[i], P.PropertyList[Hindices[i]]);
@@ -84,26 +84,26 @@ struct ForwardWalking : public OperatorBase
     return 0.0;
   }
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
   ///rename it to avoid conflicts with put
   bool putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P);
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "ForwardWalking";
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void addObservables(PropertySetType& plist);
 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist) { copy(Values.begin(), Values.end(), plist.begin() + myIndex); }
+  void setObservables(PropertySetType& plist) override { copy(Values.begin(), Values.end(), plist.begin() + myIndex); }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
+  void setParticlePropertyList(PropertySetType& plist, int offset) override
   {
     copy(Values.begin(), Values.end(), plist.begin() + myIndex + offset);
   }

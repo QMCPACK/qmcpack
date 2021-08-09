@@ -87,7 +87,7 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  void set(int first, int nel, int delay = 1) override final;
+  void set(int first, int nel, int delay = 1) final;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -119,7 +119,7 @@ public:
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVector<const VirtualParticleSet>& vp_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<ValueType>>& ratios) const override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
@@ -195,8 +195,8 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection) override;
-  void releaseResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** cloning function
    * @param tqp target particleset
@@ -212,7 +212,12 @@ public:
   /// return  for testing
   auto& getPsiMinv() const { return psiMinv; }
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
+  /** inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$ memory view
+   * Actual memory is owned by det_engine_
+   * Only NumOrbitals x NumOrbitals subblock has meaningful data
+   * The number of rows is equal to NumOrbitals
+   * The number of columns in each row is padded to a multiple of QMC_SIMD_ALIGNMENT
+   */
   ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]

@@ -53,7 +53,7 @@ public:
   DiracDeterminantWithBackflow(ParticleSet& ptcl, std::shared_ptr<SPOSet>&& spos, BackflowTransformation* BF, int first = 0);
 
   ///default destructor
-  ~DiracDeterminantWithBackflow();
+  ~DiracDeterminantWithBackflow() override;
 
   // copy constructor and assign operator disabled
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;

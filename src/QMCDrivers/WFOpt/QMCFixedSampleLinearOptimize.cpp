@@ -317,9 +317,8 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      RealType lowestEV(0);
       eigenvalue_timer_.start();
-      lowestEV = getLowestEigenvector(Right, currentParameterDirections);
+      getLowestEigenvector(Right, currentParameterDirections);
       Lambda   = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
@@ -886,7 +885,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
     Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
@@ -1297,7 +1296,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
   Lambda = getNonLinearRescale(parameterDirections, ovlMat);

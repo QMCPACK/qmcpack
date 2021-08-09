@@ -118,7 +118,7 @@ public:
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
    */
-  void addComponent(WaveFunctionComponent* aterm);
+  void addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -277,7 +277,7 @@ public:
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
   static void mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVector<const VirtualParticleSet>& Vp_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 
@@ -376,6 +376,9 @@ public:
                                    int iat,
                                    const std::vector<bool>& isAccepted,
                                    bool safe_to_delay = false);
+
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   *  See WaveFunctionComponent::completeUpdates for more detail */
   void completeUpdates();
   /* batched version of completeUpdates.  */
   static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
@@ -406,11 +409,11 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   RealType KECorrection() const;
 
@@ -437,7 +440,7 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  std::vector<WaveFunctionComponent*>& getOrbitals() { return Z; }
+  std::vector<std::unique_ptr<WaveFunctionComponent>> const& getOrbitals() { return Z; }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
@@ -487,7 +490,7 @@ private:
   const bool use_tasking_;
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
-  std::vector<WaveFunctionComponent*> Z;
+  std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;

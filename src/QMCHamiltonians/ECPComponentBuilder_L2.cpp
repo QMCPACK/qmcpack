@@ -91,8 +91,8 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   RealType rmax        = rcut;
   const int max_points = 100000;
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
-  LinearGrid<RealType>* grid = new LinearGrid<RealType>;
-  RealType d                 = 1e-4;
+  auto grid  = std::make_unique<LinearGrid<RealType>>();
+  RealType d = 1e-4;
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
   {
@@ -121,21 +121,21 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   std::vector<RealType> new_vL2in(ngIn);
   for (int i = 0; i < ngIn; i++)
     new_vL2in[i] = Vprefactor * vL2in[i];
-  OneDimCubicSpline<mRealType> infunc(grid_global, new_vL2in);
+  OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), new_vL2in);
   infunc.spline(0, 0.0, ngIn - 1, 0.0);
   for (int i = 1; i < ng - 1; i++)
   {
     RealType r = d * i;
     new_vL2[i] = infunc.splint(r) / r;
   }
-  new_vL2[0]               = new_vL2[1];
-  new_vL2[ng - 1]          = 0.0;
-  RadialPotentialType* vL2 = new RadialPotentialType(grid, new_vL2);
+  new_vL2[0]      = new_vL2[1];
+  new_vL2[ng - 1] = 0.0;
+  auto vL2        = std::make_unique<RadialPotentialType>(std::move(grid), new_vL2);
   vL2->spline();
 
   // save the splined L2 potential
   pp_L2       = std::make_unique<L2RadialPotential>();
-  pp_L2->vL2  = vL2;
+  pp_L2->vL2  = std::move(vL2);
   pp_L2->rcut = rcut;
 
   //app_log()<<std::endl;

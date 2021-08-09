@@ -57,11 +57,11 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   renameProperty(a);
   isphysical = (physical == "yes" || physical == "true");
 #ifdef QMC_CUDA
-  MPC_CUDA* mpc = new MPC_CUDA(targetPtcl, cutoff);
+  std::unique_ptr<MPC_CUDA> mpc = std::make_unique<MPC_CUDA>(targetPtcl, cutoff);
 #else
-  MPC* mpc = new MPC(targetPtcl, cutoff);
+  std::unique_ptr<MPC> mpc = std::make_unique<MPC>(targetPtcl, cutoff);
 #endif
-  targetH->addOperator(mpc, "MPC", isphysical);
+  targetH->addOperator(std::move(mpc), "MPC", isphysical);
 #else
   APP_ABORT(
       "HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
@@ -112,20 +112,20 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     bool quantum = (sourceInp == targetPtcl.getName());
 #ifdef QMC_CUDA
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAA_CUDA(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_unique<CoulombPBCAA_CUDA>(*ptclA, quantum, doForces), title, physical);
     else
     {
       if (quantum)
-        targetH->addOperator(new CoulombPotentialAA_CUDA(*ptclA, true), title, physical);
+        targetH->addOperator(std::make_unique<CoulombPotentialAA_CUDA>(*ptclA, true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
+        targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
     }
 #else
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAA(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces), title, physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
     }
 #endif
   }
@@ -133,14 +133,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   {
 #ifdef QMC_CUDA
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAB_CUDA(*ptclA, targetPtcl), title);
+      targetH->addOperator(std::make_unique<CoulombPBCAB_CUDA>(*ptclA, targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotentialAB_CUDA(*ptclA, targetPtcl), title);
+      targetH->addOperator(std::make_unique<CoulombPotentialAB_CUDA>(*ptclA, targetPtcl), title);
 #else
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAB(*ptclA, targetPtcl), title);
+      targetH->addOperator(std::make_unique<CoulombPBCAB>(*ptclA, targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, targetPtcl, true), title);
+      targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, targetPtcl, true), title);
 #endif
   }
 }
@@ -182,23 +182,23 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   //bool applyPBC= (PBCType && pbc=="yes");
   if (mode == "bare")
   {
-    BareForce* bareforce = new BareForce(*source, *target);
+    std::unique_ptr<BareForce> bareforce = std::make_unique<BareForce>(*source, *target);
     bareforce->put(cur);
-    targetH->addOperator(bareforce, title, false);
+    targetH->addOperator(std::move(bareforce), title, false);
   }
   else if (mode == "cep")
   {
     if (applyPBC == true)
     {
-      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target, true);
+      std::unique_ptr<ForceChiesaPBCAA> force_chi = std::make_unique<ForceChiesaPBCAA>(*source, *target, true);
       force_chi->put(cur);
-      targetH->addOperator(force_chi, title, false);
+      targetH->addOperator(std::move(force_chi), title, false);
     }
     else
     {
-      ForceCeperley* force_cep = new ForceCeperley(*source, *target);
+      std::unique_ptr<ForceCeperley> force_cep = std::make_unique<ForceCeperley>(*source, *target);
       force_cep->put(cur);
-      targetH->addOperator(force_cep, title, false);
+      targetH->addOperator(std::move(force_cep), title, false);
     }
   }
   else if (mode == "acforce")
@@ -209,16 +209,14 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     {
       APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
     }
-    TrialWaveFunction& psi = *psi_it->second->getTWF();
-    ACForce* acforce       = new ACForce(*source, *target, psi, *targetH);
+    TrialWaveFunction& psi           = *psi_it->second->getTWF();
+    std::unique_ptr<ACForce> acforce = std::make_unique<ACForce>(*source, *target, psi, *targetH);
     acforce->put(cur);
-    targetH->addOperator(acforce, title, false);
+    targetH->addOperator(std::move(acforce), title, false);
   }
   else
   {
     ERRORMSG("Failed to recognize Force mode " << mode);
-    //} else if(mode=="FD") {
-    //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
   }
 #endif
 }

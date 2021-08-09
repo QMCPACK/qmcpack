@@ -29,31 +29,31 @@ struct ACForce : public OperatorBase
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
   /** Destructor **/
-  ~ACForce(){};
+  ~ACForce() override{};
   /** Copy constructor **/
   //ACForce(const ACForce& ac)  {};
 
   /** I/O Routines */
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const { return true; };
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override { return true; };
 
   /** Cloning **/
   //We don't actually use this makeClone method.  We just put an APP_ABORT here
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
   /** Initialization/assignment **/
-  void resetTargetParticleSet(ParticleSet& P){};
-  void addObservables(PropertySetType& plist, BufferType& collectables);
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
+  void resetTargetParticleSet(ParticleSet& P) override{};
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
   /** Since we store a reference to QMCHamiltonian, the baseclass method add2Hamiltonian 
  *  isn't sufficient.  We override it here. **/
-  void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
+  void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) override;
   /** Evaluate **/
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   ///Finite difference timestep
   RealType delta; 

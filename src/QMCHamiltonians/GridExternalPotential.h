@@ -42,32 +42,32 @@ struct GridExternalPotential : public OperatorBase
     one_body_quantum_domain(P);
   }
 
-  ~GridExternalPotential() {}
+  ~GridExternalPotential() override {}
 
   //unneeded interface functions
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
   //standard interface functions
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 
   //functions for physical (hamiltonian component) estimator
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
   inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) { return evaluate(P); }
 
 #if !defined(REMOVE_TRACEMANAGER)
   //traces interface
-  virtual void contribute_particle_quantities() { request.contribute_array(myName); }
+  void contribute_particle_quantities() override { request.contribute_array(myName); }
 
-  virtual void checkout_particle_quantities(TraceManager& tm)
+  void checkout_particle_quantities(TraceManager& tm) override
   {
     streaming_particles = request.streaming_array(myName);
     if (streaming_particles)
       V_sample = tm.checkout_real<1>(myName, Ps);
   }
 
-  virtual void delete_particle_quantities()
+  void delete_particle_quantities() override
   {
     if (streaming_particles)
       delete V_sample;

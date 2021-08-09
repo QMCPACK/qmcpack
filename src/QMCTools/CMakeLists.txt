@@ -14,80 +14,43 @@
 #//
 #// File created by: Jordan E. Vincent, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
+project(qmctools)
 
+add_executable(convert4qmc convert4qmc.cpp QMCGaussianParserBase.cpp GaussianFCHKParser.cpp GamesAsciiParser.cpp
+  LCAOHDFParser.cpp DiracParser.cpp RMGParser.cpp)
 
-PROJECT(qmctools)
+target_link_libraries(convert4qmc PUBLIC qmcparticle)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(convert4qmc PUBLIC qmcutil containers platform_omptarget)
+endif()
 
-SET(MOSRCS
-  QMCGaussianParserBase.cpp
-  GaussianFCHKParser.cpp
-  GamesAsciiParser.cpp
-  LCAOHDFParser.cpp
-  RMGParser.cpp
-)
+add_executable(qmc-extract-eshdf-kvectors qmc-extract-eshdf-kvectors.cpp)
+target_link_libraries(qmc-extract-eshdf-kvectors PUBLIC qmcio)
 
-# create libmocommon 
-ADD_LIBRARY(mocommon ${MOSRCS})
-TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcparticle)
+add_executable(qmc-get-supercell getSupercell.cpp)
 
-set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
-FOREACH(p ${QTOOLS})
+add_executable(qmc-check-affinity check-affinity.cpp)
+if(HAVE_MPI)
+  target_link_libraries(qmc-check-affinity MPI::MPI_CXX)
+endif()
 
-  ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} mocommon)
-  IF(USE_OBJECT_TARGET)
-    TARGET_LINK_LIBRARIES(${p} qmcparticle qmcutil containers platform_omptarget)
-  ENDIF()
+add_executable(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
+target_link_libraries(convertpw4qmc qmcutil Math::FFTW3)
 
-  INSTALL(TARGETS ${p}
-          RUNTIME DESTINATION bin)
+set(FSSRCS QMCFiniteSize/QMCFiniteSize.cpp QMCFiniteSize/SkParserBase.cpp QMCFiniteSize/SkParserASCII.cpp
+           QMCFiniteSize/SkParserScalarDat.cpp QMCFiniteSize/SkParserHDF5.cpp QMCFiniteSize/FSUtilities.cpp)
 
-ENDFOREACH(p ${QTOOLS})
+add_library(fstool ${FSSRCS})
+target_link_libraries(fstool PUBLIC qmc qmcparticle qmcwfs)
 
-ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
-INSTALL(TARGETS qmc-get-supercell
+add_executable(qmcfinitesize qmcfinitesize.cpp)
+target_link_libraries(qmcfinitesize fstool)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(qmcfinitesize qmcparticle qmcutil containers platform_omptarget)
+endif()
+
+install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize
         RUNTIME DESTINATION bin)
 
-ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
-IF(HAVE_MPI)
-  TARGET_LINK_LIBRARIES(qmc-check-affinity MPI::MPI_CXX)
-ENDIF()
-
-INSTALL(TARGETS qmc-check-affinity
-        RUNTIME DESTINATION bin)
-
-ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
-TARGET_LINK_LIBRARIES(convertpw4qmc qmcutil Math::FFTW3)
-
-INSTALL(TARGETS convertpw4qmc
-        RUNTIME DESTINATION bin)
-
-SET(FSSRCS
-  QMCFiniteSize/QMCFiniteSize.cpp
-  QMCFiniteSize/SkParserBase.cpp
-  QMCFiniteSize/SkParserASCII.cpp
-  QMCFiniteSize/SkParserScalarDat.cpp
-  QMCFiniteSize/SkParserHDF5.cpp
-  QMCFiniteSize/FSUtilities.cpp
-)
-
-ADD_LIBRARY(fstool ${FSSRCS})
-TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcparticle qmcwfs)
-
-ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
-TARGET_LINK_LIBRARIES(qmcfinitesize fstool)
-IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(qmcfinitesize qmcparticle qmcutil containers platform_omptarget)
-ENDIF()
-
-
-INSTALL(TARGETS qmcfinitesize
-        RUNTIME DESTINATION bin)
-
-#ppconvert
-if( BUILD_PPCONVERT )
-  SUBDIRS(ppconvert)
-endif( BUILD_PPCONVERT )
+add_subdirectory(ppconvert)

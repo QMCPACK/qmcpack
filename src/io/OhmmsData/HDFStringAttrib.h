@@ -28,7 +28,7 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hid_t str80 = H5Tcopy(H5T_C_S1);
     H5Tset_size(str80, ref.size());
@@ -40,7 +40,7 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -82,7 +82,7 @@ struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
 
   HDFAttribIO<Data_t>(Data_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     status        = H5Gget_objinfo(grp, name, 0, NULL);
@@ -105,7 +105,7 @@ struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name) {}
+  inline void read(hid_t grp, const char* name) override {}
 };
 } // namespace qmcplusplus
 #endif

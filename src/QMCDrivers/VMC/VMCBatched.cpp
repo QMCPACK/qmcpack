@@ -51,8 +51,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
-  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
-                                               crowd.get_walker_hamiltonians()[0]);
+  ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
 
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
@@ -176,6 +175,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.hamiltonian_timer.start();
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
+  ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_elecs));
   timers.hamiltonian_timer.stop();
@@ -390,7 +390,7 @@ bool VMCBatched::run()
 void VMCBatched::enable_sample_collection()
 {
   int samples = compute_samples_per_rank(qmcdriver_input_, population_.get_num_local_walkers());
-  samples_.setMaxSamples(samples);
+  samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 
   int total_samples = samples * population_.get_num_ranks();

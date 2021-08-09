@@ -26,6 +26,7 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
+#include "QMCDrivers/WFOpt/WFOptDriverInput.h"
 
 
 namespace qmcplusplus
@@ -50,22 +51,23 @@ public:
                      MCWalkerConfiguration& w,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
+                     WFOptDriverInput&& wfoptdriver_input,
                      MCPopulation&& population,
                      SampleStack& samples,
                      Communicate* comm);
 
   ///Destructor
-  ~QMCOptimizeBatched();
+  ~QMCOptimizeBatched() override;
 
   ///Run the Optimization algorithm.
-  bool run();
+  bool run() override;
   ///process xml node
-  void process(xmlNodePtr cur);
+  void process(xmlNodePtr cur) override;
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
 
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
-  QMCRunType getRunType() { return QMCRunType::OPTIMIZE_BATCH; }
+  QMCRunType getRunType() override { return QMCRunType::OPTIMIZE_BATCH; }
 
 private:
   ///index to denote the partition id
@@ -98,6 +100,8 @@ private:
 
   /// VMC-specific driver input
   VMCDriverInput vmcdriver_input_;
+
+  WFOptDriverInput wfoptdriver_input_;
 
   /// Samples to use in optimizer
   SampleStack& samples_;

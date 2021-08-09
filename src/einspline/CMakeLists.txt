@@ -4,48 +4,49 @@
 #//
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+#// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//		       Anouar Benali, benali@anl.gov, Argonne National Laboratory
 #//		       Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
-#// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
-#////////////////////////////////////////////////////////////////////////////////////// 
+#// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+#//////////////////////////////////////////////////////////////////////////////////////
 
-set(SRCS )
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 
-SET(SRCS ${SRCS}
-  bspline_create.c
-  bspline_data.c
-  multi_bspline_create.c
-  multi_nubspline_create.c
-  nubspline_create.c
-  nubasis.c
-  nugrid.c
-  multi_bspline_copy.c
-)
+set(SRCS
+    bspline_create.c
+    bspline_data.c
+    multi_bspline_create.c
+    multi_nubspline_create.c
+    nubspline_create.c
+    nubasis.c
+    nugrid.c
+    multi_bspline_copy.c)
 
-SET(SRCS ${SRCS}
-  bspline_eval_d_std.cpp
-  nubspline_eval_d_std.cpp
-  multi_bspline_eval_s_std3.cpp
-  multi_bspline_eval_d_std3.cpp
-  multi_bspline_eval_z_std3.cpp
-  multi_nubspline_eval_z_std.cpp
-)
+set(SRCS
+    ${SRCS}
+    bspline_eval_d_std.cpp
+    nubspline_eval_d_std.cpp
+    multi_bspline_eval_s_std3.cpp
+    multi_bspline_eval_d_std3.cpp
+    multi_bspline_eval_z_std3.cpp
+    multi_nubspline_eval_z_std.cpp)
 
+if(QMC_CUDA)
+  set(SRCS ${SRCS} multi_bspline_create_cuda.cu bspline_create_cuda.cu)
+  if(NOT QMC_CUDA2HIP)
+    cuda_add_library(einspline ${SRCS})
+  else()
+    hip_add_library(einspline ${SRCS})
+  endif(NOT QMC_CUDA2HIP)
+  target_link_libraries(einspline PRIVATE platform_device)
+else(QMC_CUDA)
+  add_library(einspline ${SRCS})
+endif(QMC_CUDA)
 
-IF(QMC_CUDA)
-  SET(SRCS  ${SRCS}
-    multi_bspline_create_cuda.cu
-    bspline_create_cuda.cu
-    )
-  CUDA_ADD_LIBRARY(einspline ${SRCS})
-  TARGET_LINK_LIBRARIES(einspline PRIVATE platform_device)
-ELSE(QMC_CUDA)
-  ADD_LIBRARY(einspline ${SRCS})
-ENDIF(QMC_CUDA)
-
-TARGET_COMPILE_DEFINITIONS(einspline INTERFACE "HAVE_EINSPLINE")
+target_compile_definitions(einspline INTERFACE "HAVE_EINSPLINE")
 
 #ADD_EXECUTABLE(time_multi time_multi_new.c)
 #target_link_libraries(time_multi einspline)

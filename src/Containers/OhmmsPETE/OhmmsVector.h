@@ -2,14 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 /** @file
  *
@@ -66,6 +66,17 @@ public:
       else
         qmc_allocator_traits<Alloc>::fill_n(X, nLocal, T());
     }
+  }
+
+  /** This allows construction of a Vector on another containers owned memory that is using a dualspace allocator.
+   *  It can be any span of that memory.
+   *  You're going to get a bunch of compile errors if the Container in questions is not using a the QMCPACK
+   *  realspace dualspace allocator "interface"
+   */
+  template<typename CONTAINER>
+  Vector(CONTAINER& from, T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref)
+  {
+    qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, from.data(), ref);
   }
 
   Vector(std::initializer_list<T> ts)
@@ -127,6 +138,22 @@ public:
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
+  }
+
+  /** Attach to pre-allocated memory and propagate the allocator of the owning container.
+   *  Required for sane access to dual space memory
+   */
+  template<typename CONTAINER>
+  inline void attachReference(const CONTAINER& other, T* ref, size_t n)
+  {
+    if (nAllocated)
+    {
+      free();
+    }
+    nLocal     = n;
+    nAllocated = 0;
+    X          = ref;
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ref);
   }
 
   //! return the current size
@@ -203,15 +230,18 @@ public:
   inline pointer data() { return X; }
   inline const_pointer data() const { return X; }
 
+  /** Return the device_ptr matching X if this is a vector attached or
+   *  owning dual space memory.
+   */
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline pointer device_data()
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const_pointer device_data() const
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
 
   inline pointer first_address() { return X; }
@@ -220,12 +250,24 @@ public:
   inline pointer last_address() { return X + nLocal; }
   inline const_pointer last_address() const { return X + nLocal; }
 
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    qmc_allocator_traits<Alloc>::updateTo(mAllocator, X, nLocal);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, nLocal);
+  }
+
 private:
   ///size
   size_t nLocal;
   ///The number of allocated
   size_t nAllocated;
-  ///pointer to the data managed by this object
+  ///pointer to the data accessed through this object
   T* X;
   ///allocator
   Alloc mAllocator;

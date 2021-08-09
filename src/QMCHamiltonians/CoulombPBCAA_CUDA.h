@@ -47,10 +47,10 @@ struct CoulombPBCAA_CUDA : public CoulombPBCAA
   std::vector<gpu::host_vector<CUDA_PRECISION_FULL*>> RhoklistsHost;
   gpu::device_vector<CUDA_PRECISION_FULL> RhokGPU;
   void setupLongRangeGPU(ParticleSet& P);
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   void initBreakup(ParticleSet& P, bool cloning);
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 };
 } // namespace qmcplusplus
 #endif

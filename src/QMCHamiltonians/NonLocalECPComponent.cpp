@@ -74,6 +74,10 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   rrotsgrid_m.resize(n);
   nchannel = nlpp_m.size();
   nknot    = sgridxyz_m.size();
+
+  //Now we inititalize the quadrature grid rrotsgrid_m to the unrotated grid.
+  rrotsgrid_m = sgridxyz_m;
+
   //This is just to check
   //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
   if (lmax)
@@ -195,7 +199,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   {
     // Compute ratios with VP
     RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
-    RefVector<const VirtualParticleSet> const_vp_list;
+    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*ecp_component_leader.VP);
     RefVector<const std::vector<PosType>> deltaV_list;
     RefVector<std::vector<ValueType>> psiratios_list;
     vp_list.reserve(ecp_component_list.size());
@@ -216,8 +220,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
       psiratios_list.push_back(component.psiratio);
     }
 
-    auto vp_to_p_list = VirtualParticleSet::RefVectorWithLeaderParticleSet(vp_list);
-    ResourceCollectionTeamLock<ParticleSet> vp_res_lock(collection, vp_to_p_list);
+    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
 
     VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
 
@@ -234,7 +237,6 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
     for (size_t i = 0; i < p_list.size(); i++)
     {
       NonLocalECPComponent& component(ecp_component_list[i]);
-      auto* VP = component.VP;
       ParticleSet& W(p_list[i]);
       TrialWaveFunction& psi(psi_list[i]);
       const NLPPJob<RealType>& job = joblist[i];
@@ -273,6 +275,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
+
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
+  for (int j = 0; j < nknot; j++)
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
+
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;
@@ -404,6 +412,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
+
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
+  for (int j = 0; j < nknot; j++)
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;

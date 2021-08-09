@@ -57,7 +57,11 @@ struct EGOSet : public SPOSet
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  inline void evaluateVGL(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          ValueVector_t& d2psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
@@ -109,7 +113,7 @@ public:
   //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 };
 
 /** OrbitalBuilder for Slater determinants of electron-gas
@@ -129,8 +133,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
-  SPOSet* createSPOSetFromIndices(indices_t& indices);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
+  std::unique_ptr<SPOSet> createSPOSetFromIndices(indices_t& indices);
 };
 } // namespace qmcplusplus
 #endif

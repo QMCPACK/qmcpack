@@ -22,18 +22,18 @@ void ChiesaCorrection::resetTargetParticleSet(ParticleSet& P) {}
 bool ChiesaCorrection::put(xmlNodePtr cur) { return true; }
 
 
-OperatorBase* ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new ChiesaCorrection(qp, psi);
+  return std::make_unique<ChiesaCorrection>(qp, psi);
 }
 
 ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return Value = psi_ref.KECorrection(); }
 #ifdef QMC_CUDA
 void ChiesaCorrection::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  using WP = WalkerProperties::Indexes;
-  RealType corr                   = psi_ref.KECorrection();
-  std::vector<Walker_t*>& walkers = W.WalkerList;
+  using WP      = WalkerProperties::Indexes;
+  RealType corr = psi_ref.KECorrection();
+  auto& walkers = W.WalkerList;
   for (int iw = 0; iw < LocalEnergy.size(); iw++)
   {
     walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = corr;

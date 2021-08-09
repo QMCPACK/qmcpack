@@ -681,8 +681,8 @@ production, a platform-optimized BLAS should be used.
 
 ::
 
-  apt-get cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  apt-get libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
+  sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
+  sudo apt-get install libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
   export CXX=mpiCC
   cd build
   cmake ..
@@ -1080,17 +1080,24 @@ supercomputer. The other frequently encountered challenge is that the
 compiler configuration is nonintuitive.  This is especially the case
 with the Intel compiler. If you encounter any difficulties, we
 recommend testing the Spack compiler configuration on a simpler
-packages, e.g. HDF5.
+package, e.g. HDF5.
 
-Here are some additional limitations of the QMCPACK Spack package that
-will be resolved in future releases:
+Here are some additional limitations that new users should be aware
+of:
 
-- CUDA support in Spack still has some limitations.  It will
-  catch only some compiler-CUDA conflicts.
+* CUDA support in Spack still has some limitations.  It will
+  not catch the most recent compiler-CUDA conflicts.
 
-- The Intel compiler must find a recent and compatible GCC
+* The Intel compiler must find a recent and compatible GCC
   compiler in its path or one must be explicity set with the
-  ``-gcc-name`` and ``-gxx-name`` flags.
+  ``-gcc-name`` and ``-gxx-name`` flags in your ``compilers.yaml``.
+
+* Cross-compilation is non-intuitive. If the host OS and target OS are the same,
+  but only the processors differ, you will just need to add the ``target=<target CPU>``.
+  However, if the host OS is different from the target OS and you will need to add
+  ``os=<target OS>``. If both the OS and CPU differ between host and target, you will
+  need to set the ``arch=<platform string>``. For more information, see:
+  https://spack.readthedocs.io/en/latest/basic_usage.html?highlight=cross%20compilation#architecture-specifiers
 
 Setting up the Spack environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1126,7 +1133,7 @@ to add one:
 
   your-laptop> spack compiler add <path-to-compiler>
 
-The Intel compiler, and other commerical compilers like PGI, typically
+The Intel ("classic") compiler and other commerical compilers may
 require extra environment variables to work properly. If you have an
 module environment set-up by your system administrators, it is
 recommended that you set the module name in
@@ -1239,10 +1246,13 @@ options and different versions of the application. A full list can be displayed 
     ecp  ecp-apps
 
   Preferred version:
-    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
+    3.11.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.11.0
 
   Safe versions:
-    develop  [git] https://github.com/QMCPACK/qmcpack.git
+    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    3.11.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.11.0
+    3.10.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
     3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
     3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
     3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
@@ -1257,36 +1267,36 @@ options and different versions of the application. A full list can be displayed 
 
   Variants:
     Name [Default]          Allowed values          Description
+    ====================    ====================    =============================
 
-
-    build_type [Release]    Debug, Release,         The build type to build
-                            RelWithDebInfo
-    afqmc [off]             True, False             Install with AFQMC support.
+    afqmc [off]             on, off                 Install with AFQMC support.
                                                     NOTE that if used in
                                                     combination with CUDA, only
                                                     AFQMC will have CUDA.
-    complex [off]           True, False             Build the complex (general
+    build_type [Release]    Debug, Release,         The build type to build
+                            RelWithDebInfo
+    complex [off]           on, off                 Build the complex (general
                                                     twist/k-point) version
-    cuda [off]              True, False             Build with CUDA
+    cuda [off]              on, off                 Build with CUDA
     cuda_arch [none]        none, 53, 20, 62,       CUDA architecture
                             60, 61, 50, 75, 70,
                             72, 32, 52, 30, 35
-    da [off]                True, False             Install with support for basic
+    da [off]                on, off                 Install with support for basic
                                                     data analysis tools
-    gui [off]               True, False             Install with Matplotlib (long
+    gui [off]               on, off                 Install with Matplotlib (long
                                                     installation time)
-    mixed [off]             True, False             Build the mixed precision
+    mixed [off]             on, off                 Build the mixed precision
                                                     (mixture of single and double
                                                     precision) version for gpu and
                                                     cpu
-    mpi [on]                True, False             Build with MPI support
-    phdf5 [on]              True, False             Build with parallel collective
+    mpi [on]                on, off                 Build with MPI support
+    phdf5 [on]              on, off                 Build with parallel collective
                                                     I/O
-    ppconvert [off]         True, False             Install with pseudopotential
+    ppconvert [off]         on, off                 Install with pseudopotential
                                                     converter.
-    qe [on]                 True, False             Install with patched Quantum
+    qe [on]                 on, off                 Install with patched Quantum
                                                     Espresso 6.4.0
-    timers [off]            True, False             Build with support for timers
+    timers [off]            on, off                 Build with support for timers
 
   Installation Phases:
     cmake    build    install
@@ -1332,9 +1342,9 @@ installation process, for example:
 
   your-laptop> spack install --test=root qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
 
-will run the unit and short tests. The current behavior of the QMCPACK
+will run the unit and deterministic tests. The current behavior of the QMCPACK
 Spack package is to complete the install as long as all the unit tests
-pass. If the short tests fail, a warning is issued at the command prompt.
+pass. If the deterministic tests fail, a warning is issued at the command prompt.
 
 For CUDA, you will need to specify and extra ``cuda_arch``
 parameter otherwise, it will default to ``cuda_arch=61``.
@@ -1383,7 +1393,7 @@ Installing QMCPACK with Spack on Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Spack works robustly on the standard flavors of Linux (Ubuntu, CentOS,
-Ubuntu, etc.) using GCC, Clang, PGI, and Intel compilers.
+Ubuntu, etc.) using GCC, Clang, NVHPC, and Intel compilers.
 
 Installing QMCPACK with Spack on Mac OS X
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1404,9 +1414,7 @@ facility. Additionally, Spack packages compiled by the facility can be
 reused by chaining Spack installations
 https://spack.readthedocs.io/en/latest/chain.html.
 
-Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
-
-Installing Quantum-Espresso with Spack
+Installing Quantum-ESPRESSO with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 More information about the QE Spack package can be obtained directly
@@ -1422,7 +1430,7 @@ Spack installation command that needs to be invoked:
 
 ::
 
-  your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+  your-laptop> spack install quantum-espresso+qmcpack~patch@6.7%gcc hdf5=parallel
 
 The ``~`` decorator means deactivate the ``patch``
 variant. This refers not to the QMCPACK patch, but to the upstream
@@ -1438,10 +1446,10 @@ is non-intuitive for Spack newcomers:
 
 ::
 
-  your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.4.1%gcc hdf5=serial
+  your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.7%gcc hdf5=serial
 
 QE Spack package is well tested with GCC and Intel compilers, but will not work
-with the PGI compiler or in a cross-compile environment.
+with the NVHPC compiler or in a cross-compile environment.
 
 Reporting Bugs
 ~~~~~~~~~~~~~~

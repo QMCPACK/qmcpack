@@ -215,17 +215,17 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
 
 void LatticeDeviationEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
-OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this);
-  LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp, spset, tgroup, sgroup);
+  std::unique_ptr<LatticeDeviationEstimator> myclone =
+      std::make_unique<LatticeDeviationEstimator>(qp, spset, tgroup, sgroup);
   myclone->put(input_xml);
-
   return myclone;
 }
 
-void LatticeDeviationEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void LatticeDeviationEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {
@@ -238,12 +238,10 @@ void LatticeDeviationEstimator::registerCollectables(std::vector<observable_help
     }
 
     // open hdf5 entry and resize
-    observable_helper* h5o = new observable_helper(myName);
-    h5o->set_dimensions(ndim, h5_index);
-    h5o->open(gid);
-
-    // add to h5 file
-    h5desc.push_back(h5o);
+    h5desc.emplace_back(myName);
+    auto& h5o = h5desc.back();
+    h5o.set_dimensions(ndim, h5_index);
+    h5o.open(gid);
   }
 }
 

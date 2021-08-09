@@ -25,6 +25,7 @@ public:
 
   using RealType = QMCTraits::RealType;
 
+  std::unique_ptr<FakeJastrow> makeClone() { return std::make_unique<FakeJastrow>(*this); }
   bool evaluateDerivatives(RealType r, std::vector<TinyVector<RealType, 3>>& derivs)
   {
     derivs = derivs_;
@@ -52,12 +53,13 @@ TEST_CASE("DiffTwoBodyJastrowOrbital one species and two variables", "[wavefunct
   elec.setName("e");
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
-  FakeJastrow j2;
+  auto j2_uptr = std::make_unique<FakeJastrow>();
+  auto& j2     = *j2_uptr;
   j2.myVars.insert("opt1", 1.0);
   j2.myVars.insert("opt2", 2.0);
   // update num_active_vars
   j2.myVars.resetIndex();
-  jorb.addFunc(0, 0, &j2);
+  jorb.addFunc(0, 0, std::move(j2_uptr));
 
   opt_variables_type global_active;
   global_active.insertFrom(j2.myVars);
@@ -97,19 +99,21 @@ TEST_CASE("DiffTwoBodyJastrowOrbital two variables", "[wavefunction]")
 
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
-  FakeJastrow j2a;
+  auto j2a_uptr = std::make_unique<FakeJastrow>();
+  auto& j2a     = *j2a_uptr;
   j2a.myVars.insert("opt1", 1.0);
   j2a.name = "j2a";
   // update num_active_vars
   j2a.myVars.resetIndex();
-  jorb.addFunc(0, 0, &j2a);
+  jorb.addFunc(0, 0, std::move(j2a_uptr));
 
-  FakeJastrow j2b;
+  auto j2b_uptr = std::make_unique<FakeJastrow>();
+  auto& j2b     = *j2b_uptr;
   j2b.myVars.insert("opt2", 2.0);
   j2b.name = "j2b";
   // update num_active_vars
   j2b.myVars.resetIndex();
-  jorb.addFunc(0, 1, &j2b);
+  jorb.addFunc(0, 1, std::move(j2b_uptr));
 
   opt_variables_type global_active;
   global_active.insertFrom(j2a.myVars);
@@ -159,19 +163,21 @@ TEST_CASE("DiffTwoBodyJastrowOrbital variables fail", "[wavefunction]")
 
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
-  FakeJastrow j2a;
+  auto j2a_uptr = std::make_unique<FakeJastrow>();
+  auto& j2a     = *j2a_uptr;
   j2a.myVars.insert("opt1", 1.0);
   j2a.name = "j2a";
   // update num_active_vars
   j2a.myVars.resetIndex();
-  jorb.addFunc(0, 0, &j2a);
+  jorb.addFunc(0, 0, std::move(j2a_uptr));
 
-  FakeJastrow j2b;
+  auto j2b_uptr = std::make_unique<FakeJastrow>();
+  auto& j2b     = *j2b_uptr;
   j2b.myVars.insert("opt2", 2.0);
   j2b.name = "j2b";
   // update num_active_vars
   j2b.myVars.resetIndex();
-  jorb.addFunc(0, 1, &j2b);
+  jorb.addFunc(0, 1, std::move(j2b_uptr));
 
   opt_variables_type global_active;
   global_active.insertFrom(j2b.myVars);
@@ -224,19 +230,21 @@ TEST_CASE("DiffTwoBodyJastrowOrbital other variables", "[wavefunction]")
 
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
-  FakeJastrow j2a;
+  auto j2a_uptr = std::make_unique<FakeJastrow>();
+  auto j2a      = *j2a_uptr;
   j2a.myVars.insert("opt1", 1.0);
   j2a.name = "j2a";
   // update num_active_vars
   j2a.myVars.resetIndex();
-  jorb.addFunc(0, 0, &j2a);
+  jorb.addFunc(0, 0, std::move(j2a_uptr));
 
-  FakeJastrow j2b;
+  auto j2b_uptr = std::make_unique<FakeJastrow>();
+  auto& j2b     = *j2b_uptr;
   j2b.myVars.insert("opt2", 2.0);
   j2b.name = "j2b";
   // update num_active_vars
   j2b.myVars.resetIndex();
-  jorb.addFunc(0, 1, &j2b);
+  jorb.addFunc(0, 1, std::move(j2b_uptr));
 
   opt_variables_type global_active;
   // This is a parameter from another part of the wavefunction
@@ -285,6 +293,74 @@ TEST_CASE("DiffTwoBodyJastrowOrbital other variables", "[wavefunction]")
 
   jorb.evaluateDerivatives(elec, global_active, dlogpsi2, dhpsioverpsi);
   CHECK(dlogpsi2[1] == ValueApprox(-2.0));
+}
+
+// Reproduce 3137.  If the number of particle types equals the number of particles
+// the two body jastrow is not constructed correctly (except in the case of two
+// particles).
+TEST_CASE("DiffTwoBodyJastrowOrbital Jastrow three particles of three types", "[wavefunction]")
+{
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ion");
+  ions.create(1);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+  elec.setName("elec");
+  std::vector<int> udp(3);
+  udp[0] = 1;
+  udp[1] = 1;
+  udp[2] = 1;
+  elec.create(udp);
+  elec.R[0][0] = -0.28;
+  elec.R[0][1] = 0.0225;
+  elec.R[0][2] = -2.709;
+  elec.R[1][0] = -1.08389;
+  elec.R[1][1] = 1.9679;
+  elec.R[1][2] = -0.0128914;
+  elec.R[2][0] = -2.08389;
+  elec.R[2][1] = 0.9679;
+  elec.R[2][2] = 0.0128914;
+
+
+  DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
+
+  // 0 uu  (0,0)
+  // 1 ud  (0,1)
+  // 2 up  (0,2)
+  // 3 du  (1,0)
+  // 4 dd  (1,1)
+  // 5 dp  (1,2)
+  // 6 pu  (2,0)
+  // 7 pd  (2,1)
+  // 8 pp  (2,2)
+
+  auto j2a_uptr = std::make_unique<FakeJastrow>();
+  auto& j2a     = *j2a_uptr;
+  j2a.myVars.insert("opt1", 1.0);
+  j2a.name = "j2a";
+  // update num_active_vars
+  j2a.myVars.resetIndex();
+  jorb.addFunc(0, 1, std::move(j2a_uptr));
+
+  auto j2b_uptr = std::make_unique<FakeJastrow>();
+  auto j2b      = *j2b_uptr;
+  j2b.myVars.insert("opt2", 2.0);
+  j2b.name = "j2b";
+  // update num_active_vars
+  j2b.myVars.resetIndex();
+  jorb.addFunc(0, 2, j2b_uptr->makeClone());
+
+  // currently opposite spins won't be set to be equivalent
+  // setting u,p doesn't set d,p
+  jorb.addFunc(1, 2, std::move(j2b_uptr));
+
+  auto& F = jorb.getPairFunctions();
+  for (size_t i = 0; i < F.size(); ++i)
+    CHECK(F[i] != nullptr);
 }
 
 } // namespace qmcplusplus

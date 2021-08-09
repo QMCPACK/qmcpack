@@ -19,7 +19,8 @@
 
 namespace qmcplusplus
 {
-OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory) : psetpool(PSP), wf_factory_(factory)
+OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory)
+    : psetpool(PSP), wf_factory_(factory)
 {
   //keep the electron particle to get the cell later, if necessary
   Peln = &P;
@@ -29,13 +30,14 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, 
 }
 
 
-OperatorBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
-  OrbitalImages* clone = new OrbitalImages(*this);
-  clone->Peln          = &P;
+  std::unique_ptr<OrbitalImages> clone = std::make_unique<OrbitalImages>(*this);
+  clone->Peln                          = &P;
   for (int i = 0; i < sposets.size(); ++i)
   {
+    //FIXME eliminate new
     clone->sposet_indices[i] = new std::vector<int>(*sposet_indices[i]);
     clone->sposets[i]        = sposets[i]->makeClone();
   }

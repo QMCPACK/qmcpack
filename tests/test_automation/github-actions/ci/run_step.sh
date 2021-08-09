@@ -1,14 +1,24 @@
 #!/bin/bash
 
+set -x
+
 case "$1" in 
 
   # Configure qmcpack using cmake out-of-source builds 
   configure)
     
+    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
+    then
+      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
+      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build
+    fi
+    
+    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build"
     cd ${GITHUB_WORKSPACE}/..
     mkdir qmcpack-build
     cd qmcpack-build
     
+    # Real or Complex
     case "${GH_JOBNAME}" in
       *"real"*)
         echo 'Configure for real build -DQMC_COMPLEX=0'
@@ -20,13 +30,25 @@ case "$1" in
       ;; 
     esac
     
+    # Mixed of Full precision, used in GPU code (cuda jobs) as it's more mature
+    case "${GH_JOBNAME}" in
+      *"full"*)
+        echo 'Configure for real build -DQMC_MIXED_PRECISION=0'
+        IS_MIXED_PRECISION=0
+      ;;
+      *"mixed"*)
+        echo 'Configure for complex build -DQMC_MIXED_PRECISION=1'
+        IS_MIXED_PRECISION=1
+      ;; 
+    esac
+    
     case "${GH_JOBNAME}" in
       # Sanitize with clang compilers
       *"asan"*)
         echo 'Configure for address sanitizer asan including lsan (leaks)'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=asan \
+        cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=asan \
+                      -DQMC_MPI=0 \
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
       ;;
@@ -61,6 +83,21 @@ case "$1" in
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"clang-latest-openmp-offload"*)
+        echo 'Configure for building OpenMP offload with clang-12 on x86_64'
+        cmake -GNinja -DCMAKE_C_COMPILER=clang-12 -DCMAKE_CXX_COMPILER=clang++-12 \
+                      -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
+                      -DUSE_OBJECT_TARGET=ON -DQMC_MPI=0 \
+                      ${GITHUB_WORKSPACE}
+      ;;
+      *"gpu-cuda"*)
+        echo 'Configure for building GPU CUDA legacy'
+        cmake -GNinja -DQMC_CUDA=1 \
+                      -DQMC_MPI=0 \
+                      -DQMC_COMPLEX=$IS_COMPLEX \
+                      -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+                      ${GITHUB_WORKSPACE}
+      ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'
@@ -89,15 +126,31 @@ case "$1" in
       export OMPI_MCA_hwloc_base_binding_policy=none
     fi 
     
+    # Run only deterministic tests (reasonable for CI) by default
+    TEST_LABEL="-L deterministic"
+    
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      echo "Enabling LSAN suppressions file config/sanitizers/lsan.supp"
-      export LSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
+      TEST_LABEL="-L unit"
     fi
     
-    # Run only deterministic tests (reasonable for CI)
-    ctest --output-on-failure -L deterministic
+    if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
+    then
+       echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
+       export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+       # Clang 12 helper threads used by target nowait is very broken. Disable this feature
+       export LIBOMP_USE_HIDDEN_HELPER_TASK=0
+       # Run only unit tests (reasonable for CI using openmp-offload)
+       TEST_LABEL="-L unit"
+    fi
+    
+    if [[ "${GH_JOBNAME}" =~ (gpu-cuda) ]]
+    then
+       export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH}
+    fi
+    
+    ctest --output-on-failure $TEST_LABEL
     ;;
   
   # Generate coverage reports

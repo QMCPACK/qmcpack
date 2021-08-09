@@ -235,6 +235,11 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
+  return previous_linear_methods_run();
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
+{
   start();
   bool Valid(true);
   int Total_iterations(0);
@@ -317,9 +322,8 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      RealType lowestEV(0);
       eigenvalue_timer_.start();
-      lowestEV = getLowestEigenvector(Right, currentParameterDirections);
+      getLowestEigenvector(Right, currentParameterDirections);
       Lambda   = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
@@ -899,7 +903,7 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
     Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
@@ -1309,7 +1313,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
   Lambda = getNonLinearRescale(parameterDirections, ovlMat);

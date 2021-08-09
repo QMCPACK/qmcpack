@@ -52,10 +52,10 @@ void MPC_CUDA::initBreakup()
   //  app_log() << "    Finished copying MPC spline to GPU memory.\n";
 }
 
-OperatorBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
-  MPC_CUDA* newMPC = new MPC_CUDA(*this);
+  std::unique_ptr<MPC_CUDA> newMPC = std::make_unique<MPC_CUDA>(*this);
   newMPC->resetTargetParticleSet(qp);
   return newMPC;
 }
@@ -63,9 +63,9 @@ OperatorBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
   init_Acuda();
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  const int nw                    = walkers.size();
-  const int N                     = NParticles;
+  auto& walkers = W.WalkerList;
+  const int nw  = walkers.size();
+  const int N   = NParticles;
   if (SumGPU.size() < nw)
   {
     SumGPU.resize(nw, 1.25);
@@ -130,7 +130,7 @@ void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalE
 
   for (int iw = 0; iw < nw; iw++)
   {
-    double e                                                = esum[iw] + SumHost[iw] + Vconst;
+    double e                                                    = esum[iw] + SumHost[iw] + Vconst;
     walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = e;
     LocalEnergy[iw] += e;
   }

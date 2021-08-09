@@ -1050,5 +1050,6 @@ destroy_NUBspline(Bspline *spline)
   default:
     break;
   }
+  free(spline);
 }
     

@@ -26,7 +26,6 @@
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#include "QMCWaveFunctions/EinsplineSet.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
@@ -129,7 +128,7 @@ public:
 
   /**  Helper vector for sorting bands
    */
-  std::vector<std::vector<BandInfo>*> FullBands;
+  std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
   /// reader to use BsplineReaderBase
   BsplineReaderBase* MixedSplineReader;
@@ -145,12 +144,12 @@ public:
   EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
 
   ///destructor
-  ~EinsplineSetBuilder();
+  ~EinsplineSetBuilder() override;
 
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
@@ -158,7 +157,7 @@ public:
   void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks=false);
 
   /** initialize with the existing SPOSet */
-  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
 
   //////////////////////////////////////
   // HDF5-related data  and functions //

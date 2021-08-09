@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_H
 #define QMCPLUSPLUS_DTDIMPL_AB_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
 #include "Utilities/FairDivide.h"
 #include "Message/OpenMP.h"
 
@@ -26,7 +27,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
 {
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
-        DistanceTableData(source, target),
+        DistanceTableData(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::evaluate_") + target.getName() +
                                                        "_" + source.getName(),
                                                    timer_level_fine)),
@@ -88,7 +89,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
-    if (!need_full_table_ && prepare_old)
+    if (!(modes_ & DTModes::NEED_FULL_TABLE_ANYTIME) && prepare_old)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
                                              distances_[iat].data(), displacements_[iat], 0, N_sources);
   }

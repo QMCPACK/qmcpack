@@ -66,7 +66,7 @@ public:
   ~QMCHamiltonian();
 
   ///add an operator
-  void addOperator(OperatorBase* h, const std::string& aname, bool physical = true);
+  void addOperator(std::unique_ptr<OperatorBase>&& h, const std::string& aname, bool physical = true);
 
   ///record the name-type pair of an operator
   void addOperatorType(const std::string& name, const std::string& type);
@@ -90,7 +90,7 @@ public:
    * @param i index of the OperatorBase
    * @return H[i]
    */
-  OperatorBase* getHamiltonian(int i) { return H[i]; }
+  OperatorBase* getHamiltonian(int i) { return H[i].get(); }
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
@@ -122,17 +122,17 @@ public:
   int addObservables(ParticleSet& P);
 
   /** register obsevables so that their averages can be dumped to hdf5
-   * @param h5desc has observable_helper* for each h5 group
+   * @param h5desc has observable_helper for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    */
-  void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
   /** register collectables so that their averages can be dumped to hdf5
-   * @param h5desc has observable_helper* for each h5 group
+   * @param h5desc has observable_helper for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    *
    * Add observable_helper information for the data stored in ParticleSet::mcObservables.
    */
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -316,6 +316,22 @@ public:
                                      ParticleSet::ParticlePos_t& hf_terms,
                                      ParticleSet::ParticlePos_t& pulay_terms,
                                      ParticleSet::ParticlePos_t& wf_grad);
+
+  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Re [(dH)Psi]/Psi
+  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
+  * @param wf_grad  Re (dPsi/Psi)
+  * @return Local Energy.
+  */
+  FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
+                                     ParticleSet& ions,
+                                     TrialWaveFunction& psi,
+                                     ParticleSet::ParticlePos_t& hf_terms,
+                                     ParticleSet::ParticlePos_t& pulay_terms,
+                                     ParticleSet::ParticlePos_t& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */
@@ -391,11 +407,11 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
   /** return a clone */
   QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
@@ -430,13 +446,13 @@ private:
   ///getName is in the way
   const std::string myName;
   ///vector of Hamiltonians
-  std::vector<OperatorBase*> H;
+  std::vector<std::unique_ptr<OperatorBase>> H;
   ///pointer to NonLocalECP
   NonLocalECPotential* nlpp_ptr;
   ///pointer to L2Potential
   L2Potential* l2_ptr;
   ///vector of Hamiltonians
-  std::vector<OperatorBase*> auxH;
+  std::vector<std::unique_ptr<OperatorBase>> auxH;
   /// Total timer for H evaluation
   NewTimer& ham_timer_;
   /// timers for H components

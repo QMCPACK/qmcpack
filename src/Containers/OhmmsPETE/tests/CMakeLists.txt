@@ -9,16 +9,13 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
+set(SRC_DIR ohmmspete)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+add_executable(${UTEST_EXE} test_vector.cpp test_matrix.cpp test_tinyvector.cpp)
+target_link_libraries(${UTEST_EXE} catch_main containers)
 
-SET(SRC_DIR ohmmspete)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-
-
-ADD_EXECUTABLE(${UTEST_EXE} test_vector.cpp test_matrix.cpp test_tinyvector.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main containers)
-
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

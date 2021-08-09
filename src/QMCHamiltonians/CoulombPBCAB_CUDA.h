@@ -61,9 +61,9 @@ struct CoulombPBCAB_CUDA : public CoulombPBCAB
 
   void initBreakup(ParticleSet& P);
 
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   CoulombPBCAB_CUDA(ParticleSet& ions, ParticleSet& elns, bool cloning = false);
 };

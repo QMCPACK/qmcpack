@@ -256,8 +256,7 @@ struct WalkerControlMPITest
       wc.NumPerRank[i] = 1;
     }
     // One walker on every node, should be no swapping
-    //walkers.push_back(std::make_unique<Walker_t>());
-    wc.good_w.push_back(new Walker_t());
+    wc.good_w.push_back(std::make_unique<Walker_t>());
     wc.good_w[0]->ID = c->rank();
     wc.ncopy_w.push_back(0);
 
@@ -273,8 +272,8 @@ struct WalkerControlMPITest
     {
       if (c->rank() == 0)
       {
-        wc.good_w.push_back(new Walker_t());
-        wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(std::make_unique<Walker_t>());
+        wc.good_w.push_back(std::make_unique<Walker_t>());
 
         // Use the ID variable to check that the walker content was transmitted
         wc.good_w[1]->ID = c->size();
@@ -322,8 +321,8 @@ struct WalkerControlMPITest
     {
       if (c->rank() == 0)
       {
-        wc.good_w.push_back(new Walker_t());
-        wc.good_w.push_back(new Walker_t());
+        wc.good_w.push_back(std::make_unique<Walker_t>());
+        wc.good_w.push_back(std::make_unique<Walker_t>());
         // wc.good_w.push_back(new Walker_t());
         // wc.good_w.push_back(new Walker_t());
         int nwalkers_rank                = wc.good_w.size();

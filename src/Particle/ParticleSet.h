@@ -29,6 +29,7 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
@@ -104,6 +105,8 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
+  ///true is a dynamic spin calculation
+  bool is_spinor_;
   /** the index of the active particle during particle-by-particle moves
    *
    * when a single particle move is proposed, the particle id is assigned to activePtcl
@@ -183,7 +186,7 @@ public:
   ParticleSet(const ParticleSet& p);
 
   ///default destructor
-  virtual ~ParticleSet();
+  ~ParticleSet() override;
 
   /** create  particles
    * @param n number of particles
@@ -195,16 +198,16 @@ public:
   void create(const std::vector<int>& agroup);
 
   ///write to a std::ostream
-  bool get(std::ostream&) const;
+  bool get(std::ostream&) const override;
 
   ///read from std::istream
-  bool put(std::istream&);
+  bool put(std::istream&) override;
 
   ///reset member data
-  void reset();
+  void reset() override;
 
   ///initialize ParticleSet from xmlNode
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///specify quantum_domain of particles
   void set_quantum_domain(quantum_domains qdomain);
@@ -223,11 +226,11 @@ public:
 
   /** add a distance table
    * @param psrc source particle set
-   * @param need_full_table if true, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
+   * @param modes bitmask DistanceTableData::DTModes
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, bool need_full_table = false);
+  int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
 
   /** get a distance table by table_ID
    */
@@ -252,6 +255,10 @@ public:
   /** Turn on per particle storage in Structure Factor
    */
   void turnOnPerParticleSK();
+
+  /** Get state (on/off) of per particle storage in Structure Factor
+   */
+  bool getPerParticleSKState() const;
 
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet() { return mySpecies; }
@@ -278,7 +285,7 @@ public:
 
   /** return the position of the active particle
    *
-   * activePtcl=-1 is used to flag non-physical moves
+   * activePtcl=-1 is used to flag non-physical move
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
   inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
@@ -337,6 +344,7 @@ public:
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
 
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
@@ -561,6 +569,7 @@ public:
     spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
+    is_spinor_       = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());
@@ -704,12 +713,11 @@ protected:
                                               const std::vector<SingleParticlePos_t>& new_positions,
                                               bool maybe_accept = true);
 
-  /** actual implemenation for accepting a proposed move, support both regular and forward modes
+  /** actual implemenation for accepting a proposed move in forward mode
    *
    * @param iat the index of the particle whose position and other attributes to be updated
-   * @param forward_mode if ture, in forward mode.
    */
-  void acceptMove_impl(Index_t iat, bool forward_mode);
+  void acceptMoveForwardMode(Index_t iat);
 
   /** reject a proposed move in forward mode
    * @param iat the electron whose proposed move gets rejected.

@@ -9,16 +9,14 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR lattice)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR lattice)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+add_executable(${UTEST_EXE} test_ParticleBConds.cpp test_CrystalLattice.cpp test_LRBreakupParameters.cpp)
+target_include_directories(${UTEST_EXE} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+target_link_libraries(${UTEST_EXE} catch_main qmcutil Math::scalar_vector_functions)
 
-
-ADD_EXECUTABLE(${UTEST_EXE} test_ParticleBConds.cpp test_CrystalLattice.cpp test_LRBreakupParameters.cpp)
-TARGET_INCLUDE_DIRECTORIES(${UTEST_EXE} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil Math::scalar_vector_functions)
-
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

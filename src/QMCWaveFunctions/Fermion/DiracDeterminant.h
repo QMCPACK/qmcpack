@@ -62,7 +62,7 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  void set(int first, int nel, int delay = 1) override final;
+  void set(int first, int nel, int delay = 1) final;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -97,12 +97,12 @@ public:
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVector<const VirtualParticleSet>& vp_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<ValueType>>& ratios) const override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override final;
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) final;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
@@ -112,7 +112,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override final;
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) final;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -172,8 +172,8 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection) override;
-  void releaseResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
 
   /** cloning function
    * @param tqp target particleset

@@ -2,6 +2,11 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+* Quantum ESPRESSO (QE) v6.8 support. [\#3301](https://github.com/QMCPACK/qmcpack/pull/3301).
+* To aid coexistence of real and complex builds, the qmcpack executable is now named qmcpack_complex for builds with QMC_COMPLEX=1
+
 ## [3.11.0] - 2021-04-09
 
 ### Notes

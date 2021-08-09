@@ -13,19 +13,13 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef OHMMS_HDF_NUMERICATTRIBIO_H
 #define OHMMS_HDF_NUMERICATTRIBIO_H
 #include "OhmmsData/HDFAttribIO.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#ifdef HAVE_LIBBLITZ
-#include <blitz/array.h>
-#else
 #include "OhmmsPETE/OhmmsArray.h"
-#endif
-
 
 namespace qmcplusplus
 {
@@ -72,7 +66,7 @@ struct HDFAttribIO<hsize_t> : public HDFAttribIOBase
 
   HDFAttribIO<hsize_t>(hsize_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim     = 1;
     hid_t dataspace = H5Screate_simple(1, &dim, NULL);
@@ -82,7 +76,7 @@ struct HDFAttribIO<hsize_t> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
@@ -98,7 +92,7 @@ struct HDFAttribIO<unsigned long> : public HDFAttribIOBase
 
   HDFAttribIO<unsigned long>(unsigned long& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     {
@@ -117,7 +111,7 @@ struct HDFAttribIO<unsigned long> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_ULONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
@@ -134,7 +128,7 @@ struct HDFAttribIO<int> : public HDFAttribIOBase
 
   HDFAttribIO<int>(int& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     //herr_t status = H5Eset_auto(NULL, NULL);
@@ -156,7 +150,7 @@ struct HDFAttribIO<int> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -179,7 +173,7 @@ struct HDFAttribIO<double> : public HDFAttribIOBase
 
   HDFAttribIO<double>(double& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim     = 1;
     hid_t dataspace = H5Screate_simple(1, &dim, NULL);
@@ -189,7 +183,7 @@ struct HDFAttribIO<double> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     H5E_auto2_t func;
     void* client_data;
@@ -215,7 +209,7 @@ struct HDFAttribIO<TinyVector<double, D>> : public HDFAttribIOBase
 
   inline HDFAttribIO<data_type>(data_type& a, bool over = false) : ref(a), replace(over) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     {
@@ -234,7 +228,7 @@ struct HDFAttribIO<TinyVector<double, D>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     H5E_auto2_t func;
     void* client_data;
@@ -260,7 +254,7 @@ struct HDFAttribIO<Tensor<double, D>> : public HDFAttribIOBase
 
   inline HDFAttribIO<data_type>(data_type& a, bool over = false) : ref(a), replace(over) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     {
@@ -279,7 +273,7 @@ struct HDFAttribIO<Tensor<double, D>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref(0, 0)));
@@ -297,7 +291,7 @@ struct HDFAttribIO<TinyVector<int, D>> : public HDFAttribIOBase
 
   HDFAttribIO<data_type>(data_type& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     {
@@ -316,7 +310,7 @@ struct HDFAttribIO<TinyVector<int, D>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -340,7 +334,7 @@ struct HDFAttribIO<std::vector<TinyVector<int, D>>> : public HDFAttribIOBase
 
   HDFAttribIO<data_type>(data_type& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim[2]  = {ref.size(), D};
     hid_t dataspace = H5Screate_simple(2, dim, NULL);
@@ -350,7 +344,7 @@ struct HDFAttribIO<std::vector<TinyVector<int, D>>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     H5E_auto2_t func;
     void* client_data;
@@ -385,7 +379,7 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
 
   HDFAttribIO<data_type>(data_type& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim[2]  = {ref.size(), D};
     hid_t dataspace = H5Screate_simple(2, dim, NULL);
@@ -395,7 +389,7 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -419,6 +413,8 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
       H5Dclose(h1);
     }
     H5Eset_auto2(H5E_DEFAULT, func, client_data);
+    if (ret < 0)
+      throw std::runtime_error("HDFAttribIO<std::vector<TinyVector<double, D>>>::read failed!");
   }
 };
 
@@ -432,7 +428,7 @@ struct HDFAttribIO<Vector<double>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim     = ref.size();
     hid_t dataspace = H5Screate_simple(1, &dim, NULL);
@@ -442,7 +438,7 @@ struct HDFAttribIO<Vector<double>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -468,7 +464,7 @@ struct HDFAttribIO<Vector<std::complex<double>>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim[2];
     dim[0]          = ref.size();
@@ -480,7 +476,7 @@ struct HDFAttribIO<Vector<std::complex<double>>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -512,7 +508,7 @@ struct HDFAttribIO<Vector<int>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim     = ref.size();
     hid_t dataspace = H5Screate_simple(1, &dim, NULL);
@@ -522,7 +518,7 @@ struct HDFAttribIO<Vector<int>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -548,7 +544,7 @@ struct HDFAttribIO<Vector<TinyVector<double, D>>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hsize_t dim[2]  = {ref.size(), D};
     hid_t dataspace = H5Screate_simple(2, dim, NULL);
@@ -558,7 +554,7 @@ struct HDFAttribIO<Vector<TinyVector<double, D>>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -586,7 +582,7 @@ struct HDFAttribIO<Matrix<int>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     //  herr_t status = H5Eset_auto(NULL, NULL);
@@ -610,7 +606,7 @@ struct HDFAttribIO<Matrix<int>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -629,7 +625,7 @@ struct HDFAttribIO<Matrix<double>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     //  herr_t status = H5Eset_auto(NULL, NULL);
@@ -653,7 +649,7 @@ struct HDFAttribIO<Matrix<double>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -672,7 +668,7 @@ struct HDFAttribIO<Matrix<TinyVector<double, D>>> : public HDFAttribIOBase
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     const int rank = 3;
     hsize_t dims[rank], maxdims[rank];
@@ -728,7 +724,7 @@ struct HDFAttribIO<Matrix<TinyVector<double, D>>> : public HDFAttribIOBase
     */
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -744,47 +740,6 @@ struct HDFAttribIO<Matrix<TinyVector<double, D>>> : public HDFAttribIOBase
   }
 };
 
-#ifdef HAVE_LIBBLITZ
-/** Specialization for blitz::Array<TinyVector<double,D>,2> */
-template<unsigned D>
-struct HDFAttribIO<blitz::Array<TinyVector<double, D>, 2>> : public HDFAttribIOBase
-{
-  typedef blitz::Array<TinyVector<double, D>, 2> ArrayType_t;
-  ArrayType_t& ref;
-
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
-
-  inline void write(hid_t grp, const char* name)
-  {
-    const int rank = 3;
-    hsize_t dim[rank];
-    dim[0]          = ref.extent(0);
-    dim[1]          = ref.extent(1);
-    dim[2]          = D;
-    hid_t dataspace = H5Screate_simple(rank, dim, NULL);
-    hid_t dataset   = H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name)
-  {
-    hid_t h1        = H5Dopen(grp, name);
-    hid_t dataspace = H5Dget_space(h1);
-    hsize_t dims_out[3];
-    int rank     = H5Sget_simple_extent_ndims(dataspace);
-    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
-    if ((ref.extent(0) != (unsigned long)dims_out[0]) || (ref.extent(1) != (unsigned long)dims_out[1]))
-    {
-      //   std::cout << "dimensions not equal" << std::endl;
-      ref.resize(dims_out[0], dims_out[1]);
-    }
-    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-    H5Dclose(h1);
-  }
-};
-#else
 /** Specialization for Array<double,D> */
 template<unsigned D>
 struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
@@ -792,7 +747,7 @@ struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
   typedef Array<double, D> ArrayType_t;
   ArrayType_t& ref;
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     const int rank = D;
     hsize_t dim[rank];
@@ -805,7 +760,7 @@ struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -836,7 +791,7 @@ struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
   ArrayType_t& ref;
   bool replace;
   HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse = false) : ref(a), replace(reuse) {}
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     const int rank = D + 1;
     hsize_t dim[rank];
@@ -862,7 +817,7 @@ struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1 = H5Dopen(grp, name);
     if (h1 >= -1)
@@ -877,6 +832,6 @@ struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
     }
   }
 };
-#endif
+
 } // namespace qmcplusplus
 #endif

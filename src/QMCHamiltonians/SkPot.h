@@ -29,13 +29,13 @@ class SkPot : public OperatorBase
 public:
   SkPot(ParticleSet& elns);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   inline void FillFk()
   {

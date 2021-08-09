@@ -72,7 +72,7 @@ public:
   ///container type of the Properties of a Walker
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
-  typedef std::vector<Walker_t*> WalkerList_t;
+  typedef std::vector<std::unique_ptr<Walker_t>> WalkerList_t;
   /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
   typedef WalkerList_t::iterator iterator;
   ///const_iterator of Walker container
@@ -196,7 +196,7 @@ public:
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
 

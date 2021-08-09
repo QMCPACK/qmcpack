@@ -13,29 +13,36 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "AtomicOrbitalCuda.h"
 #include <cstdio>
 #include <vector>
 #include <complex>
 
+__device__ inline void sincos_t(float x, float *sin, float *cos) {
+  sincosf(x, sin, cos);
+}
+
+__device__ inline void sincos_t(double x, double *sin, double *cos) {
+  sincos(x, sin, cos);
+}
 
 __constant__ float  Acuda[48];
 
 bool atomic_cuda_initialized = false;
 
 // type traits for cuda variable make types
-template<typename T> __device__ typename cudaTypeTraits<T>::realType4 cudaMakeType4(T a, T b, T c, T d); 
+template<typename T> __device__ typename cudaTypeTraits<T>::realType4 cudaMakeType4(T a, T b, T c, T d);
 
 template<> __device__ typename cudaTypeTraits<float>::realType4 cudaMakeType4(float a, float b, float c, float d)
 {
-  return make_float4(a, b, c, d); 
+  return make_float4(a, b, c, d);
 };
 
 template<> __device__ typename cudaTypeTraits<double>::realType4 cudaMakeType4(double a, double b, double c, double d)
 {
-  return make_double4(a, b, c, d); 
+  return make_double4(a, b, c, d);
 };
 
 
@@ -932,10 +939,10 @@ evaluateHybridSplineComplexToReal_kernel
     if (block*BS+tid < N)
       m2c[tid] = make2copies[block*BS+tid];
     __syncthreads();
-    sincos(-(k_red[tid][0]*myData.img[0]+
-             k_red[tid][1]*myData.img[1]+
-             k_red[tid][2]*myData.img[2]),
-             &phase_im, &phase_re);
+    sincos_t(-(k_red[tid][0]*myData.img[0]+
+               k_red[tid][1]*myData.img[1]+
+               k_red[tid][2]*myData.img[2]),
+               &phase_im, &phase_re);
     T *c0 =  myCoefs + 2*index*ustride + 2*block*BS;
     __shared__ T c[BS][2], val[BS][2];
     val[0][tid]    = T();
@@ -1062,10 +1069,10 @@ evaluateHybridPolyComplexToReal_kernel
     if (block*BS+tid < N)
       m2c[tid] = make2copies[block*BS+tid];
     __syncthreads();
-    sincos(-(k_red[tid][0]*myData.img[0]+
-             k_red[tid][1]*myData.img[1]+
-             k_red[tid][2]*myData.img[2]),
-           &phase_im, &phase_re);
+    sincos_t(-(k_red[tid][0]*myData.img[0]+
+               k_red[tid][1]*myData.img[1]+
+               k_red[tid][2]*myData.img[2]),
+             &phase_im, &phase_re);
     T *c0 =  myCoefs + 2*block*BS + tid;
     __shared__ T c[BS][2], val[BS][2];
     val[0][tid]    = T();
@@ -1328,10 +1335,10 @@ evaluateHybridSplineComplexToReal_kernel
     if (block*BS+tid < N)
       m2c[tid] = make2copies[block*BS+tid];
     __syncthreads();
-    sincos(-(k_red[tid][0]*myData.img[0]+
-             k_red[tid][1]*myData.img[1]+
-             k_red[tid][2]*myData.img[2]),
-           &phase_im, &phase_re);
+    sincos_t(-(k_red[tid][0]*myData.img[0]+
+               k_red[tid][1]*myData.img[1]+
+               k_red[tid][2]*myData.img[2]),
+             &phase_im, &phase_re);
     T *c0 =  myCoefs + 2*index*ustride + 2*block*BS;
     T v_re         =T(), v_im         =T();
     T g_rhat_re    =T(), g_rhat_im    =T(),
@@ -1582,10 +1589,10 @@ evaluateHybridPolyComplexToReal_kernel
     if (block*BS+tid < N)
       m2c[tid] = make2copies[block*BS+tid];
     __syncthreads();
-    sincos(-(k_red[tid][0]*myData.img[0]+
-             k_red[tid][1]*myData.img[1]+
-             k_red[tid][2]*myData.img[2]),
-           &phase_im, &phase_re);
+    sincos_t(-(k_red[tid][0]*myData.img[0]+
+               k_red[tid][1]*myData.img[1]+
+               k_red[tid][2]*myData.img[2]),
+             &phase_im, &phase_re);
     T *c0 =  myCoefs + 2*block*BS + tid;
     T v_re         =T(), v_im         =T();
     T g_rhat_re    =T(), g_rhat_im    =T(),
@@ -1908,7 +1915,7 @@ CalcYlmComplex (T *rhats, HybridJobType  *job_types,
         int m = m_lm[lm];
         T fm = floatm_lm[lm];
         T re, im;
-        sincos(fm*phi[i], &im, &re);
+        sincos_t(fm*phi[i], &im, &re);
         // Switch sign if m<0 and it's odd
         if (m<0 && (m&1))
         {
@@ -2055,7 +2062,7 @@ CalcYlmReal (T *rhats, HybridJobType* job_type,
         int m = m_lm[lm];
         T fm = floatm_lm[lm];
         T re, im;
-        sincos(fm*phi[i], &im, &re);
+        sincos_t(fm*phi[i], &im, &re);
         int off = ((l*(l+1))>>1) + m;
         int iplus = l*(l+1)+m;
         int iminus = l*(l+1)-m;
@@ -2252,7 +2259,7 @@ CalcYlmComplex (T *rhats, HybridJobType *job_types, T **Ylm_ptr, int N)
         int m = m_lm[lm];
         T fm = floatm_lm[lm];
         T re, im;
-        sincos(fm*phi[i], &im, &re);
+        sincos_t(fm*phi[i], &im, &re);
         // Switch sign if m<0 and it's odd
         if (m<0 && (m&1))
         {
@@ -2366,7 +2373,7 @@ CalcYlmReal (T *rhats, HybridJobType *job_types, T **Ylm_ptr, int N)
         int m = m_lm[lm];
         T fm = floatm_lm[lm];
         T re, im;
-        sincos(fm*phi[i], &im, &re);
+        sincos_t(fm*phi[i], &im, &re);
         int off = ((l*(l+1))>>1) + m;
         int iplus = l*(l+1)+m;
         int iminus = l*(l+1)-m;
@@ -2458,7 +2465,7 @@ void dummy_float()
 
 template<typename T, int BS> __global__ void
 evaluate3DSplineReal_kernel (HybridJobType *job_types, T *pos, T *k_reduced,
-                             typename cudaTypeTraits<T>::realType3 drInv, T *coefs, 
+                             typename cudaTypeTraits<T>::realType3 drInv, T *coefs,
                              uint3 dim, uint3 strides,
                              T *Linv, T **vals, T **grad_lapl,
                              int row_stride, int N)
@@ -2853,9 +2860,9 @@ evaluate3DSplineComplexToReal_kernel
       m2c[tid] = make2copies[block*BS+tid];
     __syncthreads();
     T phase_re, phase_im;
-    sincos(-(r[0]*kp[tid][0] +
-             r[1]*kp[tid][1] +
-             r[2]*kp[tid][2]), &phase_im, &phase_re);;
+    sincos_t(-(r[0]*kp[tid][0] +
+               r[1]*kp[tid][1] +
+               r[2]*kp[tid][2]), &phase_im, &phase_re);;
     T v=0.0f, g0=0.0f, g1=0.0f, g2=0.0f,
           h00=0.0f, h01=0.0f, h02=0.0f, h11=0.0f, h12=0.0f, h22=0.0f;
     __shared__ T val[BS][2], grad[BS][2][3], lapl[BS][2];
@@ -3146,9 +3153,9 @@ evaluate3DSplineComplexToReal_kernel
       m2c[tid] = make2copies[block*BS+tid];
     __syncthreads();
     T phase_re, phase_im;
-    sincos(-(r[0]*kp[tid][0] +
-             r[1]*kp[tid][1] +
-             r[2]*kp[tid][2]), &phase_im, &phase_re);;
+    sincos_t(-(r[0]*kp[tid][0] +
+               r[1]*kp[tid][1] +
+               r[2]*kp[tid][2]), &phase_im, &phase_re);;
     T v=0.0f;
     __shared__ T val[BS][2];
     int off   = 2*block*BS+threadIdx.x;
@@ -3368,11 +3375,11 @@ template void CalcYlmRealCuda <double>
 (double*, HybridJobType*, double**, double**, double**, int, int);
 
 // CalcYlmComplexCuda
-template void CalcYlmComplexCuda <float> 
-(float*, HybridJobType*, float**, float**, float**, int, int); 
+template void CalcYlmComplexCuda <float>
+(float*, HybridJobType*, float**, float**, float**, int, int);
 
-template void CalcYlmComplexCuda <double> 
-(double*, HybridJobType*, double**, double**, double**, int, int); 
+template void CalcYlmComplexCuda <double>
+(double*, HybridJobType*, double**, double**, double**, int, int);
 
 
 ////////////////////

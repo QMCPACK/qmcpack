@@ -159,22 +159,24 @@ bool OperatorBase::quantum_domain_valid(quantum_domains qdomain) { return qdomai
 
 void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {
-  OperatorBase* myclone = makeClone(qp, psi);
+  std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
   if (myclone)
-    targetH.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
+  {
+    targetH.addOperator(std::move(myclone), myName, UpdateMode[PHYSICAL]);
+  }
 }
 
-void OperatorBase::registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   bool collect = UpdateMode.test(COLLECTABLE);
   //exclude collectables
   if (!collect)
   {
-    int loc = h5desc.size();
-    h5desc.push_back(new observable_helper(myName));
+    h5desc.emplace_back(myName);
+    auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
-    h5desc[loc]->set_dimensions(onedim, myIndex);
-    h5desc[loc]->open(gid);
+    oh.set_dimensions(onedim, myIndex);
+    oh.open(gid);
   }
 }
 

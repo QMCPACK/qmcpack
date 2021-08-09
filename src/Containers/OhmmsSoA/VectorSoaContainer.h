@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
-// File developed by:
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,7 @@ struct VectorSoaContainer
   }
 
   ///move constructor
-  VectorSoaContainer(VectorSoaContainer&& in)
+  VectorSoaContainer(VectorSoaContainer&& in) noexcept
       : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(std::move(in.myData))
   {
     in.myData     = nullptr;
@@ -82,8 +83,7 @@ struct VectorSoaContainer
 
   /** constructor with Vector<T1,D> */
   template<typename T1>
-  VectorSoaContainer(const Vector<TinyVector<T1, D>>& in)
-      : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
+  VectorSoaContainer(const Vector<TinyVector<T1, D>>& in) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
   {
     resize(in.size());
     copyIn(in);
@@ -123,11 +123,11 @@ struct VectorSoaContainer
     if (n_padded * D > nAllocated)
     {
       if (nAllocated)
-        myAlloc.deallocate(myData, nAllocated);
+        mAllocator.deallocate(myData, nAllocated);
       nLocal     = n;
       nGhosts    = n_padded;
       nAllocated = nGhosts * D;
-      myData     = myAlloc.allocate(nAllocated);
+      myData     = mAllocator.allocate(nAllocated);
     }
     else
     {
@@ -147,7 +147,7 @@ struct VectorSoaContainer
   __forceinline void free()
   {
     if (nAllocated)
-      myAlloc.deallocate(myData, nAllocated);
+      mAllocator.deallocate(myData, nAllocated);
     nLocal     = 0;
     nGhosts    = 0;
     nAllocated = 0;
@@ -173,6 +173,30 @@ struct VectorSoaContainer
     nLocal  = n;
     nGhosts = n_padded;
     myData  = ptr;
+  }
+
+  /** attach to pre-allocated data
+   * @param n new nLocal
+   * @param n_padded new nGhosts
+   * @param other the container that owns the memory that ptr points to
+   * @param ptr new myData
+   *
+   * To attach to existing memory, currently owned memory must be freed before calling attachReference
+   */
+  template<typename CONTAINER>
+  void attachReference(size_t n, size_t n_padded, const CONTAINER& other, T* ptr)
+  {
+    if (nAllocated)
+    {
+      free();
+      // This is too noisy right now.
+      // std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
+      /// \todo return this when buffer system is simplified.
+    }
+    nLocal  = n;
+    nGhosts = n_padded;
+    myData  = ptr;
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ptr);
   }
 
   ///return the physical size
@@ -240,6 +264,8 @@ struct VectorSoaContainer
   __forceinline T* data() { return myData; }
   ///return the base
   __forceinline const T* data() const { return myData; }
+  /// return non_const data
+  T* getNonConstData() const { return myData; }
   ///return the pointer of the i-th components
   __forceinline T* restrict data(size_t i) { return myData + i * nGhosts; }
   ///return the const pointer of the i-th components
@@ -252,16 +278,51 @@ struct VectorSoaContainer
 
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline T* device_data() { return myAlloc.getDevicePtr(); }
+  __forceinline T* device_data()
+  {
+    return mAllocator.get_device_ptr();
+  }
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline const T* device_data() const { return myAlloc.getDevicePtr(); }
+  __forceinline const T* device_data() const
+  {
+    return mAllocator.get_device_ptr();
+  }
   ///return the pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline T* restrict device_data(size_t i) { return myAlloc.getDevicePtr() + i * nGhosts; }
+  __forceinline T* restrict device_data(size_t i)
+  {
+    return mAllocator.get_device_ptr() + i * nGhosts;
+  }
   ///return the const pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline const T* restrict device_data(size_t i) const { return myAlloc.getDevicePtr() + i * nGhosts; }
+  __forceinline const T* restrict device_data(size_t i) const
+  {
+    return mAllocator.get_device_ptr() + i * nGhosts;
+  }
+
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    qmc_allocator_traits<Alloc>::updateTo(mAllocator, myData, nGhosts * D);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    qmc_allocator_traits<Alloc>::updateFrom(mAllocator, myData, nGhosts * D);
+  }
+
+  // For tesing copy on device side from one data index to another
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void copyDeviceDataByIndex(unsigned to, unsigned from)
+  {
+    auto* host_ptr   = this->data();
+    auto offset_from = this->data(from) - host_ptr;
+    auto offset_to   = this->data(to) - host_ptr;
+    auto nsize       = this->size();
+    qmc_allocator_traits<Alloc>::deviceSideCopyN(mAllocator, offset_to, nsize, offset_from);
+  }
 
 private:
   /// number of elements
@@ -273,10 +334,17 @@ private:
   /// pointer: what type????
   T* myData;
   /// allocator
-  Alloc myAlloc;
+  Alloc mAllocator;
 
   /// return true if memory is not owned by the container but from outside.
   inline bool isRefAttached() const { return nGhosts * D > nAllocated; }
+
+  // We need this because of the hack propagation of the VectorSoaContainer allocator
+  // to allow proper OhmmsVector based views of VectorSoAContainer elements with OMPallocator
+  friend class qmcplusplus::Vector<T, Alloc>;
+
+  template<typename OtherT, unsigned OtherD, typename OtherAlloc>
+  friend struct VectorSoaContainer;
 };
 
 } // namespace qmcplusplus

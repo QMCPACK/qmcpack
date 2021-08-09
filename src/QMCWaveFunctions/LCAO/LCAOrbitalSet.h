@@ -71,7 +71,7 @@ public:
 
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */
-  virtual void setOrbitalSetSize(int norbs) override;
+  void setOrbitalSetSize(int norbs) override;
 
   /** return the size of the basis set
     */
@@ -271,7 +271,6 @@ private:
                                   GradMatrix_t& dlogdet,
                                   HessMatrix_t& dglogdet,
                                   GradMatrix_t& dllogdet) const;
-
 };
 } // namespace qmcplusplus
 #endif

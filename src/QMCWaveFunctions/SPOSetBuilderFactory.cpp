@@ -41,20 +41,18 @@
 
 namespace qmcplusplus
 {
-
 SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   int nfound  = 0;
   SPOSet* spo = nullptr;
   for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
-    std::vector<SPOSet*>& sposets = it->second->sposets;
-    for (int i = 0; i < sposets.size(); ++i)
+    auto& sposets = it->second->sposets;
+    for (auto& sposet : sposets)
     {
-      SPOSet* sposet = sposets[i];
       if (sposet->getName() == name)
       {
-        spo = sposet;
+        spo = sposet.get();
         nfound++;
       }
     }
@@ -78,7 +76,7 @@ void SPOSetBuilderFactory::write_spo_builders(const std::string& pad) const
   for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
     const std::string& type       = it->first;
-    std::vector<SPOSet*>& sposets = it->second->sposets;
+    auto& sposets                 = it->second->sposets;
     app_log() << pad << "sposets for SPOSetBuilder of type " << type << std::endl;
     for (int i = 0; i < sposets.size(); ++i)
     {
@@ -136,12 +134,12 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   SPOSetBuilder* bb = 0;
 
   //check if builder can be reused
-  std::map<std::string, SPOSetBuilder*>::iterator bbit = spo_builders.find(name);
+  const auto bbit = spo_builders.find(name);
   if (bbit != spo_builders.end())
   {
     app_log() << "Reuse SPOSetBuilder \"" << name << "\" type " << type_in << std::endl;
     app_log().flush();
-    bb                  = (*bbit).second;
+    bb                  = (*bbit).second.get();
     return last_builder = bb;
   }
 
@@ -164,23 +162,26 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     bb = new SHOSetBuilder(targetPtcl, myComm);
   }
 #if OHMMS_DIM == 3
-  else if (type == "spinorbspline")
-  {
-#ifdef QMC_COMPLEX
-    app_log() << "Einspline Spinor Set\n";
-    bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
-#else
-    PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
-#endif
-  }
   else if (type.find("spline") < type.size())
   {
-#if defined(HAVE_EINSPLINE)
-    PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-    bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+    if (targetPtcl.is_spinor_)
+    {
+#ifdef QMC_COMPLEX
+      app_log() << "Einspline Spinor Set\n";
+      bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
 #else
-    PRE.error("Einspline is missing for B-spline orbitals", true);
+      PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
+    }
+    else
+    {
+#if defined(HAVE_EINSPLINE)
+      PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
+      bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+#else
+      PRE.error("Einspline is missing for B-spline orbitals", true);
+#endif
+    }
   }
   else if (type == "molecularorbital" || type == "mo")
   {
@@ -191,22 +192,14 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-    bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
-  }
-  else if (type == "molecularspinor")
-  {
+    if (targetPtcl.is_spinor_)
 #ifdef QMC_COMPLEX
-    ParticleSet* ions = 0;
-    //initialize with the source tag
-    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-    if (pit == ptclPool.end())
-      PRE.error("Missing basisset/@source.", true);
-    else
-      ions = (*pit).second;
-    bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
+      bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
 #else
-    PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+      PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
+    else
+      bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
   }
 #endif //OHMMS_DIM==3
   PRE.flush();
@@ -219,7 +212,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   else
   {
     app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
-    spo_builders[name] = bb; //use name, if missing type is used
+    spo_builders[name] = std::unique_ptr<SPOSetBuilder>(bb); //use name, if missing type is used
   }
   last_builder = bb;
 
@@ -240,7 +233,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (type == "")
     bb = last_builder;
   else if (spo_builders.find(type) != spo_builders.end())
-    bb = spo_builders[type];
+    bb = spo_builders[type].get();
 
   if (bb)
   {

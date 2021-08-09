@@ -29,19 +29,19 @@ public:
   typedef std::map<std::string, ParticleSet*> PSPool;
 
   EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE);
-  ~EnergyDensityEstimator();
+  ~EnergyDensityEstimator() override;
 
-  void resetTargetParticleSet(ParticleSet& P);
-  Return_t evaluate(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P) override;
   void addObservables(PropertySetType& plist) {}
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
   bool put(xmlNodePtr cur, ParticleSet& P);
-  bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  bool get(std::ostream& os) const override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void write_description(std::ostream& os);
 
@@ -100,12 +100,12 @@ private:
   CombinedTraceSample<TraceReal>* Vd_trace;
   CombinedTraceSample<TraceReal>* Vs_trace;
 
-  virtual void get_required_traces(TraceManager& tm);
+  void get_required_traces(TraceManager& tm) override;
 
-  virtual void contribute_scalar_quantities() {}
-  virtual void checkout_scalar_quantities(TraceManager& tm) {}
-  virtual void collect_scalar_quantities() {}
-  virtual void delete_scalar_quantities() {}
+  void contribute_scalar_quantities() override {}
+  void checkout_scalar_quantities(TraceManager& tm) override {}
+  void collect_scalar_quantities() override {}
+  void delete_scalar_quantities() override {}
 };
 
 

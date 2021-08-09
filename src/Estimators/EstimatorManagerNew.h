@@ -141,7 +141,7 @@ private:
    * @param aname name of the estimator
    * @return locator of newestimator
    */
-  int add(EstimatorType* newestimator, const std::string& aname);
+  int add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname);
 
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
@@ -216,9 +216,9 @@ private:
   ///column map
   std::map<std::string, int> EstimatorMap;
   ///estimators of simple scalars
-  std::vector<EstimatorType*> Estimators;
+  std::vector<std::unique_ptr<EstimatorType>> Estimators;
   ///convenient descriptors for hdf5
-  std::vector<observable_helper*> h5desc;
+  std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables
    *
    * since the operator estimators are also a close set at compile time

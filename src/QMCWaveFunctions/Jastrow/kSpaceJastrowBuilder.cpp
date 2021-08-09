@@ -37,7 +37,7 @@ inline bool putContent2(std::vector<T>& a, xmlNodePtr cur)
 }
 
 
-WaveFunctionComponent* kSpaceJastrowBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> kSpaceJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   xmlNodePtr kids = cur->xmlChildrenNode;
   kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
@@ -127,41 +127,37 @@ WaveFunctionComponent* kSpaceJastrowBuilder::buildComponent(xmlNodePtr cur)
   std::map<std::string, kSpaceJastrow::SymmetryType>::iterator symm2 = SymmMap.find(symm2_opt);
   if (symm2 != SymmMap.end())
     twoBodySymm = symm2->second;
-  kSpaceJastrow* jastrow = new kSpaceJastrow(sourcePtcl,
-                                             targetPtcl,
-                                             oneBodySymm,
-                                             kc1,
-                                             id1_opt,
-                                             spin1_opt == "yes",
-                                             twoBodySymm,
-                                             kc2,
-                                             id2_opt,
-                                             spin2_opt == "yes");
+  auto jastrow = std::make_unique<kSpaceJastrow>(sourcePtcl, targetPtcl, oneBodySymm, kc1, id1_opt, spin1_opt == "yes",
+                                                 twoBodySymm, kc2, id2_opt, spin2_opt == "yes");
   jastrow->setCoefficients(oneBodyCoefs, twoBodyCoefs);
-  if (qmc_common.io_node) outputJastrow(jastrow);
+  if (qmc_common.io_node)
+    outputJastrow(jastrow.get());
   //jastrow->addOptimizables(targetPsi.VarList);
   return jastrow;
 }
 
 
-void
-kSpaceJastrowBuilder::outputJastrow(kSpaceJastrow* jastrow)
+void kSpaceJastrowBuilder::outputJastrow(kSpaceJastrow* jastrow)
 {
   char fname[32];
-  int taskid = is_manager() ? getGroupID():-1;
+  int taskid = is_manager() ? getGroupID() : -1;
   std::ofstream fout;
 
   // output one-body jastrow
-  if (qmc_common.mpi_groups>1) sprintf(fname,"Jk1.g%03d.dat",taskid);
-  else sprintf(fname,"Jk1.dat");
+  if (qmc_common.mpi_groups > 1)
+    sprintf(fname, "Jk1.g%03d.dat", taskid);
+  else
+    sprintf(fname, "Jk1.dat");
   fout.open(fname);
   fout << "#  kx  ky  kz  coeff_real  coeff_imag" << std::endl;
   jastrow->printOneBody(fout);
   fout.close();
 
   // output two-body jastrow
-  if (qmc_common.mpi_groups>1) sprintf(fname,"Jk2.g%03d.dat",taskid);
-  else sprintf(fname,"Jk2.dat");
+  if (qmc_common.mpi_groups > 1)
+    sprintf(fname, "Jk2.g%03d.dat", taskid);
+  else
+    sprintf(fname, "Jk2.dat");
   fout.open(fname);
   fout << "#  kx  ky  kz  coeff_real  coeff_imag" << std::endl;
   jastrow->printTwoBody(fout);

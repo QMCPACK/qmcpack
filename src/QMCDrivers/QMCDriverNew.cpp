@@ -92,7 +92,7 @@ QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
     if (Rng[i] != nullptr)
-      RandomNumberControl::Children[i] = Rng[i].release();
+      RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
@@ -151,7 +151,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i].reset(new Crowd(*estimator_manager_, golden_resource_, dispatchers_));
+    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
   }
 
   //now give walkers references to their walkers
@@ -295,9 +295,7 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 
   for (int i = 0; i < num_crowds; ++i)
   {
-    Rng[i].reset(RandomNumberControl::Children[i]);
-    // Ye: RandomNumberControl::Children needs to be replaced with unique_ptr and use Rng[i].swap()
-    RandomNumberControl::Children[i] = nullptr;
+    Rng[i].reset(RandomNumberControl::Children[i].release());
     step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
     RngCompatibility[i] = Rng[i].get();
@@ -317,16 +315,16 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
-  auto& walkers = crowd.get_walkers();
-  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
-                                               crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+  ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
+  ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
 
+  auto& walkers = crowd.get_walkers();
   std::vector<bool> recompute_mask(walkers.size(), true);
   ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
   ps_dispatcher.flex_donePbyP(walker_elecs);

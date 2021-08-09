@@ -46,7 +46,7 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
 }
 
 void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                   const RefVector<ValueVector_t>& psi_list,
                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const
@@ -110,6 +110,17 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
   APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
+}
+
+void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
+                                       int first,
+                                       int last,
+                                       ValueMatrix_t& logdet,
+                                       GradMatrix_t& dlogdet,
+                                       ValueMatrix_t& d2logdet,
+                                       ValueMatrix_t& dspinlogdet)
+{
+  APP_ABORT("Need specialization of " + className + "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -215,7 +226,9 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
+void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
+                      int iat,
+                      gpu::device_vector<CTS::ValueType*>& phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";

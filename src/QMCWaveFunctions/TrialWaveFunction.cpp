@@ -66,7 +66,7 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
 *@warning Have not decided whether Z is cleaned up by TrialWaveFunction
 *  or not. It will depend on I/O implementation.
 */
-TrialWaveFunction::~TrialWaveFunction() { delete_iter(Z.begin(), Z.end()); }
+TrialWaveFunction::~TrialWaveFunction() {}
 
 void TrialWaveFunction::startOptimization()
 {
@@ -85,10 +85,8 @@ void TrialWaveFunction::stopOptimization()
 
 /** Takes owndership of aterm
  */
-void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
+void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
 {
-  Z.push_back(aterm);
-
   std::string aname = aterm->ClassName;
   if (!aterm->myName.empty())
     aname += ":" + aterm->myName;
@@ -98,6 +96,8 @@ void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 
   for (auto& suffix : suffixes)
     WFC_timers_.push_back(*timer_manager.createTimer(aname + "::" + suffix));
+
+  Z.emplace_back(std::move(aterm));
 }
 
 
@@ -418,9 +418,6 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
 
 void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-
   grad_grad_psi.resize(P.getTotalNum());
 
   for (int i = 0; i < Z.size(); i++)
@@ -594,7 +591,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   {
     std::vector<GradType> grad_components(Z.size(), GradType(0.0));
     std::vector<PsiValueType> ratio_components(Z.size(), 0.0);
-#pragma omp taskloop default(shared)
+    PRAGMA_OMP_TASKLOOP("omp taskloop default(shared)")
     for (int i = 0; i < Z.size(); ++i)
     {
       ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
@@ -659,7 +656,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   {
     std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
     std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
-#pragma omp taskloop default(shared)
+    PRAGMA_OMP_TASKLOOP("omp taskloop default(shared)")
     for (int i = 0; i < num_wfc; ++i)
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
@@ -726,7 +723,7 @@ void TrialWaveFunction::rejectMove(int iat)
 void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   ScopedTimer local_timer(TWF_timers_[ACCEPT_TIMER]);
-#pragma omp taskloop default(shared) if (use_tasking_)
+  PRAGMA_OMP_TASKLOOP("omp taskloop default(shared) if (use_tasking_)")
   for (int i = 0; i < Z.size(); i++)
   {
     ScopedTimer z_timer(WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);
@@ -757,7 +754,7 @@ void TrialWaveFunction::mw_accept_rejectMove(const RefVectorWithLeader<TrialWave
       wf_list[iw].PhaseValue = 0;
     }
 
-#pragma omp taskloop default(shared) if (wf_leader.use_tasking_)
+  PRAGMA_OMP_TASKLOOP("omp taskloop default(shared) if (wf_leader.use_tasking_)")
   for (int i = 0; i < num_wfc; i++)
   {
     ScopedTimer z_timer(wf_leader.WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);
@@ -1001,7 +998,7 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
 }
 
 void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                          const RefVector<const VirtualParticleSet>& vp_list,
+                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                           const RefVector<std::vector<ValueType>>& ratios_list,
                                           ComputeType ct)
 {
@@ -1012,7 +1009,7 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     std::vector<ValueType>& ratios = ratios_list[iw];
-    assert(vp_list[iw].get().getTotalNum() == ratios.size());
+    assert(vp_list[iw].getTotalNum() == ratios.size());
     std::fill(ratios.begin(), ratios.end(), 1.0);
     t[iw].resize(ratios.size());
   }
@@ -1188,16 +1185,28 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
     Z[i]->createResource(collection);
 }
 
-void TrialWaveFunction::acquireResource(ResourceCollection& collection)
+void TrialWaveFunction::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  for (int i = 0; i < Z.size(); ++i)
-    Z[i]->acquireResource(collection);
+  auto& wf_leader = wf_list.getLeader();
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wf_leader.Z.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->acquireResource(collection, wfc_list);
+  }
 }
 
-void TrialWaveFunction::releaseResource(ResourceCollection& collection)
+void TrialWaveFunction::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  for (int i = 0; i < Z.size(); ++i)
-    Z[i]->releaseResource(collection);
+  auto& wf_leader = wf_list.getLeader();
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wf_leader.Z.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->releaseResource(collection, wfc_list);
+  }
 }
 
 RefVectorWithLeader<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
@@ -1216,7 +1225,7 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extractWFCPtrList(const U
   std::vector<WaveFunctionComponent*> WFC_list;
   WFC_list.reserve(g.size());
   for (auto& WF : g)
-    WFC_list.push_back(WF->Z[id]);
+    WFC_list.push_back(WF->Z[id].get());
   return WFC_list;
 }
 

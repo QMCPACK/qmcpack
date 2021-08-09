@@ -77,7 +77,7 @@ public:
 
   /** standard interface
    */
-  OperatorEstBase* clone() override;
+  SpinDensityNew* clone() override;
 
   /** accumulate 1 or more walkers of SpinDensity samples
    */

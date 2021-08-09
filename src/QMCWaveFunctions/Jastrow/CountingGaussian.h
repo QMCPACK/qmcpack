@@ -222,9 +222,9 @@ public:
     app_log() << std::endl;
   }
 
-  CountingGaussian* makeClone(std::string fid) const
+  std::unique_ptr<CountingGaussian> makeClone(std::string fid) const
   {
-    CountingGaussian* rptr = new CountingGaussian(fid);
+    auto rptr = std::make_unique<CountingGaussian>(fid);
     for (int i = 0; i < A.size(); ++i)
       rptr->A[i] = A[i];
     for (int i = 0; i < B.size(); ++i)

@@ -36,10 +36,7 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : W
 }
 
 ///destructor
-SlaterDet::~SlaterDet()
-{
-  ///clean up SPOSet
-}
+SlaterDet::~SlaterDet() = default;
 
 ///add a new DiracDeterminant to the list of determinants
 void SlaterDet::add(Determinant_t* det, int ispin)
@@ -211,16 +208,22 @@ void SlaterDet::createResource(ResourceCollection& collection) const
     Dets[i]->createResource(collection);
 }
 
-void SlaterDet::acquireResource(ResourceCollection& collection)
+void SlaterDet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->acquireResource(collection);
+  {
+    const auto det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->acquireResource(collection, det_list);
+  }
 }
 
-void SlaterDet::releaseResource(ResourceCollection& collection)
+void SlaterDet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->releaseResource(collection);
+  {
+    const auto det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->releaseResource(collection, det_list);
+  }
 }
 
 void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
@@ -249,9 +252,9 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ", buf.current());
 }
 
-WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) const
 {
-  SlaterDet* myclone   = new SlaterDet(tqp);
+  auto myclone         = std::make_unique<SlaterDet>(tqp);
   myclone->Optimizable = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {

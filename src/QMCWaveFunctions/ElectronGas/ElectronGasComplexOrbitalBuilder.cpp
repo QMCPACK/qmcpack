@@ -50,7 +50,7 @@ ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(Communicate* 
 {}
 
 
-WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc = 0;
   PosType twist(0.0);
@@ -77,7 +77,7 @@ WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodeP
   downdet->set(nup, nup);
   //create a Slater determinant
   //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
-  SlaterDet* sdet = new SlaterDet(targetPtcl);
+  auto sdet = std::make_unique<SlaterDet>(targetPtcl);
   sdet->add(updet, 0);
   sdet->add(downdet, 1);
   return sdet;
@@ -89,7 +89,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, 
   ClassName = "ElectronGasSPOBuilder";
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc = 0;
@@ -119,16 +119,14 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("ElectronGasSPOBuilder::put");
   }
   egGrid.createGrid(nc, ns, twist);
-  EGOSet* spo = new EGOSet(egGrid.kpt, egGrid.mk2, egGrid.deg);
-  return spo;
+  return std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2, egGrid.deg);
 }
 
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
-  EGOSet* spo = new EGOSet(egGrid.kpt, egGrid.mk2, egGrid.deg);
-  return spo;
+  return std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2, egGrid.deg);
 }
 
 

@@ -61,7 +61,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 
   ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true);
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   void InitMatrix();
   void initBreakup(ParticleSet& P);
@@ -73,35 +73,35 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 
   Return_t g_filter(RealType r);
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override
   {
     registerObservablesF(h5list, gid);
   }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
 
-  void setObservables(PropertySetType& plist)
+  void setObservables(PropertySetType& plist) override
   {
     OperatorBase::setObservables(plist);
     setObservablesF(plist);
   }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
+  void setParticlePropertyList(PropertySetType& plist, int offset) override
   {
     OperatorBase::setParticlePropertyList(plist, offset);
     setParticleSetF(plist, offset);
   }
 
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "Ceperley Force Estimator Hamiltonian: " << pairName;
     return true;

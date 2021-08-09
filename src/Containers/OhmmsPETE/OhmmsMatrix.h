@@ -2,11 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//		      Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//  		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -51,6 +52,15 @@ public:
 
   /** constructor with an initialized ref */
   inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(ref, n * m) {}
+
+  /** This allows construction of a Matrix on another containers owned memory that is using a dualspace allocator.
+   *  It can be any span of that memory.
+   *  You're going to get a bunch of compile errors if the Container in questions is not using a the QMCPACK
+   *  realspace dualspace allocator "interface"
+   */
+  template<typename CONTAINER>
+  Matrix(CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
+  {}
 
   // Copy Constructor
   Matrix(const This_t& rhs)
@@ -108,6 +118,18 @@ public:
     X.attachReference(ref, TotSize);
   }
 
+  /** Attach to pre-allocated memory and propagate the allocator of the owning container.
+   *  Required for sane access to dual space memory
+   */
+  template<typename CONTAINER>
+  inline void attachReference(const CONTAINER& other, T* ref, size_type n, size_type m)
+  {
+    D1      = n;
+    D2      = m;
+    TotSize = n * m;
+    X.attachReference(other, ref, TotSize);
+  }
+
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(size_type n) // you can add rows: adding columns are forbidden
   {
@@ -122,6 +144,22 @@ public:
     assign(*this, rhs);
   }
 
+  /** This assigns from a matrix with larger row size (used for alignment)
+   *  to whatever the rowsize is here.
+   *  Hacky but so is just making the matrix n x (n + padding) to handle row alignment.
+   *  This is unoptimized.
+   */
+  template<typename CONTAINER>
+  void assignUpperRight(const CONTAINER& other)
+  {
+    auto& this_ref = *this;
+    size_t cols = std::max(this_ref.cols(), other.cols());
+    size_t rows = std::max(this_ref.rows(), other.rows());
+    for(int j = 0; j < cols; ++j)
+      for(int i = 0; i < rows; ++i)
+        this_ref(i,j) = other(i,j);
+  }
+  
   // Assignment Operators
   inline This_t& operator=(const This_t& rhs)
   {
@@ -324,6 +362,18 @@ public:
   {
     m.Unpack(X.data(), D1 * D2);
     return m;
+  }
+
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    X.updateTo();
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    X.updateFrom();
   }
 
 protected:

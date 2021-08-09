@@ -9,17 +9,17 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR particle)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR particle)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
+add_executable(${UTEST_EXE} test_particle.cpp test_distance_table.cpp test_walker.cpp test_particle_pool.cpp
+                            test_sample_stack.cpp test_DTModes.cpp test_SoaDistanceTableAA.cpp)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle Math::scalar_vector_functions)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} qmcutil containers platform_omptarget)
+endif()
 
-ADD_EXECUTABLE(${UTEST_EXE} test_particle.cpp test_distance_table.cpp test_walker.cpp test_particle_pool.cpp test_sample_stack.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcparticle Math::scalar_vector_functions)
-IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil containers platform_omptarget)
-ENDIF()
-
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

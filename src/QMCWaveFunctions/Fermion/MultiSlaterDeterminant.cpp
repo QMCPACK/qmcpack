@@ -53,16 +53,18 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
       DetID[j] = i;
 }
 
-WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   typedef DiracDeterminant<> SingleDet_t;
-  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()), FirstIndex_up, LastIndex_up);
-  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()), FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup               = spo_up->occup;
-  spo_dn_C->occup               = spo_dn->occup;
-  MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, std::move(spo_up_C), std::move(spo_dn_C));
-  clone->C2node_up              = C2node_up;
-  clone->C2node_dn              = C2node_dn;
+  auto spo_up_C    = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
+                                                      FirstIndex_up, LastIndex_up);
+  auto spo_dn_C    = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
+                                                      FirstIndex_dn, LastIndex_dn);
+  spo_up_C->occup  = spo_up->occup;
+  spo_dn_C->occup  = spo_dn->occup;
+  auto clone       = std::make_unique<MultiSlaterDeterminant>(tqp, std::move(spo_up_C), std::move(spo_dn_C));
+  clone->C2node_up = C2node_up;
+  clone->C2node_dn = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());
   if (usingCSF)
   {
@@ -70,35 +72,15 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
     clone->CSFexpansion = CSFexpansion;
     clone->DetsPerCSF   = DetsPerCSF;
   }
-  //     SPOSetProxyForMSD* spo = clone->spo_up;
-  //     spo->occup.resize(uniqueConfg_up.size(),clone->nels_up);
   for (int i = 0; i < dets_up.size(); i++)
   {
-    //       int nq=0;
-    // //       configuration& ci = uniqueConfg_up[i];
-    //       for(int k=0; k<uniqueConfg_up[i].occup.size(); k++) {
-    //         if(uniqueConfg_up[i].occup[k]) {
-    //           spo->occup(i,nq++) = k;
-    //         }
-    //       }
-    SingleDet_t* adet = new SingleDet_t(std::static_pointer_cast<SPOSet>(clone->spo_up), 0);
-    adet->set(clone->FirstIndex_up, clone->nels_up);
-    clone->dets_up.push_back(adet);
+    clone->dets_up.push_back(std::make_unique<SingleDet_t>(std::static_pointer_cast<SPOSet>(clone->spo_up), 0));
+    clone->dets_up.back()->set(clone->FirstIndex_up, clone->nels_up);
   }
-  //     spo = clone->spo_dn;
-  //     spo->occup.resize(uniqueConfg_dn.size(),clone->nels_dn);
   for (int i = 0; i < dets_dn.size(); i++)
   {
-    //       int nq=0;
-    // //       configuration& ci = uniqueConfg_dn[i];
-    //       for(int k=0; k<uniqueConfg_dn[i].occup.size(); k++) {
-    //         if(uniqueConfg_dn[i].occup[k]) {
-    //           spo->occup(i,nq++) = k;
-    //         }
-    //       }
-    SingleDet_t* adet = new SingleDet_t(std::static_pointer_cast<SPOSet>(clone->spo_dn), 0);
-    adet->set(clone->FirstIndex_dn, clone->nels_dn);
-    clone->dets_dn.push_back(adet);
+    clone->dets_dn.emplace_back(std::make_unique<SingleDet_t>(std::static_pointer_cast<SPOSet>(clone->spo_dn), 0));
+    clone->dets_dn.back()->set(clone->FirstIndex_dn, clone->nels_dn);
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;
@@ -691,8 +673,8 @@ void MultiSlaterDeterminant::reportStatus(std::ostream& os) {}
 
 void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
                                                  const opt_variables_type& optvars,
-                                                 std::vector<RealType>& dlogpsi,
-                                                 std::vector<RealType>& dhpsioverpsi)
+                                                 std::vector<ValueType>& dlogpsi,
+                                                 std::vector<ValueType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)

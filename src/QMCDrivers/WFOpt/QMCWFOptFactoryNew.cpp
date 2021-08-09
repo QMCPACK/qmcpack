@@ -24,9 +24,12 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
   qmcdriver_input.readXML(cur);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
+  WFOptDriverInput wfoptdriver_input;
+  wfoptdriver_input.readXML(cur);
 
-  QMCOptimizeBatched* opt = new QMCOptimizeBatched(project_data, w, std::move(qmcdriver_input),
-                                                   std::move(vmcdriver_input), std::move(pop), samples, comm);
+  QMCOptimizeBatched* opt =
+      new QMCOptimizeBatched(project_data, w, std::move(qmcdriver_input), std::move(vmcdriver_input),
+                             std::move(wfoptdriver_input), std::move(pop), samples, comm);
   return opt;
 }
 

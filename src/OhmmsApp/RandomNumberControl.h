@@ -37,15 +37,15 @@ public:
   typedef RandomGenerator_t::uint_type uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<RandomGenerator_t*> Children;
+  static std::vector<std::unique_ptr<RandomGenerator_t>> Children;
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
 
-  bool get(std::ostream& os) const;
-  bool put(std::istream& is);
-  bool put(xmlNodePtr cur);
-  void reset();
+  bool get(std::ostream& os) const override;
+  bool put(std::istream& is) override;
+  bool put(xmlNodePtr cur) override;
+  void reset() override;
   static void test();
 
   static void make_seeds();

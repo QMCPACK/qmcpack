@@ -30,9 +30,6 @@ namespace qmcplusplus
 {
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions_;
   ParticleSet elec_;
 
@@ -112,8 +109,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   root = doc.getRoot();
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
-  bool is_manager=false;
-  auto jas = std::make_unique<RPAJastrow>(elec_, is_manager);
+  auto jas = std::make_unique<RPAJastrow>(elec_);
   jas->put(root);
 
   // update all distance tables

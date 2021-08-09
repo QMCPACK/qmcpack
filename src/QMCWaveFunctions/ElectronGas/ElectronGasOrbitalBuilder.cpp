@@ -42,7 +42,7 @@ ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, Particle
     : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(nullptr)
 {}
 
-WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
   ValueType bosonic_eps(-999999);
@@ -114,11 +114,8 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   }
 
   //create a Slater determinant
-  SlaterDeterminant_t* sdet;
-  if (UseBackflow)
-    sdet = new SlaterDetWithBackflow(targetPtcl, BFTrans);
-  else
-    sdet = new SlaterDeterminant_t(targetPtcl);
+  auto sdet = UseBackflow ? std::make_unique<SlaterDetWithBackflow>(targetPtcl, BFTrans)
+                          : std::make_unique<SlaterDeterminant_t>(targetPtcl);
 
   if (UseBackflow)
   {
@@ -169,7 +166,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, 
   ClassName = "ElectronGasSPOBuilder";
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int nc = 0;
   int ns = 0;
@@ -190,7 +187,7 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("ElectronGasOrbitalBuilder::put");
   }
   egGrid.createGrid(nc, (ns - 1) / 2);
-  return new RealEGOSet(egGrid.kpt, egGrid.mk2);
+  return std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
 }
 
 } // namespace qmcplusplus

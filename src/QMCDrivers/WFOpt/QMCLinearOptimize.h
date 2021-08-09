@@ -56,12 +56,12 @@ public:
                     const std::string& QMC_driver_type = "QMCLinearOptimize");
 
   ///Destructor
-  virtual ~QMCLinearOptimize() = default;
+  ~QMCLinearOptimize() override = default;
 
   ///Run the Optimization algorithm.
-  virtual bool run() = 0;
+  bool run() override = 0;
   ///process xml node
-  virtual bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
@@ -166,7 +166,9 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj, DescentEngine& descentEngineObj, std::string MinMethod);
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                    DescentEngine& descentEngineObj,
+                    std::string MinMethod);
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();
@@ -180,7 +182,7 @@ public:
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
 
-  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
   NewTimer& eigenvalue_timer_;

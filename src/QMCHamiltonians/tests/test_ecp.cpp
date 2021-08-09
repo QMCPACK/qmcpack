@@ -33,7 +33,6 @@
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
@@ -228,8 +227,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
   ions.resetGroups();
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -241,7 +238,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\">  \
+  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
       <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
           <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
         </correlation> \
@@ -486,10 +483,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
   ions.resetGroups();
   elec.resetGroups();
 
@@ -523,10 +516,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  DiracDeterminant<>* dd = new DiracDeterminant<>(std::move(spinor_set));
+  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set));
   dd->resize(nelec, norb);
 
-  psi.addComponent(dd);
+  psi.addComponent(std::move(dd));
 
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);

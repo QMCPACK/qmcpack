@@ -17,12 +17,12 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
+#include <limits>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include <limits>
-#include <bitset>
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
@@ -55,9 +55,11 @@ protected:
   /*@{*/
   /** distances_[i][j] , [N_targets][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) is defined and up-to-date after pbyp move.
-   *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
-   *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
+   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
+   *            There is no bound check to protect j>=i terms as the nature of operator[].
+   *            When the storage of the table is allocated as a single memory segment,
+   *            out-of-bound access is still within the segment and
+   *            thus doesn't trigger an alarm by the address sanitizer.
    *        For derived AB, the full table is up-to-date after pbyp move
    */
   std::vector<DistRow> distances_;
@@ -65,7 +67,7 @@ protected:
   /** displacements_[N_targets]x[3][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
    *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined.
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
    *        For derived AB, A1=A, A2=B, the full table is allocated.
    */
   std::vector<DisplRow> displacements_;
@@ -77,11 +79,8 @@ protected:
   DisplRow temp_dr_;
   /*@}*/
 
-  /** whether full table needs to be ready at anytime or not
-   * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
-   * DT consumers should know if full table is needed or not and request via addTable.
-   */
-  bool need_full_table_;
+  ///operation modes defined by DTModes
+  DTModes modes_;
 
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
@@ -93,11 +92,11 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableData(const ParticleSet& source, const ParticleSet& target)
+  DistanceTableData(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : Origin(&source),
         N_sources(source.getTotalNum()),
         N_targets(target.getTotalNum()),
-        need_full_table_(false),
+        modes_(modes),
         old_prepared_elec_id(-1),
         name_(source.getName() + "_" + target.getName())
   {}
@@ -105,11 +104,11 @@ public:
   ///virutal destructor
   virtual ~DistanceTableData() = default;
 
-  ///get need_full_table_
-  inline bool getFullTableNeeds() const { return need_full_table_; }
+  ///get modes
+  inline DTModes getModes() const { return modes_; }
 
-  ///set need_full_table_
-  inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
+  ///set modes
+  inline void setModes(DTModes modes) { modes_ = modes; }
 
   ///return the name of table
   inline const std::string& getName() const { return name_; }
@@ -125,6 +124,27 @@ public:
 
   ///returns the number of source particles
   inline IndexType sources() const { return N_sources; }
+
+  /// return multi walker temporary pair distance table data pointer
+  virtual const RealType* getMultiWalkerTempDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  /// return multi-walker full (all pairs) distance table data pointer
+  virtual const RealType* getMultiWalkerDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer not supported");
+    return nullptr;
+  }
+
+  /// return stride of per target pctl data. full table data = stride * num of target particles
+  virtual size_t getPerTargetPctlStrideSize() const
+  {
+    throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
+    return 0;
+  }
 
   /** return full table distances
    */
@@ -146,7 +166,7 @@ public:
    */
   virtual const DistRow& getOldDists() const
   {
-    APP_ABORT("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
+    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
     return temp_r_; // dummy return to avoid compiler warning.
   }
 
@@ -154,7 +174,7 @@ public:
    */
   virtual const DisplRow& getOldDispls() const
   {
-    APP_ABORT("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
+    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
     return temp_dr_; // dummy return to avoid compiler warning.
   }
 
@@ -203,6 +223,12 @@ public:
    * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
   virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
+
+  /** walker batched version of move. this function may be implemented asynchronously.
+   * Additional synchroniziation for collecting results should be handled by the caller.
+   * If DTModes::NEED_TEMP_DATA_ON_HOST, host data will be updated.
+   * If no consumer requests data on the host, the transfer is skipped.
+   */
   virtual void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
                        const std::vector<PosType>& rnew_list,
@@ -229,6 +255,36 @@ public:
   {
     if (from_temp)
       update(jat);
+  }
+
+  /** walker batched version of updatePartial.
+   * If not DTModes::NEED_TEMP_DATA_ON_HOST, host data is not up-to-date and host distance table will not be updated.
+   */
+  virtual void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                                IndexType jat,
+                                const std::vector<bool>& from_temp)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].updatePartial(jat, from_temp[iw]);
+  }
+
+  /** finalize distance table calculation after particle-by-particle moves
+   * if update() doesn't make the table up-to-date during p-by-p moves
+   * finalizePbyP takes action to bring the table up-to-date
+   */
+  virtual void finalizePbyP(const ParticleSet& P) {}
+
+  /** walker batched version of finalizePbyP
+   * If not DTModes::NEED_TEMP_DATA_ON_HOST, host distance table data is not updated at all during p-by-p
+   * Thus, a recompute is necessary to update the whole host distance table for consumers like the Coulomb potential.
+   */
+  virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].finalizePbyP(p_list[iw]);
   }
 
   /** build a compact list of a neighbor for the iat source
@@ -258,13 +314,13 @@ public:
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
-    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
+    throw std::runtime_error("DistanceTableData::get_first_neighbor is not implemented in calling base class");
     return 0;
   }
 
   inline void print(std::ostream& os)
   {
-    APP_ABORT("DistanceTableData::print is not supported")
+    throw std::runtime_error("DistanceTableData::print is not supported");
     //os << "Table " << Origin->getName() << std::endl;
     //for (int i = 0; i < r_m.size(); i++)
     //  os << r_m[i] << " ";

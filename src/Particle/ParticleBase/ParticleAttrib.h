@@ -60,7 +60,7 @@ public:
   inline PosUnit getUnit() const { return InUnit; }
   //@}
 
-  OhmmsObject* makeClone() const { return new ParticleAttrib<T, Alloc>(*this); }
+  OhmmsObject* makeClone() const override { return new ParticleAttrib<T, Alloc>(*this); }
 
   /** Specialized to write the unit
    *\return true, if the attribute is relative to a unit
@@ -68,7 +68,7 @@ public:
    * Ad hoc get function to tell users if this attribute is absolute or relative value.
    * E.g., is Cartesian unit vs Lattice unit.
    */
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << InUnit;
     return true;
@@ -76,17 +76,17 @@ public:
 
   /** Specialized to read the unit
    */
-  bool put(std::istream& is)
+  bool put(std::istream& is) override
   {
     is >> InUnit;
     return true;
   }
 
   /*@warning not fully implemented.*/
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
   ///reset member data
-  void reset() {}
+  void reset() override {}
 };
 
 template<class T, unsigned D>

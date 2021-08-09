@@ -139,7 +139,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   RealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
   movepbyp_timer_.start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
@@ -186,7 +185,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
           ++nAcceptTemp;
           Psi.acceptMove(W, iat, true);
           rr_accepted += rr;
-          gf_acc *= prob; //accumulate the ratio
         }
         else
         {
@@ -233,7 +231,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
     H.rejectedMove(W, curhead);
     curhead.Weight = wtmp;
     ++nAllRejected;
-    gf_acc = 1.0;
     nReject++;
   }
   Walker_t& centerbead = W.reptile->getCenter();
@@ -270,7 +267,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   RealType vqold(prophead.Properties(WP::DRIFTSCALE));
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
   movepbyp_timer_.start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
@@ -317,7 +313,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
           ++nAcceptTemp;
           Psi.acceptMove(W, iat, true);
           rr_accepted += rr;
-          gf_acc *= prob; //accumulate the ratio
         }
         else
         {

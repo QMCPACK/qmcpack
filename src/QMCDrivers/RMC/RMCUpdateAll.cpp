@@ -116,7 +116,6 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   //app_log()<<"Old phase = "<<Psi.getPhase()<< std::endl;
   makeGaussRandomWithEngine(deltaR, RandomGen);
   RealType r2proposed = Dot(deltaR, deltaR);
-  RealType r2accept   = 0.0;
   //      W.reptile->r2prop += r2proposed;
   //      W.reptile->r2samp++;
   if (!W.makeMoveAllParticlesWithDrift(curhead, drift, deltaR, m_sqrttau))
@@ -239,8 +238,6 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   if (RandomGen() < acceptProb)
   {
     //Assuming the VMC step is fine, we are forcing the move.
-    r2accept = r2proposed;
-    //        W.reptile->r2accept+=r2accept;
     MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
 
     W.saveWalker(overwriteWalker);

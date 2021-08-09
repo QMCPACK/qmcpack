@@ -32,7 +32,7 @@ public:
                std::vector<QMCHamiltonian*>& h,
                RandomGenerator_t& rg);
 
-  virtual ~CSUpdateBase();
+  ~CSUpdateBase() override;
 
   int nPsi;
   bool useDrift;
