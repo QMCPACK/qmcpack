@@ -56,6 +56,7 @@ struct QMCGaussianParserBase
   bool singledetH5;
   bool optDetCoeffs;
   bool usingCSF;
+  bool isSpinor;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -84,6 +85,7 @@ struct QMCGaussianParserBase
   std::string CurrentCenter;
   std::string outputFile;
   std::string angular_type;
+  std::string expandYlm;
   std::string h5file;
   std::string multih5file;
   std::string WFS_name;
@@ -116,6 +118,8 @@ struct QMCGaussianParserBase
 
   QMCGaussianParserBase();
   QMCGaussianParserBase(int argc, char** argv);
+
+  virtual ~QMCGaussianParserBase() = default;
 
   void setOccupationNumbers();
 

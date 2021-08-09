@@ -46,8 +46,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+#if defined(ENABLE_OFFLOAD)
+  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS_OFFLOAD;
+#else
+  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
+#endif
+  auto ions_uptr = std::make_unique<ParticleSet>(kind_selected);
+  auto elec_uptr = std::make_unique<ParticleSet>(kind_selected);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -303,6 +308,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::vector<PosType> displs{delta_sign_changed, delta_sign_changed};
   ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
+  if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
   ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
   ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
@@ -321,6 +328,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(grad_temp[1] == Approx(1.4564444046734));
   REQUIRE(grad_temp[2] == Approx(-1.2928240654738));
 #endif
+  }
 
   PosType delta_zero(0, 0, 0);
   displs = {delta_zero, delta};
@@ -345,13 +353,15 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
 
+  if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
   ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
   ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
   std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
-
+  }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
@@ -396,7 +406,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, true);
 
   const int moved_elec_id_next = 1;
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
@@ -462,11 +472,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   isAccepted[0] = true;
   isAccepted[1] = false;
   TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, true);
 
-  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, false);
   TrialWaveFunction::mw_completeUpdates(wf_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
-
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
             << " " << std::endl;
@@ -485,6 +494,18 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
     log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
+#if defined(QMC_COMPLEX)
+  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-4.1148130068943, -6.2831779860047});
+  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-6.6269077659586, -3.1416312090662});
+#else
+  CHECK(LogComplexApprox(log_values[0]) == LogValueType{-5.5011162672993, 9.4247779607694});
+  CHECK(LogComplexApprox(log_values[1]) == LogValueType{-8.0131646238354, 6.2831853071796});
+#endif
+
+  // This test has 4 electrons but only 2 particle moves are attempted.
+  // Force update of all distance tables before mw_evaluateGL with recompute
+  // needed as the above ParticleSet::mw_accept_rejectMove calls are in forward mode.
+  ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
     REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
