@@ -94,7 +94,6 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       gBound(0),
       Occ_alpha(0),
       Occ_beta(0),
-      gridPtr(0),
       X(0),
       Y(0),
       Z(0)
@@ -159,7 +158,6 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       gBound(0),
       Occ_alpha(0),
       Occ_beta(0),
-      gridPtr(0),
       X(0),
       Y(0),
       Z(0)
@@ -1342,7 +1340,7 @@ xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_)
   xmlNewProp(abasis, (const xmlChar*)"type", (const xmlChar*)basisType.c_str());
   xmlNewProp(abasis, (const xmlChar*)"elementType", (const xmlChar*)CurrentCenter.c_str());
   xmlNewProp(abasis, (const xmlChar*)"normalized", (const xmlChar*)Normalized.c_str());
-  xmlAddChild(abasis, xmlCopyNode(gridPtr, 1));
+  xmlAddChild(abasis, xmlCopyNode(gridPtr.get(), 1));
   for (int ig = gBound[iat], n = 0; ig < gBound[iat + 1]; ig++, n++)
   {
     createShell(n, ig, off_, abasis);
@@ -1605,7 +1603,7 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
 
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 {
-  gridPtr = xmlNewNode(NULL, (const xmlChar*)"grid");
+  gridPtr = std::unique_ptr<xmlNode, void (*)(xmlNodePtr)>(xmlNewNode(NULL, (const xmlChar*)"grid"), xmlFreeNode);
   std::string gridType("log");
   std::string gridFirst("1.e-6");
   std::string gridLast("1.e2");
@@ -1636,10 +1634,10 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
     }
     ++iargc;
   }
-  xmlNewProp(gridPtr, (const xmlChar*)"type", (const xmlChar*)gridType.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"ri", (const xmlChar*)gridFirst.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"rf", (const xmlChar*)gridLast.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"type", (const xmlChar*)gridType.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"ri", (const xmlChar*)gridFirst.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"rf", (const xmlChar*)gridLast.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
 }
 
 void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& ion_tag)
