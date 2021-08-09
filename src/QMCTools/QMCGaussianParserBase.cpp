@@ -441,8 +441,13 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
     double valence = ionSpecies(IonChargeIndex, i);
-    if (valence > gCoreTable[z] && !FixValence)
-      valence -= gCoreTable[z];
+    if (!FixValence)
+    {
+      if (z > gCoreTable.size())
+        return nullptr;
+      else if (valence > gCoreTable[z])
+        valence -= gCoreTable[z];
+    }
     ionSpecies(ValenceChargeIndex, i) = valence;
     ionSpecies(AtomicNumberIndex, i)  = z;
   }
@@ -476,8 +481,13 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
       hout.push(SpecieID.str().c_str(), true);
       int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
       double valence = ionSpecies(IonChargeIndex, i);
-      if (valence > gCoreTable[z] && FixValence != true)
-        valence -= gCoreTable[z];
+      if (!FixValence)
+      {
+        if (z > gCoreTable.size())
+          return nullptr;
+        else if (valence > gCoreTable[z])
+          valence -= gCoreTable[z];
+      }
       hout.write(z, "charge");
       hout.write(z, "atomic_number");
       hout.write(valence, "core");
@@ -1687,12 +1697,23 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       exit(0);
       // xmlAddChild(qm_root_p, createCell());
     }
-    xmlAddChild(qm_root_p, createIonSet());
-    xmlAddChild(qm_root_p, createElectronSet(ion_tag));
-    xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title + ".structure.xml";
-    xmlSaveFormatFile(fname.c_str(), doc_p, 1);
-    xmlFreeDoc(doc_p);
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dump, check out of "
+                               "bounds for valence calculation\n");
+    }
     Structure = true;
   }
   xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");
@@ -1826,12 +1847,24 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     if (PBC)
       xmlAddChild(qm_root_p, createCell());
-    xmlAddChild(qm_root_p, createIonSet());
-    xmlAddChild(qm_root_p, createElectronSet(ion_tag));
-    xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title + ".structure.xml";
-    xmlSaveFormatFile(fname.c_str(), doc_p, 1);
-    xmlFreeDoc(doc_p);
+
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dumpPBC, check out of "
+                               "bounds for valence calculation\n");
+    }
     Structure = true;
   }
   xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");
