@@ -18,15 +18,9 @@
 #include <map>
 
 
-RMGParser::RMGParser()
-{
-  PBC = true;
-}
+RMGParser::RMGParser() { PBC = true; }
 
-RMGParser::RMGParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
-{
-  PBC = true;
-}
+RMGParser::RMGParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv) { PBC = true; }
 
 void RMGParser::getCell(const std::string& fname)
 {
@@ -101,7 +95,7 @@ void RMGParser::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
         down_size << NumberOfBeta;
 
         xmlNodePtr slaterdetPtr = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
-        
+
         xmlNodePtr updetPtr = xmlNewNode(NULL, (const xmlChar*)"determinant");
         xmlNewProp(updetPtr, (const xmlChar*)"id", (const xmlChar*)"updet");
         xmlNewProp(updetPtr, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
@@ -109,8 +103,8 @@ void RMGParser::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
         xmlNodePtr occUpPtr = xmlNewNode(NULL, (const xmlChar*)"occupation");
         xmlNewProp(occUpPtr, (const xmlChar*)"mode", (const xmlChar*)"ground");
         xmlNewProp(occUpPtr, (const xmlChar*)"spindataset", (const xmlChar*)"0");
-        xmlAddChild(updetPtr,occUpPtr);
-       
+        xmlAddChild(updetPtr, occUpPtr);
+
 
         xmlNodePtr downdetPtr = xmlNewNode(NULL, (const xmlChar*)"determinant");
         xmlNewProp(downdetPtr, (const xmlChar*)"id", (const xmlChar*)"downdet");
@@ -118,12 +112,12 @@ void RMGParser::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
 
         xmlNodePtr occDownPtr = xmlNewNode(NULL, (const xmlChar*)"occupation");
         xmlNewProp(occDownPtr, (const xmlChar*)"mode", (const xmlChar*)"ground");
-        if(NumberOfSpins==2)
+        if (NumberOfSpins == 2)
         {
           xmlNewProp(downdetPtr, (const xmlChar*)"ref", (const xmlChar*)"updet");
           xmlNewProp(occDownPtr, (const xmlChar*)"spindataset", (const xmlChar*)"1");
         }
-        else if (NumberOfSpins==1)
+        else if (NumberOfSpins == 1)
         {
           xmlNewProp(occDownPtr, (const xmlChar*)"spindataset", (const xmlChar*)"0");
         }
@@ -132,12 +126,12 @@ void RMGParser::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
           std::cerr << "Error: Number of spins should be 1 or 2. (" << NumberOfSpins << ")" << std::endl;
           abort();
         }
-        xmlAddChild(downdetPtr,occDownPtr);
-        
-        xmlAddChild(slaterdetPtr,updetPtr);
-        xmlAddChild(slaterdetPtr,downdetPtr);
-        
-        xmlAddChild(detsetPtr,slaterdetPtr);
+        xmlAddChild(downdetPtr, occDownPtr);
+
+        xmlAddChild(slaterdetPtr, updetPtr);
+        xmlAddChild(slaterdetPtr, downdetPtr);
+
+        xmlAddChild(detsetPtr, slaterdetPtr);
       }
       xmlAddChild(wfPtr, detsetPtr);
       if (addJastrow)
@@ -180,13 +174,13 @@ void RMGParser::parse(const std::string& fname)
 
   hin.push("electrons");
   std::vector<double> Nalpha_Nbeta(2);
-  hin.read(Nalpha_Nbeta,"number_of_electrons");
+  hin.read(Nalpha_Nbeta, "number_of_electrons");
   NumberOfAlpha = Nalpha_Nbeta[0];
-  NumberOfBeta = Nalpha_Nbeta[1];
-  NumberOfEls = NumberOfAlpha + NumberOfBeta;
+  NumberOfBeta  = Nalpha_Nbeta[1];
+  NumberOfEls   = NumberOfAlpha + NumberOfBeta;
   std::cout << "Number of (alpha,beta) electrons: (" << NumberOfAlpha << ", " << NumberOfBeta << ")" << std::endl;
 
-  hin.read(NumberOfSpins,"number_of_spins");
+  hin.read(NumberOfSpins, "number_of_spins");
   std::cout << "Number of spins: " << NumberOfSpins << std::endl;
   hin.pop();
 
@@ -219,7 +213,7 @@ void RMGParser::parse(const std::string& fname)
     int zint;
     double z;
     std::string Name;
-    std::string ecpName="";
+    std::string ecpName = "";
     hin.read(zint, "atomic_number");
     atomic_number.push_back(zint);
     hin.read(z, "valence_charge");
@@ -227,11 +221,11 @@ void RMGParser::parse(const std::string& fname)
     hin.read(Name, "name");
     try
     {
-      hin.read(ecpName,"pseudopotential");
+      hin.read(ecpName, "pseudopotential");
       ECP_names.push_back(ecpName);
       ECP = true;
     }
-    catch(...)
+    catch (...)
     {
       std::cerr << "WARNING: no ECP found for " << speciesName << ":" << Name << std::endl;
       ECP_names.push_back(ecpName);
@@ -270,7 +264,7 @@ void RMGParser::parse(const std::string& fname)
     std::cerr << "Supertwist not yet implemented in RMG converter; aborting." << std::endl;
     abort();
   }
-  catch(...)
+  catch (...)
   {
     std::cerr << "Could not find Super_Twist, using [0,0,0] (not yet implemented in basic RMG interface)" << std::endl;
     STwist_Coord[0] = 0;
@@ -278,4 +272,3 @@ void RMGParser::parse(const std::string& fname)
     STwist_Coord[2] = 0;
   }
 }
-

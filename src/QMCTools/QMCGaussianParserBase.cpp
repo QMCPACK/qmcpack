@@ -2371,7 +2371,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
     std::string tmp_codename = CodeName;
     tolower(tmp_codename);
 
-    if (tmp_codename=="rmg")
+    if (tmp_codename == "rmg")
     {
       std::cout << "Adding MPC and Chiesa correction to Hamiltonian" << std::endl;
       xmlNodePtr pairpotMPC = xmlNewNode(NULL, (const xmlChar*)"pairpot");
@@ -2382,7 +2382,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
       xmlNewProp(pairpotMPC, (const xmlChar*)"ecut", (const xmlChar*)"60.0");
       xmlNewProp(pairpotMPC, (const xmlChar*)"physical", (const xmlChar*)"false");
       xmlAddChild(hamPtr, pairpotMPC);
-      
+
       xmlNodePtr chiesaPtr = xmlNewNode(NULL, (const xmlChar*)"estimator");
       xmlNewProp(chiesaPtr, (const xmlChar*)"name", (const xmlChar*)"KEcorr");
       xmlNewProp(chiesaPtr, (const xmlChar*)"type", (const xmlChar*)"chiesa");

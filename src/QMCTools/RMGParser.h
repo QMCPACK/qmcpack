@@ -24,14 +24,14 @@ public:
   RMGParser();
 
   RMGParser(int argc, char** argv);
-  
+
   std::vector<std::string> ECP_names;
   //std::vector<std::string> tags;
   int NumberOfSpins;
   void dumpPBC(const std::string& psi_tag, const std::string& ion_tag);
 
 
- // void dumpStdInput(const std::string& psi_tag, const std::string& ion_tag);
+  // void dumpStdInput(const std::string& psi_tag, const std::string& ion_tag);
 
   //void dumpStdInputProd(const std::string& psi_tag, const std::string& ion_tag);
   void parse(const std::string& fname);
