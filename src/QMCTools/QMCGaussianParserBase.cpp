@@ -1715,7 +1715,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       //BASISSET
       {
         if (UseHDF5)
+        {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
+          xmlFreeNode(bsetPtr);
+        }
         else
         {
           if (!singledetH5)
