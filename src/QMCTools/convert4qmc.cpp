@@ -113,7 +113,7 @@ int main(int argc, char** argv)
         }
         else if (a == "-rmg")
         {
-          parser  = new RMGParser(argc, argv);
+          parser  = std::make_unique<RMGParser>(argc, argv);
           h5      = true;
           in_file = argv[++iargc];
         }
