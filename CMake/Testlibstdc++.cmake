@@ -5,7 +5,7 @@ try_compile(
   ${CMAKE_BINARY_DIR}
   ${PROJECT_CMAKE}/try_compile_sources/check_libstdcxx.cpp
   CXX_STANDARD
-  17
+  ${QMC_CXX_STANDARD}
   CXX_STANDARD_REQUIRED
   ON
   OUTPUT_VARIABLE COMPILE_OUTPUT)
