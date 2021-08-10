@@ -64,6 +64,8 @@ public:
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
+  void set_output_matrix_inputs_hdf(bool output) { output_matrix_inputs_hdf_ = output; }
+
 protected:
   /// H components used in correlated sampling. It can be KE or KE+NLPP
   std::vector<std::string> H_KE_node_names_;
@@ -87,10 +89,11 @@ protected:
 
   std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
 
+  bool output_matrix_inputs_hdf_;
+
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
   NewTimer& fill_timer_;
-
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();

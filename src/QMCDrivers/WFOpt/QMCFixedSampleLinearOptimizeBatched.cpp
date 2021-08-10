@@ -102,7 +102,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       do_output_matrices_csv_(false),
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
-      freeze_parameters_(false)
+      freeze_parameters_(false),
+      do_output_matrix_inputs_hdf_(false)
 
 {
   //set the optimization flag
@@ -473,6 +474,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   std::string ReportToH5("no");
   std::string OutputMatrices("no");
   std::string OutputMatricesHDF("no");
+  std::string OutputMatrixInputsHDF("no");
   std::string FreezeParameters("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
@@ -482,13 +484,15 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   m_param.add(OutputMatrices, "output_matrices_csv", {"no", "yes"});
   m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
   m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
+  m_param.add(OutputMatrixInputsHDF, "output_matrix_inputs_hdf", {"no", "yes"});
 
   oAttrib.put(q);
   m_param.put(q);
 
-  do_output_matrices_csv_ = (OutputMatrices == "yes");
-  do_output_matrices_hdf_ = (OutputMatricesHDF == "yes");
-  freeze_parameters_      = (FreezeParameters == "yes");
+  do_output_matrices_csv_      = (OutputMatrices == "yes");
+  do_output_matrices_hdf_      = (OutputMatricesHDF == "yes");
+  freeze_parameters_           = (FreezeParameters == "yes");
+  do_output_matrix_inputs_hdf_ = (OutputMatrixInputsHDF == "yes");
 
   // Use freeze_parameters with output_matrices to generate multiple lines in the output with
   // the same parameters so statistics can be computed in post-processing.
@@ -632,6 +636,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
       std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
                                                samples_, opt_num_crowds_, crowd_size_, myComm);
   optTarget->setStream(&app_log());
+  optTarget->set_output_matrix_inputs_hdf(do_output_matrix_inputs_hdf_);
   if (reportH5)
     optTarget->reportH5 = true;
   success = optTarget->put(qsave);

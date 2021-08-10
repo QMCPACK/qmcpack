@@ -1148,20 +1148,27 @@ Output of intermediate values
 
 Use the following parameters to the linear optimizers to output intermediate values such as the overlap and Hamiltonian matrices.
 
-  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
-  | **Name**                | **Datatype** | **Values**  | **Default** | **Description**                                  |
-  +=========================+==============+=============+=============+==================================================+
-  | ``output_matrices_csv`` | text         | yes, no     | no          |  Output linear method matrices to CSV files      |
-  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``output_matrices_hdf`` | text         | yes, no     | no          |  Output linear method matrices to HDF file       |
-  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``freeze_parameters``   | text         | yes, no     | no          |  Do not update parameters between iterations     |
-  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  +------------------------------+----------------------------+-------------+-------------------------------------------------------------+
+  | **Name**                     | **Datatype** | **Values**  | **Default** | **Description**                                             |
+  +==============================+==============+=============+=============+=============================================================+
+  | ``output_matrices_csv``      | text         | yes, no     | no          |  Output linear method matrices to CSV files                 |
+  +------------------------------+--------------+-------------+-------------+-------------------------------------------------------------+
+  | ``output_matrices_hdf``      | text         | yes, no     | no          |  Output linear method matrices to HDF file                  |
+  +------------------------------+--------------+-------------+-------------+-------------------------------------------------------------+
+  | ``output_matrix_inputs_hdf`` | text         | yes, no     | no          |  Output values that serve as inputs to the linear matrices  |
+  +------------------------------+--------------+-------------+-------------+-------------------------------------------------------------+
+  | ``freeze_parameters``        | text         | yes, no     | no          |  Do not update parameters between iterations                |
+  +------------------------------+--------------+-------------+-------------+-------------------------------------------------------------+
 
   The ``output_matrices_csv`` parameter will write to <base name>.ham.s000.scalar.dat and <base name>.ovl.scalar.dat.  One line per iteration of the optimizer loop.  Combined with ``freeze_parameters``, this allows computing error bars on the matrices for use in regression testing.
 
   The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
 
+
+  The ``output_matrix_inputs_hdf`` parameter will write out the values that are inputs to the construction of the linear method matrices - wavefunction values, derivatives, etc.  This file is named "<base name>.<series number>.matrix_inputs.h5".
+  This file together with ``output_matrices.hdf`` can be used in the ``fillFromH5`` unit test (in ``src/QMCDrivers/test/test_QMCCostFunctionBatched.cpp``)
+  This file store values per-sample, and so the size will be proportional to the number of samples.
+  It only works with the batched optimizer(``linear_batch``).
 
 .. _dmc:
 

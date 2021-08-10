@@ -218,6 +218,9 @@ private:
 
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
+
+  // Output matrix inputs (wavefunction values, derivatives, etc) in HDF format
+  bool do_output_matrix_inputs_hdf_;
 };
 } // namespace qmcplusplus
 #endif

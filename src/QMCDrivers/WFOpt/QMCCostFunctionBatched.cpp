@@ -38,6 +38,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
       samples_(samples),
       opt_batch_size_(crowd_size),
       opt_num_crowds_(num_opt_crowds),
+      output_matrix_inputs_hdf_(false),
       check_config_timer_(
           *timer_manager.createTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
       corr_sampling_timer_(
@@ -723,6 +724,29 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
                                                                                          Matrix<Return_rt>& Right)
 {
   ScopedTimer tmp_timer(fill_timer_);
+
+  hdf_archive hout;
+  if (output_matrix_inputs_hdf_)
+  {
+    std::vector<Return_rt> reweight(rank_local_num_samples_);
+    std::vector<Return_rt> energy_new(rank_local_num_samples_);
+    for (int iw = 0; iw < rank_local_num_samples_; iw++)
+    {
+      reweight[iw]   = RecordsOnNode_[iw][REWEIGHT];
+      energy_new[iw] = RecordsOnNode_[iw][ENERGY_NEW];
+    }
+
+    std::string newh5 = RootName + ".matrix_inputs.h5";
+    hout.create(newh5, H5F_ACC_TRUNC);
+    hout.write(SumValue[SUM_E_WGT], "e_weight");
+    hout.write(SumValue[SUM_ESQ_WGT], "e_sq_weight");
+    hout.write(SumValue[SUM_WGT], "weight");
+    hout.write(reweight, "reweight");
+    hout.write(energy_new, "energy_new");
+    hout.write(DerivRecords_, "deriv_records");
+    hout.write(HDerivRecords_, "H_deriv_records");
+    hout.close();
+  }
 
   RealType b1, b2;
   if (GEVType == "H2")

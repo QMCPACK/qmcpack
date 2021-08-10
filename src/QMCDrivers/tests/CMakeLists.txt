@@ -75,6 +75,10 @@ if(NOT QMC_CUDA)
   set(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
   set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
   set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+  set(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/diamondC_1x1x1_linear_matrices.h5)
+  set(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/diamondC_1x1x1_matrix_inputs.h5)
+  maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_1x1x1_linear_matrices.h5)
+  maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/diamondC_1x1x1_matrix_inputs.h5)
   #this is dependent on the directory creation and sym linking of earlier driver tests
 
   set(DRIVER_TEST_SRC

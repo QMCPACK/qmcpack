@@ -39,6 +39,7 @@ namespace qmcplusplus
 {
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
+class QMCCostFunctionBatched;
 class HamiltonianPool;
 
 
@@ -82,7 +83,7 @@ public:
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
   ///target cost function to optimize
-  std::unique_ptr<QMCCostFunctionBase> optTarget;
+  std::unique_ptr<QMCCostFunctionBatched> optTarget;
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
