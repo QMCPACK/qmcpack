@@ -159,9 +159,53 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
 #end def read_eshdf_nofk_data
 
 
+def first_eshdf_file(args):
+    # check files provided
+    eshdf_files = list(sorted(args[1:]))
+    if len(eshdf_files)!=1:
+        user_error('exactly one ESHDF file is allowed as input.\nYou provided: {}'.format(eshdf_files))
+    #end if
+    eshdf_filepath = eshdf_files[0]
+    if not os.path.exists(eshdf_filepath):
+        user_error('ESHDF file does not exist.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
+    elif not eshdf_filepath.endswith('.h5'):
+        user_error('file provided is not an HDF5 file.\nAn ESHDF file must have a .h5 extension.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
+    #end if
+    return eshdf_filepath
+#end def first_eshdf_file
+
+
+def interpret_nk_options(parser):
+    options,args = parser.parse_args()
+    opt.transfer_from(options.__dict__)
+    for k,v in opt.items():
+        if v=='None':
+            opt[k] = None
+        #end if
+    #end for
+    eshdf_files = list(sorted(args[1:]))
+    if opt.help or len(eshdf_files)==0:
+        print('\n'+parser.format_help().strip()+'\n')
+        exit()
+    #end if
+    # check Fermi energy
+    if opt.E_fermi is None:
+        user_error('please provide the Fermi energy via the --Ef option.')
+    else:
+        try:
+            opt.E_fermi = float(opt.E_fermi)
+        except:
+            user_error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi))
+        #end try
+    #end if
+    # set active space
+    opt.ncore = int(opt.ncore)
+    opt.nval = int(opt.nval)
+    return opt, args
+#end def interpret_nk_options
+
 
 def kinetic():
-
     # read command line inputs
     usage = '''usage: %prog kinetic [options] [eshdf_file]'''
     parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
@@ -186,59 +230,16 @@ def kinetic():
                       action='store_true',default=False,
                       help='Print per orbital kinetic energies (default=%default).'
                       )
-    parser.add_option('--ispin',dest='ispin',default=0,
-                      help='spin channel (default=%default).'
-                      )
     parser.add_option('--ncore',dest='ncore',default=0,
                       help='number of core states to exclude (default=%default).'
                       )
     parser.add_option('--nval',dest='nval',default=-1,
                       help='number of valence states to include (default=%default, i.e. all).'
                       )
-    parser.add_option('--fnk3d',dest='fnk3d',
-                      default=None,
-                      help='Output 3D momentum distribution'
-                      )
 
 
-    options,args = parser.parse_args()
-    eshdf_files = list(sorted(args[1:]))
-
-    opt.transfer_from(options.__dict__)
-    for k,v in opt.items():
-        if v=='None':
-            opt[k] = None
-        #end if
-    #end for
-
-    if opt.help or len(eshdf_files)==0:
-        print('\n'+parser.format_help().strip()+'\n')
-        exit()
-    #end if
-
-    # check files provided
-    if len(eshdf_files)!=1:
-        user_error('exactly one ESHDF file is allowed as input.\nYou provided: {}'.format(eshdf_files))
-    #end if
-    eshdf_filepath = eshdf_files[0]
-    if not os.path.exists(eshdf_filepath):
-        user_error('ESHDF file does not exist.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
-    elif not eshdf_filepath.endswith('.h5'):
-        user_error('file provided is not an HDF5 file.\nAn ESHDF file must have a .h5 extension.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
-    #end if
-
-    # check Fermi energy
-    if opt.E_fermi is None:
-        user_error('please provide the Fermi energy via the --Ef option.')
-    else:
-        try:
-            opt.E_fermi = float(opt.E_fermi)
-        except:
-            user_error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi))
-        #end try
-    #end if
-    opt.ncore = int(opt.ncore)
-    opt.nval = int(opt.nval)
+    opt, args = interpret_nk_options(parser)
+    eshdf_filepath = first_eshdf_file(args)
 
     d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
 
@@ -315,34 +316,65 @@ def kinetic():
             #end for
         #end for
     #end if
-
-    if opt.fnk3d is not None:
-        ispin0 = int(opt.ispin)
-        log('Writing n(k) to HDF5 {}'.format(opt.fnk3d))
-        import tables
-        klist = []
-        nklist = []
-        for key, val in d.data.items():
-            ik, ispin = key
-            if ispin != ispin0: continue
-            klist.append(val.k)
-            nklist.append(val.nk)
-        kvecs = np.concatenate(klist, axis=0)
-        nk = np.concatenate(nklist, axis=0)
-        data = np.c_[kvecs, nk]
-        filters = tables.Filters(complevel=5, complib='zlib')
-        fp = tables.open_file(opt.fnk3d, mode='w', filter=filters)
-        atom = tables.Atom.from_dtype(data.dtype)
-        ca = fp.create_carray(fp.root, 'data', atom, data.shape)
-        ca[:] = data
-        fp.close()
-    #end if
 #end def kinetic
+
+
+def write_nk():
+    # read command line inputs
+    usage = '''usage: %prog write_nk [options] [eshdf_file]'''
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('--Ef',dest='E_fermi',
+                      default='None',
+                      help='Fermi energy in eV (default=%default).'
+                      )
+    parser.add_option('--ncore',dest='ncore',default=0,
+                      help='number of core states to exclude (default=%default).'
+                      )
+    parser.add_option('--nval',dest='nval',default=-1,
+                      help='number of valence states to include (default=%default, i.e. all).'
+                      )
+    parser.add_option('--ispin',dest='ispin',default=0,
+                      help='spin channel (default=%default).'
+                      )
+    parser.add_option('--outfile',dest='outfile',
+                      default=None,
+                      help='Output 3D momentum distribution'
+                      )
+    opt, args = interpret_nk_options(parser)
+    eshdf_filepath = first_eshdf_file(args)
+
+    d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
+
+    ispin0 = int(opt.ispin)
+    log('Writing n(k) to HDF5 {}'.format(opt.outfile))
+    import tables
+    klist = []
+    nklist = []
+    for key, val in d.data.items():
+        ik, ispin = key
+        if ispin != ispin0: continue
+        klist.append(val.k)
+        nklist.append(val.nk)
+    kvecs = np.concatenate(klist, axis=0)
+    nk = np.concatenate(nklist, axis=0)
+    data = np.c_[kvecs, nk]
+    filters = tables.Filters(complevel=5, complib='zlib')
+    fp = tables.open_file(opt.outfile, mode='w', filter=filters)
+    atom = tables.Atom.from_dtype(data.dtype)
+    ca = fp.create_carray(fp.root, 'data', atom, data.shape)
+    ca[:] = data
+    fp.close()
+#end def write_nk
 
 
 
 operations = obj(
     kinetic = kinetic,
+    write_nk = write_nk,
     )
 
 
