@@ -127,10 +127,10 @@ set(EXECUTABLE_OUTPUT_PATH
 # Set C++ standard used by QMCPACK
 ##################################
 set(QMC_CXX_STANDARD
-    14
+    17
     CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 14)
-  message(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
+if(NOT QMC_CXX_STANDARD EQUAL 17)
+  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
@@ -407,11 +407,7 @@ include(CMake/Testlibstdc++.cmake)
 #---------------------------------------------------------
 # Check that a C++ standard library is configured properly
 #---------------------------------------------------------
-if(QMC_CXX_STANDARD GREATER_EQUAL 17)
-  include(CMake/TestCxx17Library.cmake)
-else()
-  include(CMake/TestCxx14Library.cmake)
-endif()
+include(CMake/TestCxx17Library.cmake)
 
 if(ENABLE_GCOV)
   if(NOT GCOV_SUPPORTED)
