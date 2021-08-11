@@ -261,12 +261,10 @@ void RMGParser::parse(const std::string& fname)
     STwist_Coord[0] = STVec[0][0];
     STwist_Coord[1] = STVec[0][1];
     STwist_Coord[2] = STVec[0][2];
-    std::cerr << "Supertwist not yet implemented in RMG converter; aborting." << std::endl;
-    abort();
   }
   catch (...)
   {
-    std::cerr << "Could not find Super_Twist, using [0,0,0] (not yet implemented in basic RMG interface)" << std::endl;
+    std::cout << "Could not find Super_Twist, using [0,0,0] (not yet implemented in basic RMG interface)" << std::endl;
     STwist_Coord[0] = 0;
     STwist_Coord[1] = 0;
     STwist_Coord[2] = 0;
