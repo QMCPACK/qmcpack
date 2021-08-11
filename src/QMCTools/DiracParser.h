@@ -50,7 +50,7 @@ class DiracParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 
 public:
   DiracParser(int argc, char** argv);
-  void parse(const std::string& fname);
+  void parse(const std::string& fname) override;
 
 private:
   void dumpHDF5(const std::string& fname);

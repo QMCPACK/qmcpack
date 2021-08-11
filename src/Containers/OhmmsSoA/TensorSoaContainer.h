@@ -59,7 +59,7 @@ struct TensorSoaContainer<T, 3>
 
   ~TensorSoaContainer() = default;
 
-  __forceinline void resize(int n)
+  inline void resize(int n)
   {
     nLocal  = n;
     nGhosts = getAlignedSize<T>(n);
@@ -68,7 +68,7 @@ struct TensorSoaContainer<T, 3>
 
   /** return TinyVector<T,3>
        */
-  __forceinline Tensor<T, 3> operator[](int i) const
+  inline Tensor<T, 3> operator[](int i) const
   {
     const T* restrict b = m_data + i;
     T xx                = *(b);
@@ -87,10 +87,10 @@ struct TensorSoaContainer<T, 3>
     T* _base;
     Accessor()                = delete;
     Accessor(const Accessor&) = delete;
-    __forceinline Accessor(T* a, int ng) : _base(a), M(ng) {}
+    inline Accessor(T* a, int ng) : _base(a), M(ng) {}
 
     template<unsigned D>
-    __forceinline Accessor& operator=(const Tensor<T, D>& rhs)
+    inline Accessor& operator=(const Tensor<T, D>& rhs)
     {
       *_base           = rhs(0);
       *(_base + M)     = rhs(1);
@@ -103,7 +103,7 @@ struct TensorSoaContainer<T, 3>
 
     /** assign value */
     template<typename T1>
-    __forceinline Accessor& operator=(T1 rhs)
+    inline Accessor& operator=(T1 rhs)
     {
       *_base           = rhs;
       *(_base + M)     = rhs;
@@ -119,20 +119,20 @@ struct TensorSoaContainer<T, 3>
        *
        * Use for (*this)[i]=Tensor<T,3>;
        */
-  __forceinline Accessor operator()(int i) { return Accessor(m_data.data() + i, nGhosts); }
+  inline Accessor operator()(int i) { return Accessor(m_data.data() + i, nGhosts); }
 
   ///return the base
-  __forceinline T* data() { return m_data.data(); }
+  inline T* data() { return m_data.data(); }
   ///return the base
-  __forceinline const T* data() const { return m_data.data(); }
+  inline const T* data() const { return m_data.data(); }
   ///return the base of XX components
-  __forceinline T* restrict data(int i, int j)
+  inline T* restrict data(int i, int j)
   {
     const int n = (i < j) ? i * 3 + j : j * 3 + i;
     return m_data().data() + n * nGhosts;
   }
   ///return the base of XX components
-  __forceinline const T* restrict data(int i, int j) const
+  inline const T* restrict data(int i, int j) const
   {
     const int n = (i < j) ? i * 3 + j : j * 3 + i;
     return m_data().data() + n * nGhosts;
