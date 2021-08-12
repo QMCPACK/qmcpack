@@ -22,7 +22,7 @@ particular emphasis is placed on code quality and reproducibility.
 
 # Prerequisites
 
- * C++ 14 and C99 capable compilers. 
+ * C++ 17 and C99 capable compilers. 
  * CMake v3.14.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/

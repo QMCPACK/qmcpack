@@ -111,7 +111,7 @@ newer versions are faster; see :ref:`buildperformance` for performance suggestio
 unsupported and untested by the developers although they may still work.
 
 -  C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
-   are required to support the C++ 14 standard. Use of recent (“current
+   are required to support the C++ 17 standard. Use of recent (“current
    year version”) compilers is strongly encouraged.
 
 -  An MPI library such as OpenMPI (http://open-mpi.org) or a
@@ -143,7 +143,7 @@ Many of the utilities provided with QMCPACK require Python (v3). The numpy
 and matplotlib libraries are required for full functionality.
 
 
-C++ 14 standard library
+C++ 17 standard library
 -----------------------
 
 The C++ standard consists of language features—which are implemented in
@@ -151,15 +151,15 @@ the compiler—and library features—which are implemented in the standard
 library. GCC includes its own standard library and headers, but many
 compilers do not and instead reuse those from an existing GCC install.
 Depending on setup and installation, some of these compilers might not
-default to using a GCC with C++ 14 headers (e.g., GCC 4.8 is common as a
+default to using a GCC with C++ 17 headers (e.g., GCC 4.8 is common as a
 base system compiler, but its standard library only supports C++ 11).
 
-The symptom of having header files that do not support the C++ 14
+The symptom of having header files that do not support the C++ 17
 standard is usually compile errors involving standard include header
 files. Look for the GCC library version, which should be present in the
-path to the include file in the error message, and ensure that it is 5.0
+path to the include file in the error message, and ensure that it is 8.1
 or greater. To avoid these errors occurring at compile time, QMCPACK
-tests for a C++ 14 standard library during configuration and will halt
+tests for a C++ 17 standard library during configuration and will halt
 with an error if one is not found.
 
 At sites that use modules, it is often sufficient to simply load a newer
@@ -168,14 +168,14 @@ GCC.
 Intel compiler
 ~~~~~~~~~~~~~~
 
-The Intel compiler version must be 19 or newer due to use of C++14 and bugs and limitations in earlier versions.
+The Intel compiler version must be 19 or newer due to use of C++17 and bugs and limitations in earlier versions.
 
 If a newer GCC is needed, the ``-cxxlib`` option can be used to point to a different
 GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Be sure to
 pass this flag to the C compiler in addition to the C++ compiler. This
 is necessary because CMake extracts some library paths from the C
 compiler, and those paths usually also contain to the C++ library. The
-symptom of this problem is C++ 14 standard library functions not found
+symptom of this problem is C++ 17 standard library functions not found
 at link time.
 
 .. _cmake:
@@ -186,8 +186,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.6, which is the oldest version to
-support correct application of C++ 14 flags for the Intel compiler. Most
+minimum required version of CMake is 3.14.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 

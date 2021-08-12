@@ -1143,6 +1143,26 @@ the values found in the \*.sXXX.opt.h5 file. Be careful to keep the pair
 of optimized CI coefficients and Jastrow coefficients together to avoid
 inconsistencies.
 
+Output of intermediate values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the following parameters to the linear optimizers to output intermediate values such as the overlap and Hamiltonian matrices.
+
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | **Name**                | **Datatype** | **Values**  | **Default** | **Description**                                  |
+  +=========================+==============+=============+=============+==================================================+
+  | ``output_matrices_csv`` | text         | yes, no     | no          |  Output linear method matrices to CSV files      |
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``output_matrices_hdf`` | text         | yes, no     | no          |  Output linear method matrices to HDF file       |
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``freeze_parameters``   | text         | yes, no     | no          |  Do not update parameters between iterations     |
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+
+  The ``output_matrices_csv`` parameter will write to <base name>.ham.s000.scalar.dat and <base name>.ovl.scalar.dat.  One line per iteration of the optimizer loop.  Combined with ``freeze_parameters``, this allows computing error bars on the matrices for use in regression testing.
+
+  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
+
+
 .. _dmc:
 
 Diffusion Monte Carlo
