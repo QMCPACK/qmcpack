@@ -17,7 +17,7 @@
 #include <string>
 #include <complex>
 #include <type_traits>
-#include "type_traits/type_tests.hpp"
+#include "type_traits/complex_help.hpp"
 namespace qmcplusplus
 {
 

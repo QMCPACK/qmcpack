@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -23,16 +24,24 @@
 #endif
 #include "Platforms/PinnedAllocator.h"
 #include "OMPTarget/OMPallocator.hpp"
+#include "WaveFunctionTypes.hpp"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
+
+template <typename VALUE, typename VALUE_FP>
 struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
-  using ValueType = QMCTraits::ValueType;
-  using GradType  = QMCTraits::GradType;
+  using GradType     = QMCTraits::GradType;
+  using Real         = RealAlias<VALUE>;
+  using FullPrecReal = RealAlias<VALUE_FP>;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, OffloadPinnedAllocator<ValueType>>;
+  // I don't think its a good idea create a hard dependency all the way back to WaveFunctionComponent for this.
+  using LogValue                    = std::complex<FullPrecReal>;
+  using OffloadPinnedLogValueVector = Vector<LogValue, OffloadPinnedAllocator<LogValue>>;
 
   DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
 
@@ -42,11 +51,11 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 
   Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
 
-
+  OffloadPinnedLogValueVector log_values;
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
   OffloadVGLVector_t phi_vgl_v;
   // multi walker of ratio
-  std::vector<ValueType> ratios_local;
+  std::vector<VALUE> ratios_local;
   // multi walker of grads
   std::vector<GradType> grad_new_local;
 };
@@ -55,23 +64,33 @@ template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTr
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
-  using ValueVector_t = SPOSet::ValueVector_t;
-  using ValueMatrix_t = SPOSet::ValueMatrix_t;
-  using GradVector_t  = SPOSet::GradVector_t;
-  using GradMatrix_t  = SPOSet::GradMatrix_t;
-  using HessMatrix_t  = SPOSet::HessMatrix_t;
-  using HessVector_t  = SPOSet::HessVector_t;
-  using HessType      = SPOSet::HessType;
-
-  using mValueType = QMCTraits::QTFull::ValueType;
-  using mGradType  = TinyVector<mValueType, DIM>;
+  using WFT = typename DET_ENGINE::WFT;
+  using Value = typename WFT::Value;
+  // These types are much more self documenting this way.
+  using ValueVector_t = Vector<Value>;
+  using ValueMatrix_t = Matrix<Value>;
+  using Grad = TinyVector<Value, OHMMS_DIM>;
+  using GradVector_t  = Vector<Grad>;
+  using GradMatrix_t  = Matrix<Grad>;
+  using Hess  = Tensor<Value, OHMMS_DIM>;
+  using HessVector_t  = Vector<Hess>;
+  using Real          = typename WFT::Real;
+  using mValueType    = typename WFT::FullPrecReal;
+  using mGradType     = TinyVector<mValueType, DIM>;
+  using DetEngine_t   = DET_ENGINE;
 
   template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedLogValueVector_t = Vector<LogValueType, OffloadPinnedAllocator<LogValueType>>;
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
-  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedGradVector       = Vector<OrbitalSetTraits<SPOSet::ValueType>::GradType,
+                                         OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+  using OffloadPinnedGradMatrix       = Matrix<OrbitalSetTraits<SPOSet::ValueType>::GradType,
+                                         OffloadPinnedAllocator<OrbitalSetTraits<SPOSet::ValueType>::GradType>>;
+
+  using OffloadVGLVector_t = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
