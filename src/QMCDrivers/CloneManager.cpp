@@ -34,20 +34,26 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 //initialization of the static wClones
+UPtrVector<MCWalkerConfiguration> CloneManager::wClones_uptr;
 std::vector<MCWalkerConfiguration*> CloneManager::wClones;
 //initialization of the static psiClones
+UPtrVector<TrialWaveFunction> CloneManager::psiClones_uptr;
 std::vector<TrialWaveFunction*> CloneManager::psiClones;
 //initialization of the static guideClones
+UPtrVector<TrialWaveFunction> CloneManager::guideClones_uptr;
 std::vector<TrialWaveFunction*> CloneManager::guideClones;
 
-std::vector<MCWalkerConfiguration*> CloneManager::wgClones;
+UPtrVector<MCWalkerConfiguration> CloneManager::wgClones;
 //initialization of the static hClones
+UPtrVector<QMCHamiltonian> CloneManager::hClones_uptr;
 std::vector<QMCHamiltonian*> CloneManager::hClones;
 
+std::vector<UPtrVector<MCWalkerConfiguration>> CloneManager::WPoolClones_uptr;
 std::vector<std::vector<MCWalkerConfiguration*>> CloneManager::WPoolClones;
+std::vector<UPtrVector<TrialWaveFunction>> CloneManager::PsiPoolClones_uptr;
 std::vector<std::vector<TrialWaveFunction*>> CloneManager::PsiPoolClones;
+std::vector<UPtrVector<QMCHamiltonian>> CloneManager::HPoolClones_uptr;
 std::vector<std::vector<QMCHamiltonian*>> CloneManager::HPoolClones;
-
 
 // Clear the static clones so makeClones will work as expected.
 // For now only clearing wClones is strictly necessary.  The storage is not freed,
@@ -85,6 +91,11 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
   hClones[0]   = &ham;
   if (NumThreads == 1)
     return;
+
+  wClones_uptr.resize(NumThreads - 1);
+  psiClones_uptr.resize(NumThreads - 1);
+  hClones_uptr.resize(NumThreads - 1);
+
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   print_mem("Memory Usage before cloning", app_log());
@@ -98,16 +109,15 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       throw std::runtime_error("CloneManager::makeClones Inconsist NumThreads and omp_get_num_threads()!\n");
 
     const int ip = omp_get_thread_num();
-    // all the [ip] objects must be created on the ip threads to have first touch accurate.
     if (ip > 0)
     {
-#if defined(USE_PARTCILESET_CLONE)
-      wClones[ip] = dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
-#else
-      wClones[ip] = new MCWalkerConfiguration(w);
-#endif
-      psiClones[ip] = psi.makeClone(*wClones[ip]);
-      hClones[ip]   = ham.makeClone(*wClones[ip], *psiClones[ip]);
+      // all the [ip] objects must be created on the ip threads to have first touch accurate.
+      wClones_uptr[ip - 1] = std::make_unique<MCWalkerConfiguration>(w);
+      wClones[ip] = wClones_uptr[ip - 1].get();
+      psiClones_uptr[ip - 1] = psi.makeClone(*wClones[ip]);
+      psiClones[ip] = psiClones_uptr[ip-1].get();
+      hClones_uptr[ip - 1]   = ham.makeClone(*wClones[ip], *psiClones[ip]);
+      hClones[ip] = hClones_uptr[ip-1].get();
     }
   }
   // clang-format on
@@ -135,9 +145,13 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   PsiPoolClones[0] = psipool;
   HPoolClones[0]   = hampool;
 
-
   if (NumThreads == 1)
     return;
+
+  wClones_uptr.resize(NumThreads - 1);
+  PsiPoolClones_uptr.resize(NumThreads - 1);
+  HPoolClones_uptr.resize(NumThreads - 1);
+
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   outputManager.pause();
@@ -147,18 +161,19 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 
   for (int ip = 1; ip < NumThreads; ++ip)
   {
-    // WPoolClones[ip].resize(nPsi,0);
     PsiPoolClones[ip].resize(nPsi);
+    PsiPoolClones_uptr[ip - 1].resize(nPsi);
     HPoolClones[ip].resize(nPsi);
+    HPoolClones_uptr[ip - 1].resize(nPsi);
+
+    wClones_uptr[ip - 1] = std::make_unique<MCWalkerConfiguration>(w);
+    wClones[ip]          = wClones_uptr[ip - 1].get();
     for (int ipsi = 0; ipsi < psipool.size(); ipsi++)
     {
-      //#if defined(USE_PARTCILESET_CLONE)
-      //      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
-      //#else
-      wClones[ip] = new MCWalkerConfiguration(w);
-      //#endif
-      PsiPoolClones[ip][ipsi] = psipool[ipsi]->makeClone(w);
-      HPoolClones[ip][ipsi]   = hampool[ipsi]->makeClone(w, *psipool[ipsi]);
+      PsiPoolClones_uptr[ip - 1][ipsi] = psipool[ipsi]->makeClone(w);
+      PsiPoolClones[ip][ipsi]          = PsiPoolClones_uptr[ip - 1][ipsi].get();
+      HPoolClones_uptr[ip - 1][ipsi]   = hampool[ipsi]->makeClone(w, *psipool[ipsi]);
+      HPoolClones[ip][ipsi]            = HPoolClones_uptr[ip - 1][ipsi].get();
     }
   }
   infoSummary.resume();
@@ -174,19 +189,17 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
-  else
-  {
-    guideClones.resize(NumThreads, 0);
-  }
-  guideClones.resize(NumThreads, 0);
+  guideClones.resize(NumThreads);
   guideClones[0] = &guide;
   if (NumThreads == 1)
     return;
+  guideClones_uptr.resize(NumThreads - 1);
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
   for (int ip = 1; ip < NumThreads; ++ip)
   {
-    guideClones[ip] = guide.makeClone(*wClones[ip]);
+    guideClones_uptr[ip - 1] = guide.makeClone(*wClones[ip]);
+    guideClones[ip]          = guideClones_uptr[ip - 1].get();
   }
   infoSummary.resume();
   infoLog.resume();
@@ -200,23 +213,20 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
-  else
-  {
-    guideClones.resize(NumThreads, 0);
-    wgClones.resize(NumThreads, 0);
-  }
-  guideClones.resize(NumThreads, 0);
-  wgClones.resize(NumThreads, 0);
+  guideClones.resize(NumThreads);
+  wgClones.resize(NumThreads);
   guideClones[0] = &guide;
-  wgClones[0]    = new MCWalkerConfiguration(wg);
+  wgClones[0]    = std::make_unique<MCWalkerConfiguration>(wg);
   if (NumThreads == 1)
     return;
+  guideClones_uptr.resize(NumThreads - 1);
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
   for (int ip = 1; ip < NumThreads; ++ip)
   {
-    wgClones[ip]    = new MCWalkerConfiguration(wg);
-    guideClones[ip] = guide.makeClone(*wgClones[ip]);
+    wgClones[ip]             = std::make_unique<MCWalkerConfiguration>(wg);
+    guideClones_uptr[ip - 1] = guide.makeClone(*wgClones[ip]);
+    guideClones[ip]          = guideClones_uptr[ip - 1].get();
   }
   infoSummary.resume();
   infoLog.resume();

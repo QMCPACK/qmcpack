@@ -101,9 +101,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
       *walkers_[iw]       = *walker_configs_ref_[iw];
 
     walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
-    walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
-    walker_hamiltonians_[iw].reset(
-        hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
+    walker_trial_wavefunctions_[iw] = trial_wf_->makeClone(*walker_elec_particle_sets_[iw]);
+    walker_hamiltonians_[iw] =
+        hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
   };
 
   outputManager.resume();
