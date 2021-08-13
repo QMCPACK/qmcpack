@@ -609,8 +609,8 @@ if(NOT DEFINED MATH_VENDOR_GUESS)
   set(MATH_VENDOR_GUESS "GENERIC")
 endif()
 set(QMC_MATH_VENDOR
-  ${MATH_VENDOR_GUESS}
-  CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
+    ${MATH_VENDOR_GUESS}
+    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
 
 # Perform math vendor option check
 if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)

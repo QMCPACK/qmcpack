@@ -345,6 +345,12 @@ the path to the source directory.
                         See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
     MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
 
+- Scalar and vector math functions
+
+  ::
+    QMC_MATH_VENDOR     Select a vendor optimized library for scalar and vector math functions.
+                        Providers are GENERIC INTEL_VML IBM_MASS AMD_LIBM
+
 - libxml2 related
 
   ::

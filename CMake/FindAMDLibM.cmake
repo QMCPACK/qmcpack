@@ -1,4 +1,8 @@
+# Output: HAVE_AMD_LIBM
+
 message(STATUS "Setting up AMD LibM libraries")
+message(WARNING "In limited benchmarks, AMD LibM slows down QMCPACK. "
+        "Please check carefully before using it in production runs.")
 
 include(CheckCXXSourceCompiles)
 
@@ -26,7 +30,8 @@ endif()
 
 set(CMAKE_REQUIRED_INCLUDES "${AMD_LIBM_INCLUDE_DIR}")
 set(CMAKE_REQUIRED_LIBRARIES "${AMD_LIBM_LIBRARY}")
-check_cxx_source_compiles("
+check_cxx_source_compiles(
+  "
 #include <amdlibm.h>
 int main() {
   double d_in(0), d_sin, d_cos;

@@ -1,4 +1,4 @@
-# Simple file to verify MKL VML 
+# Simple file to verify MKL VML
 # Input: MKL_FOUND, MKL_INCLUDE, MKL_LIBRARIES
 # Output: HAVE_MKL_VML
 
@@ -12,7 +12,7 @@ include(CheckIncludeFileCXX)
 
 # Check for mkl_vml_functions.h
 set(CMAKE_REQUIRED_INCLUDES "${MKL_INCLUDE}")
-CHECK_INCLUDE_FILE_CXX(mkl_vml_functions.h HAVE_MKL_VML)
+check_include_file_cxx(mkl_vml_functions.h HAVE_MKL_VML)
 unset(CMAKE_REQUIRED_INCLUDES)
 
 if(HAVE_MKL_VML)
