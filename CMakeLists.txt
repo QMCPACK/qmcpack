@@ -589,6 +589,10 @@ if(LAPACK_LIBRARIES MATCHES "mkl_core")
   include(CMake/FindMKL.cmake)
 endif()
 
+if(MKL_FOUND)
+  set(MATH_VENDOR_GUESS "INTEL_VML")
+endif()
+
 # AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
 if(BUILD_AFQMC AND NOT MKL_FOUND)
   message(
@@ -600,12 +604,25 @@ endif()
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
+set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
+if(NOT DEFINED MATH_VENDOR_GUESS)
+  set(MATH_VENDOR_GUESS "GENERIC")
+endif()
 set(QMC_MATH_VENDOR
-    generic
-    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
+  ${MATH_VENDOR_GUESS}
+  CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
+
+# Perform math vendor option check
+if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
+  message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
+else()
+  message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
+endif()
 
 # This needs to go before HAVE_SINCOS
-if(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
+if(QMC_MATH_VENDOR STREQUAL "INTEL_VML")
+  include(CMake/FindMKLVML.cmake)
+elseif(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
   include(CMake/FindIBMMASS.cmake)
 elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
   include(CMake/FindAMDLibM.cmake)
