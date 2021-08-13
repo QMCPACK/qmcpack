@@ -29,6 +29,38 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, 
   comm = mpicomm;
 }
 
+OrbitalImages::OrbitalImages(const OrbitalImages& other)
+    : OperatorBase(other),
+      psetpool(other.psetpool),
+      Peln(other.Peln),
+      Pion(other.Pion),
+      comm(other.comm),
+      format(other.format),
+      value_types(other.value_types),
+      derivatives(other.derivatives),
+      sposet_names(other.sposet_names),
+      sposet_indices(other.sposet_indices),
+      center_grid(other.center_grid),
+      cell(other.cell),
+      corner(other.corner),
+      grid(other.grid),
+      gdims(other.gdims),
+      npoints(other.npoints),
+      batch_size(other.batch_size),
+      spo_vtmp(other.spo_vtmp),
+      spo_gtmp(other.spo_gtmp),
+      spo_ltmp(other.spo_ltmp),
+      batch_values(other.batch_values),
+      batch_gradients(other.batch_gradients),
+      batch_laplacians(other.batch_laplacians),
+      orbital(other.orbital),
+      wf_factory_(other.wf_factory_)
+{
+  for (auto& element : other.sposets)
+  {
+    sposets.push_back(element->makeClone());
+  }
+}
 
 std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
@@ -190,7 +222,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     SPOSet* sposet = wf_factory_.getSPOSet(sposet_names[i]);
     if (sposet == 0)
       APP_ABORT("OrbitalImages::put  sposet " + sposet_names[i] + " does not exist");
-    sposets.push_back(sposet);
+    sposets.push_back(sposet->makeClone());
     std::vector<int>& sposet_inds = *sposet_indices[i];
     if (sposet_inds.size() == 0)
       for (int n = 0; n < sposet->size(); ++n)

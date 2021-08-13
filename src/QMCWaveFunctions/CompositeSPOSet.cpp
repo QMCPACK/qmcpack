@@ -46,40 +46,41 @@ CompositeSPOSet::CompositeSPOSet()
   component_offsets.reserve(4);
 }
 
-CompositeSPOSet::~CompositeSPOSet()
+CompositeSPOSet::CompositeSPOSet(const CompositeSPOSet& other) : SPOSet(other)
 {
-  delete_iter(component_values.begin(), component_values.end());
-  delete_iter(component_gradients.begin(), component_gradients.end());
-  delete_iter(component_laplacians.begin(), component_laplacians.end());
+  for (auto& element : other.components)
+  {
+    this->add(element->makeClone());
+  }
 }
 
+CompositeSPOSet::~CompositeSPOSet() = default;
 
-void CompositeSPOSet::add(SPOSet* component)
+void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
 {
   if (components.empty())
   {
     component_offsets.push_back(0); //add 0
   }
 
-  int norbs                 = component->size();
-  ValueVector_t* values     = new ValueVector_t;
-  GradVector_t* gradients   = new GradVector_t;
-  ValueVector_t* laplacians = new ValueVector_t;
+  int norbs = component->size();
+  ValueVector_t values;
+  GradVector_t gradients;
+  ValueVector_t laplacians;
 
-  values->resize(norbs);
-  gradients->resize(norbs);
-  laplacians->resize(norbs);
+  values.resize(norbs);
+  gradients.resize(norbs);
+  laplacians.resize(norbs);
 
-  components.push_back(component);
-  component_values.push_back(values);
-  component_gradients.push_back(gradients);
-  component_laplacians.push_back(laplacians);
+  components.push_back(std::move(component));
+  component_values.push_back(std::move(values));
+  component_gradients.push_back(std::move(gradients));
+  component_laplacians.push_back(std::move(laplacians));
 
   OrbitalSetSize += norbs;
 
   component_offsets.push_back(OrbitalSetSize);
 }
-
 
 void CompositeSPOSet::report()
 {
@@ -93,29 +94,7 @@ void CompositeSPOSet::report()
   }
 }
 
-
-SPOSet* CompositeSPOSet::makeClone() const
-{
-  // base class and shallow copy
-  CompositeSPOSet* clone = new CompositeSPOSet(*this);
-  // remove component shallow copies then deep copy
-  clone->clone_from(*this);
-  return clone;
-}
-
-
-void CompositeSPOSet::clone_from(const CompositeSPOSet& master)
-{
-  components.clear();
-  component_values.clear();
-  component_gradients.clear();
-  component_laplacians.clear();
-  component_offsets.clear(); //add 0
-
-  OrbitalSetSize = 0;
-  for (int c = 0; c < master.components.size(); ++c)
-    add(master.components[c]->makeClone());
-}
+std::unique_ptr<SPOSet> CompositeSPOSet::makeClone() const { return std::make_unique<CompositeSPOSet>(*this); }
 
 void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
@@ -123,13 +102,12 @@ void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t
   for (int c = 0; c < components.size(); ++c)
   {
     SPOSet& component     = *components[c];
-    ValueVector_t& values = *component_values[c];
+    ValueVector_t& values = component_values[c];
     component.evaluateValue(P, iat, values);
     std::copy(values.begin(), values.end(), psi.begin() + n);
     n += component.size();
   }
 }
-
 
 void CompositeSPOSet::evaluateVGL(const ParticleSet& P,
                                   int iat,
@@ -141,9 +119,9 @@ void CompositeSPOSet::evaluateVGL(const ParticleSet& P,
   for (int c = 0; c < components.size(); ++c)
   {
     SPOSet& component         = *components[c];
-    ValueVector_t& values     = *component_values[c];
-    GradVector_t& gradients   = *component_gradients[c];
-    ValueVector_t& laplacians = *component_laplacians[c];
+    ValueVector_t& values     = component_values[c];
+    GradVector_t& gradients   = component_gradients[c];
+    ValueVector_t& laplacians = component_laplacians[c];
     component.evaluateVGL(P, iat, values, gradients, laplacians);
     std::copy(values.begin(), values.end(), psi.begin() + n);
     std::copy(gradients.begin(), gradients.end(), dpsi.begin() + n);
@@ -236,7 +214,7 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr c
   {
     SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
     if (spo)
-      spo_now->add(spo);
+      spo_now->add(spo->makeClone());
   }
   return (spo_now->size()) ? std::unique_ptr<SPOSet>{std::move(spo_now)} : nullptr;
 }

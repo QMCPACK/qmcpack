@@ -1036,9 +1036,9 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
 }
 
 
-SPOSet* RotatedSPOs::makeClone() const
+std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
 {
-  RotatedSPOs* myclone = new RotatedSPOs(std::unique_ptr<SPOSet>(Phi->makeClone()));
+  auto myclone = std::make_unique<RotatedSPOs>(std::unique_ptr<SPOSet>(Phi->makeClone()));
 
   myclone->params          = this->params;
   myclone->params_supplied = this->params_supplied;

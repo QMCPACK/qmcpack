@@ -38,11 +38,16 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc), wf_factory_(master.wf_factory_)
+    : OperatorBase(master),
+      basis_functions(master.basis_functions),
+      Lattice(P.Lattice),
+      Psi(psi),
+      Pq(P),
+      Pc(master.Pc),
+      wf_factory_(master.wf_factory_)
 {
   reset();
   set_state(master);
-  basis_functions.clone_from(master.basis_functions);
   initialize();
   for (int i = 0; i < basis_size; ++i)
     basis_norms[i] = master.basis_norms[i];
@@ -255,7 +260,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    basis_functions.add(wf_factory_.getSPOSet(sposets[i]));
+    basis_functions.add(wf_factory_.getSPOSet(sposets[i])->makeClone());
   }
   basis_size = basis_functions.size();
 
