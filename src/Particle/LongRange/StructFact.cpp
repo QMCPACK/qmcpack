@@ -14,7 +14,7 @@
 
 
 #include "StructFact.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
 #include "CPU/BLAS.hpp"

@@ -18,7 +18,7 @@
 #ifndef ATOMIC_ORBITAL_H
 #define ATOMIC_ORBITAL_H
 
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #include "einspline/multi_bspline.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Lattice/CrystalLattice.h"

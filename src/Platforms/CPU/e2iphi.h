@@ -27,7 +27,7 @@
 #include <config.h>
 #include <vector>
 #include <complex>
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 // #if defined(HAVE_ACML)
 // extern "C"
