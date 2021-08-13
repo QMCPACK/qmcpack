@@ -41,10 +41,10 @@ unset(CMAKE_REQUIRED_INCLUDES)
 unset(CMAKE_REQUIRED_LIBRARIES)
 
 if(HAVE_AMD_LIBM)
-  target_link_libraries(Math::scalar_vector_functions INTERFACE "${AMD_LIBM_LIBRARY}")
-  target_include_directories(Math::scalar_vector_functions INTERFACE "${AMD_LIBM_INCLUDE_DIR}")
   target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_AMD_LIBM")
+  target_include_directories(Math::scalar_vector_functions INTERFACE "${AMD_LIBM_INCLUDE_DIR}")
+  target_link_libraries(Math::scalar_vector_functions INTERFACE "${AMD_LIBM_LIBRARY}")
   message(STATUS "AMD LIBM found")
-else
+else()
   message(FATAL_ERROR "AMD LIBM not found")
 endif()
