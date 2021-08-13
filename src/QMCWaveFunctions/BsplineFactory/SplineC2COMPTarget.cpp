@@ -15,7 +15,7 @@
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/OMPTarget/ompReduction.hpp"
-#include "CPU/math.hpp"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -42,7 +42,7 @@ inline void assign_v(ST x,
 
   //phase
   ST s, c, p = -(x * kx[index] + y * ky[index] + z * kz[index]);
-  qmcplusplus::sincos(p, &s, &c);
+  omptarget::sincos(p, &s, &c);
 
   const ST val_r         = val[index * 2];
   const ST val_i         = val[index * 2 + 1];
@@ -101,7 +101,7 @@ inline void assign_vgl(ST x,
 
   //phase
   ST s, c, p = -(x * kX + y * kY + z * kZ);
-  qmcplusplus::sincos(p, &s, &c);
+  omptarget::sincos(p, &s, &c);
 
   //dot(PrimLattice.G,myG[j])
   const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -183,7 +183,7 @@ inline void SplineC2COMPTarget<ST>::assign_v(const PointType& r,
     ST s, c;
     const ST val_r = myV[2 * j];
     const ST val_i = myV[2 * j + 1];
-    qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
+    omptarget::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
     psi[j + first_spo] = ComplexT(val_r * c - val_i * s, val_i * c + val_r * s);
   }
 }
@@ -456,7 +456,7 @@ inline void SplineC2COMPTarget<ST>::assign_vgl_from_l(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
@@ -891,7 +891,7 @@ void SplineC2COMPTarget<ST>::assign_vgh(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -1043,7 +1043,7 @@ void SplineC2COMPTarget<ST>::assign_vghgh(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
