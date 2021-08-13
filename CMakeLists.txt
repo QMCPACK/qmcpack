@@ -579,6 +579,11 @@ message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
 set_target_properties(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES
                                                    "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
 
+#create scalar_vector_functions target
+add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
+#create fftw3 target
+add_library(Math::FFTW3 INTERFACE IMPORTED)
+
 # Detects MKL header files and other components.
 if(LAPACK_LIBRARIES MATCHES "mkl_core")
   include(CMake/FindMKL.cmake)
@@ -595,19 +600,16 @@ endif()
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
-set(ENABLE_MASS
-    FALSE
-    CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
+set(QMC_MATH_VENDOR
+    generic
+    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
 
 # This needs to go before HAVE_SINCOS
-if(ENABLE_MASS)
+if(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
   include(CMake/FindIBMMASS.cmake)
-endif(ENABLE_MASS)
-
-if(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
-  message(STATUS "No usable vector math library detected.")
-  add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-endif(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
+elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
+  include(CMake/FindAMDLibM.cmake)
+endif()
 
 # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
 if(NOT SINCOS_INCLUDE)

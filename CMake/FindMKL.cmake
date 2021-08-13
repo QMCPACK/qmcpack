@@ -74,26 +74,19 @@ if(HAVE_MKL)
   message(STATUS "MKL found: HAVE_MKL=${HAVE_MKL}, HAVE_MKL_VML=${HAVE_MKL_VML}, HAVE_MKL_FFTW3=${HAVE_MKL_FFTW3}")
 
   #Add BLAS_LAPACK header
-  set_target_properties(Math::BLAS_LAPACK PROPERTIES INTERFACE_COMPILE_DEFINITIONS "HAVE_MKL"
-                                                     INTERFACE_INCLUDE_DIRECTORIES "${MKL_INCLUDE_DIRECTORIES}")
+  target_compile_definitions(Math::BLAS_LAPACK INTERFACE "HAVE_MKL")
+  target_include_directories(Math::BLAS_LAPACK INTERFACE "${MKL_INCLUDE_DIRECTORIES}")
 
   if(HAVE_MKL_VML)
-    #create scalar_vector_functions target
-    add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-    set_target_properties(
-      Math::scalar_vector_functions
-      PROPERTIES INTERFACE_COMPILE_DEFINITIONS "HAVE_MKL;HAVE_MKL_VML" INTERFACE_INCLUDE_DIRECTORIES
-                                                                       "${MKL_INCLUDE_DIRECTORIES}"
-                 INTERFACE_LINK_LIBRARIES "${MKL_LIBRARIES}")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MKL;HAVE_MKL_VML")
+    target_include_directories(Math::scalar_vector_functions INTERFACE "${MKL_INCLUDE_DIRECTORIES}")
+    target_link_libraries(Math::scalar_vector_functions INTERFACE "${MKL_LIBRARIES}")
   endif(HAVE_MKL_VML)
 
   if(HAVE_MKL_FFTW3)
-    #create FFTW3 target
-    add_library(Math::FFTW3 INTERFACE IMPORTED)
-    set_target_properties(
-      Math::FFTW3
-      PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${MKL_FFTW3}" INTERFACE_COMPILE_DEFINITIONS "HAVE_MKL;HAVE_LIBFFTW"
-                 INTERFACE_LINK_LIBRARIES "${MKL_LIBRARIES}")
+    target_compile_definitions(Math::FFTW3 INTERFACE "HAVE_MKL;HAVE_LIBFFTW")
+    target_include_directories(Math::FFTW3 INTERFACE "${MKL_FFTW3}")
+    target_link_libraries(Math::FFTW3 INTERFACE "${MKL_LIBRARIES}")
   endif(HAVE_MKL_FFTW3)
 else(HAVE_MKL)
   set(MKL_FOUND FALSE)
