@@ -18,7 +18,7 @@
 #include "CPU/e2iphi.h"
 #include "EinsplineSet.h"
 #include "einspline/multi_bspline.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

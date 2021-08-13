@@ -16,6 +16,9 @@
 #include <cmath>
 #include <type_traits>
 #include "config/stdlib/Constants.h"
+#if defined(HAVE_AMD_LIBM)
+#include <amdlibm.h>
+#endif
 #if defined(HAVE_MASS)
 #include <mass.h>
 #endif
@@ -36,9 +39,19 @@ inline void sincos(float a, float* s, float* c)
   ::__sincosf(a,s,c);
 }
 
-#else // not __APPLE__
+#elif defined(HAVE_AMD_LIBM)
 
-#if defined(HAVE_SINCOS)
+inline void sincos(double a, double* s, double* c)
+{
+  ::amd_sincos(a,s,c);
+}
+
+inline void sincos(float a, float* s, float* c)
+{
+  ::amd_sincosf(a,s,c);
+}
+
+#elif defined(HAVE_SINCOS)
 
 inline void sincos(double a, double* s, double* c)
 {
@@ -58,7 +71,7 @@ inline void sincos(float a, float* s, float* c)
 #endif
 }
 
-#else
+#else // fallback
 
 template<typename T>
 inline void sincos(T a, T* restrict s, T*  restrict c)
@@ -67,9 +80,7 @@ inline void sincos(T a, T* restrict s, T*  restrict c)
   *c=std::cos(a);
 }
 
-#endif // HAVE_SINCOS
-
-#endif // __APPLE__
+#endif
 
 /** return i^n
  *

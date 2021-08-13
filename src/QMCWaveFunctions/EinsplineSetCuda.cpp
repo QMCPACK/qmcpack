@@ -23,7 +23,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/PhaseFactors.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #ifdef HAVE_MKL
 #include <mkl_vml.h>
 #endif

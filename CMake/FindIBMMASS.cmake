@@ -81,23 +81,18 @@ if(HAVE_MASS OR HAVE_MASSV)
   set(MASS_FOUND TRUE)
   message(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASSV=${HAVE_MASSV}")
 
-  #create scalar_vector_functions target
-  add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-  set_target_properties(
-    Math::scalar_vector_functions PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${MASS_INCLUDE_DIRECTORIES}"
-                                             INTERFACE_LINK_OPTIONS "${MASS_LINKER_FLAGS}")
+  target_include_directories(Math::scalar_vector_functions INTERFACE "${MASS_INCLUDE_DIRECTORIES}")
+  target_link_options(Math::scalar_vector_functions INTERFACE "${MASS_LINKER_FLAGS}")
+
   if(HAVE_MASS)
-    set_property(
-      TARGET Math::scalar_vector_functions
-      APPEND
-      PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_MASS")
-    set_property(TARGET Math::scalar_vector_functions APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${MASS_LIBRARY}")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MASS")
+    target_link_libraries(Math::scalar_vector_functions INTERFACE "${MASS_LIBRARY}")
     set(SINCOS_INCLUDE mass.h)
   endif()
 
   if(HAVE_MASSV)
-    set_property(TARGET Math::scalar_vector_functions APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_MASSV")
-    set_property(TARGET Math::scalar_vector_functions APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${MASSV_LIBRARY}")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MASSV")
+    target_link_libraries(Math::scalar_vector_functions INTERFACE "${MASSV_LIBRARY}")
   endif()
 
 else()
