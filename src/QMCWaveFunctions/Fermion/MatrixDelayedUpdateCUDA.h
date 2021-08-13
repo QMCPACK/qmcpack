@@ -98,12 +98,13 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
 template<typename T, typename T_FP>
 class MatrixDelayedUpdateCUDA
 {
+public:
+  using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
-
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
-
+private:
   /// matrix inversion engine
   DiracMatrix<T_FP> detEng;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$

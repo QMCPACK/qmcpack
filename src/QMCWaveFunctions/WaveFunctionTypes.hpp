@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_QMC_WAVEFUNCTION_TYPES_HPP
 
 #include "type_traits/complex_help.hpp"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {
@@ -37,7 +38,11 @@ struct WaveFunctionTypes final
   using FullPrecValue = FP_VALUE;
   using Real = RealAlias<Value>;
   using FullPrecReal = RealAlias<FullPrecValue>;
+  // This is all that belongs here so far.
   using PsiValue = FP_VALUE;
+  using Grad = TinyVector<Value, OHMMS_DIM>;
+  using Hess = Tensor<Value, OHMMS_DIM>;
+  using LogValue = std::complex<FullPrecReal>;
 };
 
 }
