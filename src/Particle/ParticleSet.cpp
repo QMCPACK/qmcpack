@@ -811,9 +811,16 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
   for (ParticleSet& pset : p_list)
   {
     pset.coordinates_->donePbyP();
-    if (pset.SK && !pset.SK->DoUpdate)
-      pset.SK->UpdateAllPart(pset);
     pset.activePtcl = -1;
+  }
+
+  if (p_leader.SK && !p_leader.SK->DoUpdate)
+  {
+    RefVectorWithLeader<StructFact> sk_list(*p_leader.SK);
+    sk_list.reserve(p_list.size());
+    for (ParticleSet& pset : p_list)
+      sk_list.push_back(*pset.SK);
+    StructFact::mw_UpdateAllPart(sk_list, p_list);
   }
 
   auto& dts = p_leader.DistTables;

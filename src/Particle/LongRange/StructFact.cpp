@@ -24,7 +24,11 @@ namespace qmcplusplus
 {
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(const ParticleSet& P, RealType kc)
-    : DoUpdate(false), SuperCellEnum(SUPERCELL_BULK), KLists(std::make_shared<KContainer>()), StorePerParticle(false)
+    : DoUpdate(false),
+      SuperCellEnum(SUPERCELL_BULK),
+      KLists(std::make_shared<KContainer>()),
+      StorePerParticle(false),
+      update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
   if (qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
   {
@@ -69,7 +73,20 @@ void StructFact::resize(int ns, int nptcl, int nkpts)
 }
 
 
-void StructFact::UpdateAllPart(const ParticleSet& P) { FillRhok(P); }
+void StructFact::UpdateAllPart(const ParticleSet& P)
+{
+  ScopedTimer local(update_all_timer_);
+  FillRhok(P);
+}
+
+void StructFact::mw_UpdateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  auto& sk_leader = sk_list.getLeader();
+  ScopedTimer local(sk_leader.update_all_timer_);
+  for (int iw = 0; iw < sk_list.size(); iw++)
+    sk_list[iw].FillRhok(p_list[iw]);
+}
 
 
 /** evaluate rok per species, eikr  per particle
@@ -90,8 +107,8 @@ void StructFact::FillRhok(const ParticleSet& P)
       const auto& pos           = P.R[i];
       auto* restrict eikr_r_ptr = eikr_r[i];
       auto* restrict eikr_i_ptr = eikr_i[i];
-      auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
-      auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
+      auto* restrict rhok_r_ptr = rhok_r[P.getGroupID(i)];
+      auto* restrict rhok_i_ptr = rhok_i[P.getGroupID(i)];
 #pragma omp simd
       for (int ki = 0; ki < nk; ki++)
       {
@@ -107,8 +124,8 @@ void StructFact::FillRhok(const ParticleSet& P)
     for (int i = 0; i < npart; ++i)
     {
       const auto& pos           = P.R[i];
-      auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
-      auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
+      auto* restrict rhok_r_ptr = rhok_r[P.getGroupID(i)];
+      auto* restrict rhok_i_ptr = rhok_i[P.getGroupID(i)];
 #if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 #pragma omp simd
       for (int ki = 0; ki < nk; ki++)
@@ -137,7 +154,7 @@ void StructFact::FillRhok(const ParticleSet& P)
     PosType pos(P.R[i]);
     RealType s, c; //get sin and cos
     ComplexType* restrict eikr_ref = eikr[i];
-    ComplexType* restrict rhok_ref = rhok[P.GroupID[i]];
+    ComplexType* restrict rhok_ref = rhok[P.getGroupID(i)];
     for (int ki = 0; ki < KLists->numk; ki++)
     {
       qmcplusplus::sincos(dot(KLists->kpts_cart[ki], pos), &s, &c);

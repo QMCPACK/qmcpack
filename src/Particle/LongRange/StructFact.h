@@ -77,6 +77,9 @@ public:
    */
   void UpdateAllPart(const ParticleSet& P);
 
+  static void mw_UpdateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list);
+
   /** evaluate eikr_temp for eikr for the proposed move
    * @param active index of the moved particle
    * @param pos proposed position
@@ -180,6 +183,8 @@ private:
    * storing data per particle specie is more cost-effective
    */
   bool StorePerParticle;
+  /// timer for UpdateAllPart
+  NewTimer& update_all_timer_;
 };
 } // namespace qmcplusplus
 
