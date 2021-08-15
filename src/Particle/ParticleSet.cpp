@@ -816,10 +816,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
 
   if (p_leader.SK && !p_leader.SK->DoUpdate)
   {
-    RefVectorWithLeader<StructFact> sk_list(*p_leader.SK);
-    sk_list.reserve(p_list.size());
-    for (ParticleSet& pset : p_list)
-      sk_list.push_back(*pset.SK);
+    auto sk_list = extractSKRefList(p_list);
     StructFact::mw_UpdateAllPart(sk_list, p_list);
   }
 
@@ -1032,6 +1029,15 @@ RefVectorWithLeader<DynamicCoordinates> ParticleSet::extractCoordsRefList(
   for (ParticleSet& p : p_list)
     coords_list.push_back(*p.coordinates_);
   return coords_list;
+}
+
+RefVectorWithLeader<StructFact> ParticleSet::extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  RefVectorWithLeader<StructFact> sk_list(*p_list.getLeader().SK);
+  sk_list.reserve(p_list.size());
+  for (ParticleSet& p : p_list)
+    sk_list.push_back(*p.SK);
+  return sk_list;
 }
 
 } // namespace qmcplusplus

@@ -33,8 +33,6 @@ namespace qmcplusplus
 class StructFact : public QMCTraits
 {
 public:
-  typedef PooledData<RealType> BufferType;
-
   /** false, if the structure factor is not actively updated
    *
    * Default is false. Particle-by-particle update functions, makeMove,
@@ -97,63 +95,6 @@ public:
    * Do nothing
    */
   void rejectMove(int active, int gid);
-  /// Update Rhok if 1 particle moved
-  //void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
-
-  //Buffer methods. For PbyP MC where data must be stored in an anonymous
-  //buffer between iterations
-  /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
-   *
-   * This function is used for particle-by-particle MC methods to register structure factor
-   * to an anonymous buffer.
-   */
-  inline void registerData(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.add(rhok_r.first_address(), rhok_r.last_address());
-    buf.add(rhok_i.first_address(), rhok_i.last_address());
-    buf.add(eikr_r.first_address(), eikr_r.last_address());
-    buf.add(eikr_i.first_address(), eikr_i.last_address());
-#else
-    buf.add(rhok.first_address(), rhok.last_address());
-    buf.add(eikr.first_address(), eikr.last_address());
-#endif
-  }
-
-  /** @brief put rhok data to buf
-   *
-   * This function is used for particle-by-particle MC methods
-   */
-  inline void updateBuffer(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.put(rhok_r.first_address(), rhok_r.last_address());
-    buf.put(rhok_i.first_address(), rhok_i.last_address());
-    buf.put(eikr_r.first_address(), eikr_r.last_address());
-    buf.put(eikr_i.first_address(), eikr_i.last_address());
-#else
-    buf.put(rhok.first_address(), rhok.last_address());
-    buf.put(eikr.first_address(), eikr.last_address());
-#endif
-  }
-
-  /** @brief copy the data from an anonymous buffer
-   *
-   * Any data that was used by the previous iteration will be copied from a buffer.
-   */
-  inline void copyFromBuffer(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.get(rhok_r.first_address(), rhok_r.last_address());
-    buf.get(rhok_i.first_address(), rhok_i.last_address());
-    buf.get(eikr_r.first_address(), eikr_r.last_address());
-    buf.get(eikr_i.first_address(), eikr_i.last_address());
-#else
-    buf.get(rhok.first_address(), rhok.last_address());
-    buf.get(eikr.first_address(), eikr.last_address());
-#endif
-  }
-
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
    * if StorePerParticle was true, this function is no-op
