@@ -65,17 +65,17 @@ public:
    * @param P Reference particle set
    * @param kc cutoff for k
    */
-  StructFact(ParticleSet& P, RealType kc);
+  StructFact(const ParticleSet& P, RealType kc);
   /// desructor
   ~StructFact();
 
   /** Recompute Rhok if lattice changed
    * @param kc cut-off K
    */
-  void UpdateNewCell(ParticleSet& P, RealType kc);
+  void UpdateNewCell(const ParticleSet& P, RealType kc);
   /**  Update Rhok if all particles moved
    */
-  void UpdateAllPart(ParticleSet& P);
+  void UpdateAllPart(const ParticleSet& P);
 
   /** evaluate eikr_temp for eikr for the proposed move
    * @param active index of the moved particle
@@ -155,7 +155,7 @@ public:
    * if StorePerParticle was false, this function allocates memory and precompute data
    * if StorePerParticle was true, this function is no-op
    */
-  void turnOnStorePerParticle(ParticleSet& P);
+  void turnOnStorePerParticle(const ParticleSet& P);
 
   /// accessor of StorePerParticle
   bool isStorePerParticle() const { return StorePerParticle; }
@@ -165,7 +165,7 @@ public:
 
 private:
   /// Compute all rhok elements from the start
-  void FillRhok(ParticleSet& P);
+  void FillRhok(const ParticleSet& P);
   /** resize the internal data
    * @param np number of species
    * @param nptcl number of particles

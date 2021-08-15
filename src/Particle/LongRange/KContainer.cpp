@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-void KContainer::UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere)
+void KContainer::UpdateKLists(const ParticleLayout_t& lattice, RealType kc, bool useSphere)
 {
   kcutoff = kc;
   kcut2   = kc * kc;
@@ -36,7 +36,7 @@ void KContainer::UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSp
   app_log() << std::endl;
 }
 
-void KContainer::FindApproxMMax(ParticleLayout_t& lattice)
+void KContainer::FindApproxMMax(const ParticleLayout_t& lattice)
 {
   //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
@@ -98,7 +98,7 @@ void KContainer::FindApproxMMax(ParticleLayout_t& lattice)
     mmax[DIM] = std::max(mmax[i], mmax[DIM]);
 }
 
-void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
+void KContainer::BuildKLists(const ParticleLayout_t& lattice, bool useSphere)
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;

@@ -77,15 +77,15 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere = true);
+  void UpdateKLists(const ParticleLayout_t& lattice, RealType kc, bool useSphere = true);
 
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(ParticleLayout_t& lattice);
+  void FindApproxMMax(const ParticleLayout_t& lattice);
   /** construct the container for k-vectors */
-  void BuildKLists(ParticleLayout_t& lattice, bool useSphere);
+  void BuildKLists(const ParticleLayout_t& lattice, bool useSphere);
 };
 
 } // namespace qmcplusplus

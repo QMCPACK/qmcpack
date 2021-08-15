@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 //Constructor - pass arguments to KLists' constructor
-StructFact::StructFact(ParticleSet& P, RealType kc)
+StructFact::StructFact(const ParticleSet& P, RealType kc)
     : DoUpdate(false), SuperCellEnum(SUPERCELL_BULK), KLists(std::make_shared<KContainer>()), StorePerParticle(false)
 {
   if (qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
@@ -38,7 +38,7 @@ StructFact::StructFact(ParticleSet& P, RealType kc)
 //Destructor
 StructFact::~StructFact() {}
 
-void StructFact::UpdateNewCell(ParticleSet& P, RealType kc)
+void StructFact::UpdateNewCell(const ParticleSet& P, RealType kc)
 {
   //Generate the lists of k-vectors
   KLists->UpdateKLists(P.LRBox, kc);
@@ -69,12 +69,12 @@ void StructFact::resize(int ns, int nptcl, int nkpts)
 }
 
 
-void StructFact::UpdateAllPart(ParticleSet& P) { FillRhok(P); }
+void StructFact::UpdateAllPart(const ParticleSet& P) { FillRhok(P); }
 
 
 /** evaluate rok per species, eikr  per particle
  */
-void StructFact::FillRhok(ParticleSet& P)
+void StructFact::FillRhok(const ParticleSet& P)
 {
   int npart = P.getTotalNum();
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -213,7 +213,7 @@ void StructFact::rejectMove(int active, int gid)
   //do nothing
 }
 
-void StructFact::turnOnStorePerParticle(ParticleSet& P)
+void StructFact::turnOnStorePerParticle(const ParticleSet& P)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   if (!StorePerParticle)
