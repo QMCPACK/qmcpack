@@ -47,8 +47,6 @@ public:
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
    */
   int SuperCellEnum;
-  /// K-Vector List.
-  KContainer KLists;
   ///1-D container for the phase
   Vector<RealType> phiV;
   ///2-D container for the phase
@@ -162,6 +160,9 @@ public:
   /// accessor of StorePerParticle
   bool isStorePerParticle() const { return StorePerParticle; }
 
+  /// access KLists read only
+  const KContainer& getKLists() const { return *KLists; }
+
 private:
   /// Compute all rhok elements from the start
   void FillRhok(ParticleSet& P);
@@ -172,6 +173,8 @@ private:
    */
   void resize(int ns, int nptcl, int nkpts);
 
+  /// K-Vector List.
+  const std::shared_ptr<KContainer> KLists;
   /** Whether intermediate data is stored per particle. default false
    * storing data per particle needs significant amount of memory but some calculation may request it.
    * storing data per particle specie is more cost-effective
