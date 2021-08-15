@@ -28,43 +28,8 @@ namespace qmcplusplus
  */
 void ParticleSet::createSK()
 {
-  //if(!sorted_ids && !reordered_ids)
-  //{
-  //  //save ID and GroupID
-  //  orgID=ID;
-  //  orgGroupID=GroupID;
-  //  if(groups()<1)
-  //  {
-  //    int nspecies=mySpecies.getTotalNum();
-  //    std::vector<int> ppg(nspecies,0);
-  //    for(int iat=0; iat<GroupID.size(); ++iat) ppg[GroupID[iat]]+=1;
-  //    SubPtcl.resize(nspecies+1);
-  //    SubPtcl[0]=0;
-  //    for(int i=0; i<nspecies; ++i) SubPtcl[i+1]=SubPtcl[i]+ppg[i];
-  //    int new_id=0;
-  //    for(int i=0; i<nspecies; ++i)
-  //      for(int iat=0; iat<GroupID.size(); ++iat) if(GroupID[iat]==i) orgID[new_id++]=ID[iat];
-  //    bool grouped=true;
-  //    for(int iat=0; iat<ID.size(); ++iat) grouped &= (orgID[iat]==ID[iat]);
-  //    if(grouped)
-  //    {
-  //      app_log() << "  ParticleSet is grouped. No need to reorder." << std::endl;
-  //    }
-  //    else
-  //    {
-  //      app_log() << "  Need to reorder. Only R is swapped." << std::endl;
-  //      ParticlePos_t oldR(R);
-  //      for(int iat=0; iat<R.size(); ++iat) R[iat]=oldR[orgID[iat]];
-  //      for(int i=0; i<groups(); ++i)
-  //        for(int iat=first(i); iat<last(i); ++iat) GroupID[iat]=i;
-  //      reordered_ids=true;
-  //    }
-  //  }//once group is set, nothing to be done
-  //  sorted_ids=true;
-  //}
-  //int membersize= mySpecies.addAttribute("membersize");
-  //for(int ig=0; ig<mySpecies.size(); ++ig)
-  //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
+  if (SK)
+    throw std::runtime_error("Report bug! SK has already been created. Unexpected call sequence.");
 
   if (Lattice.explicitly_defined)
     convert2Cart(R); //make sure that R is in Cartesian coordinates
@@ -103,20 +68,10 @@ void ParticleSet::createSK()
       app_log() << "--------------------------------------- " << std::endl;
     }
 
-    if (SK)
-    {
-      app_log() << "\n  Structure Factor is reset by " << Lattice.LR_kc << std::endl;
-      SK->UpdateNewCell(*this, LRBox.LR_kc);
-    }
-    else
-    {
-      app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-      SK = std::make_unique<StructFact>(*this, LRBox.LR_kc);
-    }
-    //Lattice.print(app_log());
-    //This uses the copy constructor to avoid recomputing the data.
-    //SKOld = new StructFact(*SK);
+    app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
+    SK = std::make_unique<StructFact>(*this, LRBox.LR_kc);
   }
+
   //set the mass array
   int beforemass = mySpecies.numAttributes();
   int massind    = mySpecies.addAttribute("mass");
