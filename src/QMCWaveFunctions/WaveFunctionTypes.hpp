@@ -34,16 +34,16 @@ template<typename VALUE, typename FP_VALUE>
 struct WaveFunctionTypes final
 {
   // Should be factored up into a non broken QMCTypes
-  using Value = VALUE;
+  using Value         = VALUE;
   using FullPrecValue = FP_VALUE;
-  using Real = RealAlias<Value>;
-  using FullPrecReal = RealAlias<FullPrecValue>;
+  using Real          = RealAlias<Value>;
+  using FullPrecReal  = RealAlias<FullPrecValue>;
   // This is all that belongs here so far.
   using PsiValue = FP_VALUE;
-  using Grad = TinyVector<Value, OHMMS_DIM>;
-  using Hess = Tensor<Value, OHMMS_DIM>;
+  using Grad     = TinyVector<Value, OHMMS_DIM>;
+  using Hess     = Tensor<Value, OHMMS_DIM>;
   using LogValue = std::complex<FullPrecReal>;
 };
 
-}
+} // namespace qmcplusplus
 #endif
