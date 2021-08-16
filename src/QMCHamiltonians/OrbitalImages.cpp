@@ -154,8 +154,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
 
   //second pass parameter read to get orbital indices
   //  each parameter is named after the corresponding sposet
-  for (int i = 0; i < sposet_names.size(); ++i)
-    sposet_indices->push_back(std::vector<int>());
+  sposet_indices->resize(sposet_names.size());
   for (int n = 0; n < other_elements.size(); ++n)
   {
     xmlNodePtr element = other_elements[n];

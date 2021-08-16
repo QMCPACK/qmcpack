@@ -62,21 +62,12 @@ void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
     component_offsets.push_back(0); //add 0
 
   int norbs = component->size();
-  ValueVector_t values;
-  GradVector_t gradients;
-  ValueVector_t laplacians;
-
-  values.resize(norbs);
-  gradients.resize(norbs);
-  laplacians.resize(norbs);
-
   components.push_back(std::move(component));
-  component_values.push_back(std::move(values));
-  component_gradients.push_back(std::move(gradients));
-  component_laplacians.push_back(std::move(laplacians));
+  component_values.emplace_back(norbs);
+  component_gradients.emplace_back(norbs);
+  component_laplacians.emplace_back(norbs);
 
   OrbitalSetSize += norbs;
-
   component_offsets.push_back(OrbitalSetSize);
 }
 

@@ -259,7 +259,12 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     APP_ABORT("DensityMatrices1B::put  basis must have at least one sposet");
 
   for (int i = 0; i < sposets.size(); ++i)
-    basis_functions.add(wf_factory_.getSPOSet(sposets[i])->makeClone());
+  {
+    SPOSet* sposet = wf_factory_.getSPOSet(sposets[i]);
+    if (sposet == 0)
+      APP_ABORT("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist");
+    basis_functions.add(sposet->makeClone());
+  }
   basis_size = basis_functions.size();
 
   if (basis_size < 1)
