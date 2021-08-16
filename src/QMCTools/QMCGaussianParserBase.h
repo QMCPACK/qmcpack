@@ -52,6 +52,7 @@ struct QMCGaussianParserBase
   bool debug;
   bool Structure;
   bool DoCusp;
+  // if true, adjust valence electron count output based on gCoreTable
   bool FixValence;
   bool singledetH5;
   bool optDetCoeffs;

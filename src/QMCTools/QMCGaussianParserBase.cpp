@@ -441,7 +441,7 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
     double valence = ionSpecies(IonChargeIndex, i);
-    if (!FixValence)
+    if (FixValence)
     {
       if (z > gCoreTable.size())
         return nullptr;
@@ -481,7 +481,7 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
       hout.push(SpecieID.str().c_str(), true);
       int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
       double valence = ionSpecies(IonChargeIndex, i);
-      if (!FixValence)
+      if (FixValence)
       {
         if (z > gCoreTable.size())
           return nullptr;

@@ -53,7 +53,6 @@ fermIrrep fermIrrep::generate_kramers_pair()
 
 DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
 {
-  FixValence   = true;
   ECP          = false;
   BohrUnit     = true;
   PBC          = false;
