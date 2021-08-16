@@ -14,7 +14,7 @@
 
 
 #include "StructFact.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
 #include "CPU/BLAS.hpp"
@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(ParticleSet& P, RealType kc)
-    : DoUpdate(false), StorePerParticle(false), SuperCellEnum(SUPERCELL_BULK)
+    : DoUpdate(false), SuperCellEnum(SUPERCELL_BULK), StorePerParticle(false)
 {
   if (qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
   {
@@ -109,7 +109,7 @@ void StructFact::FillRhok(ParticleSet& P)
       const auto& pos           = P.R[i];
       auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
       auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 #pragma omp simd
       for (int ki = 0; ki < nk; ki++)
       {

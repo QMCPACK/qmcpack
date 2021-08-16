@@ -75,7 +75,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(use_DLA, "DLA", {"no", "yes"});
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
-  pAttrib.add(physicalSO, "physicalSO", {"no", "yes"});
+  pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
   pAttrib.put(cur);
 
   if (NLPP_algo.empty())

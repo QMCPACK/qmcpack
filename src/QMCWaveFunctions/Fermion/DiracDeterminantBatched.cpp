@@ -592,7 +592,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVector<const VirtualParticleSet>& vp_list,
+                                                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                             std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
@@ -939,22 +939,38 @@ void DiracDeterminantBatched<DET_ENGINE>::createResource(ResourceCollection& col
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::acquireResource(ResourceCollection& collection)
+void DiracDeterminantBatched<DET_ENGINE>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   auto res_ptr = dynamic_cast<DiracDeterminantBatchedMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("DiracDeterminantBatched::acquireResource dynamic_cast failed");
-  mw_res_.reset(res_ptr);
-  Phi->acquireResource(collection);
-  det_engine_.acquireResource(collection);
+  wfc_leader.mw_res_.reset(res_ptr);
+
+  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
+  for (WaveFunctionComponent& wfc : wfc_list)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE>&>(wfc);
+    phi_list.push_back(*det.Phi);
+  }
+  wfc_leader.Phi->acquireResource(collection, phi_list);
+
+  wfc_leader.det_engine_.acquireResource(collection);
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::releaseResource(ResourceCollection& collection)
+void DiracDeterminantBatched<DET_ENGINE>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  collection.takebackResource(std::move(mw_res_));
-  Phi->releaseResource(collection);
-  det_engine_.releaseResource(collection);
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  collection.takebackResource(std::move(wfc_leader.mw_res_));
+  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
+  for (WaveFunctionComponent& wfc : wfc_list)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE>&>(wfc);
+    phi_list.push_back(*det.Phi);
+  }
+  wfc_leader.Phi->releaseResource(collection, phi_list);
+  wfc_leader.det_engine_.releaseResource(collection);
 }
 
 template class DiracDeterminantBatched<>;

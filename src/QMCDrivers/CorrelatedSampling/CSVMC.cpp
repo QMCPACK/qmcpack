@@ -34,10 +34,7 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 /// Constructor.
-CSVMC::CSVMC(MCWalkerConfiguration& w,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
-             Communicate* comm)
+CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
     : QMCDriver(w, psi, h, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
@@ -199,7 +196,7 @@ bool CSVMC::run()
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
+    wrotesamples = W.dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }

@@ -30,6 +30,11 @@ namespace qmcplusplus
 
 class CostFunctionCrowdData;
 
+namespace testing
+{
+class LinearMethodTestSupport;
+};
+
 
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
@@ -74,6 +79,9 @@ protected:
 
   SampleStack& samples_;
 
+  // Number of samples local to each MPI rank
+  int rank_local_num_samples_;
+
   int opt_batch_size_;
   int opt_num_crowds_;
 
@@ -87,6 +95,8 @@ protected:
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
 #endif
+
+  friend testing::LinearMethodTestSupport;
 };
 } // namespace qmcplusplus
 #endif

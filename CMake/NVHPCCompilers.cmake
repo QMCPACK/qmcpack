@@ -11,7 +11,7 @@ if(QMC_OMP)
       message(FATAL_ERROR "NVIDIA HPC compiler requires -gpu=ccXX option set based on the target GPU architecture! "
                           "Please add -DOFFLOAD_ARCH=ccXX to cmake. For example, cc70 is for Volta.")
     endif()
-    set(CMAKE_CXX_FLAGS "-mp=gpu")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mp=gpu")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-gpu=${OFFLOAD_ARCH}")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mp=allcores")
@@ -19,9 +19,6 @@ if(QMC_OMP)
 endif(QMC_OMP)
 
 add_definitions(-Drestrict=__restrict__)
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__forceinline=inline")
 
 # Suppress compile warnings
 # 177 variable "XX" was declared but never referenced
@@ -34,10 +31,8 @@ set(CMAKE_CXX_FLAGS
 )
 
 # Set extra optimization specific flags
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fast")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fast")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fast")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fast")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast")
 
 # Setting this to 'OFF' adds the -A flag, which enforces strict standard compliance
 #  and causes the compilation to fail with some GNU header files

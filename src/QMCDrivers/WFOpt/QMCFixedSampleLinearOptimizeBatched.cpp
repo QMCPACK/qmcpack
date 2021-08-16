@@ -99,7 +99,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE),
-      do_output_matrices_(false),
+      do_output_matrices_csv_(false),
+      do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false)
 
@@ -207,7 +208,7 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
 
 bool QMCFixedSampleLinearOptimizeBatched::run()
 {
-  if (do_output_matrices_ && !output_matrices_initialized_)
+  if (do_output_matrices_csv_ && !output_matrices_initialized_)
   {
     numParams = optTarget->getNumParams();
     int N     = numParams + 1;
@@ -235,6 +236,11 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
+  return previous_linear_methods_run();
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
+{
   start();
   bool Valid(true);
   int Total_iterations(0);
@@ -319,7 +325,7 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      Lambda   = getNonLinearRescale(currentParameterDirections, S);
+      Lambda = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -466,20 +472,23 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   std::string vmcMove("pbyp");
   std::string ReportToH5("no");
   std::string OutputMatrices("no");
+  std::string OutputMatricesHDF("no");
   std::string FreezeParameters("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices");
-  m_param.add(FreezeParameters, "freeze_parameters");
+  m_param.add(OutputMatrices, "output_matrices_csv", {"no", "yes"});
+  m_param.add(OutputMatricesHDF, "output_matrices_hdf", {"no", "yes"});
+  m_param.add(FreezeParameters, "freeze_parameters", {"no", "yes"});
 
   oAttrib.put(q);
   m_param.put(q);
 
-  do_output_matrices_ = (OutputMatrices != "no");
-  freeze_parameters_  = (FreezeParameters != "no");
+  do_output_matrices_csv_ = (OutputMatrices == "yes");
+  do_output_matrices_hdf_ = (OutputMatricesHDF == "yes");
+  freeze_parameters_      = (FreezeParameters == "yes");
 
   // Use freeze_parameters with output_matrices to generate multiple lines in the output with
   // the same parameters so statistics can be computed in post-processing.
@@ -1277,10 +1286,21 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
-  if (do_output_matrices_)
+  if (do_output_matrices_csv_)
   {
     output_overlap_.output(ovlMat);
     output_hamiltonian_.output(hamMat);
+  }
+
+  hdf_archive hout;
+  if (do_output_matrices_hdf_)
+  {
+    std::string newh5 = get_root_name() + ".linear_matrices.h5";
+    hout.create(newh5, H5F_ACC_TRUNC);
+    hout.write(ovlMat, "overlap");
+    hout.write(hamMat, "Hamiltonian");
+    hout.write(bestShift_i, "bestShift_i");
+    hout.write(bestShift_s, "bestShift_s");
   }
 
   // apply the identity shift
@@ -1308,10 +1328,18 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  getLowestEigenvector(prdMat, parameterDirections);
+  RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
   Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+
+  if (do_output_matrices_hdf_)
+  {
+    hout.write(lowestEV, "lowest_eigenvalue");
+    hout.write(parameterDirections, "scaled_eigenvector");
+    hout.write(Lambda, "non_linear_rescale");
+    hout.close();
+  }
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)

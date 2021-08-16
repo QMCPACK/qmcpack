@@ -22,8 +22,7 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
 #include "SplineOMPTargetMultiWalkerMem.h"
@@ -40,11 +39,6 @@ template<typename ST>
 class SplineC2ROMPTarget : public BsplineSet
 {
 public:
-  template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-
   using SplineType       = typename bspline_traits<ST, 3>::SplineType;
   using BCType           = typename bspline_traits<ST, 3>::BCType;
   using DataType         = ST;
@@ -148,15 +142,22 @@ public:
     auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>());
   }
 
-  void acquireResource(ResourceCollection& collection) override
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
+    assert(this == &spo_list.getLeader());
+    auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
     auto res_ptr = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, TT>*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
-    mw_mem_.reset(res_ptr);
+    phi_leader.mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
+  {
+    assert(this == &spo_list.getLeader());
+    auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+    collection.takebackResource(std::move(phi_leader.mw_mem_));
+  }
 
   virtual SPOSet* makeClone() const override { return new SplineC2ROMPTarget(*this); }
 
@@ -261,7 +262,7 @@ public:
                                  std::vector<ValueType>& ratios) override;
 
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const override;

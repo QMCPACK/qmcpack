@@ -101,7 +101,6 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 
   const int d_ii_ID = ions->addTable(*ions);
   ions->update();
-  const auto& d_ii = ions->getDistTable(d_ii_ID);
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
@@ -127,14 +126,14 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   RealType rmin = cutoff;
   ParticleSet::SingleParticlePos_t cm;
 
+  const auto& dist = ions->getDistTable(d_ii_ID).getDistances();
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
   for (size_t iat = 0; iat < Centers; iat++)
   {
     cm += ions->R[iat];
-    const auto& dist = d_ii.getDistRow(iat);
     for (size_t jat = iat + 1; jat < Centers; ++jat)
     {
-      rmin = std::min(rmin, dist[jat]);
+      rmin = std::min(rmin, dist[jat][iat]);
     }
     //use 40% of the minimum bond
     RealType sep = rmin * 0.4;

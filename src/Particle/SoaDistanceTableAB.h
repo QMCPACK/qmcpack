@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_H
 #define QMCPLUSPLUS_DTDIMPL_AB_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
 #include "Utilities/FairDivide.h"
 #include "Message/OpenMP.h"
 
@@ -26,7 +27,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
 {
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
-        DistanceTableData(source, target),
+        DistanceTableData(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::evaluate_") + target.getName() +
                                                        "_" + source.getName(),
                                                    timer_level_fine)),

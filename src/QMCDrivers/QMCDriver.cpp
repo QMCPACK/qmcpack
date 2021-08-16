@@ -49,14 +49,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
-      Estimators(0),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
       W(w),
       Psi(psi),
       H(h),
-      wOut(0),
       driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
@@ -209,10 +207,10 @@ void QMCDriver::process(xmlNodePtr cur)
   put(cur);
   //create and initialize estimator
   Estimators = branchEngine->getEstimatorManager();
-  if (Estimators == 0)
+  if (Estimators == nullptr)
   {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
+    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(myComm));
+    Estimators = branchEngine->getEstimatorManager();
     branchEngine->read(h5FileRoot);
   }
   if (DriftModifier == 0)
@@ -228,8 +226,8 @@ void QMCDriver::process(xmlNodePtr cur)
 #endif
   branchEngine->put(cur);
   Estimators->put(H, cur);
-  if (wOut == 0)
-    wOut = new HDFWalkerOutput(W, RootName, myComm);
+  if (!wOut)
+    wOut = std::make_unique<HDFWalkerOutput>(W, RootName, myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -339,8 +337,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
-  delete wOut;
-  wOut           = 0;
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();

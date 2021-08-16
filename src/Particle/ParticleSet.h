@@ -256,6 +256,10 @@ public:
    */
   void turnOnPerParticleSK();
 
+  /** Get state (on/off) of per particle storage in Structure Factor
+   */
+  bool getPerParticleSKState() const;
+
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet() { return mySpecies; }
   ///retrun the const SpeciesSet of this particle set

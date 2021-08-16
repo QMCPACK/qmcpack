@@ -127,10 +127,10 @@ set(EXECUTABLE_OUTPUT_PATH
 # Set C++ standard used by QMCPACK
 ##################################
 set(QMC_CXX_STANDARD
-    14
+    17
     CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 14)
-  message(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
+if(NOT QMC_CXX_STANDARD EQUAL 17)
+  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
@@ -383,42 +383,7 @@ else(CMAKE_TOOLCHAIN_FILE)
     endif()
   endif()
 
-  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(COMPILER GNU)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "XL")
-    set(COMPILER IBM)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    set(COMPILER Clang)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(COMPILER Intel)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
-    set(COMPILER PGI)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Cray")
-    set(COMPILER Cray)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(COMPILER Clang)
-  else()
-    message("${CMAKE_CXX_COMPILER_ID}")
-    message(WARNING "Unknown C/C++ compiler ${CMAKE_CXX_COMPILER_ID}, default flags will be used")
-  endif()
-  message(STATUS "C++ Compiler is identified by QMCPACK as : ${COMPILER}")
-
-  #------------------------------------
-  # Include compiler-specific cmake file
-  #------------------------------------
-  if(COMPILER MATCHES "IBM")
-    include(${PROJECT_CMAKE}/IBMCompilers.cmake)
-  elseif(COMPILER MATCHES "Intel")
-    include(${PROJECT_CMAKE}/IntelCompilers.cmake)
-  elseif(COMPILER MATCHES "GNU")
-    include(${PROJECT_CMAKE}/GNUCompilers.cmake)
-  elseif(COMPILER MATCHES "Clang")
-    include(${PROJECT_CMAKE}/ClangCompilers.cmake)
-  elseif(COMPILER MATCHES "PGI")
-    include(${PROJECT_CMAKE}/PGICompilers.cmake)
-  else()
-    message(WARNING "No default file for compiler (${COMPILER})")
-  endif()
+  include(CMake/inspectCompiler.cmake)
 
 endif(CMAKE_TOOLCHAIN_FILE)
 
@@ -442,11 +407,7 @@ include(CMake/Testlibstdc++.cmake)
 #---------------------------------------------------------
 # Check that a C++ standard library is configured properly
 #---------------------------------------------------------
-if(QMC_CXX_STANDARD GREATER_EQUAL 17)
-  include(CMake/TestCxx17Library.cmake)
-else()
-  include(CMake/TestCxx14Library.cmake)
-endif()
+include(CMake/TestCxx17Library.cmake)
 
 if(ENABLE_GCOV)
   if(NOT GCOV_SUPPORTED)
@@ -505,7 +466,9 @@ if(QMC_MPI)
         "Setting MPIEXEC_EXECUTABLE based on MPIEXEC. MPIEXEC has been deprecated! Use MPIEXEC_EXECUTABLE instead!")
     set(MPIEXEC_EXECUTABLE ${MPIEXEC})
   endif(DEFINED MPIEXEC AND NOT DEFINED MPIEXEC_EXECUTABLE)
-  set(MPI_CXX_SKIP_MPICXX TRUE CACHE BOOL "Must be TRUE for QMCPACK. Cached for working around CMake FindMPI issue.")
+  set(MPI_CXX_SKIP_MPICXX
+      TRUE
+      CACHE BOOL "Must be TRUE for QMCPACK. Cached for working around CMake FindMPI issue.")
   if(NOT CMAKE_CROSSCOMPILING)
     set(MPI_DETERMINE_LIBRARY_VERSION TRUE)
   endif()
@@ -594,7 +557,7 @@ foreach(MKL_LIB_PATH IN ITEMS ${MKL_ROOT} $ENV{MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_
 endforeach()
 if(NOT BLA_VENDOR)
   message(STATUS "Trying to find LAPACK from Intel MKL")
-  if(QMC_OMP AND CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  if(QMC_OMP AND COMPILER STREQUAL "Intel")
     set(BLA_VENDOR Intel10_64lp)
   else()
     set(BLA_VENDOR Intel10_64lp_seq)
@@ -616,9 +579,18 @@ message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
 set_target_properties(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES
                                                    "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
 
+#create scalar_vector_functions target
+add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
+#create fftw3 target
+add_library(Math::FFTW3 INTERFACE IMPORTED)
+
 # Detects MKL header files and other components.
 if(LAPACK_LIBRARIES MATCHES "mkl_core")
   include(CMake/FindMKL.cmake)
+endif()
+
+if(MKL_FOUND)
+  set(MATH_VENDOR_GUESS "INTEL_VML")
 endif()
 
 # AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
@@ -632,19 +604,29 @@ endif()
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
-set(ENABLE_MASS
-    FALSE
-    CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
+set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
+if(NOT DEFINED MATH_VENDOR_GUESS)
+  set(MATH_VENDOR_GUESS "GENERIC")
+endif()
+set(QMC_MATH_VENDOR
+    ${MATH_VENDOR_GUESS}
+    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
+
+# Perform math vendor option check
+if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
+  message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
+else()
+  message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
+endif()
 
 # This needs to go before HAVE_SINCOS
-if(ENABLE_MASS)
+if(QMC_MATH_VENDOR STREQUAL "INTEL_VML")
+  include(CMake/FindMKLVML.cmake)
+elseif(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
   include(CMake/FindIBMMASS.cmake)
-endif(ENABLE_MASS)
-
-if(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
-  message(STATUS "No usable vector math library detected.")
-  add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-endif(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
+elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
+  include(CMake/FindAMDLibM.cmake)
+endif()
 
 # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
 if(NOT SINCOS_INCLUDE)
@@ -811,12 +793,15 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(HAVE_CUDA 1)
     message("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
   else()
-    set(ROCM_ROOT "/opt/rocm" CACHE PATH "Root directory of ROCM")
+    set(ROCM_ROOT
+        "/opt/rocm"
+        CACHE PATH "Root directory of ROCM")
     message(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
     list(APPEND CMAKE_MODULE_PATH ${ROCM_ROOT}/hip/cmake)
     list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
     find_package(HIP REQUIRED)
     find_package(hipblas REQUIRED)
+    find_package(rocsolver REQUIRED)
     # architecture flags
     set(HIP_ARCH
         "gfx906,gfx908"

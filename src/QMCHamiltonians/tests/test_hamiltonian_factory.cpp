@@ -19,9 +19,9 @@
 
 namespace qmcplusplus
 {
-ParticleSet* createElectronParticleSet()
+std::unique_ptr<ParticleSet> createElectronParticleSet()
 {
-  ParticleSet* qp = new ParticleSet;
+  auto qp = std::make_unique<ParticleSet>();
   qp->setName("e");
   qp->create(2);
   qp->R[0][0] = 1.0;
@@ -44,7 +44,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet* qp = createElectronParticleSet();
+  auto qp = createElectronParticleSet();
 
   ParticleSet ions;
   ions.setName("ion0");
@@ -54,7 +54,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   HamiltonianFactory::PtclPoolType particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
-  particle_set_map["e"]    = qp;
+  particle_set_map["e"]    = qp.get();
   particle_set_map["ion0"] = &ions;
 
   HamiltonianFactory hf("h0", *qp, particle_set_map, psi_map, c);
@@ -89,7 +89,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet* qp = createElectronParticleSet();
+  auto qp = createElectronParticleSet();
 
   ParticleSet ions;
   ions.setName("ion0");
@@ -107,7 +107,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   HamiltonianFactory::PtclPoolType particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
-  particle_set_map["e"]    = qp;
+  particle_set_map["e"]    = qp.get();
   particle_set_map["ion0"] = &ions;
 
   HamiltonianFactory hf("h0", *qp, particle_set_map, psi_map, c);

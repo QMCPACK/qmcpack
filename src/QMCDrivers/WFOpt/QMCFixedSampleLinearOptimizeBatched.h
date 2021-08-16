@@ -87,6 +87,10 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
+  // Previous linear optimizers ("quartic" and "rescale")
+  bool previous_linear_methods_run();
+
+
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
@@ -201,7 +205,10 @@ private:
   bool doHybrid;
 
   // Output Hamiltonian and overlap matrices
-  bool do_output_matrices_;
+  bool do_output_matrices_csv_;
+
+  // Output Hamiltonian and overlap matrices in HDF format
+  bool do_output_matrices_hdf_;
 
   // Flag to open the files on first pass and print header line
   bool output_matrices_initialized_;
