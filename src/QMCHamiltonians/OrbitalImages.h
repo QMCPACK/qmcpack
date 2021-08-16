@@ -168,7 +168,7 @@ public:
   std::vector<std::string> sposet_names;
 
   ///indices of orbitals within each sposet to evaluate
-  std::vector<std::vector<int>> sposet_indices;
+  const std::shared_ptr<std::vector<std::vector<int>>> sposet_indices;
 
   ///sposets obtained by name from WaveFunctionFactory
   std::vector<std::unique_ptr<SPOSet>> sposets;

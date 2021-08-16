@@ -155,7 +155,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   //second pass parameter read to get orbital indices
   //  each parameter is named after the corresponding sposet
   for (int i = 0; i < sposet_names.size(); ++i)
-    sposet_indices.push_back(std::vector<int>());
+    sposet_indices->push_back(std::vector<int>());
   for (int n = 0; n < other_elements.size(); ++n)
   {
     xmlNodePtr element = other_elements[n];
@@ -165,7 +165,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
       const XMLAttrString name(element, "name");
       for (int i = 0; i < sposet_names.size(); ++i)
         if (name == sposet_names[i])
-          putContent(sposet_indices[i], element);
+          putContent((*sposet_indices)[i], element);
     }
   }
 
@@ -215,7 +215,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     if (sposet == 0)
       APP_ABORT("OrbitalImages::put  sposet " + sposet_names[i] + " does not exist");
     sposets.push_back(sposet->makeClone());
-    std::vector<int>& sposet_inds = sposet_indices[i];
+    std::vector<int>& sposet_inds = (*sposet_indices)[i];
     if (sposet_inds.size() == 0)
       for (int n = 0; n < sposet->size(); ++n)
         sposet_inds.push_back(n);
@@ -272,11 +272,11 @@ void OrbitalImages::report(const std::string& pad)
 {
   app_log() << pad << "OrbitalImages report" << std::endl;
   app_log() << pad << "  derivatives = " << derivatives << std::endl;
-  app_log() << pad << "  nsposets    = " << sposets.size() << " " << sposet_names.size() << " " << sposet_indices.size()
-            << std::endl;
+  app_log() << pad << "  nsposets    = " << sposets.size() << " " << sposet_names.size() << " "
+            << sposet_indices->size() << std::endl;
   for (int i = 0; i < sposet_names.size(); ++i)
   {
-    std::vector<int>& sposet_inds = sposet_indices[i];
+    std::vector<int>& sposet_inds = (*sposet_indices)[i];
     SPOSet& sposet                = *sposets[i];
     if (sposet_inds.size() == sposet.size())
       app_log() << pad << "  " << sposet_names[i] << " = all " << sposet.size() << " orbitals" << std::endl;
@@ -338,7 +338,7 @@ OrbitalImages::Return_t OrbitalImages::evaluate(ParticleSet& P)
       //get sposet information
       const std::string& sposet_name = sposet_names[i];
       app_log() << "  evaluating orbitals in " + sposet_name + " on the grid" << std::endl;
-      std::vector<int>& sposet_inds = sposet_indices[i];
+      std::vector<int>& sposet_inds = (*sposet_indices)[i];
       SPOSet& sposet                = *sposets[i];
       int nspo                      = sposet_inds.size();
 
