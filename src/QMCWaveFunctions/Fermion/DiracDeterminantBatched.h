@@ -72,7 +72,7 @@ public:
   using Hess        = typename WFT::Hess;
   using Real        = typename WFT::Real;
   using FullPrecGrad   = TinyVector<FullPrecValue, DIM>;
-  using DetEngine_t = DET_ENGINE;
+  using DetEngine = DET_ENGINE;
   template<typename DT>
   using OffloadPinnedAllocator        = PinnedDualAllocator<DT>;
   using OffloadPinnedValueVector    = Vector<Value, OffloadPinnedAllocator<Value>>;
