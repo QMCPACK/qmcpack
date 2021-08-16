@@ -52,6 +52,7 @@ struct QMCGaussianParserBase
   bool debug;
   bool Structure;
   bool DoCusp;
+  // if true, adjust valence electron count output based on gCoreTable
   bool FixValence;
   bool singledetH5;
   bool optDetCoeffs;
@@ -170,6 +171,8 @@ struct QMCGaussianParserBase
 
   static std::vector<std::string> gShellType;
   static std::vector<int> gShellID;
+
+  static const std::vector<double> gCoreTable;
 
   static void init();
 };
