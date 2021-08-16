@@ -23,7 +23,7 @@ if [[ ! -d /ccs/proj/mat151/opt/modules ]] ; then
   exit 1
 fi
 module use /ccs/proj/mat151/opt/modules
-module load llvm/master-latest
+module load llvm/main-20210811
 
 #the XL built fftw is buggy, use the gcc version
 #module load fftw
@@ -39,7 +39,7 @@ for name in offload_cuda_real offload_cuda_real_MP offload_cuda_cplx offload_cud
             cpu_real cpu_real_MP cpu_cplx cpu_cplx_MP
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16;--smpiargs=off'"
+CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D QMC_MATH_VENDOR=IBM_MASS -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16;--smpiargs=off'"
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
