@@ -59,9 +59,7 @@ CompositeSPOSet::~CompositeSPOSet() = default;
 void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
 {
   if (components.empty())
-  {
     component_offsets.push_back(0); //add 0
-  }
 
   int norbs = component->size();
   ValueVector_t values;
