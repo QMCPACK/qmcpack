@@ -155,7 +155,7 @@ public:
     collection.takebackResource(std::move(phi_leader.mw_mem_));
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2COMPTarget(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2COMPTarget>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

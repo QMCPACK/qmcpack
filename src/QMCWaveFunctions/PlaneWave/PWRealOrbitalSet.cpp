@@ -30,10 +30,10 @@ PWRealOrbitalSet::~PWRealOrbitalSet()
     delete myBasisSet;
 }
 
-SPOSet* PWRealOrbitalSet::makeClone() const
+std::unique_ptr<SPOSet> PWRealOrbitalSet::makeClone() const
 {
-  PWRealOrbitalSet* myclone = new PWRealOrbitalSet(*this);
-  myclone->myBasisSet       = new PWBasis(*myBasisSet);
+  auto myclone        = std::make_unique<PWRealOrbitalSet>(*this);
+  myclone->myBasisSet = new PWBasis(*myBasisSet);
   return myclone;
 }
 
