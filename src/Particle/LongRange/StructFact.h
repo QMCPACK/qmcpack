@@ -109,8 +109,8 @@ public:
   /// accessor of StorePerParticle
   bool isStorePerParticle() const { return StorePerParticle; }
 
-  /// access KLists read only
-  const KContainer& getKLists() const { return *KLists; }
+  /// access k_lists_ read only
+  const KContainer& getKLists() const { return *k_lists_; }
 
 private:
   /// Compute all rhok elements from the start
@@ -123,7 +123,7 @@ private:
   void resize(int nkpts);
 
   /// K-Vector List.
-  const std::shared_ptr<KContainer> KLists;
+  const std::shared_ptr<KContainer> k_lists_;
   /// number of particles
   const size_t num_ptcls;
   /// number of species
