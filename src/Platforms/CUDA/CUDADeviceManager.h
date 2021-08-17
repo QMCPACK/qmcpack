@@ -25,6 +25,8 @@
 namespace qmcplusplus
 {
 
+/** CUDA device manager
+ */
 class CUDADeviceManager
 {
   int cuda_default_device_num;

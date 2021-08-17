@@ -22,6 +22,8 @@
 namespace qmcplusplus
 {
 
+/** OpenMP device manager
+ */
 class OMPDeviceManager
 {
   int omp_default_device_num;
