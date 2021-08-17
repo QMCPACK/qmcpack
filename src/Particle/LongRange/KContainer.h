@@ -77,7 +77,7 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void UpdateKLists(const ParticleLayout_t& lattice, RealType kc, bool useSphere = true);
+  void updateKLists(const ParticleLayout_t& lattice, RealType kc, bool useSphere = true);
 
 private:
   /** compute approximate parallelpiped that surrounds kc

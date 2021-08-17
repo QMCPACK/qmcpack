@@ -70,12 +70,12 @@ public:
   /** Recompute Rhok if lattice changed
    * @param kc cut-off K
    */
-  void UpdateNewCell(const ParticleSet& P, RealType kc);
+  void updateNewCell(const ParticleSet& P, RealType kc);
   /**  Update Rhok if all particles moved
    */
-  void UpdateAllPart(const ParticleSet& P);
+  void updateAllPart(const ParticleSet& P);
 
-  static void mw_UpdateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
+  static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
                                const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate eikr_temp for eikr for the proposed move
@@ -109,7 +109,7 @@ public:
 
 private:
   /// Compute all rhok elements from the start
-  void FillRhok(const ParticleSet& P);
+  void computeRhok(const ParticleSet& P);
   /** resize the internal data
    * @param np number of species
    * @param nptcl number of particles
@@ -124,7 +124,7 @@ private:
    * storing data per particle specie is more cost-effective
    */
   bool StorePerParticle;
-  /// timer for UpdateAllPart
+  /// timer for updateAllPart
   NewTimer& update_all_timer_;
 };
 } // namespace qmcplusplus

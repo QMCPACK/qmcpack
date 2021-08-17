@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-void KContainer::UpdateKLists(const ParticleLayout_t& lattice, RealType kc, bool useSphere)
+void KContainer::updateKLists(const ParticleLayout_t& lattice, RealType kc, bool useSphere)
 {
   kcutoff = kc;
   kcut2   = kc * kc;

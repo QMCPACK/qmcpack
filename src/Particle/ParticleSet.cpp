@@ -396,7 +396,7 @@ void ParticleSet::update(bool skipSK)
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
-    SK->UpdateAllPart(*this);
+    SK->updateAllPart(*this);
 
   activePtcl = -1;
 }
@@ -420,7 +420,7 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   {
 #pragma omp parallel for
     for (int iw = 0; iw < p_list.size(); iw++)
-      p_list[iw].SK->UpdateAllPart(p_list[iw]);
+      p_list[iw].SK->updateAllPart(p_list[iw]);
   }
 }
 
@@ -556,7 +556,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart(*this);
+    SK->updateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -588,7 +588,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart(*this);
+    SK->updateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -628,7 +628,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart(*this);
+    SK->updateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -662,7 +662,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
-    SK->UpdateAllPart(*this);
+    SK->updateAllPart(*this);
   //every move is valid
   return true;
 }
@@ -797,7 +797,7 @@ void ParticleSet::donePbyP()
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
   coordinates_->donePbyP();
   if (SK && !SK->DoUpdate)
-    SK->UpdateAllPart(*this);
+    SK->updateAllPart(*this);
   for (size_t i = 0; i < DistTables.size(); ++i)
     DistTables[i]->finalizePbyP(*this);
   activePtcl = -1;
@@ -817,7 +817,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
   if (p_leader.SK && !p_leader.SK->DoUpdate)
   {
     auto sk_list = extractSKRefList(p_list);
-    StructFact::mw_UpdateAllPart(sk_list, p_list);
+    StructFact::mw_updateAllPart(sk_list, p_list);
   }
 
   auto& dts = p_leader.DistTables;
@@ -854,7 +854,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
         DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)
-      SK->UpdateAllPart(*this);
+      SK->updateAllPart(*this);
   }
 
   activePtcl = -1;
@@ -891,7 +891,7 @@ void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
     {
 #pragma omp parallel for
       for (int iw = 0; iw < p_list.size(); iw++)
-        p_list[iw].SK->UpdateAllPart(p_list[iw]);
+        p_list[iw].SK->updateAllPart(p_list[iw]);
     }
   }
 }

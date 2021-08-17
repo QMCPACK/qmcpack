@@ -50,7 +50,7 @@ TEST_CASE("StructFact", "[lrhandler]")
 
   StructFact sk(ref, 50);
   REQUIRE(sk.getKLists().numk == 263786);
-  sk.UpdateAllPart(ref);
+  sk.updateAllPart(ref);
 
   std::vector<std::complex<double>> rhok_sum_ref{-125.80618630936, 68.199075127271};
 

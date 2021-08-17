@@ -36,20 +36,18 @@ StructFact::StructFact(const ParticleSet& P, RealType kc)
     SuperCellEnum = SUPERCELL_SLAB;
   }
 
-  UpdateNewCell(P, kc);
+  updateNewCell(P, kc);
 }
 
 //Destructor
-StructFact::~StructFact() {}
+StructFact::~StructFact() = default;
 
-void StructFact::UpdateNewCell(const ParticleSet& P, RealType kc)
+void StructFact::updateNewCell(const ParticleSet& P, RealType kc)
 {
   //Generate the lists of k-vectors
-  KLists->UpdateKLists(P.LRBox, kc);
+  KLists->updateKLists(P.LRBox, kc);
   //resize any array
   resize(P.getSpeciesSet().size(), P.getTotalNum(), KLists->numk);
-  //Compute the entire Rhok
-  FillRhok(P);
 }
 
 void StructFact::resize(int ns, int nptcl, int nkpts)
@@ -73,25 +71,25 @@ void StructFact::resize(int ns, int nptcl, int nkpts)
 }
 
 
-void StructFact::UpdateAllPart(const ParticleSet& P)
+void StructFact::updateAllPart(const ParticleSet& P)
 {
   ScopedTimer local(update_all_timer_);
-  FillRhok(P);
+  computeRhok(P);
 }
 
-void StructFact::mw_UpdateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
+void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
                                   const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& sk_leader = sk_list.getLeader();
   ScopedTimer local(sk_leader.update_all_timer_);
   for (int iw = 0; iw < sk_list.size(); iw++)
-    sk_list[iw].FillRhok(p_list[iw]);
+    sk_list[iw].computeRhok(p_list[iw]);
 }
 
 
 /** evaluate rok per species, eikr  per particle
  */
-void StructFact::FillRhok(const ParticleSet& P)
+void StructFact::computeRhok(const ParticleSet& P)
 {
   int npart = P.getTotalNum();
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -239,7 +237,7 @@ void StructFact::turnOnStorePerParticle(const ParticleSet& P)
     const int nptcl  = P.getTotalNum();
     eikr_r.resize(nptcl, KLists->numk);
     eikr_i.resize(nptcl, KLists->numk);
-    FillRhok(P);
+    computeRhok(P);
   }
 #endif
 }
