@@ -490,8 +490,7 @@ void DiracParser::getSpinors(std::istream& is)
         {
           std::cerr << "ERROR parsing line: " << std::endl;
           std::cerr << aline << std::endl;
-          std::cerr << "One of the printed AO coefficients is outside the default DIRAC print format"
-                    << std::endl;
+          std::cerr << "One of the printed AO coefficients is outside the default DIRAC print format" << std::endl;
           std::cerr << "In order to continue, please change the following in DIRAC/src/dirac/dirout.F (around line 427)"
                     << std::endl;
           std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F14.10)" << std::endl;
@@ -508,7 +507,9 @@ void DiracParser::getSpinors(std::istream& is)
           std::cerr << "ERROR parsing line: " << std::endl;
           std::cerr << aline << std::endl;
           std::cerr << "Expected line to be parsed into vector<string> of length 9" << std::endl;
-          std::cerr << "Either recompile DIRAC in DIRAC/src/dirac/dirout.F (around line 427) to avoid this issue from now on" << std::endl;
+          std::cerr
+              << "Either recompile DIRAC in DIRAC/src/dirac/dirout.F (around line 427) to avoid this issue from now on"
+              << std::endl;
           std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F14.10)" << std::endl;
           std::cerr << " to " << std::endl;
           std::cerr << "     100  FORMAT(3X,I5,2X,A12,2X,4F20.10)" << std::endl;
@@ -619,4 +620,3 @@ void DiracParser::getSpinors(std::istream& is)
     }
   }*/
 }
-

@@ -34,7 +34,7 @@ struct EGOSet : public SPOSet
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d);
 
-  SPOSet* makeClone() const override { return new EGOSet(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<EGOSet>(*this); }
 
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override {}
