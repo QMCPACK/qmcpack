@@ -749,36 +749,45 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_rt> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
+
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
-    for (int iw = 0; iw < rank_local_num_samples_; iw++)
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    const Return_rt* Dsaved         = DerivRecords_[iw];
+    for (int pm = 0; pm < getNumParams(); pm++)
     {
-      const Return_rt* restrict saved = RecordsOnNode_[iw];
-      Return_rt weight                = saved[REWEIGHT] * wgtinv;
-      const Return_rt* Dsaved         = DerivRecords_[iw];
-      for (int pm = 0; pm < getNumParams(); pm++)
-      {
-        D_avg[pm] += Dsaved[pm] * weight;
-      }
+      D_avg[pm] += Dsaved[pm] * weight;
     }
   }
 
   myComm->allreduce(D_avg);
 
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
-    for (int iw = 0; iw < rank_local_num_samples_; iw++)
-    {
-      const Return_rt* restrict saved = RecordsOnNode_[iw];
-      Return_rt weight                = saved[REWEIGHT] * wgtinv;
-      Return_rt eloc_new              = saved[ENERGY_NEW];
-      const Return_rt* Dsaved         = DerivRecords_[iw];
-      const Return_rt* HDsaved        = HDerivRecords_[iw];
-      for (int pm = 0; pm < getNumParams(); pm++)
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    Return_rt eloc_new              = saved[ENERGY_NEW];
+    const Return_rt* Dsaved         = DerivRecords_[iw];
+    const Return_rt* HDsaved        = HDerivRecords_[iw];
+
+    std::vector<int> params_per_crowd(opt_num_crowds_ + 1);
+    FairDivide(getNumParams(), opt_num_crowds_, params_per_crowd);
+
+
+    auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_rt* Dsaved,
+                                const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new, RealType H2_avg,
+                                RealType V_avg, std::vector<Return_rt>& D_avg, RealType b1, RealType b2,
+                                RealType curAvg_w, Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) {
+      int local_pm_start = crowd_ranges[crowd_id];
+      int local_pm_end   = crowd_ranges[crowd_id + 1];
+
+      for (int pm = local_pm_start; pm < local_pm_end; pm++)
       {
         Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
         Return_rt wfd = (Dsaved[pm] - D_avg[pm]) * weight;
         Return_rt vterm =
             HDsaved[pm] * (eloc_new - curAvg_w) + (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - 2.0 * curAvg_w);
-        //                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
         //                 H2
         Right(0, pm + 1) += b1 * H2_avg * vterm * weight;
         Right(pm + 1, 0) += b1 * H2_avg * vterm * weight;
@@ -788,7 +797,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
         //                 Hamiltonian
         Left(0, pm + 1) += (1 - b2) * wfe;
         Left(pm + 1, 0) += (1 - b2) * wfd * eloc_new;
-        for (int pm2 = 0; pm2 < getNumParams(); pm2++)
+        for (int pm2 = 0; pm2 < numParams; pm2++)
         {
           //                Hamiltonian
           Left(pm + 1, pm2 + 1) += (1 - b2) * wfd * (HDsaved[pm2] + (Dsaved[pm2] - D_avg[pm2]) * eloc_new);
@@ -798,14 +807,16 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
           //                Variance
           RealType varij = weight * (HDsaved[pm] - 2.0 * (Dsaved[pm] - D_avg[pm]) * eloc_new) *
               (HDsaved[pm2] - 2.0 * (Dsaved[pm2] - D_avg[pm2]) * eloc_new);
-          //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
-          //                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
           Left(pm + 1, pm2 + 1) += b2 * (varij + V_avg * ovlij);
           //                H2
           Right(pm + 1, pm2 + 1) += b1 * H2_avg * varij;
         }
       }
-    }
+    };
+
+    ParallelExecutor<> crowd_tasks;
+    crowd_tasks(opt_num_crowds_, constructMatrices, params_per_crowd, getNumParams(), Dsaved, HDsaved, weight, eloc_new,
+                H2_avg, V_avg, D_avg, b1, b2, curAvg_w, Left, Right);
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
