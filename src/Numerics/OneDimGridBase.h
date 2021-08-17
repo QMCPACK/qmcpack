@@ -38,19 +38,19 @@ struct OneDimGridBase
   typedef CT Array_t;
 
 
-  int GridTag            = 0;
-  int num_points         = 0;
-  value_type lower_bound = T();
-  value_type upper_bound = T();
+  int GridTag;
+  int num_points;
+  value_type lower_bound;
+  value_type upper_bound;
   ///differential spacing of the grid
-  value_type Delta = T();
-  double DeltaInv  = 0.;
+  value_type Delta;
+  double DeltaInv;
 
   ///array to store the radial grid data
   Array_t X;
 
 
-  inline OneDimGridBase() : num_points(0) {}
+  inline OneDimGridBase() : GridTag(0), num_points(0), lower_bound(0), upper_bound(0), Delta(0), DeltaInv(0.) {}
 
   virtual std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const = 0;
 
