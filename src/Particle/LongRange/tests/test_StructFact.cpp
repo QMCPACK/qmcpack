@@ -48,7 +48,7 @@ TEST_CASE("StructFact", "[lrhandler]")
   ref.R[2] = {0.3, 4.0, 1.4};
   ref.R[3] = {3.2, 4.7, 0.7};
 
-  StructFact sk(ref, 50);
+  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.LRBox, 50);
   REQUIRE(sk.getKLists().numk == 263786);
   sk.updateAllPart(ref);
 

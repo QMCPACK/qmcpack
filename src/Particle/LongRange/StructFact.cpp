@@ -23,49 +23,51 @@
 namespace qmcplusplus
 {
 //Constructor - pass arguments to KLists' constructor
-StructFact::StructFact(const ParticleSet& P, RealType kc)
+StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, RealType kc)
     : DoUpdate(false),
       SuperCellEnum(SUPERCELL_BULK),
       KLists(std::make_shared<KContainer>()),
+      num_ptcls(nptcls),
+      num_species(ns),
       StorePerParticle(false),
       update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
-  if (qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
+  if (qmc_common.use_ewald && lattice.SuperCellEnum == SUPERCELL_SLAB)
   {
     app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum = SUPERCELL_SLAB;
   }
 
-  updateNewCell(P, kc);
+  updateNewCell(lattice, kc);
 }
 
 //Destructor
 StructFact::~StructFact() = default;
 
-void StructFact::updateNewCell(const ParticleSet& P, RealType kc)
+void StructFact::updateNewCell(const ParticleLayout& lattice, RealType kc)
 {
   //Generate the lists of k-vectors
-  KLists->updateKLists(P.LRBox, kc);
+  KLists->updateKLists(lattice, kc);
   //resize any array
-  resize(P.getSpeciesSet().size(), P.getTotalNum(), KLists->numk);
+  resize(KLists->numk);
 }
 
-void StructFact::resize(int ns, int nptcl, int nkpts)
+void StructFact::resize(int nkpts)
 {
   phiV.resize(nkpts);
 #if defined(USE_REAL_STRUCT_FACTOR)
-  rhok_r.resize(ns, nkpts);
-  rhok_i.resize(ns, nkpts);
+  rhok_r.resize(num_species, nkpts);
+  rhok_i.resize(num_species, nkpts);
   if (StorePerParticle)
   {
-    eikr_r.resize(nptcl, nkpts);
-    eikr_i.resize(nptcl, nkpts);
+    eikr_r.resize(num_ptcls, nkpts);
+    eikr_i.resize(num_ptcls, nkpts);
   }
   eikr_r_temp.resize(nkpts);
   eikr_i_temp.resize(nkpts);
 #else
-  rhok.resize(ns, nkpts);
-  eikr.resize(nptcl, nkpts);
+  rhok.resize(num_species, nkpts);
+  eikr.resize(num_ptcls, nkpts);
   eikr_temp.resize(nkpts);
 #endif
 }

@@ -69,7 +69,7 @@ void ParticleSet::createSK()
     }
 
     app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-    SK = std::make_unique<StructFact>(*this, LRBox.LR_kc);
+    SK = std::make_unique<StructFact>(mySpecies.size(), TotalNum, LRBox, LRBox.LR_kc);
   }
 
   //set the mass array

@@ -15,10 +15,11 @@
 #define QMCPLUSPLUS_STRUCTFACT_H
 
 //#define USE_REAL_STRUCT_FACTOR
-#include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
+#include "ParticleSet.h"
+#include "DynamicCoordinates.h"
 #include "LongRange/KContainer.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {
@@ -33,6 +34,8 @@ namespace qmcplusplus
 class StructFact : public QMCTraits
 {
 public:
+  //Typedef for the lattice-type
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout_t;
   /** false, if the structure factor is not actively updated
    *
    * Default is false. Particle-by-particle update functions, makeMove,
@@ -60,17 +63,19 @@ public:
   Vector<ComplexType> eikr_temp;
 #endif
   /** Constructor - copy ParticleSet and init. k-shells
-   * @param P Reference particle set
+   * @param nptcls number of particles
+   * @param ns number of species
+   * @param lattice long range box
    * @param kc cutoff for k
    */
-  StructFact(const ParticleSet& P, RealType kc);
+  StructFact(int nptcls, int ns, const ParticleLayout& lattice, RealType kc);
   /// desructor
   ~StructFact();
 
   /** Recompute Rhok if lattice changed
    * @param kc cut-off K
    */
-  void updateNewCell(const ParticleSet& P, RealType kc);
+  void updateNewCell(const ParticleLayout& lattice, RealType kc);
   /**  Update Rhok if all particles moved
    */
   void updateAllPart(const ParticleSet& P);
@@ -115,10 +120,14 @@ private:
    * @param nptcl number of particles
    * @param nkpts
    */
-  void resize(int ns, int nptcl, int nkpts);
+  void resize(int nkpts);
 
   /// K-Vector List.
   const std::shared_ptr<KContainer> KLists;
+  /// number of particles
+  const size_t num_ptcls;
+  /// number of species
+  const size_t num_species;
   /** Whether intermediate data is stored per particle. default false
    * storing data per particle needs significant amount of memory but some calculation may request it.
    * storing data per particle specie is more cost-effective

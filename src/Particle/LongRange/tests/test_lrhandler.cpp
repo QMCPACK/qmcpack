@@ -40,10 +40,9 @@ TEST_CASE("dummy", "[lrhandler]")
   REQUIRE(Lattice.LR_rc == Approx(2.5));
   REQUIRE(Lattice.LR_kc == Approx(12));
 
-  ParticleSet ref;          // handler needs ref.SK.getKLists()
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  ParticleSet ref;       // handler needs ref.SK.getKLists()
+  ref.Lattice = Lattice; // !!!! crucial for access to Volume
+  ref.createSK();
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
   handler.initBreakup(ref);

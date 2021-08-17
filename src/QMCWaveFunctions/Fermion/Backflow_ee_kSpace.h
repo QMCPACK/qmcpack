@@ -264,7 +264,7 @@ public:
     copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
       accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const KContainer::VContainer_t& Kcart(P.SK->getKLists().kpts_cart);
+    const auto& Kcart(P.SK->getKLists().kpts_cart);
     std::vector<int>& kshell(P.SK->getKLists().kshell);
     for (int iel = 0; iel < NumTargets; iel++)
     {
@@ -302,7 +302,7 @@ public:
     copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
       accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const KContainer::VContainer_t& Kcart(P.SK->getKLists().kpts_cart);
+    const auto& Kcart(P.SK->getKLists().kpts_cart);
     std::vector<int>& kshell(P.SK->getKLists().kshell);
     GradType fact;
     HessType kakb;

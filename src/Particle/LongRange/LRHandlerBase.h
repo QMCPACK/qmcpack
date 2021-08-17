@@ -308,7 +308,7 @@ struct DummyLRHandler : public LRHandlerBase
     mRealType kcsq = LR_kc * LR_kc;
     auto& KList(ref.SK->getKLists());
     int maxshell = KList.kshell.size() - 1;
-    const KContainer::SContainer_t& kk(KList.ksq);
+    const auto& kk(KList.ksq);
     int ksh = 0, ik = 0;
     while (ksh < maxshell)
     {
