@@ -267,8 +267,10 @@ class HDFgroup(DevBase):
 
 
 class HDFreader(DevBase):
-    datasets = set(["<class 'h5py.highlevel.Dataset'>","<class 'h5py._hl.dataset.Dataset'>"])
-    groups   = set(["<class 'h5py.highlevel.Group'>","<class 'h5py._hl.group.Group'>"])
+    datasets = set(["<class 'h5py.highlevel.Dataset'>","<class 'h5py._hl.dataset.Dataset'>",
+                    "<class 'h5py._debian_h5py_serial._hl.dataset.Dataset'>"])
+    groups   = set(["<class 'h5py.highlevel.Group'>","<class 'h5py._hl.group.Group'>",
+                    "<class 'h5py._debian_h5py_serial._hl.group.Group'>"])
     
     def __init__(self,fpath,verbose=False,view=False):
         
