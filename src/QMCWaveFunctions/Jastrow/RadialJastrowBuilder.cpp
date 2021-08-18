@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "RadialJastrowBuilder.h"
-
+#include <type_traits>
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
@@ -64,6 +64,7 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
   using J1Type      = OneBodyJastrowOrbitalBspline<RadFuncType>;
+  using J1SpinType  = void;
   using J2Type      = TwoBodyJastrowOrbitalBspline<RadFuncType>;
   using DiffJ2Type  = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
@@ -339,12 +340,13 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2<RPAFunctor
   return rpajastrow;
 }
 
-template<class RadFuncType, unsigned Implementation>
+template<class RadFuncType, bool SPIN, unsigned Implementation>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ1(xmlNodePtr)");
   using Real   = typename RadFuncType::real_type;
-  using J1Type = typename JastrowTypeHelper<RadFuncType, Implementation>::J1Type;
+  using TH     = JastrowTypeHelper<RadFuncType, Implementation>;
+  using J1Type = typename std::conditional<SPIN, typename TH::J1SpinType, typename TH::J1Type>::type;
 
   XMLAttrString input_name(cur, "name");
   std::string jname = input_name.empty() ? Jastfunction : input_name;
@@ -391,7 +393,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
                       targetPtcl.getName(),
                   true);
       }
-      app_summary() << "    Radial function for element: " << speciesA << std::endl;
+      app_summary() << "    Radial function for element: " << speciesA << " - "
+                    << (speciesB.empty() ? targetPtcl.getName() : speciesB) << std::endl;
       functor->put(kids);
       app_summary() << std::endl;
       if (is_manager())
@@ -503,89 +506,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   return J1;
 }
 
-template<class RadFuncType, unsigned Implementation>
-std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1Spin(xmlNodePtr cur)
-{
-  ReportEngine PRE(ClassName, "createJ1Spin(xmlNodePtr)");
-  using RT     = typename RadFuncType::real_type;
-  using J1Type = typename JastrowTypeHelper<RadFuncType>::J1SpinType;
-
-  XMLAttrString input_name(cur, "name");
-  std::string jname = input_name.empty() ? Jastfunction : input_name;
-
-  std::unique_ptr<J1Type> J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl);
-
-  xmlNodePtr kids = cur->xmlChildrenNode;
-
-  // Find the number of the source species
-  SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
-  SpeciesSet& tSet = targetPtcl.getSpeciesSet();
-  bool success     = false;
-  bool Opt(true);
-  while (kids != NULL)
-  {
-    std::string kidsname = (char*)kids->name;
-    tolower(kidsname);
-    if (kidsname == "correlation")
-    {
-      std::string speciesA;
-      std::string speciesB;
-      RealType cusp(0);
-      OhmmsAttributeSet rAttrib;
-      rAttrib.add(speciesA, "elementType");
-      rAttrib.add(speciesA, "speciesA");
-      rAttrib.add(speciesB, "speciesB");
-      rAttrib.add(cusp, "cusp");
-      rAttrib.put(kids);
-      auto functor = std::make_unique<RadFuncType>();
-      functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-      functor->setCusp(cusp);
-      const int ig = sSet.findSpecies(speciesA);
-      const int jg = speciesB.size() ? tSet.findSpecies(speciesB) : -1;
-      if (ig == sSet.getTotalNum())
-      {
-        PRE.error("species " + speciesA + " requested for Jastrow " + jname + " does not exist in ParticleSet " +
-                      SourcePtcl->getName(),
-                  true);
-      }
-      if (jg == tSet.getTotalNum())
-      {
-        PRE.error("species " + speciesB + " requested for Jastrow " + jname + " does not exist in ParticleSet " +
-                      targetPtcl.getName(),
-                  true);
-      }
-      app_summary() << "    Radial function for species: " << speciesA << " - " << speciesB << std::endl;
-      functor->put(kids);
-      app_summary() << std::endl;
-      if (is_manager())
-      {
-        char fname[128];
-        if (speciesB.size())
-          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(),
-                  getGroupID());
-        else
-          sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
-        std::ofstream os(fname);
-        print(*functor.get(), os);
-      }
-      J1->addFunc(ig, std::move(functor), jg);
-      success = true;
-    }
-    kids = kids->next;
-  }
-  if (success)
-  {
-    J1->setOptimizable(Opt);
-    return J1;
-  }
-  else
-  {
-    PRE.error("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
-    return std::unique_ptr<WaveFunctionComponent>();
-  }
-}
-
 
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
@@ -616,15 +536,15 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       if (SpinOpt == "yes")
       {
 #if defined(QMC_CUDA)
-        return createJ1Spin<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
+        myComm->barrier_and_abort("Spin resolved bspline Jastrow is not supported in legacy CUDA build.");
 #else
-        return createJ1Spin<BsplineFunctor<RealType>>(cur);
+        return createJ1<BsplineFunctor<RealType>, true>(cur);
 #endif
       }
       else
       {
 #if defined(QMC_CUDA)
-        return createJ1<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
+        return createJ1<BsplineFunctor<RealType>, false, detail::CUDA_LEGACY>(cur);
 #else
         return createJ1<BsplineFunctor<RealType>>(cur);
 #endif
@@ -634,13 +554,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     {
       guardAgainstPBC();
       if (SpinOpt == "yes")
-      {
-        return createJ1Spin<PadeFunctor<RealType>>(cur);
-      }
+        return createJ1<PadeFunctor<RealType>, true>(cur);
       else
-      {
         return createJ1<PadeFunctor<RealType>>(cur);
-      }
     }
     else if (Jastfunction == "pade2")
     {
@@ -651,24 +567,16 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     {
       //guardAgainstPBC(); // is this needed?
       if (SpinOpt == "yes")
-      {
-        return createJ1Spin<ShortRangeCuspFunctor<RealType>>(cur);
-      }
+        return createJ1<ShortRangeCuspFunctor<RealType>, true>(cur);
       else
-      {
         return createJ1<ShortRangeCuspFunctor<RealType>>(cur);
-      }
     }
     else if (Jastfunction == "user")
     {
       if (SpinOpt == "yes")
-      {
-        return createJ1Spin<UserFunctor<RealType>>(cur);
-      }
+        return createJ1<UserFunctor<RealType>, true>(cur);
       else
-      {
         return createJ1<UserFunctor<RealType>>(cur);
-      }
     }
     else if (Jastfunction == "rpa")
     {
@@ -696,11 +604,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
                                    J2OMPTarget<BsplineFunctor<RealType>>>::value,
                       "check consistent type");
-        if(targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+        if (targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
         {
           std::ostringstream msg;
-          msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \""
-              << targetPtcl.getName() << "\" particleset" << std::endl;
+          msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"" << targetPtcl.getName()
+              << "\" particleset" << std::endl;
           myComm->barrier_and_abort(msg.str());
         }
         app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
