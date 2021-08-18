@@ -51,12 +51,12 @@ jobs:
             image: williamfgc/qmcpack-ci:ubuntu2110-serial
             options: -u 1001
             
-        - jobname: clang-openmpi-real-asan
+        - jobname: clang-real-asan
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
             
-        - jobname: clang-openmpi-complex-asan
+        - jobname: clang-complex-asan
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
