@@ -236,7 +236,7 @@ typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::updateBuffer(ParticleSet
 {
   evaluateGL(P, P.G, P.L, false);
   buf.forward(Bytes_in_WFBuffer);
-  return LogValue;
+  return log_value_;
 }
 
 template<typename FT>
@@ -579,7 +579,7 @@ void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     }
     cur_dUat[idim] = cur_g;
   }
-  LogValue += Uat[iat] - cur_Uat;
+  log_value_ += Uat[iat] - cur_Uat;
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
@@ -606,7 +606,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
   for (int iw = 0; iw < nw; iw++)
   {
     auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
-    wfc.LogValue += wfc.Uat[iat] - mw_vgl[iw][0];
+    wfc.log_value() += wfc.Uat[iat] - mw_vgl[iw][0];
   }
 
   /* this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates */
@@ -719,7 +719,7 @@ WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSe
 {
   if (fromscratch)
     recompute(P);
-  return LogValue = computeGL(G, L);
+  return log_value_ = computeGL(G, L);
 }
 
 template<typename FT>
@@ -739,14 +739,14 @@ void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCompon
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& wfc    = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
-    wfc.LogValue = wfc.computeGL(G_list[iw], L_list[iw]);
+    wfc.log_value() = wfc.computeGL(G_list[iw], L_list[iw]);
   }
 }
 
 template<typename FT>
 void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
-  LogValue = 0.0;
+  log_value_ = 0.0;
   const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
   valT dudr, d2udr2;
 
@@ -767,7 +767,7 @@ void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_ps
       auto dr   = displ[j];
       auto jg   = P.GroupID[j];
       auto uij  = F[igt + jg]->evaluate(r, dudr, d2udr2);
-      LogValue -= uij;
+      log_value_ -= uij;
       auto hess = rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
       grad_grad_psi[i] -= hess;
       grad_grad_psi[j] -= hess;

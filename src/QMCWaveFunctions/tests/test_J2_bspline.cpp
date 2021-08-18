@@ -229,6 +229,6 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   elec_.acceptMove(1);
 
   REQUIRE(std::real(ratio_1) == Approx(0.9871985577));
-  REQUIRE(std::real(j2->LogValue) == Approx(0.0883791773));
+  REQUIRE(std::real(j2->get_log_value()) == Approx(0.0883791773));
 }
 } // namespace qmcplusplus

@@ -61,7 +61,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
-  updateEng.invert_transpose(logdetT, invMat, LogValue);
+  updateEng.invert_transpose(logdetT, invMat, log_value_);
 }
 
 
@@ -237,7 +237,7 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to
   ScopedTimer local_timer(UpdateTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
-  LogValue += convertValueToLog(curRatio);
+  log_value_ += convertValueToLog(curRatio);
   updateEng.acceptRow(psiM, WorkingIndex, psiV, curRatio);
   if (!safe_to_delay)
     updateEng.updateInvMat(psiM);
@@ -324,7 +324,7 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
     // std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
 #endif
   }
-  buf.add(LogValue);
+  buf.add(log_value_);
 }
 
 template<typename DU_TYPE>
@@ -338,7 +338,7 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
     evaluateLog(P, G, L);
   else
     updateAfterSweep(P, G, L);
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DU_TYPE>
@@ -350,9 +350,9 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::upda
   {
     ScopedTimer local_timer(BufferTimer);
     buf.forward(Bytes_in_WFBuffer);
-    buf.put(LogValue);
+    buf.put(log_value_);
   }
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DU_TYPE>
@@ -362,7 +362,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
   dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
-  buf.get(LogValue);
+  buf.get(log_value_);
   // start with invRow labelled invalid
   invRow_id = -1;
   updateEng.initializeInv(psiM);
@@ -658,7 +658,7 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
       L[iat] += lap - dot(rv, rv);
     }
   }
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DU_TYPE>
@@ -672,7 +672,7 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
   {
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    LogValue      = convertValueToLog(det);
+    log_value_      = convertValueToLog(det);
   }
   else
     invertPsiM(psiM_temp, psiM);
