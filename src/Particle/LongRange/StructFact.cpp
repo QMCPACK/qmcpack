@@ -14,7 +14,7 @@
 
 
 #include "StructFact.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
 #include "CPU/BLAS.hpp"
@@ -109,7 +109,7 @@ void StructFact::FillRhok(ParticleSet& P)
       const auto& pos           = P.R[i];
       auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
       auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 #pragma omp simd
       for (int ki = 0; ki < nk; ki++)
       {

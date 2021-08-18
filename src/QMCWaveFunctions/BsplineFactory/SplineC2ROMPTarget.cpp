@@ -14,7 +14,7 @@
 #include "spline2/MultiBsplineEval.hpp"
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
-#include "config/stdlib/math.hpp"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -44,7 +44,7 @@ inline void assign_v(ST x,
   const size_t ji = jr + 1;
   //phase
   ST s, c, p = -(x * kx[index] + y * ky[index] + z * kz[index]);
-  qmcplusplus::sincos(p, &s, &c);
+  omptarget::sincos(p, &s, &c);
 
   const ST val_r        = val[jr];
   const ST val_i        = val[ji];
@@ -107,7 +107,7 @@ inline void assign_vgl(ST x,
 
   //phase
   ST s, c, p = -(x * kX + y * kY + z * kZ);
-  qmcplusplus::sincos(p, &s, &c);
+  omptarget::sincos(p, &s, &c);
 
   //dot(PrimLattice.G,myG[j])
   const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -202,7 +202,7 @@ inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
     const size_t ji = jr + 1;
     const ST val_r  = myV[jr];
     const ST val_i  = myV[ji];
-    qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
+    omptarget::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
     psi_s[jr] = val_r * c - val_i * s;
     psi_s[ji] = val_i * c + val_r * s;
   }
@@ -214,7 +214,7 @@ inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
     ST s, c;
     const ST val_r = myV[2 * j];
     const ST val_i = myV[2 * j + 1];
-    qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
+    omptarget::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
     psi_s[j] = val_r * c - val_i * s;
   }
 }
@@ -549,7 +549,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
@@ -598,7 +598,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
@@ -1050,7 +1050,7 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -1154,7 +1154,7 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -1306,7 +1306,7 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -1540,7 +1540,7 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
 
     //phase
     ST s, c;
-    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];

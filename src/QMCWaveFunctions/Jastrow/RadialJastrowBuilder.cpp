@@ -696,6 +696,13 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
                                    J2OMPTarget<BsplineFunctor<RealType>>>::value,
                       "check consistent type");
+        if(targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+        {
+          std::ostringstream msg;
+          msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \""
+              << targetPtcl.getName() << "\" particleset" << std::endl;
+          myComm->barrier_and_abort(msg.str());
+        }
         app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
         return createJ2<BsplineFunctor<RealType>, detail::OMPTARGET>(cur);
       }

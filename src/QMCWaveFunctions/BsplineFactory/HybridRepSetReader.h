@@ -22,7 +22,7 @@
 #include "Numerics/Bessel.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 //#include "QMCHamiltonians/Ylm.h"
 //#define PRINT_RADIAL

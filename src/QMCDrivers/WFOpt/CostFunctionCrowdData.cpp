@@ -23,6 +23,10 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              RandomGenerator_t& Rng)
     : e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
+  P.createResource(driverwalker_resource_collection_.pset_res);
+  Psi.createResource(driverwalker_resource_collection_.twf_res);
+  H.createResource(driverwalker_resource_collection_.ham_res);
+
   log_psi_fixed_.resize(crowd_size);
   log_psi_opt_.resize(crowd_size);
 

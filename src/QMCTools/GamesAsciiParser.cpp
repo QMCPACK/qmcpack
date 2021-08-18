@@ -35,6 +35,7 @@ GamesAsciiParser::GamesAsciiParser()
   readtype     = 0;
   NFZC         = 0;
   ECP          = false;
+  FixValence   = true;
 }
 
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
@@ -49,6 +50,7 @@ GamesAsciiParser::GamesAsciiParser(int argc, char** argv) : QMCGaussianParserBas
   SpinRestricted = true;
   readtype       = 0;
   NFZC           = 0;
+  FixValence     = true;
 }
 
 void GamesAsciiParser::parse(const std::string& fname)

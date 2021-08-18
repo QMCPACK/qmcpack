@@ -114,7 +114,7 @@ public:
   using SPOSet::acquireResource;
   using SPOSet::releaseResource;
 
-  SPOSet* makeClone() const override = 0;
+  std::unique_ptr<SPOSet> makeClone() const override = 0;
 
   void resetParameters(const opt_variables_type& active) override {}
 

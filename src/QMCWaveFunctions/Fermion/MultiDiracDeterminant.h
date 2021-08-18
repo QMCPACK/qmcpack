@@ -73,7 +73,7 @@ public:
 
   /** return a clone of Phi
    */
-  SPOSetPtr clonePhi() const;
+  std::unique_ptr<SPOSet> clonePhi() const;
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
