@@ -70,11 +70,11 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
   if (is_active)
   {
     StructFact& SK = *(P.SK);
-    Numk           = SK.KLists.numk;
+    Numk           = SK.getKLists().numk;
     gpu::host_vector<CUDA_PRECISION_FULL> kpointsHost(OHMMS_DIM * Numk);
     for (int ik = 0; ik < Numk; ik++)
       for (int dim = 0; dim < OHMMS_DIM; dim++)
-        kpointsHost[ik * OHMMS_DIM + dim] = SK.KLists.kpts_cart[ik][dim];
+        kpointsHost[ik * OHMMS_DIM + dim] = SK.getKLists().kpts_cart[ik][dim];
     kpointsGPU = kpointsHost;
     gpu::host_vector<CUDA_PRECISION_FULL> FkHost(Numk);
     for (int ik = 0; ik < Numk; ik++)

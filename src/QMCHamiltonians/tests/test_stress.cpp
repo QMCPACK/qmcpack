@@ -54,8 +54,9 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
   ions.Lattice = Lattice;
+  ions.resetGroups();
   ions.createSK();
-
+  ions.update();
 
   elec.Lattice = Lattice;
   elec.setName("elec");
@@ -75,13 +76,10 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(massIdx, upIdx)     = 1.0;
 
-  elec.createSK();
-
-  ions.resetGroups();
-
   // The call to resetGroups is needed transfer the SpeciesSet
   // settings to the ParticleSet
   elec.resetGroups();
+  elec.createSK();
 
   TrialWaveFunction psi;
 

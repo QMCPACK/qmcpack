@@ -48,16 +48,16 @@ TEST_CASE("StructFact", "[lrhandler]")
   ref.R[2] = {0.3, 4.0, 1.4};
   ref.R[3] = {3.2, 4.7, 0.7};
 
-  StructFact sk(ref, 50);
-  REQUIRE(sk.KLists.numk == 263786);
-  sk.UpdateAllPart(ref);
+  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.LRBox, 50);
+  REQUIRE(sk.getKLists().numk == 263786);
+  sk.updateAllPart(ref);
 
   std::vector<std::complex<double>> rhok_sum_ref{-125.80618630936, 68.199075127271};
 
   for (int i = 0; i < ref.groups(); i++)
   {
     std::complex<QMCTraits::RealType> rhok_sum, rhok_even_sum;
-    for (int ik = 0; ik < sk.KLists.numk; ik++)
+    for (int ik = 0; ik < sk.getKLists().numk; ik++)
       rhok_sum += std::complex<QMCTraits::RealType>(sk.rhok_r[i][ik], sk.rhok_i[i][ik]);
 
     //std::cout << std::setprecision(14) << rhok_sum << std::endl;
