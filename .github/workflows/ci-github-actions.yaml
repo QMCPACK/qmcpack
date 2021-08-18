@@ -25,8 +25,8 @@ jobs:
           gcc-openmpi-complex-coverage,
           gcc11-real-werror,
           gcc11-complex-werror,
-          clang-openmpi-real-asan,
-          clang-openmpi-complex-asan,
+          clang-real-asan,
+          clang-complex-asan,
           clang-openmpi-real-ubsan,
           clang-latest-openmp-offload
         ]
