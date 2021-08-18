@@ -62,12 +62,17 @@ public:
 
   void set_samples_and_param(int nsamples, int nparam)
   {
-    numSamples         = nsamples;
-    numParam           = nparam;
+    numSamples = nsamples;
+    numParam   = nparam;
 
     costFn.rank_local_num_samples_ = nsamples;
 
-    costFn.OptVariables.insert("var1", 1.0);
+    for (int i = 0; i < nparam; i++)
+    {
+      std::string varname = "var" + std::to_string(i);
+      costFn.OptVariables.insert(varname, 1.0);
+    }
+
     costFn.NumOptimizables = numParam;
 
     getRecordsOnNode().resize(numSamples, QMCCostFunctionBase::SUM_INDEX_SIZE);
@@ -124,6 +129,90 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
   CHECK(ham(1, 0) == Approx(0.0));
   CHECK(ham(0, 1) == Approx(-1.2));
   CHECK(ham(1, 1) == Approx(0.0));
+}
+
+struct FillData
+{
+  int numSamples;
+  int numParam;
+  double sum_wgt;
+  double sum_e_wgt;
+  double sum_esq_wgt;
+
+  std::vector<double> reweight;
+  std::vector<double> energy_new;
+
+  Matrix<double> derivRecords;
+  Matrix<double> HDerivRecords;
+
+  Matrix<double> ovlp_gold;
+  Matrix<double> ham_gold;
+};
+
+void fill_from_text(int num_opt_crowds, FillData& fd)
+{
+  int crowd_size = 1;
+
+  using Return_rt = qmcplusplus::QMCTraits::RealType;
+
+  Communicate* comm = OHMMS::Controller;
+
+  testing::LinearMethodTestSupport lin(num_opt_crowds, crowd_size, comm);
+
+  int numSamples = fd.numSamples;
+  int numParam   = fd.numParam;
+  lin.set_samples_and_param(numSamples, numParam);
+
+  std::vector<Return_rt>& SumValue           = lin.getSumValue();
+  SumValue[QMCCostFunctionBase::SUM_WGT]     = fd.sum_wgt;
+  SumValue[QMCCostFunctionBase::SUM_E_WGT]   = fd.sum_e_wgt;
+  SumValue[QMCCostFunctionBase::SUM_ESQ_WGT] = fd.sum_esq_wgt;
+
+  auto& RecordsOnNode = lin.getRecordsOnNode();
+  for (int iw = 0; iw < numSamples; iw++)
+  {
+    RecordsOnNode(iw, QMCCostFunctionBase::REWEIGHT)   = fd.reweight[iw];
+    RecordsOnNode(iw, QMCCostFunctionBase::ENERGY_NEW) = fd.energy_new[iw];
+  }
+
+  auto& derivRecords = lin.getDerivRecords();
+  derivRecords       = fd.derivRecords;
+
+  auto& HDerivRecords = lin.getHDerivRecords();
+  HDerivRecords       = fd.HDerivRecords;
+
+  int N = numParam + 1;
+  Matrix<Return_rt> ham(N, N);
+  Matrix<Return_rt> ovlp(N, N);
+  lin.costFn.fillOverlapHamiltonianMatrices(ham, ovlp);
+
+  for (int iw = 0; iw < numParam; iw++)
+  {
+    for (int iw2 = 0; iw2 < numParam; iw2++)
+    {
+      //app_log() << "iw = " << iw << " iw2 = " << iw2 << " ovlp = " << ovlp(iw,iw2) << " " << ovlp_gold(iw,iw2);
+      //app_log() << " ham = " << ham(iw,iw2) << " " << ham_gold(iw,iw2) << std::endl;
+      CHECK(ovlp(iw, iw2) == Approx(fd.ovlp_gold(iw, iw2)));
+      CHECK(ham(iw, iw2) == Approx(fd.ham_gold(iw, iw2)));
+    }
+  }
+}
+
+#include "diamond_fill_data.h"
+
+TEST_CASE("fillfromText", "[drivers]")
+{
+  FillData fd;
+
+  // Generated from short-diamondC_1x1x1_pp-opt_sdj-1-16 with 1 thread and 10 samples
+  // And the bsplines sizes were reduced from 8 to 4 to give a total of 12 parameters
+  get_diamond_fill_data(fd);
+
+  // Test for 1 and 2 crowds (threads)
+  for (int num_opt_crowds = 1; num_opt_crowds < 3; num_opt_crowds++)
+  {
+    fill_from_text(num_opt_crowds, fd);
+  }
 }
 
 
