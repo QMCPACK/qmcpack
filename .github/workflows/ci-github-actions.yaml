@@ -23,6 +23,8 @@ jobs:
         jobname: [
           gcc-openmpi-real-coverage,
           gcc-openmpi-complex-coverage,
+          gcc11-real-werror,
+          gcc11-complex-werror,
           clang-openmpi-real-asan,
           clang-openmpi-complex-asan,
           clang-openmpi-real-ubsan,
@@ -37,6 +39,16 @@ jobs:
         - jobname: gcc-openmpi-complex-coverage
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+            options: -u 1001
+        
+        - jobname: gcc11-real-werror
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu2110-serial
+            options: -u 1001
+        
+        - jobname: gcc11-complex-werror
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu2110-serial
             options: -u 1001
             
         - jobname: clang-openmpi-real-asan
