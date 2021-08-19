@@ -65,7 +65,7 @@ QMCMain::QMCMain(Communicate* c)
   Communicate node_comm;
   node_comm.initializeAsNodeComm(*OHMMS::Controller);
   // assign accelerators within a node
-  DeviceManager::global = std::make_unique<DeviceManager>(node_comm.rank(), node_comm.size());
+  DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
   app_summary() << "\n=====================================================\n"
                 << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -88,7 +88,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
-      << "\n  Accelerators per node     = " << DeviceManager::global->getNumDevices()
+      << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
   // clang-format on

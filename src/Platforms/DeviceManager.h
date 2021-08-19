@@ -41,13 +41,13 @@ namespace qmcplusplus
  * DeviceManager assumes there is only one type of accelerators although they may support multiple
  * platforms. Under this assumption, the numbers of devices captured on all the platforms must agree.
  *
- * DeviceManager::global is intended to the per-process singleton and should be initialized after
- * MPI initialization in main().
+ * DeviceManager::global is intended to the per-process global instance and should be initialized
+ * after MPI initialization in main().
  */
 class DeviceManager
 {
 public:
-  /* constructor
+  /** constructor
    * @param local_rank the rank id of the node local MPI communicator
    * @param local_size the size of the node local MPI communicator
    */
@@ -66,10 +66,16 @@ public:
   const auto& getOMPDM() const { return omptarget_dm_; }
 #endif
 
-  /// the global singleton which can be used to query default devices and all the captured devices.
-  static std::unique_ptr<DeviceManager> global;
+  /** initialize the global instance of DeviceManager
+   * arguments are the same as the constructor
+   */
+  static void initializeGlobalDeviceManager(int local_rank, int local_size);
+  /// global instance accessor
+  static const DeviceManager& getGlobal();
 
 private:
+  /// the global singleton which can be used to query default devices and all the captured devices.
+  static std::unique_ptr<DeviceManager> global;
   // the id of default device. Must be defined before platform device manager objects
   int default_device_num;
   // the number of devices. Must be defined before platform device manager objects

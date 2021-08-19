@@ -13,6 +13,7 @@
 
 #include "DeviceManager.h"
 #include <memory>
+#include <stdexcept>
 #include "Host/OutputManager.h"
 
 namespace qmcplusplus
@@ -42,4 +43,20 @@ DeviceManager::~DeviceManager() = default;
 
 std::unique_ptr<DeviceManager> DeviceManager::global;
 
+void DeviceManager::initializeGlobalDeviceManager(int local_rank, int local_size)
+{
+  // throw error on subsequent calls to initializeGlobalDeviceManager
+  // if the desired behavior is no-op. std::call_once can be used.
+  if (global)
+    throw std::runtime_error(
+        "DeviceManager::initializeGlobalDeviceManager the global instance cannot be initialized again.");
+  global = std::make_unique<DeviceManager>(local_rank, local_size);
+}
+
+const DeviceManager& DeviceManager::getGlobal()
+{
+  if (!global)
+    throw std::runtime_error("DeviceManager::getGlobal cannot access initialized the global instance.");
+  return *global;
+}
 } // namespace qmcplusplus
