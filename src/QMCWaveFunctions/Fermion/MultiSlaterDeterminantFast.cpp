@@ -156,13 +156,13 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(cons
       Dets[id]->evaluateForWalkerMove(P);
   }
 
-  LogValue = evaluate_vgl_impl(P, myG, myL);
+  log_value_ = evaluate_vgl_impl(P, myG, myL);
 
   G += myG;
   for (size_t i = 0; i < L.size(); i++)
     L[i] += myL[i] - dot(myG[i], myG[i]);
 
-  return LogValue;
+  return log_value_;
 }
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P,
@@ -708,7 +708,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
   ScopedTimer local_timer(AccRejTimer);
   // update psi_ratio_to_ref_det_,myG_temp,myL_temp
   psi_ratio_to_ref_det_ = new_psi_ratio_to_new_ref_det_;
-  LogValue += convertValueToLog(curRatio);
+  log_value_ += convertValueToLog(curRatio);
   curRatio = 1.0;
 
   Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
@@ -730,7 +730,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->registerData(P, buf);
 
-  buf.add(LogValue);
+  buf.add(log_value_);
   buf.add(psi_ratio_to_ref_det_);
 }
 
@@ -743,16 +743,16 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->updateBuffer(P, buf, fromscratch);
 
-  LogValue = evaluate_vgl_impl(P, myG, myL);
+  log_value_ = evaluate_vgl_impl(P, myG, myL);
 
   P.G += myG;
   for (int i = 0; i < P.L.size(); i++)
     P.L[i] += myL[i] - dot(myG[i], myG[i]);
 
-  buf.put(LogValue);
+  buf.put(log_value_);
   buf.put(psi_ratio_to_ref_det_);
 
-  return LogValue;
+  return log_value_;
 }
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
@@ -761,7 +761,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
 
-  buf.get(LogValue);
+  buf.get(log_value_);
   buf.get(psi_ratio_to_ref_det_);
 }
 

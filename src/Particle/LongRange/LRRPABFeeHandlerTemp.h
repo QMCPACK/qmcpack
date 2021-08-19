@@ -71,7 +71,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice)
   {
     myFunc.reset(ref);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.SK->getKLists());
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -82,7 +82,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
   void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.SK->getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -92,7 +92,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     rs = rs_ext;
     myFunc.reset(ref, rs);
     InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.SK->getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -238,7 +238,7 @@ private:
     }
   }
 
-  void fillFk(KContainer& KList)
+  void fillFk(const KContainer& KList)
   {
     Fk.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);

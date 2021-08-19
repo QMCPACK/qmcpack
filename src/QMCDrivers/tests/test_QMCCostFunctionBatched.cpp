@@ -105,7 +105,7 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
   auto& derivRecords = lin.getDerivRecords();
   derivRecords(0, 0) = 1.1;
 
-  auto& HDerivRecords = lin.getDerivRecords();
+  auto& HDerivRecords = lin.getHDerivRecords();
   HDerivRecords(0, 0) = -1.2;
 
   int N = numParam + 1;
@@ -122,7 +122,7 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
   CHECK(ham(0, 0) == Approx(-1.3));
   // With one sample, values are always zero
   CHECK(ham(1, 0) == Approx(0.0));
-  CHECK(ham(0, 1) == Approx(0.0));
+  CHECK(ham(0, 1) == Approx(-1.2));
   CHECK(ham(1, 1) == Approx(0.0));
 }
 

@@ -99,9 +99,9 @@ public:
     return 2.0 * Sigma * std::exp(-Sigma * Sigma * r * r) / (std::sqrt(M_PI) * r) - erf(Sigma * r) * rinv * rinv;
   }
 
-  void fillFk(KContainer& KList);
+  void fillFk(const KContainer& KList);
 
-  void fillYkgstrain(KContainer& KList)
+  void fillYkgstrain(const KContainer& KList)
   {
     Fkgstrain.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
@@ -114,7 +114,7 @@ public:
     }
   }
 
-  void filldFk_dk(KContainer& KList)
+  void filldFk_dk(const KContainer& KList)
   {
     dFk_dstrain.resize(KList.kpts_cart.size());
 

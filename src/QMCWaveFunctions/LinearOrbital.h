@@ -52,8 +52,8 @@ public:
       G[i] = coeff;
     }
     L        = 0.0;
-    LogValue = convertValueToLog(v);
-    return LogValue;
+    log_value_ = convertValueToLog(v);
+    return log_value_;
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}

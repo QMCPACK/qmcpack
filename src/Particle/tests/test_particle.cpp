@@ -130,59 +130,60 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
-  ParticleSet source;
-
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   // PPP case
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true;
-  Lattice.R(0)      = 1.0;
-  Lattice.R(1)      = 2.0;
-  Lattice.R(2)      = 3.0;
-
-  Lattice.R(3) = 0.0;
-  Lattice.R(4) = 1.0;
-  Lattice.R(5) = 0.0;
-
-  Lattice.R(6) = 0.0;
-  Lattice.R(7) = 0.0;
-  Lattice.R(8) = 1.0;
+  Lattice.R = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
   Lattice.VacuumScale = 2.0;
   Lattice.reset();
+  {
+    ParticleSet source;
+    source.setName("electrons");
+    source.Lattice = Lattice;
+    source.createSK();
 
-  source.setName("electrons");
-  source.Lattice = Lattice;
-  source.createSK();
-
-  REQUIRE(source.LRBox.R(0, 0) == 1.0);
-  REQUIRE(source.LRBox.R(0, 1) == 2.0);
-  REQUIRE(source.LRBox.R(0, 2) == 3.0);
+    CHECK(Lattice.SuperCellEnum == SUPERCELL_BULK);
+    CHECK(source.LRBox.R(0, 0) == 1.0);
+    CHECK(source.LRBox.R(0, 1) == 2.0);
+    CHECK(source.LRBox.R(0, 2) == 3.0);
+  }
 
   // PPN case
   Lattice.BoxBConds[2] = false;
   Lattice.reset();
-  source.Lattice = Lattice;
-  source.createSK();
+  {
+    ParticleSet source;
+    source.setName("electrons");
+    source.Lattice = Lattice;
+    source.createSK();
 
-  REQUIRE(source.LRBox.R(2, 0) == 0.0);
-  REQUIRE(source.LRBox.R(2, 1) == 0.0);
-  REQUIRE(source.LRBox.R(2, 2) == 2.0);
+    CHECK(Lattice.SuperCellEnum == SUPERCELL_SLAB);
+    CHECK(source.LRBox.R(2, 0) == 0.0);
+    CHECK(source.LRBox.R(2, 1) == 0.0);
+    CHECK(source.LRBox.R(2, 2) == 2.0);
+  }
 
   // PNN case
   Lattice.BoxBConds[1] = false;
   Lattice.reset();
-  source.Lattice = Lattice;
-  source.createSK();
+  {
+    ParticleSet source;
+    source.setName("electrons");
+    source.Lattice = Lattice;
+    source.createSK();
 
-  REQUIRE(source.LRBox.R(0, 0) == 1.0);
-  REQUIRE(source.LRBox.R(0, 1) == 2.0);
-  REQUIRE(source.LRBox.R(0, 2) == 3.0);
-  REQUIRE(source.LRBox.R(1, 0) == 0.0);
-  REQUIRE(source.LRBox.R(1, 1) == 2.0);
-  REQUIRE(source.LRBox.R(1, 2) == 0.0);
-  REQUIRE(source.LRBox.R(2, 0) == 0.0);
-  REQUIRE(source.LRBox.R(2, 1) == 0.0);
-  REQUIRE(source.LRBox.R(2, 2) == 2.0);
+    CHECK(Lattice.SuperCellEnum == SUPERCELL_WIRE);
+    CHECK(source.LRBox.R(0, 0) == 1.0);
+    CHECK(source.LRBox.R(0, 1) == 2.0);
+    CHECK(source.LRBox.R(0, 2) == 3.0);
+    CHECK(source.LRBox.R(1, 0) == 0.0);
+    CHECK(source.LRBox.R(1, 1) == 2.0);
+    CHECK(source.LRBox.R(1, 2) == 0.0);
+    CHECK(source.LRBox.R(2, 0) == 0.0);
+    CHECK(source.LRBox.R(2, 1) == 0.0);
+    CHECK(source.LRBox.R(2, 2) == 2.0);
+  }
 }
 
 } // namespace qmcplusplus
