@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -35,6 +35,7 @@ TEST_CASE("ParallelExecutor<OPENMP> function case", "[concurrency]")
 TEST_CASE("ParallelExecutor<OPENMP> lambda case", "[concurrency]")
 {
   const int num_threads = omp_get_max_threads();
+  std::cout << "omp_get_max_threads() == " << num_threads << '\n';
   ParallelExecutor<Executor::OPENMP> test_block;
   int count(0);
   test_block(
@@ -49,7 +50,7 @@ TEST_CASE("ParallelExecutor<OPENMP> lambda case", "[concurrency]")
 
 // Sadly this test case is not straight forward with openmp
 // Wouldn't be with std::thread either both call terminate when
-// the exception is not
+// the exception is not caught
 //
 TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
 {
