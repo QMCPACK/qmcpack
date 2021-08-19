@@ -11,6 +11,9 @@
 
 #include "catch.hpp"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "FillData.h"
+// Input data and gold data for fillFromText test
+#include "diamond_fill_data.h"
 
 
 namespace qmcplusplus
@@ -131,26 +134,12 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
   CHECK(ham(1, 1) == Approx(0.0));
 }
 
-struct FillData
-{
-  int numSamples;
-  int numParam;
-  double sum_wgt;
-  double sum_e_wgt;
-  double sum_esq_wgt;
-
-  std::vector<double> reweight;
-  std::vector<double> energy_new;
-
-  Matrix<double> derivRecords;
-  Matrix<double> HDerivRecords;
-
-  Matrix<double> ovlp_gold;
-  Matrix<double> ham_gold;
-};
-
+// Test QMCCostFunctionBatched::fillOverlapHamiltonianMatrices
+// Inputs are the number of crowds (threads) and
+// the input/gold data (from a file created by convert_hdf_to_cpp.py)
 void fill_from_text(int num_opt_crowds, FillData& fd)
 {
+  // Not used in the function under test
   int crowd_size = 1;
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
@@ -198,8 +187,9 @@ void fill_from_text(int num_opt_crowds, FillData& fd)
   }
 }
 
-#include "diamond_fill_data.h"
 
+// Test fillOverlapHamiltonianMatrices function using gold data
+// This can test the parallelization of that function using different numbers of crowds
 TEST_CASE("fillfromText", "[drivers]")
 {
   FillData fd;

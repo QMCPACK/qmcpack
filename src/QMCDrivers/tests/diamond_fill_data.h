@@ -2,7 +2,7 @@
 // Generated with convert_hdf_to_cpp.py
 // clang-format off
 
-void get_diamond_fill_data(FillData &fd)
+void get_diamond_fill_data(qmcplusplus::FillData &fd)
 {
   fd.numSamples = 10;
   fd.numParam = 12;
