@@ -41,10 +41,10 @@ SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(const Par
                                                                        ParticleSet::ParticleLaplacian_t& L)
 {
   BFTrans->evaluate(P);
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->evaluateLog(P, G, L);
-  return LogValue;
+    log_value_ += Dets[i]->evaluateLog(P, G, L);
+  return log_value_;
 }
 
 void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
@@ -61,10 +61,10 @@ SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(Particle
   //BFTrans->updateBuffer(P,buf,fromscratch);
   BFTrans->updateBuffer(P, buf, fromscratch);
   //BFTrans->evaluate(P);
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
-  return LogValue;
+    log_value_ += Dets[i]->updateBuffer(P, buf, fromscratch);
+  return log_value_;
 }
 
 void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)

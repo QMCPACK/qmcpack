@@ -235,10 +235,10 @@ RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)
 {
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Psi.size(); i++)
-    LogValue += Psi[i]->evaluateLog(P, G, L);
-  return LogValue;
+    log_value_ += Psi[i]->evaluateLog(P, G, L);
+  return log_value_;
 }
 
 RPAJastrow::PsiValueType RPAJastrow::ratio(ParticleSet& P, int iat)
@@ -288,10 +288,10 @@ void RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 
 RPAJastrow::LogValueType RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Psi.size(); i++)
-    LogValue += Psi[i]->updateBuffer(P, buf, fromscratch);
-  return LogValue;
+    log_value_ += Psi[i]->updateBuffer(P, buf, fromscratch);
+  return log_value_;
 }
 
 void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
