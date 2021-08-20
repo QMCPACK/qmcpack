@@ -48,10 +48,6 @@ TEST_CASE("ParallelExecutor<OPENMP> lambda case", "[concurrency]")
   REQUIRE(count == num_threads);
 }
 
-// Sadly this test case is not straight forward with openmp
-// Wouldn't be with std::thread either both call terminate when
-// the exception is not caught
-//
 TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
 {
   int num_threads = 1;
