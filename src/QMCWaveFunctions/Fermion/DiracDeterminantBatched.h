@@ -22,7 +22,7 @@
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
 #endif
-#include "Fermion/DeterminantAllocators.hpp"
+#include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
 

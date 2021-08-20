@@ -21,7 +21,7 @@
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
-#include "Fermion/DeterminantAllocators.hpp"
+#include "DualAllocatorAliases.hpp"
 #include "CUDA/CUDALinearAlgebraHandles.h"
 #include "ResourceCollection.h"
 

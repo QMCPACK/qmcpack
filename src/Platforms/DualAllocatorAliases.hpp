@@ -11,16 +11,17 @@
 // -*- C++ -*-
 /** @file
  *  These allocators are to make code that should be 
- *  generic with the respect to accelerator code flavor actually so.
+ *  generic with the respect to accelerator code flavor actually so,
+ *  but only through configuration time switches.
  *  A DualAllocator as in DualAllocator.hpp constructed of a Host and Device allocator
  *  or a OMPallocator which leverages the OMP runtime magic to map host and implicit device data
  *  if offload is enabled or is just a host allocator otherwise.
  */
 
-#ifndef QMCPLUSPLUS_DETERMINANT_ALLOCATORS_HPP
-#define QMCPLUSPLUS_DETERMINANT_ALLOCATORS_HPP
+#ifndef QMCPLUSPLUS_DUAL_ALLOCATOR_ALIASES_HPP
+#define QMCPLUSPLUS_DUAL_ALLOCATOR_ALIASES_HPP
 
-#include "Platforms/PinnedAllocator.h"
+#include "PinnedAllocator.h"
 
 #if defined(ENABLE_CUDA) && ! defined(ENABLE_OFFLOAD)
 #include "DualAllocator.hpp"
