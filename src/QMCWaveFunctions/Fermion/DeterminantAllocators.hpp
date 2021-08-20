@@ -4,13 +4,17 @@
 //
 // Copyright (c) 2021 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// Filef developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
-// Refactored from: OMPallocator.hpp
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file
- *  These allocators are problematic to maintain consistency of
+ *  These allocators are to make code that should be 
+ *  generic with the respect to accelerator code flavor actually so.
+ *  A DualAllocator as in DualAllocator.hpp constructed of a Host and Device allocator
+ *  or a OMPallocator which leverages the OMP runtime magic to map host and implicit device data
+ *  if offload is enabled or is just a host allocator otherwise.
  */
 
 #ifndef QMCPLUSPLUS_DETERMINANT_ALLOCATORS_HPP
