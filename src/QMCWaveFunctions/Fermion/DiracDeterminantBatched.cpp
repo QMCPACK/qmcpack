@@ -933,7 +933,7 @@ DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCo
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::createResource(ResourceCollection& collection) const
 {
-  auto resource_index = collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource<Value,FullPrecValue>>());
+  auto resource_index = collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   Phi->createResource(collection);
   det_engine_.createResource(collection);
 }
@@ -942,7 +942,7 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  auto res_ptr = dynamic_cast<DiracDeterminantBatchedMultiWalkerResource<Value,FullPrecValue>*>(collection.lendResource().release());
+  auto res_ptr = dynamic_cast<DiracDeterminantBatchedMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("DiracDeterminantBatched::acquireResource dynamic_cast failed");
   wfc_leader.mw_res_.reset(res_ptr);

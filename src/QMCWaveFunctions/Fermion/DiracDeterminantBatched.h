@@ -23,65 +23,47 @@
 #include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
 #endif
 #include "Fermion/DeterminantAllocators.hpp"
-#include "OMPTarget/OMPallocator.hpp"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
-template<typename VALUE, typename VALUE_FP>
-struct DiracDeterminantBatchedMultiWalkerResource : public Resource
-{
-  using GradType     = QMCTraits::GradType;
-  using Real         = RealAlias<VALUE>;
-  using FullPrecReal = RealAlias<VALUE_FP>;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadVGLVector_t     = VectorSoaContainer<VALUE, QMCTraits::DIM + 2, OffloadPinnedAllocator<VALUE>>;
-  // I don't think its a good idea create a hard dependency all the way back to WaveFunctionComponent for this.
-  using LogValue                    = std::complex<FullPrecReal>;
-  using OffloadPinnedLogValueVector = Vector<LogValue, OffloadPinnedAllocator<LogValue>>;
-
-  DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
-
-  DiracDeterminantBatchedMultiWalkerResource(const DiracDeterminantBatchedMultiWalkerResource&)
-      : DiracDeterminantBatchedMultiWalkerResource()
-  {}
-
-  Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
-
-  OffloadPinnedLogValueVector log_values;
-  /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
-  OffloadVGLVector_t phi_vgl_v;
-  // multi walker of ratio
-  std::vector<VALUE> ratios_local;
-  // multi walker of grads
-  std::vector<GradType> grad_new_local;
-};
 
 template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
-  using WFT      = typename DET_ENGINE::WFT;
-  using Value    = typename WFT::Value;
+  using WFT           = typename DET_ENGINE::WFT;
+  using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;
-  using PsiValue = typename WFT::PsiValue;
-  using LogValue = typename WFT::LogValue;
-  using Grad        = typename WFT::Grad;
-  using Hess        = typename WFT::Hess;
-  using Real        = typename WFT::Real;
-  using FullPrecGrad   = TinyVector<FullPrecValue, DIM>;
-  using DetEngine = DET_ENGINE;
+  using PsiValue      = typename WFT::PsiValue;
+  using LogValue      = typename WFT::LogValue;
+  using Grad          = typename WFT::Grad;
+  using Hess          = typename WFT::Hess;
+  using Real          = typename WFT::Real;
+  using FullPrecGrad  = TinyVector<FullPrecValue, DIM>;
   template<typename DT>
-  using OffloadPinnedAllocator        = PinnedDualAllocator<DT>;
-  using OffloadPinnedValueVector    = Vector<Value, OffloadPinnedAllocator<Value>>;
-  using OffloadPinnedLogValueVector = Vector<LogValue, OffloadPinnedAllocator<LogValue>>;
-  using OffloadPinnedValueMatrix      = Matrix<Value, OffloadPinnedAllocator<Value>>;
-  using OffloadPinnedPsiValueVector = Vector<typename WFT::PsiValue, OffloadPinnedAllocator<typename WFT::PsiValue>>;
-  using OffloadPinnedGradVector       = Vector<Grad, OffloadPinnedAllocator<Grad>>;
-  using OffloadPinnedGradMatrix       = Matrix<Grad, OffloadPinnedAllocator<Grad>>;
-  using OffloadVGLVector            = VectorSoaContainer<Value, DIM + 2, OffloadPinnedAllocator<Value>>;
+  using PinnedVector = Vector<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
+  using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
+
+  struct DiracDeterminantBatchedMultiWalkerResource : public Resource
+  {
+    DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
+    DiracDeterminantBatchedMultiWalkerResource(const DiracDeterminantBatchedMultiWalkerResource&)
+        : DiracDeterminantBatchedMultiWalkerResource()
+    {}
+
+    Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
+    PinnedVector<LogValue> log_values;
+    /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
+    DualVGLVector phi_vgl_v;
+    // multi walker of ratio
+    std::vector<Value> ratios_local;
+    // multi walker of grads
+    std::vector<Grad> grad_new_local;
+  };
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -233,7 +215,7 @@ public:
   Matrix<Value> psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
-  OffloadVGLVector psiM_vgl;
+  DualVGLVector psiM_vgl;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   Matrix<Value> psiM_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
@@ -250,7 +232,7 @@ public:
   Matrix<Hess> grad_phi_alpha_Minv;
 
   /// value of single-particle orbital for particle-by-particle update
-  OffloadPinnedValueVector psiV;
+  PinnedVector<Value> psiV;
   Vector<Value> psiV_host_view;
   Vector<Grad> dpsiV;
   Vector<Value> d2psiV;
@@ -261,7 +243,7 @@ public:
   // psi(r')/psi(r) during a PbyP move
   PsiValue curRatio;
 
-  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource<Value, FullPrecValue>> mw_res_;
+  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
 
 private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
@@ -286,7 +268,7 @@ private:
           << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
              "but only unit tests (expected)."
           << std::endl;
-      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource<Value, FullPrecValue>>();
+      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource>();
     }
   }
 
