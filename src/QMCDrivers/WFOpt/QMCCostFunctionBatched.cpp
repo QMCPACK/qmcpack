@@ -719,6 +719,17 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 }
 
 
+// Construct the overlap and Hamiltonian matrices for the linear method
+// A sum over samples.  Inputs are
+//   DerivRecords - derivative of log psi ( d ln (psi) / dp = 1/psi * d psi / dp )
+//   HDerivRecords - derivative of Hamiltonian
+//   RecordsOnNode - energies and weights (for reweighting)
+//   SumValue - sums of energies and weights
+// Outputs
+//   Left - Hamiltonian matrix
+//   Right - overlap matrix
+//
+
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                                          Matrix<Return_rt>& Right)
 {
