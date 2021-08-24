@@ -33,7 +33,6 @@ QMCState::QMCState()
   use_ewald              = false;
   qmc_counter            = 0;
   memory_allocated       = 0;
-  default_accelerator_id = -1;
 }
 
 void QMCState::initialize(int argc, char** argv)
