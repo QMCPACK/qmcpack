@@ -19,7 +19,7 @@
 
 set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
 
-set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp)
+set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
 
 add_library(platform_host ${HOST_SRCS})
 

@@ -48,7 +48,7 @@ struct NLjob
 #endif
 
 ///forward declaration
-struct WaveFunctionComponent;
+class WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
 
@@ -69,8 +69,9 @@ class ResourceCollection;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-struct WaveFunctionComponent : public QMCTraits
+class WaveFunctionComponent : public QMCTraits
 {
+public:
   /** enum for a update mode */
   enum
   {
@@ -107,9 +108,6 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** current update mode */
   int UpdateMode;
-  /** current \f$\log\phi \f$
-   */
-  LogValueType LogValue;
   /** Pointer to the differential WaveFunctionComponent of this object
    *
    * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
@@ -128,6 +126,16 @@ struct WaveFunctionComponent : public QMCTraits
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
+protected:
+  /** current \f$\log\phi \f$
+   */
+  LogValueType log_value_;
+
+public:
+  const LogValueType get_log_value() const { return log_value_; }
+  LogValueType& log_value() { return log_value_; }
+  
+  
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
   ///default destructor
@@ -139,7 +147,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d);
 
   ///assembles the full value
-  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }
+  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -476,7 +484,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
-    RealType myrat = std::real(LogToValue<PsiValueType>::convert(LogValue));
+    RealType myrat = std::real(LogToValue<PsiValueType>::convert(log_value_));
     for (int j = 0; j < myVars.size(); j++)
     {
       int loc = myVars.where(j);

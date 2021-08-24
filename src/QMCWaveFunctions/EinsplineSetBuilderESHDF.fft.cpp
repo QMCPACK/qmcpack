@@ -182,6 +182,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     const auto& ii_table = SourcePtcl->getDistTable(table_id);
     SourcePtcl->update(true);
     for (int i = 0; i < IonPos.size(); i++)
+    {
+      AtomicCentersInfo.non_overlapping_radius[i] = std::numeric_limits<RealType>::max();
+      //should only call get_first_neighbor to set non_overlapping_radius if there are more than one atom  in the cell
+      if (Super2Prim.size() == 1)
+        continue;
       for (int j = 0; j < Super2Prim.size(); j++)
         if (Super2Prim[j] == i)
         {
@@ -205,6 +210,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
           AtomicCentersInfo.non_overlapping_radius[i] = 0.5 * r;
           break;
         }
+    }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
     const int inner_cutoff_ind   = SourcePtcl->mySpecies.findAttribute("inner_cutoff");

@@ -140,7 +140,7 @@ template<typename T, typename INVT = double>
 struct DiracDet
 {
   ///log|det|
-  std::complex<INVT> LogValue;
+  std::complex<INVT> log_value;
   ///current ratio
   INVT curRatio;
   ///workspace size
@@ -182,7 +182,7 @@ struct DiracDet
     psiMsave -= shift;
 
     transpose(psiMsave.data(), psiM.data(), nels, nels);
-    InvertWithLog(psiM.data(), nels, nels, work.data(), LWork, pivot.data(), LogValue);
+    InvertWithLog(psiM.data(), nels, nels, work.data(), LWork, pivot.data(), log_value);
     copy_n(psiM.data(), nels * nels, psiMinv.data());
 
     if (omp_get_num_threads() == 1)
@@ -245,8 +245,8 @@ struct DiracDet
           std::complex<INVT> newlog;
           InvertWithLog(psiM.data(), nels, nels, work.data(), pivot.data(), newlog);
 
-          ratio_full = std::exp(std::real(newlog - LogValue));
-          LogValue   = newlog;
+          ratio_full = std::exp(std::real(newlog - log_value));
+          log_value   = newlog;
           double err = r / ratio_full - 1;
           ratio_error += err;
 #pragma omp master
