@@ -32,7 +32,7 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPO
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
-  static_assert(std::is_same<SPOSet::ValueType, DET_ENGINE::Value>::value);
+  static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
 }
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
@@ -334,8 +334,11 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
+  // This is actually dual so there is a point.
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
+  // Since this is also just a std::vector<ValueType> what is the point
   auto& ratios_local   = mw_res.ratios_local;
+  // Since this is also just a std::vector<GradType> what is the point
   auto& grad_new_local = mw_res.grad_new_local;
   {
     ScopedTimer local_timer(SPOVGLTimer);
