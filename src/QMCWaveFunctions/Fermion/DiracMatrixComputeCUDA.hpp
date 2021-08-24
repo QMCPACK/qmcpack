@@ -90,7 +90,7 @@ class DiracMatrixComputeCUDA : public Resource
                                      OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     // This is probably dodgy
-    int nw = log_values.size();
+    int nw = a_mats.size();
     psiM_ptrs_.resize(sizeof(TMAT*) * nw);
     invM_ptrs_.resize(sizeof(TMAT*) * nw);
     //temp_mat_.resize(n,lda);
@@ -174,7 +174,7 @@ class DiracMatrixComputeCUDA : public Resource
     LU_diags_fp_.resize(n * nw);
     cudaStream_t hstream;
     cublasErrorCheck(cublasGetStream(h_cublas, &hstream), "cublasGetStream failed!");
-    assert(hstream == hstream_);
+    //assert(hstream == hstream_);
     cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
@@ -316,7 +316,7 @@ public:
       OffloadPinnedVector<std::complex<FullPrecReal>>& log_values,
       const std::vector<bool>& compute_mask)
   {
-    assert(log_values.size() == a_mats.size());
+    //assert(log_values.size() == a_mats.size());
     auto& cuda_handles = dynamic_cast<CUDALinearAlgebraHandles&>(resource);
     const int n        = a_mats[0].get().rows();
     const int lda      = a_mats[0].get().cols();

@@ -134,6 +134,14 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   dpsiM_views.reserve(nw);
   d2psiM_views.reserve(nw);
 
+  // Must return early since illegal access to wfc_list etc. will otherwise occur.
+  if(wfc_list.size() == 0)
+    return;
+
+  // Now you might think the point of the recompute mask is to leave the psiM_temp_views and whatnot untouched.
+  // but instead we just filter and pass smaller refvectors. Also this seems to be done elsewhere as well
+  // since a size 0 wfc_list can arrive here.
+  // All of this complicates data move minimization since any state in "mw_res_" data is untrustworthy.
   for (int iw = 0; iw < nw; iw++)
     if (recompute_mask[iw])
     {
@@ -153,6 +161,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
 
   {
     ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
+    // arguments here seem inconsistent, but there clearly is no effective unit test.
     wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
                                             psiM_temp_list, dpsiM_list, d2psiM_list);
   }

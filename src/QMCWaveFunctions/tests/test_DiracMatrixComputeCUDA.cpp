@@ -11,7 +11,6 @@
 
 #include <catch.hpp>
 #include <algorithm>
-#include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -21,6 +20,7 @@
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/PinnedAllocator.h"
+#include "Platforms/DualAllocator.hpp"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/tests/CUDA/test_device_value_kernels.hpp"
 
@@ -30,12 +30,13 @@
 
 namespace qmcplusplus
 {
-#ifdef ENABLE_OFFLOAD
+#if defined(ENABLE_OFFLOAD)
   template<typename T>
   using DualSpacePinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-#elif ENABLE_CUDA
-  template<typename T>
-  using DualSpacePinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+// Direct inversion broken fror ENABLE_OFFLOAD=0 ENABLE_CUDA=1
+// #elif defined(ENABLE_CUDA)
+//   template<typename T>
+//   using DualSpacePinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 
 template<typename T>

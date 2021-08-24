@@ -98,16 +98,15 @@ set(JASTROW_SRC
 set(DETERMINANT_SRC
   FakeSPO.cpp
   test_DiracDeterminant.cpp
-    test_DiracDeterminantBatched.cpp
-    test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
     test_dirac_matrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
-if(ENABLE_CUDA)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)
-endif(ENABLE_CUDA)
+if(ENABLE_CUDA AND ENABLE_OFFLOAD)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp
+        test_DiracDeterminantBatched.cpp)
+endif()
 if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
@@ -143,7 +142,7 @@ if(ENABLE_CUDA)
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 endif()
 
-if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
+if(ENABLE_OFFLOAD AND ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)

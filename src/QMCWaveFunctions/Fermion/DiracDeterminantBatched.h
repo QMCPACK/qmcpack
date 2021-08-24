@@ -27,6 +27,7 @@
 #endif
 #include "Platforms/PinnedAllocator.h"
 #include "OMPTarget/OMPallocator.hpp"
+#include "Fermion/DiracMatrix.h"
 
 namespace qmcplusplus
 {
