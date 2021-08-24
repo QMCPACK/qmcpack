@@ -86,6 +86,8 @@ class MatrixDelayedUpdateCUDA
 {
 public:
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
+  using Value = T;
+  using FullPrecValue = T_FP;
   using FullPrecReal = QMCTraits::FullPrecRealType;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;

@@ -65,6 +65,8 @@ class MatrixUpdateOMPTarget
 {
 public:
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
+  using Value = T;
+  using FullPrecValue = T_FP;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>

@@ -364,6 +364,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
+  // End up with zero gradiant here.
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
   std::cout << "flex_calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "

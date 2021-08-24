@@ -17,6 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/SIMD/simd.hpp"
+#include <cassert>
 
 namespace qmcplusplus
 {
@@ -30,7 +31,9 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPO
       ndelay(1),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
-{}
+{
+  static_assert(std::is_same<SPOSet::ValueType, DET_ENGINE::Value>::value);
+}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
