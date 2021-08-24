@@ -191,7 +191,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(const Pa
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
-  return LogValue = convertValueToLog(evaluate(P, G, L));
+  return log_value_ = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
@@ -382,7 +382,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
       // ratio(P,iat)
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -392,7 +392,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         detValues_up[i] *= detsRatios[i];
         grads_up[i][iat] = grad_temp[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -403,13 +403,13 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         grads_up[i] = tempgrad[i];
         lapls_up[i] = templapl[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -424,7 +424,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
       // ratio(P,iat)
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -434,7 +434,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         detValues_dn[i] *= detsRatios[i];
         grads_dn[i][iat] = grad_temp[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -445,13 +445,13 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         grads_dn[i] = tempgrad[i];
         lapls_dn[i] = templapl[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -580,7 +580,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(Particl
   for (int i = 0; i < P.L.size(); i++)
     P.L[i] += myL[i] - dot(myG[i], myG[i]);
   UpdateTimer.stop();
-  return LogValue = convertValueToLog(psi);
+  return log_value_ = convertValueToLog(psi);
   ;
 }
 
@@ -691,7 +691,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
     if (usingCSF)
     {
       int n            = P.getTotalNum();
-      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
@@ -755,7 +755,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
     else
     {
       int n            = P.getTotalNum();
-      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);

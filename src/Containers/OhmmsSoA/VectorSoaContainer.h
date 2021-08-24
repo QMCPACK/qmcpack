@@ -111,7 +111,7 @@ struct VectorSoaContainer
    *
    * nAllocated is used to ensure no memory leak
    */
-  __forceinline void resize(size_t n)
+  inline void resize(size_t n)
   {
     static_assert(std::is_same<Element_t, typename Alloc::value_type>::value,
                   "VectorSoaContainer and Alloc data types must agree!");
@@ -144,7 +144,7 @@ struct VectorSoaContainer
   }
 
   /// free allocated memory and clear status variables
-  __forceinline void free()
+  inline void free()
   {
     if (nAllocated)
       mAllocator.deallocate(myData, nAllocated);
@@ -161,7 +161,7 @@ struct VectorSoaContainer
    *
    * To attach to existing memory, currently owned memory must be freed before calling attachReference
    */
-  __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
+  inline void attachReference(size_t n, size_t n_padded, T* ptr)
   {
     if (nAllocated)
     {
@@ -200,9 +200,9 @@ struct VectorSoaContainer
   }
 
   ///return the physical size
-  __forceinline size_t size() const { return nLocal; }
+  inline size_t size() const { return nLocal; }
   ///return the physical size
-  __forceinline size_t capacity() const { return nGhosts; }
+  inline size_t capacity() const { return nGhosts; }
 
   /** AoS to SoA : copy from Vector<TinyVector<>>
        *
@@ -227,16 +227,16 @@ struct VectorSoaContainer
 
   /** return TinyVector<T,D>
        */
-  __forceinline const AoSElement_t operator[](size_t i) const { return AoSElement_t(myData + i, nGhosts); }
+  inline const AoSElement_t operator[](size_t i) const { return AoSElement_t(myData + i, nGhosts); }
 
   ///helper class for operator ()(size_t i) to assign a value
   struct Accessor
   {
     T* _base;
     size_t M;
-    __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
+    inline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
     template<typename T1>
-    __forceinline Accessor& operator=(const TinyVector<T1, D>& rhs)
+    inline Accessor& operator=(const TinyVector<T1, D>& rhs)
     {
 #pragma unroll
       for (size_t i = 0; i < D; ++i)
@@ -246,7 +246,7 @@ struct VectorSoaContainer
 
     /** assign value */
     template<typename T1>
-    __forceinline Accessor& operator=(T1 rhs)
+    inline Accessor& operator=(T1 rhs)
     {
 #pragma unroll
       for (size_t i = 0; i < D; ++i)
@@ -259,44 +259,44 @@ struct VectorSoaContainer
        *
        * Use for (*this)[i]=TinyVector<T,D>;
        */
-  __forceinline Accessor operator()(size_t i) { return Accessor(myData + i, nGhosts); }
+  inline Accessor operator()(size_t i) { return Accessor(myData + i, nGhosts); }
   ///return the base
-  __forceinline T* data() { return myData; }
+  inline T* data() { return myData; }
   ///return the base
-  __forceinline const T* data() const { return myData; }
+  inline const T* data() const { return myData; }
   /// return non_const data
   T* getNonConstData() const { return myData; }
   ///return the pointer of the i-th components
-  __forceinline T* restrict data(size_t i) { return myData + i * nGhosts; }
+  inline T* restrict data(size_t i) { return myData + i * nGhosts; }
   ///return the const pointer of the i-th components
-  __forceinline const T* restrict data(size_t i) const { return myData + i * nGhosts; }
+  inline const T* restrict data(size_t i) const { return myData + i * nGhosts; }
   ///return the end
-  __forceinline T* end() { return myData + D * nGhosts; }
+  inline T* end() { return myData + D * nGhosts; }
   ///return the end
-  __forceinline const T* end() const { return myData + D * nGhosts; }
+  inline const T* end() const { return myData + D * nGhosts; }
 
 
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline T* device_data()
+  inline T* device_data()
   {
     return mAllocator.get_device_ptr();
   }
   ///return the base, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline const T* device_data() const
+  inline const T* device_data() const
   {
     return mAllocator.get_device_ptr();
   }
   ///return the pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline T* restrict device_data(size_t i)
+  inline T* restrict device_data(size_t i)
   {
     return mAllocator.get_device_ptr() + i * nGhosts;
   }
   ///return the const pointer of the i-th components, device
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  __forceinline const T* restrict device_data(size_t i) const
+  inline const T* restrict device_data(size_t i) const
   {
     return mAllocator.get_device_ptr() + i * nGhosts;
   }

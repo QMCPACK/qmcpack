@@ -127,10 +127,10 @@ set(EXECUTABLE_OUTPUT_PATH
 # Set C++ standard used by QMCPACK
 ##################################
 set(QMC_CXX_STANDARD
-    14
+    17
     CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 14)
-  message(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
+if(NOT QMC_CXX_STANDARD EQUAL 17)
+  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
@@ -407,11 +407,7 @@ include(CMake/Testlibstdc++.cmake)
 #---------------------------------------------------------
 # Check that a C++ standard library is configured properly
 #---------------------------------------------------------
-if(QMC_CXX_STANDARD GREATER_EQUAL 17)
-  include(CMake/TestCxx17Library.cmake)
-else()
-  include(CMake/TestCxx14Library.cmake)
-endif()
+include(CMake/TestCxx17Library.cmake)
 
 if(ENABLE_GCOV)
   if(NOT GCOV_SUPPORTED)
@@ -583,9 +579,18 @@ message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
 set_target_properties(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES
                                                    "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
 
+#create scalar_vector_functions target
+add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
+#create fftw3 target
+add_library(Math::FFTW3 INTERFACE IMPORTED)
+
 # Detects MKL header files and other components.
 if(LAPACK_LIBRARIES MATCHES "mkl_core")
   include(CMake/FindMKL.cmake)
+endif()
+
+if(MKL_FOUND)
+  set(MATH_VENDOR_GUESS "INTEL_VML")
 endif()
 
 # AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
@@ -599,19 +604,29 @@ endif()
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
-set(ENABLE_MASS
-    FALSE
-    CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
+set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
+if(NOT DEFINED MATH_VENDOR_GUESS)
+  set(MATH_VENDOR_GUESS "GENERIC")
+endif()
+set(QMC_MATH_VENDOR
+    ${MATH_VENDOR_GUESS}
+    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
+
+# Perform math vendor option check
+if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
+  message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
+else()
+  message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
+endif()
 
 # This needs to go before HAVE_SINCOS
-if(ENABLE_MASS)
+if(QMC_MATH_VENDOR STREQUAL "INTEL_VML")
+  include(CMake/FindMKLVML.cmake)
+elseif(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
   include(CMake/FindIBMMASS.cmake)
-endif(ENABLE_MASS)
-
-if(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
-  message(STATUS "No usable vector math library detected.")
-  add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-endif(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
+elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
+  include(CMake/FindAMDLibM.cmake)
+endif()
 
 # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
 if(NOT SINCOS_INCLUDE)
@@ -758,7 +773,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
       message(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
     else(CUDA_NVCC_FLAGS MATCHES "arch")
       # Automatically set the default NVCC flags
-      set(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
       if(QMC_COMPLEX)
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
       endif()
@@ -875,6 +890,9 @@ else()
   message(STATUS "VTune ittnotify APIs disabled")
 endif()
 
+# consider making this always on if OpenMP is no longer UB with Thread Support Library
+# We should test out abstractions consistently and c++17 stdlib's all have support for
+# std::thread and std::atomic
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
 if(QMC_EXP_THREADING)

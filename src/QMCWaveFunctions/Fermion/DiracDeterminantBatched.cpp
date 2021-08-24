@@ -50,7 +50,7 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(const ValueMatrix_t& logdetT)
 {
   ScopedTimer inverse_timer(InverseTimer);
-  det_engine_.invert_transpose(logdetT, LogValue);
+  det_engine_.invert_transpose(logdetT, log_value_);
 }
 
 template<typename DET_ENGINE>
@@ -69,7 +69,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   {
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.det_engine_);
-    log_value_list.push_back(det.LogValue);
+    log_value_list.push_back(det.log_value());
   }
 
   DET_ENGINE::mw_invert_transpose(engine_list, logdetT_list, log_value_list);
@@ -227,7 +227,7 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
-  LogValue += convertValueToLog(curRatio);
+  log_value_ += convertValueToLog(curRatio);
   {
     ScopedTimer local_timer(UpdateTimer);
     det_engine_.updateRow(WorkingIndex, psiV, curRatio);
@@ -278,7 +278,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
     {
       psiM_g_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
       psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
-      det.LogValue += convertValueToLog(det.curRatio);
+      det.log_value() += convertValueToLog(det.curRatio);
       count++;
     }
     det.curRatio = 1.0;
@@ -392,7 +392,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
 
     computeGL(G, L);
   }
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DET_ENGINE>
@@ -468,7 +468,7 @@ void DiracDeterminantBatched<DET_ENGINE>::registerData(ParticleSet& P, WFBufferT
   buf.add(psiMinv.first_address(), psiMinv.last_address());
   buf.add(dpsiM.first_address(), dpsiM.last_address());
   buf.add(d2psiM.first_address(), d2psiM.last_address());
-  buf.add(LogValue);
+  buf.add(log_value_);
 }
 
 template<typename DET_ENGINE>
@@ -483,8 +483,8 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
   buf.put(psiMinv.first_address(), psiMinv.last_address());
   buf.put(dpsiM.first_address(), dpsiM.last_address());
   buf.put(d2psiM.first_address(), d2psiM.last_address());
-  buf.put(LogValue);
-  return LogValue;
+  buf.put(log_value_);
+  return log_value_;
 }
 
 template<typename DET_ENGINE>
@@ -500,7 +500,7 @@ void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBuffe
   const size_t psiM_vgl_stride = psiM_vgl.capacity();
   // transfer host to device, total size 4, g(3) + l(1)
   PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
-  buf.get(LogValue);
+  buf.get(log_value_);
 }
 
 /** return the ratio only for the  iat-th partcle move
@@ -817,7 +817,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
 {
   recompute(P);
   computeGL(G, L);
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DET_ENGINE>
