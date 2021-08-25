@@ -21,65 +21,42 @@
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "DualAllocatorAliases.hpp"
+#include "CUDA/CUDALinearAlgebraHandles.h"
 #include "ResourceCollection.h"
 
 
 namespace qmcplusplus
 {
-struct CUDALinearAlgebraHandles : public Resource
-{
-  // CUDA specific variables
-  cudaStream_t hstream;
-  cublasHandle_t h_cublas;
-
-  CUDALinearAlgebraHandles() : Resource("CUDALinearAlgebraHandles")
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
-
-  CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles() {}
-
-  ~CUDALinearAlgebraHandles()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
-
-  Resource* makeClone() const override { return new CUDALinearAlgebraHandles(*this); }
-};
 
 template<typename T>
 struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
 {
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
+  using UnPinnedDualVector       = Vector<T, UnpinnedDualAllocator<T>>;
+  using DualMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
   // constant array value T(1)
-  OffloadValueVector_t cone_vec;
+  UnPinnedDualVector cone_vec;
   // constant array value T(-1)
-  OffloadValueVector_t cminusone_vec;
+  UnPinnedDualVector cminusone_vec;
   // constant array value T(0)
-  OffloadValueVector_t czero_vec;
+  UnPinnedDualVector czero_vec;
   // multi walker of grads for transfer needs.
-  OffloadPinnedValueMatrix_t grads_value_v;
+  DualMatrix grads_value_v;
   // mw_updateRow pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> updateRow_buffer_H2D;
+  Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
   // mw_prepareInvRow pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> prepare_inv_row_buffer_H2D;
+  Vector<char, PinnedDualAllocator<char>> prepare_inv_row_buffer_H2D;
   // mw_accept_rejectRow pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> accept_rejectRow_buffer_H2D;
+  Vector<char, PinnedDualAllocator<char>> accept_rejectRow_buffer_H2D;
   // mw_updateInv pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> updateInv_buffer_H2D;
+  Vector<char, PinnedDualAllocator<char>> updateInv_buffer_H2D;
   // mw_evalGrad pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> evalGrad_buffer_H2D;
+  Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
   /// scratch space for rank-1 update
-  OffloadValueVector_t mw_temp;
+  UnPinnedDualVector mw_temp;
   // scratch space for keeping one row of Ainv
-  OffloadValueVector_t mw_rcopy;
+  UnPinnedDualVector mw_rcopy;
 
   MatrixDelayedUpdateCUDAMultiWalkerMem() : Resource("MatrixDelayedUpdateCUDAMultiWalkerMem") {}
 
@@ -98,20 +75,27 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
 template<typename T, typename T_FP>
 class MatrixDelayedUpdateCUDA
 {
+public:
+  using WFT = WaveFunctionTypes<T, T_FP>;
+  using Value = T;
+  using FullPrecValue = T_FP;
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
-
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
-
-  /// matrix inversion engine
+  // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
+  template<typename DT>
+  using UnpinnedDualVector       = Vector<DT, UnpinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+private:
+  /// legacy single walker matrix inversion engine
   DiracMatrix<T_FP> detEng;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  OffloadPinnedValueMatrix_t psiMinv;
+  DualMatrix<Value> psiMinv;
   /// scratch space for rank-1 update
-  OffloadValueVector_t temp;
+  UnpinnedDualVector<Value> temp;
   // row of up-to-date Ainv
-  OffloadValueVector_t invRow;
+  UnpinnedDualVector<Value> invRow;
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
    *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
    *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
@@ -119,20 +103,22 @@ class MatrixDelayedUpdateCUDA
    */
   int invRow_id;
   // scratch space for keeping one row of Ainv
-  OffloadValueVector_t rcopy;
+  UnpinnedDualVector<Value> rcopy;
 
-  using DeviceValueMatrix_t = Matrix<T, CUDAAllocator<T>>;
-  using DeviceValueVector_t = Vector<T, CUDAAllocator<T>>;
+  template<typename DT>
+  using DeviceMatrix = Matrix<DT, CUDAAllocator<DT>>;
+  template<typename DT>
+  using DeviceVector = Vector<DT, CUDAAllocator<DT>>;
   /// orbital values of delayed electrons
-  DeviceValueMatrix_t U_gpu;
+  DeviceMatrix<Value> U_gpu;
   /// rows of Ainv corresponding to delayed electrons
-  DeviceValueMatrix_t V_gpu;
+  DeviceMatrix<Value> V_gpu;
   /// Matrix inverse of B, at maximum KxK
-  DeviceValueMatrix_t Binv_gpu;
+  DeviceMatrix<Value> Binv_gpu;
   /// scratch space, used during inverse update
-  DeviceValueMatrix_t tempMat_gpu;
+  DeviceMatrix<Value> tempMat_gpu;
   /// new column of B
-  DeviceValueVector_t p_gpu;
+  DeviceVector<Value> p_gpu;
   /// list of delayed electrons
   Vector<int, CUDAAllocator<int>> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
@@ -377,16 +363,16 @@ public:
     collection.takebackResource(std::move(mw_mem_));
   }
 
-  inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
+  inline DualMatrix<Value>& get_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix
-   * @param LogValue log(det(logdetT))
+   * @param log_value log(det(logdetT))
    */
   template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& log_value)
   {
     // make this class unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
@@ -396,7 +382,7 @@ public:
 
     auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
+    detEng.invert_transpose(logdetT, Ainv_host_view, log_value);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
@@ -404,7 +390,7 @@ public:
   template<typename TREAL>
   static void mw_invert_transpose(const RefVectorWithLeader<This_t>& engines,
                                   const RefVector<const Matrix<T>>& logdetT_list,
-                                  const RefVector<std::complex<TREAL>>& LogValues)
+                                  const RefVector<std::complex<TREAL>>& log_values)
   {
     auto& engine_leader = engines.getLeader();
     // make this class unit tests friendly without the need of setup resources.
@@ -430,7 +416,7 @@ public:
     {
       auto& Ainv = engines[iw].psiMinv;
       Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
+      engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, log_values[iw].get());
       T* Ainv_ptr = Ainv.data();
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }

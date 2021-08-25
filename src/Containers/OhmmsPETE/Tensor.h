@@ -102,6 +102,7 @@ public:
     X[2] = x01;
     X[3] = x11;
   }
+
   Tensor(const T& x00,
          const T& x10,
          const T& x20,

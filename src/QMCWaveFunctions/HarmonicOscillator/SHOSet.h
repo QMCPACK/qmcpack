@@ -72,7 +72,7 @@ struct SHOSet : public SPOSet
 
 
   //SPOSet interface methods
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 

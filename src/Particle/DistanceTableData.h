@@ -92,11 +92,11 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableData(const ParticleSet& source, const ParticleSet& target)
+  DistanceTableData(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : Origin(&source),
         N_sources(source.getTotalNum()),
         N_targets(target.getTotalNum()),
-        modes_(DTModes::ALL_OFF),
+        modes_(modes),
         old_prepared_elec_id(-1),
         name_(source.getName() + "_" + target.getName())
   {}
@@ -125,10 +125,17 @@ public:
   ///returns the number of source particles
   inline IndexType sources() const { return N_sources; }
 
-  /// return multi_walker full distance table data ptr
+  /// return multi walker temporary pair distance table data pointer
+  virtual const RealType* getMultiWalkerTempDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  /// return multi-walker full (all pairs) distance table data pointer
   virtual const RealType* getMultiWalkerDataPtr() const
   {
-    throw std::runtime_error(name_ + " multi waler data pointer not supported");
+    throw std::runtime_error(name_ + " multi walker data pointer not supported");
     return nullptr;
   }
 

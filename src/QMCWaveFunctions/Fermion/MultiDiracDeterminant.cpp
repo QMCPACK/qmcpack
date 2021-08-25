@@ -421,7 +421,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
   resize(s.NumPtcls);
 }
 
-SPOSetPtr MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
+std::unique_ptr<SPOSet> MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
 
 std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(ParticleSet& tqp) const
 {

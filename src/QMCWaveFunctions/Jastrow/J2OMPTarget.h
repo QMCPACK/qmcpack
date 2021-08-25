@@ -23,7 +23,7 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include "OMPTarget/OMPAlignedAllocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "J2KECorrection.h"
 
 namespace qmcplusplus
@@ -56,33 +56,33 @@ public:
   ///type of each component U, dU, d2U;
   using valT = typename FT::real_type;
   ///element position type
-  using posT = TinyVector<valT, OHMMS_DIM>;
+  using posT = TinyVector<valT, DIM>;
   ///use the same container
-  using DistRow         = DistanceTableData::DistRow;
-  using DisplRow        = DistanceTableData::DisplRow;
-  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
+  using DistRow  = DistanceTableData::DistRow;
+  using DisplRow = DistanceTableData::DisplRow;
 
-protected:
+private:
+  /** initialize storage Uat,dUat, d2Uat */
+  void resizeInternalStorage();
+
   ///number of particles
-  size_t N;
+  const size_t N;
   ///number of particles + padded
-  size_t N_padded;
+  const size_t N_padded;
   ///number of groups of the target particleset
-  size_t NumGroups;
-  /// the index of the first particle in each group
-  Vector<int, OffloadPinnedAllocator<int>> g_first;
-  /// the index + 1 of the last particle in each group
-  Vector<int, OffloadPinnedAllocator<int>> g_last;
+  const size_t NumGroups;
+  /// the group_id of each particle
+  Vector<int, OffloadPinnedAllocator<int>> grp_ids;
   ///diff value
   RealType DiffVal;
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  Vector<valT, OffloadPinnedAllocator<valT>> Uat;
+  Vector<valT, aligned_allocator<valT>> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  gContainer_type dUat;
+  VectorSoaContainer<valT, DIM, aligned_allocator<valT>> dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  Vector<valT> d2Uat;
+  Vector<valT, aligned_allocator<valT>> d2Uat;
   valT cur_Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
@@ -104,17 +104,16 @@ public:
   J2OMPTarget(const J2OMPTarget& rhs) = delete;
   ~J2OMPTarget() override;
 
-  /* initialize storage */
-  void init(ParticleSet& p);
-
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
 
   void createResource(ResourceCollection& collection) const override;
 
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
@@ -138,13 +137,25 @@ public:
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
+  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(const ParticleSet& P) override;
+  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    const std::vector<bool>& recompute) const override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
+  void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) const override;
+
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -155,11 +166,20 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios,
+                    std::vector<GradType>& grad_new) const override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
-  inline void restore(int iat) override {}
+  void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            const std::vector<bool>& isAccepted,
+                            bool safe_to_delay = false) const override;
 
-  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  inline void restore(int iat) override {}
 
   /** compute G and L after the sweep
    */
@@ -167,6 +187,11 @@ public:
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch = false) override;
+  void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                     const RefVectorWithLeader<ParticleSet>& p_list,
+                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     bool fromscratch) const override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -195,6 +220,8 @@ public:
   inline RealType KECorrection() override { return KEcorr; }
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
+
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 };
 
 } // namespace qmcplusplus

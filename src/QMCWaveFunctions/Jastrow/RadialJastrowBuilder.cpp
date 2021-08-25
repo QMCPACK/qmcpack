@@ -302,9 +302,9 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
     sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
     fout = fopen(fname, "w");
   }
-  for (int iG = 0; iG < targetPtcl.SK->KLists.ksq.size(); iG++)
+  for (int iG = 0; iG < targetPtcl.SK->getKLists().ksq.size(); iG++)
   {
-    RealType Gmag = std::sqrt(targetPtcl.SK->KLists.ksq[iG]);
+    RealType Gmag = std::sqrt(targetPtcl.SK->getKLists().ksq[iG]);
     RealType sum  = 0.0;
     RealType uk   = 0.0;
     for (int i = 0; i < targetPtcl.groups(); i++)
@@ -589,6 +589,13 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       {
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2OrbitalType,
                                    J2OMPTarget<BsplineFunctor<RealType>>>::value, "check consistent type");
+        if(targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+        {
+          std::ostringstream msg;
+          msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \""
+              << targetPtcl.getName() << "\" particleset" << std::endl;
+          myComm->barrier_and_abort(msg.str());
+        }
         app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
         return createJ2<BsplineFunctor<RealType>, detail::OMPTARGET>(cur);
       }

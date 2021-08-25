@@ -72,9 +72,9 @@ public:
    * @param Ainv inverse matrix
    */
   template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-    detEng.invert_transpose(logdetT, Ainv, LogValue);
+    detEng.invert_transpose(logdetT, Ainv, log_value);
     // safe mechanism
     delay_count = 0;
   }

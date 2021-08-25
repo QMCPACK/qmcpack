@@ -15,10 +15,11 @@
 #define QMCPLUSPLUS_STRUCTFACT_H
 
 //#define USE_REAL_STRUCT_FACTOR
-#include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
+#include "ParticleSet.h"
+#include "DynamicCoordinates.h"
 #include "LongRange/KContainer.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {
@@ -33,8 +34,8 @@ namespace qmcplusplus
 class StructFact : public QMCTraits
 {
 public:
-  typedef PooledData<RealType> BufferType;
-
+  //Typedef for the lattice-type
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout_t;
   /** false, if the structure factor is not actively updated
    *
    * Default is false. Particle-by-particle update functions, makeMove,
@@ -47,8 +48,6 @@ public:
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
    */
   int SuperCellEnum;
-  /// K-Vector List.
-  KContainer KLists;
   ///1-D container for the phase
   Vector<RealType> phiV;
   ///2-D container for the phase
@@ -64,20 +63,25 @@ public:
   Vector<ComplexType> eikr_temp;
 #endif
   /** Constructor - copy ParticleSet and init. k-shells
-   * @param P Reference particle set
+   * @param nptcls number of particles
+   * @param ns number of species
+   * @param lattice long range box
    * @param kc cutoff for k
    */
-  StructFact(ParticleSet& P, RealType kc);
+  StructFact(int nptcls, int ns, const ParticleLayout& lattice, RealType kc);
   /// desructor
   ~StructFact();
 
   /** Recompute Rhok if lattice changed
    * @param kc cut-off K
    */
-  void UpdateNewCell(ParticleSet& P, RealType kc);
+  void updateNewCell(const ParticleLayout& lattice, RealType kc);
   /**  Update Rhok if all particles moved
    */
-  void UpdateAllPart(ParticleSet& P);
+  void updateAllPart(const ParticleSet& P);
+
+  static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate eikr_temp for eikr for the proposed move
    * @param active index of the moved particle
@@ -96,87 +100,41 @@ public:
    * Do nothing
    */
   void rejectMove(int active, int gid);
-  /// Update Rhok if 1 particle moved
-  //void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
-
-  //Buffer methods. For PbyP MC where data must be stored in an anonymous
-  //buffer between iterations
-  /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
-   *
-   * This function is used for particle-by-particle MC methods to register structure factor
-   * to an anonymous buffer.
-   */
-  inline void registerData(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.add(rhok_r.first_address(), rhok_r.last_address());
-    buf.add(rhok_i.first_address(), rhok_i.last_address());
-    buf.add(eikr_r.first_address(), eikr_r.last_address());
-    buf.add(eikr_i.first_address(), eikr_i.last_address());
-#else
-    buf.add(rhok.first_address(), rhok.last_address());
-    buf.add(eikr.first_address(), eikr.last_address());
-#endif
-  }
-
-  /** @brief put rhok data to buf
-   *
-   * This function is used for particle-by-particle MC methods
-   */
-  inline void updateBuffer(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.put(rhok_r.first_address(), rhok_r.last_address());
-    buf.put(rhok_i.first_address(), rhok_i.last_address());
-    buf.put(eikr_r.first_address(), eikr_r.last_address());
-    buf.put(eikr_i.first_address(), eikr_i.last_address());
-#else
-    buf.put(rhok.first_address(), rhok.last_address());
-    buf.put(eikr.first_address(), eikr.last_address());
-#endif
-  }
-
-  /** @brief copy the data from an anonymous buffer
-   *
-   * Any data that was used by the previous iteration will be copied from a buffer.
-   */
-  inline void copyFromBuffer(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.get(rhok_r.first_address(), rhok_r.last_address());
-    buf.get(rhok_i.first_address(), rhok_i.last_address());
-    buf.get(eikr_r.first_address(), eikr_r.last_address());
-    buf.get(eikr_i.first_address(), eikr_i.last_address());
-#else
-    buf.get(rhok.first_address(), rhok.last_address());
-    buf.get(eikr.first_address(), eikr.last_address());
-#endif
-  }
-
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
    * if StorePerParticle was true, this function is no-op
    */
-  void turnOnStorePerParticle(ParticleSet& P);
+  void turnOnStorePerParticle(const ParticleSet& P);
 
   /// accessor of StorePerParticle
   bool isStorePerParticle() const { return StorePerParticle; }
 
+  /// access k_lists_ read only
+  const KContainer& getKLists() const { return *k_lists_; }
+
 private:
   /// Compute all rhok elements from the start
-  void FillRhok(ParticleSet& P);
+  void computeRhok(const ParticleSet& P);
   /** resize the internal data
    * @param np number of species
    * @param nptcl number of particles
    * @param nkpts
    */
-  void resize(int ns, int nptcl, int nkpts);
+  void resize(int nkpts);
 
+  /// K-Vector List.
+  const std::shared_ptr<KContainer> k_lists_;
+  /// number of particles
+  const size_t num_ptcls;
+  /// number of species
+  const size_t num_species;
   /** Whether intermediate data is stored per particle. default false
    * storing data per particle needs significant amount of memory but some calculation may request it.
    * storing data per particle specie is more cost-effective
    */
   bool StorePerParticle;
+  /// timer for updateAllPart
+  NewTimer& update_all_timer_;
 };
 } // namespace qmcplusplus
 

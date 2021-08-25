@@ -502,7 +502,7 @@ public:
         save_g[jel] += new_g[jel] - old_g[jel];
     }
 
-    LogValue += Uat[iat] - cur_Uat;
+    log_value_ += Uat[iat] - cur_Uat;
     Uat[iat]   = cur_Uat;
     dUat(iat)  = cur_dUat;
     d2Uat[iat] = cur_d2Uat;
@@ -831,7 +831,7 @@ public:
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
-    return LogValue;
+    return log_value_;
   }
 
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override
@@ -849,15 +849,15 @@ public:
   {
     if (fromscratch)
       recompute(P);
-    LogValue = valT(0);
+    log_value_ = valT(0);
     for (int iat = 0; iat < Nelec; ++iat)
     {
-      LogValue += Uat[iat];
+      log_value_ += Uat[iat];
       G[iat] += dUat[iat];
       L[iat] += d2Uat[iat];
     }
 
-    return LogValue = -LogValue * 0.5;
+    return log_value_ = -log_value_ * 0.5;
   }
 
   void evaluateDerivatives(ParticleSet& P,

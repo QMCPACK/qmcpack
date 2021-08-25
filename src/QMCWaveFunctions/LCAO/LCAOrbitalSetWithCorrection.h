@@ -37,7 +37,7 @@ public:
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   void setOrbitalSetSize(int norbs) override;
 

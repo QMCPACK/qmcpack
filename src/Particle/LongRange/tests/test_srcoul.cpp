@@ -46,10 +46,9 @@ TEST_CASE("srcoul", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  ParticleSet ref;       // handler needs ref.SK.KLists
+  ref.Lattice = Lattice; // !!!! crucial for access to Volume
+  ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
@@ -89,10 +88,9 @@ TEST_CASE("srcoul df", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  ParticleSet ref;       // handler needs ref.SK.KLists
+  ref.Lattice = Lattice; // !!!! crucial for access to Volume
+  ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);

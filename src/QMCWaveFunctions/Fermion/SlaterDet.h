@@ -172,9 +172,9 @@ public:
   {
     Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
 
-    LogValue = 0.0;
+    log_value_ = 0.0;
     for (int i = 0; i < Dets.size(); ++i)
-      LogValue += Dets[i]->LogValue;
+      log_value_ += Dets[i]->get_log_value();
   }
 
   void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -185,9 +185,12 @@ public:
   {
     constexpr LogValueType czero(0);
 
+    // This log_value_ is in the slater determinant, it's still around but not consistent anymore with the
+    // sum of the log_values in its determinants.  Caching the state seems like a bad call, but the wfc base class
+    // having log_value_ as a data member asks for this sort of consistency issue when wfc can contain wfc.
     for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
-        wfc_list[iw].LogValue = czero;
+        wfc_list[iw].log_value() = czero;
 
     for (int i = 0; i < Dets.size(); ++i)
     {
@@ -198,7 +201,7 @@ public:
 
       for (int iw = 0; iw < wfc_list.size(); iw++)
         if (isAccepted[iw])
-          wfc_list[iw].LogValue += Det_list[iw].LogValue;
+          wfc_list[iw].log_value() += Det_list[iw].get_log_value();
     }
   }
 
