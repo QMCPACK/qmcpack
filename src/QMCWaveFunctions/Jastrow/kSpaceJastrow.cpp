@@ -627,7 +627,7 @@ void kSpaceJastrow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 
 void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  LogValue = evaluateLog(P, P.G, P.L);
+  log_value_ = evaluateLog(P, P.G, P.L);
   // eikr.resize(NumPtcls,MaxK);
   // eikr_new.resize(MaxK);
   // delta_eikr.resize(MaxK);
@@ -642,7 +642,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 
 kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
-  LogValue = evaluateLog(P, P.G, P.L);
+  log_value_ = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)
   //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
   // buf.put(Rhok.first_address(), Rhok.last_address());
@@ -650,7 +650,7 @@ kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBuffer
   // buf.put(d2U.first_address(), d2U.last_address());
   // buf.put(FirstAddressOfdU,LastAddressOfdU);
   // return LogValue;
-  return LogValue;
+  return log_value_;
 }
 
 void kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)

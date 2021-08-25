@@ -98,6 +98,14 @@ case "$1" in
                       -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"werror"*)
+        echo 'Configure for building with -Werror flag enabled'
+        cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+                      -DCMAKE_CXX_FLAGS=-Werror \
+                      -DQMC_MPI=0 \
+                      -DQMC_COMPLEX=$IS_COMPLEX \
+                      ${GITHUB_WORKSPACE}
+      ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'

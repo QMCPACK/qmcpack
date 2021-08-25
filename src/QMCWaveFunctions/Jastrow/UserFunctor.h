@@ -33,7 +33,7 @@
 #include <cmath>
 // #include <vector>
 #include "OhmmsPETE/TinyVector.h"
-#include "OMPTarget/OMPAlignedAllocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 
 namespace qmcplusplus

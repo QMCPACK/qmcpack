@@ -40,10 +40,9 @@ TEST_CASE("dummy", "[lrhandler]")
   REQUIRE(Lattice.LR_rc == Approx(2.5));
   REQUIRE(Lattice.LR_kc == Approx(12));
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  ParticleSet ref;       // handler needs ref.SK.getKLists()
+  ref.Lattice = Lattice; // !!!! crucial for access to Volume
+  ref.createSK();
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
   handler.initBreakup(ref);
@@ -61,13 +60,13 @@ TEST_CASE("dummy", "[lrhandler]")
   //  the full Coulomb potential should be retained in kspace
   for (int ish = 0; ish < handler.MaxKshell; ish++)
   {
-    int ik           = ref.SK->KLists.kshell[ish];
-    double k2        = ref.SK->KLists.ksq[ik];
+    int ik           = ref.SK->getKLists().kshell[ish];
+    double k2        = ref.SK->getKLists().ksq[ik];
     double fk_expect = fk(k2);
     REQUIRE(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }
   // ?? cannot access base class method, too many overloads?
-  // handler.evaluate(SK->KLists.kshell, rhok1.data(), rhok2.data());
+  // handler.evaluate(SK->getKLists().kshell, rhok1.data(), rhok2.data());
 }
 
 } // namespace qmcplusplus
