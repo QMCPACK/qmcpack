@@ -302,9 +302,9 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
     sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
     fout = fopen(fname, "w");
   }
-  for (int iG = 0; iG < targetPtcl.SK->KLists.ksq.size(); iG++)
+  for (int iG = 0; iG < targetPtcl.SK->getKLists().ksq.size(); iG++)
   {
-    RealType Gmag = std::sqrt(targetPtcl.SK->KLists.ksq[iG]);
+    RealType Gmag = std::sqrt(targetPtcl.SK->getKLists().ksq[iG]);
     RealType sum  = 0.0;
     RealType uk   = 0.0;
     for (int i = 0; i < targetPtcl.groups(); i++)

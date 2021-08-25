@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_OFFLOADSHAREDMEM_H
 #define QMCPLUSPLUS_OFFLOADSHAREDMEM_H
 
-#include "OMPTarget/OMPAlignedAllocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"
 
 namespace qmcplusplus

@@ -21,7 +21,7 @@
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
-
+#include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
 {
@@ -64,6 +64,7 @@ template<typename T, typename T_FP>
 class MatrixUpdateOMPTarget
 {
 public:
+  using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
   using Value = T;
   using FullPrecValue = T_FP;

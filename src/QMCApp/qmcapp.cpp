@@ -25,7 +25,7 @@
 #include "Platforms/Host/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
 #include "Host/sysutil.h"
-#include "Platforms/devices.h"
+#include "Platforms/CUDA_legacy/devices.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
 #include "Utilities/qmc_common.h"

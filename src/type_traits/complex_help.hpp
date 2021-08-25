@@ -9,8 +9,8 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_TYPE_TESTS_HPP
-#define QMCPLUSPLUS_TYPE_TESTS_HPP
+#ifndef QMCPLUSPLUS_COMPLEX_HELP_HPP
+#define QMCPLUSPLUS_COMPLEX_HELP_HPP
 
 namespace qmcplusplus
 {

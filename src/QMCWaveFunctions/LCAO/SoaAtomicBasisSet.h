@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

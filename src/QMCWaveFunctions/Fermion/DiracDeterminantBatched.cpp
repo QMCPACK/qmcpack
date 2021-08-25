@@ -271,7 +271,7 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                       const RefVectorWithLeader<ParticleSet>& p_list,
                                                       int iat,
-                                                      std::vector<GradType>& grad_now) const
+                                                      std::vector<Grad>& grad_now) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
@@ -299,10 +299,10 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGrad(const RefVectorWithLeader<
 }
 
 template<typename DET_ENGINE>
-typename DiracDeterminantBatched<DET_ENGINE>::PsiValueType DiracDeterminantBatched<DET_ENGINE>::ratioGrad(
+typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratioGrad(
     ParticleSet& P,
     int iat,
-    GradType& grad_iat)
+    Grad& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -327,8 +327,8 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        int iat,
-                                                       std::vector<PsiValueType>& ratios,
-                                                       std::vector<GradType>& grad_new) const
+                                                       std::vector<PsiValue>& ratios,
+                                                       std::vector<Grad>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
@@ -527,15 +527,15 @@ void DiracDeterminantBatched<DET_ENGINE>::computeGL(ParticleSet::ParticleGradien
   auto& psiMinv = det_engine_.get_psiMinv();
   for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
   {
-    mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
-    mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
+    Grad rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+    Value lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
     G[iat] += rv;
     L[iat] += lap - dot(rv, rv);
   }
 }
 
 template<typename DET_ENGINE>
-typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatched<DET_ENGINE>::evaluateGL(
+typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<DET_ENGINE>::evaluateGL(
     const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L,
@@ -557,7 +557,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
 
     computeGL(G, L);
   }
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DET_ENGINE>
@@ -646,11 +646,11 @@ void DiracDeterminantBatched<DET_ENGINE>::registerData(ParticleSet& P, WFBufferT
   buf.add(psiMinv.first_address(), psiMinv.last_address());
   buf.add(dpsiM.first_address(), dpsiM.last_address());
   buf.add(d2psiM.first_address(), d2psiM.last_address());
-  buf.add(LogValue);
+  buf.add(log_value_);
 }
 
 template<typename DET_ENGINE>
-typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatched<DET_ENGINE>::updateBuffer(
+typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<DET_ENGINE>::updateBuffer(
     ParticleSet& P,
     WFBufferType& buf,
     bool fromscratch)
@@ -661,8 +661,8 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
   buf.put(psiMinv.first_address(), psiMinv.last_address());
   buf.put(dpsiM.first_address(), dpsiM.last_address());
   buf.put(d2psiM.first_address(), d2psiM.last_address());
-  buf.put(LogValue);
-  return LogValue;
+  buf.put(log_value_);
+  return log_value_;
 }
 
 template<typename DET_ENGINE>
@@ -679,7 +679,7 @@ void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBuffe
   const size_t psiM_vgl_stride = psiM_vgl.capacity();
   // transfer host to device, total size 4, g(3) + l(1)
   PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
-  buf.get(LogValue);
+  buf.get(log_value_);
 }
 
 /** return the ratio only for the  iat-th partcle move
@@ -687,7 +687,7 @@ void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBuffe
  * @param iat the particle thas is being moved
  */
 template<typename DET_ENGINE>
-typename DiracDeterminantBatched<DET_ENGINE>::PsiValueType DiracDeterminantBatched<DET_ENGINE>::ratio(ParticleSet& P,
+typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratio(ParticleSet& P,
                                                                                                       int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
@@ -707,7 +707,7 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        int iat,
-                                                       std::vector<PsiValueType>& ratios) const
+                                                       std::vector<PsiValue>& ratios) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   wfc_leader.guardMultiWalkerRes();
@@ -756,7 +756,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<Value>& ratios)
 {
   {
     ScopedTimer local_timer(RatioTimer);
@@ -772,15 +772,15 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSe
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                             const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                            std::vector<std::vector<ValueType>>& ratios) const
+                                                            std::vector<std::vector<Value>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   const size_t nw  = wfc_list.size();
 
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
-  RefVector<ValueVector_t> psiV_list;
-  std::vector<const ValueType*> invRow_ptr_list;
+  RefVector<Vector<Value>> psiV_list;
+  std::vector<const Value*> invRow_ptr_list;
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
   invRow_ptr_list.reserve(nw);
@@ -809,7 +809,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(const RefVectorWithL
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios)
 {
   {
     ScopedTimer local_timer(SPOVTimer);
@@ -993,7 +993,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<D
  *for local energy calculations.
  */
 template<typename DET_ENGINE>
-typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatched<DET_ENGINE>::evaluateLog(
+typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<DET_ENGINE>::evaluateLog(
     const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
@@ -1001,8 +1001,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatch
   recompute(//*mw_res_,
             P);
   computeGL(G, L);
-  //LogValue = mw_res_->log_values[0];
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DET_ENGINE>
@@ -1045,8 +1044,8 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(//DiracDeterminantBatchedMul
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
                                                               const opt_variables_type& active,
-                                                              std::vector<ValueType>& dlogpsi,
-                                                              std::vector<ValueType>& dhpsioverpsi)
+                                                              std::vector<Value>& dlogpsi,
+                                                              std::vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }

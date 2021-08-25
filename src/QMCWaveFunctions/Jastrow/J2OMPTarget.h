@@ -23,7 +23,7 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include "OMPTarget/OMPAlignedAllocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "J2KECorrection.h"
 
 namespace qmcplusplus

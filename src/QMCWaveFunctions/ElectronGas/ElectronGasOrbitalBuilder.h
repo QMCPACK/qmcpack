@@ -19,7 +19,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -44,7 +44,7 @@ struct RealEGOSet : public SPOSet
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override {}
 
-  SPOSet* makeClone() const override { return new RealEGOSet(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<RealEGOSet>(*this); }
 
   PosType get_k(int i) override
   {

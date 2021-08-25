@@ -87,10 +87,10 @@ public:
   void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.LRBox, 1);
-    //    fillYk(ref.SK->KLists);
-    fillYkg(ref.SK->KLists);
+    //    fillYk(ref.SK->getKLists());
+    fillYkg(ref.SK->getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.SK->KLists);
+    //filldFk_dk(ref.SK->getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -99,10 +99,10 @@ public:
     rs = rs_ext;
     myFunc.reset(ref, rs);
     InitBreakup(ref.LRBox, 1);
-    //    fillYk(ref.SK->KLists);
-    fillYkg(ref.SK->KLists);
+    //    fillYk(ref.SK->getKLists());
+    fillYkg(ref.SK->getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.SK->KLists);
+    //filldFk_dk(ref.SK->getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -414,7 +414,7 @@ private:
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
-  void fillYkg(KContainer& KList)
+  void fillYkg(const KContainer& KList)
   {
     Fkg.resize(KList.kpts_cart.size());
     //LRHandlerSRCoulomb is the force handler now.  Only want

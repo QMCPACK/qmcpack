@@ -394,7 +394,7 @@ void MCWalkerConfiguration::allocateGPU(size_t buffersize)
   int N    = WalkerList[0]->R.size();
   int Numk = 0;
   if (SK)
-    Numk = SK->KLists.numk;
+    Numk = SK->getKLists().numk;
   int NumSpecies = getSpeciesSet().TotalNum;
   for (int iw = 0; iw < WalkerList.size(); iw++)
   {

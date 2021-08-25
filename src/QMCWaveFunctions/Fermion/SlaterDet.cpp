@@ -113,10 +113,10 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
                                                ParticleSet::ParticleGradient_t& G,
                                                ParticleSet::ParticleLaplacian_t& L)
 {
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->evaluateLog(P, G, L);
-  return LogValue;
+    log_value_ += Dets[i]->evaluateLog(P, G, L);
+  return log_value_;
 }
 
 void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -127,14 +127,14 @@ void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
   constexpr LogValueType czero(0);
 
   for (WaveFunctionComponent& wfc : wfc_list)
-    wfc.LogValue = czero;
+    wfc.log_value() = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto Det_list(extract_DetRef_list(wfc_list, i));
     Dets[i]->mw_evaluateLog(Det_list, p_list, G_list, L_list);
     for (int iw = 0; iw < wfc_list.size(); iw++)
-      wfc_list[iw].LogValue += Det_list[iw].LogValue;
+      wfc_list[iw].log_value() += Det_list[iw].get_log_value();
   }
 }
 
@@ -143,10 +143,10 @@ SlaterDet::LogValueType SlaterDet::evaluateGL(const ParticleSet& P,
                                               ParticleSet::ParticleLaplacian_t& L,
                                               bool from_scratch)
 {
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->evaluateGL(P, G, L, from_scratch);
-  return LogValue;
+    log_value_ += Dets[i]->evaluateGL(P, G, L, from_scratch);
+  return log_value_;
 }
 
 void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -158,14 +158,14 @@ void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& 
   constexpr LogValueType czero(0);
 
   for (WaveFunctionComponent& wfc : wfc_list)
-    wfc.LogValue = czero;
+    wfc.log_value() = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto Det_list(extract_DetRef_list(wfc_list, i));
     Dets[i]->mw_evaluateGL(Det_list, p_list, G_list, L_list, fromscratch);
     for (int iw = 0; iw < wfc_list.size(); iw++)
-      wfc_list[iw].LogValue += Det_list[iw].LogValue;
+      wfc_list[iw].log_value() += Det_list[iw].get_log_value();
   }
 }
 
@@ -237,11 +237,11 @@ void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 SlaterDet::LogValueType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
-  LogValue = 0.0;
+  log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-    LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
+    log_value_ += Dets[i]->updateBuffer(P, buf, fromscratch);
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
-  return LogValue;
+  return log_value_;
 }
 
 void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)

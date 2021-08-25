@@ -28,7 +28,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Numerics/LinearFit.h"
-#include "OMPTarget/OMPAlignedAllocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 
 namespace qmcplusplus
