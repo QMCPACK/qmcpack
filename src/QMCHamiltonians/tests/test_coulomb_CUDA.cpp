@@ -53,6 +53,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   ion_species(pChargeIdx, pIdx) = 1;
   ions.Lattice                  = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;
@@ -115,6 +116,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   ion_species(pChargeIdx, pIdx) = 1;
   ions.Lattice                  = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;

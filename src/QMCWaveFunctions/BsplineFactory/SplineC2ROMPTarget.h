@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
-#include "OMPTarget/OMPAlignedAllocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
 #include "SplineOMPTargetMultiWalkerMem.h"
@@ -159,7 +159,7 @@ public:
     collection.takebackResource(std::move(phi_leader.mw_mem_));
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2ROMPTarget(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2ROMPTarget>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

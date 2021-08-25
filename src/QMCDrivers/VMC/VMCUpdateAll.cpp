@@ -55,7 +55,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       assignDrift(Tau, MassInvP, thisWalker.G, drift); // fill variable drift
       if (W.makeMoveAllParticlesWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
       { // W.R = thisWalker.R + drift + deltaR; W.DistTables,SK are updated; W.G,L are now stale
-        RealType logpsi = Psi.evaluateLog(W); // update W.G,L; update Psi.PhaseValue,LogValue
+        RealType logpsi = Psi.evaluateLog(W); // update W.G,L; update Psi.PhaseValue,log_real_
         RealType logGf  = -0.5 * Dot(deltaR, deltaR);
         assignDrift(Tau, MassInvP, W.G, drift);      // update drift at proposed configuration
         deltaR         = thisWalker.R - W.R - drift; // hijack deltaR to hold reverse move
@@ -77,7 +77,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     {
       if (W.makeMoveAllParticles(thisWalker, deltaR, SqrtTauOverMass))
       {                                       // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
-        RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.LogValue,PhaseValue
+        RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.log_real_,PhaseValue
         RealType g      = std::exp(2.0 * (logpsi - logpsi_old));
         if (RandomGen() <= g)
         {                        // move is accepted; logpsi_old and R_old are stale
