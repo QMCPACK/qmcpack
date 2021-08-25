@@ -85,13 +85,13 @@
 
 <loop max="2">
  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="yes">
-   <parameter name="blocks">   3 </parameter>
+   <parameter name="blocks">   5 </parameter>
    <parameter name="warmupsteps"> 1 </parameter>
    <parameter name="stepsbetweensamples">  1 </parameter>
    <parameter name="substeps"> 2     </parameter>
    <parameter name="timestep"> 1.0  </parameter>
    <parameter name="walkers">  1 </parameter>
-   <parameter name="samples">  32  </parameter>
+   <parameter name="samples">  48  </parameter>
    <parameter name="minwalkers">  0.01 </parameter>
    <parameter name="useDrift">   no </parameter>
    <estimator name="LocalEnergy" hdf5="no"/>

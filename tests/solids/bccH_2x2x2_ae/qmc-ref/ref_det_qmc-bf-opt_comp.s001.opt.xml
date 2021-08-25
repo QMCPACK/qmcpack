@@ -8,15 +8,15 @@
             <backflow>
               <transformation name="eHB" type="e-I" function="Bspline" source="ion0">
                  <correlation elementType="H" cusp="0.0" size="8" rcut="1.0">
-                  <coefficients id="eHB" type="Array" optimize="yes"> -0.2693436899 -0.9006450058 -0.6094460588 -0.1146732584 -0.1106933323 -0.06763375973 -0.01634213549 -0.0344954629</coefficients>
+                  <coefficients id="eHB" type="Array" optimize="yes"> -0.4050730119 -0.02550086374 0.1297634893 -0.001858104091 -0.02368661617 -0.002096340324 -0.002621966171 0.02586175465</coefficients>
                  </correlation>
               </transformation>
               <transformation name="eeB" type="e-e" function="Bspline">
                  <correlation speciesA="u" speciesB="u" cusp="0.0" size="8" rcut="1.0">
-                  <coefficients id="uuB" type="Array" optimize="yes"> 0.09613117178 0.0693866824 0.03958692785 0.02585207976 0.5099238098 0.2730457228 0.1523869251 0.07650607076</coefficients>
+                  <coefficients id="uuB" type="Array" optimize="yes"> 0.09613117178 0.0693866824 0.03503165795 -0.1488515407 -0.2367655005 -0.146876156 -0.08566200773 -0.04757958646</coefficients>
                  </correlation>
                  <correlation speciesA="u" speciesB="d" cusp="0.0" size="8" rcut="1.0">
-                  <coefficients id="udB" type="Array" optimize="yes"> 0.1754731877 0.126159103 -0.2070279698 -0.3514796553 -0.5733325002 -0.3143395764 -0.1925615912 -0.06343036507</coefficients>
+                  <coefficients id="udB" type="Array" optimize="yes"> 0.03674342117 -0.2469749748 0.1311424782 0.1948213533 0.1294488342 0.1018291813 0.04555871589 0.04199679333</coefficients>
                  </correlation>
               </transformation>
             </backflow>
