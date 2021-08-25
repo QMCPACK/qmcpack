@@ -28,13 +28,13 @@ public:
   std::vector<std::string> ECP_names;
   //std::vector<std::string> tags;
   int NumberOfSpins;
-  void dumpPBC(const std::string& psi_tag, const std::string& ion_tag);
+  void dumpPBC(const std::string& psi_tag, const std::string& ion_tag) override;
 
 
   // void dumpStdInput(const std::string& psi_tag, const std::string& ion_tag);
 
   //void dumpStdInputProd(const std::string& psi_tag, const std::string& ion_tag);
-  void parse(const std::string& fname);
+  void parse(const std::string& fname) override;
   void getCell(const std::string& fname);
 };
 //#endif
