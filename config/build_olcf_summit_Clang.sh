@@ -12,7 +12,8 @@ module load gcc/9.3.0
 module load spectrum-mpi
 module load cmake
 module load git
-module load cuda
+# default cuda/11.0.3 causes frequent hanging with the offload code in production runs.
+module load cuda/10.1.243
 module load essl
 module load netlib-lapack
 module load hdf5
@@ -25,7 +26,8 @@ if [[ ! -d /ccs/proj/mat151/opt/modules ]] ; then
   exit 1
 fi
 module use /ccs/proj/mat151/opt/modules
-module load llvm/main-20210811
+# requires cuda/10.1.243 to have safe production runs.
+module load llvm/main-20210811-cuda10.1
 
 TYPE=Release
 Compiler=Clang
@@ -51,7 +53,7 @@ if [[ $name == *"offload"* ]]; then
 fi
 
 if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`"
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=/usr/bin/gcc -D CUDA_NVCC_FLAGS='-Xcompiler;-mno-float128'"
 fi
 
 folder=build_summit_${Compiler}_${name}

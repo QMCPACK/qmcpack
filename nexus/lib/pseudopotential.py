@@ -596,7 +596,7 @@ class SemilocalPP(Pseudopotential):
 
     # test needed
     def add_L2(self,v):
-        self.set_component('L2',guard=True)
+        self.set_component('L2',v,guard=True)
     #end def add_L2
 
 
