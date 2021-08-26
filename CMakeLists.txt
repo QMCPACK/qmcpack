@@ -20,87 +20,46 @@ project(
   VERSION 3.11.9
   LANGUAGES C CXX)
 
-######################################################
-# Directory where customize cmake files reside
-######################################################
-set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
-
-set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
-
-include(CMake/macros.cmake)
-
 ######################################################################
-# CTest
+# Set C++ standard used by QMCPACK
 ######################################################################
-# The following option disables the extremely slow setup of full system run tests
-# This is a developer option
-# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
-# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
-# when rerunning cmake.
-#
-# On leconte: rerun of cmake with
-# slow custom commands 27 secs
-# without 8 secs
-option(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS "Disable the slow cmake custom commands for integration tests." OFF)
-mark_as_advanced(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-
-set(DROP_METHOD "http")
-set(DROP_SITE "cdash.qmcpack.org")
-set(DROP_LOCATION "/CDash/submit.php?project=QMCPACK")
-set(TRIGGER_SITE "")
-set(DROP_SITE_CDASH TRUE)
-# Increase timeout per test over the default of 1500 seconds (25 minutes)
-set(DART_TESTING_TIMEOUT
-    3600
-    CACHE STRING "Maximum time for one test")
-enable_testing()
-include(CTest)
-
-option(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead."
-       ON)
-
-if(QMC_SYMLINK_TEST_FILES)
-  set(SYMLINK_MSG
-      "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source."
-  )
-else()
-  set(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
-endif()
-message(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
-
-######################################################################
-# Verify Python3 available
-######################################################################
-include(CMake/python.cmake)
-find_package(Python3)
-if(NOT Python3_FOUND)
-  message(FATAL_ERROR "Could not find required python3")
-endif(NOT Python3_FOUND)
-
-######################################################################
-# Check if PySCF is available
-######################################################################
-if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(pyscf HAVE_PYSCF)
-  if(NOT HAVE_PYSCF)
-    message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
-  else()
-    message(STATUS "Successfully imported PySCF python module.")
-  endif()
+set(QMC_CXX_STANDARD
+    17
+    CACHE STRING "QMCPACK C++ language standard")
+if(NOT QMC_CXX_STANDARD EQUAL 17)
+  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
+                  "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
 ######################################################################
-# Check if QE executables available at QE_BIN or on the PATH
+# Programmind model related build options
+# MPI, OpenMP, GPU acceleration
 ######################################################################
-if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  include("CMake/FindQE.cmake")
-  if(QE_FOUND)
-    message(STATUS "Found and using patched Quantum ESPRESSO (QE) with pw2qmcpack.x at ${QE_PW_DIR}")
-  else(QE_FOUND)
-    message(
-      STATUS "Did not find a patched Quantum ESPRESSO (QE) distribution with pw2qmcpack.x. QE tests will not be run.")
-  endif(QE_FOUND)
+option(QMC_MPI "Enable/disable MPI" ON)
+option(QMC_OMP "Enable/disable OpenMP" ON)
+option(QMC_COMPLEX "Build for complex binary" OFF)
+option(QMC_CUDA "Build with GPU support through CUDA" OFF)
+option(
+  ENABLE_CUDA
+  "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
+  OFF)
+option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
+if(QMC_CUDA2HIP)
+  set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
+# explicit HIP source codes only exist in AFQMC.
+option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
+option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
+option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+# Use CMake object library targets to workaround clang linker not being able to handle fat
+# binary archives which contain both host and device codes, for example OpenMP offload regions.
+# CMake does not propagate indirect object files by design.
+# So the dependency must be explicitly specified with USE_OBJECT_TARGET.
+cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
+
+if(ENABLE_CUDA AND QMC_CUDA)
+  message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
+endif(ENABLE_CUDA AND QMC_CUDA)
 
 ######################################################################
 # Build level
@@ -114,25 +73,23 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
 message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
 ######################################################################
-#define the paths for library and executable for out-of-soruce compilation
+# Directory where customize cmake files reside
 ######################################################################
-set(LIBRARY_OUTPUT_PATH
+set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
+
+set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
+
+include(CMake/macros.cmake)
+
+######################################################################
+# Paths for library and executable for out-of-soruce compilation
+######################################################################
+set(LIBRARY_OUTPUT_DIRECTORY
     ${qmcpack_BINARY_DIR}/lib
     CACHE PATH "Single output directory for building all libraries.")
-set(EXECUTABLE_OUTPUT_PATH
+set(RUNTIME_OUTPUT_DIRECTORY
     ${qmcpack_BINARY_DIR}/bin
     CACHE PATH "Single output directory for building all executables.")
-
-##################################
-# Set C++ standard used by QMCPACK
-##################################
-set(QMC_CXX_STANDARD
-    17
-    CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 17)
-  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
-                  "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
-endif()
 
 ######################################################################
 # Set the compiler-time parameters
@@ -144,9 +101,6 @@ endif()
 # OHMMS_INDEXTYPE = type of index
 # OHMMS_PRECISION  = base precision, float, double etc
 # OHMMS_PRECISION_FULL  = full precision, double etc
-# QMC_COMPLEX = true if using complex wavefunctions
-# QMC_MPI =  enable MPI
-# QMC_OMP = enable OMP
 ######################################################################
 set(WALKER_MAX_PROPERTIES
     2048
@@ -156,9 +110,17 @@ set(OHMMS_DIM
     3
     CACHE STRING "Select physical dimension")
 set(OHMMS_INDEXTYPE int)
-message(STATUS "defining the float point precision")
 set(OHMMS_PRECISION_FULL double)
 
+# Code coverage
+set(GCOV_SUPPORTED FALSE)
+option(ENABLE_GCOV "Enable code coverage" OFF)
+
+option(QMC_VERBOSE_CONFIGURATION "Give details why specific tests are/are not added" OFF)
+
+######################################################################
+message(STATUS "defining the float point precision")
+######################################################################
 if(QMC_CUDA)
   set(QMC_MIXED_PRECISION
       1
@@ -188,41 +150,6 @@ else(QMC_CUDA)
   message("   Full precision = ${OHMMS_PRECISION_FULL}")
 endif(QMC_CUDA)
 
-# Code coverage
-set(GCOV_SUPPORTED FALSE)
-option(ENABLE_GCOV "Enable code coverage" OFF)
-
-######################################################################
-# enable MPI and OPENMP  if possible
-######################################################################
-option(QMC_MPI "Enable/disable MPI" ON)
-option(QMC_OMP "Enable/disable OpenMP" ON)
-option(QMC_COMPLEX "Build for complex binary" OFF)
-option(QMC_CUDA "Build with GPU support through CUDA" OFF)
-option(
-  ENABLE_CUDA
-  "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
-  OFF)
-option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP)
-  set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
-endif()
-# explicit HIP source codes only exist in AFQMC.
-option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
-option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
-option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
-# Use CMake object library targets to workaround clang linker not being able to handle fat
-# binary archives which contain both host and device codes, for example OpenMP offload regions.
-# CMake does not propagate indirect object files by design.
-# So the dependency must be explicitly specified with USE_OBJECT_TARGET.
-cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
-
-if(ENABLE_CUDA AND QMC_CUDA)
-  message(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
-endif(ENABLE_CUDA AND QMC_CUDA)
-
-option(QMC_VERBOSE_CONFIGURATION "Give details why specific tests are/are not added" OFF)
-
 ######################################################################
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
@@ -250,9 +177,7 @@ set(CMAKE_MODULE_PATH "${qmcpack_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 include(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 include(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 include(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
-include(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
-check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 
 ######################################################################
 # Build options
@@ -543,11 +468,12 @@ endif(QMC_MPI)
 
 ####################################################################
 #First check the required libraries. Abort if these are not found.
-#Changed the fall-back versions to use similar conventions to 2.8.0 and higher
 ####################################################################
-# use customized cmake file for boost so that we can deal with multiple
-# installataions
-# list of libraries to be linked with the main applications using I/O
+
+#-------------------------------------------------------------------
+# check OS related libraries
+#-------------------------------------------------------------------
+check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 
 #-------------------------------------------------------------------
 # Check LAPACK/BLAS
@@ -1041,6 +967,79 @@ endforeach(target_type IN ITEMS EXE SHARED)
 ###################################################
 # Done searching libraries. Start building qmcpack
 ###################################################
+
+######################################################################
+# CTest
+######################################################################
+# The following option disables the extremely slow setup of full system run tests
+# This is a developer option
+# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
+# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
+# when rerunning cmake.
+#
+# On leconte: rerun of cmake with
+# slow custom commands 27 secs
+# without 8 secs
+option(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS "Disable the slow cmake custom commands for integration tests." OFF)
+mark_as_advanced(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+
+set(DROP_METHOD "http")
+set(DROP_SITE "cdash.qmcpack.org")
+set(DROP_LOCATION "/CDash/submit.php?project=QMCPACK")
+set(TRIGGER_SITE "")
+set(DROP_SITE_CDASH TRUE)
+# Increase timeout per test over the default of 1500 seconds (25 minutes)
+set(DART_TESTING_TIMEOUT
+    3600
+    CACHE STRING "Maximum time for one test")
+enable_testing()
+include(CTest)
+
+option(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead."
+       ON)
+
+if(QMC_SYMLINK_TEST_FILES)
+  set(SYMLINK_MSG
+      "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source."
+  )
+else()
+  set(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
+endif()
+message(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
+
+######################################################################
+# Verify Python3 available
+######################################################################
+include(CMake/python.cmake)
+find_package(Python3)
+if(NOT Python3_FOUND)
+  message(FATAL_ERROR "Could not find required python3")
+endif(NOT Python3_FOUND)
+
+######################################################################
+# Check if PySCF is available
+######################################################################
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  test_python_module(pyscf HAVE_PYSCF)
+  if(NOT HAVE_PYSCF)
+    message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
+  else()
+    message(STATUS "Successfully imported PySCF python module.")
+  endif()
+endif()
+
+######################################################################
+# Check if QE executables available at QE_BIN or on the PATH
+######################################################################
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  include("CMake/FindQE.cmake")
+  if(QE_FOUND)
+    message(STATUS "Found and using patched Quantum ESPRESSO (QE) with pw2qmcpack.x at ${QE_PW_DIR}")
+  else(QE_FOUND)
+    message(
+      STATUS "Did not find a patched Quantum ESPRESSO (QE) distribution with pw2qmcpack.x. QE tests will not be run.")
+  endif(QE_FOUND)
+endif()
 
 message(STATUS "Ready to build qmcpack")
 
