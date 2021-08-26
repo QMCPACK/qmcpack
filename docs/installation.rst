@@ -325,17 +325,15 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
-    QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
-    QMC_INCLUDE               Add extra include paths
-    QMC_EXTRA_LIBS            Add extra link libraries
-    QMC_BUILD_STATIC          ON/OFF(default). Add -static flags to build
-    QMC_SYMLINK_TEST_FILES    Set to zero to require test files to be copied. Avoids space
-                              saving default use of symbolic links for test files. Useful
-                              if the build is on a separate filesystem from the source, as
-                              required on some HPC systems.
-    QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                              including details of which tests are enabled.
+    QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+    QMC_INCLUDE            Add extra include paths
+    QMC_EXTRA_LIBS         Add extra link libraries
+    QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
+    QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                           saving default use of symbolic links for test files. Useful
+                           if the build is on a separate filesystem from the source, as
+                           required on some HPC systems.
 
 - BLAS/LAPACK related
 

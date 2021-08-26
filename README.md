@@ -185,8 +185,6 @@ make -j 8
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as
                             required on some HPC systems.
-     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                               including details of which tests are enabled.
 ```
 
   * libxml2 related
