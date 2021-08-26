@@ -77,7 +77,7 @@ public:
   using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 
   template<class DET_ENGINE>
-  DiracDeterminantBatchedMultiWalkerResource& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
+  typename DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatchedMultiWalkerResource& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
   {
     return *(ddb.mw_res_);
   }

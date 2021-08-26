@@ -248,7 +248,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
   ddb.acceptMove(elec, 1);
-  ddb.LogValue = 0.0;
+  ddb.log_value() = 0.0;
   PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   LogValueType det_update3;
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),

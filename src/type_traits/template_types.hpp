@@ -38,7 +38,13 @@ using UPtrVector = std::vector<std::unique_ptr<T>>;
 /** }@ */
 
 
-// temporary helper function
+/** temporary helper function you have a vector of derived class but what to pass
+ *  a vector of base class references to an API.
+ *
+ *  godbolt.org indicates at least with clang 11&12 we get RVO here.
+ *  auto ref_whatevers = makeRefVector(whatevers);
+ *  makes no extra copy.
+ */
 template<class TR, class T>
 static RefVector<TR> makeRefVector(std::vector<T>& vec_list)
 {

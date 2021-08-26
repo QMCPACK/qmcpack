@@ -168,7 +168,7 @@ public:
 
   inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
   {
-    detEng->invert_transpose(log_det, a_inv, log_value);
+    detEng.invert_transpose(log_det, a_inv, log_value);
   }
 
   

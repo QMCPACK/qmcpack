@@ -216,7 +216,7 @@ void DiracDeterminantBatched<DET_ENGINE>::resize(int nel, int morb)
     norb = nel; // for morb == -1 (default)
   psiM_vgl.resize(nel * norb);
   // attach pointers VGL
-  psiM_temp.attachReference(psiM_vgl, psiM_vgl.data(0), nel, norb);
+  psiM_temp.attachReference(psiM_vgl.data(0), nel, norb);
   dpsiM.attachReference(reinterpret_cast<GradType*>(psiM_vgl.data(1)), nel, norb);
   d2psiM.attachReference(psiM_vgl.data(4), nel, norb);
 
