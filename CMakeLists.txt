@@ -12,7 +12,7 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0075 NEW)
 
 ######################################################################
-# QMCPACK
+# QMCPACK project
 ######################################################################
 project(
   qmcpack
@@ -215,7 +215,7 @@ if(INSTALL_NEXUS)
 endif()
 
 ######################################################################
-# now set the compiler flags and the macros in src/config.h
+# Set the compiler specific options/flags
 ######################################################################
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
@@ -448,9 +448,9 @@ else(QMC_MPI)
   message(STATUS "MPI is disabled")
 endif(QMC_MPI)
 
-####################################################################
-#First check the required libraries. Abort if these are not found.
-####################################################################
+######################################################################
+# Check external libraries.
+######################################################################
 
 #-------------------------------------------------------------------
 # check OS related libraries
@@ -808,12 +808,9 @@ if(ENABLE_HIP)
   endif()
 endif(ENABLE_HIP)
 
-######################################################
-# Add optional macros
-######################################################
-
-#include qmcpack/src
-include_directories(${PROJECT_SOURCE_DIR}/src)
+#-------------------------------------------------------------------
+# set up VTune ittnotify library
+#-------------------------------------------------------------------
 
 if(USE_VTUNE_API)
   message(STATUS "Enabling use of VTune ittnotify APIs")
@@ -835,15 +832,6 @@ if(USE_VTUNE_API)
   endif()
 else()
   message(STATUS "VTune ittnotify APIs disabled")
-endif()
-
-#-------------------------------------------------------------------
-# for specific linker in the case of profiling like hpctoolkit.
-#-------------------------------------------------------------------
-if(CMAKE_CXX_LINKER)
-  set(CMAKE_CXX_LINK_EXECUTABLE
-      "${CMAKE_CXX_LINKER} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS>  <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-  message(STATUS "Linker is specified as '${CMAKE_CXX_LINKER}' instead of '${CMAKE_CXX_COMPILER}'")
 endif()
 
 #-------------------------------------------------------------------
@@ -870,9 +858,13 @@ endif()
 # All the settings related to building QMCPACK are complete
 ######################################################################
 
+# set up config.h
 configure_file(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in ${qmcpack_BINARY_DIR}/src/config.h)
 #include build/src
 include_directories(${qmcpack_BINARY_DIR}/src)
+
+#include qmcpack/src
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
 #-------------------------------------------------------------------
 # add definitions DO NOT EXPAND
