@@ -639,10 +639,3 @@ function(
     set_property(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
   endif()
 endfunction()
-
-# Print THE_MESSAGE if verbose configuration is enabled
-function(MESSAGE_VERBOSE THE_MESSAGE)
-  if(QMC_VERBOSE_CONFIGURATION)
-    message(STATUS ${THE_MESSAGE})
-  endif()
-endfunction()

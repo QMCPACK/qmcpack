@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.15.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
@@ -104,6 +104,9 @@ set(OHMMS_DIM
 set(OHMMS_INDEXTYPE int)
 set(OHMMS_PRECISION_FULL double)
 
+if(QMC_VERBOSE_CONFIGURATION)
+  message(WARNING "QMC_VERBOSE_CONFIGURATION option has been removed. Use --log-level=VERBOSE cmake option instead.")
+endif()
 option(QMC_VERBOSE_CONFIGURATION "Give details why specific tests are/are not added" OFF)
 
 #--------------------------------------------------------------------
