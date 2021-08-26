@@ -185,6 +185,9 @@ public:
   {
     constexpr LogValueType czero(0);
 
+    // This log_value_ is in the slater determinant, it's still around but not consistent anymore with the
+    // sum of the log_values in its determinants.  Caching the state seems like a bad call, but the wfc base class
+    // having log_value_ as a data member asks for this sort of consistency issue when wfc can contain wfc.
     for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
         wfc_list[iw].log_value() = czero;
