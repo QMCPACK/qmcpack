@@ -109,19 +109,11 @@ if(ENABLE_CUDA)
   target_link_libraries(afqmc PRIVATE ${CUDA_curand_LIBRARY})
 elseif(ENABLE_HIP)
   set_source_files_properties(${AFQMC_HIP_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
-  hip_add_library(
-    afqmc_hip_lib
-    ${AFQMC_HIP_SRCS}
-    HIPCC_OPTIONS
-    "-std=c++14"
-    HCC_OPTIONS
-    ""
-    NVCC_OPTIONS
-    "")
+  hip_add_library(afqmc_hip_lib ${AFQMC_HIP_SRCS})
   target_link_libraries(afqmc_hip_lib PUBLIC HIP::HIP ROCM::libraries Boost::boost)
   target_include_directories(afqmc_hip_lib PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
   add_library(afqmc ${AFQMC_SRCS})
-  target_link_libraries(afqmc PRIVATE afqmc_hip_lib)
+  target_link_libraries(afqmc PUBLIC afqmc_hip_lib)
 else(ENABLE_CUDA)
   add_library(afqmc ${AFQMC_SRCS})
 endif(ENABLE_CUDA)

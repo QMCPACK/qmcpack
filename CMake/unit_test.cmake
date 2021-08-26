@@ -23,6 +23,7 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
 
     if(QMC_CUDA
        OR ENABLE_CUDA
+       OR ENABLE_ROCM
        OR ENABLE_OFFLOAD)
       set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
     endif()
