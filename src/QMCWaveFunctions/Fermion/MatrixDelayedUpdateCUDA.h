@@ -13,10 +13,10 @@
 #ifndef QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
 #define QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
 
-#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Fermion/DiracMatrixComputeCUDA.hpp"
+#include "Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
@@ -25,10 +25,15 @@
 #include "DualAllocatorAliases.hpp"
 #include "CUDA/CUDALinearAlgebraHandles.h"
 #include "ResourceCollection.h"
-
+#include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+  class DiracDeterminantBatchedTest;
+}
 
 template<typename T>
 struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
@@ -83,6 +88,7 @@ public:
   using WFT = WaveFunctionTypes<T, T_FP>;
   using Value = T;
   using FullPrecValue = T_FP;
+  using LogValue = typename WFT::LogValue;
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
   // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
@@ -94,6 +100,7 @@ public:
 private:
   /// legacy single walker matrix inversion engine
   DiracMatrix<T_FP> detEng;
+
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   DualMatrix<Value> psiMinv;
   /// scratch space for rank-1 update
@@ -129,14 +136,14 @@ private:
   int delay_count;
 
   // psi(r')/psi(r) during a PbyP move
-  FullPrecReal cur_ratio_;
+  FullPrecValue cur_ratio_;
   
   /** @ingroup Resources
    *  @{ */
   // CUDA stream, cublas handle object
   std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  UPtr<DiracMatrixCompute> det_inverter_;
+  UPtr<DiracMatrixComputeCUDA<T_FP>> det_inverter_;
   /**}@ */
 
   std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem<T>> mw_mem_;
@@ -387,14 +394,10 @@ public:
     collection.takebackResource(std::move(mw_mem_));
   }
 
-  Handles& getHandles() { return *cuda_handles_; }
-
   /** Why do you need to modify another classes data member?
    */
-  inline const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
-  
-  inline OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
-  inline DualMatrix<Value>& get_psiMinv() { return psiMinv; }
+  inline const DualMatrix<FullPrecValue>& get_psiMinv() const { return psiMinv; }
+  inline DualMatrix<FullPrecValue>& get_nonconst_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
@@ -420,6 +423,13 @@ public:
   }
 
 
+inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
+{
+  guard_no_delay(); 
+  detEng->invert_transpose(log_det, a_inv, log_value);
+}
+
+  
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    *
    *  This does not get called constantly so to get real benchmark data that redirection to mw
@@ -428,7 +438,7 @@ public:
    * @param logdetT orbital value matrix
    * @param log_value log(det(logdetT))
    */
-inline void invert_transpose(DualPinnedMatrix<Value>& log_det, DualMatrix<Value>& a_inv, DualVector<LogValue>& log_values)
+inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_inv, DualVector<LogValue>& log_values)
   {
     guard_no_delay(); 
     det_inverter_->invert_transpose(*cuda_handles_, log_det, a_inv, log_values);
@@ -445,15 +455,15 @@ inline void invert_transpose(DualPinnedMatrix<Value>& log_det, DualMatrix<Value>
    *  compute_mask is in the API to reserve the right to reduce transfers to/from device.
    */
   static void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
-                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                 OffloadPinnedLogValueVector_t& log_values,
+                                 RefVector<DualMatrix<Value>>& logdetT_list,
+                                 DualVector<LogValue>& log_values,
                                  const std::vector<bool>& compute_mask)
   {
     auto& engine_leader = engines.getLeader();
 
     engine_leader.guard_no_delay();
 
-    RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
+    RefVector<DualMatrix<Value>> a_inv_refs;
     a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
       a_inv_refs.emplace_back(engines[iw].psiMinv);
@@ -462,9 +472,9 @@ inline void invert_transpose(DualPinnedMatrix<Value>& log_det, DualMatrix<Value>
   }
 
   static void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
-                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                 RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
-                                 OffloadPinnedLogValueVector_t& log_values,
+                                 RefVector<DualMatrix<Value>>& logdetT_list,
+                                 RefVector<DualMatrix<Value>>& a_inv_list,
+                                 DualVector<LogValue>& log_values,
                                  const std::vector<bool>& compute_mask)
   {
     auto& engine_leader = engines.getLeader();

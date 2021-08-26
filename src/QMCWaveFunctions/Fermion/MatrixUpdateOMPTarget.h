@@ -68,6 +68,7 @@ public:
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
   using Value = T;
   using FullPrecValue = T_FP;
+  using LogValue = typename WFT::LogValue;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
@@ -82,6 +83,9 @@ public:
   using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;
 
 private:
+  /// legacy single walker matrix inversion engine
+  DiracMatrix<T_FP> detEng;
+
   /// matrix inversion engine this crowd scope resouce and only the leader engine gets it
   UPtr<DiracMatrixCompute> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
@@ -161,13 +165,20 @@ public:
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
+
+  inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
+  {
+    detEng->invert_transpose(log_det, a_inv, log_value);
+  }
+
+  
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix (this has trustworth dimensions)
    * @param LogValue log(det(logdetT))
    *
    * note psiMinv has had its dimensions messed with.  rows have been padded to alignment adding colums.
    */
-  inline void invert_transpose(OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv, OffloadPinnedLogValueVector_t& log_values)
+  inline void invert_transpose(const OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv, OffloadPinnedLogValueVector_t& log_values)
   {
     DummyResource dummy_resource;
     det_inverter_->invert_transpose(dummy_resource, logdetT, a_inv, log_values);

@@ -22,6 +22,7 @@
 #if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
 #endif
+#include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
 
 #include "DualAllocatorAliases.hpp"
 #include "WaveFunctionTypes.hpp"
@@ -29,6 +30,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class DiracDeterminantBatchedTest;
+struct SetupDiracDetResources;
+} // namespace testing
 
 template<typename DET_ENGINE>
 class DiracDeterminantBatched : public DiracDeterminantBase
@@ -44,7 +50,7 @@ public:
   using Real          = typename WFT::Real;
   using FullPrecGrad  = TinyVector<FullPrecValue, DIM>;
   template<typename DT>
-  using PinnedVector = Vector<DT, PinnedDualAllocator<DT>>;
+  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
   using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
@@ -57,7 +63,7 @@ public:
     {}
 
     Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
-    PinnedVector<LogValue> log_values;
+    DualVector<LogValue> log_values;
     /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
     DualVGLVector phi_vgl_v;
     // multi walker of ratio
@@ -176,12 +182,8 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute( //DiracDeterminantBatchedMultiWalkerResource& mw_res,
-      const ParticleSet& P) override;
-
-  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVectorWithLeader<ParticleSet>& p_list,
-                    const std::vector<bool>& recompute) const override;
+  // void recompute( //DiracDeterminantBatchedMultiWalkerResource& mw_res,
+  //     const ParticleSet& P) override;
 
   LogValue evaluateGL(const ParticleSet& P,
                       ParticleSet::ParticleGradient_t& G,
@@ -255,14 +257,19 @@ public:
   Matrix<Hess> grad_phi_alpha_Minv;
 
   /// value of single-particle orbital for particle-by-particle update
-  PinnedVector<Value> psiV;
+  DualVector<Value> psiV;
   Vector<Value> psiV_host_view;
-  Vector<Grad> dpsiV;
-  Vector<Value> d2psiV;
-
+  DualVector<Grad> dpsiV;
+  Vector<Grad> dpsiV_host_view;
+  DualVector<Value> d2psiV;
+  Vector<Value> d2psiV_host_view;
+  
   /// Delayed update engine 1 per walker.
   DET_ENGINE det_engine_;
   /**@}*/
+
+  /// We still need one of these per DDB because single calls obviously shouldn't have resources
+  DiracMatrix<Value> single_walker_dm_;
 
   // psi(r')/psi(r) during a PbyP move
   PsiValue curRatio;
@@ -273,15 +280,22 @@ private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
-  /// invert logdetT(psiM), result is in the engine.
-  void invertPsiM(const Matrix<Value>& logdetT);
+  /// single invert logdetT(psiM)
+  /// as a side effect this->log_value_ gets the log determinant of logdetT
+  void invertPsiM(const Matrix<Value>& logdetT,
+      DualMatrix<Value>& a_inv);
 
-  static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<const Matrix<Value>>& logdetT_list);
+  void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                     RefVector<DualMatrix<Value>>& logdetT_list,
+                     RefVector<DualMatrix<Value>>& a_inv_list,
+                     const std::vector<bool>& compute_mask) const;
 
   void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     const std::vector<bool>& recompute) const override;
+
+  /// Resize all temporary arrays required for force computation.
+  void resizeScratchObjectsForIonDerivs();
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()
@@ -299,23 +313,17 @@ private:
   /// timers
   NewTimer &D2HTimer, &H2DTimer;
 
-private:
-  /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
-  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
-
-  /// single invert logdetT(psiM)
-  /// as a side effect LogValue gets the log determinant of logdetT
-  void invertPsiM( //DiracDeterminantBatchedMultiWalkerResource& mw_res,
-      OffloadPinnedValueMatrix_t& logdetT,
-      OffloadPinnedValueMatrix_t& a_inv);
-
-  /// Resize all temporary arrays required for force computation.
-  void resizeScratchObjectsForIonDerivs();
-
   //  friend class qmcplusplus::DiracDeterminantDetails;
   friend struct qmcplusplus::testing::SetupDiracDetResources;
   friend class qmcplusplus::testing::DiracDeterminantBatchedTest;
 };
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+extern template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
+#if defined(ENABLE_OFFLOAD)
+extern template class DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
 
 
 } // namespace qmcplusplus
