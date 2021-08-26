@@ -236,7 +236,6 @@ below:
 ```
 export CXX=mpic++
 export CC=mpicc
-export ACML_HOME=/opt/acml-5.3.1/gfortran64
 export HDF5_ROOT=/opt/hdf5
 export BOOST_ROOT=/opt/boost
 
@@ -248,7 +247,6 @@ cmake                                               \
   -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-  -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
   -D QMC_DATA=/projects/QMCPACK/qmc-data            \
   ..
 ```

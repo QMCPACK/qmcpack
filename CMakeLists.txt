@@ -30,7 +30,7 @@ include(macros)
 # Paths for library and executable for out-of-soruce compilation
 #--------------------------------------------------------------------
 set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
-set(LIBRARY_OUTPUT_DIRECTORY
+set(ARCHIVE_OUTPUT_DIRECTORY
     ${qmcpack_BINARY_DIR}/lib
     CACHE PATH "Single output directory for building all libraries.")
 set(RUNTIME_OUTPUT_DIRECTORY
@@ -217,9 +217,8 @@ endif()
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
-  message(STATUS "Trying to figure out .....")
+  message(STATUS "Trying to figure out compiler options ....")
   set(ENABLE_OPENMP 0)
-  set(HAVE_ACML 0)
 
   #------------------------
   # On Cray's machine
