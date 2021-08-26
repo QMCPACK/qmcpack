@@ -1,9 +1,9 @@
 # Deterministic test for QMC optimizer
 
 if(MIXED_PRECISION)
-  message_verbose("Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1)")
+  message(VERBOSE "Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1)")
 elseif(QMC_CUDA)
-  message_verbose("Skipping optimizer deterministic He tests because CUDA is not supported (QMC_CUDA=1)")
+  message(VERBOSE "Skipping optimizer deterministic He tests because CUDA is not supported (QMC_CUDA=1)")
 else()
   simple_run_and_check(
     deterministic-He_ae-opt

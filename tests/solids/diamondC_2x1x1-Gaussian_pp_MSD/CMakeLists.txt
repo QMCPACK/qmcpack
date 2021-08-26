@@ -1006,5 +1006,5 @@ if(NOT QMC_CUDA)
   )
 
 else()
-  message_verbose("Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
 endif()

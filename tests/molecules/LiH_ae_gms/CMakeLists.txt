@@ -88,9 +88,9 @@ if(NOT QMC_CUDA)
     endif()
 
   else()
-    message_verbose(
+    message(VERBOSE
       "Skipping LiH_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose("Skipping LiH_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping LiH_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

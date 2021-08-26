@@ -2,7 +2,7 @@ include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 
 # Runs unit tests
 function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
-  message_verbose("Adding test ${TESTNAME}")
+  message(VERBOSE "Adding test ${TESTNAME}")
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   if(HAVE_MPI)
     add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
@@ -13,7 +13,7 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
       add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${ARGN})
       set(TEST_ADDED TRUE)
     else()
-      message_verbose("Disabling test ${TESTNAME} (building without MPI)")
+      message(VERBOSE "Disabling test ${TESTNAME} (building without MPI)")
     endif()
   endif()
 

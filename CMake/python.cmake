@@ -4,7 +4,7 @@
 #   MODULE_NAME - input, name of module to test for
 #   MODULE_PRESENT - output - True/False based on success of the import
 function(TEST_PYTHON_MODULE MODULE_NAME MODULE_PRESENT)
-  message_verbose("Checking import python module ${MODULE_NAME}")
+  message(VERBOSE "Checking import python module ${MODULE_NAME}")
   execute_process(
     COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/test_import.py ${MODULE_NAME}
     OUTPUT_VARIABLE TMP_OUTPUT_VAR
