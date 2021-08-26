@@ -22,11 +22,24 @@
 
 namespace qmcplusplus
 {
-OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0)
-{
-  quantum_domain = no_quantum_domain;
-  energy_domain  = no_energy_domain;
+//NonLocalData
+NonLocalData::NonLocalData() : PID(-1), Weight(1.0) {}
 
+NonLocalData::NonLocalData(IndexType id, RealType w, const PosType& d) : PID(id), Weight(w), Delta(d) {}
+
+//OperatorBase
+
+//PUBLIC
+OperatorBase::OperatorBase()
+    : myIndex(-1),
+      Dependants(0),
+      Value(0.0),
+      NewValue(0.0),
+      tWalker(0),
+      quantum_domain(quantum_domains::no_quantum_domain),
+      energy_domain(energy_domains::no_energy_domain),
+      value_sample(nullptr)
+{
 #if !defined(REMOVE_TRACEMANAGER)
   streaming_scalars    = false;
   streaming_particles  = false;
@@ -34,6 +47,23 @@ OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0
 #endif
   UpdateMode.set(PRIMARY, 1);
 }
+
+bool OperatorBase::is_classical() const noexcept { return quantum_domain == quantum_domains::classical; }
+
+bool OperatorBase::is_quantum() const noexcept { return quantum_domain == quantum_domains::quantum; }
+
+bool OperatorBase::is_classical_classical() const noexcept
+{
+  return quantum_domain == quantum_domains::classical_classical;
+}
+
+bool OperatorBase::is_quantum_classical() const noexcept
+{
+  return quantum_domain == quantum_domains::quantum_classical;
+}
+
+bool OperatorBase::is_quantum_quantum() const noexcept { return quantum_domain == quantum_domains::quantum_quantum; }
+
 
 /** The correct behavior of this routine requires estimators with non-deterministic components
  * in their evaluate() function to override this function.
@@ -102,7 +132,7 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader
   }
 }
 
-
+// PROTECTED
 void OperatorBase::set_energy_domain(energy_domains edomain)
 {
   if (energy_domain_valid(edomain))
@@ -122,9 +152,9 @@ void OperatorBase::set_quantum_domain(quantum_domains qdomain)
 void OperatorBase::one_body_quantum_domain(const ParticleSet& P)
 {
   if (P.is_classical())
-    quantum_domain = classical;
+    quantum_domain = quantum_domains::classical;
   else if (P.is_quantum())
-    quantum_domain = quantum;
+    quantum_domain = quantum_domains::quantum;
   else
     APP_ABORT("OperatorBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
 }
@@ -132,9 +162,9 @@ void OperatorBase::one_body_quantum_domain(const ParticleSet& P)
 void OperatorBase::two_body_quantum_domain(const ParticleSet& P)
 {
   if (P.is_classical())
-    quantum_domain = classical_classical;
+    quantum_domain = quantum_domains::classical_classical;
   else if (P.is_quantum())
-    quantum_domain = quantum_quantum;
+    quantum_domain = quantum_domains::quantum_quantum;
   else
     APP_ABORT("OperatorBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
 }
@@ -146,16 +176,21 @@ void OperatorBase::two_body_quantum_domain(const ParticleSet& P1, const Particle
   bool q1 = P1.is_quantum();
   bool q2 = P2.is_quantum();
   if (c1 && c2)
-    quantum_domain = classical_classical;
+    quantum_domain = quantum_domains::classical_classical;
   else if ((q1 && c2) || (c1 && q2))
-    quantum_domain = quantum_classical;
+    quantum_domain = quantum_domains::quantum_classical;
   else if (q1 && q2)
-    quantum_domain = quantum_quantum;
+    quantum_domain = quantum_domains::quantum_quantum;
   else
     APP_ABORT("OperatorBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
 }
 
-bool OperatorBase::quantum_domain_valid(quantum_domains qdomain) { return qdomain != no_quantum_domain; }
+bool OperatorBase::quantum_domain_valid(const quantum_domains qdomain) const noexcept
+{
+  return qdomain != quantum_domains::no_quantum_domain;
+}
+
+bool OperatorBase::quantum_domain_valid() const noexcept { return quantum_domain_valid(quantum_domain); }
 
 void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {

@@ -52,8 +52,8 @@ struct NonLocalData : public QMCTraits
   IndexType PID;
   RealType Weight;
   PosType Delta;
-  inline NonLocalData() : PID(-1), Weight(1.0) {}
-  inline NonLocalData(IndexType id, RealType w, const PosType& d) : PID(id), Weight(w), Delta(d) {}
+  NonLocalData();
+  NonLocalData(IndexType id, RealType w, const PosType& d);
 };
 
 /** @ingroup hamiltonian
@@ -62,30 +62,31 @@ struct NonLocalData : public QMCTraits
  * Return_t is defined as RealTye.
  * The types should be checked when using complex wave functions.
  */
-struct OperatorBase : public QMCTraits
+class OperatorBase : public QMCTraits
 {
+public:
   /** type of return value of evaluate
    */
-  typedef FullPrecRealType Return_t;
+  using Return_t = FullPrecRealType;
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
    */
-  typedef ParticleSet::Buffer_t BufferType;
+  using BufferType = ParticleSet::Buffer_t;
   ///typedef for the walker
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
   ///typedef for the ParticleScalar
-  typedef ParticleSet::Scalar_t ParticleScalar_t;
+  using ParticleScalar_t = ParticleSet::Scalar_t;
 
   ///enum to denote energy domain of operators
-  enum energy_domains
+  enum class energy_domains
   {
     kinetic = 0,
     potential,
     no_energy_domain
   };
 
-  enum quantum_domains
+  enum class quantum_domains
   {
     no_quantum_domain = 0,
     classical,
@@ -100,15 +101,13 @@ struct OperatorBase : public QMCTraits
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
   energy_domains energy_domain;
   ///enum for UpdateMode
-  enum
-  {
-    PRIMARY     = 0,
-    OPTIMIZABLE = 1,
-    RATIOUPDATE = 2,
-    PHYSICAL    = 3,
-    COLLECTABLE = 4,
-    NONLOCAL    = 5,
-  };
+
+  static constexpr int PRIMARY     = 0;
+  static constexpr int OPTIMIZABLE = 1;
+  static constexpr int RATIOUPDATE = 2;
+  static constexpr int PHYSICAL    = 3;
+  static constexpr int COLLECTABLE = 4;
+  static constexpr int NONLOCAL    = 5;
 
   ///set the current update mode
   std::bitset<8> UpdateMode;
@@ -124,7 +123,7 @@ struct OperatorBase : public QMCTraits
   /// ParticleSet.  It is accumulated if setComputeForces(true).
   ParticleSet::ParticlePos_t IonForce;
   ///reference to the current walker
-  Walker_t* tWalker;
+  Walker_t* tWalker = nullptr;
   //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
   ///name of this object
   std::string myName;
@@ -147,16 +146,11 @@ struct OperatorBase : public QMCTraits
   OperatorBase();
 
   ///virtual destructor
-  virtual ~OperatorBase() {}
+  virtual ~OperatorBase() = default;
 
+protected:
   ///set energy domain
   void set_energy_domain(energy_domains edomain);
-
-  ///return whether the energy domain is valid
-  inline bool energy_domain_valid(energy_domains edomain) const { return edomain != no_energy_domain; }
-
-  ///return whether the energy domain is valid
-  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
 
   ///set quantum domain
   void set_quantum_domain(quantum_domains qdomain);
@@ -170,17 +164,47 @@ struct OperatorBase : public QMCTraits
   ///set quantum domain for two-body operator
   void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
 
-  ///return whether the quantum domain is valid
-  bool quantum_domain_valid(quantum_domains qdomain);
+  /**
+   * set the values evaluated by this object to plist
+     * @param plist RecordNameProperty
+     *
+     * Default implementation is to assign Value which is updated
+     * by evaluate  function using myIndex.
+     */
+  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = Value; }
+
+  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
+
+  /** named values to  the property list
+     * @param plist RecordNameProperty
+     *
+     * Previously addObservables but it is renamed and a non-virtial function.
+     */
+  inline void addValue(PropertySetType& plist)
+  {
+    if (!UpdateMode[COLLECTABLE])
+      myIndex = plist.add(myName.c_str());
+  }
+
+
+private:
+  ///return whether the energy domain is valid
+  bool energy_domain_valid(energy_domains edomain) const { return edomain != energy_domains::no_energy_domain; }
+
+  ///return whether the energy domain is valid
+  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
 
   ///return whether the quantum domain is valid
-  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
+  bool quantum_domain_valid(quantum_domains qdomain) const noexcept;
 
-  inline bool is_classical() { return quantum_domain == classical; }
-  inline bool is_quantum() { return quantum_domain == quantum; }
-  inline bool is_classical_classical() { return quantum_domain == classical_classical; }
-  inline bool is_quantum_classical() { return quantum_domain == quantum_classical; }
-  inline bool is_quantum_quantum() { return quantum_domain == quantum_quantum; }
+  ///return whether the quantum domain is valid
+  bool quantum_domain_valid() const noexcept;
+
+  bool is_classical() const noexcept;
+  bool is_quantum() const noexcept;
+  bool is_classical_classical() const noexcept;
+  bool is_quantum_classical() const noexcept;
+  bool is_quantum_quantum() const noexcept;
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
@@ -188,17 +212,6 @@ struct OperatorBase : public QMCTraits
   inline bool getMode(int i) { return UpdateMode[i]; }
 
   inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
-
-  /** named values to  the property list
-   * @param plist RecordNameProperty
-   *
-   * Previously addObservables but it is renamed and a non-virtial function.
-   */
-  inline void addValue(PropertySetType& plist)
-  {
-    if (!UpdateMode[COLLECTABLE])
-      myIndex = plist.add(myName.c_str());
-  }
 
   /** named values to  the property list
    * @param plist RecordNameProperty
@@ -225,15 +238,6 @@ struct OperatorBase : public QMCTraits
    */
   virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
 
-  /** set the values evaluated by this object to plist
-   * @param plist RecordNameProperty
-   *
-   * Default implementation is to assign Value which is updated
-   * by evaluate  function using myIndex.
-   */
-  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = Value; }
-
-  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
 
   //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
   virtual void setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
@@ -322,8 +326,8 @@ struct OperatorBase : public QMCTraits
                                                       ParticleSet::ParticlePos_t& pulay_term)
   {
     //If there's no stochastic component, defaults to above defined evaluateWithIonDerivs.
-    //If not otherwise specified, this defaults to evaluate().  
-    return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
+    //If not otherwise specified, this defaults to evaluate().
+    return evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_term);
   }
   /** update data associated with a particleset
    * @param s source particle set

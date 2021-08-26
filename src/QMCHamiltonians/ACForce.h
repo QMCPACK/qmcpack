@@ -10,8 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file ACForce.h
- *@brief Declaration of ACForce, Assaraf-Caffarel ZVZB style force estimation.
+/**
+ * @file ACForce.h
+ * @brief Declaration of ACForce, Assaraf-Caffarel ZVZB style force estimation.
+ * @brief https://arxiv.org/abs/physics/0310035
  */
 #ifndef QMCPLUSPLUS_ACFORCE_H
 #define QMCPLUSPLUS_ACFORCE_H
@@ -23,15 +25,15 @@
 
 namespace qmcplusplus
 {
-struct ACForce : public OperatorBase
+using Force_t = ParticleSet::ParticlePos_t;
+
+class ACForce : public OperatorBase
 {
-  typedef ParticleSet::ParticlePos_t Force_t;
+public:
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
   /** Destructor **/
   ~ACForce() override{};
-  /** Copy constructor **/
-  //ACForce(const ACForce& ac)  {};
 
   /** I/O Routines */
   bool put(xmlNodePtr cur) override;
@@ -55,8 +57,9 @@ struct ACForce : public OperatorBase
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P) override;
 
+private:
   ///Finite difference timestep
-  RealType delta; 
+  RealType delta;
 
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
