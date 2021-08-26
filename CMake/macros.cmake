@@ -14,7 +14,7 @@
 #     using a specified script
 #############################################################
 
-include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+include(test_labels)
 
 # Function to copy a directory
 function(COPY_DIRECTORY SRC_DIR DST_DIR)
