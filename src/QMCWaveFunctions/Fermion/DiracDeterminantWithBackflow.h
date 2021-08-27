@@ -50,7 +50,10 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet& ptcl, std::shared_ptr<SPOSet>&& spos, BackflowTransformation* BF, int first = 0);
+  DiracDeterminantWithBackflow(ParticleSet& ptcl,
+                               std::shared_ptr<SPOSet>&& spos,
+                               std::shared_ptr<BackflowTransformation> BF,
+                               int first = 0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow() override;
@@ -71,7 +74,7 @@ public:
   }
 
   ///set BF pointers
-  void setBF(BackflowTransformation* bf) override { BFTrans = bf; }
+  void setBF(std::shared_ptr<BackflowTransformation> bf) override { BFTrans = std::move(bf); }
 
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
@@ -164,7 +167,7 @@ public:
   HessVector_t grad_gradV;
   HessMatrix_t grad_grad_psiM_temp;
   GGGMatrix_t grad_grad_grad_psiM;
-  BackflowTransformation* BFTrans;
+  std::shared_ptr<BackflowTransformation> BFTrans;
   ParticleSet::ParticleGradient_t Gtemp;
   ValueType La1, La2, La3;
   HessMatrix_t Ajk_sum, Qmat;

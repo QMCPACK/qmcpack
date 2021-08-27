@@ -80,8 +80,8 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(Par
   auto clone = std::make_unique<MultiSlaterDeterminantFast>(tqp, std::move(dets_clone), use_pre_computing_);
   if (usingBF)
   {
-    BackflowTransformation* tr = BFTrans->makeClone(tqp);
-    clone->setBF(tr);
+    auto tr = BFTrans->makeClone(tqp);
+    clone->setBF(std::move(tr));
   }
 
   clone->C2node = C2node;

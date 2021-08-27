@@ -39,15 +39,17 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : W
 SlaterDet::~SlaterDet() = default;
 
 ///add a new DiracDeterminant to the list of determinants
-void SlaterDet::add(Determinant_t* det, int ispin)
+void SlaterDet::add(std::unique_ptr<Determinant_t> det, int ispin)
 {
   if (Dets[ispin] != nullptr)
   {
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
-    Dets[ispin].reset(det);
-  Optimizable = Optimizable || det->Optimizable;
+  {
+    Optimizable = Optimizable || det->Optimizable;
+    Dets[ispin] = std::move(det);
+  }
 }
 
 void SlaterDet::checkInVariables(opt_variables_type& active)
@@ -258,8 +260,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) co
   myclone->Optimizable = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {
-    Determinant_t* newD = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));
-    myclone->add(newD, i);
+    auto newD = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
+    myclone->add(std::unique_ptr<DiracDeterminantBase>(newD), i);
   }
   return myclone;
 }

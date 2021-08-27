@@ -21,9 +21,9 @@ namespace qmcplusplus
 MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
                                                                        std::unique_ptr<SPOSetProxyForMSD>&& upspo,
                                                                        std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                                                       BackflowTransformation* BF)
+                                                                       std::shared_ptr<BackflowTransformation> BF)
     : MultiSlaterDeterminant(targetPtcl, std::move(upspo), std::move(dnspo), "MultiSlaterDeterminantWithBackflow"),
-      BFTrans(BF)
+      BFTrans(std::move(BF))
 {
   Optimizable  = false;
   is_fermionic = true;
@@ -31,15 +31,14 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
 
 std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  // mmorales: the proxy classes read from the particle set inside BFTrans
-  BackflowTransformation* tr = BFTrans->makeClone(tqp);
-  auto spo_up_C              = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
-                                                      FirstIndex_up, LastIndex_up);
-  auto spo_dn_C              = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
-                                                      FirstIndex_dn, LastIndex_dn);
+  // mmorales: the proxy classes read from the particle set inside BFTran
+  std::shared_ptr<BackflowTransformation> tr = BFTrans->makeClone(tqp);
+  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
+  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup            = spo_up->occup;
   spo_dn_C->occup            = spo_dn->occup;
-  auto clone = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spo_up_C), std::move(spo_dn_C), tr);
+  auto clone       = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spo_up_C), std::move(spo_dn_C),
+                                                                    std::move(tr));
   clone->C2node_up = C2node_up;
   clone->C2node_dn = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());

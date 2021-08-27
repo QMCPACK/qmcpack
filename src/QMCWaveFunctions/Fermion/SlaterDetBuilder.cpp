@@ -524,7 +524,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);
 #endif
-  slaterdet_0->add(adet, spin_group);
+  slaterdet_0->add(std::unique_ptr<DiracDeterminantBase>(adet), spin_group);
 
   app_log() << std::endl;
   app_log().flush();

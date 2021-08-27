@@ -74,11 +74,9 @@ public:
 
   void resize(int NT) { NumTargets = NT; }
 
-  ~Backflow_ee_kSpace() override{};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_ee_kSpace>(CenterSys, tqp);
     clone->resize(NumTargets);
     //       clone->uniqueRadFun.resize(uniqueRadFun.size());
     //       clone->RadFun.resize(RadFun.size());
