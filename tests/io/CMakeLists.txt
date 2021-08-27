@@ -21,7 +21,7 @@ function(
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  message_verbose("Adding test ${full_name}")
+  message(VERBOSE "Adding test ${full_name}")
 
   # add run (task 1)
   set(test_added false)

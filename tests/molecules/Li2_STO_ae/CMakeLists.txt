@@ -60,9 +60,9 @@ if(NOT QMC_CUDA)
     )
 
   else()
-    message_verbose(
+    message(VERBOSE
       "Skipping Li2_STO_ae tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose("Skipping Li2_STO_ae tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping Li2_STO_ae tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

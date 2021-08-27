@@ -79,9 +79,9 @@ if(NOT QMC_CUDA)
     )
 
   else()
-    message_verbose("Skipping bccH_2x2x2_ae derivative and optimization tests in mixed precision (QMC_MIXED_PRECISION=1)")
+    message(VERBOSE "Skipping bccH_2x2x2_ae derivative and optimization tests in mixed precision (QMC_MIXED_PRECISION=1)")
   endif(NOT MIXED_PRECISION)
 else()
-  message_verbose("Skipping bccH_2x2x2_ae derivative and backflow tests because they are not support by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping bccH_2x2x2_ae derivative and backflow tests because they are not support by CUDA build (QMC_CUDA=1)")
 endif()
 
