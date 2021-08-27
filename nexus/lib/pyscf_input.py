@@ -118,26 +118,46 @@ class PyscfInput(SimulationInputTemplateDev):
     
 
     def __init__(self,
-                 template   = None,   # path to template input file
-                 prefix     = None,   # $prefix var for file prefixes
-                 custom     = None,   # obj w/ $ prefixed vars in template
-                 system     = None,   # physical system object
-                 units      = None,   # input units desired
-                 use_folded = True,   # use folded system/primitive cell
-                 mole       = None,   # obj w/ Mole variables
-                 cell       = None,   # obj w/ Cell variables
-                 sys_var    = None,   # local var name for Mole/Cell
-                 mole_var   = 'mol',  # local var name for Mole in written input
-                 cell_var   = 'cell', # local var name for Cell in written input
-                 save_qmc   = False,  # convert to QMCPACK format
-                 checkpoint = False,  # set $chkfile variable
-                 mf_var     = 'mf',   # local var name for mf, used for convert
-                 kpts_var   = 'kpts', # local var name for kpts, used for convert
-                 filepath   = None,   # alias for template
-                 text       = None,   # full text of (and alternate to) template 
+                 template    = None,   # path to template input file
+                 prefix      = None,   # $prefix var for file prefixes
+                 custom      = None,   # obj w/ $ prefixed vars in template
+                 system      = None,   # physical system object
+                 units       = None,   # input units desired
+                 use_folded  = True,   # use folded system/primitive cell
+                 mole        = None,   # obj w/ Mole variables
+                 cell        = None,   # obj w/ Cell variables
+                 sys_var     = None,   # local var name for Mole/Cell
+                 mole_var    = 'mol',  # local var name for Mole in written input
+                 cell_var    = 'cell', # local var name for Cell in written input
+                 save_qmc    = False,  # convert to QMCPACK format
+                 checkpoint  = False,  # set $chkfile variable
+                 mf_var      = 'mf',   # local var name for mf, used for convert
+                 kpts_var    = 'kpts', # local var name for kpts, used for convert
+                 filepath    = None,   # alias for template
+                 text        = None,   # full text of (and alternate to) template 
+                 calculation = None,   # obj w/ Calculation variables
                  ):
         if filepath is None and template is not None:
             filepath = template
+        elif filepath is None and template is None: # and text is None:
+            # would be nice to have following check, but doesn't work
+            # due to line 384 of simulation.py
+            #if calculation is None:
+            #    self.error('pyscf template not provided with \'template\', \'filepath\', or \'text\'.\nIn this case \'calculation\' must be specified.')
+            ##end if
+            self.calculation = calculation
+            text='''
+#! /usr/bin/env python3
+
+import numpy as np
+from numpy import array
+from pyscf.pbc import df, scf
+
+
+$system
+
+$calculation
+'''
         #end if
         SimulationInputTemplateDev.__init__(self,filepath,text)
 
@@ -228,6 +248,70 @@ class PyscfInput(SimulationInputTemplateDev):
             #end if
         else:
             None # no action needed if not molecule or periodic solid
+        #end if
+
+        if calculation is not None and 'system' not in self.values:
+            #MCB
+            calculation = calculation.copy() # make a local copy
+            if 'method' in calculation.keys():
+                pyscf_method = calculation.method
+            else:
+                pyscf_method = 'RKS'
+            #end if
+            if 'df_fitting' in calculation.keys():
+                pyscf_df_fitting = calculation.df_fitting
+            else:
+                pyscf_df_fitting = True
+            #end if
+            if 'xc' in calculation.keys():
+                pyscf_xc = calculation.xc
+            else:
+                pyscf_xc = 'pbe'
+            #end if
+            if 'tol' in calculation.keys():
+                pyscf_tol = calculation.tol
+            else:
+                pyscf_tol = '1e-10'
+            #end if
+            if 'df_method' in calculation.keys():
+                pyscf_df_method = calculation.df_method
+            else:
+                pyscf_df_method = 'GDF'
+            #end if
+            if 'exxdiv' in calculation.keys():
+                pyscf_exxdiv = calculation.exxdiv
+            else:
+                pyscf_exxdiv = 'ewald'
+            #end if
+            # Begin to construct input string
+            c = '\n### generated calculation text ###\n'
+            if sys_name is not None:
+                df_str = '.density_fit()' if pyscf_df_fitting else ''
+                if sys_name == 'mole':
+                    c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var)
+                    c += 'mydf.auxbasis = \'weigend\'\n'
+                    c += 'dfpath = \'df_ints.h5\'\n'
+                    c += 'mydf._cderi_to_save = dfpath\n'
+                    c += 'mydf.build()\n\n'
+                    c += 'mf = scf.{}({}){}\n'.format(pyscf_method,sys_var,df_str)
+                elif sys_name == 'cell':
+                    c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var,'kpts')
+                    c += 'mydf.auxbasis = \'weigend\'\n'
+                    c += 'dfpath = \'df_ints.h5\'\n'
+                    c += 'mydf._cderi_to_save = dfpath\n'
+                    c += 'mydf.build()\n\n'
+                    c += 'mf = scf.{}({},{}){}\n'.format(pyscf_method,sys_var,'kpts',df_str)
+                    c += 'mf.exxdiv      = \'{}\'\n'.format(pyscf_exxdiv)
+                #end if
+            #end if
+            c += 'mf.xc          = \'{}\'\n'.format(pyscf_xc)
+            c += 'mf.tol         = \'{}\'\n'.format(pyscf_tol)
+            if pyscf_df_fitting:
+                c += 'mf.with_df     = mydf\n'
+            #end if
+            c += 'e_scf = mf.kernel()'
+            c += '### end generated calculation text ###\n\n'
+            self.assign(calculation=c)
         #end if
 
         if sys_name is not None:
