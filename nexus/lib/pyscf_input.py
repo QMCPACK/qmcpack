@@ -136,6 +136,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  filepath    = None,   # alias for template
                  text        = None,   # full text of (and alternate to) template 
                  calculation = None,   # obj w/ Calculation variables
+                 twist_num   =    0,   # Twist index
                  ):
         if filepath is None and template is not None:
             filepath = template
@@ -200,6 +201,18 @@ $calculation
                 self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
             #end if
             system = system.copy() # make a local copy
+            if system.has_folded():
+                stmp = system.structure.copy()
+                prim_sys_kpoints = stmp.folded_structure.kpoints.copy()
+                kmap = stmp.kmap() 
+                allkpts = list(map(lambda xs: list(map(lambda x: prim_sys_kpoints[x], xs)), kmap))
+                sp_kpoints = stmp.kpoints.copy()
+                sp_twist = sp_kpoints[twist_num]
+                p_kpts     = allkpts[twist_num]
+                sp_kmesh = system.generation_info.kgrid
+            else:
+                sp_twist=None
+            #end if
             if use_folded and system.has_folded():
                 system = system.folded_system
             #end if
@@ -230,6 +243,26 @@ $calculation
                 #end if
             #end if
         #end if
+
+#if show_kmap: 
+#    print 
+#    print 
+#    print (cell_type) 
+#    print ('===============================') 
+#    s = diamond.structure.copy() 
+#    kmap = s.kmap() 
+#    print ('supercell kpoints/twists') 
+#    for i,k in enumerate(s.kpoints): 
+#        print ('  ',i,k) 
+#    #end for 
+#    print ('primitive cell kpoints') 
+#    for i,k in enumerate(s.folded_structure.kpoints): 
+#        print ('  ',i,k) 
+#    #end for 
+#    print ('mapping from supercell to primitive cell k-points') 
+#    print (kmap) 
+##end if 
+
         if is_mole:
             sys_name    = 'mole'
             sys_var     = mole_var
@@ -309,7 +342,8 @@ $calculation
             if pyscf_df_fitting:
                 c += 'mf.with_df     = mydf\n'
             #end if
-            c += 'e_scf = mf.kernel()'
+            c += 'e_scf = mf.kernel()\n'
+
             c += '### end generated calculation text ###\n\n'
             self.assign(calculation=c)
         #end if
@@ -388,8 +422,12 @@ $calculation
             s += 'from PyscfToQmcpack import savetoqmcpack\n'
             if sys_kpoints is None:
                 s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
-            else:
+            elif sp_twist is None:
                 s += "savetoqmcpack({0},{1},'{2}',{3})\n".format(sys_var,mf_var,prefix,kpts_var)
+            else:
+                s += "kmesh=[{},{},{}]\n".format(sp_kmesh[0],sp_kmesh[1],sp_kmesh[2])
+                s += "sp_twist=array([{},{},{}])\n".format(sp_twist[0],sp_twist[1],sp_twist[2])
+                s += "savetoqmcpack({0},{1},'{2}',kmesh=kmesh,kpts={3},sp_twist=sp_twist)\n".format(sys_var,mf_var,prefix,kpts_var)
             #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
