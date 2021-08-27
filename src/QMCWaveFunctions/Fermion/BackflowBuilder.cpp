@@ -37,17 +37,14 @@
 
 namespace qmcplusplus
 {
-BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool)
-    : cutOff(1.0), targetPtcl(els), ptclPool(pool)
-{
-}
+BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool) {}
 
 std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
   xmlNodePtr curRoot = cur;
   std::string cname;
   auto BFTrans = std::make_unique<BackflowTransformation>(targetPtcl);
-  cur     = curRoot->children;
+  cur          = curRoot->children;
   while (cur != NULL)
   {
     getNodeName(cname, cur);
@@ -119,10 +116,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
   }
   app_log() << "Adding electron-Ion backflow for source:" << source << " \n";
   std::unique_ptr<BackflowFunctionBase> tbf;
-  int nIons                 = ions->getTotalNum();
-  SpeciesSet& sSet          = ions->getSpeciesSet();
-  SpeciesSet& tSet          = targetPtcl.getSpeciesSet();
-  int numSpecies            = sSet.getTotalNum();
+  int nIons        = ions->getTotalNum();
+  SpeciesSet& sSet = ions->getSpeciesSet();
+  SpeciesSet& tSet = targetPtcl.getSpeciesSet();
+  int numSpecies   = sSet.getTotalNum();
   if (spin == "yes")
   {
     APP_ABORT("Spin one body backflow not supported");
@@ -246,9 +243,9 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
     if (funct == "Bspline")
     {
       app_log() << "Using BsplineFunctor type. \n";
-      tbf       = std::make_unique<Backflow_eI<BsplineFunctor<RealType>>>(*ions, targetPtcl);
-      auto* dum = (Backflow_eI<BsplineFunctor<RealType>>*)tbf.get();
-      tbf->numParams                             = 0;
+      auto dum         = std::make_unique<Backflow_eI<BsplineFunctor<RealType>>>(*ions, targetPtcl);
+      auto& num_params = dum->numParams;
+      num_params       = 0;
       std::vector<int> offsets;
       for (int i = 0; i < funs.size(); i++)
       {
@@ -261,10 +258,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
         bsp->myVars.setParameterType(optimize::BACKFLOW_P);
         //bsp->print();
         dum->uniqueRadFun.push_back(bsp);
-        offsets.push_back(tbf->numParams);
-        tbf->numParams += bsp->NumParams;
+        offsets.push_back(num_params);
+        num_params += bsp->NumParams;
       }
-      tbf->derivs.resize(tbf->numParams);
+      dum->derivs.resize(num_params);
       dum->offsetPrms.resize(nIons);
       dum->RadFun.resize(nIons);
       for (int i = 0; i < ion2functor.size(); i++)
@@ -276,6 +273,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
         dum->RadFun[i]     = dum->uniqueRadFun[ion2functor[i]];
         dum->offsetPrms[i] = offsets[ion2functor[i]];
       }
+      tbf = std::move(dum);
     }
     else
     {
@@ -439,7 +437,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addRPA(xmlNodePtr cur)
   std::vector<int> offsetsSR;
   std::vector<int> offsetsLR;
   std::unique_ptr<Backflow_ee<BsplineFunctor<RealType>>> tbf;
-  Backflow_ee_kSpace* tbfks                  = 0;
+  Backflow_ee_kSpace* tbfks = 0;
   // now look for components
   std::string cname;
   cur = cur->children;

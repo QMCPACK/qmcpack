@@ -38,9 +38,9 @@ namespace qmcplusplus
 {
 class BackflowBuilder
 {
-  using RealType = BackflowFunctionBase::RealType;
-  using HandlerType = LRHandlerBase;
-  using GridType = LinearGrid<RealType>;
+  using RealType     = BackflowFunctionBase::RealType;
+  using HandlerType  = LRHandlerBase;
+  using GridType     = LinearGrid<RealType>;
   using PtclPoolType = std::map<std::string, ParticleSet*>;
 
 public:

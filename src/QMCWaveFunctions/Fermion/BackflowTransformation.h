@@ -175,7 +175,7 @@ public:
   }
 
   // FIX FIX FIX
-  std::unique_ptr<BackflowTransformation> makeClone(ParticleSet& tqp)
+  std::unique_ptr<BackflowTransformation> makeClone(ParticleSet& tqp) const
   {
     auto clone = std::make_unique<BackflowTransformation>(tqp);
     clone->copyFrom(*this, tqp);
