@@ -52,8 +52,6 @@ SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
     : WaveFunctionComponentBuilder(comm, els), sposet_builder_factory_(factory), targetPsi(psi), ptclPool(psets)
 {
   ClassName   = "SlaterDetBuilder";
-  BFTrans     = 0;
-  UseBackflow = false;
 }
 
 /** process <determinantset>
@@ -70,7 +68,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  xmlNodePtr BFnode  = nullptr;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
@@ -118,16 +115,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       // in the xml file
       if (BFTrans != 0)
       {
-        APP_ABORT("Only a single backflow block is allowed in the xml. Please collect all transformations into a "
+        myComm->barrier_and_abort("Only a single backflow block is allowed in the xml. Please collect all transformations into a "
                   "single block. \n");
       }
-      UseBackflow = true;
-      // creating later due to problems with ParticleSets
-      //BFTrans = new BackflowTransformation(targetPtcl,ptclPool);
-      BFTrans = nullptr;
-      BFnode  = cur;
-      // read xml later, in case some ParticleSets are read from hdf5 file.
-      //BFTrans->put(cur);
+
+      BackflowBuilder bfbuilder(targetPtcl, ptclPool);
+      BFTrans = bfbuilder.buildBackflowTransformation(cur);
     }
     cur = cur->next;
   }
@@ -148,7 +141,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       {
         APP_ABORT("slaterdet is already instantiated.");
       }
-      if (UseBackflow)
+      if (BFTrans)
       {
         app_summary() << "    Using backflow transformation." << std::endl;
         slaterdet_0 = std::make_unique<SlaterDetWithBackflow>(targetPtcl, BFTrans);
@@ -233,7 +226,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
       {
         app_summary() << "    Using Bryan's table method." << std::endl;
-        if (UseBackflow)
+        if (BFTrans)
         {
           APP_ABORT("Backflow is not implemented with the table method.");
         }
@@ -281,7 +274,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
             std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[0]), targetPtcl.first(0), targetPtcl.last(0));
         auto spo_dn =
             std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[1]), targetPtcl.first(1), targetPtcl.last(1));
-        if (UseBackflow)
+        if (BFTrans)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
           multislaterdet_0 = std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spo_up),
@@ -312,10 +305,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     return nullptr;
   }
   // change DistanceTables if using backflow
-  if (UseBackflow)
+  if (BFTrans)
   {
-    BackflowBuilder bfbuilder(targetPtcl, ptclPool);
-    BFTrans = bfbuilder.buildBackflowTransformation(BFnode);
     if (multiDet)
     {
       if (msd_algorithm == "all_determinants")
@@ -474,7 +465,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   app_summary() << "      Using legacy CUDA acceleration." << std::endl;
   adet = new DiracDeterminantCUDA(std::move(psi_clone), firstIndex, lastIndex);
 #else
-  if (UseBackflow)
+  if (BFTrans)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
     adet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psi_clone), BFTrans, firstIndex, lastIndex);
@@ -732,7 +723,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur
         }
       }
       DiracDeterminantBase* adet;
-      if (UseBackflow)
+      if (BFTrans)
       {
         adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), nullptr, multiSD.FirstIndex_up, multiSD.FirstIndex_up + multiSD.nels_up);
       }
@@ -760,7 +751,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur
         }
       }
       DiracDeterminantBase* adet;
-      if (UseBackflow)
+      if (BFTrans)
       {
         adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), nullptr, multiSD.FirstIndex_dn, multiSD.FirstIndex_dn + multiSD.nels_dn);
       }

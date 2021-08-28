@@ -66,7 +66,6 @@ private:
   std::unique_ptr<MultiSlaterDeterminant_t> multislaterdet_0;
   std::unique_ptr<MultiSlaterDeterminantFast> multislaterdetfast_0;
 
-  bool UseBackflow;
   std::shared_ptr<BackflowTransformation> BFTrans;
 
   /** process a determinant element
