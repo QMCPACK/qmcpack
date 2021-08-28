@@ -136,7 +136,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  filepath    = None,   # alias for template
                  text        = None,   # full text of (and alternate to) template 
                  calculation = None,   # obj w/ Calculation variables
-                 twist_num   =    0,   # Twist index
+                 twist_num   = None,   # Twist index
                  ):
         if filepath is None and template is not None:
             filepath = template
