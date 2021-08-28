@@ -74,13 +74,11 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminant::makeClone(Particl
   }
   for (int i = 0; i < dets_up.size(); i++)
   {
-    clone->dets_up.push_back(std::make_unique<SingleDet_t>(std::static_pointer_cast<SPOSet>(clone->spo_up), 0));
-    clone->dets_up.back()->set(clone->FirstIndex_up, clone->nels_up);
+    clone->dets_up.push_back(std::make_unique<SingleDet_t>(std::static_pointer_cast<SPOSet>(clone->spo_up), clone->FirstIndex_up, clone->FirstIndex_up + clone->nels_up));
   }
   for (int i = 0; i < dets_dn.size(); i++)
   {
-    clone->dets_dn.emplace_back(std::make_unique<SingleDet_t>(std::static_pointer_cast<SPOSet>(clone->spo_dn), 0));
-    clone->dets_dn.back()->set(clone->FirstIndex_dn, clone->nels_dn);
+    clone->dets_dn.emplace_back(std::make_unique<SingleDet_t>(std::static_pointer_cast<SPOSet>(clone->spo_dn), clone->FirstIndex_dn, clone->FirstIndex_dn + clone->nels_dn));
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;

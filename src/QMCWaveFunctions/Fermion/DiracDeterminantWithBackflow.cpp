@@ -30,8 +30,8 @@ namespace qmcplusplus
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
                                                            std::shared_ptr<SPOSet>&& spos,
                                                            std::shared_ptr<BackflowTransformation> BF,
-                                                           int first)
-    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first)
+                                                           int first, int last)
+    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first, last)
 {
   Optimizable  = true;
   is_fermionic = true;
@@ -39,6 +39,7 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
   BFTrans      = std::move(BF);
   NumParticles = ptcl.getTotalNum();
   NP           = 0;
+  resize(NumPtcls, NumPtcls);
 }
 
 ///default destructor
@@ -55,9 +56,6 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
   psiMinv.resize(nel, norb);
   WorkSpace.resize(nel);
   Pivot.resize(nel);
-  LastIndex   = FirstIndex + nel;
-  NumPtcls    = nel;
-  NumOrbitals = norb;
   grad_grad_psiM.resize(nel, norb);
   grad_grad_grad_psiM.resize(nel, norb);
   Gtemp.resize(NumParticles); // not correct for spin polarized...
@@ -1002,9 +1000,7 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared
 {
   //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, std::move(spo), BFTrans, FirstIndex);
-  dclone->resize(NumPtcls, NumOrbitals);
-  dclone->Optimizable = Optimizable;
+  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, std::move(spo), BFTrans, FirstIndex, LastIndex);
   return dclone;
 }
 

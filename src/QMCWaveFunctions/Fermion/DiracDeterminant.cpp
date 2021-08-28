@@ -29,30 +29,19 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first), ndelay(1), invRow_id(-1)
-{}
-
-/** set the index of the first particle in the determinant and reset the size of the determinant
- *@param first index of first particle
- *@param nel number of particles in the determinant
- */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay)
+    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last), ndelay_(ndelay), invRow_id(-1)
 {
-  FirstIndex = first;
-  ndelay     = delay;
-
-  resize(nel, nel);
+  resize(NumPtcls, NumPtcls);
 
   if (Optimizable)
-    Phi->buildOptVariables(nel);
+    Phi->buildOptVariables(NumPtcls);
 
-  if (Phi->getOrbitalSetSize() < nel)
+  if (Phi->getOrbitalSetSize() < NumPtcls)
   {
     std::ostringstream err_msg;
     err_msg << "The SPOSet " << Phi->getName() << " only has " << Phi->getOrbitalSetSize() << " orbitals "
-            << "but this determinant needs at least " << nel << std::endl;
+            << "but this determinant needs at least " << NumPtcls << std::endl;
     throw std::runtime_error(err_msg.str());
   }
 }
@@ -74,16 +63,13 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  updateEng.resize(norb, ndelay);
+  updateEng.resize(norb, ndelay_);
   psiM.resize(nel, norb);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
-  LastIndex   = FirstIndex + nel;
-  NumPtcls    = nel;
-  NumOrbitals = norb;
 
   dpsiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);
@@ -693,8 +679,7 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo));
-  dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
+  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo), FirstIndex, LastIndex, ndelay_);
   return dclone;
 }
 

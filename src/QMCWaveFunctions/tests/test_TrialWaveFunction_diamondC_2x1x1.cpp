@@ -135,11 +135,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto det_up_uptr = std::make_unique<DiracDet>(spo->makeClone());
+  auto det_up_uptr = std::make_unique<DiracDet>(spo->makeClone(), 0, 2, ndelay);
   auto det_up      = det_up_uptr.get();
-  det_up->set(0, 2, ndelay);
-  auto det_dn = std::make_unique<DiracDet>(spo->makeClone());
-  det_dn->set(2, 2, ndelay);
+  auto det_dn = std::make_unique<DiracDet>(spo->makeClone(), 2, 4, ndelay);
 
   auto slater_det = std::make_unique<SlaterDet>(elec_);
   slater_det->add(std::move(det_up_uptr), 0);

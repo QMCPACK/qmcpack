@@ -472,12 +472,12 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   //TODO: the switch logic should be improved as we refine the input tags.
 #if defined(QMC_CUDA)
   app_summary() << "      Using legacy CUDA acceleration." << std::endl;
-  adet = new DiracDeterminantCUDA(std::move(psi_clone), firstIndex);
+  adet = new DiracDeterminantCUDA(std::move(psi_clone), firstIndex, lastIndex);
 #else
   if (UseBackflow)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
-    adet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psi_clone), BFTrans, firstIndex);
+    adet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psi_clone), BFTrans, firstIndex, lastIndex);
   }
   else
   {
@@ -490,7 +490,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = new DiracDeterminantBatched<
             MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
-                                                                                         firstIndex);
+                                                                                         firstIndex, lastIndex, delay_rank);
       }
       else
 #endif
@@ -498,7 +498,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
         app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
                          "delay_rank is ignored."
                       << std::endl;
-        adet = new DiracDeterminantBatched<>(std::move(psi_clone), firstIndex);
+        adet = new DiracDeterminantBatched<>(std::move(psi_clone), firstIndex, lastIndex, delay_rank);
       }
     }
     else
@@ -508,19 +508,18 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
         adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
-                                                                                                firstIndex);
+                                                                                                firstIndex, lastIndex, delay_rank);
       }
       else
 #endif
       {
         app_summary() << "      Running on CPU." << std::endl;
-        adet = new DiracDeterminant<>(std::move(psi_clone), firstIndex);
+        adet = new DiracDeterminant<>(std::move(psi_clone), firstIndex, lastIndex, delay_rank);
       }
     }
   }
 #endif
 
-  adet->set(firstIndex, lastIndex - firstIndex, delay_rank);
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);
 #endif
@@ -735,13 +734,12 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur
       DiracDeterminantBase* adet;
       if (UseBackflow)
       {
-        adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), 0, 0);
+        adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), nullptr, multiSD.FirstIndex_up, multiSD.FirstIndex_up + multiSD.nels_up);
       }
       else
       {
-        adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
+        adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_up, multiSD.FirstIndex_up + multiSD.nels_up);
       }
-      adet->set(multiSD.FirstIndex_up, multiSD.nels_up);
       multiSD.dets_up.emplace_back(adet);
     }
   }
@@ -764,13 +762,12 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur
       DiracDeterminantBase* adet;
       if (UseBackflow)
       {
-        adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), 0, 0);
+        adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), nullptr, multiSD.FirstIndex_dn, multiSD.FirstIndex_dn + multiSD.nels_dn);
       }
       else
       {
-        adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
+        adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_dn, multiSD.FirstIndex_dn + multiSD.nels_dn);
       }
-      adet->set(multiSD.FirstIndex_dn, multiSD.nels_dn);
       multiSD.dets_dn.emplace_back(adet);
     }
   }
