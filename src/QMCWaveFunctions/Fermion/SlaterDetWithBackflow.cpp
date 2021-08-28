@@ -22,6 +22,9 @@ SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, std::share
     : SlaterDet(targetPtcl, "SlaterDetWithBackflow"), BFTrans(std::move(BF))
 {
   Optimizable = false;
+  // FIXME once setBF is removed
+  //if (BFTrans->isOptimizable())
+  //  Optimizable = true;
 }
 
 ///destructor

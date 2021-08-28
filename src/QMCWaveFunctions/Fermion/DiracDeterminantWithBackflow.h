@@ -86,9 +86,6 @@ public:
                            Array<GradType, OHMMS_DIM>& dG,
                            Matrix<RealType>& dL) override;
 
-  ///reset the size: with the number of particles and number of orbtials
-  void resize(int nel, int morb);
-
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
@@ -141,6 +138,9 @@ public:
   std::shared_ptr<BackflowTransformation> BFTrans;
 
 private:
+  ///reset the size: with the number of particles and number of orbtials
+  void resize(int nel, int morb);
+
   inline ValueType rcdot(TinyVector<RealType, OHMMS_DIM>& lhs, TinyVector<ValueType, OHMMS_DIM>& rhs)
   {
     ValueType ret(0);

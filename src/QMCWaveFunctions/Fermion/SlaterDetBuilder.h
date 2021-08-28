@@ -36,7 +36,6 @@ namespace qmcplusplus
 class SlaterDetBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  typedef SlaterDet SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
   /** constructor
    * \param els reference to the electrons
@@ -62,20 +61,19 @@ private:
   TrialWaveFunction& targetPsi;
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  std::unique_ptr<SlaterDeterminant_t> slaterdet_0;
-  std::unique_ptr<MultiSlaterDeterminant_t> multislaterdet_0;
-  std::unique_ptr<MultiSlaterDeterminantFast> multislaterdetfast_0;
-
-  std::shared_ptr<BackflowTransformation> BFTrans;
 
   /** process a determinant element
    * @param cur xml node
    * @param firstIndex index of the determinant
    * @return firstIndex+number of orbitals
    */
-  bool putDeterminant(xmlNodePtr cur, int firstIndex);
+  std::unique_ptr<DiracDeterminantBase> putDeterminant(xmlNodePtr cur,
+                                                       int spin_group,
+                                                       const std::shared_ptr<BackflowTransformation>& BFTrans);
 
-  bool createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur);
+  bool createMSD(MultiSlaterDeterminant& multiSD,
+                 xmlNodePtr cur,
+                 const std::shared_ptr<BackflowTransformation>& BFTrans);
 
   bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
                      std::vector<std::vector<size_t>>& C2node,
