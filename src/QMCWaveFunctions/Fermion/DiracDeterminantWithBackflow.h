@@ -50,9 +50,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos,
-                               std::shared_ptr<BackflowTransformation> BF,
-                               int first, int last);
+  DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos, BackflowTransformation& BF, int first, int last);
 
   ///default destructor
   ~DiracDeterminantWithBackflow() override;
@@ -114,7 +112,9 @@ public:
    */
   void restore(int iat) override;
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -123,7 +123,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo, std::shared_ptr<BackflowTransformation> BF) const;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo, BackflowTransformation& BF) const;
   DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("makeCopy spo should not be called.");
@@ -136,7 +136,7 @@ public:
   void testDerivLi(ParticleSet& P, int pa);
   void testL(ParticleSet& P);
 
-  std::shared_ptr<BackflowTransformation> BFTrans;
+  BackflowTransformation& BFTrans_;
 
 private:
   ///reset the size: with the number of particles and number of orbtials

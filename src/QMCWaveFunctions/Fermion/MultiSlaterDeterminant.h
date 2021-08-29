@@ -68,8 +68,7 @@ public:
 
   ///constructor
   MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                         std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                         std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
+                         std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
                          const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor

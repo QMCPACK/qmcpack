@@ -33,9 +33,8 @@ class MultiSlaterDeterminantWithBackflow : public MultiSlaterDeterminant
 public:
   ///constructor
   MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
-                                     std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                                     std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                     std::shared_ptr<BackflowTransformation> tr);
+                                     std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
+                                     std::unique_ptr<BackflowTransformation> tr);
 
   ///destructor
   ~MultiSlaterDeterminantWithBackflow() override;
@@ -68,11 +67,12 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi) override;
+
 private:
   void resize(int, int) override;
 
   // transformation
-  std::shared_ptr<BackflowTransformation> BFTrans;
+  const std::unique_ptr<BackflowTransformation> BFTrans;
 
   // temporary storage for evaluateDerivatives
   Matrix<RealType> dpsia_up, dLa_up;

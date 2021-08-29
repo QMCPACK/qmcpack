@@ -30,7 +30,9 @@ public:
    * @param targetPtcl target Particleset
    * @param rn release node
    */
-  SlaterDetWithBackflow(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, std::shared_ptr<BackflowTransformation> BF);
+  SlaterDetWithBackflow(ParticleSet& targetPtcl,
+                        std::vector<std::unique_ptr<Determinant_t>> dets,
+                        std::unique_ptr<BackflowTransformation> BF);
 
   ///destructor
   ~SlaterDetWithBackflow() override;
@@ -153,9 +155,8 @@ public:
 private:
   ///container for the DiracDeterminants
   const std::vector<std::unique_ptr<Determinant_t>> Dets;
-
-  std::shared_ptr<BackflowTransformation> BFTrans;
-
+  /// backflow transformation
+  const std::unique_ptr<BackflowTransformation> BFTrans;
 };
 } // namespace qmcplusplus
 #endif

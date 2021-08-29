@@ -84,7 +84,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   }
 
   //check the basis set and backflow transformation
-  std::shared_ptr<BackflowTransformation> BFTrans;
+  std::unique_ptr<BackflowTransformation> BFTrans;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
   {
@@ -170,9 +170,10 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       {
         app_summary() << "    Using backflow transformation." << std::endl;
         std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dirac_dets_bf;
-        for(auto& det : dirac_dets)
+        for (auto& det : dirac_dets)
           dirac_dets_bf.emplace_back(dynamic_cast<DiracDeterminantWithBackflow*>(det.release()));
-        auto single_det = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dirac_dets_bf), std::move(BFTrans));
+        auto single_det =
+            std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dirac_dets_bf), std::move(BFTrans));
         built_singledet_or_multidets = std::move(single_det);
       }
       else
@@ -266,23 +267,24 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
           return nullptr;
         }
         app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
-        auto spo_up =
-            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[0]), targetPtcl.first(0), targetPtcl.last(0));
-        auto spo_dn =
-            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[1]), targetPtcl.first(1), targetPtcl.last(1));
+        std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos;
+        spos.push_back(
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[0]), targetPtcl.first(0), targetPtcl.last(0)));
+        spos.push_back(
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[1]), targetPtcl.first(1), targetPtcl.last(1)));
         if (BFTrans)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
-          auto msd_all_dets = std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spo_up),
-                                                                                   std::move(spo_dn), BFTrans);
-          createMSD(*msd_all_dets, cur, BFTrans);
+          BackflowTransformation* const BFTrans_ptr = BFTrans.get();
+          auto msd_all_dets =
+              std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spos), std::move(BFTrans));
+          createMSD(*msd_all_dets, cur, BFTrans_ptr);
           built_singledet_or_multidets = std::move(msd_all_dets);
         }
         else
         {
-          auto msd_all_dets =
-              std::make_unique<MultiSlaterDeterminant>(targetPtcl, std::move(spo_up), std::move(spo_dn));
-          createMSD(*msd_all_dets, cur, BFTrans);
+          auto msd_all_dets = std::make_unique<MultiSlaterDeterminant>(targetPtcl, std::move(spos));
+          createMSD(*msd_all_dets, cur, nullptr);
           built_singledet_or_multidets = std::move(msd_all_dets);
         }
       }
@@ -314,7 +316,7 @@ magnetic system
 std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     xmlNodePtr cur,
     int spin_group,
-    const std::shared_ptr<BackflowTransformation>& BFTrans)
+    const std::unique_ptr<BackflowTransformation>& BFTrans)
 {
   ReportEngine PRE(ClassName, "putDeterminant(xmlNodePtr,int)");
 
@@ -437,8 +439,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   if (BFTrans)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
-    adet = std::make_unique<DiracDeterminantWithBackflow>(std::move(psi_clone), BFTrans, firstIndex,
-                                                          lastIndex);
+    adet = std::make_unique<DiracDeterminantWithBackflow>(std::move(psi_clone), *BFTrans, firstIndex, lastIndex);
   }
   else
   {
@@ -640,7 +641,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 
 bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
                                  xmlNodePtr cur,
-                                 const std::shared_ptr<BackflowTransformation>& BFTrans)
+                                 BackflowTransformation* const BFTrans) const
 {
   bool success = true;
   std::vector<std::vector<ci_configuration>> uniqueConfgs(2);
@@ -699,8 +700,8 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       DiracDeterminantBase* adet;
       if (BFTrans)
       {
-        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), BFTrans,
-                                                multiSD.FirstIndex_up, multiSD.FirstIndex_up + multiSD.nels_up);
+        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), *BFTrans, multiSD.FirstIndex_up,
+                                                multiSD.FirstIndex_up + multiSD.nels_up);
       }
       else
       {
@@ -729,8 +730,8 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       DiracDeterminantBase* adet;
       if (BFTrans)
       {
-        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), BFTrans,
-                                                multiSD.FirstIndex_dn, multiSD.FirstIndex_dn + multiSD.nels_dn);
+        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), *BFTrans, multiSD.FirstIndex_dn,
+                                                multiSD.FirstIndex_dn + multiSD.nels_dn);
       }
       else
       {
@@ -799,7 +800,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<ValueType>& CSFcoeff,
                                    std::vector<size_t>& DetsPerCSF,
                                    std::vector<RealType>& CSFexpansion,
-                                   bool& usingCSF)
+                                   bool& usingCSF) const
 {
   bool success = true;
 
@@ -1167,7 +1168,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      std::vector<std::string>& CItags,
                                      std::vector<ValueType>& coeff,
                                      bool& optimizeCI,
-                                     std::vector<int>& nptcls)
+                                     std::vector<int>& nptcls) const
 {
   bool success = true;
   int extlevel(0);

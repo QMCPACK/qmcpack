@@ -18,28 +18,30 @@
 
 namespace qmcplusplus
 {
-MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
-                                                                       std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                                                                       std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                                                       std::shared_ptr<BackflowTransformation> BF)
-    : MultiSlaterDeterminant(targetPtcl, std::move(upspo), std::move(dnspo), "MultiSlaterDeterminantWithBackflow"),
-      BFTrans(std::move(BF))
+MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(
+    ParticleSet& targetPtcl,
+    std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
+    std::unique_ptr<BackflowTransformation> BF)
+    : MultiSlaterDeterminant(targetPtcl, std::move(spos), "MultiSlaterDeterminantWithBackflow"), BFTrans(std::move(BF))
 {
   assert(BFTrans);
-  Optimizable  = false;
+  Optimizable  = BFTrans->isOptimizable();
   is_fermionic = true;
 }
 
 std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   // mmorales: the proxy classes read from the particle set inside BFTran
-  std::shared_ptr<BackflowTransformation> tr = BFTrans->makeClone(tqp);
-  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
-  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup            = spo_up->occup;
-  spo_dn_C->occup            = spo_dn->occup;
-  auto clone       = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spo_up_C), std::move(spo_dn_C),
-                                                                    std::move(tr));
+  auto tr         = BFTrans->makeClone(tqp);
+  auto& bf_ref    = *tr;
+  auto spo_up_C   = std::make_unique<SPOSetProxyForMSD>(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
+  auto spo_dn_C   = std::make_unique<SPOSetProxyForMSD>(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
+  spo_up_C->occup = spo_up->occup;
+  spo_dn_C->occup = spo_dn->occup;
+  std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos;
+  spos.push_back(std::move(spo_up_C));
+  spos.push_back(std::move(spo_dn_C));
+  auto clone       = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spos), std::move(tr));
   clone->C2node_up = C2node_up;
   clone->C2node_dn = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());
@@ -53,13 +55,13 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeC
   {
     auto up_det = dynamic_cast<DiracDeterminantWithBackflow*>(dets_up[i].get());
     assert(up_det);
-    clone->dets_up.emplace_back(up_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up), tr));
+    clone->dets_up.emplace_back(up_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up), bf_ref));
   }
   for (int i = 0; i < dets_dn.size(); i++)
   {
     auto dn_det = dynamic_cast<DiracDeterminantWithBackflow*>(dets_dn[i].get());
     assert(dn_det);
-    clone->dets_dn.emplace_back(dn_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn), tr));
+    clone->dets_dn.emplace_back(dn_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn), bf_ref));
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;

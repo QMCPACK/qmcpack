@@ -193,10 +193,6 @@ public:
   // coefficient of csf expansion (smaller dimension)
   std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
-  // transformation
-  std::shared_ptr<BackflowTransformation> BFTrans;
-  bool usingBF;
-
   // temporary storage for evaluateDerivatives
   ParticleSet::ParticleGradient_t gmPG;
   std::vector<Matrix<RealType>> dpsia, dLa;
@@ -248,6 +244,10 @@ private:
    * @param ig group id
    */
   void precomputeC_otherDs(const ParticleSet& P, int ig);
+
+  // transformation
+  std::shared_ptr<BackflowTransformation> BFTrans;
+  bool usingBF;
 
   ///the last particle of each group
   std::vector<int> Last;

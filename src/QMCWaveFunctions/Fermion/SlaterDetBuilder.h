@@ -69,11 +69,9 @@ private:
    */
   std::unique_ptr<DiracDeterminantBase> putDeterminant(xmlNodePtr cur,
                                                        int spin_group,
-                                                       const std::shared_ptr<BackflowTransformation>& BFTrans);
+                                                       const std::unique_ptr<BackflowTransformation>& BFTrans);
 
-  bool createMSD(MultiSlaterDeterminant& multiSD,
-                 xmlNodePtr cur,
-                 const std::shared_ptr<BackflowTransformation>& BFTrans);
+  bool createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur, BackflowTransformation* const BFTrans) const;
 
   bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
                      std::vector<std::vector<size_t>>& C2node,
@@ -98,7 +96,7 @@ private:
                    std::vector<ValueType>& CSFcoeff,
                    std::vector<size_t>& DetsPerCSF,
                    std::vector<RealType>& CSFexpansion,
-                   bool& usingCSF);
+                   bool& usingCSF) const;
 
   bool readDetListH5(xmlNodePtr cur,
                      std::vector<std::vector<ci_configuration>>& uniqueConfgs,
@@ -106,13 +104,13 @@ private:
                      std::vector<std::string>& CItags,
                      std::vector<ValueType>& coeff,
                      bool& optimizeCI,
-                     std::vector<int>& nptcls);
+                     std::vector<int>& nptcls) const;
 
   // clang-format off
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
                             (std::is_floating_point<VT>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets, int ext_level) const
   {
     ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N 
     ///for the Nth excited state. 
@@ -131,7 +129,7 @@ private:
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
                             (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets, int ext_level) const
   {
     std::string extVar;
     std::vector<double> CIcoeff_real;
