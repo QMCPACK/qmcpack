@@ -169,19 +169,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       if (BFTrans)
       {
         app_summary() << "    Using backflow transformation." << std::endl;
-        auto single_det = std::make_unique<SlaterDetWithBackflow>(targetPtcl, BFTrans);
-        for (int i = 0; i < dirac_dets.size(); i++)
-          single_det->add(std::move(dirac_dets[i]), i);
+        auto single_det = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dirac_dets), BFTrans);
         single_det->setBF(BFTrans);
         built_singledet_or_multidets = std::move(single_det);
       }
       else
-      {
-        auto single_det = std::make_unique<SlaterDet>(targetPtcl);
-        for (int i = 0; i < dirac_dets.size(); i++)
-          single_det->add(std::move(dirac_dets[i]), i);
-        built_singledet_or_multidets = std::move(single_det);
-      }
+        built_singledet_or_multidets = std::make_unique<SlaterDet>(targetPtcl, std::move(dirac_dets));
     }
     else if (cname == multisd_tag)
     {
