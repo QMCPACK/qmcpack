@@ -574,3 +574,46 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   # Close the file before exiting
 
 
+def make_multidet(cell, mf, title):
+  from pyscf import mcscf
+  import numpy
+  import h5py, re, sys
+
+  if isinstance(mf,mcscf.mc1step.CASSCF) or  isinstance(mf,mcscf.mc1step_symm.SymAdaptedCASSCF):
+    a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
+    dets_a = []
+    dets_b = []
+    coeffs = []
+    cas_mo_start_a = cell.nelec[0]-mf.nelecas[0]
+    cas_mo_start_b = cell.nelec[1]-mf.nelecas[1]
+    print(cas_mo_start_b)
+    n = 64 # chunk length
+    for idx,i in enumerate(a):
+        occ_a = numpy.array(list(i[1][2:]),dtype=int)
+        occ_b = numpy.array(list(i[2][2:]),dtype=int)
+        string_a =   '1'*cas_mo_start_a + i[1][2:] +  '0'*(len(mf.mo_coeff) - cas_mo_start_a - len(occ_a))
+        string_b =  '1'*cas_mo_start_b + i[2][2:] + '0'*(len(mf.mo_coeff) - cas_mo_start_b - len(occ_b))
+        chunks_a = [int(string_a[j:j+n],2) for j in range(0, len(string_a), n)]
+        chunks_b = [int(string_b[j:j+n],2) for j in range(0, len(string_b), n)]
+        dets_a.append(chunks_a)
+        dets_b.append(chunks_b)
+        coeffs.append(i[0])
+    H5_qmcpack=h5py.File(title+'_multidet.h5','w')
+    groupApp=H5_qmcpack.create_group("MultiDet")
+    dets_a = numpy.array(dets_a)
+    dets_b = numpy.array(dets_b)
+
+    dt = numpy.dtype(numpy.int64)
+    groupApp.create_dataset('CI_Alpha',dets_a.shape,dtype=dt, data = dets_a)
+    groupApp.create_dataset('CI_Beta',dets_b.shape,dtype=dt, data = dets_b)
+    groupApp.create_dataset('Coeff', (len(coeffs),),dtype = float,data = coeffs)
+    # I think this is the max number of dets in any group
+    groupApp.create_dataset('NbDet', (1,),dtype = "i4",data = len(coeffs))
+    # Just being specific about binary ints
+    groupApp.create_dataset('Nbits', (1,),dtype = "i4",data = len(dets_a[0]))
+    # the number of MOs, at least in the exaples I looked at?
+    groupApp.create_dataset('nstate', (1,),dtype = "i4",data = mf.mo_coeff.shape[0])
+    # I would assume 1 since I'm only treating 1 excited state? I tried two out of desparation.
+    groupApp.create_dataset('nexcitedstate', (1,),dtype = "i4",data = 2)
+
+    H5_qmcpack.close()
