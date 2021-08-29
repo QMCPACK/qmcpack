@@ -504,11 +504,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                                      opt_variables_type& myVars,
                                      bool& Optimizable,
                                      bool& CI_Optimizable,
-                                     xmlNodePtr cur)
+                                     xmlNodePtr cur) const
 {
-  bool success = true;
-
-
   bool optimizeCI;
 
   const int nGroups = targetPtcl.groups();
@@ -529,11 +526,11 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     std::string cname;
     getNodeName(cname, curTemp);
     if (cname == "detlist")
-    {
       DetListNode = curTemp;
-    }
     curTemp = curTemp->next;
   }
+
+  bool success = true;
   XMLAttrString HDF5Path(DetListNode, "href");
   if (HDF5Path != "")
   {
@@ -541,10 +538,9 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
   }
   else
-  {
     success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
                           usingCSF);
-  }
+
   if (!success)
     return false;
 
@@ -661,9 +657,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
     std::string cname;
     getNodeName(cname, curTemp);
     if (cname == "detlist")
-    {
       DetListNode = curTemp;
-    }
     curTemp = curTemp->next;
   }
   XMLAttrString HDF5Path(DetListNode, "href");
@@ -691,24 +685,17 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       int nq               = 0;
       ci_configuration& ci = uniqueConfgs[0][i];
       for (int k = 0; k < ci.occup.size(); k++)
-      {
         if (ci.occup[k])
-        {
           spo->occup(i, nq++) = k;
-        }
-      }
-      DiracDeterminantBase* adet;
+      std::unique_ptr<DiracDeterminantBase> adet;
       if (BFTrans)
-      {
-        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), *BFTrans, multiSD.FirstIndex_up,
-                                                multiSD.FirstIndex_up + multiSD.nels_up);
-      }
+        adet = std::make_unique<DiracDeterminantWithBackflow>(std::static_pointer_cast<SPOSet>(spo), *BFTrans,
+                                                              multiSD.FirstIndex_up,
+                                                              multiSD.FirstIndex_up + multiSD.nels_up);
       else
-      {
-        adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_up,
-                                      multiSD.FirstIndex_up + multiSD.nels_up);
-      }
-      multiSD.dets_up.emplace_back(adet);
+        adet = std::make_unique<DiracDeterminant<>>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_up,
+                                                    multiSD.FirstIndex_up + multiSD.nels_up);
+      multiSD.dets_up.push_back(std::move(adet));
     }
   }
   // beta dets
@@ -721,24 +708,17 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       int nq               = 0;
       ci_configuration& ci = uniqueConfgs[1][i];
       for (int k = 0; k < ci.occup.size(); k++)
-      {
         if (ci.occup[k])
-        {
           spo->occup(i, nq++) = k;
-        }
-      }
-      DiracDeterminantBase* adet;
+      std::unique_ptr<DiracDeterminantBase> adet;
       if (BFTrans)
-      {
-        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), *BFTrans, multiSD.FirstIndex_dn,
-                                                multiSD.FirstIndex_dn + multiSD.nels_dn);
-      }
+        adet = std::make_unique<DiracDeterminantWithBackflow>(std::static_pointer_cast<SPOSet>(spo), *BFTrans,
+                                                              multiSD.FirstIndex_dn,
+                                                              multiSD.FirstIndex_dn + multiSD.nels_dn);
       else
-      {
-        adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_dn,
-                                      multiSD.FirstIndex_dn + multiSD.nels_dn);
-      }
-      multiSD.dets_dn.emplace_back(adet);
+        adet = std::make_unique<DiracDeterminant<>>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_dn,
+                                                    multiSD.FirstIndex_dn + multiSD.nels_dn);
+      multiSD.dets_dn.push_back(std::move(adet));
     }
   }
   if (multiSD.CSFcoeff.size() == 1 || multiSD.C.size() == 1)

@@ -83,7 +83,7 @@ private:
                      opt_variables_type& myVars,
                      bool& Optimizable,
                      bool& CI_Optimizable,
-                     xmlNodePtr cur);
+                     xmlNodePtr cur) const;
 
 
   bool readDetList(xmlNodePtr cur,
@@ -106,29 +106,28 @@ private:
                      bool& optimizeCI,
                      std::vector<int>& nptcls) const;
 
-  // clang-format off
   template<typename VT,
-           std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
-                            (std::is_floating_point<VT>::value), int> = 0>
+           std::enable_if_t<(std::is_same<VT, ValueType>::value) && (std::is_floating_point<VT>::value), int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets, int ext_level) const
   {
-    ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N 
-    ///for the Nth excited state. 
-    ///The Ground State is always stored in Coeff 
+    ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N
+    ///for the Nth excited state.
+    ///The Ground State is always stored in Coeff
     ///Backward compatibility is insured
     std::string extVar;
-    if (ext_level==0)
-       extVar="Coeff";
+    if (ext_level == 0)
+      extVar = "Coeff";
     else
-       extVar="Coeff_"+std::to_string(ext_level);
+      extVar = "Coeff_" + std::to_string(ext_level);
 
-    if (!hin.readEntry(ci_coeff,extVar))
-       APP_ABORT("Could not read CI coefficients from HDF5");
-      
+    if (!hin.readEntry(ci_coeff, extVar))
+      APP_ABORT("Could not read CI coefficients from HDF5");
   }
+
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
-                            (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
+                                (std::is_same<VT, std::complex<typename VT::value_type>>::value),
+                            int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets, int ext_level) const
   {
     std::string extVar;
@@ -137,28 +136,27 @@ private:
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
     fill(CIcoeff_imag.begin(), CIcoeff_imag.end(), 0.0);
-    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
-    ///The Ground State is always stored in Coeff. 
+    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state.
+    ///The Ground State is always stored in Coeff.
     ///Backward compatibility is insured
 
     std::string ext_var;
-    if (ext_level==0)
-      extVar="Coeff";
+    if (ext_level == 0)
+      extVar = "Coeff";
     else
-      extVar="Coeff_"+std::to_string(ext_level);
-    
+      extVar = "Coeff_" + std::to_string(ext_level);
 
-    if(!hin.readEntry(CIcoeff_real, extVar))
-       APP_ABORT("Could not read CI coefficients from HDF5")
 
-    extVar=extVar+"_imag";
-    if(!hin.readEntry(CIcoeff_imag, extVar))
-       app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
-         
+    if (!hin.readEntry(CIcoeff_real, extVar))
+      APP_ABORT("Could not read CI coefficients from HDF5")
+
+    extVar = extVar + "_imag";
+    if (!hin.readEntry(CIcoeff_imag, extVar))
+      app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
+
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
   }
-  // clang-format on
 };
 
 } // namespace qmcplusplus
