@@ -45,16 +45,6 @@ public:
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
 
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf) override
-  {
-    BFTrans = bf;
-    for (int i = 0; i < dets_up.size(); i++)
-      dets_up[i]->setBF(bf);
-    for (int i = 0; i < dets_dn.size(); i++)
-      dets_dn[i]->setBF(bf);
-  }
-
   ValueType evaluate(const ParticleSet& P,
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L) override;
@@ -78,7 +68,7 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi) override;
-
+private:
   void resize(int, int) override;
 
   // transformation

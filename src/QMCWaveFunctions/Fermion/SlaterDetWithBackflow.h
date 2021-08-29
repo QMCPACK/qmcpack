@@ -25,7 +25,7 @@ namespace qmcplusplus
 class SlaterDetWithBackflow : public WaveFunctionComponent
 {
 public:
-  using Determinant_t = DiracDeterminantBase;
+  using Determinant_t = DiracDeterminantWithBackflow;
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
@@ -34,17 +34,6 @@ public:
 
   ///destructor
   ~SlaterDetWithBackflow() override;
-
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf)
-  {
-    BFTrans = bf;
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->setBF(BFTrans);
-
-    if (BFTrans->isOptimizable())
-      Optimizable = true;
-  }
 
   void checkInVariables(opt_variables_type& active) override
   {

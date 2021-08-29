@@ -169,8 +169,10 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       if (BFTrans)
       {
         app_summary() << "    Using backflow transformation." << std::endl;
-        auto single_det = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dirac_dets), BFTrans);
-        single_det->setBF(BFTrans);
+        std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dirac_dets_bf;
+        for(auto& det : dirac_dets)
+          dirac_dets_bf.emplace_back(dynamic_cast<DiracDeterminantWithBackflow*>(det.release()));
+        auto single_det = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dirac_dets_bf), std::move(BFTrans));
         built_singledet_or_multidets = std::move(single_det);
       }
       else
@@ -274,7 +276,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
           auto msd_all_dets = std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spo_up),
                                                                                    std::move(spo_dn), BFTrans);
           createMSD(*msd_all_dets, cur, BFTrans);
-          msd_all_dets->setBF(BFTrans);
           built_singledet_or_multidets = std::move(msd_all_dets);
         }
         else
@@ -436,7 +437,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   if (BFTrans)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
-    adet = std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psi_clone), BFTrans, firstIndex,
+    adet = std::make_unique<DiracDeterminantWithBackflow>(std::move(psi_clone), BFTrans, firstIndex,
                                                           lastIndex);
   }
   else
@@ -698,7 +699,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       DiracDeterminantBase* adet;
       if (BFTrans)
       {
-        adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), nullptr,
+        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), BFTrans,
                                                 multiSD.FirstIndex_up, multiSD.FirstIndex_up + multiSD.nels_up);
       }
       else
@@ -728,7 +729,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       DiracDeterminantBase* adet;
       if (BFTrans)
       {
-        adet = new DiracDeterminantWithBackflow(targetPtcl, std::static_pointer_cast<SPOSet>(spo), nullptr,
+        adet = new DiracDeterminantWithBackflow(std::static_pointer_cast<SPOSet>(spo), BFTrans,
                                                 multiSD.FirstIndex_dn, multiSD.FirstIndex_dn + multiSD.nels_dn);
       }
       else

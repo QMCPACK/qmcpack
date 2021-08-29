@@ -25,6 +25,7 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
     : MultiSlaterDeterminant(targetPtcl, std::move(upspo), std::move(dnspo), "MultiSlaterDeterminantWithBackflow"),
       BFTrans(std::move(BF))
 {
+  assert(BFTrans);
   Optimizable  = false;
   is_fermionic = true;
 }
@@ -50,15 +51,15 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeC
   }
   for (int i = 0; i < dets_up.size(); i++)
   {
-    clone->dets_up.emplace_back(dets_up[i]->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up)));
-    auto& dclne   = dynamic_cast<DiracDeterminantWithBackflow&>(*clone->dets_up.back());
-    dclne.BFTrans = tr;
+    auto up_det = dynamic_cast<DiracDeterminantWithBackflow*>(dets_up[i].get());
+    assert(up_det);
+    clone->dets_up.emplace_back(up_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up), tr));
   }
   for (int i = 0; i < dets_dn.size(); i++)
   {
-    clone->dets_dn.emplace_back(dets_dn[i]->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn)));
-    auto& dclne   = dynamic_cast<DiracDeterminantWithBackflow&>(*clone->dets_dn.back());
-    dclne.BFTrans = tr;
+    auto dn_det = dynamic_cast<DiracDeterminantWithBackflow*>(dets_dn[i].get());
+    assert(dn_det);
+    clone->dets_dn.emplace_back(dn_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn), tr));
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;

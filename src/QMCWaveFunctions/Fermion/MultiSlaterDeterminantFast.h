@@ -94,14 +94,6 @@ public:
     if (usingBF)
       throw std::runtime_error(func_name + " not implemented!\n");
   }
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf)
-  {
-    usingBF = true;
-    BFTrans = bf;
-    for (size_t id = 0; id < Dets.size(); id++)
-      Dets[id]->setBF(bf);
-  }
 
   LogValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,

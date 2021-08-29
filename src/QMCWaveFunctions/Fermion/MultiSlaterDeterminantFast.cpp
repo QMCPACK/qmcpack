@@ -81,7 +81,6 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(Par
   if (usingBF)
   {
     auto tr = BFTrans->makeClone(tqp);
-    clone->setBF(std::move(tr));
   }
 
   clone->C2node = C2node;

@@ -50,8 +50,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet& ptcl,
-                               std::shared_ptr<SPOSet>&& spos,
+  DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos,
                                std::shared_ptr<BackflowTransformation> BF,
                                int first, int last);
 
@@ -61,9 +60,6 @@ public:
   // copy constructor and assign operator disabled
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
-
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf) override { BFTrans = std::move(bf); }
 
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
@@ -127,7 +123,12 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo, std::shared_ptr<BackflowTransformation> BF) const;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  {
+    throw std::runtime_error("makeCopy spo should not be called.");
+    return nullptr;
+  }
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);

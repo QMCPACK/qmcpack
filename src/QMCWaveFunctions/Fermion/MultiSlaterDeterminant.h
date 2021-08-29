@@ -80,9 +80,6 @@ public:
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
 
-  ///set BF pointers
-  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
-
   virtual ValueType evaluate(const ParticleSet& P,
                              ParticleSet::ParticleGradient_t& G,
                              ParticleSet::ParticleLaplacian_t& L);

@@ -27,17 +27,15 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
-                                                           std::shared_ptr<SPOSet>&& spos,
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos,
                                                            std::shared_ptr<BackflowTransformation> BF,
                                                            int first, int last)
-    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first, last)
+    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first, last), BFTrans(std::move(BF))
 {
   Optimizable  = true;
   is_fermionic = true;
   registerTimers();
-  BFTrans      = std::move(BF);
-  NumParticles = ptcl.getTotalNum();
+  NumParticles = BFTrans->QP.getTotalNum();
   NP           = 0;
   resize(NumPtcls, NumPtcls);
 }
@@ -996,11 +994,9 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared_ptr<SPOSet>&& spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared_ptr<SPOSet>&& spo, std::shared_ptr<BackflowTransformation> BF) const
 {
-  //    BackflowTransformation *BF = BFTrans->makeClone();
-  // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, std::move(spo), BFTrans, FirstIndex, LastIndex);
+  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(std::move(spo), BF, FirstIndex, LastIndex);
   return dclone;
 }
 
