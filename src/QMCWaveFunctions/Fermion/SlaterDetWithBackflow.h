@@ -22,11 +22,10 @@
 
 namespace qmcplusplus
 {
-class SlaterDetWithBackflow : public SlaterDet
+class SlaterDetWithBackflow : public WaveFunctionComponent
 {
 public:
-  std::shared_ptr<BackflowTransformation> BFTrans;
-
+  using Determinant_t = DiracDeterminantBase;
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
@@ -81,6 +80,7 @@ public:
     }
   }
 
+  void reportStatus(std::ostream& os) override {}
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
@@ -150,7 +150,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  SPOSetPtr getPhi(int i = 0) override { return Dets[i]->getPhi(); }
+  SPOSetPtr getPhi(int i = 0) const { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -161,8 +161,12 @@ public:
 
   void testDerivGL(ParticleSet& P);
 
-  //private:
-  //SlaterDetWithBackflow() {}
+private:
+  ///container for the DiracDeterminants
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
+
+  std::shared_ptr<BackflowTransformation> BFTrans;
+
 };
 } // namespace qmcplusplus
 #endif

@@ -19,8 +19,18 @@
 namespace qmcplusplus
 {
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, std::shared_ptr<BackflowTransformation> BF)
-    : SlaterDet(targetPtcl, std::move(dets), "SlaterDetWithBackflow"), BFTrans(std::move(BF))
+    : WaveFunctionComponent("SlaterDetWithBackflow"), Dets(std::move(dets)), BFTrans(std::move(BF))
 {
+  assert(Dets.size() == targetPtcl.groups());
+
+  is_fermionic = true;
+
+  Optimizable = BFTrans ? BFTrans->isOptimizable() : false;
+  for(const auto& det : Dets)
+    Optimizable = Optimizable || det->Optimizable;
+
+  Optimizable  = false;
+  is_fermionic = true;
 }
 
 ///destructor
