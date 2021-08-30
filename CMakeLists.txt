@@ -688,7 +688,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
       # Automatically set the default NVCC flags
       set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
       if(QMC_COMPLEX)
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX=${QMC_COMPLEX}")
       endif()
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
