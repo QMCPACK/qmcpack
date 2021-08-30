@@ -26,6 +26,9 @@
 
 namespace qmcplusplus
 {
+template<class BSPLINESPO>
+class HybridRepSetReader;
+
 template<typename ST>
 class AtomicOrbitals
 {
@@ -406,11 +409,7 @@ public:
   using RealType     = typename DistanceTableData::RealType;
   using PosType      = typename DistanceTableData::PosType;
 
-#if (defined(__GNUC__) && (__GNUC__== 7))
-// Workaround GCC 7.5 and presumed earlier bug. Leave member data public.
-#else
 private:
-#endif
   ///atomic centers
   std::vector<AtomicOrbitals<ST>> AtomicCenters;
   ///table index
@@ -712,7 +711,7 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class HybridRepSetReader;
+  friend class qmcplusplus::HybridRepSetReader;
 };
 
 extern template class AtomicOrbitals<float>;
