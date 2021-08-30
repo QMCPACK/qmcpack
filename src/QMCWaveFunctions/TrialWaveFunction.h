@@ -113,8 +113,8 @@ public:
 
   inline RealType getPhaseDiff() const { return PhaseDiff; }
   inline void resetPhaseDiff() { PhaseDiff = 0.0; }
-  inline RealType getLogPsi() const { return LogValue; }
-  inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
+  inline RealType getLogPsi() const { return log_real_; }
+  inline void setLogPsi(RealType LogPsi_new) { log_real_ = LogPsi_new; }
 
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
@@ -279,7 +279,7 @@ public:
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
   static void mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVector<const VirtualParticleSet>& Vp_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 
@@ -378,6 +378,9 @@ public:
                                    int iat,
                                    const std::vector<bool>& isAccepted,
                                    bool safe_to_delay = false);
+
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   *  See WaveFunctionComponent::completeUpdates for more detail */
   void completeUpdates();
   /* batched version of completeUpdates.  */
   static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
@@ -408,11 +411,11 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   RealType KECorrection() const;
 
@@ -479,8 +482,8 @@ private:
   ///diff of the phase of the trial wave function during ratio calls
   RealType PhaseDiff;
 
-  ///log of the trial wave function
-  RealType LogValue;
+  ///real part of trial wave function log 
+  RealType log_real_;
 
   ///One over mass of target particleset, needed for Local Energy Derivatives
   RealType OneOverM;

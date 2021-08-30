@@ -39,7 +39,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableData(target, target),
+        DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
                                                        "_" + target.getName(),
                                                    timer_level_fine)),
@@ -118,6 +118,8 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
+    //ensure there are neighbors
+    assert(N_targets > 1);
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
     if (newpos)

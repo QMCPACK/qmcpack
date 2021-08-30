@@ -89,9 +89,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     std::vector<Return_rt> HD_avg(NumOptimizables, 0.0);
     Return_rt wgtinv   = 1.0 / SumValue[SUM_WGT];
     Return_rt delE_bar = 0;
-    int numSamples     = samples_.getNumSamples();
     {
-      for (int iw = 0; iw < numSamples; iw++)
+      for (int iw = 0; iw < rank_local_num_samples_; iw++)
       {
         const Return_rt* restrict saved = RecordsOnNode_[iw];
         Return_rt weight                = saved[REWEIGHT] * wgtinv;
@@ -107,7 +106,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     for (int pm = 0; pm < NumOptimizables; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     {
-      for (int iw = 0; iw < numSamples; iw++)
+      for (int iw = 0; iw < rank_local_num_samples_; iw++)
       {
         const Return_rt* restrict saved = RecordsOnNode_[iw];
         Return_rt weight                = saved[REWEIGHT] * wgtinv;
@@ -136,7 +135,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     myComm->allreduce(URV);
     Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
     {
-      for (int iw = 0; iw < numSamples; iw++)
+      for (int iw = 0; iw < rank_local_num_samples_; iw++)
       {
         const Return_rt* restrict saved = RecordsOnNode_[iw];
         Return_rt weight                = saved[REWEIGHT] * wgtinv;
@@ -200,18 +199,18 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
   }
   outputManager.resume();
 
-  int numSamples = samples_.getNumSamples();
+  rank_local_num_samples_ = samples_.getNumSamples();
 
-  if (dLogPsi.size() != numSamples)
+  if (dLogPsi.size() != rank_local_num_samples_)
   {
     delete_iter(dLogPsi.begin(), dLogPsi.end());
     delete_iter(d2LogPsi.begin(), d2LogPsi.end());
     int nptcl = W.getTotalNum();
-    dLogPsi.resize(numSamples);
-    d2LogPsi.resize(numSamples);
-    for (int i = 0; i < numSamples; ++i)
+    dLogPsi.resize(rank_local_num_samples_);
+    d2LogPsi.resize(rank_local_num_samples_);
+    for (int i = 0; i < rank_local_num_samples_; ++i)
       dLogPsi[i] = new ParticleGradient_t(nptcl);
-    for (int i = 0; i < numSamples; ++i)
+    for (int i = 0; i < rank_local_num_samples_; ++i)
       d2LogPsi[i] = new ParticleLaplacian_t(nptcl);
   }
 }
@@ -239,24 +238,26 @@ void QMCCostFunctionBatched::checkConfigurations()
 
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
-  int numSamples  = samples_.getNumSamples();
+
+  // Ensure number of samples did not change after getConfigurations
+  assert(rank_local_num_samples_ == samples_.getNumSamples());
 
   if (RecordsOnNode_.size1() == 0)
   {
-    RecordsOnNode_.resize(numSamples, SUM_INDEX_SIZE);
+    RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
     {
-      DerivRecords_.resize(numSamples, NumOptimizables);
-      HDerivRecords_.resize(numSamples, NumOptimizables);
+      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
     }
   }
-  else if (RecordsOnNode_.size1() != numSamples)
+  else if (RecordsOnNode_.size1() != rank_local_num_samples_)
   {
-    RecordsOnNode_.resize(numSamples, SUM_INDEX_SIZE);
+    RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
     {
-      DerivRecords_.resize(numSamples, NumOptimizables);
-      HDerivRecords_.resize(numSamples, NumOptimizables);
+      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
     }
   }
   OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
@@ -278,7 +279,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
   // Divide samples among the crowds
   std::vector<int> samples_per_crowd(opt_num_crowds_ + 1);
-  FairDivide(numSamples, opt_num_crowds_, samples_per_crowd);
+  FairDivide(rank_local_num_samples_, opt_num_crowds_, samples_per_crowd);
 
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
@@ -309,6 +310,10 @@ void QMCCostFunctionBatched::checkConfigurations()
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
+
+      ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
+      ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h_list);
 
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
       auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
@@ -421,7 +426,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
   etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(numSamples);
+  etemp[1] = static_cast<Return_rt>(rank_local_num_samples_);
   etemp[2] = e2_tot;
   // Sum energy values over nodes
   myComm->allreduce(etemp);
@@ -491,10 +496,13 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  const bool nlpp         = (includeNonlocalH != "no");
-  Return_rt wgt_tot       = 0.0;
-  Return_rt wgt_tot2      = 0.0;
-  int numSamples          = samples_.getNumSamples();
+  const bool nlpp    = (includeNonlocalH != "no");
+  Return_rt wgt_tot  = 0.0;
+  Return_rt wgt_tot2 = 0.0;
+
+  // Ensure number of samples did not change after getConfiguration
+  assert(rank_local_num_samples_ == samples_.getNumSamples());
+
   Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
 
   bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
@@ -502,7 +510,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   // Divide samples among crowds
   std::vector<int> samples_per_crowd(opt_num_crowds_ + 1);
-  FairDivide(numSamples, opt_num_crowds_, samples_per_crowd);
+  FairDivide(rank_local_num_samples_, opt_num_crowds_, samples_per_crowd);
 
   // lambda to execute on each crowd
   auto evalOptCorrelated = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
@@ -537,6 +545,10 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
+
+      ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
+      ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h0_list);
 
       // Load this batch of samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
@@ -654,7 +666,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   Return_rt wgtnorm = (wgt_tot == 0) ? 0 : wgt_tot;
   wgt_tot           = 0.0;
   {
-    for (int iw = 0; iw < numSamples; iw++)
+    for (int iw = 0; iw < rank_local_num_samples_; iw++)
     {
       Return_rt* restrict saved = RecordsOnNode_[iw];
       saved[REWEIGHT] =
@@ -667,7 +679,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   wgtnorm = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   wgt_tot = 0.0;
   {
-    for (int iw = 0; iw < numSamples; iw++)
+    for (int iw = 0; iw < rank_local_num_samples_; iw++)
     {
       Return_rt* restrict saved = RecordsOnNode_[iw];
       saved[REWEIGHT]           = std::min(saved[REWEIGHT] * wgtnorm, MaxWeight);
@@ -679,7 +691,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
   {
-    for (int iw = 0; iw < numSamples; iw++)
+    for (int iw = 0; iw < rank_local_num_samples_; iw++)
     {
       const Return_rt* restrict saved = RecordsOnNode_[iw];
       //      Return_t weight=saved[REWEIGHT]*wgt_tot;
@@ -706,6 +718,17 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   return SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
 }
 
+
+// Construct the overlap and Hamiltonian matrices for the linear method
+// A sum over samples.  Inputs are
+//   DerivRecords - derivative of log psi ( d ln (psi) / dp = 1/psi * d psi / dp )
+//   HDerivRecords - derivative of Hamiltonian
+//   RecordsOnNode - energies and weights (for reweighting)
+//   SumValue - sums of energies and weights
+// Outputs
+//   Left - Hamiltonian matrix
+//   Right - overlap matrix
+//
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                                          Matrix<Return_rt>& Right)
@@ -737,37 +760,45 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_rt> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
-  int numSamples   = samples_.getNumSamples();
+
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
-    for (int iw = 0; iw < numSamples; iw++)
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    const Return_rt* Dsaved         = DerivRecords_[iw];
+    for (int pm = 0; pm < getNumParams(); pm++)
     {
-      const Return_rt* restrict saved = RecordsOnNode_[iw];
-      Return_rt weight                = saved[REWEIGHT] * wgtinv;
-      const Return_rt* Dsaved         = DerivRecords_[iw];
-      for (int pm = 0; pm < getNumParams(); pm++)
-      {
-        D_avg[pm] += Dsaved[pm] * weight;
-      }
+      D_avg[pm] += Dsaved[pm] * weight;
     }
   }
 
   myComm->allreduce(D_avg);
 
+  for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
-    for (int iw = 0; iw < numSamples; iw++)
-    {
-      const Return_rt* restrict saved = RecordsOnNode_[iw];
-      Return_rt weight                = saved[REWEIGHT] * wgtinv;
-      Return_rt eloc_new              = saved[ENERGY_NEW];
-      const Return_rt* Dsaved         = DerivRecords_[iw];
-      const Return_rt* HDsaved        = HDerivRecords_[iw];
-      for (int pm = 0; pm < getNumParams(); pm++)
+    const Return_rt* restrict saved = RecordsOnNode_[iw];
+    Return_rt weight                = saved[REWEIGHT] * wgtinv;
+    Return_rt eloc_new              = saved[ENERGY_NEW];
+    const Return_rt* Dsaved         = DerivRecords_[iw];
+    const Return_rt* HDsaved        = HDerivRecords_[iw];
+
+    std::vector<int> params_per_crowd(opt_num_crowds_ + 1);
+    FairDivide(getNumParams(), opt_num_crowds_, params_per_crowd);
+
+
+    auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_rt* Dsaved,
+                                const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new, RealType H2_avg,
+                                RealType V_avg, std::vector<Return_rt>& D_avg, RealType b1, RealType b2,
+                                RealType curAvg_w, Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) {
+      int local_pm_start = crowd_ranges[crowd_id];
+      int local_pm_end   = crowd_ranges[crowd_id + 1];
+
+      for (int pm = local_pm_start; pm < local_pm_end; pm++)
       {
         Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
         Return_rt wfd = (Dsaved[pm] - D_avg[pm]) * weight;
         Return_rt vterm =
             HDsaved[pm] * (eloc_new - curAvg_w) + (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - 2.0 * curAvg_w);
-        //                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
         //                 H2
         Right(0, pm + 1) += b1 * H2_avg * vterm * weight;
         Right(pm + 1, 0) += b1 * H2_avg * vterm * weight;
@@ -777,7 +808,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
         //                 Hamiltonian
         Left(0, pm + 1) += (1 - b2) * wfe;
         Left(pm + 1, 0) += (1 - b2) * wfd * eloc_new;
-        for (int pm2 = 0; pm2 < getNumParams(); pm2++)
+        for (int pm2 = 0; pm2 < numParams; pm2++)
         {
           //                Hamiltonian
           Left(pm + 1, pm2 + 1) += (1 - b2) * wfd * (HDsaved[pm2] + (Dsaved[pm2] - D_avg[pm2]) * eloc_new);
@@ -787,14 +818,16 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
           //                Variance
           RealType varij = weight * (HDsaved[pm] - 2.0 * (Dsaved[pm] - D_avg[pm]) * eloc_new) *
               (HDsaved[pm2] - 2.0 * (Dsaved[pm2] - D_avg[pm2]) * eloc_new);
-          //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
-          //                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
           Left(pm + 1, pm2 + 1) += b2 * (varij + V_avg * ovlij);
           //                H2
           Right(pm + 1, pm2 + 1) += b1 * H2_avg * varij;
         }
       }
-    }
+    };
+
+    ParallelExecutor<> crowd_tasks;
+    crowd_tasks(opt_num_crowds_, constructMatrices, params_per_crowd, getNumParams(), Dsaved, HDsaved, weight, eloc_new,
+                H2_avg, V_avg, D_avg, b1, b2, curAvg_w, Left, Right);
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);

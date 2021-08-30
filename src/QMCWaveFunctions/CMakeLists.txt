@@ -59,6 +59,10 @@ set(JASTROW_SRCS
     Fermion/SPOSetProxy.cpp
     Fermion/SPOSetProxyForMSD.cpp)
 
+if(ENABLE_OFFLOAD)
+  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/J2OMPTarget.cpp)
+endif()
+
 if(QMC_COMPLEX)
   set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasComplexOrbitalBuilder.cpp)
 else(QMC_COMPLEX)

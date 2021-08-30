@@ -117,10 +117,10 @@ if(NOT QMC_CUDA)
       LONG_H2OS2_DMCTM3_SCALARS)
 
   else()
-    message_verbose(
+    message(VERBOSE
       "Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose(
+  message(VERBOSE
     "Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

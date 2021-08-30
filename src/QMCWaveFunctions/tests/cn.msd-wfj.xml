@@ -459,7 +459,7 @@
         </detlist>
       </multideterminant>
     </determinantset>
-    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
       <correlation rcut="10" size="10" speciesA="u" speciesB="u">
         <coefficients id="uu" type="Array"> 0.342864164 0.167634157 0.04903118791 -0.03527692708 -0.09227488823 -0.1274265008 -0.1495115033 -0.1579787527 -0.1394351675 -0.07291540506</coefficients>
       </correlation>

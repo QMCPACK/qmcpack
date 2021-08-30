@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
@@ -124,7 +124,7 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::updateBuffer(ParticleS
 {
   evaluateGL(P, P.G, P.L, false);
   buf.forward(Bytes_in_WFBuffer);
-  return LogValue;
+  return log_value_;
 }
 
 template<typename FT>
@@ -161,7 +161,9 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)), j2_ke_corr_helper(p, F)
+    : WaveFunctionComponent("J2OrbitalSoA", obj_name),
+      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
     throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
@@ -388,7 +390,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     }
     cur_dUat[idim] = cur_g;
   }
-  LogValue += Uat[iat] - cur_Uat;
+  log_value_ += Uat[iat] - cur_Uat;
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
@@ -460,21 +462,21 @@ WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleS
 {
   if (fromscratch)
     recompute(P);
-  LogValue = valT(0);
+  log_value_ = valT(0);
   for (int iat = 0; iat < N; ++iat)
   {
-    LogValue += Uat[iat];
+    log_value_ += Uat[iat];
     G[iat] += dUat[iat];
     L[iat] += d2Uat[iat];
   }
 
-  return LogValue = -LogValue * 0.5;
+  return log_value_ = -log_value_ * 0.5;
 }
 
 template<typename FT>
 void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
-  LogValue = 0.0;
+  log_value_ = 0.0;
   const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
   valT dudr, d2udr2;
 
@@ -495,7 +497,7 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_p
       auto dr   = displ[j];
       auto jg   = P.GroupID[j];
       auto uij  = F[igt + jg]->evaluate(r, dudr, d2udr2);
-      LogValue -= uij;
+      log_value_ -= uij;
       auto hess = rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
       grad_grad_psi[i] -= hess;
       grad_grad_psi[j] -= hess;

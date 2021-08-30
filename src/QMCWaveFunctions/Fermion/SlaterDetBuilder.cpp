@@ -390,17 +390,16 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #else
   std::string use_batch("no");
 #endif
-#if defined(ENABLE_CUDA)
-  std::string useGPU("yes");
-#else
-  std::string useGPU("no");
-#endif
+  std::string useGPU;
   int delay_rank(0);
+
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize");
   sdAttrib.add(use_batch, "batch");
-  sdAttrib.add(useGPU, "gpu");
+#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
+  sdAttrib.add(useGPU, "gpu", {"yes", "no"});
+#endif
   sdAttrib.put(cur->parent);
 
   { //check determinant@group
@@ -525,7 +524,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);
 #endif
-  slaterdet_0->add(adet, spin_group);
+  slaterdet_0->add(std::unique_ptr<DiracDeterminantBase>(adet), spin_group);
 
   app_log() << std::endl;
   app_log().flush();

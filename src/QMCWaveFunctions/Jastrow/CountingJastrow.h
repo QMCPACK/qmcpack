@@ -219,15 +219,15 @@ public:
       G[i] += Jgrad[i];
       L[i] += Jlap[i];
     }
-    LogValue = Jval;
-    return LogValue;
+    log_value_ = Jval;
+    return log_value_;
   }
 
 
   void recompute(const ParticleSet& P) override
   {
     evaluateExponents(P);
-    LogValue = Jval;
+    log_value_ = Jval;
   }
 
   void evaluateExponents(const ParticleSet& P)
@@ -372,7 +372,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override
   {
     evaluateExponents(P);
-    LogValue = Jval;
+    log_value_ = Jval;
     return Jgrad[iat];
   }
 
@@ -396,7 +396,7 @@ public:
     }
     // update exponent values to that at proposed position
     Jval     = Jval_t;
-    LogValue = Jval;
+    log_value_ = Jval;
     for (int i = 0; i < num_els; ++i)
     {
       Jgrad[i] = Jgrad_t[i];

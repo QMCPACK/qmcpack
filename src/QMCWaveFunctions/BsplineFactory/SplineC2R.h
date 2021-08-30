@@ -88,7 +88,7 @@ public:
     KeyWord    = "SplineC2R";
   }
 
-  SPOSet* makeClone() const override { return new SplineC2R(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

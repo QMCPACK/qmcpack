@@ -168,10 +168,10 @@ public:
   std::vector<std::string> sposet_names;
 
   ///indices of orbitals within each sposet to evaluate
-  std::vector<std::vector<int>*> sposet_indices;
+  const std::shared_ptr<std::vector<std::vector<int>>> sposet_indices;
 
   ///sposets obtained by name from WaveFunctionFactory
-  std::vector<SPOSet*> sposets;
+  std::vector<std::unique_ptr<SPOSet>> sposets;
 
   ///evaluate points at grid cell centers instead of edges
   bool center_grid;
@@ -215,10 +215,9 @@ public:
   ///temporary array to hold values of a single orbital at all grid points
   std::vector<ValueType> orbital;
 
-
-  //constructor/destructor
+  //constructors
   OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
-  ~OrbitalImages() override{};
+  OrbitalImages(const OrbitalImages& other);
 
   //standard interface
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;

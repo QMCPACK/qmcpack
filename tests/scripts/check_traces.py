@@ -332,8 +332,6 @@ class HDFgroup(DevBase):
 
 
 class HDFreader(DevBase):
-    datasets = set(["<class 'h5py.highlevel.Dataset'>","<class 'h5py._hl.dataset.Dataset'>"])
-    groups   = set(["<class 'h5py.highlevel.Group'>","<class 'h5py._hl.group.Group'>"])
     
     def __init__(self,fpath,verbose=False,view=False):
         
@@ -374,13 +372,12 @@ class HDFreader(DevBase):
             hcur  = self.hcur[self.ilevel]
             for kr,v in hcur.items():
                 k=cur._escape_name(kr)
-                vtype = str(type(v))
-                if vtype in HDFreader.datasets:
+                if isinstance(v, h5py.Dataset):
                     self.add_dataset(cur,k,v)
-                elif vtype in HDFreader.groups:
+                elif isinstance(v, h5py.Group):
                     self.add_group(hcur,cur,k,v)
                 else:
-                    self.error('encountered invalid type: '+vtype)
+                    self.error('encountered invalid type: '+str(type(v)))
                 #end if
             #end for
         #end if
@@ -432,10 +429,9 @@ class HDFreader(DevBase):
         hcur  = self.hcur[self.ilevel]
         for kr,v in hcur.items():
             k=cur._escape_name(kr)
-            vtype = str(type(v))
-            if vtype in HDFreader.datasets:
+            if isinstance(v, h5py.Dataset):
                 self.add_dataset(cur,k,v)
-            elif vtype in HDFreader.groups:
+            elif isinstance(v, h5py.Group):
                 self.add_group(hcur,cur,k,v)
             #end if
         #end for

@@ -12,8 +12,6 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64le")
     set(CMAKE_CXX_FLAGS "")
   endif()
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__forceinline=inline")
-
   # Suppress compile warnings
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value")

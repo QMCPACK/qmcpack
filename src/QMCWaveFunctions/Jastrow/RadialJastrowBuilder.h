@@ -33,6 +33,14 @@ namespace qmcplusplus
 class RadialJastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
+  enum detail
+  {
+    CPU,
+    CUDA_LEGACY,
+    CUDA,
+    OMPTARGET
+  };
+
   // one body constructor
   RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
   // two body constructor
@@ -53,10 +61,10 @@ private:
   ParticleSet* SourcePtcl;
 
   // has a specialization for RPAFunctor in cpp file
-  template<class RadFuncType>
+  template<class RadFuncType, bool SPIN = false, unsigned Implementation = detail::CPU>
   std::unique_ptr<WaveFunctionComponent> createJ1(xmlNodePtr cur);
 
-  template<class RadFuncType>
+  template<class RadFuncType, unsigned Implementation = detail::CPU>
   std::unique_ptr<WaveFunctionComponent> createJ2(xmlNodePtr cur);
 
   template<class RadFuncType>

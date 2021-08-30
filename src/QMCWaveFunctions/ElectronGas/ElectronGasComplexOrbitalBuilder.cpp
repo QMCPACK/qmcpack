@@ -70,16 +70,16 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildCo
   egGrid.createGrid(nc, nup, twist);
   targetPtcl.setTwist(twist);
   //create up determinant
-  Det_t* updet = new Det_t(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
+  auto updet = std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
   updet->set(0, nup);
   //create down determinant
-  Det_t* downdet = new Det_t(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
+  auto downdet = std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
   downdet->set(nup, nup);
   //create a Slater determinant
   //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
   auto sdet = std::make_unique<SlaterDet>(targetPtcl);
-  sdet->add(updet, 0);
-  sdet->add(downdet, 1);
+  sdet->add(std::move(updet), 0);
+  sdet->add(std::move(downdet), 1);
   return sdet;
 }
 

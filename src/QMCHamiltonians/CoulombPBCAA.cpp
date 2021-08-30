@@ -141,6 +141,7 @@ void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
   streaming_particles = request.streaming_array(myName);
   if (streaming_particles)
   {
+    Ps.turnOnPerParticleSK();
     V_sample = tm.checkout_real<1>(myName, Ps);
     if (!is_active)
       evaluate_sp(Ps);
@@ -216,6 +217,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     }
     else
     {
+      assert(PtclRhoK.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
       //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
       RealType v1; //single particle energy
       RealType z;
@@ -227,10 +229,10 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         {
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += z * Zspec[s] *
-              AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
+              AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
                            PtclRhoK.eikr_i[i]);
 #else
-          v1 += z * Zspec[s] * AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[s], PtclRhoK.eikr[i]);
+          v1 += z * Zspec[s] * AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok[s], PtclRhoK.eikr[i]);
 #endif
         }
         V_samp(i) += v1;
@@ -477,7 +479,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       for (int jat = 0; jat < iat; ++jat)
         u += Zat[jat] *
             AA->evaluate_slab(-d_slab[jat], //JK: Could be wrong. Check the SIGN
-                              PtclRhoK.KLists.kshell, PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
+                              PtclRhoK.getKLists().kshell, PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
 #endif
       res += Zat[iat] * u;
     }
@@ -490,10 +492,10 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
-        mRealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
+        mRealType temp = AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                                       PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
 #else
-        mRealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+        mRealType temp = AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
 #endif
         if (spec2 == spec1)
           temp *= 0.5;

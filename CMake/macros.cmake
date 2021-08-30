@@ -121,7 +121,7 @@ function(
   set(TEST_ADDED_TEMP FALSE)
   if(HAVE_MPI)
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
-      message_verbose("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+      message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
     else()
       add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
                                         ${QMC_APP} ${ARGN})
@@ -160,14 +160,16 @@ function(
                    OMP_NUM_THREADS=${THREADS})
       set(TEST_ADDED_TEMP TRUE)
     else()
-      message_verbose("Disabling test ${TESTNAME} (building without MPI)")
+      message(VERBOSE "Disabling test ${TESTNAME} (building without MPI)")
     endif()
   endif()
 
   if(TEST_ADDED_TEMP
      AND (QMC_CUDA
           OR ENABLE_CUDA
-          OR ENABLE_OFFLOAD))
+          OR ENABLE_ROCM
+          OR ENABLE_OFFLOAD
+         ))
     set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
   endif()
 
@@ -331,7 +333,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}")
-    message_verbose("Adding test ${FULL_NAME}")
+    message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
       ${FULL_NAME}
       ${BASE_DIR}
@@ -469,7 +471,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}")
-    message_verbose("Adding test ${FULL_NAME}")
+    message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
       ${FULL_NAME}
       ${BASE_DIR}
@@ -551,7 +553,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     # build test name
     set(full_name "${base_name}-${procs}-${threads}")
-    message_verbose("Adding test ${full_name}")
+    message(VERBOSE "Adding test ${full_name}")
 
     # add run (task 1)
     set(test_added false)

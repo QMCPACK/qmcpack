@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
@@ -38,8 +39,13 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+#if defined(ENABLE_OFFLOAD)
+  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS_OFFLOAD;
+#else
+  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
+#endif
+  auto ions_uptr = std::make_unique<ParticleSet>(kind_selected);
+  auto elec_uptr = std::make_unique<ParticleSet>(kind_selected);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -107,14 +113,14 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
+  auto det_up = std::make_unique<DiracDet>(spo->makeClone());
   det_up->set(0, 2);
-  auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
+  auto det_dn = std::make_unique<DiracDet>(spo->makeClone());
   det_dn->set(2, 2);
 
   auto slater_det = std::make_unique<SlaterDet>(elec_);
-  slater_det->add(det_up, 0);
-  slater_det->add(det_dn, 1);
+  slater_det->add(std::move(det_up), 0);
+  slater_det->add(std::move(det_dn), 1);
 
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));
@@ -150,7 +156,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   // make a TrialWaveFunction Clone
-  TrialWaveFunction* psi_clone = psi.makeClone(elec_clone);
+  std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
 
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
@@ -202,38 +208,38 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   // testing batched interfaces
-  std::vector<ParticleSet*> P_list(2, nullptr);
-  P_list[0] = &elec_;
-  P_list[1] = &elec_clone;
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection twf_res("test_twf_res");
 
-  std::vector<TrialWaveFunction*> WF_list(2, nullptr);
-  WF_list[0] = &psi;
-  WF_list[1] = psi_clone;
+  elec_.createResource(pset_res);
+  psi.createResource(twf_res);
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
+
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-0.1201465271523596, 6.345732826640545)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
 #endif
 
-
   std::vector<GradType> grad_old(2);
 
-  grad_old[0] = WF_list[0]->evalGrad(*P_list[0], moved_elec_id);
-  grad_old[1] = WF_list[1]->evalGrad(*P_list[1], moved_elec_id);
+  grad_old[0] = wf_ref_list[0].evalGrad(p_ref_list[0], moved_elec_id);
+  grad_old[1] = wf_ref_list[1].evalGrad(p_ref_list[1], moved_elec_id);
 
   std::cout << "evalGrad " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2]
             << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
@@ -256,9 +262,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
-  p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
-  p_ref_list[1].makeMove(moved_elec_id, delta_sign_changed);
 
+  std::vector<PosType> displs{delta_sign_changed, delta_sign_changed};
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
+
+  if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
   ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
   ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
@@ -275,10 +284,11 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(grad_temp[1] == Approx(19.854257889369));
   REQUIRE(grad_temp[2] == Approx(-2.9669578650441));
 #endif
+  }
 
   PosType delta_zero(0, 0, 0);
-  p_ref_list[0].makeMove(moved_elec_id, delta_zero);
-  p_ref_list[1].makeMove(moved_elec_id, delta);
+  displs = {delta_zero, delta};
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displs);
 
   std::vector<PsiValueType> ratios(2);
   TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
@@ -294,13 +304,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
 
-  ratios[0] = WF_list[0]->calcRatioGrad(*P_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = WF_list[1]->calcRatioGrad(*P_list[1], moved_elec_id, grad_new[1]);
+  if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
+  ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+  ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
   std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
-
+  }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
 
@@ -328,14 +340,14 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   std::vector<bool> isAccepted(2, true);
   TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  REQUIRE(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
 #endif
 
@@ -356,9 +368,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(grad_old[1][2] == Approx(4.8529516184558));
 #endif
 
-
-  //FIXME more thinking and fix about ownership and schope are needed for exiting clean
-  delete psi_clone;
 #endif
 }
 

@@ -13,7 +13,7 @@ function(
   INPUT_FILE
   H5_FILE
   ADJUST_INPUT)
-  message_verbose("Adding test ${TEST_NAME}")
+  message(VERBOSE "Adding test ${TEST_NAME}")
   set(WDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/${TEST_DIR}")
   set(SDIR "${qmcpack_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_SOURCE_DIR}")
   set(QMC_APP $<TARGET_FILE:qmcpack>)
@@ -65,7 +65,7 @@ function(
 endfunction()
 
 if(NOT QMC_DATA)
-  message_verbose("QMC_DATA not set. Performance tests not added.")
+  message(VERBOSE "QMC_DATA not set. Performance tests not added.")
 elseif(NOT EXISTS ${QMC_DATA}/NiO)
   message("NiO directory under QMC_DATA does not exist. NiO performance tests not added.")
 else()

@@ -256,6 +256,10 @@ public:
    */
   void turnOnPerParticleSK();
 
+  /** Get state (on/off) of per particle storage in Structure Factor
+   */
+  bool getPerParticleSKState() const;
+
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet() { return mySpecies; }
   ///retrun the const SpeciesSet of this particle set
@@ -659,6 +663,7 @@ public:
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);
   static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
+  static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
   /** map to handle distance tables

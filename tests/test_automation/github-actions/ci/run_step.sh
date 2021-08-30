@@ -18,6 +18,7 @@ case "$1" in
     mkdir qmcpack-build
     cd qmcpack-build
     
+    # Real or Complex
     case "${GH_JOBNAME}" in
       *"real"*)
         echo 'Configure for real build -DQMC_COMPLEX=0'
@@ -26,6 +27,18 @@ case "$1" in
       *"complex"*)
         echo 'Configure for complex build -DQMC_COMPLEX=1'
         IS_COMPLEX=1
+      ;; 
+    esac
+    
+    # Mixed of Full precision, used in GPU code (cuda jobs) as it's more mature
+    case "${GH_JOBNAME}" in
+      *"full"*)
+        echo 'Configure for real build -DQMC_MIXED_PRECISION=0'
+        IS_MIXED_PRECISION=0
+      ;;
+      *"mixed"*)
+        echo 'Configure for complex build -DQMC_MIXED_PRECISION=1'
+        IS_MIXED_PRECISION=1
       ;; 
     esac
     
@@ -80,6 +93,15 @@ case "$1" in
       *"gpu-cuda"*)
         echo 'Configure for building GPU CUDA legacy'
         cmake -GNinja -DQMC_CUDA=1 \
+                      -DQMC_MPI=0 \
+                      -DQMC_COMPLEX=$IS_COMPLEX \
+                      -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+                      ${GITHUB_WORKSPACE}
+      ;;
+      *"werror"*)
+        echo 'Configure for building with -Werror flag enabled'
+        cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+                      -DCMAKE_CXX_FLAGS=-Werror \
                       -DQMC_MPI=0 \
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}

@@ -274,6 +274,9 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     Eloc.push_back(H[i]->myName);
   for (int i = 1; i < H.size(); ++i)
     Vloc.push_back(H[i]->myName);
+
+  // These contributions are based on the potential energy components.
+  // Loop starts at one to skip the kinetic energy component.
   for (int i = 1; i < H.size(); ++i)
   {
     OperatorBase& h = *H[i];
@@ -1154,16 +1157,24 @@ void QMCHamiltonian::createResource(ResourceCollection& collection) const
     H[i]->createResource(collection);
 }
 
-void QMCHamiltonian::acquireResource(ResourceCollection& collection)
+void QMCHamiltonian::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
-  for (int i = 0; i < H.size(); ++i)
-    H[i]->acquireResource(collection);
+  auto& ham_leader = ham_list.getLeader();
+  for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
+  {
+    const auto HC_list(extract_HC_list(ham_list, i_ham_op));
+    ham_leader.H[i_ham_op]->acquireResource(collection, HC_list);
+  }
 }
 
-void QMCHamiltonian::releaseResource(ResourceCollection& collection)
+void QMCHamiltonian::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
-  for (int i = 0; i < H.size(); ++i)
-    H[i]->releaseResource(collection);
+  auto& ham_leader = ham_list.getLeader();
+  for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
+  {
+    const auto HC_list(extract_HC_list(ham_list, i_ham_op));
+    ham_leader.H[i_ham_op]->releaseResource(collection, HC_list);
+  }
 }
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

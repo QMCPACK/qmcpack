@@ -81,7 +81,7 @@ public:
   void reportStatus(std::ostream& os) override;
 
   ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
+  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   virtual ValueType evaluate(const ParticleSet& P,
                              ParticleSet::ParticleGradient_t& G,

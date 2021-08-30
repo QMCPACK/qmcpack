@@ -28,11 +28,11 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
-      LogValue(0.0),
       dPsi(nullptr),
       ClassName(class_name),
       myName(obj_name),
-      Bytes_in_WFBuffer(0)
+      Bytes_in_WFBuffer(0),
+      log_value_(0.0)
 {
   if (ClassName.empty())
     throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
@@ -208,7 +208,7 @@ void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vec
 }
 
 void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                              const RefVector<const VirtualParticleSet>& vp_list,
+                                              const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                               std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());

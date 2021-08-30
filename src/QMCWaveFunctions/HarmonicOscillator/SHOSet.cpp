@@ -64,7 +64,7 @@ void SHOSet::initialize()
 SHOSet::~SHOSet() {}
 
 
-SPOSet* SHOSet::makeClone() const { return new SHOSet(*this); }
+std::unique_ptr<SPOSet> SHOSet::makeClone() const { return std::make_unique<SHOSet>(*this); }
 
 
 void SHOSet::report(const std::string& pad) const

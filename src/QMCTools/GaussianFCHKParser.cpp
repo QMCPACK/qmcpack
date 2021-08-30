@@ -26,12 +26,14 @@ GaussianFCHKParser::GaussianFCHKParser()
 {
   basisName  = "Gaussian-G2";
   Normalized = "no";
+  FixValence = true;
 }
 
 GaussianFCHKParser::GaussianFCHKParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
 {
   basisName  = "Gaussian-G2";
   Normalized = "no";
+  FixValence = true;
 }
 
 void GaussianFCHKParser::parse(const std::string& fname)

@@ -704,17 +704,19 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
   auto resource_index = collection.addResource(std::move(new_res));
 }
 
-void NonLocalECPotential::acquireResource(ResourceCollection& collection)
+void NonLocalECPotential::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
 {
+  auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
   auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
-  mw_res_.reset(res_ptr);
+  O_leader.mw_res_.reset(res_ptr);
 }
 
-void NonLocalECPotential::releaseResource(ResourceCollection& collection)
+void NonLocalECPotential::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
 {
-  collection.takebackResource(std::move(mw_res_));
+  auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
+  collection.takebackResource(std::move(O_leader.mw_res_));
 }
 
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
