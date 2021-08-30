@@ -2,7 +2,7 @@
 #define QMCPLUSPLUS_SCOPEDPROFILER_H
 
 #include "config.h"
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 #include "CUDA/cudaError.h"
 #include <cuda_profiler_api.h>
 #endif
@@ -21,7 +21,7 @@ public:
   {
     if (active_)
     {
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
       cudaErrorCheck(cudaProfilerStart(), "cudaProfilerStart failed!");
 #endif
 #ifdef USE_VTUNE_API
@@ -34,7 +34,7 @@ public:
   {
     if (active_)
     {
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
       cudaErrorCheck(cudaProfilerStop(), "cudaProfilerStop failed!");
 #endif
 #ifdef USE_VTUNE_API
