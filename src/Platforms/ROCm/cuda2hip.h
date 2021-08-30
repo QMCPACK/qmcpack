@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright(C) 2021 Advanced Micro Devices, Inc. All rights reserved.
+//
+// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//
+// File created by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef CUDA2HIP_H
 #define CUDA2HIP_H

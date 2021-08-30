@@ -3,8 +3,10 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
