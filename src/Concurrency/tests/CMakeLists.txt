@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2019 QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
@@ -23,4 +23,4 @@ add_executable(${UTEST_EXE} ${SRCS})
 
 target_link_libraries(${UTEST_EXE} catch_main)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 3 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

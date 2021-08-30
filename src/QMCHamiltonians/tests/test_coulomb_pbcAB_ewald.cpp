@@ -53,6 +53,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
   ions.Lattice                      = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;
@@ -71,8 +72,8 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)     = -1;
   tspecies(massIdx, upIdx)       = 1.0;
 
+  elec.resetGroups();
   elec.createSK();
-
   elec.addTable(ions);
   elec.update();
 
@@ -133,6 +134,7 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 2;
   ions.Lattice                      = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;
@@ -155,10 +157,9 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)     = -1;
   tspecies(massIdx, upIdx)       = 1.0;
 
-  elec.createSK();
-
-  elec.addTable(ions);
   elec.resetGroups();
+  elec.createSK();
+  elec.addTable(ions);
   elec.update();
 
 

@@ -76,7 +76,7 @@ public:
   virtual void set(int first, int nel, int delay = 1){};
 
   ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
+  virtual void setBF(std::shared_ptr<BackflowTransformation> BFTrans) {}
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }

@@ -160,7 +160,7 @@ public:
    */
   template<typename TMAT, typename TREAL, typename = std::enable_if_t<std::is_same<TMAT, T>::value>>
   std::enable_if_t<std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& LogValue)
+  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& log_value)
   {
     // safe mechanism
     delay_count = 0;
@@ -193,7 +193,7 @@ public:
                        "cusolver::getrs failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
-    computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, LogValue);
+    computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
@@ -214,7 +214,7 @@ public:
    */
   template<typename TMAT, typename TREAL, typename = std::enable_if_t<std::is_same<TMAT, T>::value>>
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& LogValue)
+  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& log_value)
   {
     // safe mechanism
     delay_count = 0;
@@ -249,7 +249,7 @@ public:
     copy_matrix_cuda(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, hstream);
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
-    computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, LogValue);
+    computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");

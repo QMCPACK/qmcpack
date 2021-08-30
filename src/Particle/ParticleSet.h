@@ -663,6 +663,7 @@ public:
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);
   static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
+  static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
   /** map to handle distance tables

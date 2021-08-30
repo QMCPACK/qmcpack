@@ -35,7 +35,7 @@ public:
   MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
                                      std::unique_ptr<SPOSetProxyForMSD>&& upspo,
                                      std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                     BackflowTransformation* tr);
+                                     std::shared_ptr<BackflowTransformation> tr);
 
   ///destructor
   ~MultiSlaterDeterminantWithBackflow() override;
@@ -46,7 +46,7 @@ public:
   void reportStatus(std::ostream& os) override;
 
   ///set BF pointers
-  void setBF(BackflowTransformation* bf) override
+  void setBF(std::shared_ptr<BackflowTransformation> bf) override
   {
     BFTrans = bf;
     for (int i = 0; i < dets_up.size(); i++)
@@ -82,7 +82,7 @@ public:
   void resize(int, int) override;
 
   // transformation
-  BackflowTransformation* BFTrans;
+  std::shared_ptr<BackflowTransformation> BFTrans;
 
   // temporary storage for evaluateDerivatives
   Matrix<RealType> dpsia_up, dLa_up;

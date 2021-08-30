@@ -101,8 +101,10 @@ bool WaveFunctionTester::run()
 
   put(qmcNode);
 
-  RandomGenerator_t* Rng1        = new RandomGenerator_t();
-  H.setRandomGenerator(Rng1);
+  auto Rng1 = std::make_unique<RandomGenerator_t>();
+  H.setRandomGenerator(Rng1.get());
+  // Add to Rng so the object is eventually deleted
+  Rng.push_back(Rng1.release());
 
   if (checkSlaterDetOption == "no")
     checkSlaterDet = false;
@@ -1902,14 +1904,16 @@ void WaveFunctionTester::runDerivCloneTest()
 {
   app_log() << " ===== runDerivCloneTest =====\n";
   app_log() << " Testing derivatives clone" << std::endl;
-  RandomGenerator_t* Rng1        = new RandomGenerator_t();
-  RandomGenerator_t* Rng2        = new RandomGenerator_t();
-  (*Rng1)                        = (*Rng2);
-  MCWalkerConfiguration* w_clone = new MCWalkerConfiguration(W);
-  TrialWaveFunction* psi_clone   = Psi.makeClone(*w_clone);
-  QMCHamiltonian* h_clone        = H.makeClone(*w_clone, *psi_clone);
-  h_clone->setRandomGenerator(Rng2);
-  H.setRandomGenerator(Rng1);
+  auto Rng1      = std::make_unique<RandomGenerator_t>();
+  auto Rng2      = std::make_unique<RandomGenerator_t>();
+  (*Rng1)        = (*Rng2);
+  auto w_clone   = std::make_unique<MCWalkerConfiguration>(W);
+  auto psi_clone = Psi.makeClone(*w_clone);
+  auto h_clone   = H.makeClone(*w_clone, *psi_clone);
+  h_clone->setRandomGenerator(Rng2.get());
+  H.setRandomGenerator(Rng1.get());
+  // Add to Rng so the object is eventually deleted
+  Rng.push_back(Rng1.release());
   h_clone->setPrimary(true);
   int nat = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);

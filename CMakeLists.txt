@@ -198,15 +198,18 @@ option(ENABLE_GCOV "Enable code coverage" OFF)
 option(QMC_MPI "Enable/disable MPI" ON)
 option(QMC_OMP "Enable/disable OpenMP" ON)
 option(QMC_COMPLEX "Build for complex binary" OFF)
-set(QMC_CUDA
-    0
-    CACHE BOOL "Build with GPU support through CUDA")
+option(QMC_CUDA "Build with GPU support through CUDA" OFF)
 option(
   ENABLE_CUDA
   "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
   OFF)
-option(ENABLE_HIP "Build with with GPU support through HIP" OFF)
-option(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
+option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
+if(QMC_CUDA2HIP)
+  set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
+endif()
+# explicit HIP source codes only exist in AFQMC.
+option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
+option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
@@ -760,7 +763,9 @@ endif()
 #-------------------------------------------------------------------
 set(HAVE_CUDA 0)
 if(QMC_CUDA OR ENABLE_CUDA)
-  if(NOT QMC_CUDA2HIP)
+  if(QMC_CUDA2HIP)
+    message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
+  else(QMC_CUDA2HIP)
     # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
     # It happened -ffast-math from host caused numerical issue in CUDA kernels.
     option(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
@@ -773,7 +778,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
       message(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
     else(CUDA_NVCC_FLAGS MATCHES "arch")
       # Automatically set the default NVCC flags
-      set(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
       if(QMC_COMPLEX)
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
       endif()
@@ -792,29 +797,11 @@ if(QMC_CUDA OR ENABLE_CUDA)
     include_directories(${CUDA_INCLUDE_DIRS})
     set(HAVE_CUDA 1)
     message("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-  else()
-    set(ROCM_ROOT
-        "/opt/rocm"
-        CACHE PATH "Root directory of ROCM")
-    message(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
-    list(APPEND CMAKE_MODULE_PATH ${ROCM_ROOT}/hip/cmake)
-    list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
-    find_package(HIP REQUIRED)
-    find_package(hipblas REQUIRED)
-    find_package(rocsolver REQUIRED)
-    # architecture flags
-    set(HIP_ARCH
-        "gfx906,gfx908"
-        CACHE STRING "HIP architecture gfxXXX")
-    list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3")
-    list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
-    list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
-    # warning suppression
-    list(APPEND HIP_HIPCC_FLAGS "-Wno-vla")
-    list(APPEND HIP_HIPCC_FLAGS "-Wno-deprecated-declarations")
-    list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
-  endif(NOT QMC_CUDA2HIP)
+  endif(QMC_CUDA2HIP)
 else(QMC_CUDA OR ENABLE_CUDA)
+  if(QMC_CUDA2HIP)
+    message(FATAL_ERROR "QMC_CUDA2HIP requires QMC_CUDA=ON or ENABLE_CUDA=ON.")
+  endif()
   message(STATUS "CUDA disabled")
 endif(QMC_CUDA OR ENABLE_CUDA)
 
@@ -837,11 +824,53 @@ endif(USE_NVTX_API)
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_ROCM)
-  message(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
-  add_library(ROCM::libraries INTERFACE IMPORTED)
-  # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
-  set_target_properties(ROCM::libraries PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
-                                                   INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
+  if(ROCM_ROOT)
+    message(STATUS "ROCM_ROOT provided. Searching for FindHIP.cmake file")
+    find_path(
+      HIP_MODULE_FILE_DIR FindHIP.cmake
+      HINTS ${ROCM_ROOT}
+      PATH_SUFFIXES hip/cmake REQUIRED
+      NO_DEFAULT_PATH)
+  else()
+    message(STATUS "ROCM_ROOT not provided. Searching for FindHIP.cmake file.")
+    find_path(
+      HIP_MODULE_FILE_DIR FindHIP.cmake
+      HINTS /opt/rocm
+      PATH_SUFFIXES hip/cmake)
+    if(HIP_MODULE_FILE_DIR)
+      message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
+    else()
+      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installiation.")
+    endif()
+    string(REGEX REPLACE "\/hip\/cmake" "" ROCM_ROOT "${HIP_MODULE_FILE_DIR}")
+  endif()
+  message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
+
+  list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
+  list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
+  find_package(HIP REQUIRED)
+  find_package(hipblas REQUIRED)
+  find_package(rocsolver REQUIRED)
+  # architecture flags
+  set(HIP_ARCH
+      "gfx906,gfx908"
+      CACHE STRING "HIP architecture gfxXXX")
+  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
+  list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
+  list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
+  # warning suppression
+  list(APPEND HIP_HIPCC_FLAGS "-Wno-vla")
+  list(APPEND HIP_HIPCC_FLAGS "-Wno-deprecated-declarations")
+  list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
+
+  if(BUILD_AFQMC)
+    find_package(rocrand REQUIRED)
+    # connect ROCm shipped libraries
+    add_library(ROCM::libraries INTERFACE IMPORTED)
+    # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
+    target_link_libraries(ROCM::libraries INTERFACE "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
+    target_include_directories(ROCM::libraries INTERFACE "${ROCM_ROOT}/include")
+  endif()
 endif(ENABLE_ROCM)
 
 #-------------------------------------------------------------------
@@ -851,14 +880,23 @@ if(ENABLE_HIP)
   if(NOT ENABLE_ROCM)
     message(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
   endif()
-  set(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
-  find_package(HIP REQUIRED)
 
+  find_package(hipsparse REQUIRED)
   add_library(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
-  set_target_properties(
-    HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include" INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP"
-                        INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
+  target_link_libraries(HIP::HIP INTERFACE "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
+  target_include_directories(HIP::HIP INTERFACE "${ROCM_ROOT}/include")
+  target_compile_definitions(HIP::HIP INTERFACE "ENABLE_HIP")
+
+  # FindHIP sets HIP_PLATFORM to amd or nvcc
+  message(STATUS "FindHIP determined HIP_PLATFORM is ${HIP_PLATFORM}.")
+  if(HIP_PLATFORM STREQUAL "amd")
+    target_compile_definitions(HIP::HIP INTERFACE "__HIP_PLATFORM_AMD__")
+  elseif(HIP_PLATFORM STREQUAL "nvcc")
+    target_compile_definitions(HIP::HIP INTERFACE "__HIP_PLATFORM_NVIDIA__")
+  else()
+    message(FATAL_ERROR "Unknown HIP platform ${HIP_PLATFORM} only support 'amd' or 'nvcc'")
+  endif()
 endif(ENABLE_HIP)
 
 ######################################################
@@ -890,6 +928,9 @@ else()
   message(STATUS "VTune ittnotify APIs disabled")
 endif()
 
+# consider making this always on if OpenMP is no longer UB with Thread Support Library
+# We should test out abstractions consistently and c++17 stdlib's all have support for
+# std::thread and std::atomic
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
 if(QMC_EXP_THREADING)

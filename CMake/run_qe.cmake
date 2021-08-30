@@ -58,7 +58,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
         ${FULL_NAME}
         PARENT_SCOPE)
     set(MY_WORKDIR ${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME})
-    message_verbose("Adding test ${FULL_NAME}")
+    message(VERBOSE "Adding test ${FULL_NAME}")
     copy_directory("${SRC_DIR}" "${MY_WORKDIR}")
     add_qe_test(${FULL_NAME}-scf ${PROCS1} ${QE_PW_DIR}/pw.x ${NPOOL1} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-scf.in)
     if(PROCS2 EQUAL 0)

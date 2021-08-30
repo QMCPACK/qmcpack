@@ -25,19 +25,19 @@ namespace qmcplusplus
 class SlaterDetWithBackflow : public SlaterDet
 {
 public:
-  BackflowTransformation* BFTrans;
+  std::shared_ptr<BackflowTransformation> BFTrans;
 
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
    */
-  SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF);
+  SlaterDetWithBackflow(ParticleSet& targetPtcl, std::shared_ptr<BackflowTransformation> BF);
 
   ///destructor
   ~SlaterDetWithBackflow() override;
 
   ///set BF pointers
-  void setBF(BackflowTransformation* bf) override
+  void setBF(std::shared_ptr<BackflowTransformation> bf) override
   {
     BFTrans = bf;
     for (int i = 0; i < Dets.size(); i++)
