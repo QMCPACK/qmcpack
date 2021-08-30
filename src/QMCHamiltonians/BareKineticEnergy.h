@@ -527,6 +527,7 @@ struct BareKineticEnergy : public OperatorBase
                                          int iat, 
                                          std::vector<std::vector<ValueMatrix_t> >& Bforce) override
   {
+//    ScopedTimer dBketimer(*timer_manager.createTimer("NEW::KE::dB"));
     IndexType ngroups = P.groups();
     assert(Bforce.size() == OHMMS_DIM);
     assert(Bforce[0].size() == ngroups);
@@ -554,7 +555,10 @@ struct BareKineticEnergy : public OperatorBase
     dlapl.push_back(mtmp);
     dlapl.push_back(mtmp);
 
+    {
+ //   ScopedTimer gradorbtimer(*timer_manager.createTimer("NEW::KE::orb_grad"));
     psi.get_igrad_igradelapl_M(P,source, iat, dm, dlapl);
+    }
     for(int idim=0; idim<OHMMS_DIM; idim++)
       for(int ig=0; ig<ngroups; ig++)
       {  

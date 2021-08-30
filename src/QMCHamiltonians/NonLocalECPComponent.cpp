@@ -670,7 +670,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
                                                                  std::vector<std::vector<ValueMatrix_t> >& dB)
 
 {
-  ScopedTimer dBnlpptimer(*timer_manager.createTimer("NEW::NLPP::dB"));
+ // ScopedTimer dBnlpptimer(*timer_manager.createTimer("NEW::NLPP::dB"));
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
@@ -745,9 +745,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   
   for (int j = 0; j < nknot; j++)
   {
+   // ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
     W.makeMove(iel, deltaV[j], false);
     iongrad_phi=0.0;
-    ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
   //  spo->evaluateGradSourceRow(W,iel,ions,iat_src,iongrad_phimat[j]);
     spo->evaluateGradSourceRow(W,iel,ions,iat_src,iongrad_phi);
     for(int iorb=0; iorb<norbs; iorb++)
@@ -756,7 +756,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     }
     if(iat==iat_src )
     {
-      ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
+   //   ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
      // spo->evaluateVGL(W,iel,phimat[j],gradphi[j],laplphi[j]);
       spo->evaluateVGL(W,iel,phi,gradphi,laplphi);
       for(int iorb=0; iorb<norbs; iorb++)
@@ -781,6 +781,8 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 //  }
   for (int j=0; j<nknot; j++)
   {
+  //  ScopedTimer prefactortimer(*timer_manager.createTimer("NLPP::dB::prefactors"));
+    
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
@@ -797,7 +799,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
     for (int l = 0; l < lmax; l++)
     {
-      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
+//      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
       //Legendre polynomial recursion formula.
       lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
       lpol[l + 1] *= Lfactor2[l];
@@ -812,7 +814,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
     for (int l = 0; l < nchannel; l++)
     {
-      ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
+   //   ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
      
@@ -828,7 +830,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   {
     for(int iorb=0; iorb<norbs; iorb++)
       {
-        ScopedTimer stitchtimer(*timer_manager.createTimer("NLPP::dB::component_comp"));
+  //      ScopedTimer stitchtimer(*timer_manager.createTimer("NLPP::dB::component_comp"));
   //      if (iat==iat_src)
   //      {
   //        gpot[iorb]  += dvdr_prefactor[j]*phimat[j][iorb];
@@ -841,13 +843,12 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
    } 
 
   if(iat==iat_src)
-  
   for (int j=0; j<nknot; j++)
   {
+  //  ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::udot_and_wfgradrow"));
     for(int iorb=0; iorb<norbs; iorb++)
     {
       //this is for diagonal case.
-      ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::udot_and_wfgradrow"));
       udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb],rrotsgrid_m[j]);
       wfgradmat[j][iorb] = gradphimat[j][iorb]-dr*(udotgradpsimat[j][iorb]*rinv);
       gpot[iorb]  += dvdr_prefactor[j]*phimat[j][iorb];
@@ -857,7 +858,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   }
 
     {
-    ScopedTimer copypastetimer(*timer_manager.createTimer("NLPP::dB::copypaste"));
+  //  ScopedTimer copypastetimer(*timer_manager.createTimer("NLPP::dB::copypaste"));
     for(int idim=0; idim<OHMMS_DIM; idim++)
     { 
       for(int iorb=0; iorb<norbs; iorb++)
