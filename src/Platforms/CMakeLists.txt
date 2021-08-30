@@ -47,4 +47,9 @@ if(ENABLE_CUDA)
   target_link_libraries(platform_device PUBLIC platform_cuda)
 endif(ENABLE_CUDA)
 
+if(ENABLE_ROCM)
+  add_subdirectory(ROCm)
+  target_link_libraries(platform_device PUBLIC platform_rocm)
+endif(ENABLE_ROCM)
+
 add_subdirectory(tests)

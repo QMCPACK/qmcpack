@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2021 QMCPACK developers.
+//
+// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef CUDA2HIP_H
 #define CUDA2HIP_H
@@ -20,6 +31,7 @@
 #define cublasStatus_t          hipblasStatus_t
 #define cublasCreate            hipblasCreate
 #define cublasDestroy           hipblasDestroy
+#define cublasSetStream         hipblasSetStream
 #define cublasOperation_t       hipblasOperation_t
 #define cublasCgeam             hipblasCgeam
 #define cublasCgemm             hipblasCgemm
@@ -43,6 +55,7 @@
 #define cublasZgetriBatched     hipblasZgetriBatched_
 
 #define cuComplex                       hipComplex
+#define cuDoubleComplex                 hipDoubleComplex
 #define cuCrealf                        hipCrealf
 #define cuCimagf                        hipCimagf
 #define cuCreal                         hipCreal
@@ -118,9 +131,6 @@
 #define cudaStreamSynchronize           hipStreamSynchronize
 #define cudaStreamWaitEvent             hipStreamWaitEvent
 #define cudaSuccess                     hipSuccess
-#define cuDoubleComplex                 hipDoubleComplex
-#define make_cuComplex                  make_hipComplex
-#define make_cuDoubleComplex            make_hipDoubleComplex
 
 #define cudaDeviceSetLimit(limit, value) ;
 
