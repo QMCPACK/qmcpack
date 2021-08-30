@@ -85,7 +85,7 @@ hipblasZgemmBatched(hipblasHandle_t handle,
 
 //------------------------------------------------------------------------------
 hipblasStatus_t
-hipblasSgetrfBatched_(cublasHandle_t handle,
+hipblasSgetrfBatched_(hipblasHandle_t handle,
                       int n,
                       float *const A[],
                       int lda,
@@ -118,7 +118,7 @@ hipblasSgetrfBatched_(cublasHandle_t handle,
 }
 
 hipblasStatus_t
-hipblasDgetrfBatched_(cublasHandle_t handle,
+hipblasDgetrfBatched_(hipblasHandle_t handle,
                       int n,
                       double *const A[],
                       int lda,
@@ -151,9 +151,9 @@ hipblasDgetrfBatched_(cublasHandle_t handle,
 }
 
 hipblasStatus_t
-hipblasCgetrfBatched_(cublasHandle_t handle,
+hipblasCgetrfBatched_(hipblasHandle_t handle,
                       int n,
-                      cuComplex *const A[],
+                      hipComplex *const A[],
                       int lda,
                       int *P,
                       int *info,
@@ -184,9 +184,9 @@ hipblasCgetrfBatched_(cublasHandle_t handle,
 }
 
 hipblasStatus_t
-hipblasZgetrfBatched_(cublasHandle_t handle,
+hipblasZgetrfBatched_(hipblasHandle_t handle,
                       int n,
-                      cuDoubleComplex *const A[],
+                      hipDoubleComplex *const A[],
                       int lda,
                       int *P,
                       int *info,
@@ -267,7 +267,7 @@ static void identity(int n, rocblas_double_complex* const a_array[], int lda)
 
 //------------------------------------------------------------------------------
 hipblasStatus_t
-hipblasSgetriBatched_(cublasHandle_t handle,
+hipblasSgetriBatched_(hipblasHandle_t handle,
                       int n,
                       const float *const A[],
                       int lda,
@@ -326,7 +326,7 @@ hipblasSgetriBatched_(cublasHandle_t handle,
 }
 
 hipblasStatus_t
-hipblasDgetriBatched_(cublasHandle_t handle,
+hipblasDgetriBatched_(hipblasHandle_t handle,
                       int n,
                       const double *const A[],
                       int lda,
@@ -384,12 +384,12 @@ hipblasDgetriBatched_(cublasHandle_t handle,
 }
 
 hipblasStatus_t
-hipblasCgetriBatched_(cublasHandle_t handle,
+hipblasCgetriBatched_(hipblasHandle_t handle,
                       int n,
-                      const cuComplex *const A[],
+                      const hipComplex *const A[],
                       int lda,
                       const int *P,
-                      cuComplex *const C[],
+                      hipComplex *const C[],
                       int ldc,
                       int *info,
                       int batchSize)
@@ -443,12 +443,12 @@ hipblasCgetriBatched_(cublasHandle_t handle,
 }
 
 hipblasStatus_t
-hipblasZgetriBatched_(cublasHandle_t handle,
+hipblasZgetriBatched_(hipblasHandle_t handle,
                       int n,
-                      const cuDoubleComplex *const A[],
+                      const hipDoubleComplex *const A[],
                       int lda,
                       const int *P,
-                      cuDoubleComplex *const C[],
+                      hipDoubleComplex *const C[],
                       int ldc,
                       int *info,
                       int batchSize)
