@@ -188,6 +188,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     cuda_add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
   else()
     hip_add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
+    target_link_libraries(qmcwfs_cuda PUBLIC platform_device)
   endif(NOT QMC_CUDA2HIP)
   if(QMC_CUDA)
     target_include_directories(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
@@ -203,7 +204,11 @@ target_link_libraries(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Mat
 # do not merge with qmcwfs target unless all qmcwfs unit tests pass santitizers.
 if(ENABLE_CUDA)
   set(DIRECT_INVERSION_SRCS detail/CUDA/cuBLAS_LU.cu)
-  cuda_add_library(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
+  if(NOT QMC_CUDA2HIP)
+    cuda_add_library(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
+  else()
+    hip_add_library(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
+  endif()
   target_link_libraries(qmcwfs_direct_inversion_cuda PUBLIC platform_device)
   # CUDA_ADD_LIBRARY is from deprecated FindCuda and ignores TARGET_INCLUDE_DIRECTORIES so
   # headers in this target contain full relative path from project root.

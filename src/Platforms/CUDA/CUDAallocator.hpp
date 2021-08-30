@@ -24,8 +24,13 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
-#include <cuda_runtime_api.h>
 #include "config.h"
+#ifndef QMC_CUDA2HIP
+#include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 #include "cudaError.h"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
