@@ -61,7 +61,7 @@ private:
   ParticleSet* SourcePtcl;
 
   // has a specialization for RPAFunctor in cpp file
-  template<class RadFuncType, unsigned Implementation = detail::CPU>
+  template<class RadFuncType, bool SPIN = false, unsigned Implementation = detail::CPU>
   std::unique_ptr<WaveFunctionComponent> createJ1(xmlNodePtr cur);
 
   template<class RadFuncType, unsigned Implementation = detail::CPU>
