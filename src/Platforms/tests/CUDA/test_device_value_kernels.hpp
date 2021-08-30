@@ -12,13 +12,7 @@
 #ifndef QMCPLUSPLUS_TEST_DEVICE_VALUES_KERNELS_HPP
 #define QMCPLUSPLUS_TEST_DEVICE_VALUES_KERNELS_HPP
 
-#include "config.h"
-#ifndef QMC_CUDA2HIP
-#include <cuda_runtime_api.h>
-#else
-#include <hip/hip_runtime.h>
-#include "Platforms/ROCm/cuda2hip.h"
-#endif
+#include "CUDA/CUDAruntime.hpp"
 
 namespace qmcplusplus
 {

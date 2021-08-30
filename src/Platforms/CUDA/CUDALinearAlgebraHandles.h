@@ -13,8 +13,8 @@
 #define QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
 
 #include "ResourceCollection.h"
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
-#include "CUDA/cudaError.h"
 
 namespace qmcplusplus
 {

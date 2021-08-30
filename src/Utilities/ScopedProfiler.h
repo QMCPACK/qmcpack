@@ -3,7 +3,7 @@
 
 #include "config.h"
 #if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
-#include "CUDA/cudaError.h"
+#include "CUDA/CUDAruntime.hpp"
 #include <cuda_profiler_api.h>
 #endif
 #ifdef USE_VTUNE_API

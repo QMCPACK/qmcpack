@@ -15,13 +15,7 @@
 #define QMCPLUSPLUS_CUDADEVICEMANAGER_H
 
 #include <stdexcept>
-#ifndef QMC_CUDA2HIP
-#include <cuda_runtime_api.h>
-#else
-#include <hip/hip_runtime.h>
-#include "Platforms/ROCm/cuda2hip.h"
-#endif
-#include "CUDA/cudaError.h"
+#include "CUDAruntime.hpp"
 #include "Host/OutputManager.h"
 #include "determineDefaultDeviceNum.h"
 

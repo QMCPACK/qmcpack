@@ -13,6 +13,7 @@
 #ifndef CUDA2HIP_H
 #define CUDA2HIP_H
 
+// cuBLAS to hipBLAS
 #define CUBLAS_OP_N                     HIPBLAS_OP_N
 #define CUBLAS_STATUS_ALLOC_FAILED      HIPBLAS_STATUS_ALLOC_FAILED
 #define CUBLAS_STATUS_ARCH_MISMATCH     HIPBLAS_STATUS_ARCH_MISMATCH
@@ -54,6 +55,7 @@
 #define cublasZgetrfBatched     hipblasZgetrfBatched_
 #define cublasZgetriBatched     hipblasZgetriBatched_
 
+// CUDA runtime to HIP runtime
 #define cuComplex                       hipComplex
 #define cuDoubleComplex                 hipDoubleComplex
 #define cuCrealf                        hipCrealf

@@ -17,13 +17,6 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include "config.h"
-#ifndef QMC_CUDA2HIP
-#include <cuda_runtime_api.h>
-#else
-#include <hip/hip_runtime.h>
-#include "Platforms/ROCm/cuda2hip.h"
-#endif
 
 #define cudaErrorCheck(ans, cause)                \
   {                                               \
