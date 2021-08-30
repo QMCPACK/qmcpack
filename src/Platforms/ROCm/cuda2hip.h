@@ -15,6 +15,7 @@
 
 // cuBLAS to hipBLAS
 #define CUBLAS_OP_N                     HIPBLAS_OP_N
+#define CUBLAS_OP_T                     HIPBLAS_OP_T
 #define CUBLAS_STATUS_ALLOC_FAILED      HIPBLAS_STATUS_ALLOC_FAILED
 #define CUBLAS_STATUS_ARCH_MISMATCH     HIPBLAS_STATUS_ARCH_MISMATCH
 #define CUBLAS_STATUS_EXECUTION_FAILED  HIPBLAS_STATUS_EXECUTION_FAILED
@@ -33,6 +34,7 @@
 #define cublasCreate            hipblasCreate
 #define cublasDestroy           hipblasDestroy
 #define cublasSetStream         hipblasSetStream
+#define cublasGetStream         hipblasGetStream
 #define cublasOperation_t       hipblasOperation_t
 #define cublasCgeam             hipblasCgeam
 #define cublasCgemm             hipblasCgemm
