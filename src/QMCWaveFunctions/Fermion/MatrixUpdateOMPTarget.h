@@ -86,10 +86,12 @@ private:
   /// legacy single walker matrix inversion engine
   DiracMatrix<T_FP> detEng;
 
+  int inv_row_id_;
+  
   /// matrix inversion engine this crowd scope resouce and only the leader engine gets it
   UPtr<DiracMatrixCompute> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  OffloadPinnedValueMatrix_t psiMinv;
+  OffloadPinnedValueMatrix_t psiMinv_;
   /// scratch space for rank-1 update
   OffloadValueVector_t temp;
   // scratch space for keeping one row of Ainv
@@ -131,8 +133,9 @@ public:
    * @param delay, maximum delay 0<delay<=norb
    *
    * Wow does this seem wrong. After this psiMinv can report nothing useful about its actual dimensions.
+   * I feel like a good matrix class would handle this.
    */
-  inline void resize(int norb, int delay) { psiMinv.resize(norb, getAlignedSize<T>(norb)); }
+  inline void resize(int norb, int delay) {psiMinv_.resize(norb, getAlignedSize<T>(norb)); }
 
   void createResource(ResourceCollection& collection) const
   {
@@ -160,10 +163,12 @@ public:
     collection.takebackResource(std::move(det_inverter_));
   }
 
-  const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
-  OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
+  const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv_; }
+  OffloadPinnedValueMatrix_t& psiMinv() { return psiMinv_; }
+  const int get_inv_row_id() const { return inv_row_id_; }
+  int& inv_row_id() { return inv_row_id_; }
 
-  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
+  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
 
 
   inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
@@ -202,7 +207,7 @@ public:
 
     for (int iw = 0; iw < engines.size(); iw++)
     {
-      a_inv_refs.emplace_back(engines[iw].psiMinv);
+      a_inv_refs.emplace_back(engines[iw].psiMinv());
       const T* a_inv_ptr = a_inv_refs.back().get().data();
       PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
@@ -232,13 +237,13 @@ public:
     auto& buffer_H2D    = engine_leader.mw_mem_->buffer_H2D;
     auto& grads_value_v = engine_leader.mw_mem_->grads_value_v;
 
-    const int norb = engine_leader.psiMinv.rows();
+    const int norb = engine_leader.get_psiMinv().rows();
     const int nw   = engines.size();
     buffer_H2D.resize(sizeof(T*) * 2 * nw);
     Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(buffer_H2D.data()), 2, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[0][iw] = engines[iw].psiMinv.device_data() + rowchanged * engine_leader.psiMinv.cols();
+      ptr_buffer[0][iw] = engines[iw].get_psiMinv().device_data() + rowchanged * engine_leader.get_psiMinv().cols();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
@@ -274,7 +279,7 @@ public:
   template<typename VVT, typename RATIOT>
   inline void updateRow(int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
   {
-    auto& Ainv = psiMinv;
+    auto& Ainv = psiMinv_;
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);
@@ -328,8 +333,8 @@ public:
     auto& czero_vec     = engine_leader.mw_mem_->czero_vec;
     auto& mw_temp       = engine_leader.mw_mem_->mw_temp;
     auto& mw_rcopy      = engine_leader.mw_mem_->mw_rcopy;
-    const int norb      = engine_leader.psiMinv.rows();
-    const int lda       = engine_leader.psiMinv.cols();
+    const int norb      = engine_leader.get_psiMinv().rows();
+    const int lda       = engine_leader.get_psiMinv().cols();
 
     engine_leader.resize_scratch_arrays(norb, n_accepted);
 
@@ -340,7 +345,7 @@ public:
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = engines[iw].psiMinv.device_data();
+        ptr_buffer[0][count] = engines[iw].psiMinv().device_data();
         ptr_buffer[1][count] = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
@@ -430,19 +435,19 @@ public:
   std::vector<const T*> static mw_getInvRow(const RefVectorWithLeader<This_t>& engines, const int row_id, bool on_host)
   {
     const size_t nw    = engines.size();
-    const size_t ncols = engines.getLeader().psiMinv.cols();
+    const size_t ncols = engines.getLeader().get_psiMinv().cols();
     std::vector<const T*> row_ptr_list;
     row_ptr_list.reserve(nw);
     if (on_host)
       for (This_t& engine : engines)
       {
-        auto* ptr = engine.psiMinv.data();
+        auto* ptr = engine.get_psiMinv().data();
         PRAGMA_OFFLOAD("omp target update from(ptr[row_id * ncols : ncols])")
         row_ptr_list.push_back(ptr + row_id * ncols);
       }
     else
       for (This_t& engine : engines)
-        row_ptr_list.push_back(engine.psiMinv.device_data() + row_id * ncols);
+        row_ptr_list.push_back(engine.get_psiMinv().device_data() + row_id * ncols);
     return row_ptr_list;
   }
 
@@ -450,8 +455,8 @@ public:
   {
     for (This_t& engine : engines)
     {
-      auto* ptr = engine.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(ptr[:engine.psiMinv.size()])")
+      auto* ptr = engine.get_psiMinv().data();
+      PRAGMA_OFFLOAD("omp target update from(ptr[:engine.get_psiMinv().size()])")
     }
   }
 

@@ -102,17 +102,17 @@ private:
   DiracMatrix<T_FP> detEng;
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  DualMatrix<Value> psiMinv;
+  DualMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
   UnpinnedDualVector<Value> temp;
-  // row of up-to-date Ainv
+  /// row of up-to-date Ainv
   UnpinnedDualVector<Value> invRow;
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
    *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
    *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
    *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
    */
-  int invRow_id;
+  int inv_row_id_;
   // scratch space for keeping one row of Ainv
   UnpinnedDualVector<Value> rcopy;
 
@@ -200,7 +200,7 @@ private:
     auto& cone_vec                   = engine_leader.mw_mem_->cone_vec;
     auto& czero_vec                  = engine_leader.mw_mem_->czero_vec;
     auto& prepare_inv_row_buffer_H2D = engine_leader.mw_mem_->prepare_inv_row_buffer_H2D;
-    const int norb                   = engine_leader.psiMinv.rows();
+    const int norb                   = engine_leader.psiMinv_.rows();
     const int nw                     = engines.size();
     int& delay_count                 = engine_leader.delay_count;
     prepare_inv_row_buffer_H2D.resize(sizeof(T*) * 7 * nw);
@@ -211,7 +211,7 @@ private:
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];
-      ptr_buffer[0][iw] = engine.psiMinv.device_data() + rowchanged * engine.psiMinv.cols();
+      ptr_buffer[0][iw] = engine.psiMinv_.device_data() + rowchanged * engine.psiMinv_.cols();
       ptr_buffer[1][iw] = engine.invRow.device_data();
       ptr_buffer[2][iw] = engine.U_gpu.data();
       ptr_buffer[3][iw] = engine.p_gpu.data();
@@ -251,7 +251,7 @@ private:
                                             BinvRow_mw_ptr, 1, cone_vec.device_data(), invRow_mw_ptr, 1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
     // mark row prepared
-    engine_leader.invRow_id = rowchanged;
+    engine_leader.inv_row_id() = rowchanged;
   }
 
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
@@ -276,8 +276,8 @@ private:
     auto& mw_rcopy             = engine_leader.mw_mem_->mw_rcopy;
     auto& cone_vec             = engine_leader.mw_mem_->cone_vec;
     auto& czero_vec            = engine_leader.mw_mem_->czero_vec;
-    const int norb             = engine_leader.psiMinv.rows();
-    const int lda              = engine_leader.psiMinv.cols();
+    const int norb             = engine_leader.psiMinv_.rows();
+    const int lda              = engine_leader.psiMinv_.cols();
     mw_temp.resize(norb * n_accepted);
     mw_rcopy.resize(norb * n_accepted);
     updateRow_buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * n_accepted);
@@ -288,7 +288,7 @@ private:
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = engines[iw].psiMinv.device_data();
+        ptr_buffer[0][count] = engines[iw].psiMinv_.device_data();
         ptr_buffer[1][count] = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
@@ -338,7 +338,7 @@ private:
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0) {}
+  MatrixDelayedUpdateCUDA() : inv_row_id_(-1), delay_count(0) {}
 
   MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
 
@@ -355,7 +355,7 @@ public:
     Binv_gpu.resize(delay, delay);
     delay_list_gpu.resize(delay);
     invRow.resize(norb);
-    psiMinv.resize(norb, getAlignedSize<T>(norb));
+    psiMinv_.resize(norb, getAlignedSize<T>(norb));
   }
 
   void createResource(ResourceCollection& collection) const
@@ -394,12 +394,13 @@ public:
     collection.takebackResource(std::move(mw_mem_));
   }
 
-  /** Why do you need to modify another classes data member?
-   */
-  inline const DualMatrix<FullPrecValue>& get_psiMinv() const { return psiMinv; }
-  inline DualMatrix<FullPrecValue>& get_nonconst_psiMinv() { return psiMinv; }
+  inline const DualMatrix<FullPrecValue>& get_psiMinv() const { return psiMinv_; }
 
-  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
+  inline DualMatrix<FullPrecValue>& psiMinv() { return psiMinv_; }
+  const int get_inv_row_id() const { return inv_row_id_; }
+  int& inv_row_id() { return inv_row_id_; }
+  
+  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
 
   QMCTraits::FullPrecRealType& cur_ratio() {return cur_ratio_; }
   const QMCTraits::FullPrecRealType get_cur_ratio() const { return cur_ratio_; }
@@ -466,7 +467,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     RefVector<DualMatrix<Value>> a_inv_refs;
     a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
-      a_inv_refs.emplace_back(engines[iw].psiMinv);
+      a_inv_refs.emplace_back(engines[iw].psiMinv_);
     engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs,
                                                         log_values, compute_mask);
   }
@@ -504,7 +505,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     for (int iw = 0; iw < nw; iw++)
     {
       if (engine_leader.isSM1())
-        ptr_buffer[0][iw] = engines[iw].psiMinv.device_data() + rowchanged * engine_leader.psiMinv.cols();
+        ptr_buffer[0][iw] = engines[iw].psiMinv_.device_data() + rowchanged * engine_leader.psiMinv_.cols();
       else
         ptr_buffer[0][iw] = engines[iw].invRow.device_data();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
@@ -520,7 +521,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     const T** invRow_ptr    = reinterpret_cast<const T**>(evalGrad_buffer_H2D.device_data());
     const T** dpsiM_row_ptr = reinterpret_cast<const T**>(evalGrad_buffer_H2D.device_data()) + nw;
 
-    const int norb = engine_leader.psiMinv.rows();
+    const int norb = engine_leader.psiMinv_.rows();
     cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_v.device_data(), nw),
                    "CUDA::calcGradients_cuda failed!");
     cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_v.device_data(), grads_value_v.size() * sizeof(T),
@@ -532,10 +533,10 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
-  /** Update the "local" psiMinv on the device.
+  /** Update the "local" psiMinv_ on the device.
    *  Side Effect Transfers:
    *  * phiV is left on host side in the single methods so it must be transferred to device
-   *  * psiMinv is transferred back to host
+   *  * psiMinv_ is transferred back to host
    *
    *  Since this is a single walker function it cannot require resources so we don't update CUDA data that would be
    *  on default stream and synchronization with mw operations undefined.
@@ -543,7 +544,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
   template<typename VVT, typename RATIOT>
   void updateRow(int rowchanged, VVT& phiV, RATIOT c_ratio_in)
   {
-    auto& Ainv = psiMinv;
+    auto& Ainv = psiMinv_;
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);
@@ -553,7 +554,6 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
-    int success       = 0;
     const T* phiV_ptr = phiV.data();
     T* Ainv_ptr       = Ainv.data();
     T* temp_ptr       = temp.data();
@@ -562,7 +562,9 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
                     map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::gemv failed.");
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
@@ -572,6 +574,8 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       }
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
                              1, Ainv_ptr, lda);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::ger failed.");
     }
 
 
@@ -579,7 +583,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
 
     // guard_no_delay();
 
-    // auto& Ainv = psiMinv;
+    // auto& Ainv = psiMinv_;
     // // update the inverse matrix
     // constexpr T cone(1), czero(0);
     // const int norb = Ainv.rows();
@@ -591,11 +595,11 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     // // invoke the Fahy's variant of Sherman-Morrison update.
     // cudaErrorCheck(cudaMemcpyAsync(phiV.device_data(), phiV.data(), sizeof(T) * phiV.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream), "cuda copy failed in MatrixDelayedUpdateCUDA::updateRow");
 
-    // cublasErrorCheck(cuBLAS::gemv(cuda_handles_->h_cublas, CUBLAS_OP_T, norb, norb, &cone, psiMinv.device_data(), lda, phiV.device_data(), 1, &czero, temp.device_data(), 1), "cuBLAS::gemv failed in MatrixDelayedUpdateCUDA::updateRow"); 
+    // cublasErrorCheck(cuBLAS::gemv(cuda_handles_->h_cublas, CUBLAS_OP_T, norb, norb, &cone, psiMinv_.device_data(), lda, phiV.device_data(), 1, &czero, temp.device_data(), 1), "cuBLAS::gemv failed in MatrixDelayedUpdateCUDA::updateRow"); 
     // cublasErrorCheck(cuBLAS::copy(cuda_handles_->h_cublas, norb, Ainv.device_data() + rowchanged * lda, 1, rcopy.device_data(), 1), "cuBLAS::copy failed in MatrixDelayedUpdateCUDA::updateRow");
     // T alpha = static_cast<T>(RATIOT(-1) / c_ratio_in);
-    // cublasErrorCheck(cuBLAS::ger(cuda_handles_->h_cublas, norb, norb, &alpha, rcopy.device_data(), 1, temp.device_data(), 1, psiMinv.device_data(), lda), "cuBLAS::ger failed in MatrixDelayedUpdateCUDA::updateRow");
-    // cudaErrorCheck(cudaMemcpyAsync(psiMinv.data(), psiMinv.device_data(), sizeof(T) * norb * norb, cudaMemcpyDeviceToHost, cuda_handles_->hstream), "cuda copy failed in MatrixDelayedUpdateCUDA::updateRow");
+    // cublasErrorCheck(cuBLAS::ger(cuda_handles_->h_cublas, norb, norb, &alpha, rcopy.device_data(), 1, temp.device_data(), 1, psiMinv_.device_data(), lda), "cuBLAS::ger failed in MatrixDelayedUpdateCUDA::updateRow");
+    // cudaErrorCheck(cudaMemcpyAsync(psiMinv_.data(), psiMinv_.device_data(), sizeof(T) * norb * norb, cudaMemcpyDeviceToHost, cuda_handles_->hstream), "cuda copy failed in MatrixDelayedUpdateCUDA::updateRow");
     // cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
   }
 
@@ -610,7 +614,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
   {
     auto& engine_leader = engines.getLeader();
     // invRow consumed, mark invRow_id unset
-    engine_leader.invRow_id = -1;
+    engine_leader.inv_row_id() = -1;
 
     if (engine_leader.isSM1())
     {
@@ -626,8 +630,8 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     auto& accept_rejectRow_buffer_H2D = engine_leader.mw_mem_->accept_rejectRow_buffer_H2D;
     int& delay_count                  = engine_leader.delay_count;
     const int lda_Binv                = engine_leader.Binv_gpu.cols();
-    const int norb                    = engine_leader.psiMinv.rows();
-    const int lda                     = engine_leader.psiMinv.cols();
+    const int norb                    = engine_leader.psiMinv_.rows();
+    const int lda                     = engine_leader.psiMinv_.cols();
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
     accept_rejectRow_buffer_H2D.resize((sizeof(T*) * 14 + sizeof(T)) * nw);
@@ -640,7 +644,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       This_t& engine = engines[iw];
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count_accepted]  = engine.psiMinv.device_data() + lda * rowchanged;
+        ptr_buffer[0][count_accepted]  = engine.psiMinv_.device_data() + lda * rowchanged;
         ptr_buffer[1][count_accepted]  = engine.V_gpu.data();
         ptr_buffer[2][count_accepted]  = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][count_accepted]  = engine.p_gpu.data();
@@ -659,7 +663,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       }
       else
       {
-        ptr_buffer[0][n_accepted + count_rejected] = engine.psiMinv.device_data() + lda * rowchanged;
+        ptr_buffer[0][n_accepted + count_rejected] = engine.psiMinv_.device_data() + lda * rowchanged;
         ptr_buffer[1][n_accepted + count_rejected] = engine.V_gpu.data();
         ptr_buffer[2][n_accepted + count_rejected] = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][n_accepted + count_rejected] = engine.p_gpu.data();
@@ -739,8 +743,8 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     auto& hstream              = engine_leader.cuda_handles_->hstream;
     auto& h_cublas             = engine_leader.cuda_handles_->h_cublas;
     auto& updateInv_buffer_H2D = engine_leader.mw_mem_->updateInv_buffer_H2D;
-    const int norb             = engine_leader.psiMinv.rows();
-    const int lda              = engine_leader.psiMinv.cols();
+    const int norb             = engine_leader.psiMinv_.rows();
+    const int lda              = engine_leader.psiMinv_.cols();
     const int nw               = engines.size();
     updateInv_buffer_H2D.resize(sizeof(T*) * 6 * nw);
     engine_leader.resize_fill_constant_arrays(nw);
@@ -750,7 +754,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     {
       This_t& engine    = engines[iw];
       ptr_buffer[0][iw] = engine.U_gpu.data();
-      ptr_buffer[1][iw] = engine.psiMinv.device_data();
+      ptr_buffer[1][iw] = engine.psiMinv_.device_data();
       ptr_buffer[2][iw] = engine.tempMat_gpu.data();
       ptr_buffer[3][iw] = reinterpret_cast<T*>(engine.delay_list_gpu.data());
       ptr_buffer[4][iw] = engine.V_gpu.data();
@@ -801,12 +805,12 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
   {
     for (This_t& engine : engines)
     {
-      std::cout << "debug Ainv host  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
-      auto* temp_ptr = engine.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(temp_ptr[:psiMinv.size()])")
-      std::cout << "debug Ainv devi  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
+      std::cout << "debug Ainv host  " << engine.psiMinv_[0][0] << " " << engine.psiMinv_[0][1] << " "
+                << engine.psiMinv_[1][0] << " " << engine.psiMinv_[1][1] << std::endl;
+      auto* temp_ptr = engine.psiMinv_.data();
+      PRAGMA_OFFLOAD("omp target update from(temp_ptr[:engine.psiMinv_.size()])")
+      std::cout << "debug Ainv devi  " << engine.psiMinv_[0][0] << " " << engine.psiMinv_[0][1] << " "
+                << engine.psiMinv_[1][0] << " " << engine.psiMinv_[1][1] << std::endl;
     }
   }
 
@@ -818,14 +822,14 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     auto& engine_leader = engines.getLeader();
     if (engine_leader.isSM1())
       engine_leader.waitStream();
-    else if (engine_leader.invRow_id != row_id)
+    else if (engine_leader.get_inv_row_id() != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
       mw_prepareInvRow(engines, row_id);
       engine_leader.waitStream();
     }
 
-    const size_t ncols = engines.getLeader().psiMinv.cols();
+    const size_t ncols = engines.getLeader().psiMinv_.cols();
     const size_t nw    = engines.size();
     std::vector<const T*> row_ptr_list;
     row_ptr_list.reserve(nw);
@@ -835,7 +839,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       for (This_t& engine : engines)
         if (engine_leader.isSM1())
         {
-          auto* ptr = engine.psiMinv.data();
+          auto* ptr = engine.psiMinv_.data();
           PRAGMA_OFFLOAD("omp target update from(ptr[row_id * ncols : ncols])")
           row_ptr_list.push_back(ptr + row_id * ncols);
         }
@@ -851,7 +855,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       // return device pointer
       for (This_t& engine : engines)
         if (engine_leader.isSM1())
-          row_ptr_list.push_back(engine.psiMinv.device_data() + row_id * ncols);
+          row_ptr_list.push_back(engine.psiMinv_.device_data() + row_id * ncols);
         else
           row_ptr_list.push_back(engine.invRow.device_data());
     }
@@ -865,8 +869,8 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     engine_leader.guard_no_delay();
 
     for (This_t& engine : engines)
-      cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv.data(), engine.psiMinv.device_data(),
-                                     engine.psiMinv.size() * sizeof(T), cudaMemcpyDeviceToHost, hstream),
+      cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv_.data(), engine.psiMinv_.device_data(),
+                                     engine.psiMinv_.size() * sizeof(T), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync Ainv failed!");
     engine_leader.waitStream();
   }

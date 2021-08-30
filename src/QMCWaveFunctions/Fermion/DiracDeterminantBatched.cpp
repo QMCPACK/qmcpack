@@ -63,7 +63,7 @@ void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(const Matrix<Value>& logdet
   //LogValue = mw_res.log_values[0];
 
 #ifndef NDEBUG
-  auto& engine_psiMinv = det_engine_.get_nonconst_psiMinv();
+  auto& engine_psiMinv = det_engine_.psiMinv();
   dummy_vmt.attachReference(engine_psiMinv.data(), engine_psiMinv.rows(), engine_psiMinv.cols());
 #endif
 }
@@ -102,12 +102,36 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   for (int iw = 0; iw < nw; ++iw)
   {
     auto& det            = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-    auto& engine_psiMinv = det.det_engine_.get_nonconst_psiMinv();
+    auto& engine_psiMinv = det.det_engine_.psiMinv();
     det.dummy_vmt.attachReference(engine_psiMinv.data(), engine_psiMinv.rows(), engine_psiMinv.cols());
   }
 #endif
 }
 
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::recompute(const ParticleSet& P)
+{
+  {
+    ScopedTimer local_timer(SPOVGLTimer);
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+  }
+
+  // The below likely should be in the engine.
+  if (NumPtcls == 1)
+  {
+    Value det = psiM_temp(0, 0);
+    det_engine_.psiMinv()(0, 0)    = Real(1) / det;
+    log_value_      = convertValueToLog(det);
+  }
+  else
+    invertPsiM(psiM_temp, det_engine_.psiMinv());
+
+  // invRow becomes invalid after updating the inverse matrix
+  // Not owned by this class and an implementation detail of the engine.
+  det_engine_.inv_row_id() = -1;
+}
+
+  
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
@@ -198,7 +222,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
                                                         det.psiM_vgl.getNonConstData(), det.psiM_temp.rows(),
                                                         det.psiM_temp.cols()));
       dual_psiM_temp_list.push_back(*(dual_psiM_views.back()));
-      psiMinv_temp_list.push_back(det.get_det_engine().get_nonconst_psiMinv());
+      psiMinv_temp_list.push_back(det.get_det_engine().psiMinv());
     }
     // Waiting here for the psiM update in the above loop to complete
     PRAGMA_OFFLOAD("omp taskwait")
@@ -675,7 +699,7 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   ScopedTimer local_timer(BufferTimer);
-  auto& psiMinv = det_engine_.get_nonconst_psiMinv();
+  auto& psiMinv = det_engine_.psiMinv();
   buf.get(psiMinv.first_address(), psiMinv.last_address());
   buf.get(dpsiM.first_address(), dpsiM.last_address());
   buf.get(d2psiM.first_address(), d2psiM.last_address());
@@ -868,7 +892,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVe
   ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
   GradMatrix_t dpsiM_host(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_host, grad_grad_source_psiM);
-  invertPsiM(psiM_temp, det_engine_.get_nonconst_psiMinv());
+  invertPsiM(psiM_temp, det_engine_.psiMinv());
 
   phi_alpha_Minv      = 0.0;
   grad_phi_Minv       = 0.0;
@@ -1004,8 +1028,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<D
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
-  recompute(//*mw_res_,
-            P);
+  recompute(P);
   computeGL(G, L);
   return log_value_;
 }
@@ -1043,7 +1066,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
 //     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
 //   }
 //   //mw_res.log_values.resize(1);
-//   invertPsiM(psiM_temp, det_engine_.get_nonconst_psiMinv());
+//   invertPsiM(psiM_temp, det_engine_.psiMinv());
 // }
 
 template<typename DET_ENGINE>
