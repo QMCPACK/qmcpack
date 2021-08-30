@@ -18,6 +18,7 @@
 
 namespace qmcplusplus
 {
+#if !defined(QMC_CUDA)
 TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
@@ -110,4 +111,5 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
     CHECK(dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
   }
 }
+#endif
 } // namespace qmcplusplus

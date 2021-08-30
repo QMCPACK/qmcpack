@@ -536,7 +536,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       if (SpinOpt == "yes")
       {
 #if defined(QMC_CUDA)
-        myComm->barrier_and_abort("Spin resolved bspline Jastrow is not supported in legacy CUDA build.");
+        myComm->barrier_and_abort("RadialJastrowBuilder::buildComponent spin resolved bspline Jastrow is not supported in legacy CUDA build.");
 #else
         return createJ1<BsplineFunctor<RealType>, true>(cur);
 #endif

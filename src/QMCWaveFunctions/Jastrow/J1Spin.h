@@ -427,7 +427,7 @@ struct J1Spin : public WaveFunctionComponent
       G[iat] += Grad[iat];
     for (size_t iat = 0; iat < Nelec; ++iat)
       L[iat] -= Lap[iat];
-    return LogValue = -simd::accumulate_n(Vat.data(), Nelec, valT());
+    return log_value_ = -simd::accumulate_n(Vat.data(), Nelec, valT());
   }
 
   /** compute gradient and lap
@@ -523,7 +523,7 @@ struct J1Spin : public WaveFunctionComponent
       curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).getTempDispls(), curGrad);
     }
 
-    LogValue += Vat[iat] - curAt;
+    log_value_ += Vat[iat] - curAt;
     Vat[iat]  = curAt;
     Grad[iat] = curGrad;
     Lap[iat]  = curLap;
@@ -554,7 +554,7 @@ struct J1Spin : public WaveFunctionComponent
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
-    return LogValue;
+    return log_value_;
   }
 
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override
