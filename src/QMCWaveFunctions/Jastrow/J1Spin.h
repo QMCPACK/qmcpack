@@ -304,7 +304,7 @@ struct J1Spin : public WaveFunctionComponent
 
       for (size_t i = 0; i < ns; ++i)
       {
-        double cutoff_radius = 0.0;
+        RealType cutoff_radius = 0.0;
         for (size_t j = 0; j < nt; ++j)
         {
           auto functor_idx = Ions.getGroupID(i) * NumTargetGroups + P.getGroupID(j);
