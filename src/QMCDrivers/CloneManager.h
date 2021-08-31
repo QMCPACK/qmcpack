@@ -53,14 +53,22 @@ public:
 protected:
   ///number of threads
   const IndexType NumThreads;
+  /* A Non-owning pointer is passed into CloneManger, used by thread 0 and stored in XXX[0].
+   * Clones for all other threads are owned by CloneManager. For thread N, XXX_uptr[N-1] stores 
+   * a unique_ptr and a non-owning copy of the pointer is stored in XXX[N].
+   */
   ///walkers
+  static UPtrVector<MCWalkerConfiguration> wClones_uptr;
   static std::vector<MCWalkerConfiguration*> wClones;
-  static std::vector<MCWalkerConfiguration*> wgClones;
+  static UPtrVector<MCWalkerConfiguration> wgClones;
   ///trial wavefunctions
+  static UPtrVector<TrialWaveFunction> psiClones_uptr;
   static std::vector<TrialWaveFunction*> psiClones;
   ///guide wavefunctions
+  static UPtrVector<TrialWaveFunction> guideClones_uptr;
   static std::vector<TrialWaveFunction*> guideClones;
   ///Hamiltonians
+  static UPtrVector<QMCHamiltonian> hClones_uptr;
   static std::vector<QMCHamiltonian*> hClones;
   ///update engines
   std::vector<QMCUpdateBase*> Movers;
@@ -70,8 +78,11 @@ protected:
   std::vector<TraceManager*> traceClones;
 
   //for correlated sampling.
+  static std::vector<UPtrVector<MCWalkerConfiguration>> WPoolClones_uptr;
   static std::vector<std::vector<MCWalkerConfiguration*>> WPoolClones;
+  static std::vector<UPtrVector<TrialWaveFunction>> PsiPoolClones_uptr;
   static std::vector<std::vector<TrialWaveFunction*>> PsiPoolClones;
+  static std::vector<UPtrVector<QMCHamiltonian>> HPoolClones_uptr;
   static std::vector<std::vector<QMCHamiltonian*>> HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 

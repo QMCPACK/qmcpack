@@ -438,7 +438,7 @@ public:
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
   void evaluateHessian(ParticleSet& P, HessVector_t& all_grad_grad_psi);
 
-  TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<TrialWaveFunction> makeClone(ParticleSet& tqp) const;
 
   std::vector<std::unique_ptr<WaveFunctionComponent>> const& getOrbitals() { return Z; }
 
