@@ -1,4 +1,4 @@
-include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+include(test_labels)
 
 # Runs unit tests
 function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)

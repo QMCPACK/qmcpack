@@ -14,7 +14,7 @@
 #     using a specified script
 #############################################################
 
-include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+include(test_labels)
 
 # Function to copy a directory
 function(COPY_DIRECTORY SRC_DIR DST_DIR)
@@ -637,12 +637,5 @@ function(
   if(TEST_ADDED)
     set_property(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})
     set_property(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
-  endif()
-endfunction()
-
-# Print THE_MESSAGE if verbose configuration is enabled
-function(MESSAGE_VERBOSE THE_MESSAGE)
-  if(QMC_VERBOSE_CONFIGURATION)
-    message(STATUS ${THE_MESSAGE})
   endif()
 endfunction()

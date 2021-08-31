@@ -17,8 +17,6 @@
 #// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-configure_file(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in ${qmcpack_BINARY_DIR}/src/config.h)
-
 include(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
 
 set(GITREV_BARE_FILE git-rev.h)
