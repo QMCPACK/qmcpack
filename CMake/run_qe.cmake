@@ -1,6 +1,4 @@
-include("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
-
-# Runs Executable Tests
+# functions for QE workflow test
 
 if(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   function(ADD_QE_TEST)
