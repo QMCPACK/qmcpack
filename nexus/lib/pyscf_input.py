@@ -283,7 +283,7 @@ $calculation
             None # no action needed if not molecule or periodic solid
         #end if
 
-        if calculation is not None and 'system' not in self.values:
+        if calculation is not None and 'calculation' not in self.values:
             #MCB
             calculation = calculation.copy() # make a local copy
             if 'method' in calculation.keys():
@@ -425,9 +425,11 @@ $calculation
             elif sp_twist is None:
                 s += "savetoqmcpack({0},{1},'{2}',{3})\n".format(sys_var,mf_var,prefix,kpts_var)
             else:
-                s += "kmesh=[{},{},{}]\n".format(sp_kmesh[0],sp_kmesh[1],sp_kmesh[2])
-                s += "sp_twist=array([{},{},{}])\n".format(sp_twist[0],sp_twist[1],sp_twist[2])
-                s += "savetoqmcpack({0},{1},'{2}',kmesh=kmesh,kpts={3},sp_twist=sp_twist)\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += "kmesh = [{},{},{}]\n".format(sp_kmesh[0],sp_kmesh[1],sp_kmesh[2])
+                s += "sp_kpoints = {}\n".format(render_array(sp_kpoints,4))
+                s += "for spki,spk in enumerate(sp_kpoints):\n"
+                s += "    savetoqmcpack({0},{1},'{2}_Tw-{{}}'.format(spki),kmesh=kmesh,kpts={3},sp_twist=spk)\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += "#end for\n"
             #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
