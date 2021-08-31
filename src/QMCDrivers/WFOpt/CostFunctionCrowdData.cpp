@@ -45,13 +45,14 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
 
   for (int ib = 0; ib < crowd_size; ib++)
   {
-    auto pCopy = std::make_unique<ParticleSet>(P);
-    auto psiCopy = Psi.makeClone(*pCopy);
+    p_ptr_list_[ib] = std::make_unique<ParticleSet>(P);
+    auto& pCopy     = *p_ptr_list_[ib];
 
-    h_ptr_list_[ib]  = H.makeClone(*pCopy, *psiCopy);
-    h0_ptr_list_[ib] = H_KE.makeClone(*pCopy, *psiCopy);
-    wf_ptr_list_[ib] = std::move(psiCopy);
-    p_ptr_list_[ib] = std::move(pCopy);
+    wf_ptr_list_[ib] = Psi.makeClone(pCopy);
+    auto& psiCopy    = *wf_ptr_list_[ib];
+
+    h_ptr_list_[ib]  = H.makeClone(pCopy, psiCopy);
+    h0_ptr_list_[ib] = H_KE.makeClone(pCopy, psiCopy);
 
     rng_ptr_list_[ib] = std::make_unique<RandomGenerator_t>(Rng);
     h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());

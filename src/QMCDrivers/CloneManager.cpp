@@ -112,12 +112,12 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
     if (ip > 0)
     {
       // all the [ip] objects must be created on the ip threads to have first touch accurate.
-      wClones_uptr[ip - 1] = std::make_unique<MCWalkerConfiguration>(w);
-      wClones[ip] = wClones_uptr[ip - 1].get();
+      wClones_uptr[ip - 1]   = std::make_unique<MCWalkerConfiguration>(w);
+      wClones[ip]            = wClones_uptr[ip - 1].get();
       psiClones_uptr[ip - 1] = psi.makeClone(*wClones[ip]);
-      psiClones[ip] = psiClones_uptr[ip-1].get();
+      psiClones[ip]          = psiClones_uptr[ip-1].get();
       hClones_uptr[ip - 1]   = ham.makeClone(*wClones[ip], *psiClones[ip]);
-      hClones[ip] = hClones_uptr[ip-1].get();
+      hClones[ip]            = hClones_uptr[ip-1].get();
     }
   }
   // clang-format on
