@@ -68,19 +68,19 @@ public:
   ///Run the Optimization algorithm.
   bool run() override = 0;
 
-  ///add a configuration file to the list of files
-  void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
+  // ------------------------------------
+  // Used by legacy linear method algos
+
   std::vector<RealType> optdir, optparm;
-  ///index to denote the partition id
-  int PartID;
-  ///total number of partitions that will share a set of configuratons
-  int NumParts;
-  ///total number of VMC walkers
-  int NumOfVMCWalkers;
+
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+
+  RealType param_tol;
+  //-------------------------------------
+
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters
@@ -91,10 +91,7 @@ public:
   xmlNodePtr wfNode;
   ///xml node for optimizer
   xmlNodePtr optNode;
-  ///list of files storing configurations
-  std::vector<std::string> ConfigFile;
 
-  RealType param_tol;
 
   ///common operation to start optimization, used by the derived classes
   void start();

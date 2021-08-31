@@ -46,11 +46,9 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
                    "QMCLinearOptimizeBatched::",
                    comm,
                    "QMCLinearOptimizeBatched"),
-      PartID(0),
-      NumParts(1),
+      param_tol(1e-4),
       wfNode(NULL),
       optNode(NULL),
-      param_tol(1e-4),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
       generate_samples_timer_(
@@ -68,14 +66,6 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
   //Set parameters for line minimization:
 }
 
-/** Add configuration files for the optimization
-* @param a root of a hdf5 configuration file
-*/
-void QMCLinearOptimizeBatched::addConfiguration(const std::string& a)
-{
-  if (a.size())
-    ConfigFile.push_back(a);
-}
 
 void QMCLinearOptimizeBatched::start()
 {
@@ -120,7 +110,6 @@ void QMCLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* 
   generate_samples_timer_.stop();
 
   // store active number of walkers
-  NumOfVMCWalkers = W.getActiveWalkers();
   app_log() << "<opt stage=\"setup\">" << std::endl;
   app_log() << "  <log>" << std::endl;
 
