@@ -153,9 +153,9 @@ void WaveFunctionTester::runCloneTest()
   for (int iter = 0; iter < 4; ++iter)
   {
     app_log() << "Clone" << iter << std::endl;
-    ParticleSet* w_clone         = new MCWalkerConfiguration(W);
-    TrialWaveFunction* psi_clone = Psi.makeClone(*w_clone);
-    QMCHamiltonian* h_clone      = H.makeClone(*w_clone, *psi_clone);
+    auto w_clone   = std::make_unique<MCWalkerConfiguration>(W);
+    auto psi_clone = Psi.makeClone(*w_clone);
+    auto h_clone   = H.makeClone(*w_clone, *psi_clone);
     h_clone->setPrimary(false);
     int nat = W.getTotalNum();
     MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);
@@ -196,9 +196,6 @@ void WaveFunctionTester::runCloneTest()
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
     app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
-    delete h_clone;
-    delete psi_clone;
-    delete w_clone;
   }
 }
 
