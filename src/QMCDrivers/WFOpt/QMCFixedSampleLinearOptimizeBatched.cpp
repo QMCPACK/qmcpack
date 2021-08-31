@@ -61,10 +61,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                samples,
                                comm,
                                "QMCFixedSampleLinearOptimizeBatched"),
+      opt_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
-      opt_(*this),
       Max_iterations(1),
       nstabilizers(3),
       stabilizerScale(2.0),
