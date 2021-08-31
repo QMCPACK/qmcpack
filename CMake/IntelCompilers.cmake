@@ -1,3 +1,6 @@
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
 # Check compiler version
 message(DEBUG "CMAKE_CXX_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION}")
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")

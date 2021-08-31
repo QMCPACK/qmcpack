@@ -23,7 +23,7 @@ particular emphasis is placed on code quality and reproducibility.
 # Prerequisites
 
  * C++ 17 and C99 capable compilers. 
- * CMake v3.14.0 or later, build utility, http://www.cmake.org
+ * CMake v3.15.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
@@ -41,20 +41,20 @@ encouraged for highest performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 10.3.0, 9.1.0
-  * Clang/LLVM 12.0.0
+  * GCC 11.2.0, 9.1.0
+  * Clang/LLVM 12.0.1
   * Intel 19.1.1.217 configured to use C++ library from GCC 9.1.0 
   * NVIDIA HPC SDK 21.5 configured to use C++ library from GCC 9.1.0
-* Boost 1.76.0, 1.68.0
-* HDF5 1.12.0, 1.8.19
-* FFTW 3.3.8, 3.3.4
-* CMake 3.20.3, 3.14.0
+* Boost 1.77.0, 1.68.0
+* HDF5 1.12.1, 1.8.19
+* FFTW 3.3.9, 3.3.4
+* CMake 3.21.1, 3.15.0
 * MPI
-  * OpenMPI 4.1.0, 3.1.6
+  * OpenMPI 4.1.1, 3.1.6
   * Intel MPI 19.1.1.217
-* CUDA 11.3.1
+* CUDA 11.4
 
-Workflow tests are performed with Quantum Espresso v6.7.0 and PySCF v1.7.5. These check trial wavefunction generation and
+Workflow tests are performed with Quantum Espresso v6.8.0 and PySCF v1.7.5. These check trial wavefunction generation and
 conversion through to actual QMC runs.
 
 On a developmental basis we also check the latest Clang and GCC development versions, AMD AOMP and Intel OneAPI compilers.
@@ -185,8 +185,6 @@ make -j 8
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as
                             required on some HPC systems.
-     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                               including details of which tests are enabled.
 ```
 
   * libxml2 related
@@ -236,7 +234,6 @@ below:
 ```
 export CXX=mpic++
 export CC=mpicc
-export ACML_HOME=/opt/acml-5.3.1/gfortran64
 export HDF5_ROOT=/opt/hdf5
 export BOOST_ROOT=/opt/boost
 
@@ -248,7 +245,6 @@ cmake                                               \
   -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-  -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
   -D QMC_DATA=/projects/QMCPACK/qmc-data            \
   ..
 ```
