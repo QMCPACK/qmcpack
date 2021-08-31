@@ -43,6 +43,8 @@ namespace qmcplusplus
 {
 using MatrixOperators::product;
 
+OptimizationFunction::Return_t OptimizationFunction::Func(Return_t dl) { return object.costFunc(dl); }
+
 
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                                                          MCWalkerConfiguration& w,
@@ -62,6 +64,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
+      opt_(*this),
       Max_iterations(1),
       nstabilizers(3),
       stabilizerScale(2.0),
@@ -195,14 +198,14 @@ QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
 #endif
 }
 
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::Func(RealType dl)
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::costFunc(RealType dl)
 {
   for (int i = 0; i < optparm.size(); i++)
     optTarget->Params(i) = optparm[i] + dl * optdir[i];
   QMCLinearOptimizeBatched::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
+  opt_.validFuncVal = optTarget->IsValid;
   return c;
 }
 
@@ -325,7 +328,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      Lambda = getNonLinearRescale(currentParameterDirections, S);
+      opt_.Lambda = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -335,10 +338,10 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       RealType evaluated_cost(startCost);
       if (MinMethod == "rescale")
       {
-        if (std::abs(Lambda * bigVec) > bigChange)
+        if (std::abs(opt_.Lambda * bigVec) > bigChange)
         {
           goodStep = false;
-          app_log() << "  Failed Step. Magnitude of largest parameter change: " << std::abs(Lambda * bigVec)
+          app_log() << "  Failed Step. Magnitude of largest parameter change: " << std::abs(opt_.Lambda * bigVec)
                     << std::endl;
           if (stability == 0)
           {
@@ -349,7 +352,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
             stability = nstabilizers;
         }
         for (int i = 0; i < numParams; i++)
-          optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
+          optTarget->Params(i) = currentParameters[i] + opt_.Lambda * currentParameterDirections[i + 1];
         optTarget->IsValid = true;
       }
       else
@@ -358,22 +361,22 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
           optparm[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
-        TOL              = param_tol / bigVec;
-        AbsFuncTol       = true;
-        largeQuarticStep = bigChange / bigVec;
-        LambdaMax        = 0.5 * Lambda;
+        opt_.TOL              = param_tol / bigVec;
+        opt_.AbsFuncTol       = true;
+        opt_.largeQuarticStep = bigChange / bigVec;
+        opt_.LambdaMax        = 0.5 * opt_.Lambda;
         line_min_timer_.start();
         if (MinMethod == "quartic")
         {
           int npts(7);
-          quadstep         = stepsize * Lambda;
-          largeQuarticStep = bigChange / bigVec;
-          Valid            = lineoptimization3(npts, evaluated_cost);
+          opt_.quadstep         = stepsize * opt_.Lambda;
+          opt_.largeQuarticStep = bigChange / bigVec;
+          Valid                 = opt_.lineoptimization3(npts, evaluated_cost);
         }
         else
-          Valid = lineoptimization2();
+          Valid = opt_.lineoptimization2();
         line_min_timer_.stop();
-        RealType biggestParameterChange = bigVec * std::abs(Lambda);
+        RealType biggestParameterChange = bigVec * std::abs(opt_.Lambda);
         if (biggestParameterChange > bigChange)
         {
           goodStep = false;
@@ -387,7 +390,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+            optTarget->Params(i) = optparm[i] + opt_.Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -910,11 +913,11 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
     getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    opt_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= opt_.Lambda;
   }
 }
 
@@ -1331,19 +1334,19 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  opt_.Lambda = getNonLinearRescale(parameterDirections, ovlMat);
 
   if (do_output_matrices_hdf_)
   {
     hout.write(lowestEV, "lowest_eigenvalue");
     hout.write(parameterDirections, "scaled_eigenvector");
-    hout.write(Lambda, "non_linear_rescale");
+    hout.write(opt_.Lambda, "non_linear_rescale");
     hout.close();
   }
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= Lambda;
+    parameterDirections.at(i + 1) *= opt_.Lambda;
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);

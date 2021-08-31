@@ -37,8 +37,20 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
-                                            private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimizeBatched;
+
+// Wrapper class for evaluation of Func so QMCFixedSampleLinearOptimizeBatched
+// can avoid inheriting from NRCOptimization
+class OptimizationFunction : public NRCOptimization<QMCTraits::RealType>
+{
+public:
+  QMCFixedSampleLinearOptimizeBatched& object;
+  OptimizationFunction(QMCFixedSampleLinearOptimizeBatched& o) : object(o) {}
+  Return_t Func(Return_t dl) override;
+};
+
+
+class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched
 {
 public:
   ///Constructor.
@@ -60,9 +72,10 @@ public:
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl) override;
+  RealType costFunc(RealType dl);
 
 private:
+  OptimizationFunction opt_;
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
