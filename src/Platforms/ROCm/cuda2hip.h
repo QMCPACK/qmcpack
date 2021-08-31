@@ -3,12 +3,14 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2021 QMCPACK developers.
+// Copyright(C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
-// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc
+// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc
+// File created by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //////////////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef CUDA2HIP_H
 #define CUDA2HIP_H

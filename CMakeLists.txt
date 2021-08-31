@@ -86,8 +86,8 @@ endif(ENABLE_CUDA AND QMC_CUDA)
 #--------------------------------------------------------------------
 # Set compiler-time parameters
 # WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
-#   props. Things like forces are per particle so you may need this to
-#   rather large.  Each property increases walker size by
+#   properties. Properties such forces are per particle so you may need this
+#   to be rather large.  Each property increases walker size by
 #   sizeof(FULLPRECREALTYPE)
 # OHMMS_DIM =  dimension of the problem
 # OHMMS_INDEXTYPE = type of index
@@ -237,7 +237,7 @@ else(CMAKE_TOOLCHAIN_FILE)
     if(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
       message(WARNING "Cray Programming Environment uses static linking by default. "
                       "We prefer dynamic linking which makes library searching easier. "
-                      "Set environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
+                      "Setting environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
     endif()
 
     if(NOT DEFINED MPIEXEC_EXECUTABLE)
@@ -272,7 +272,7 @@ set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Check that a C++ compiler is compatiable with the underlying libstdc++
+# Check that a C++ compiler is compatible with the underlying libstdc++
 include(Testlibstdc++)
 
 # Check that a C++ standard library is configured properly
@@ -656,7 +656,6 @@ endif(HDF5_FOUND)
 #-------------------------------------------------------------------
 #  set up libboost library, header only
 #-------------------------------------------------------------------
-#make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
 if(Boost_FOUND)
@@ -748,7 +747,7 @@ if(ENABLE_ROCM)
     if(HIP_MODULE_FILE_DIR)
       message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
     else()
-      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installiation.")
+      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installation.")
     endif()
     string(REGEX REPLACE "\/hip\/cmake" "" ROCM_ROOT "${HIP_MODULE_FILE_DIR}")
   endif()
