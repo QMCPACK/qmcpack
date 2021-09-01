@@ -73,7 +73,7 @@ class DiracMatrixComputeCUDA : public Resource
    *
    *  \param[in]      h_cublas    cublas handle, hstream handle is retrieved from it.			
    *  \param[in,out]  a_mats      dual A matrices, they will be transposed on the device side as a side effect.
-   *  \param[out]     inv_a_mats  the invM matrices
+   *  \param[out]     inv_a_mats  dual invM matrices
    *  \param[in]      n           matrices rank.								
    *  \param[in]      lda         leading dimension of each matrix					
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
@@ -91,9 +91,12 @@ class DiracMatrixComputeCUDA : public Resource
   {
     // This is probably dodgy
     int nw = a_mats.size();
+    assert(a_mats.size() == inv_a_mats.size());
+
     psiM_ptrs_.resize(sizeof(TMAT*) * nw);
     invM_ptrs_.resize(sizeof(TMAT*) * nw);
     //temp_mat_.resize(n,lda);
+    int ldinv = inv_a_mats[0].get().cols();
     Vector<const VALUE_FP*> M_ptr_buffer(reinterpret_cast<const TMAT**>(psiM_ptrs_.data()), nw);
     Vector<const VALUE_FP*> invM_ptr_buffer(reinterpret_cast<const TMAT**>(invM_ptrs_.data()), nw);
     cudaStream_t hstream;
@@ -103,13 +106,15 @@ class DiracMatrixComputeCUDA : public Resource
     {
       M_ptr_buffer[iw]    = a_mats[iw].get().device_data();
       invM_ptr_buffer[iw] = inv_a_mats[iw].get().device_data();
-      // We copy a_mat to inv_a_mat on the device so we can transpose it into a_mat on the device
-      cudaErrorCheck(cudaMemcpyAsync((void*)(inv_a_mats[iw].get().device_data()), (void*)(a_mats[iw].get().data()),
-                                     a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, hstream),
+      // Since inv_a_mat can have a different leading dimension from a_mat first we remap copy on the host
+      simd::remapCopy(n,n, a_mats[iw].get().data(), lda, inv_a_mats[iw].get().data(), ldinv);
+      // Then copy a_mat in inv_a_mats to the device
+      cudaErrorCheck(cudaMemcpyAsync((void*)(inv_a_mats[iw].get().device_data()), (void*)(inv_a_mats[iw].get().data()),
+                                     inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM to device");
       // On the device Here we transpose to a_mat;
       cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
-                                    inv_a_mats[iw].get().device_data(), lda, &host_zero,
+                                    inv_a_mats[iw].get().device_data(), ldinv, &host_zero,
                                     a_mats[iw].get().device_data(), lda, a_mats[iw].get().device_data(), lda),
                        "cuBLAS::geam failed.");
     }
