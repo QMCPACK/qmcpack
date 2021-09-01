@@ -314,7 +314,7 @@ void QMCCostFunction::checkConfigurations()
       e2 += etmp * etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->Value;
+        saved[ENERGY_FIXED] -= nlpp->value;
     }
     //add them all using reduction
     et_tot += e0;
@@ -460,7 +460,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       e2 += etmp * etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->Value;
+        saved[ENERGY_FIXED] -= nlpp->value;
     }
 
     //add them all using reduction

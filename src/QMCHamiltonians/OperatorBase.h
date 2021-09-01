@@ -31,6 +31,7 @@
 #include "Estimators/TraceManager.h"
 #endif
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+
 #include <bitset>
 #include <memory> // std::unique_ptr
 
@@ -49,9 +50,9 @@ class ResourceCollection;
 // TODO add documentation
 struct NonLocalData : public QMCTraits
 {
-  IndexType PID;
-  RealType Weight;
-  PosType Delta;
+  IndexType pid;
+  RealType weight;
+  PosType delta;
   NonLocalData();
   NonLocalData(IndexType id, RealType w, const PosType& d);
 };
@@ -68,7 +69,7 @@ public:
   /// type of return value of evaluate
   using Return_t = FullPrecRealType;
   /**
-   * alias the serialized buffer
+   * alias for the serialized buffer
    * PooledData<RealType> is used to serialized an anonymous buffer
    */
   using BufferType = ParticleSet::Buffer_t;
@@ -77,7 +78,7 @@ public:
   /// alias for the ParticleScalar
   using ParticleScalar_t = ParticleSet::Scalar_t;
 
-  ///enum to denote energy domain of operators
+  ///enum class to denote energy domain of operators
   enum class energy_domains
   {
     kinetic = 0,
@@ -85,7 +86,7 @@ public:
     no_energy_domain
   };
 
-  ///enum to denote quantum domain of operators
+  ///enum class to denote quantum domain of operators
   enum class quantum_domains
   {
     no_quantum_domain = 0,
@@ -105,10 +106,10 @@ public:
   static constexpr int NONLOCAL    = 5;
 
   ///set the current update mode
-  std::bitset<8> UpdateMode;
+  std::bitset<8> updateMode;
 
   ///current value TODO: add better docs
-  Return_t Value;
+  Return_t value;
 
   ///name of this object
   std::string myName;
@@ -154,7 +155,7 @@ public:
    * @param s
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
    */
-  virtual void update_source(ParticleSet& s);
+  virtual void updateSource(ParticleSet& s);
 
   /**
    * set the values evaluated by this object to plist
@@ -194,7 +195,7 @@ public:
   virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
 
   // TODO add documentation
-  virtual void get_required_traces(TraceManager& tm);
+  virtual void getRequiredTraces(TraceManager& tm);
 
   // TODO add documentation
   virtual void setParticlePropertyList(PropertySetType& plist, int offset);
@@ -269,11 +270,11 @@ public:
      * @param P_list
      * TODO add parameter documentation above
      */
-  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+  virtual void mwEvaluate(const RefVectorWithLeader<OperatorBase>& O_list,
                            const RefVectorWithLeader<ParticleSet>& P_list) const;
 
   // TODO add documentation
-  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
+  virtual void mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
                                                    const RefVectorWithLeader<ParticleSet>& P_list,
                                                    const opt_variables_type& optvars,
                                                    RecordArray<ValueType>& dlogpsi,
@@ -285,7 +286,7 @@ public:
      * @param P_list
      * TODO add documentation
      */
-  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+  virtual void mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
                                         const RefVectorWithLeader<ParticleSet>& P_list) const;
 
   // TODO add documentation
@@ -318,11 +319,11 @@ public:
   virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const;
 
   // TODO add documentation
-  bool is_classical() const noexcept;
-  bool is_quantum() const noexcept;
-  bool is_classical_classical() const noexcept;
-  bool is_quantum_classical() const noexcept;
-  bool is_quantum_quantum() const noexcept;
+  bool isClassical() const noexcept;
+  bool isQuantum() const noexcept;
+  bool isClassicalClassical() const noexcept;
+  bool isQuantumClassical() const noexcept;
+  bool isQuantumQuantum() const noexcept;
   bool isNonLocal() const noexcept;
 
   /**
@@ -333,17 +334,17 @@ public:
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///make trace quantities available
-  void contribute_trace_quantities();
+  void contributeTraceQuantities();
 
   ///collect scalar trace data
-  void collect_scalar_traces();
+  void collectScalarTraces();
 #endif
 
   ///checkout trace arrays
-  void checkout_trace_quantities(TraceManager& tm);
+  void checkoutTraceQuantities(TraceManager& tm);
 
   ///delete trace arrays
-  void delete_trace_quantities();
+  void deleteTraceQuantities();
 
 
 protected:
@@ -351,16 +352,16 @@ protected:
   int myIndex;
 
   /// a new value for a proposed move
-  Return_t NewValue;
+  Return_t newValue;
 
   ///reference to the current walker
   Walker_t* tWalker = nullptr;
 
 #if !defined(REMOVE_TRACEMANAGER)
   // TODO add documentation
-  bool have_required_traces;
+  bool haveRequiredTraces;
 
-  bool streaming_particles;
+  bool streamingParticles;
 #endif
 
   /**
@@ -371,19 +372,19 @@ protected:
 
   //TODO add documentation
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_scalar_quantities();
+  virtual void contributeScalarQuantities();
 
-  virtual void checkout_scalar_quantities(TraceManager& tm);
+  virtual void checkoutScalarQuantities(TraceManager& tm);
 
-  virtual void collect_scalar_quantities();
+  virtual void collectScalarQuantities();
 
-  virtual void delete_scalar_quantities();
+  virtual void deleteScalarQuantities();
 
-  virtual void contribute_particle_quantities();
+  virtual void contributeParticleQuantities();
 
-  virtual void checkout_particle_quantities(TraceManager& tm);
+  virtual void checkoutParticleQuantities(TraceManager& tm);
 
-  virtual void delete_particle_quantities();
+  virtual void deleteParticleQuantities();
 #endif
 
   virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
@@ -396,19 +397,19 @@ protected:
   virtual void setComputeForces(bool compute);
 
   ///set energy domain
-  void set_energy_domain(energy_domains edomain);
+  void setEnergyDomain(energy_domains edomain);
 
   ///set quantum domain
-  void set_quantum_domain(quantum_domains qdomain);
+  void setQuantumDomain(quantum_domains qdomain);
 
   ///set quantum domain for one-body operator
-  void one_body_quantum_domain(const ParticleSet& P);
+  void oneBodyQuantumDomain(const ParticleSet& P);
 
   ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P);
+  void twoBodyQuantumDomain(const ParticleSet& P);
 
   ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
+  void twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2);
 
   /**
      * Named values to  the property list
@@ -420,32 +421,32 @@ protected:
 
 private:
   ///quantum_domain of the (particle) operator, default = no_quantum_domain
-  quantum_domains quantum_domain;
+  quantum_domains quantumDomain;
 
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  energy_domains energy_domain;
+  energy_domains energyDomain;
 
 #if !defined(REMOVE_TRACEMANAGER)
   //TODO add documentation
-  bool streaming_scalars;
+  bool streamingScalars;
 
-  std::vector<RealType> ValueVector;
+  std::vector<RealType> valueVector;
 
   ///array to store sample value
-  Array<RealType, 1>* value_sample;
+  Array<RealType, 1>* valueSample;
 #endif
 
   ///return whether the energy domain is valid
-  bool energy_domain_valid(const energy_domains edomain) const noexcept;
+  bool energyDomainValid(const energy_domains edomain) const noexcept;
 
   ///return whether the energy domain is valid
-  bool energy_domain_valid() const noexcept;
+  bool energyDomainValid() const noexcept;
 
   ///return whether the quantum domain is valid
-  bool quantum_domain_valid(const quantum_domains qdomain) const noexcept;
+  bool quantumDomainValid(const quantum_domains qdomain) const noexcept;
 
   ///return whether the quantum domain is valid
-  bool quantum_domain_valid() const noexcept;
+  bool quantumDomainValid() const noexcept;
 };
 } // namespace qmcplusplus
 #endif

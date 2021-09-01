@@ -43,7 +43,7 @@ struct Pressure : public OperatorBase
    */
   Pressure(ParticleSet& P)
   {
-    UpdateMode.set(OPTIMIZABLE, 1);
+    updateMode.set(OPTIMIZABLE, 1);
     pNorm = 1.0 / (P.Lattice.DIM * P.Lattice.Volume);
   }
   ///destructor
@@ -53,8 +53,8 @@ struct Pressure : public OperatorBase
 
   inline Return_t evaluate(ParticleSet& P) override
   {
-    Value = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
-    Value *= pNorm;
+    value = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
+    value *= pNorm;
     return 0.0;
   }
 

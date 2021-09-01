@@ -40,19 +40,19 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
-  void delete_particle_quantities() override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+  void mwEvaluate(const RefVectorWithLeader<OperatorBase>& O_list,
                    const RefVectorWithLeader<ParticleSet>& P_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+  void mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
                                 const RefVectorWithLeader<ParticleSet>& P_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,

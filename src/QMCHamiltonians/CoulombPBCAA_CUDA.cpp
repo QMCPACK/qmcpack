@@ -91,8 +91,8 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   {
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
-      LocalEnergy[iw] += Value;
+      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = value;
+      LocalEnergy[iw] += value;
     }
     return;
   }

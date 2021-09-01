@@ -23,7 +23,7 @@ namespace qmcplusplus
 SkEstimator::SkEstimator(ParticleSet& source)
 {
   sourcePtcl = &source;
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   NumSpecies = source.getSpeciesSet().getTotalNum();
   NumK       = source.SK->getKLists().numk;
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());

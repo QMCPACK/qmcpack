@@ -32,20 +32,20 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       d_aa_ID(ref.addTable(ref))
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
-  set_energy_domain(energy_domains::potential);
-  two_body_quantum_domain(ref);
+  setEnergyDomain(energy_domains::potential);
+  twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
   initBreakup(ref);
 
   if (ComputeForces)
   {
     ref.turnOnPerParticleSK();
-    update_source(ref);
+    updateSource(ref);
   }
   if (!is_active)
   {
     ref.update();
-    update_source(ref);
+    updateSource(ref);
 
     ewaldref::RealMat A;
     ewaldref::PosArray R;
@@ -62,7 +62,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     }
 
     RealType Vii_ref        = ewaldref::ewaldEnergy(A, R, Q);
-    RealType Vdiff_per_atom = std::abs(Value - Vii_ref) / NumCenters;
+    RealType Vdiff_per_atom = std::abs(value - Vii_ref) / NumCenters;
     app_log() << "Checking ion-ion Ewald energy against reference..." << std::endl;
     if (Vdiff_per_atom > Ps.Lattice.LR_tol)
     {
@@ -71,9 +71,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       msg << "in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
       msg << std::endl;
       msg << "  Reference ion-ion energy: " << Vii_ref << std::endl;
-      msg << "  QMCPACK   ion-ion energy: " << Value << std::endl;
-      msg << "            ion-ion diff  : " << Value - Vii_ref << std::endl;
-      msg << "            diff/atom     : " << (Value - Vii_ref) / NumCenters << std::endl;
+      msg << "  QMCPACK   ion-ion energy: " << value << std::endl;
+      msg << "            ion-ion diff  : " << value - Vii_ref << std::endl;
+      msg << "            diff/atom     : " << (value - Vii_ref) / NumCenters << std::endl;
       msg << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
       msg << std::endl;
       msg << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
@@ -94,7 +94,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << Value << std::endl;
+  app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << value << std::endl;
 }
 
 CoulombPBCAA::~CoulombPBCAA() = default;
@@ -106,7 +106,7 @@ void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectabl
     addObservablesF(plist);
 }
 
-void CoulombPBCAA::update_source(ParticleSet& s)
+void CoulombPBCAA::updateSource(ParticleSet& s)
 {
   mRealType eL(0.0), eS(0.0);
   if (ComputeForces)
@@ -120,7 +120,7 @@ void CoulombPBCAA::update_source(ParticleSet& s)
     eL = evalLR(s);
     eS = evalSR(s);
   }
-  NewValue = Value = eL + eS + myConst;
+  newValue = value = eL + eS + myConst;
 }
 
 void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
@@ -134,12 +134,12 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAA::contribute_particle_quantities() { request.contribute_array(myName); }
+void CoulombPBCAA::contributeParticleQuantities() { request.contribute_array(myName); }
 
-void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
+void CoulombPBCAA::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
-  if (streaming_particles)
+  streamingParticles = request.streaming_array(myName);
+  if (streamingParticles)
   {
     Ps.turnOnPerParticleSK();
     V_sample = tm.checkout_real<1>(myName, Ps);
@@ -148,9 +148,9 @@ void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAA::delete_particle_quantities()
+void CoulombPBCAA::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streamingParticles)
     delete V_sample;
 }
 #endif
@@ -161,13 +161,13 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
   if (is_active)
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
-      Value = evaluate_sp(P);
+    if (streamingParticles)
+      value = evaluate_sp(P);
     else
 #endif
-      Value = evalLR(P) + evalSR(P) + myConst;
+      value = evalLR(P) + evalSR(P) + myConst;
   }
-  return Value;
+  return value;
 }
 
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
@@ -179,7 +179,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
   if (ComputeForces and !is_active)
     hf_terms -= forces;
   //No pulay term.
-  return Value;
+  return value;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -242,7 +242,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   }
   for (int i = 0; i < V_samp.size(); ++i)
     V_samp(i) += V_const(i);
-  Value = Vsr + Vlr + Vc;
+  value = Vsr + Vlr + Vc;
 #if defined(TRACE_CHECK)
   RealType Vlrnow = evalLR(P);
   RealType Vsrnow = evalSR(P);
@@ -265,7 +265,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     APP_ABORT("Trace check failed");
   }
 #endif
-  return Value;
+  return value;
 }
 #endif
 

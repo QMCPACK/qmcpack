@@ -82,7 +82,7 @@ void DensityMatrices1B::reset()
   eindex         = -1;
   uniform_random = NULL;
   // basic HamiltonianBase info
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   // default values
   energy_mat             = false;
   integrator             = uniform_grid;
@@ -487,7 +487,7 @@ void DensityMatrices1B::report(const std::string& pad)
 }
 
 
-void DensityMatrices1B::get_required_traces(TraceManager& tm)
+void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 {
   w_trace = tm.get_real_trace("weight");
   if (energy_mat)
@@ -504,7 +504,7 @@ void DensityMatrices1B::get_required_traces(TraceManager& tm)
 
     E_samp.resize(nparticles);
   }
-  have_required_traces = true;
+  haveRequiredTraces = true;
 }
 
 
@@ -596,7 +596,7 @@ void DensityMatrices1B::warmup_sampling()
 DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
 {
   ScopedTimer t(timers[DM_eval]);
-  if (have_required_traces || !energy_mat)
+  if (haveRequiredTraces || !energy_mat)
   {
     if (check_derivatives)
       test_derivatives();

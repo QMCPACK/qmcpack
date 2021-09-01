@@ -23,7 +23,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
                                                                                const std::vector<ValueType>& dlogpsi,
                                                                                std::vector<ValueType>& dhpsioverpsi)
 {
-  Value = 0.0;
+  value = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
@@ -34,10 +34,10 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
     const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < NumIons; iat++)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+        value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                       dhpsioverpsi);
   }
-  return Value;
+  return value;
 }
 
 /** evaluate the non-local potential of the iat-th ionic center

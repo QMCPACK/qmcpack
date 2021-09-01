@@ -82,7 +82,7 @@ bool QMCHamiltonian::get(std::ostream& os) const
 void QMCHamiltonian::addOperator(std::unique_ptr<OperatorBase>&& h, const std::string& aname, bool physical)
 {
   //change UpdateMode[PHYSICAL] of h so that cloning can be done correctly
-  h->UpdateMode[OperatorBase::PHYSICAL] = physical;
+  h->updateMode[OperatorBase::PHYSICAL] = physical;
   if (physical)
   {
     for (int i = 0; i < H.size(); ++i)
@@ -175,9 +175,9 @@ const std::string& QMCHamiltonian::getOperatorType(const std::string& name)
 void QMCHamiltonian::update_source(ParticleSet& s)
 {
   for (int i = 0; i < H.size(); ++i)
-    H[i]->update_source(s);
+    H[i]->updateSource(s);
   for (int i = 0; i < auxH.size(); ++i)
-    auxH[i]->update_source(s);
+    auxH[i]->updateSource(s);
 }
 
 /** add a number of properties to the ParticleSet
@@ -280,15 +280,15 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
   for (int i = 1; i < H.size(); ++i)
   {
     OperatorBase& h = *H[i];
-    if (h.is_quantum())
+    if (h.isQuantum())
       Vq.push_back(h.myName);
-    else if (h.is_classical())
+    else if (h.isClassical())
       Vc.push_back(h.myName);
-    else if (h.is_quantum_quantum())
+    else if (h.isQuantumQuantum())
       Vqq.push_back(h.myName);
-    else if (h.is_quantum_classical())
+    else if (h.isQuantumClassical())
       Vqc.push_back(h.myName);
-    else if (h.is_classical_classical())
+    else if (h.isClassicalClassical())
       Vcc.push_back(h.myName);
     else if (omp_get_thread_num() == 0)
       app_log() << "  warning: potential named " << h.myName
@@ -308,9 +308,9 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
   request.contribute_scalar("weight", true);       //default trace quantity
   request.contribute_array("position");
   for (int i = 0; i < H.size(); ++i)
-    H[i]->contribute_trace_quantities();
+    H[i]->contributeTraceQuantities();
   for (int i = 0; i < auxH.size(); ++i)
-    auxH[i]->contribute_trace_quantities();
+    auxH[i]->contributeTraceQuantities();
 
 
   //note availability of combined quantities
@@ -391,13 +391,13 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     {
       if (trace_log)
         app_log() << "    OperatorBase::checkout_trace_quantities  " << H[i]->myName << std::endl;
-      H[i]->checkout_trace_quantities(tm);
+      H[i]->checkoutTraceQuantities(tm);
     }
     for (int i = 0; i < auxH.size(); ++i)
     {
       if (trace_log)
         app_log() << "    OperatorBase::checkout_trace_quantities  " << auxH[i]->myName << std::endl;
-      auxH[i]->checkout_trace_quantities(tm);
+      auxH[i]->checkoutTraceQuantities(tm);
     }
     //setup combined traces that depend on H information
     //  LocalEnergy, LocalPotential, Vq, Vc, Vqq, Vqc, Vcc
@@ -427,7 +427,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
     {
       if (trace_log)
         app_log() << "    OperatorBase::get_required_traces  " << auxH[i]->myName << std::endl;
-      auxH[i]->get_required_traces(tm);
+      auxH[i]->getRequiredTraces(tm);
     }
     //report
 
@@ -476,9 +476,9 @@ void QMCHamiltonian::finalize_traces()
   if (request.streaming())
   {
     for (int i = 0; i < H.size(); ++i)
-      H[i]->delete_trace_quantities();
+      H[i]->deleteTraceQuantities();
     for (int i = 0; i < auxH.size(); ++i)
-      auxH[i]->delete_trace_quantities();
+      auxH[i]->deleteTraceQuantities();
   }
   streaming_position = false;
   request.reset();
@@ -502,11 +502,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
     LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
-    H[i]->collect_scalar_traces();
+    H[i]->collectScalarTraces();
 #endif
     H[i]->setParticlePropertyList(P.PropertyList, myIndex);
   }
-  KineticEnergy                      = H[0]->Value;
+  KineticEnergy                      = H[0]->value;
   P.PropertyList[WP::LOCALENERGY]    = LocalEnergy;
   P.PropertyList[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
   // auxHevaluate(P);
@@ -526,11 +526,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
     LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
-    H[i]->collect_scalar_traces();
+    H[i]->collectScalarTraces();
 #endif
     H[i]->setParticlePropertyList(P.PropertyList, myIndex);
   }
-  KineticEnergy                      = H[0]->Value;
+  KineticEnergy                      = H[0]->value;
   P.PropertyList[WP::LOCALENERGY]    = LocalEnergy;
   P.PropertyList[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
   // auxHevaluate(P);
@@ -538,17 +538,17 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
 }
 void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset)
 {
-  if (std::isnan(op.Value))
+  if (std::isnan(op.value))
     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
   // The following is a ridiculous breach of encapsulation.
-  ham.LocalEnergy += op.Value;
+  ham.LocalEnergy += op.value;
   op.setObservables(ham.Observables);
   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
 }
 
 void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset)
 {
-  ham.KineticEnergy                     = op.Value;
+  ham.KineticEnergy                     = op.value;
   pset.PropertyList[WP::LOCALENERGY]    = ham.LocalEnergy;
   pset.PropertyList[WP::LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
 }
@@ -581,7 +581,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     //   op.setObservables(ham.Observables);
     //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
     // };
-    ham_leader.H[i_ham_op]->mw_evaluate(HC_list, p_list);
+    ham_leader.H[i_ham_op]->mwEvaluate(HC_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
       updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
   }
@@ -641,7 +641,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
       ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
       const auto HC_list(extract_HC_list(ham_list, i_ham_op));
 
-      ham_leader.H[i_ham_op]->mw_evaluateWithParameterDerivatives(HC_list, p_list, optvars, dlogpsi, dhpsioverpsi);
+      ham_leader.H[i_ham_op]->mwEvaluateWithParameterDerivatives(HC_list, p_list, optvars, dlogpsi, dhpsioverpsi);
 
       for (int iw = 0; iw < ham_list.size(); iw++)
         updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
@@ -699,7 +699,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P)
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
-    auxH[i]->collect_scalar_traces();
+    auxH[i]->collectScalarTraces();
 #endif
     auxH[i]->setParticlePropertyList(P.PropertyList, myIndex);
     //H[i]->setParticlePropertyList(P.PropertyList,myIndex);
@@ -718,7 +718,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
-    auxH[i]->collect_scalar_traces();
+    auxH[i]->collectScalarTraces();
 #endif
     auxH[i]->setParticlePropertyList(P.PropertyList, myIndex);
   }
@@ -739,7 +739,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_
       RealType sink = auxH[i]->evaluate(P);
       auxH[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
-      auxH[i]->collect_scalar_traces();
+      auxH[i]->collectScalarTraces();
 #endif
       auxH[i]->setParticlePropertyList(P.PropertyList, myIndex);
     }
@@ -775,10 +775,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
     LocalEnergy += H[i]->evaluateWithToperator(P);
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
-    H[i]->collect_scalar_traces();
+    H[i]->collectScalarTraces();
 #endif
   }
-  KineticEnergy                      = H[0]->Value;
+  KineticEnergy                      = H[0]->value;
   P.PropertyList[WP::LOCALENERGY]    = LocalEnergy;
   P.PropertyList[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
   //   auxHevaluate(P);
@@ -799,7 +799,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
     ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
 
-    ham_leader.H[i_ham_op]->mw_evaluateWithToperator(HC_list, p_list);
+    ham_leader.H[i_ham_op]->mwEvaluateWithToperator(HC_list, p_list);
     for (int iw = 0; iw < ham_list.size(); ++iw)
       updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
   }

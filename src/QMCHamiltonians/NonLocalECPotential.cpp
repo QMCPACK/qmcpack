@@ -56,8 +56,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       UseTMove(TMOVE_OFF),
       nonLocalOps(els.getTotalNum())
 {
-  set_energy_domain(energy_domains::potential);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(energy_domains::potential);
+  twoBodyQuantumDomain(ions, els);
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   //els.resizeSphere(NumIons);
@@ -65,7 +65,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   prefix = "FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
-  UpdateMode.set(NONLOCAL, 1);
+  updateMode.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
   {
@@ -77,21 +77,21 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
 NonLocalECPotential::~NonLocalECPotential() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
-void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
+void NonLocalECPotential::contributeParticleQuantities() { request.contribute_array(myName); }
 
-void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
+void NonLocalECPotential::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
-  if (streaming_particles)
+  streamingParticles = request.streaming_array(myName);
+  if (streamingParticles)
   {
     Ve_sample = tm.checkout_real<1>(myName, Peln);
     Vi_sample = tm.checkout_real<1>(myName, IonConfig);
   }
 }
 
-void NonLocalECPotential::delete_particle_quantities()
+void NonLocalECPotential::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streamingParticles)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -102,16 +102,16 @@ void NonLocalECPotential::delete_particle_quantities()
 NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
 {
   evaluateImpl(P, false);
-  return Value;
+  return value;
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
 {
   evaluateImpl(P, false, true);
-  return Value;
+  return value;
 }
 
-void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mwEvaluate(const RefVectorWithLeader<OperatorBase>& O_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   mw_evaluateImpl(O_list, p_list, false);
@@ -123,10 +123,10 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
     evaluateImpl(P, true);
   else
     evaluateImpl(P, false);
-  return Value;
+  return value;
 }
 
-void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
@@ -140,11 +140,11 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
   if (Tmove)
     nonLocalOps.reset();
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  Value = 0.0;
+  value = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
   auto& Ve_samp = *Ve_sample;
   auto& Vi_samp = *Vi_sample;
-  if (streaming_particles)
+  if (streamingParticles)
   {
     Ve_samp = 0.0;
     Vi_samp = 0.0;
@@ -179,7 +179,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
             RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
             if (Tmove)
               PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
+            value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
           }
@@ -202,10 +202,10 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
             RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
             if (Tmove)
               PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
+            value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
-            if (streaming_particles)
+            if (streamingParticles)
             {
               Ve_samp(jel) += 0.5 * pairpot;
               Vi_samp(iat) += 0.5 * pairpot;
@@ -216,9 +216,9 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
   }
 
 #if !defined(TRACE_CHECK)
-  if (streaming_particles)
+  if (streamingParticles)
   {
-    Return_t Vnow  = Value;
+    Return_t Vnow  = value;
     RealType Visum = Vi_sample->sum();
     RealType Vesum = Ve_sample->sum();
     RealType Vsum  = Vesum + Visum;
@@ -297,7 +297,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       max_num_jobs[ig] = std::max(max_num_jobs[ig], joblist.size());
     }
 
-    O.Value = 0.0;
+    O.value = 0.0;
   }
 
   // make this class unit tests friendly without the need of setup resources.
@@ -377,7 +377,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
             std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
                       << std::abs(check_value - pairpots[j]) << std::endl;
         }
-        ecp_potential_list[j].get().Value += pairpots[j];
+        ecp_potential_list[j].get().value += pairpots[j];
         if (Tmove)
           ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id,
                                               ecp_potential_list[j].get().nonLocalOps.Txy);
@@ -403,7 +403,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
   forces    = 0;
   PulayTerm = 0;
 
-  Value = 0.0;
+  value = 0.0;
   if (!keepGrid)
   {
     for (int ipp = 0; ipp < PPset.size(); ipp++)
@@ -429,7 +429,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          Value +=
+          value +=
               PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
           if (Tmove)
             PP[iat]->contributeTxy(jel, Txy);
@@ -450,7 +450,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
                                                                          ParticleSet::ParticlePos_t& pulay_terms)
 {
   evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms);
-  return Value;
+  return value;
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDeterministic(
@@ -461,7 +461,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDetermin
     ParticleSet::ParticlePos_t& pulay_terms)
 {
   evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms, true);
-  return Value;
+  return value;
 }
 
 void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
@@ -491,9 +491,9 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     //make a non-local move
     if (oneTMove)
     {
-      int iat = oneTMove->PID;
+      int iat = oneTMove->pid;
       Psi.prepareGroup(P, P.getGroupID(iat));
-      if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+      if (P.makeMoveAndCheck(iat, oneTMove->delta))
       {
         GradType grad_iat;
         Psi.calcRatioGrad(P, iat, grad_iat);
@@ -516,7 +516,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
         if (oneTMove)
         {
-          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+          if (P.makeMoveAndCheck(iat, oneTMove->delta))
           {
             Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat, true);
@@ -549,7 +549,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
         if (oneTMove)
         {
-          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+          if (P.makeMoveAndCheck(iat, oneTMove->delta))
           {
             Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat, true);

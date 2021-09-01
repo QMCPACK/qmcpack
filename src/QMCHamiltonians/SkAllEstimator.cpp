@@ -29,7 +29,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   ions          = &source;
   NumeSpecies   = elns->getSpeciesSet().getTotalNum();
   NumIonSpecies = ions->getSpeciesSet().getTotalNum();
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
 
   NumK      = source.SK->getKLists().numk;
   OneOverN  = 1.0 / static_cast<RealType>(source.getTotalNum());

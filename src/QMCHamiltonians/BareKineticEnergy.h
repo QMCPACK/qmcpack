@@ -137,12 +137,12 @@ struct BareKineticEnergy : public OperatorBase
    */
   BareKineticEnergy(RealType m = 1.0) : SameMass(true), M(m), OneOver2M(0.5 / m)
   {
-    set_energy_domain(energy_domains::kinetic);
-    set_quantum_domain(quantum_domains::quantum);
+    setEnergyDomain(energy_domains::kinetic);
+    setQuantumDomain(quantum_domains::quantum);
     streaming_kinetic      = false;
     streaming_kinetic_comp = false;
     streaming_momentum     = false;
-    UpdateMode.set(OPTIMIZABLE, 1);
+    updateMode.set(OPTIMIZABLE, 1);
   }
 
   /** constructor with particleset
@@ -153,12 +153,12 @@ struct BareKineticEnergy : public OperatorBase
    */
   BareKineticEnergy(ParticleSet& p) : Ps(p)
   {
-    set_energy_domain(energy_domains::kinetic);
-    one_body_quantum_domain(p);
+    setEnergyDomain(energy_domains::kinetic);
+    oneBodyQuantumDomain(p);
     streaming_kinetic      = false;
     streaming_kinetic_comp = false;
     streaming_momentum     = false;
-    UpdateMode.set(OPTIMIZABLE, 1);
+    updateMode.set(OPTIMIZABLE, 1);
     SpeciesSet& tspecies(p.getSpeciesSet());
     MinusOver2M.resize(tspecies.size());
     int massind = tspecies.addAttribute("mass");
@@ -178,18 +178,18 @@ struct BareKineticEnergy : public OperatorBase
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override
+  void contributeParticleQuantities() override
   {
     request.contribute_array(myName);
     request.contribute_array(myName + "_complex");
     request.contribute_array("momentum");
   }
 
-  void checkout_particle_quantities(TraceManager& tm) override
+  void checkoutParticleQuantities(TraceManager& tm) override
   {
-    streaming_particles = request.streaming_array(myName) || request.streaming_array(myName + "_complex") ||
+    streamingParticles = request.streaming_array(myName) || request.streaming_array(myName + "_complex") ||
         request.streaming_array("momentum");
-    if (streaming_particles)
+    if (streamingParticles)
     {
       T_sample      = tm.checkout_real<1>(myName, Ps);
       T_sample_comp = tm.checkout_complex<1>(myName + "_complex", Ps);
@@ -197,9 +197,9 @@ struct BareKineticEnergy : public OperatorBase
     }
   }
 
-  void delete_particle_quantities() override
+  void deleteParticleQuantities() override
   {
-    if (streaming_particles)
+    if (streamingParticles)
     {
       delete T_sample;
       delete T_sample_comp;
@@ -212,9 +212,9 @@ struct BareKineticEnergy : public OperatorBase
   inline Return_t evaluate(ParticleSet& P) override
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
+    if (streamingParticles)
     {
-      Value = evaluate_sp(P);
+      value = evaluate_sp(P);
     }
     else
 #endif
@@ -222,25 +222,25 @@ struct BareKineticEnergy : public OperatorBase
     {
 //app_log() << "Here" << std::endl;
 #ifdef QMC_COMPLEX
-      Value = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
-      Value *= -OneOver2M;
+      value = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
+      value *= -OneOver2M;
 #else
-      Value = Dot(P.G, P.G) + Sum(P.L);
-      Value *= -OneOver2M;
+      value = Dot(P.G, P.G) + Sum(P.L);
+      value *= -OneOver2M;
 #endif
     }
     else
     {
-      Value = 0.0;
+      value = 0.0;
       for (int i = 0; i < MinusOver2M.size(); ++i)
       {
         T x = 0.0;
         for (int j = P.first(i); j < P.last(i); ++j)
           x += laplacian(P.G[j], P.L[j]);
-        Value += x * MinusOver2M[i];
+        value += x * MinusOver2M[i];
       }
     }
-    return Value;
+    return value;
   }
 
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -342,25 +342,25 @@ struct BareKineticEnergy : public OperatorBase
 
     if (SameMass)
     {
-      Value = Dot(P.G, P.G) + Sum(P.L);
-      Value *= -OneOver2M;
+      value = Dot(P.G, P.G) + Sum(P.L);
+      value *= -OneOver2M;
     }
     else
     {
-      Value = 0.0;
+      value = 0.0;
       for (int i = 0; i < MinusOver2M.size(); ++i)
       {
         T x = 0.0;
         for (int j = P.first(i); j < P.last(i); ++j)
           x += laplacian(P.G[j], P.L[j]);
-        Value += x * MinusOver2M[i];
+        value += x * MinusOver2M[i];
       }
     }
-    pulaytmpreal_ -= Value * iongradpsireal_;
+    pulaytmpreal_ -= value * iongradpsireal_;
 
 
     pulay_terms += pulaytmpreal_;
-    return Value;
+    return value;
   }
 
 
@@ -372,7 +372,7 @@ struct BareKineticEnergy : public OperatorBase
     Array<std::complex<RealType>, 2>& p_samp      = *p_sample;
     std::complex<RealType> t1                     = 0.0;
     const RealType clambda(-OneOver2M);
-    Value = 0.0;
+    value = 0.0;
     if (SameMass)
     {
       for (int i = 0; i < P.getTotalNum(); i++)
@@ -383,7 +383,7 @@ struct BareKineticEnergy : public OperatorBase
         T_samp_comp(i) = t1;
         for (int d = 0; d < DIM; ++d)
           p_samp(i, d) = P.G[i][d];
-        Value += real(t1);
+        value += real(t1);
       }
     }
     else
@@ -400,12 +400,12 @@ struct BareKineticEnergy : public OperatorBase
           T_samp_comp(i) = t1;
           for (int d = 0; d < DIM; ++d)
             p_samp(i, d) = P.G[i][d];
-          Value += real(t1);
+          value += real(t1);
         }
       }
     }
 #if defined(TRACE_CHECK)
-    RealType Vnow = Value;
+    RealType Vnow = value;
     RealType Vsum = T_samp.sum();
     RealType Vold = evaluate_orig(P);
     if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
@@ -423,7 +423,7 @@ struct BareKineticEnergy : public OperatorBase
       APP_ABORT("Trace check failed");
     }
 #endif
-    return Value;
+    return value;
   }
 
 #endif
@@ -432,21 +432,21 @@ struct BareKineticEnergy : public OperatorBase
   {
     if (SameMass)
     {
-      Value = Dot(P.G, P.G) + Sum(P.L);
-      Value *= -OneOver2M;
+      value = Dot(P.G, P.G) + Sum(P.L);
+      value *= -OneOver2M;
     }
     else
     {
-      Value = 0.0;
+      value = 0.0;
       for (int i = 0; i < MinusOver2M.size(); ++i)
       {
         T x = 0.0;
         for (int j = P.first(i); j < P.last(i); ++j)
           x += laplacian(P.G[j], P.L[j]);
-        Value += x * MinusOver2M[i];
+        value += x * MinusOver2M[i];
       }
     }
-    return Value;
+    return value;
   }
 
   /** implements the virtual function.

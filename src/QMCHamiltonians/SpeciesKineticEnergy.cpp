@@ -53,7 +53,7 @@ bool SpeciesKineticEnergy::put(xmlNodePtr cur)
 
   if (hdf5_out)
   { // add this estimator to stat.h5
-    UpdateMode.set(COLLECTABLE, 1);
+    updateMode.set(COLLECTABLE, 1);
   }
   return true;
 }
@@ -112,8 +112,8 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
     species_kinetic[ispec] += my_kinetic;
   }
 
-  Value = 0.0; // Value is no longer used
-  return Value;
+  value = 0.0; // Value is no longer used
+  return value;
 }
 
 std::unique_ptr<OperatorBase> SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

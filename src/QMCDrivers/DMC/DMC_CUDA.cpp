@@ -247,8 +247,8 @@ bool DMCcuda::run()
           const NonLocalData* oneTMove = NLop.selectMove(Random(), Txy[iw]);
           if (oneTMove)
           {
-            int iat = oneTMove->PID;
-            PosType newpos(W[iw]->R[iat] + oneTMove->Delta);
+            int iat = oneTMove->pid;
+            PosType newpos(W[iw]->R[iat] + oneTMove->delta);
             if (checkBounds(newpos))
             {
               accepted.push_back(W[iw]);

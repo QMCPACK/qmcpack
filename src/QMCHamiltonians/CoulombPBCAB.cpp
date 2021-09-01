@@ -32,8 +32,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
-  set_energy_domain(energy_domains::potential);
-  two_body_quantum_domain(ions, elns);
+  setEnergyDomain(energy_domains::potential);
+  twoBodyQuantumDomain(ions, elns);
   if (ComputeForces)
     PtclA.turnOnPerParticleSK();
   initBreakup(elns);
@@ -69,12 +69,12 @@ void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectabl
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAB::contribute_particle_quantities() { request.contribute_array(myName); }
+void CoulombPBCAB::contributeParticleQuantities() { request.contribute_array(myName); }
 
-void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
+void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
-  if (streaming_particles)
+  streamingParticles = request.streaming_array(myName);
+  if (streamingParticles)
   {
     Pion.turnOnPerParticleSK();
     Peln.turnOnPerParticleSK();
@@ -83,9 +83,9 @@ void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAB::delete_particle_quantities()
+void CoulombPBCAB::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streamingParticles)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -99,16 +99,16 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
   if (ComputeForces)
   {
     forces = 0.0;
-    Value  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    value  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
   }
   else
 #if !defined(REMOVE_TRACEMANAGER)
-      if (streaming_particles)
-    Value = evaluate_sp(P);
+      if (streamingParticles)
+    value = evaluate_sp(P);
   else
 #endif
-    Value = evalLR(P) + evalSR(P) + myConst;
-  return Value;
+    value = evalLR(P) + evalSR(P) + myConst;
+  return value;
 }
 
 CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
@@ -120,13 +120,13 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
   if (ComputeForces)
   {
     forces = 0.0;
-    Value  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    value  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
     hf_terms -= forces;
     //And no Pulay contribution.
   }
   else
-    Value = evalLR(P) + evalSR(P) + myConst;
-  return Value;
+    value = evalLR(P) + evalSR(P) + myConst;
+  return value;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -210,7 +210,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     Ve_samp(i) += Ve_const(i);
   for (int i = 0; i < Vi_samp.size(); ++i)
     Vi_samp(i) += Vi_const(i);
-  Value = Vsr + Vlr + Vc;
+  value = Vsr + Vlr + Vc;
 #if defined(TRACE_CHECK)
   RealType Vlrnow = evalLR(P);
   RealType Vsrnow = evalSR(P);
@@ -250,7 +250,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   }
 
 #endif
-  return Value;
+  return value;
 }
 #endif
 

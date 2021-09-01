@@ -438,7 +438,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
             for (int ip = 0; ip < pp.nchannel; ip++)
               lsum += vrad[ip] * lpol[pp.angpp_m[ip]];
             esum[iw] += lsum * ratio;
-            Txy[iw][iTxy[iw]++].Weight = lsum * ratio;
+            Txy[iw][iTxy[iw]++].weight = lsum * ratio;
           }
         }
       }

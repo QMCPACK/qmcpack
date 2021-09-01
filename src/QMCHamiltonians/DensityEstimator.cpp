@@ -30,7 +30,7 @@ typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
 DensityEstimator::DensityEstimator(ParticleSet& elns)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   Periodic = (elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
   for (int dim = 0; dim < OHMMS_DIM; ++dim)
   {

@@ -25,7 +25,7 @@ namespace qmcplusplus
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
     : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   num_species = elns.groups();
   n_vec.resize(num_species, 0);
   for (int i = 0; i < num_species; i++)

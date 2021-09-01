@@ -106,12 +106,12 @@ std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P, T
 GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-    Value = evaluate_sp(P);
+  if (streamingParticles)
+    value = evaluate_sp(P);
   else
   {
 #endif
-    Value = 0.0;
+    value = 0.0;
     for (int i = 0; i < P.getTotalNum(); ++i)
     {
       PosType r = P.R[i];
@@ -119,12 +119,12 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
       double val = 0.0;
       eval_UBspline_3d_d(spline_data.get(), r[0], r[1], r[2], &val);
 
-      Value += val;
+      value += val;
     }
 #if !defined(REMOVE_TRACEMANAGER)
   }
 #endif
-  return Value;
+  return value;
 }
 
 
@@ -132,15 +132,15 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
 GridExternalPotential::Return_t GridExternalPotential::evaluate_sp(ParticleSet& P)
 {
   Array<TraceReal, 1>& V_samp = *V_sample;
-  Value                       = 0.0;
+  value                       = 0.0;
   for (int i = 0; i < P.getTotalNum(); ++i)
   {
     PosType r   = P.R[i];
     RealType v1 = dot(r, r);
     V_samp(i)   = v1;
-    Value += v1;
+    value += v1;
   }
-  return Value;
+  return value;
 }
 #endif
 

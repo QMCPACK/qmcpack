@@ -359,8 +359,8 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
 MPC::Return_t MPC::evaluate(ParticleSet& P)
 {
   //if (FirstTime || P.tag() == PtclRef->tag())
-  Value = evalSR(P) + evalLR(P) + Vconst;
-  return Value;
+  value = evalSR(P) + evalLR(P) + Vconst;
+  return value;
 }
 
 void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)

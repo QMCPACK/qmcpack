@@ -23,43 +23,43 @@
 namespace qmcplusplus
 {
 //NonLocalData
-NonLocalData::NonLocalData() : PID(-1), Weight(1.0) {}
+NonLocalData::NonLocalData() : pid(-1), weight(1.0) {}
 
-NonLocalData::NonLocalData(IndexType id, RealType w, const PosType& d) : PID(id), Weight(w), Delta(d) {}
+NonLocalData::NonLocalData(IndexType id, RealType w, const PosType& d) : pid(id), weight(w), delta(d) {}
 
 //OperatorBase
 
 //PUBLIC
 OperatorBase::OperatorBase()
-    : UpdateMode(std::move(std::bitset<8>{}.set(PRIMARY, 1))),
-      Value(0.0),
+    : updateMode(std::move(std::bitset<8>{}.set(PRIMARY, 1))),
+      value(0.0),
       myIndex(-1),
-      NewValue(0.0),
+      newValue(0.0),
       tWalker(0),
 #if !defined(REMOVE_TRACEMANAGER)
-      have_required_traces(false),
-      streaming_particles(false),
+      haveRequiredTraces(false),
+      streamingParticles(false),
 #endif
-      quantum_domain(quantum_domains::no_quantum_domain),
-      energy_domain(energy_domains::no_energy_domain)
+      quantumDomain(quantum_domains::no_quantum_domain),
+      energyDomain(energy_domains::no_energy_domain)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
-      streaming_scalars(false),
-      value_sample(nullptr)
+      streamingScalars(false),
+      valueSample(nullptr)
 #endif
 {}
 
 OperatorBase::Return_t OperatorBase::getEnsembleAverage() { return 0.0; }
 
-void OperatorBase::update_source(ParticleSet& s) {}
+void OperatorBase::updateSource(ParticleSet& s) {}
 
-void OperatorBase::setObservables(PropertySetType& plist) { plist[myIndex] = Value; }
+void OperatorBase::setObservables(PropertySetType& plist) { plist[myIndex] = value; }
 
 void OperatorBase::addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
 
 void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  bool collect = UpdateMode.test(COLLECTABLE);
+  bool collect = updateMode.test(COLLECTABLE);
   //exclude collectables
   if (!collect)
   {
@@ -73,9 +73,9 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
 
 void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
 
-void OperatorBase::get_required_traces(TraceManager& tm) {}
+void OperatorBase::getRequiredTraces(TraceManager& tm) {}
 
-void OperatorBase::setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
+void OperatorBase::setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = value; }
 
 void OperatorBase::setRandomGenerator(RandomGenerator_t* rng) {}
 
@@ -114,7 +114,7 @@ OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
 }
 
 
-void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+void OperatorBase::mwEvaluate(const RefVectorWithLeader<OperatorBase>& O_list,
                                const RefVectorWithLeader<ParticleSet>& P_list) const
 {
   assert(this == &O_list.getLeader());
@@ -147,7 +147,7 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
     O_list[iw].evaluate(P_list[iw]);
 }
 
-void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
+void OperatorBase::mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
                                                        const RefVectorWithLeader<ParticleSet>& P_list,
                                                        const opt_variables_type& optvars,
                                                        RecordArray<ValueType>& dlogpsi,
@@ -172,10 +172,10 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader
   }
 }
 
-void OperatorBase::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+void OperatorBase::mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
                                             const RefVectorWithLeader<ParticleSet>& P_list) const
 {
-  mw_evaluate(O_list, P_list);
+  mwEvaluate(O_list, P_list);
 }
 
 void OperatorBase::setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
@@ -187,7 +187,7 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
   if (myclone)
   {
-    targetH.addOperator(std::move(myclone), myName, UpdateMode[PHYSICAL]);
+    targetH.addOperator(std::move(myclone), myName, updateMode[PHYSICAL]);
   }
 }
 
@@ -201,81 +201,81 @@ void OperatorBase::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& O_list) const
 {}
 
-bool OperatorBase::is_classical() const noexcept { return quantum_domain == quantum_domains::classical; }
+bool OperatorBase::isClassical() const noexcept { return quantumDomain == quantum_domains::classical; }
 
-bool OperatorBase::is_quantum() const noexcept { return quantum_domain == quantum_domains::quantum; }
+bool OperatorBase::isQuantum() const noexcept { return quantumDomain == quantum_domains::quantum; }
 
-bool OperatorBase::is_classical_classical() const noexcept
+bool OperatorBase::isClassicalClassical() const noexcept
 {
-  return quantum_domain == quantum_domains::classical_classical;
+  return quantumDomain == quantum_domains::classical_classical;
 }
 
-bool OperatorBase::is_quantum_classical() const noexcept
+bool OperatorBase::isQuantumClassical() const noexcept
 {
-  return quantum_domain == quantum_domains::quantum_classical;
+  return quantumDomain == quantum_domains::quantum_classical;
 }
 
-bool OperatorBase::is_quantum_quantum() const noexcept { return quantum_domain == quantum_domains::quantum_quantum; }
+bool OperatorBase::isQuantumQuantum() const noexcept { return quantumDomain == quantum_domains::quantum_quantum; }
 
-bool OperatorBase::isNonLocal() const noexcept { return UpdateMode[NONLOCAL]; }
+bool OperatorBase::isNonLocal() const noexcept { return updateMode[NONLOCAL]; }
 
-bool OperatorBase::getMode(int i) const noexcept { return UpdateMode[i]; }
+bool OperatorBase::getMode(int i) const noexcept { return updateMode[i]; }
 
 #if !defined(REMOVE_TRACEMANAGER)
-void OperatorBase::contribute_trace_quantities()
+void OperatorBase::contributeTraceQuantities()
 {
-  contribute_scalar_quantities();
-  contribute_particle_quantities();
+  contributeScalarQuantities();
+  contributeParticleQuantities();
 }
 
-void OperatorBase::collect_scalar_traces() { collect_scalar_quantities(); }
+void OperatorBase::collectScalarTraces() { collectScalarQuantities(); }
 #endif
 
-void OperatorBase::checkout_trace_quantities(TraceManager& tm)
+void OperatorBase::checkoutTraceQuantities(TraceManager& tm)
 {
   //derived classes must guard individual checkouts using request info
-  checkout_scalar_quantities(tm);
-  checkout_particle_quantities(tm);
+  checkoutScalarQuantities(tm);
+  checkoutParticleQuantities(tm);
 }
 
-void OperatorBase::delete_trace_quantities()
+void OperatorBase::deleteTraceQuantities()
 {
-  delete_scalar_quantities();
-  delete_particle_quantities();
-  streaming_scalars    = false;
-  streaming_particles  = false;
-  have_required_traces = false;
+  deleteScalarQuantities();
+  deleteParticleQuantities();
+  streamingScalars    = false;
+  streamingParticles  = false;
+  haveRequiredTraces = false;
   request.reset();
 }
 
 // PROTECTED
 #if !defined(REMOVE_TRACEMANAGER)
-void OperatorBase::contribute_scalar_quantities() { request.contribute_scalar(myName); }
+void OperatorBase::contributeScalarQuantities() { request.contribute_scalar(myName); }
 
-void OperatorBase::checkout_scalar_quantities(TraceManager& tm)
+void OperatorBase::checkoutScalarQuantities(TraceManager& tm)
 {
-  streaming_scalars = request.streaming_scalar(myName);
-  if (streaming_scalars)
-    value_sample = tm.checkout_real<1>(myName);
+  streamingScalars = request.streaming_scalar(myName);
+  if (streamingScalars)
+    valueSample = tm.checkout_real<1>(myName);
 }
 
-void OperatorBase::collect_scalar_quantities()
+void OperatorBase::collectScalarQuantities()
 {
-  if (streaming_scalars)
-    (*value_sample)(0) = Value;
+  if (streamingScalars)
+    (*valueSample)(0) = value;
 }
 
-void OperatorBase::delete_scalar_quantities()
+void OperatorBase::deleteScalarQuantities()
 {
-  if (streaming_scalars)
-    delete value_sample;
+  if (streamingScalars)
+    delete valueSample;
 }
 
-void OperatorBase::contribute_particle_quantities(){};
+void OperatorBase::contributeParticleQuantities(){};
 
-void OperatorBase::checkout_particle_quantities(TraceManager& /*tm*/){};
+void OperatorBase::checkoutParticleQuantities(TraceManager& /*tm*/){};
 
-void OperatorBase::delete_particle_quantities(){};
+void OperatorBase::deleteParticleQuantities(){};
 
 #endif
 
@@ -294,79 +294,79 @@ void OperatorBase::addEnergy(MCWalkerConfiguration& W,
 
 void OperatorBase::setComputeForces(bool compute) {}
 
-void OperatorBase::set_energy_domain(energy_domains edomain)
+void OperatorBase::setEnergyDomain(energy_domains edomain)
 {
-  if (energy_domain_valid(edomain))
-    energy_domain = edomain;
+  if (energyDomainValid(edomain))
+    energyDomain = edomain;
   else
     APP_ABORT("QMCHamiltonainBase::set_energy_domain\n  input energy domain is invalid");
 }
 
-void OperatorBase::set_quantum_domain(quantum_domains qdomain)
+void OperatorBase::setQuantumDomain(quantum_domains qdomain)
 {
-  if (quantum_domain_valid(qdomain))
-    quantum_domain = qdomain;
+  if (quantumDomainValid(qdomain))
+    quantumDomain = qdomain;
   else
     APP_ABORT("QMCHamiltonainBase::set_quantum_domain\n  input quantum domain is invalid");
 }
 
-void OperatorBase::one_body_quantum_domain(const ParticleSet& P)
+void OperatorBase::oneBodyQuantumDomain(const ParticleSet& P)
 {
   if (P.is_classical())
-    quantum_domain = quantum_domains::classical;
+    quantumDomain = quantum_domains::classical;
   else if (P.is_quantum())
-    quantum_domain = quantum_domains::quantum;
+    quantumDomain = quantum_domains::quantum;
   else
     APP_ABORT("OperatorBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
 }
 
-void OperatorBase::two_body_quantum_domain(const ParticleSet& P)
+void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P)
 {
   if (P.is_classical())
-    quantum_domain = quantum_domains::classical_classical;
+    quantumDomain = quantum_domains::classical_classical;
   else if (P.is_quantum())
-    quantum_domain = quantum_domains::quantum_quantum;
+    quantumDomain = quantum_domains::quantum_quantum;
   else
     APP_ABORT("OperatorBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
 }
 
-void OperatorBase::two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2)
+void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2)
 {
   bool c1 = P1.is_classical();
   bool c2 = P2.is_classical();
   bool q1 = P1.is_quantum();
   bool q2 = P2.is_quantum();
   if (c1 && c2)
-    quantum_domain = quantum_domains::classical_classical;
+    quantumDomain = quantum_domains::classical_classical;
   else if ((q1 && c2) || (c1 && q2))
-    quantum_domain = quantum_domains::quantum_classical;
+    quantumDomain = quantum_domains::quantum_classical;
   else if (q1 && q2)
-    quantum_domain = quantum_domains::quantum_quantum;
+    quantumDomain = quantum_domains::quantum_quantum;
   else
     APP_ABORT("OperatorBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
 }
 
 void OperatorBase::addValue(PropertySetType& plist)
 {
-  if (!UpdateMode[COLLECTABLE])
+  if (!updateMode[COLLECTABLE])
     myIndex = plist.add(myName.c_str());
 }
 
 
 // PRIVATE
-bool OperatorBase::energy_domain_valid(const energy_domains edomain) const noexcept
+bool OperatorBase::energyDomainValid(const energy_domains edomain) const noexcept
 {
   return edomain != energy_domains::no_energy_domain;
 }
 
-bool OperatorBase::energy_domain_valid() const noexcept { return energy_domain_valid(energy_domain); }
+bool OperatorBase::energyDomainValid() const noexcept { return energyDomainValid(energyDomain); }
 
-bool OperatorBase::quantum_domain_valid(const quantum_domains qdomain) const noexcept
+bool OperatorBase::quantumDomainValid(const quantum_domains qdomain) const noexcept
 {
   return qdomain != quantum_domains::no_quantum_domain;
 }
 
-bool OperatorBase::quantum_domain_valid() const noexcept { return quantum_domain_valid(quantum_domain); }
+bool OperatorBase::quantumDomainValid() const noexcept { return quantumDomainValid(quantumDomain); }
 
 
 } // namespace qmcplusplus

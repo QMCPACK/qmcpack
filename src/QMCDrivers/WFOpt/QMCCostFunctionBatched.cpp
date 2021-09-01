@@ -385,7 +385,7 @@ void QMCCostFunctionBatched::checkConfigurations()
           if (includeNonlocalH != "no")
           {
             OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
-            RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
+            RecordsOnNode[is][ENERGY_FIXED] -= nlpp->value;
           }
         }
       }

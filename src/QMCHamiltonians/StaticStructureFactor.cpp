@@ -38,7 +38,7 @@ StaticStructureFactor::StaticStructureFactor(ParticleSet& P) : Pinit(P)
 void StaticStructureFactor::reset()
 {
   myName = "StaticStructureFactor";
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   ecut     = -1.0;
   nkpoints = -1;
 }

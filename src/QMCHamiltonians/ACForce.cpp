@@ -80,7 +80,7 @@ void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamilt
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi, ham_in);
   if (myclone)
   {
-    ham_in.addOperator(std::move(myclone), myName, UpdateMode[PHYSICAL]);
+    ham_in.addOperator(std::move(myclone), myName, updateMode[PHYSICAL]);
   }
 }
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)
@@ -92,7 +92,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   sw_grad     = 0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
+  value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
 
   if (useSpaceWarp)
   {
@@ -155,7 +155,7 @@ void ACForce::setObservables(PropertySetType& plist)
       // add the minus one to be a force.
       plist[myindex++] = -hf_force[iat][iondim];
       plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
-      plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
+      plist[myindex++] = -value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
 
       //TODO: Remove when ACForce is production ready
@@ -177,7 +177,7 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myindex++] = -hf_force[iat][iondim];
       plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
-      plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
+      plist[myindex++] = -value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       //TODO: Remove when ACForce is production ready
       //      if(useSpaceWarp)

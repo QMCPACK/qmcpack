@@ -67,7 +67,7 @@ bool LatticeDeviationEstimator::put(xmlNodePtr cur)
   {
     // change the default behavior of addValue() called by addObservables()
     // YY: does this still matter if I have overwritten addObservables()?
-    UpdateMode.set(COLLECTABLE, 1);
+    updateMode.set(COLLECTABLE, 1);
   }
 
   if (xyz_flag == "yes")
@@ -95,7 +95,7 @@ bool LatticeDeviationEstimator::get(std::ostream& os) const
 
 LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(ParticleSet& P)
 { // calculate <r^2> averaged over lattice sites
-  Value = 0.0;
+  value = 0.0;
   std::fill(xyz2.begin(), xyz2.end(), 0.0);
 
   RealType wgt        = tWalker->Weight;
@@ -118,7 +118,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
           // distance between particle iat in source pset, and jat in target pset
           r  = d_table.getDistRow(jat)[iat];
           r2 = r * r;
-          Value += r2;
+          value += r2;
 
           if (hdf5_out & !per_xyz)
           { // store deviration for each lattice site if h5 file is available
@@ -154,7 +154,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   }
 
   // average per site
-  Value /= num_sites;
+  value /= num_sites;
   if (per_xyz)
   {
     for (int idir = 0; idir < OHMMS_DIM; idir++)
@@ -163,7 +163,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
     }
   }
 
-  return Value;
+  return value;
 }
 
 void LatticeDeviationEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -209,7 +209,7 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
   }
   else
   {
-    plist[myIndex] = Value; // default behavior
+    plist[myIndex] = value; // default behavior
   }
 }
 

@@ -28,7 +28,7 @@ namespace qmcplusplus
 MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
     : M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   psi_ratios.resize(elns.getTotalNum());
   twist = elns.getTwist();
 }

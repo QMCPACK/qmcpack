@@ -166,7 +166,7 @@ public:
   Return_t evaluate(ParticleSet& P) override;
 
   //optional standard interface
-  void get_required_traces(TraceManager& tm) override;
+  void getRequiredTraces(TraceManager& tm) override;
   void setRandomGenerator(RandomGenerator_t* rng) override;
 
   //required for Collectables interface
@@ -177,10 +177,10 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override {}
   void setObservables(PropertySetType& plist) override {}
   void setParticlePropertyList(PropertySetType& plist, int offset) override {}
-  void contribute_scalar_quantities() override {}
-  void checkout_scalar_quantities(TraceManager& tm) override {}
-  void collect_scalar_quantities() override {}
-  void delete_scalar_quantities() override {}
+  void contributeScalarQuantities() override {}
+  void checkoutScalarQuantities(TraceManager& tm) override {}
+  void collectScalarQuantities() override {}
+  void deleteScalarQuantities() override {}
 
   //obsolete?
   bool get(std::ostream& os) const override { return false; }

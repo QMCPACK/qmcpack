@@ -104,13 +104,13 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob, std::vector<Non
   RealType wgt_t = 1.0;
   for (int i = 0; i < txy.size(); i++)
   {
-    if (txy[i].Weight > 0)
+    if (txy[i].weight > 0)
     {
-      wgt_t += txy[i].Weight *= plusFactor;
+      wgt_t += txy[i].weight *= plusFactor;
     }
     else
     {
-      wgt_t += txy[i].Weight *= minusFactor;
+      wgt_t += txy[i].weight *= minusFactor;
     }
   }
   prob *= wgt_t;
@@ -118,7 +118,7 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob, std::vector<Non
   int ibar      = 0;
   while (wsum < prob)
   {
-    wsum += txy[ibar].Weight;
+    wsum += txy[ibar].weight;
     ibar++;
   }
   return ibar > 0 ? &(txy[ibar - 1]) : nullptr;
@@ -134,7 +134,7 @@ void NonLocalTOperator::group_by_elec()
 
   for (int i = 0; i < Txy.size(); i++)
   {
-    Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
+    Txy_by_elec[Txy[i].pid].push_back(Txy[i]);
   }
 }
 

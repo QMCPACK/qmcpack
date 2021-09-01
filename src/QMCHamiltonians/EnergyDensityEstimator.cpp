@@ -26,7 +26,7 @@ namespace qmcplusplus
 EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   defKE      = defaultKE;
   nsamples   = 0;
   ion_points = false;
@@ -203,7 +203,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 }
 
 
-void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
+void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
   w_trace    = tm.get_real_trace("weight");
@@ -211,7 +211,7 @@ void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
   Vd_trace   = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
   if (Pstatic)
     Vs_trace = tm.get_real_combined_trace(*Pstatic, "LocalPotential");
-  have_required_traces = true;
+  haveRequiredTraces = true;
 }
 
 
@@ -257,7 +257,7 @@ void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
 {
-  if (have_required_traces)
+  if (haveRequiredTraces)
   {
     Pdynamic = &P;
     //Collect positions from ParticleSets

@@ -48,7 +48,7 @@ SpinDensity::SpinDensity(ParticleSet& P)
 void SpinDensity::reset()
 {
   myName = "SpinDensity";
-  UpdateMode.set(COLLECTABLE, 1);
+  updateMode.set(COLLECTABLE, 1);
   corner = 0.0;
 }
 

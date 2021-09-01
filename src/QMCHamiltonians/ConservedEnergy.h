@@ -83,9 +83,9 @@ struct ConservedEnergy : public OperatorBase
     RealType lap    = Sum(P.L);
 #ifdef QMC_COMPLEX
     RealType gradsq_cc = Dot_CC(P.G, P.G);
-    Value              = lap + gradsq + gradsq_cc;
+    value              = lap + gradsq + gradsq_cc;
 #else
-    Value = lap + 2 * gradsq;
+    value = lap + 2 * gradsq;
 #endif
     return 0.0;
   }

@@ -36,8 +36,8 @@ struct HarmonicExternalPotential : public OperatorBase
   //construction/destruction
   HarmonicExternalPotential(ParticleSet& P) : Ps(P)
   {
-    set_energy_domain(energy_domains::potential);
-    one_body_quantum_domain(P);
+    setEnergyDomain(energy_domains::potential);
+    oneBodyQuantumDomain(P);
   }
 
   ~HarmonicExternalPotential() override {}
@@ -56,18 +56,18 @@ struct HarmonicExternalPotential : public OperatorBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   //traces interface
-  void contribute_particle_quantities() override { request.contribute_array(myName); }
+  void contributeParticleQuantities() override { request.contribute_array(myName); }
 
-  void checkout_particle_quantities(TraceManager& tm) override
+  void checkoutParticleQuantities(TraceManager& tm) override
   {
-    streaming_particles = request.streaming_array(myName);
-    if (streaming_particles)
+    streamingParticles = request.streaming_array(myName);
+    if (streamingParticles)
       V_sample = tm.checkout_real<1>(myName, Ps);
   }
 
-  void delete_particle_quantities() override
+  void deleteParticleQuantities() override
   {
-    if (streaming_particles)
+    if (streamingParticles)
       delete V_sample;
   }
 
