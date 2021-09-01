@@ -33,7 +33,6 @@ set(QMCDRIVERS
     WFOpt/QMCWFOptFactoryNew.cpp
     WFOpt/QMCLinearOptimize.cpp
     WFOpt/QMCLinearOptimizeBatched.cpp
-    WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp
@@ -83,7 +82,7 @@ if(QMC_CUDA)
   set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp WFOpt/QMCCostFunctionCUDA.cpp)
 endif(QMC_CUDA)
 
-set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp VMC/VMCLinearOpt.cpp WFOpt/QMCCostFunction.cpp
+set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp WFOpt/QMCCostFunction.cpp
                WFOpt/QMCCostFunctionBatched.cpp)
 
 if(HAVE_MPI)

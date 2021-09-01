@@ -42,42 +42,6 @@ if(NOT QMC_CUDA)
       H4_OPT_SCALARS # OPT step 5
     )
 
-    qmc_run_and_check(
-      short-H4-opt-cslinear-quartic
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4-cslinear-quartic
-      optm-cslinear-quartic.xml
-      4
-      4
-      ${SUCCESS_STATUS_MP}
-      7
-      H4_OPT_SCALARS # OPT step 7
-    )
-
-    qmc_run_and_check(
-      short-H4-opt-cslinear-rescale
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4-cslinear-rescale
-      optm-cslinear-rescale.xml
-      16
-      1
-      ${SUCCESS_STATUS_MP}
-      7
-      H4_OPT_SCALARS # OPT step 7
-    )
-
-    qmc_run_and_check(
-      short-H4-opt-cslinear-linemin
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4-cslinear-linemin
-      optm-cslinear-linemin.xml
-      16
-      1
-      ${SUCCESS_STATUS_MP}
-      7
-      H4_OPT_SCALARS # OPT step 7
-    )
-
     if(BUILD_LMYENGINE_INTERFACE)
       qmc_run_and_check(
         short-H4-opt-adaptive
