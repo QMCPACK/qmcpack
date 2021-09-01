@@ -56,7 +56,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       UseTMove(TMOVE_OFF),
       nonLocalOps(els.getTotalNum())
 {
-  set_energy_domain(potential);
+  set_energy_domain(energy_domains::potential);
   two_body_quantum_domain(ions, els);
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
@@ -632,16 +632,18 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
   auto resource_index = collection.addResource(std::move(new_res));
 }
 
-void NonLocalECPotential::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
+void NonLocalECPotential::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& O_list) const
 {
   auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
-  auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  auto res_ptr   = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
   O_leader.mw_res_.reset(res_ptr);
 }
 
-void NonLocalECPotential::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
+void NonLocalECPotential::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& O_list) const
 {
   auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
   collection.takebackResource(std::move(O_leader.mw_res_));

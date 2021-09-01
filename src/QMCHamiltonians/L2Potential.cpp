@@ -18,7 +18,7 @@ namespace qmcplusplus
 {
 L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi) : IonConfig(ions)
 {
-  set_energy_domain(potential);
+  set_energy_domain(energy_domains::potential);
   two_body_quantum_domain(ions, els);
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);

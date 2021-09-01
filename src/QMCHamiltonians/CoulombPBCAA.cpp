@@ -32,7 +32,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       d_aa_ID(ref.addTable(ref))
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
-  set_energy_domain(potential);
+  set_energy_domain(energy_domains::potential);
   two_body_quantum_domain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
   initBreakup(ref);

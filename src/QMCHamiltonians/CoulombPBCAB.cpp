@@ -32,7 +32,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
-  set_energy_domain(potential);
+  set_energy_domain(energy_domains::potential);
   two_body_quantum_domain(ions, elns);
   if (ComputeForces)
     PtclA.turnOnPerParticleSK();
@@ -181,7 +181,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         for (int s = 0; s < NumSpeciesA; s++)
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Zspec[s] * q *
-              AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i], RhoKB.eikr_i[i]);
+              AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i],
+                           RhoKB.eikr_i[i]);
 #else
           v1 += Zspec[s] * q * AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
 #endif
@@ -195,7 +196,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         for (int s = 0; s < NumSpeciesB; s++)
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Qspec[s] * q *
-              AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i], RhoKA.eikr_i[i]);
+              AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
+                           RhoKA.eikr_i[i]);
 #else
           v1 += Qspec[s] * q * AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
 #endif
@@ -331,7 +333,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
 #if !defined(USE_REAL_STRUCT_FACTOR)
       const int slab_dir = OHMMS_DIM - 1;
       for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-        u += Qat[jat] * AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
+        u += Qat[jat] *
+            AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
 #endif
       res += Zat[iat] * u;
     }

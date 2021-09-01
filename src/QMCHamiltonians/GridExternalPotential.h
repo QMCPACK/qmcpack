@@ -38,7 +38,7 @@ struct GridExternalPotential : public OperatorBase
   //construction/destruction
   GridExternalPotential(ParticleSet& P) : Ps(P)
   {
-    set_energy_domain(potential);
+    set_energy_domain(energy_domains::potential);
     one_body_quantum_domain(P);
   }
 

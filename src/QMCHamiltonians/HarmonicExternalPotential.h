@@ -36,7 +36,7 @@ struct HarmonicExternalPotential : public OperatorBase
   //construction/destruction
   HarmonicExternalPotential(ParticleSet& P) : Ps(P)
   {
-    set_energy_domain(potential);
+    set_energy_domain(energy_domains::potential);
     one_body_quantum_domain(P);
   }
 

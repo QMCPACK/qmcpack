@@ -137,8 +137,8 @@ struct BareKineticEnergy : public OperatorBase
    */
   BareKineticEnergy(RealType m = 1.0) : SameMass(true), M(m), OneOver2M(0.5 / m)
   {
-    set_energy_domain(kinetic);
-    set_quantum_domain(quantum);
+    set_energy_domain(energy_domains::kinetic);
+    set_quantum_domain(quantum_domains::quantum);
     streaming_kinetic      = false;
     streaming_kinetic_comp = false;
     streaming_momentum     = false;
@@ -153,7 +153,7 @@ struct BareKineticEnergy : public OperatorBase
    */
   BareKineticEnergy(ParticleSet& p) : Ps(p)
   {
-    set_energy_domain(kinetic);
+    set_energy_domain(energy_domains::kinetic);
     one_body_quantum_domain(p);
     streaming_kinetic      = false;
     streaming_kinetic_comp = false;
