@@ -25,11 +25,16 @@ public:
   MomentumDistributionInput()
   {
     section_name   = "MomentumDistribution";
-    attributes     = {"type","name","samples","kmax"};
+    attributes     = {"type","name","samples","kmax","kmax0","kmax1","kmax2"};
     strings        = {"type","name"};
     integers       = {"samples"};
-    reals          = {"kmax"};
-    default_values = { {"samples", 40} };
+    reals          = {"kmax","kmax0","kmax1","kmax2"};
+    default_values = { {"name"   , "nofk" },
+                       {"samples", 40     },
+                       {"kmax"   , 0.0    },
+                       {"kmax0"  , 0.0    },
+                       {"kmax1"  , 0.0    },
+                       {"kmax2"  , 0.0    }};
   };
 };
 

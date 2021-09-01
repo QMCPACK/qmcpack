@@ -28,21 +28,53 @@ namespace qmcplusplus
 class MomentumDistribution : public OperatorEstBase
 {
 public:
-  using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout_t;
-  using QMCT    = QMCTraits;
+  using LatticeType = PtclOnLatticeTraits::ParticleLayout_t;
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using PosType     = QMCTraits::PosType;
 
-  //data members
+  //data members set only during construction
+  ///input values
   MomentumDistributionInput input_;
+  ///number of samples
+  int M;
+  ///reference to the trial wavefunction for ratio evaluations
+  //TrialWaveFunction& refPsi;
+  ///twist angle
+  PosType twist;
+  ///lattice vector
+  LatticeType Lattice;
+  ///normalization factor for n(k)
+  RealType norm_nofK;
+  ///random generator
+  RandomGenerator_t myRNG;
+  ///list of k-points in Cartesian Coordinates
+  std::vector<PosType> kPoints;
+  ///weight of k-points (make use of symmetry)
+  std::vector<int> kWeights;
 
-  /** @ingroup MomentumDistribution mutable parameters
+  /** @ingroup MomentumDistribution mutable data members
    */
+  ///sample positions
+  std::vector<PosType> vPos;
+  ///wavefunction ratios
+  std::vector<ValueType> psi_ratios;
+  ///wavefunction ratios all samples
+  Matrix<ValueType> psi_ratios_all;
+  ///nofK internal
+  Vector<RealType> kdotp;
+  ///phases
+  VectorSoaContainer<RealType, 2> phases;
+  ///phases of vPos
+  std::vector<VectorSoaContainer<RealType, 2>> phases_vPos;
+  ///nofK
+  aligned_vector<RealType> nofK;
 
   /** Constructor for MomentumDistributionInput 
    */
-  MomentumDistribution(MomentumDistributionInput&& mdi, DataLocality dl = DataLocality::crowd);
+  MomentumDistribution(MomentumDistributionInput&& mdi, size_t np, const PosType& twist, const LatticeType& lattice, DataLocality dl = DataLocality::crowd);
 
-  MomentumDistribution(const MomentumDistribution& md);
+  //MomentumDistribution(const MomentumDistribution& md);
 
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */

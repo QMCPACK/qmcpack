@@ -388,6 +388,9 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         MomentumDistributionInput mdi;
         mdi.readXML(cur);
         DataLocality dl = DataLocality::crowd;
+        operator_ests_.emplace_back(
+          std::make_unique<MomentumDistribution>(std::move(mdi), 
+            pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl));
       }
       else
       {

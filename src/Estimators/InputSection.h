@@ -66,7 +66,7 @@ public:
 
 
   template<typename T>
-  T& get(std::string name){return std::any_cast<T>(values[name]);};
+  T get(std::string name){return std::any_cast<T>(values[name]);};
 
 
   template<typename T>
