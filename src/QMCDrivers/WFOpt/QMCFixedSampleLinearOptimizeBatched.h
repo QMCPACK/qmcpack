@@ -64,7 +64,8 @@ public:
   RealType costFunc(RealType dl);
 
 private:
-  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> opt_;
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
