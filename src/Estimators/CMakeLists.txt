@@ -21,7 +21,9 @@ set(QMCEST_SRC
     EstimatorManagerCrowd.cpp
     CollectablesEstimator.cpp
     OperatorEstBase.cpp
-    SpinDensityNew.cpp)
+    SpinDensityNew.cpp
+    MomentumDistribution.cpp
+    )
 
 ####################################
 # create libqmcestimators

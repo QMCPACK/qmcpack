@@ -15,10 +15,12 @@
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
+#include "MomentumDistribution.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
+#include "Message/UniformCommunicateError.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -329,16 +331,19 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
 
 bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur)
 {
-  std::vector<std::string> extra;
+  std::vector<std::string> extra_types;
+  std::vector<std::string> extra_names;
   cur = cur->children;
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "estimator")
     {
+      std::string est_type("none");
       std::string est_name(MainEstimatorName);
       std::string use_hdf5("yes");
       OhmmsAttributeSet hAttrib;
+      hAttrib.add(est_type, "type");
       hAttrib.add(est_name, "name");
       hAttrib.add(use_hdf5, "hdf5");
       hAttrib.put(cur);
@@ -378,8 +383,17 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
           operator_ests_.emplace_back(
               std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.mySpecies, dl));
       }
+      else if (est_type == "MomentumDistribution")
+      {
+        MomentumDistributionInput mdi;
+        mdi.readXML(cur);
+        DataLocality dl = DataLocality::crowd;
+      }
       else
-        extra.push_back(est_name);
+      {
+        extra_types.push_back(est_type);
+        extra_names.push_back(est_name);
+      }
     }
     cur = cur->next;
   }
@@ -394,6 +408,17 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
   {
     app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
     Collectables = new CollectablesEstimator(H);
+  }
+  // Unrecognized estimators are not allowed
+  if (!extra_types.empty())
+  {
+    app_log() << "\nUnrecognized estimators in input:" << std::endl;
+    for (int i=0; i<extra_types.size(); i++)
+    {
+      app_log() << "  type: "<<extra_types[i]<<"     name: "<<extra_names[i]<<std::endl;
+    }
+    app_log() << std::endl;
+    throw UniformCommunicateError("Unrecognized estimators encountered in input.  See log message for more details.");
   }
   return true;
 }
