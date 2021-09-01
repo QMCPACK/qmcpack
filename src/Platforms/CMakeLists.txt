@@ -19,7 +19,7 @@
 
 set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
 
-set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp)
+set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
 
 add_library(platform_host ${HOST_SRCS})
 
@@ -30,6 +30,7 @@ else(USE_OBJECT_TARGET)
 endif(USE_OBJECT_TARGET)
 
 target_include_directories(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(platform_device PUBLIC platform_host)
 
 add_subdirectory(CPU)
 target_link_libraries(platform_device PUBLIC platform_cpu)

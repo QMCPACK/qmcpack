@@ -18,7 +18,7 @@
 ####################################
 # create libqmc
 ####################################
-set(QMCAPPDIR QMCAppBase.cpp QMCMainState.cpp QMCMain.cpp CoupledMC.cpp accelerators.cpp)
+set(QMCAPPDIR QMCAppBase.cpp QMCMainState.cpp QMCMain.cpp CoupledMC.cpp)
 if(USE_OBJECT_TARGET)
   add_library(qmc OBJECT ${QMCAPPDIR})
 else()

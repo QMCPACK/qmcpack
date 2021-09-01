@@ -414,7 +414,7 @@ public:
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
   /** return a clone */
-  QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
 #ifdef QMC_CUDA
   ////////////////////////////////////////////

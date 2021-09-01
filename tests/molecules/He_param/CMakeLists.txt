@@ -23,5 +23,5 @@ if(NOT QMC_CUDA)
     SCALAR_VALUES
     HE_BSPLINE_PARAM)
 else()
-  message_verbose("Skipping He_param tests because parameter output is not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping He_param tests because parameter output is not supported by CUDA build (QMC_CUDA=1)")
 endif()

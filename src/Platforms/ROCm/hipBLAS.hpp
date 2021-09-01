@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright(C) 2021 Advanced Micro Devices, Inc. All rights reserved.
+//
+// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//
+// File created by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef HIPBLAS_HPP
 #define HIPBLAS_HPP
@@ -6,7 +16,6 @@
 #include <rocsolver.h>
 #include <hip/hip_complex.h>
 
-//------------------------------------------------------------------------------
 static inline hipblasStatus_t
 hipblasCgemmBatched(hipblasHandle_t handle,
                     hipblasOperation_t transa,
@@ -75,7 +84,6 @@ hipblasZgemmBatched(hipblasHandle_t handle,
                                batchCount);
 }
 
-//------------------------------------------------------------------------------
 static inline hipblasStatus_t
 hipblasSgetrfBatched_(cublasHandle_t handle,
                       int n,
@@ -208,7 +216,6 @@ hipblasZgetrfBatched_(cublasHandle_t handle,
     }
 }
 
-//------------------------------------------------------------------------------
 __global__
 static void identity(int n, float* const a_array[], int lda)
 {
@@ -257,7 +264,6 @@ static void identity(int n, rocblas_double_complex* const a_array[], int lda)
                     (i+threadIdx.x == j) ? one : zero;
 }
 
-//------------------------------------------------------------------------------
 static inline hipblasStatus_t
 hipblasSgetriBatched_(cublasHandle_t handle,
                       int n,

@@ -14,7 +14,7 @@
 #include "Platforms/CPU/SIMD/simd.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/for_testing/RandomForTest.h"
-#include "type_traits/type_tests.hpp"
+#include "type_traits/complex_help.hpp"
 #include "type_traits/type_mapping.hpp"
 
 namespace qmcplusplus

@@ -296,7 +296,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   elec_.acceptMove(1);
 
   REQUIRE(std::real(ratio_1) == Approx(1.0040884258));
-  REQUIRE(std::real(j1->LogValue) == Approx(0.32013531536));
+  REQUIRE(std::real(j1->get_log_value()) == Approx(0.32013531536));
 
   // test to make sure that setting cusp for J1 works properly
   const char* particles2 = "<tmp> \

@@ -37,7 +37,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> m, m_invT;
-  LogValueType LogValue;
+  LogValueType log_value;
   m.resize(3, 3);
   m_invT.resize(3, 3);
 
@@ -45,8 +45,8 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   m(1, 1) = 1.0;
   m(2, 2) = 1.0;
 
-  dm.invert_transpose(m, m_invT, LogValue);
-  REQUIRE(LogValue == LogComplexApprox(0.0));
+  dm.invert_transpose(m, m_invT, log_value);
+  REQUIRE(log_value == LogComplexApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
@@ -63,7 +63,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a, a_T, a_inv;
-  LogValueType LogValue;
+  LogValueType log_value;
   a.resize(3, 3);
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
@@ -79,8 +79,8 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   a(2, 2) = 4.9;
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
-  dm.invert_transpose(a_T, a_inv, LogValue);
-  REQUIRE(LogValue == LogComplexApprox(3.78518913425));
+  dm.invert_transpose(a_T, a_inv, log_value);
+  REQUIRE(log_value == LogComplexApprox(3.78518913425));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -104,7 +104,7 @@ TEST_CASE("DiracMatrix_inverse_matching", "[wavefunction][fermion]")
   DiracMatrix<double> dm;
 
   Matrix<double> a, a_T, a_inv;
-  LogValueType LogValue;
+  LogValueType log_value;
   a.resize(4, 4);
   a_T.resize(4, 4);
   a_inv.resize(4, 4);
@@ -127,8 +127,8 @@ TEST_CASE("DiracMatrix_inverse_matching", "[wavefunction][fermion]")
   a(3, 3) = 8;
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
-  dm.invert_transpose(a_T, a_inv, LogValue);
-  CHECK(LogValue == LogComplexApprox(std::complex<double>{5.50533, 6.28319}));
+  dm.invert_transpose(a_T, a_inv, log_value);
+  CHECK(log_value == LogComplexApprox(std::complex<double>{5.50533, 6.28319}));
 
   Matrix<std::complex<double>> inv_M;
   inv_M.resize(4, 4);
@@ -158,7 +158,7 @@ TEST_CASE("DiracMatrix_inverse_matching_2", "[wavefunction][fermion]")
   DiracMatrix<double> dm;
 
   Matrix<double> a, a_T, a_inv;
-  LogValueType LogValue;
+  LogValueType log_value;
   a.resize(4, 4);
   a_T.resize(4, 4);
   a_inv.resize(4, 4);
@@ -206,8 +206,8 @@ TEST_CASE("DiracMatrix_inverse_matching_2", "[wavefunction][fermion]")
   auto check_matrix_result = checkMatrix(lu_mat, a_T);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  dm.invert_transpose(a, a_inv, LogValue);
-  CHECK(LogValue == LogComplexApprox(std::complex<double>{5.50533, 6.28319}));
+  dm.invert_transpose(a, a_inv, log_value);
+  CHECK(log_value == LogComplexApprox(std::complex<double>{5.50533, 6.28319}));
 
   Matrix<std::complex<double>> inv_M;
   inv_M.resize(4, 4);
@@ -241,7 +241,7 @@ TEST_CASE("DiracMatrix_inverse_complex", "[wavefunction][fermion]")
   DiracMatrix<std::complex<double>> dm;
 
   Matrix<std::complex<double>> a, a_T, a_inv;
-  LogValueType LogValue;
+  LogValueType log_value;
   a.resize(4, 4);
   a_T.resize(4, 4);
   a_inv.resize(4, 4);
@@ -304,8 +304,8 @@ TEST_CASE("DiracMatrix_inverse_complex", "[wavefunction][fermion]")
   auto check_matrix_result = checkMatrix(lu_mat, a_T);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  dm.invert_transpose(a, a_inv, LogValue);
-  CHECK(LogValue == LogComplexApprox(std::complex<double>{5.603777579195571, 0.12452497406076501}));
+  dm.invert_transpose(a, a_inv, log_value);
+  CHECK(log_value == LogComplexApprox(std::complex<double>{5.603777579195571, 0.12452497406076501}));
 
   Matrix<std::complex<double>> b;
   b.resize(4, 4);
@@ -338,7 +338,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   updateEng.resize(3, 1);
 
   Matrix<ValueType> a, a_T, a_inv;
-  LogValueType LogValue;
+  LogValueType log_value;
   a.resize(3, 3);
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
@@ -354,7 +354,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   a(2, 2) = 4.9;
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
-  dm.invert_transpose(a_T, a_inv, LogValue);
+  dm.invert_transpose(a_T, a_inv, log_value);
 
   // new row
   Vector<ValueType> v(3), invRow(3);

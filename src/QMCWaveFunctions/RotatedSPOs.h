@@ -46,7 +46,7 @@ public:
   /// the number of electrons of the majority spin
   size_t nel_major_;
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
   // myG_J is the Gradient of the all other parts of the wavefunction (typically just the Jastrow).

@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +20,7 @@
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
-
+#include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
 {
@@ -60,7 +61,11 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 template<typename T, typename T_FP>
 class MatrixUpdateOMPTarget
 {
+public:
+  using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
+  template<typename DT>
+  using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
@@ -132,14 +137,14 @@ public:
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix
-   * @param LogValue log(det(logdetT))
+   * @param log_value log(det(logdetT))
    */
   template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& log_value)
   {
     auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
+    detEng.invert_transpose(logdetT, Ainv_host_view, log_value);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
@@ -147,7 +152,7 @@ public:
   template<typename TREAL>
   static void mw_invert_transpose(const RefVectorWithLeader<This_t>& engines,
                                   const RefVector<const Matrix<T>>& logdetT_list,
-                                  const RefVector<std::complex<TREAL>>& LogValues)
+                                  const RefVector<std::complex<TREAL>>& log_values)
   {
     auto& engine_leader = engines.getLeader();
     // make this class unit tests friendly without the need of setup resources.
@@ -163,7 +168,7 @@ public:
     {
       auto& Ainv = engines[iw].psiMinv;
       Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
+      engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, log_values[iw].get());
       T* Ainv_ptr = Ainv.data();
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }

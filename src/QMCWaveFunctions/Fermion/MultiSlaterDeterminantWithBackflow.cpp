@@ -21,9 +21,9 @@ namespace qmcplusplus
 MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
                                                                        std::unique_ptr<SPOSetProxyForMSD>&& upspo,
                                                                        std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                                                       BackflowTransformation* BF)
+                                                                       std::shared_ptr<BackflowTransformation> BF)
     : MultiSlaterDeterminant(targetPtcl, std::move(upspo), std::move(dnspo), "MultiSlaterDeterminantWithBackflow"),
-      BFTrans(BF)
+      BFTrans(std::move(BF))
 {
   Optimizable  = false;
   is_fermionic = true;
@@ -31,15 +31,14 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
 
 std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  // mmorales: the proxy classes read from the particle set inside BFTrans
-  BackflowTransformation* tr = BFTrans->makeClone(tqp);
-  auto spo_up_C              = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
-                                                      FirstIndex_up, LastIndex_up);
-  auto spo_dn_C              = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
-                                                      FirstIndex_dn, LastIndex_dn);
+  // mmorales: the proxy classes read from the particle set inside BFTran
+  std::shared_ptr<BackflowTransformation> tr = BFTrans->makeClone(tqp);
+  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
+  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup            = spo_up->occup;
   spo_dn_C->occup            = spo_dn->occup;
-  auto clone = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spo_up_C), std::move(spo_dn_C), tr);
+  auto clone       = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spo_up_C), std::move(spo_dn_C),
+                                                                    std::move(tr));
   clone->C2node_up = C2node_up;
   clone->C2node_dn = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());
@@ -173,7 +172,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::evaluate
                                                                                     ParticleSet::ParticleGradient_t& G,
                                                                                     ParticleSet::ParticleLaplacian_t& L)
 {
-  return LogValue = convertValueToLog(evaluate(P, G, L));
+  return log_value_ = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
@@ -368,7 +367,7 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, boo
       // ratio(P,iat)
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -378,7 +377,7 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, boo
         detValues_up[i] *= detsRatios[i];
         grads_up[i][iat] = grad_temp[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -389,13 +388,13 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, boo
         grads_up[i] = tempgrad[i];
         lapls_up[i] = templapl[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -410,7 +409,7 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, boo
       // ratio(P,iat)
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -420,7 +419,7 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, boo
         detValues_dn[i] *= detsRatios[i];
         grads_dn[i][iat] = grad_temp[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -431,13 +430,13 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, boo
         grads_dn[i] = tempgrad[i];
         lapls_dn[i] = templapl[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -576,7 +575,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::updateBu
   for (int i = 0; i < P.L.size(); i++)
     P.L[i] += myL[i] - dot(myG[i], myG[i]);
   UpdateTimer.stop();
-  return LogValue = convertValueToLog(psi);
+  return log_value_ = convertValueToLog(psi);
   ;
 }
 
@@ -698,7 +697,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     if (usingCSF)
     {
       int n            = P.getTotalNum();
-      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
@@ -760,7 +759,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     else
     {
       int n            = P.getTotalNum();
-      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);

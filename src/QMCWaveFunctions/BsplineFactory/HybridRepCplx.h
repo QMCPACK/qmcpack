@@ -59,7 +59,7 @@ public:
     this->KeyWord   = "Hybrid" + this->KeyWord;
   }
 
-  SPOSet* makeClone() const override { return new HybridRepCplx(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepCplx>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
