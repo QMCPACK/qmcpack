@@ -20,6 +20,7 @@
 
 #include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
 #include "Optimize/NRCOptimization.h"
+#include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
@@ -36,19 +37,6 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC.
  */
-
-class QMCFixedSampleLinearOptimizeBatched;
-
-// Wrapper class for evaluation of Func so QMCFixedSampleLinearOptimizeBatched
-// can avoid inheriting from NRCOptimization
-template<class T>
-class NRCOptimizationFunctionWrapper : public NRCOptimization<QMCTraits::RealType>
-{
-public:
-  T& object;
-  NRCOptimizationFunctionWrapper(T& o) : object(o) {}
-  Return_t Func(Return_t dl) override { return object.costFunc(dl); }
-};
 
 
 class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched
