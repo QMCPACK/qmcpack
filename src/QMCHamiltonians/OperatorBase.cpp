@@ -31,42 +31,23 @@ NonLocalData::NonLocalData(IndexType id, RealType w, const PosType& d) : PID(id)
 
 //PUBLIC
 OperatorBase::OperatorBase()
-    : quantum_domain(quantum_domains::no_quantum_domain),
-      energy_domain(energy_domains::no_energy_domain),
-      myIndex(-1),
-      Dependants(0),
+    : UpdateMode(std::move(std::bitset<8>{}.set(PRIMARY, 1))),
       Value(0.0),
+      myIndex(-1),
       NewValue(0.0),
       tWalker(0),
-      value_sample(nullptr)
-{
 #if !defined(REMOVE_TRACEMANAGER)
-  streaming_scalars    = false;
-  streaming_particles  = false;
-  have_required_traces = false;
+      have_required_traces(false),
+      streaming_particles(false),
 #endif
-  UpdateMode.set(PRIMARY, 1);
-}
-
-bool OperatorBase::is_classical() const noexcept { return quantum_domain == quantum_domains::classical; }
-
-bool OperatorBase::is_quantum() const noexcept { return quantum_domain == quantum_domains::quantum; }
-
-bool OperatorBase::is_classical_classical() const noexcept
-{
-  return quantum_domain == quantum_domains::classical_classical;
-}
-
-bool OperatorBase::is_quantum_classical() const noexcept
-{
-  return quantum_domain == quantum_domains::quantum_classical;
-}
-
-bool OperatorBase::is_quantum_quantum() const noexcept { return quantum_domain == quantum_domains::quantum_quantum; }
-
-bool OperatorBase::isNonLocal() const noexcept { return UpdateMode[NONLOCAL]; }
-
-bool OperatorBase::getMode(int i) const noexcept { return UpdateMode[i]; }
+      quantum_domain(quantum_domains::no_quantum_domain),
+      energy_domain(energy_domains::no_energy_domain)
+#if !defined(REMOVE_TRACEMANAGER)
+      ,
+      streaming_scalars(false),
+      value_sample(nullptr)
+#endif
+{}
 
 OperatorBase::Return_t OperatorBase::getEnsembleAverage() { return 0.0; }
 
@@ -92,34 +73,7 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
 
 void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
 
-#if !defined(REMOVE_TRACEMANAGER)
-void OperatorBase::contribute_trace_quantities()
-{
-  contribute_scalar_quantities();
-  contribute_particle_quantities();
-}
-
-void OperatorBase::collect_scalar_traces() { collect_scalar_quantities(); }
-#endif
-
-void OperatorBase::checkout_trace_quantities(TraceManager& tm)
-{
-  //derived classes must guard individual checkouts using request info
-  checkout_scalar_quantities(tm);
-  checkout_particle_quantities(tm);
-}
-
 void OperatorBase::get_required_traces(TraceManager& tm) {}
-
-void OperatorBase::delete_trace_quantities()
-{
-  delete_scalar_quantities();
-  delete_particle_quantities();
-  streaming_scalars    = false;
-  streaming_particles  = false;
-  have_required_traces = false;
-  request.reset();
-}
 
 void OperatorBase::setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
 
@@ -247,7 +201,99 @@ void OperatorBase::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& O_list) const
 {}
 
+bool OperatorBase::is_classical() const noexcept { return quantum_domain == quantum_domains::classical; }
+
+bool OperatorBase::is_quantum() const noexcept { return quantum_domain == quantum_domains::quantum; }
+
+bool OperatorBase::is_classical_classical() const noexcept
+{
+  return quantum_domain == quantum_domains::classical_classical;
+}
+
+bool OperatorBase::is_quantum_classical() const noexcept
+{
+  return quantum_domain == quantum_domains::quantum_classical;
+}
+
+bool OperatorBase::is_quantum_quantum() const noexcept { return quantum_domain == quantum_domains::quantum_quantum; }
+
+bool OperatorBase::isNonLocal() const noexcept { return UpdateMode[NONLOCAL]; }
+
+bool OperatorBase::getMode(int i) const noexcept { return UpdateMode[i]; }
+
+#if !defined(REMOVE_TRACEMANAGER)
+void OperatorBase::contribute_trace_quantities()
+{
+  contribute_scalar_quantities();
+  contribute_particle_quantities();
+}
+
+void OperatorBase::collect_scalar_traces() { collect_scalar_quantities(); }
+#endif
+
+void OperatorBase::checkout_trace_quantities(TraceManager& tm)
+{
+  //derived classes must guard individual checkouts using request info
+  checkout_scalar_quantities(tm);
+  checkout_particle_quantities(tm);
+}
+
+void OperatorBase::delete_trace_quantities()
+{
+  delete_scalar_quantities();
+  delete_particle_quantities();
+  streaming_scalars    = false;
+  streaming_particles  = false;
+  have_required_traces = false;
+  request.reset();
+}
+
 // PROTECTED
+#if !defined(REMOVE_TRACEMANAGER)
+void OperatorBase::contribute_scalar_quantities() { request.contribute_scalar(myName); }
+
+void OperatorBase::checkout_scalar_quantities(TraceManager& tm)
+{
+  streaming_scalars = request.streaming_scalar(myName);
+  if (streaming_scalars)
+    value_sample = tm.checkout_real<1>(myName);
+}
+
+void OperatorBase::collect_scalar_quantities()
+{
+  if (streaming_scalars)
+    (*value_sample)(0) = Value;
+}
+
+void OperatorBase::delete_scalar_quantities()
+{
+  if (streaming_scalars)
+    delete value_sample;
+}
+
+void OperatorBase::contribute_particle_quantities(){};
+
+void OperatorBase::checkout_particle_quantities(TraceManager& /*tm*/){};
+
+void OperatorBase::delete_particle_quantities(){};
+
+#endif
+
+void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+{
+  APP_ABORT("Need specialization for " + myName +
+            "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
+}
+
+void OperatorBase::addEnergy(MCWalkerConfiguration& W,
+                             std::vector<RealType>& LocalEnergy,
+                             std::vector<std::vector<NonLocalData>>& /*Txy*/)
+{
+  addEnergy(W, LocalEnergy);
+}
+
+void OperatorBase::setComputeForces(bool compute) {}
+
 void OperatorBase::set_energy_domain(energy_domains edomain)
 {
   if (energy_domain_valid(edomain))
@@ -306,8 +352,9 @@ void OperatorBase::addValue(PropertySetType& plist)
     myIndex = plist.add(myName.c_str());
 }
 
+
 // PRIVATE
-bool OperatorBase::energy_domain_valid(energy_domains edomain) const noexcept
+bool OperatorBase::energy_domain_valid(const energy_domains edomain) const noexcept
 {
   return edomain != energy_domains::no_energy_domain;
 }
@@ -321,10 +368,5 @@ bool OperatorBase::quantum_domain_valid(const quantum_domains qdomain) const noe
 
 bool OperatorBase::quantum_domain_valid() const noexcept { return quantum_domain_valid(quantum_domain); }
 
-void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  APP_ABORT("Need specialization for " + myName +
-            "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
-}
 
 } // namespace qmcplusplus
