@@ -14,7 +14,6 @@ enum class QMCRunType
   OPTIMIZE, /*!< Optimization */
   VMC_OPT,  /*!< Optimization with vmc blocks */
   LINEAR_OPTIMIZE,
-  CS_LINEAR_OPTIMIZE,
   WF_TEST,
   VMC_BATCH,
   DMC_BATCH,

@@ -14,7 +14,7 @@
 #include <memory>
 #include <iostream>
 #include <vector>
-#include "CUDA/cudaError.h"
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/CUDAfill.hpp"
 #include "CUDA/CUDAallocator.hpp"
