@@ -43,8 +43,6 @@ namespace qmcplusplus
 {
 using MatrixOperators::product;
 
-OptimizationFunction::Return_t OptimizationFunction::Func(Return_t dl) { return object.costFunc(dl); }
-
 
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                                                          MCWalkerConfiguration& w,

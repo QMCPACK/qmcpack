@@ -41,12 +41,13 @@ class QMCFixedSampleLinearOptimizeBatched;
 
 // Wrapper class for evaluation of Func so QMCFixedSampleLinearOptimizeBatched
 // can avoid inheriting from NRCOptimization
-class OptimizationFunction : public NRCOptimization<QMCTraits::RealType>
+template<class T>
+class NRCOptimizationFunctionWrapper : public NRCOptimization<QMCTraits::RealType>
 {
 public:
-  QMCFixedSampleLinearOptimizeBatched& object;
-  OptimizationFunction(QMCFixedSampleLinearOptimizeBatched& o) : object(o) {}
-  Return_t Func(Return_t dl) override;
+  T& object;
+  NRCOptimizationFunctionWrapper(T& o) : object(o) {}
+  Return_t Func(Return_t dl) override { return object.costFunc(dl); }
 };
 
 
@@ -75,7 +76,7 @@ public:
   RealType costFunc(RealType dl);
 
 private:
-  OptimizationFunction opt_;
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> opt_;
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
