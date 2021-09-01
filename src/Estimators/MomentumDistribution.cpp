@@ -252,6 +252,17 @@ void MomentumDistribution::collect(const RefVector<OperatorEstBase>& type_erased
 
 void MomentumDistribution::registerOperatorEstimator(hid_t gid)
 {
+  //descriptor for the data, 1-D data
+  std::vector<int> ng(1);
+  //add nofk
+  ng[0] = nofK.size();
+  h5desc_.emplace_back(std::make_unique<ObservableHelper>("nofk"));
+  auto& h5o = h5desc_.back();
+  //h5o.set_dimensions(ng, myIndex);
+  h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
+  h5o->open(gid);
+  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
+  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");    
 }
 
 
