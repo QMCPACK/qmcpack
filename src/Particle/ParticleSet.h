@@ -389,7 +389,9 @@ public:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMove(Index_t iat);
-  /// batched version of acceptMove and rejectMove fused
+  /** batched version of acceptMove and rejectMove fused
+   *  static to enforce no access to members through `this`
+   */
   static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                    Index_t iat,
                                    const std::vector<bool>& isAccepted,

@@ -299,6 +299,8 @@ public:
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::gemv failed.");
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
@@ -308,6 +310,8 @@ public:
       }
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
                              1, Ainv_ptr, lda);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::ger failed.");
     }
   }
 
@@ -384,6 +388,9 @@ public:
       // invoke the Fahy's variant of Sherman-Morrison update.
       success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
                                       czero_ptr, temp_mw_ptr, 1, n_accepted);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::gemv_batched failed.");
+
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
                      rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
       for (int iw = 0; iw < n_accepted; iw++)
@@ -412,6 +419,8 @@ public:
 
       success = ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
                                      Ainv_mw_ptr, lda, n_accepted);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::ger failed.");
     }
   }
 

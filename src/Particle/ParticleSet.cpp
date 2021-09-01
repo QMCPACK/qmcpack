@@ -782,13 +782,12 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
       assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
     }
   }
-  else
+  else // !forward_mode
   {
     // loop over single walker acceptMove/rejectMove doesn't work safely.
     // need to code carefully for both coordinate and distance table updates
     // disable non-forward mode cases
-    if (!forward_mode)
-      throw std::runtime_error("BUG calling mw_accept_rejectMove in non-forward mode");
+    throw std::runtime_error("BUG calling mw_accept_rejectMove in non-forward mode");
   }
 }
 

@@ -36,7 +36,9 @@ struct VectorSoaContainer
 {
   using AoSElement_t = TinyVector<T, D>;
   using Element_t    = T;
-
+#ifndef NDEBUG
+  static constexpr auto dim = D;  //Easier to see in debugger
+#endif  
   ///default constructor
   VectorSoaContainer() : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) {}
 

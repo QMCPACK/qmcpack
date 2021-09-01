@@ -128,7 +128,10 @@ void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveF
                                                  bool safe_to_delay) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
+  // This would be the third level of concurrency between the crowd threads and OMP tasking, pointless and difficult
+  // to reason about. Each parallel scope should be considered carefully we need to leave behind throwing
+  // one of these on any loop.  At the very least you should need to write a threaded microbenchmark showing that
+  // at least in that context it is useful.
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (isAccepted[iw])
       wfc_list[iw].acceptMove(p_list[iw], iat, safe_to_delay);

@@ -32,14 +32,14 @@ namespace qmcplusplus
 
 namespace testing
 {
-  class DiracDeterminantBatchedTest;
+class DiracDeterminantBatchedTest;
 }
 
 template<typename T>
 struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
 {
-  using UnPinnedDualVector       = Vector<T, UnpinnedDualAllocator<T>>;
-  using DualMatrix = Matrix<T, PinnedDualAllocator<T>>;
+  using UnPinnedDualVector = Vector<T, UnpinnedDualAllocator<T>>;
+  using DualMatrix         = Matrix<T, PinnedDualAllocator<T>>;
 
   // constant array value T(1)
   UnPinnedDualVector cone_vec;
@@ -85,18 +85,19 @@ template<typename T, typename T_FP>
 class MatrixDelayedUpdateCUDA
 {
 public:
-  using WFT = WaveFunctionTypes<T, T_FP>;
-  using Value = T;
+  using WFT           = WaveFunctionTypes<T, T_FP>;
+  using Value         = T;
   using FullPrecValue = T_FP;
-  using LogValue = typename WFT::LogValue;
-  using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
+  using LogValue      = typename WFT::LogValue;
+  using This_t        = MatrixDelayedUpdateCUDA<T, T_FP>;
   // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
-  using UnpinnedDualVector       = Vector<DT, UnpinnedDualAllocator<DT>>;
+  using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
   template<typename DT>
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+
 private:
   /// legacy single walker matrix inversion engine
   DiracMatrix<T_FP> detEng;
@@ -137,7 +138,7 @@ private:
 
   // psi(r')/psi(r) during a PbyP move
   FullPrecValue cur_ratio_;
-  
+
   /** @ingroup Resources
    *  @{ */
   // CUDA stream, cublas handle object
@@ -163,8 +164,10 @@ private:
   }
 
   // check if the number of maximal delay is 1 (SM-1)
+  // \todo rename this something containing delay.
   inline bool isSM1() const { return Binv_gpu.rows() == 1; }
 
+  /** a bad smell */
   void resize_fill_constant_arrays(size_t nw)
   {
     if (mw_mem_->cone_vec.size() < nw)
@@ -188,6 +191,7 @@ private:
   }
 
   /** compute the row of up-to-date Ainv
+   *  What the hell is this?
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
    */
@@ -254,6 +258,22 @@ private:
     engine_leader.inv_row_id() = rowchanged;
   }
 
+  /** Do complete row updates
+   *  many of these const arguments provide pointers or references
+   *  somwhere in here is an update that doesn't get where it belongs resulting in a 0
+   *  gradient later.
+   *  Sad example of OpenMP target code that is far from clear and a poor substitute for a
+   *  clear CPU reference implementation.
+   *
+   *  \param[in] engines
+   *  \param[in] rowchanged
+   *  \param[in] psiM_g_list        device ptrs
+   *  \param[in] psiM_l_list        device ptrs
+   *  \param[in] isAccepted         bool but wait some lists are also filtered
+   *  \param[in] phi_vgl_v_dev_ptr  device ptr
+   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[inout] ratios
+   */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
                            const int rowchanged,
                            const std::vector<T*>& psiM_g_list,
@@ -266,9 +286,17 @@ private:
     auto& engine_leader = engines.getLeader();
     engine_leader.guard_no_delay();
 
+    // I think this should be the number of true's in isAccepted
+    // But actually everything except phi_vgl_v needs to be filtered to this size.
+    // I think it would be much simpler to not filter and just have everything be size of isAccepted.
     const size_t n_accepted = psiM_g_list.size();
+#ifndef NDEBUG
+    size_t n_true = std::count_if(isAccepted.begin(), isAccepted.end(), [](bool accepted) { return accepted; });
+    assert(n_accepted == n_true);
+#endif
     if (n_accepted == 0)
       return;
+    engine_leader.resize_fill_constant_arrays(n_accepted);
 
     auto& hstream              = engine_leader.cuda_handles_->hstream;
     auto& updateRow_buffer_H2D = engine_leader.mw_mem_->updateRow_buffer_H2D;
@@ -280,7 +308,7 @@ private:
     const int lda              = engine_leader.psiMinv_.cols();
     mw_temp.resize(norb * n_accepted);
     mw_rcopy.resize(norb * n_accepted);
-    updateRow_buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * n_accepted);
+    updateRow_buffer_H2D.resize((sizeof(T*) * 8 * n_accepted + sizeof(T)) * n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
     Matrix<T*> ptr_buffer(reinterpret_cast<T**>(updateRow_buffer_H2D.data()), 8, n_accepted);
@@ -296,14 +324,11 @@ private:
         ptr_buffer[5][count] = psiM_l_list[count];
         ptr_buffer[6][count] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
         ptr_buffer[7][count] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
-
-        c_ratio_inv[count] = T(-1) / ratios[iw];
+        c_ratio_inv[count]   = T(-1) / ratios[iw];
         count++;
       }
 
     // update the inverse matrix
-    engine_leader.resize_fill_constant_arrays(n_accepted);
-
     cudaErrorCheck(cudaMemcpyAsync(updateRow_buffer_H2D.device_data(), updateRow_buffer_H2D.data(),
                                    updateRow_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync updateRow_buffer_H2D failed!");
@@ -399,12 +424,12 @@ public:
   inline DualMatrix<FullPrecValue>& psiMinv() { return psiMinv_; }
   const int get_inv_row_id() const { return inv_row_id_; }
   int& inv_row_id() { return inv_row_id_; }
-  
+
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
 
-  QMCTraits::FullPrecRealType& cur_ratio() {return cur_ratio_; }
+  QMCTraits::FullPrecRealType& cur_ratio() { return cur_ratio_; }
   const QMCTraits::FullPrecRealType get_cur_ratio() const { return cur_ratio_; }
-  
+
   /** make this class unit tests friendly without the need of setup resources.
    *  belongs in a friend class in test
    */
@@ -424,13 +449,13 @@ public:
   }
 
 
-inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
-{
-  guard_no_delay(); 
-  detEng.invert_transpose(log_det, a_inv, log_value);
-}
+  inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
+  {
+    guard_no_delay();
+    detEng.invert_transpose(log_det, a_inv, log_value);
+  }
 
-  
+
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    *
    *  This does not get called constantly so to get real benchmark data that redirection to mw
@@ -439,9 +464,9 @@ inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv,
    * @param logdetT orbital value matrix
    * @param log_value log(det(logdetT))
    */
-inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_inv, DualVector<LogValue>& log_values)
+  inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_inv, DualVector<LogValue>& log_values)
   {
-    guard_no_delay(); 
+    guard_no_delay();
     det_inverter_->invert_transpose(*cuda_handles_, log_det, a_inv, log_values);
     T* a_inv_ptr = a_inv.data();
     // This is likely better optional
@@ -595,7 +620,7 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     // // invoke the Fahy's variant of Sherman-Morrison update.
     // cudaErrorCheck(cudaMemcpyAsync(phiV.device_data(), phiV.data(), sizeof(T) * phiV.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream), "cuda copy failed in MatrixDelayedUpdateCUDA::updateRow");
 
-    // cublasErrorCheck(cuBLAS::gemv(cuda_handles_->h_cublas, CUBLAS_OP_T, norb, norb, &cone, psiMinv_.device_data(), lda, phiV.device_data(), 1, &czero, temp.device_data(), 1), "cuBLAS::gemv failed in MatrixDelayedUpdateCUDA::updateRow"); 
+    // cublasErrorCheck(cuBLAS::gemv(cuda_handles_->h_cublas, CUBLAS_OP_T, norb, norb, &cone, psiMinv_.device_data(), lda, phiV.device_data(), 1, &czero, temp.device_data(), 1), "cuBLAS::gemv failed in MatrixDelayedUpdateCUDA::updateRow");
     // cublasErrorCheck(cuBLAS::copy(cuda_handles_->h_cublas, norb, Ainv.device_data() + rowchanged * lda, 1, rcopy.device_data(), 1), "cuBLAS::copy failed in MatrixDelayedUpdateCUDA::updateRow");
     // T alpha = static_cast<T>(RATIOT(-1) / c_ratio_in);
     // cublasErrorCheck(cuBLAS::ger(cuda_handles_->h_cublas, norb, norb, &alpha, rcopy.device_data(), 1, temp.device_data(), 1, psiMinv_.device_data(), lda), "cuBLAS::ger failed in MatrixDelayedUpdateCUDA::updateRow");
@@ -603,6 +628,18 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
     // cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
   }
 
+  /** Accept or Reject row updates
+   *  many of these const arguments provide pointers or references
+   *  to objects that do get modified.
+   *  \param[in] engines
+   *  \param[in] rowchanged
+   *  \param[in] psiM_g_list
+   *  \param[in] psiM_l_list
+   *  \param[in] isAccepted
+   *  \param[in] phi_vgl_v_dev_ptr
+   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[inout] ratios
+   */
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
                                   const int rowchanged,
                                   const std::vector<T*>& psiM_g_list,
@@ -797,6 +834,11 @@ inline void invert_transpose(DualMatrix<Value>& log_det, DualMatrix<Value>& a_in
       cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
                                             U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, &cone, Ainv_mw_ptr, lda, nw),
                        "cuBLAS::gemm_batched failed!");
+    }
+
+    for(This_t& engine : engines)
+    {
+      cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv_.data(), engine.psiMinv_.device_data(),  engine.psiMinv_.size(), cudaMemcpyDeviceToHost, hstream), "Failed to updated copy psiMinv back to host in mw_updateInvMat.");
     }
     delay_count = 0;
   }

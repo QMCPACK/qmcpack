@@ -370,7 +370,10 @@ public:
   void rejectMove(int iat);
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
-  /* batched version of acceptMove */
+
+  /** batched and fused acceptMove & rejectMove
+   *
+   */
   static void mw_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                    int iat,

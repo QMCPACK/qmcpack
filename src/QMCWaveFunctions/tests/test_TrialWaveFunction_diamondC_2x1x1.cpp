@@ -362,9 +362,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
               << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
               << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
   }
-  //Temporary as switch to std::reference_wrapper proceeds
-  // testing batched interfaces
-  // End up with zero gradiant here.
+
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
   std::cout << "flex_calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
@@ -390,7 +388,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   std::vector<bool> isAccepted(2, true);
-  TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
+  TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, false);
   std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[0].getLogPsi()
             << " " << wf_ref_list[0].getPhase() << std::endl;
   std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[1].getLogPsi()
@@ -410,6 +408,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, true);
 
   const int moved_elec_id_next = 1;
+
+  // end up with zero gradient here
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
   std::cout << "evalGrad next electron " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " "
             << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;

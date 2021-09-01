@@ -316,6 +316,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGrad(const RefVectorWithLeader<
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    // capacity is the size of each vector in the VGL so this advances us to the g then makes
+    // an offset into the gradients
     dpsiM_row_list[iw] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
     engine_list.push_back(det.det_engine_);
   }

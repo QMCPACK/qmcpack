@@ -753,8 +753,12 @@ void TrialWaveFunction::mw_accept_rejectMove(const RefVectorWithLeader<TrialWave
       wf_list[iw].log_real_   = 0;
       wf_list[iw].PhaseValue = 0;
     }
-
-  PRAGMA_OMP_TASKLOOP("omp taskloop default(shared) if (wf_leader.use_tasking_)")
+  //  PRAGMA_OMP_TASKLOOP("omp taskloop default(shared) if (wf_leader.use_tasking_)")
+  // Tasking here should be pointless i.e. use your threads for crowds and this should already be
+  // in a crowd section. The tasking causes the omp task frame to constantly
+  // interrupt debugging even when tasking is off. Is there a way to hide this in
+  // and #ifdef NDEBUG? Or better yet remove it until it can be proven that it helps?
+  // The wfc work loads are considerably different as well.
   for (int i = 0; i < num_wfc; i++)
   {
     ScopedTimer z_timer(wf_leader.WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);
