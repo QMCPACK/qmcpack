@@ -34,6 +34,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
@@ -266,6 +267,7 @@ bool QMCMain::execute()
       xmlFreeNode(qmcactionPair.first);
 
   m_qmcaction.clear();
+  CloneManager::clearClones();
   t2->stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
   if (is_manager())
