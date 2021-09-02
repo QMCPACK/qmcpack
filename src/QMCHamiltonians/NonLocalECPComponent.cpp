@@ -744,19 +744,20 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   
   for (int j = 0; j < nknot; j++)
   {
-   // ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
+    ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
     W.makeMove(iel, deltaV[j], false);
     iongrad_phi=0.0;
-  //  spo->evaluateGradSourceRow(W,iel,ions,iat_src,iongrad_phimat[j]);
-    spo->evaluateGradSourceRow(W,iel,ions,iat_src,iongrad_phi);
+    {
+      ScopedTimer evalgsourcetimer(*timer_manager.createTimer("NLPP::dB::evalGradSourceRow"));
+      spo->evaluateGradSourceRow(W,iel,ions,iat_src,iongrad_phi);
+    }
     for(int iorb=0; iorb<norbs; iorb++)
     {
       iongrad_phimat[j][iorb]=iongrad_phi[iorb];
     }
     if(iat==iat_src )
     {
-   //   ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
-     // spo->evaluateVGL(W,iel,phimat[j],gradphi[j],laplphi[j]);
+      ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
       spo->evaluateVGL(W,iel,phi,gradphi,laplphi);
       for(int iorb=0; iorb<norbs; iorb++)
       {
@@ -768,19 +769,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     W.rejectMove(iel);
   }
   
-//  for (int j=0; j<nknot; j++)
-//  {
-//    for(int iorb=0; iorb<norbs; iorb++)
-//    {
-      //this is for diagonal case.
-//      ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::udot_and_wfgradrow"));
-//      udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb],rrotsgrid_m[j]);
-//      wfgradmat[j][iorb] = gradphimat[j][iorb]-dr*(udotgradpsimat[j][iorb]*rinv);
-//    } 
-//  }
   for (int j=0; j<nknot; j++)
   {
-  //  ScopedTimer prefactortimer(*timer_manager.createTimer("NLPP::dB::prefactors"));
+    ScopedTimer prefactortimer(*timer_manager.createTimer("NLPP::dB::prefactors"));
     
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
@@ -798,7 +789,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
     for (int l = 0; l < lmax; l++)
     {
-//      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
+      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
       //Legendre polynomial recursion formula.
       lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
       lpol[l + 1] *= Lfactor2[l];
@@ -813,7 +804,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
     for (int l = 0; l < nchannel; l++)
     {
-   //   ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
+      ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
      
