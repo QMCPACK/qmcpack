@@ -856,11 +856,8 @@ endif()
 # All the settings related to building QMCPACK are complete
 ######################################################################
 
-# set up config.h
-configure_file(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in ${qmcpack_BINARY_DIR}/src/config.h)
 #include build/src
 include_directories(${qmcpack_BINARY_DIR}/src)
-
 #include qmcpack/src
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
@@ -911,6 +908,9 @@ find_package(Git)
 if(GIT_FOUND AND EXISTS "${qmcpack_SOURCE_DIR}/.git")
   set(IS_GIT_PROJECT 1)
 endif()
+
+# set up config.h
+configure_file(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in ${qmcpack_BINARY_DIR}/src/config.h)
 
 ######################################################################
 # Testing related settings
