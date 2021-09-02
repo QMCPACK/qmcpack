@@ -25,36 +25,6 @@
 
 namespace qmcplusplus
 {
-template<typename T>
-struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
-{
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
-
-  // constant array value T(1)
-  OffloadValueVector_t cone_vec;
-  // constant array value T(0)
-  OffloadValueVector_t czero_vec;
-  // multi walker of grads for transfer needs.
-  OffloadPinnedValueMatrix_t grads_value_v;
-  // pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> buffer_H2D;
-  /// scratch space for rank-1 update
-  OffloadValueVector_t mw_temp;
-  // scratch space for keeping one row of Ainv
-  OffloadValueVector_t mw_rcopy;
-
-  
-  MatrixUpdateOMPTargetMultiWalkerMem() : Resource("MatrixUpdateOMPTargetMultiWalkerMem") {}
-
-  MatrixUpdateOMPTargetMultiWalkerMem(const MatrixUpdateOMPTargetMultiWalkerMem&)
-      : MatrixUpdateOMPTargetMultiWalkerMem()
-  {}
-
-  Resource* makeClone() const override { return new MatrixUpdateOMPTargetMultiWalkerMem(*this); }
-};
-
 /** Implements dirac matrix update using OpenMP offload.
  * It is used as DET_ENGINE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
@@ -64,33 +34,70 @@ template<typename T, typename T_FP>
 class MatrixUpdateOMPTarget
 {
 public:
-  using WFT = WaveFunctionTypes<T, T_FP>;
-  using This_t = MatrixUpdateOMPTarget<T, T_FP>;
+  using WFT           = WaveFunctionTypes<T, T_FP>;
+  using Value         = typename WFT::Value;
+  using FullPrecValue = typename WFT::FullPrecValue;
+  using LogValue      = typename WFT::LogValue;
+  using This_t        = MatrixUpdateOMPTarget<T, T_FP>;
+
+  // There is no expectation that this OMP only code can possibly work with anything but OMPallocator based
+  // Allocators.  So this file should never include DualAllocatorAliases.hpp this violation of YAGNI isn't.
+  // I do this for symmetry with MatrixDelayedUpdateCUDA only.
+  template<typename DT>
+  using UnpinnedDualAllocator = OffloadAllocator<DT>;
   template<typename DT>
   using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
+  template<typename DT>
+  using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+
+  struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
+  {
+    // constant array value T(1)
+    UnpinnedDualVector<Value> cone_vec;
+    // constant array value T(0)
+    UnpinnedDualVector<Value> czero_vec;
+    // multi walker of grads for transfer needs.
+    DualMatrix<Value> grads_value_v;
+    // pointer buffer
+    Vector<char, PinnedAllocator<char>> buffer_H2D;
+    /// scratch space for rank-1 update
+    UnpinnedDualVector<Value> mw_temp;
+    // scratch space for keeping one row of Ainv
+    UnpinnedDualVector<Value> mw_rcopy;
+
+
+    MatrixUpdateOMPTargetMultiWalkerMem() : Resource("MatrixUpdateOMPTargetMultiWalkerMem") {}
+
+    MatrixUpdateOMPTargetMultiWalkerMem(const MatrixUpdateOMPTargetMultiWalkerMem&)
+        : MatrixUpdateOMPTargetMultiWalkerMem()
+    {}
+
+    Resource* makeClone() const override { return new MatrixUpdateOMPTargetMultiWalkerMem(*this); }
+  };
 
   /// matrix inversion engine
   DiracMatrix<T_FP> detEng;
 
   int inv_row_id_;
-  
+
   /// matrix inversion engine this crowd scope resouce and only the leader engine gets it
-  UPtr<DiracMatrixCompute> det_inverter_;
+  UPtr<DiracMatrixComputeOMPTarget<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  OffloadPinnedValueMatrix_t psiMinv_;
+  DualMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
-  OffloadValueVector_t temp;
+  UnpinnedDualVector<Value> temp;
   // scratch space for keeping one row of Ainv
-  OffloadValueVector_t rcopy;
+  UnpinnedDualVector<Value> rcopy;
   // psi(r')/psi(r) during a PbyP move
-  T_FP cur_ratio_;
+  FullPrecValue cur_ratio_;
 
   // multi walker memory buffers
-  std::unique_ptr<MatrixUpdateOMPTargetMultiWalkerMem<T>> mw_mem_;
+  std::unique_ptr<MatrixUpdateOMPTargetMultiWalkerMem> mw_mem_;
 
   void resize_fill_constant_arrays(size_t nw)
   {
@@ -125,17 +132,17 @@ public:
    * Wow does this seem wrong. After this psiMinv can report nothing useful about its actual dimensions.
    * I feel like a good matrix class would handle this.
    */
-  inline void resize(int norb, int delay) {psiMinv_.resize(norb, getAlignedSize<T>(norb)); }
+  inline void resize(int norb, int delay) { psiMinv_.resize(norb, getAlignedSize<T>(norb)); }
 
   void createResource(ResourceCollection& collection) const
   {
-    collection.addResource(std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem<T>>());
+    collection.addResource(std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem>());
     collection.addResource(std::make_unique<DiracMatrixComputeOMPTarget<T_FP>>());
   }
 
   void acquireResource(ResourceCollection& collection)
   {
-    auto res_ptr = dynamic_cast<MatrixUpdateOMPTargetMultiWalkerMem<T>*>(collection.lendResource().release());
+    auto res_ptr = dynamic_cast<MatrixUpdateOMPTargetMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error(
           "MatrixUpdateOMPTarget::acquireResource dynamic_cast MatrixUpdateOMPTargetMultiWalkerMem failed");
@@ -153,8 +160,8 @@ public:
     collection.takebackResource(std::move(det_inverter_));
   }
 
-  const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv_; }
-  OffloadPinnedValueMatrix_t& psiMinv() { return psiMinv_; }
+  const DualMatrix<Value>& get_psiMinv() const { return psiMinv_; }
+  DualMatrix<Value>& psiMinv() { return psiMinv_; }
   const int get_inv_row_id() const { return inv_row_id_; }
   int& inv_row_id() { return inv_row_id_; }
 
@@ -166,14 +173,16 @@ public:
     detEng.invert_transpose(log_det, a_inv, log_value);
   }
 
-  
+
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix (this has trustworth dimensions)
    * @param LogValue log(det(logdetT))
    *
    * note psiMinv has had its dimensions messed with.  rows have been padded to alignment adding colums.
    */
-  inline void invert_transpose(const OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& a_inv, OffloadPinnedLogValueVector_t& log_values)
+  inline void invert_transpose(const DualMatrix<Value>& logdetT,
+                               DualMatrix<Value>& a_inv,
+                               DualVector<LogValue>& log_values)
   {
     DummyResource dummy_resource;
     det_inverter_->invert_transpose(dummy_resource, logdetT, a_inv, log_values);
@@ -185,14 +194,14 @@ public:
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                 OffloadPinnedLogValueVector_t& log_values,
+                                 RefVector<DualMatrix<Value>>& logdetT_list,
+                                 DualVector<LogValue>& log_values,
                                  const std::vector<bool>& compute_mask)
   {
     auto& engine_leader = engines.getLeader();
     auto& det_inverter  = engine_leader.get_det_inverter();
 
-    RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
+    RefVector<DualMatrix<Value>> a_inv_refs;
     a_inv_refs.reserve(engines.size());
 
     for (int iw = 0; iw < engines.size(); iw++)
@@ -202,19 +211,19 @@ public:
       PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
-    det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_),logdetT_list, a_inv_refs, log_values, compute_mask);
+    det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_), logdetT_list, a_inv_refs, log_values, compute_mask);
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                 RefVector<OffloadPinnedValueMatrix_t>& a_inv_list,
-                                 OffloadPinnedLogValueVector_t& log_values,
+                                 RefVector<DualMatrix<Value>>& logdetT_list,
+                                 RefVector<DualMatrix<Value>>& a_inv_list,
+                                 DualVector<LogValue>& log_values,
                                  const std::vector<bool>& compute_mask)
   {
     auto& engine_leader = engines.getLeader();
     auto& det_inverter  = engine_leader.get_det_inverter();
 
-    det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_),logdetT_list, a_inv_list, log_values, compute_mask);
+    det_inverter.mw_invertTranspose(*(engine_leader.mw_mem_), logdetT_list, a_inv_list, log_values, compute_mask);
   }
 
   template<typename GT>
@@ -468,7 +477,6 @@ public:
 
   const QMCTraits::FullPrecRealType get_cur_ratio() const { return cur_ratio_; }
   QMCTraits::FullPrecRealType& cur_ratio() { return cur_ratio_; }
-
 };
 
 extern template class MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;

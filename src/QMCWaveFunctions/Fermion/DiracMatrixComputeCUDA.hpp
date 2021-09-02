@@ -19,7 +19,7 @@
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 #include "ResourceCollection.h"
@@ -39,26 +39,26 @@ namespace qmcplusplus
 template<typename VALUE_FP>
 class DiracMatrixComputeCUDA : public Resource
 {
-  using FullPrecReal = QMCTraits::FullPrecRealType;
+  using FullPrecReal = RealAlias<VALUE_FP>;
 
   template<typename T>
-  using OffloadPinnedMatrix = Matrix<T, PinnedDualAllocator<T>>;
+  using DualMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
   template<typename T>
-  using OffloadPinnedVector = Vector<T, PinnedDualAllocator<T>>;
+  using DualVector = Vector<T, PinnedDualAllocator<T>>;
 
   cudaStream_t hstream_;
 
   // Contiguous memory for fp precision Matrices for each walker, n^2 * nw elements
-  OffloadPinnedVector<VALUE_FP> psiM_fp_;
-  OffloadPinnedVector<VALUE_FP> invM_fp_;
+  DualVector<VALUE_FP> psiM_fp_;
+  DualVector<VALUE_FP> invM_fp_;
 
   // working vectors
-  OffloadPinnedVector<VALUE_FP> LU_diags_fp_;
-  OffloadPinnedVector<int> pivots_;
-  OffloadPinnedVector<int> infos_;
+  DualVector<VALUE_FP> LU_diags_fp_;
+  DualVector<int> pivots_;
+  DualVector<int> infos_;
 
-  //OffloadPinnedMatrix<T_FP> temp_mat_;
+  //DualMatrix<T_FP> temp_mat_;
 
   // For device pointers to matrices
   Vector<char, OffloadPinnedAllocator<char>> psiM_ptrs_;
@@ -80,13 +80,13 @@ class DiracMatrixComputeCUDA : public Resource
    *  This is the prefered interface for calling computeInvertAndLog when the VALUE_FP and TMAT are equal.
    *  On Volta so far little seems to be achieved by having the mats continuous.
    */
-  template<typename TMAT, typename TREAL>
+  template<typename TMAT>
   inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
-                                     RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-                                     RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
+                                     RefVector<DualMatrix<TMAT>>& a_mats,
+                                     RefVector<DualMatrix<TMAT>>& inv_a_mats,
                                      const int n,
                                      const int lda,
-                                     OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                                     DualVector<std::complex<FullPrecReal>>& log_values)
   {
     // This is probably dodgy
     int nw = a_mats.size();
@@ -138,7 +138,7 @@ class DiracMatrixComputeCUDA : public Resource
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::inv_psiM to host");
     }
     cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),
-                                   log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyDeviceToHost, hstream),
+                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
   }
@@ -156,11 +156,11 @@ class DiracMatrixComputeCUDA : public Resource
    *
    */
   inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
-                                     OffloadPinnedVector<VALUE_FP>& psi_Ms,
-                                     OffloadPinnedVector<VALUE_FP>& inv_Ms,
+                                     DualVector<VALUE_FP>& psi_Ms,
+                                     DualVector<VALUE_FP>& inv_Ms,
                                      const int n,
                                      const int lda,
-                                     OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
+                                     DualVector<std::complex<FullPrecReal>>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
@@ -232,9 +232,9 @@ public:
    */
   template<typename TMAT>
   void invert_transpose(Resource& resource,
-                        OffloadPinnedMatrix<TMAT>& a_mat,
-                        OffloadPinnedMatrix<TMAT>& inv_a_mat,
-                        OffloadPinnedVector<std::complex<FullPrecReal>>& log_values)
+                        DualMatrix<TMAT>& a_mat,
+                        DualMatrix<TMAT>& inv_a_mat,
+                        DualVector<std::complex<FullPrecReal>>& log_values)
   {
     auto& cuda_handles = dynamic_cast<CUDALinearAlgebraHandles&>(resource);
     const int n   = a_mat.rows();
@@ -252,7 +252,7 @@ public:
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
-    OffloadPinnedMatrix<VALUE_FP> data_ref_matrix;
+    DualMatrix<VALUE_FP> data_ref_matrix;
 
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
 
@@ -271,9 +271,9 @@ public:
   template<typename TMAT>
   inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       Resource& resource,
-      RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-      RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-      OffloadPinnedVector<std::complex<FullPrecReal>>& log_values,
+      RefVector<DualMatrix<TMAT>>& a_mats,
+      RefVector<DualMatrix<TMAT>>& inv_a_mats,
+      DualVector<std::complex<FullPrecReal>>& log_values,
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
@@ -295,7 +295,7 @@ public:
     mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
-      OffloadPinnedMatrix<VALUE_FP> data_ref_matrix;
+      DualMatrix<VALUE_FP> data_ref_matrix;
       data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, lda);
       // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
       // smaller of the two's dimensions
@@ -315,9 +315,9 @@ public:
   template<typename TMAT>
   inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       Resource& resource,
-      RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-      RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-      OffloadPinnedVector<std::complex<FullPrecReal>>& log_values,
+      RefVector<DualMatrix<TMAT>>& a_mats,
+      RefVector<DualMatrix<TMAT>>& inv_a_mats,
+      DualVector<std::complex<FullPrecReal>>& log_values,
       const std::vector<bool>& compute_mask)
   {
     //assert(log_values.size() == a_mats.size());

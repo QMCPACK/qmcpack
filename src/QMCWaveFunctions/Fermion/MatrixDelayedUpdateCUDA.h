@@ -35,44 +35,6 @@ namespace testing
 class DiracDeterminantBatchedTest;
 }
 
-template<typename T>
-struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
-{
-  using UnPinnedDualVector = Vector<T, UnpinnedDualAllocator<T>>;
-  using DualMatrix         = Matrix<T, PinnedDualAllocator<T>>;
-
-  // constant array value T(1)
-  UnPinnedDualVector cone_vec;
-  // constant array value T(-1)
-  UnPinnedDualVector cminusone_vec;
-  // constant array value T(0)
-  UnPinnedDualVector czero_vec;
-  // multi walker of grads for transfer needs.
-  DualMatrix grads_value_v;
-  // mw_updateRow pointer buffer
-  Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
-  // mw_prepareInvRow pointer buffer
-  Vector<char, PinnedDualAllocator<char>> prepare_inv_row_buffer_H2D;
-  // mw_accept_rejectRow pointer buffer
-  Vector<char, PinnedDualAllocator<char>> accept_rejectRow_buffer_H2D;
-  // mw_updateInv pointer buffer
-  Vector<char, PinnedDualAllocator<char>> updateInv_buffer_H2D;
-  // mw_evalGrad pointer buffer
-  Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
-  /// scratch space for rank-1 update
-  UnPinnedDualVector mw_temp;
-  // scratch space for keeping one row of Ainv
-  UnPinnedDualVector mw_rcopy;
-
-  MatrixDelayedUpdateCUDAMultiWalkerMem() : Resource("MatrixDelayedUpdateCUDAMultiWalkerMem") {}
-
-  MatrixDelayedUpdateCUDAMultiWalkerMem(const MatrixDelayedUpdateCUDAMultiWalkerMem&)
-      : MatrixDelayedUpdateCUDAMultiWalkerMem()
-  {}
-
-  Resource* makeClone() const override { return new MatrixDelayedUpdateCUDAMultiWalkerMem(*this); }
-};
-
 /** Implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE in DiracDeterminantBatched.
  * This is a 1 per walker class unlike DiracDeterminantBatched and
@@ -86,10 +48,17 @@ class MatrixDelayedUpdateCUDA
 {
 public:
   using WFT           = WaveFunctionTypes<T, T_FP>;
-  using Value         = T;
-  using FullPrecValue = T_FP;
+  using Value         = typename WFT::Value;
+  using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixDelayedUpdateCUDA<T, T_FP>;
+
+  // allows enforcement of OMPallocator matched between DiracDeterminantBatched and MatrixUpdateOMPTarget
+  template<typename DT>
+  using PinnedDualAllocator = PinnedDualAllocator<DT>;
+  template<typename DT>
+  using UnpinnedDualAllocator = UnpinnedDualAllocator<DT>;
+
   // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
   using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
@@ -97,6 +66,40 @@ public:
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+
+  struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
+  {
+    // constant array value T(1)
+    UnpinnedDualVector<T> cone_vec;
+    // constant array value T(-1)
+    UnpinnedDualVector<T> cminusone_vec;
+    // constant array value T(0)
+    UnpinnedDualVector<T> czero_vec;
+    // multi walker of grads for transfer needs.
+    DualMatrix<T> grads_value_v;
+    // mw_updateRow pointer buffer
+    Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
+    // mw_prepareInvRow pointer buffer
+    Vector<char, PinnedDualAllocator<char>> prepare_inv_row_buffer_H2D;
+    // mw_accept_rejectRow pointer buffer
+    Vector<char, PinnedDualAllocator<char>> accept_rejectRow_buffer_H2D;
+    // mw_updateInv pointer buffer
+    Vector<char, PinnedDualAllocator<char>> updateInv_buffer_H2D;
+    // mw_evalGrad pointer buffer
+    Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
+    /// scratch space for rank-1 update
+    UnpinnedDualVector<T> mw_temp;
+    // scratch space for keeping one row of Ainv
+    UnpinnedDualVector<T> mw_rcopy;
+
+    MatrixDelayedUpdateCUDAMultiWalkerMem() : Resource("MatrixDelayedUpdateCUDAMultiWalkerMem") {}
+
+    MatrixDelayedUpdateCUDAMultiWalkerMem(const MatrixDelayedUpdateCUDAMultiWalkerMem&)
+        : MatrixDelayedUpdateCUDAMultiWalkerMem()
+    {}
+
+    Resource* makeClone() const override { return new MatrixDelayedUpdateCUDAMultiWalkerMem(*this); }
+  };
 
 private:
   /// legacy single walker matrix inversion engine
@@ -147,7 +150,7 @@ private:
   UPtr<DiracMatrixComputeCUDA<T_FP>> det_inverter_;
   /**}@ */
 
-  std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem<T>> mw_mem_;
+  std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem> mw_mem_;
 
   inline void waitStream()
   {
@@ -391,7 +394,7 @@ public:
     auto dmcc_ptr = std::make_unique<DiracMatrixComputeCUDA<T_FP>>(clah_ptr->hstream);
     collection.addResource(std::move(clah_ptr));
     collection.addResource(std::move(dmcc_ptr));
-    collection.addResource(std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem<T>>());
+    collection.addResource(std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>());
   }
 
   void acquireResource(ResourceCollection& collection)
@@ -405,7 +408,7 @@ public:
       throw std::runtime_error(
           "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixComputeCUDA<T_FP>* failed");
     det_inverter_.reset(det_eng_ptr);
-    auto res2_ptr = dynamic_cast<MatrixDelayedUpdateCUDAMultiWalkerMem<T>*>(collection.lendResource().release());
+    auto res2_ptr = dynamic_cast<MatrixDelayedUpdateCUDAMultiWalkerMem*>(collection.lendResource().release());
     if (!res2_ptr)
       throw std::runtime_error(
           "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast MatrixDelayedUpdateCUDAMultiWalkerMem failed");
@@ -839,9 +842,11 @@ public:
                        "cuBLAS::gemm_batched failed!");
     }
 
-    for(This_t& engine : engines)
+    for (This_t& engine : engines)
     {
-      cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv_.data(), engine.psiMinv_.device_data(),  engine.psiMinv_.size(), cudaMemcpyDeviceToHost, hstream), "Failed to updated copy psiMinv back to host in mw_updateInvMat.");
+      cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv_.data(), engine.psiMinv_.device_data(), engine.psiMinv_.size(),
+                                     cudaMemcpyDeviceToHost, hstream),
+                     "Failed to updated copy psiMinv back to host in mw_updateInvMat.");
     }
     delay_count = 0;
   }
