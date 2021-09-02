@@ -55,11 +55,24 @@ std::vector<std::vector<TrialWaveFunction*>> CloneManager::PsiPoolClones;
 std::vector<UPtrVector<QMCHamiltonian>> CloneManager::HPoolClones_uptr;
 std::vector<std::vector<QMCHamiltonian*>> CloneManager::HPoolClones;
 
-// Clear the static clones so makeClones will work as expected.
-// For now only clearing wClones is strictly necessary.  The storage is not freed,
-// and this will leak memory.
-// Only for use in unit tests.
-void CloneManager::clear_for_unit_tests() { wClones.clear(); }
+void CloneManager::clearClones()
+{
+  HPoolClones.clear();
+  HPoolClones_uptr.clear();
+  PsiPoolClones.clear();
+  PsiPoolClones_uptr.clear();
+  WPoolClones.clear();
+  WPoolClones_uptr.clear();
+
+  hClones.clear();
+  hClones_uptr.clear();
+  guideClones.clear();
+  guideClones_uptr.clear();
+  psiClones.clear();
+  psiClones_uptr.clear();
+  wClones.clear();
+  wClones_uptr.clear();
+}
 
 /// Constructor.
 CloneManager::CloneManager() : NumThreads(omp_get_max_threads()) { wPerRank.resize(NumThreads + 1, 0); }
