@@ -833,7 +833,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
   activePtcl = -1;
   activePos  = newpos;
   for (size_t i = 0; i < DistTables.size(); ++i)
-    DistTables[i]->move(*this, newpos);
+    DistTables[i]->move(*this, newpos, activePtcl, false);
 }
 
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
