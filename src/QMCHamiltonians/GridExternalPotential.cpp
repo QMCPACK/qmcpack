@@ -84,7 +84,7 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   hin.read(data, dataset_name);
 
-  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()));
+  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()), destroy_Bspline);
 
   return true;
 }
