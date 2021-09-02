@@ -561,10 +561,11 @@ public:
   /** Update the "local" psiMinv_ on the device.
    *  Side Effect Transfers:
    *  * phiV is left on host side in the single methods so it must be transferred to device
-   *  * psiMinv_ is transferred back to host
+   *  * psiMinv_ is transferred back to host since other single calls from QMCHamitonian and others
+   *  * expect it to be.
    *
-   *  Since this is a single walker function it cannot require resources so we don't update CUDA data that would be
-   *  on default stream and synchronization with mw operations undefined.
+   *  Forced to use OpenMP target since resources are banned for single walker functions APIs
+   *  and the acquireRelease pattern for a single DDB was removed by #3324
    */
   template<typename VVT, typename RATIOT>
   void updateRow(int rowchanged, VVT& phiV, RATIOT c_ratio_in)
@@ -583,8 +584,10 @@ public:
     T* Ainv_ptr       = Ainv.data();
     T* temp_ptr       = temp.data();
     T* rcopy_ptr      = rcopy.data();
+    // This must be Ainv must be tofrom due to NonlocalEcpComponent and possibly
+    // other modules assumptions about the state of psiMinv. :(
     PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
+                    map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
       int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
@@ -603,8 +606,8 @@ public:
         throw std::runtime_error("ompBLAS::ger failed.");
     }
 
-
-    //Forced to use OpenMP target since resources are banned for single walker functions
+    // this is a working CUDA only implementation. but only if DDB is allowed to access resources
+    // implicitly available to openmp Target code through the openMP runtime.
 
     // guard_no_delay();
 

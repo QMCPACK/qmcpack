@@ -229,24 +229,31 @@ public:
     return psiMinv_host_;
   }
 #endif
-  /** @defgroup LegacySingleData Single Walker Data Members of Legacy OO design
-   *  @brief    Deprecated as high throughput of walkers requires a division between
-   *            walker data which should be "SoA" and traditional OO design which is generally AoS with
-   *            single "structure" functions bundled.
+  /** @defgroup LegacySingleData
+   *  @brief    Single Walker Data Members of Legacy OO design
+   *            High and flexible throughput of walkers requires would ideally separate
+   *            walker data which should be "SoA" and functions over it i.e. leave behind
+   *            the OO pattern of a single set of data and functions on it.
    *  
    *  @ingroup LegacySingleData
    *  @{
    */
-  Matrix<Value> psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   DualVGLVector psiM_vgl;
+
+  /** @defgroup psiM_vgl_Views
+   *  @brief    views into psiM_vgl
+   *  @ingroup  psiM_vgl_Views
+   *  @{
+   */
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   Matrix<Value> psiM_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   Matrix<Grad> dpsiM;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   Matrix<Value> d2psiM;
+  /**@}*/
 
   /// Used for force computations
   Matrix<Grad> grad_source_psiM, grad_lapl_source_psiM;
@@ -263,16 +270,16 @@ public:
   Vector<Grad> dpsiV_host_view;
   DualVector<Value> d2psiV;
   Vector<Value> d2psiV_host_view;
-  
-  /// Delayed update engine 1 per walker.
-  DET_ENGINE det_engine_;
-  /**@}*/
 
-  /// We still need one of these per DDB because single calls obviously shouldn't have resources
+  /// We still need one of these per DDB because single calls can't currently have resources
   DiracMatrix<Value> single_walker_dm_;
 
-  // psi(r')/psi(r) during a PbyP move
+  /// psi(r')/psi(r) during a PbyP move
   PsiValue curRatio;
+  /**@}*/
+
+  /// Delayed update engine 1 per walker.
+  DET_ENGINE det_engine_;
 
   std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
 
