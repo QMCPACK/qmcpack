@@ -10,9 +10,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "MomentumDistribution.h"
+#include "CPU/e2iphi.h"
 
 #include <iostream>
 #include <numeric>
+
 
 namespace qmcplusplus
 {
@@ -217,15 +219,15 @@ MomentumDistribution* MomentumDistribution::clone()
 
 void MomentumDistribution::startBlock(int steps)
 {
-  if (data_locality_ == DataLocality::rank)
-  {
-    app_log()<<"MD::startBlock dl rank\n";
-    size_t data_size  = 10; // jtk fix
-    data_->reserve(data_size);
-    data_->resize(0);
-  }
-  else
-    app_log()<<"MD::startBlock dl other\n";
+  //if (data_locality_ == DataLocality::rank)
+  //{
+  //  app_log()<<"MD::startBlock dl rank\n";
+  //  size_t data_size  = 10; // jtk fix
+  //  data_->reserve(data_size);
+  //  data_->resize(0);
+  //}
+  //else
+  //  app_log()<<"MD::startBlock dl other\n";
 
 }
 
@@ -234,6 +236,64 @@ void MomentumDistribution::startBlock(int steps)
  */
 void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
 {
+  for (int iw = 0; iw < walkers.size(); ++iw)
+  {
+    MCPWalker& walker = walkers[iw];
+    ParticleSet& pset = psets[iw];
+    RealType weight   = walker.Weight;
+
+    const int np = pset.getTotalNum();
+    const int nk = kPoints.size();
+
+    // compute phase factors
+    for (int s = 0; s < M; ++s)
+    {
+      PosType newpos;
+      // JTK: restore this once access to RNG is provided
+      //for (int i = 0; i < OHMMS_DIM; ++i)
+      //  newpos[i] = myRNG();
+      //make it cartesian
+      vPos[s] = Lattice.toCart(newpos);
+      pset.makeVirtualMoves(vPos[s]);
+      // JTK: restore this with addition of RefVector<TrialWaveFunction>
+      //refPsi.evaluateRatiosAlltoOne(P, psi_ratios);
+      for (int i = 0; i < np; ++i)
+        psi_ratios_all[s][i] = psi_ratios[i];
+      
+      for (int ik = 0; ik < nk; ++ik)
+        kdotp[ik] = -dot(kPoints[ik], vPos[s]);
+      eval_e2iphi(nk, kdotp.data(), phases_vPos[s].data(0), phases_vPos[s].data(1));
+    }
+
+    // update n(k)
+    std::fill_n(nofK.begin(), nk, RealType(0));
+    for (int i = 0; i < np; ++i)
+    {
+      for (int ik = 0; ik < nk; ++ik)
+        kdotp[ik] = dot(kPoints[ik], pset.R[i]);
+      eval_e2iphi(nk, kdotp.data(), phases.data(0), phases.data(1));
+      for (int s = 0; s < M; ++s)
+      {
+        const ComplexType one_ratio(psi_ratios_all[s][i]);
+        const RealType ratio_c                 = one_ratio.real();
+        const RealType ratio_s                 = one_ratio.imag();
+        const RealType* restrict phases_c      = phases.data(0);
+        const RealType* restrict phases_s      = phases.data(1);
+        const RealType* restrict phases_vPos_c = phases_vPos[s].data(0);
+        const RealType* restrict phases_vPos_s = phases_vPos[s].data(1);
+        RealType* restrict nofK_here           = nofK.data();
+#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s : QMC_SIMD_ALIGNMENT)
+        for (int ik = 0; ik < nk; ++ik)
+          nofK_here[ik] += (phases_c[ik] * phases_vPos_c[ik] - phases_s[ik] * phases_vPos_s[ik]) * ratio_c -
+            (phases_s[ik] * phases_vPos_c[ik] + phases_c[ik] * phases_vPos_s[ik]) * ratio_s;
+      }
+    }
+
+    // accumulate data
+    for (int ik = 0; ik < nofK.size(); ++ik)
+      (*data_)[ik] += weight * nofK[ik];
+
+  }
 };
 
 
