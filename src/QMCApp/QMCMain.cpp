@@ -34,6 +34,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
@@ -144,7 +145,12 @@ QMCMain::QMCMain(Communicate* c)
 }
 
 ///destructor
-QMCMain::~QMCMain() {}
+QMCMain::~QMCMain()
+{
+  // free last_driver before clearing P,Psi,H clones
+  last_driver.reset();
+  CloneManager::clearClones();
+}
 
 
 bool QMCMain::execute()

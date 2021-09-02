@@ -39,9 +39,8 @@ public:
   ///virtual destructor
   virtual ~CloneManager();
 
-  // Clear static array so makeClones will populate properly
-  // Only for using in unit testing.
-  static void clear_for_unit_tests();
+  // Clear static arrays of clones owned by the manager
+  static void clearClones();
 
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);

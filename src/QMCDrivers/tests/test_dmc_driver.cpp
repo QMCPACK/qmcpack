@@ -74,7 +74,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -159,7 +159,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
