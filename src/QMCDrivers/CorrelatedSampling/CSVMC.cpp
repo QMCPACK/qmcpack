@@ -242,7 +242,6 @@ void CSVMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")

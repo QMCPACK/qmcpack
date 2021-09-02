@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +20,7 @@
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
-
+#include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
 {
@@ -60,7 +61,11 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 template<typename T, typename T_FP>
 class MatrixUpdateOMPTarget
 {
+public:
+  using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
+  template<typename DT>
+  using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;

@@ -14,7 +14,7 @@
 
 #include <memory>
 #include <iostream>
-#include "CUDA/cudaError.h"
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/CUDAallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 

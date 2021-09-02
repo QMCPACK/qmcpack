@@ -117,7 +117,7 @@ public:
     BIJ_temp = 0;
   }
 
-  virtual BackflowFunctionBase* makeClone(ParticleSet& tqp) const = 0;
+  virtual std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const = 0;
 
   virtual ~BackflowFunctionBase(){};
 

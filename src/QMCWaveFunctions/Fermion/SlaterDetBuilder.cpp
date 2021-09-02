@@ -503,7 +503,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     }
     else
     {
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
@@ -524,7 +524,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);
 #endif
-  slaterdet_0->add(adet, spin_group);
+  slaterdet_0->add(std::unique_ptr<DiracDeterminantBase>(adet), spin_group);
 
   app_log() << std::endl;
   app_log().flush();

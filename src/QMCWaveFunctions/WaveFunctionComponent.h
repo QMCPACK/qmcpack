@@ -127,15 +127,18 @@ public:
   size_t Bytes_in_WFBuffer;
 
 protected:
-  /** current \f$\log\phi \f$
+  /** Current \f$\log\phi \f$.
+   *  Exception! Slater Determinant most of the time has inconsistent a log_value inconsistent with the determinants
+   *  it contains dduring a move sequence. That case the log_value_ would be more safely calculated on the fly.
+   *
+   *  There could be others.
    */
   LogValueType log_value_;
 
 public:
   const LogValueType get_log_value() const { return log_value_; }
   LogValueType& log_value() { return log_value_; }
-  
-  
+
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
   ///default destructor

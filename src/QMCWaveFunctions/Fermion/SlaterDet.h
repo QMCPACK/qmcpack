@@ -46,10 +46,10 @@ public:
   ~SlaterDet() override;
 
   ///add a new DiracDeterminant to the list of determinants
-  virtual void add(Determinant_t* det, int ispin);
+  virtual void add(std::unique_ptr<Determinant_t> det, int ispin);
 
   ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
+  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   void checkInVariables(opt_variables_type& active) override;
 
@@ -185,6 +185,9 @@ public:
   {
     constexpr LogValueType czero(0);
 
+    // This log_value_ is in the slater determinant, it's still around but not consistent anymore with the
+    // sum of the log_values in its determinants.  Caching the state seems like a bad call, but the wfc base class
+    // having log_value_ as a data member asks for this sort of consistency issue when wfc can contain wfc.
     for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
         wfc_list[iw].log_value() = czero;

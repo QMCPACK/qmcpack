@@ -95,7 +95,7 @@ public:
       throw std::runtime_error(func_name + " not implemented!\n");
   }
   ///set BF pointers
-  void setBF(BackflowTransformation* bf)
+  void setBF(std::shared_ptr<BackflowTransformation> bf)
   {
     usingBF = true;
     BFTrans = bf;
@@ -202,7 +202,7 @@ public:
   std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
   // transformation
-  BackflowTransformation* BFTrans;
+  std::shared_ptr<BackflowTransformation> BFTrans;
   bool usingBF;
 
   // temporary storage for evaluateDerivatives
