@@ -145,7 +145,12 @@ QMCMain::QMCMain(Communicate* c)
 }
 
 ///destructor
-QMCMain::~QMCMain() {}
+QMCMain::~QMCMain()
+{
+  // free last_driver before clearing P,Psi,H clones
+  last_driver.reset();
+  CloneManager::clearClones();
+}
 
 
 bool QMCMain::execute()
@@ -267,7 +272,6 @@ bool QMCMain::execute()
       xmlFreeNode(qmcactionPair.first);
 
   m_qmcaction.clear();
-  CloneManager::clearClones();
   t2->stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
   if (is_manager())
