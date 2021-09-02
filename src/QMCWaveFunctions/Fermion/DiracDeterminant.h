@@ -24,7 +24,7 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
 
@@ -255,7 +255,7 @@ private:
 };
 
 extern template class DiracDeterminant<>;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

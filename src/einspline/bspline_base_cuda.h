@@ -1,8 +1,15 @@
-/////////////////////////////////////////////////////////////////////////////
-//  einspline:  a library for creating and evaluating B-splines            //
-//  Copyright (C) 2007-2010 Kenneth P. Esler, Jr.                          //
-//  Released under the BSD-3-clause license                                //
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (C) 2007-2010 Kenneth P. Esler, Jr.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
+//
+// File developed by: Kenneth P. Esler, Jr.
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//
+// File created by: Kenneth P. Esler, Jr.
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef BSPLINE_BASE_CUDA_H
 #define BSPLINE_BASE_CUDA_H

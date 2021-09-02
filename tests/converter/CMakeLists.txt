@@ -5,10 +5,10 @@ include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 function(ADD_CONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
-  set(EXE_NAME "${qmcpack_BINARY_DIR}/bin/convert4qmc")
+  set(EXE_NAME $<TARGET_FILE:convert4qmc>)
   if(HAVE_MPI)
     set(EXE_NAME ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-                 ${qmcpack_BINARY_DIR}/bin/convert4qmc)
+                 $<TARGET_FILE:convert4qmc>)
     string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
   endif()
   add_test(NAME converter_${test_name}
@@ -23,7 +23,7 @@ endfunction()
 function(ADD_PWCONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
-  set(EXE_NAME "${qmcpack_BINARY_DIR}/bin/convertpw4qmc")
+  set(EXE_NAME $<TARGET_FILE:convertpw4qmc>)
   add_test(NAME converter_${test_name}
            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")

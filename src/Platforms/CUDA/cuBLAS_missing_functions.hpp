@@ -14,7 +14,13 @@
 #define QMCPLUSPLUS_CUBLAS_MISSING_FUNCTIONS_H
 
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 
 namespace qmcplusplus
 {

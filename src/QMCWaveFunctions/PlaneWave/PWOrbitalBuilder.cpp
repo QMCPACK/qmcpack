@@ -115,26 +115,26 @@ std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::putSlaterDet(xmlNodePtr
         ref = id;
       int firstIndex = targetPtcl.first(spin_group);
       std::map<std::string, SPOSetPtr>::iterator lit(spomap.find(ref));
-      Det_t* adet = 0;
+      std::unique_ptr<Det_t> adet;
       //int spin_group=0;
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
         std::unique_ptr<SPOSet> psi(createPW(cur, spin_group));
         spomap[ref] = psi.get();
-        adet        = new Det_t(std::move(psi), firstIndex);
+        adet        = std::make_unique<Det_t>(std::move(psi), firstIndex);
       }
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
         std::unique_ptr<SPOSet> psi((*lit).second->makeClone());
-        adet = new Det_t(std::move(psi), firstIndex);
+        adet = std::make_unique<Det_t>(std::move(psi), firstIndex);
       }
       app_log() << "    spin=" << spin_group << " id=" << id << " ref=" << ref << std::endl;
       if (adet)
       {
         adet->set(firstIndex, targetPtcl.last(spin_group) - firstIndex);
-        sdet->add(adet, spin_group);
+        sdet->add(std::move(adet), spin_group);
       }
       spin_group++;
     }

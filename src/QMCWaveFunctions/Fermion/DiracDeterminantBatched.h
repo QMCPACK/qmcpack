@@ -49,6 +49,10 @@ public:
   using Hess          = typename WFT::Hess;
   using Real          = typename WFT::Real;
   using FullPrecGrad  = TinyVector<FullPrecValue, DIM>;
+
+  // the understanding of dual memory space needs to follow DET_ENGINE
+  template<typename DT>
+  using PinnedDualAllocator = typename DET_ENGINE::template PinnedDualAllocator<DT>;
   template<typename DT>
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>

@@ -28,7 +28,7 @@
 #include "makeRngSpdMatrix.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
-#include "Platforms/PinnedAllocator.h"
+#include "Platforms/DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 
 // Legacy CPU inversion for temporary testing
@@ -36,19 +36,10 @@
 
 namespace qmcplusplus
 {
-#ifdef ENABLE_OFFLOAD
-  template<typename T>
-  using DualSpacePinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-// Direct inversion broken fror ENABLE_OFFLOAD=0 ENABLE_CUDA=1
-// #elif ENABLE_CUDA
-//   template<typename T>
-//   using DualSpacePinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-#endif
-
 template<typename T>
-using OffloadPinnedMatrix = Matrix<T, DualSpacePinnedAllocator<T>>;
+using OffloadPinnedMatrix = Matrix<T, PinnedDualAllocator<T>>;
 template<typename T>
-using OffloadPinnedVector = Vector<T, DualSpacePinnedAllocator<T>>;
+using OffloadPinnedVector = Vector<T, PinnedDualAllocator<T>>;
 
 // Mechanism to pretty print benchmark names.
 struct DiracComputeBenchmarkParameters;

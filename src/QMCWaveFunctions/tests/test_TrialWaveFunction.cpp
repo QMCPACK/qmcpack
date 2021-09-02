@@ -25,7 +25,7 @@
 
 namespace qmcplusplus
 {
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #else
 using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
@@ -113,14 +113,14 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
+  auto det_up = std::make_unique<DiracDet>(spo->makeClone());
   det_up->set(0, 2);
-  auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
+  auto det_dn = std::make_unique<DiracDet>(spo->makeClone());
   det_dn->set(2, 2);
 
   auto slater_det = std::make_unique<SlaterDet>(elec_);
-  slater_det->add(det_up, 0);
-  slater_det->add(det_dn, 1);
+  slater_det->add(std::move(det_up), 0);
+  slater_det->add(std::move(det_dn), 1);
 
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));

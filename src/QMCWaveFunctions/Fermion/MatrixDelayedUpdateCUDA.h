@@ -18,7 +18,7 @@
 #include "Fermion/DiracMatrixComputeCUDA.hpp"
 #include "Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
-#include <cuda_runtime_api.h>
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"

@@ -15,8 +15,7 @@
 #include <type_traits>
 
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
@@ -43,10 +42,10 @@ class DiracMatrixComputeCUDA : public Resource
   using FullPrecReal = QMCTraits::FullPrecRealType;
 
   template<typename T>
-  using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
+  using OffloadPinnedMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
   template<typename T>
-  using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
+  using OffloadPinnedVector = Vector<T, PinnedDualAllocator<T>>;
 
   cudaStream_t hstream_;
 

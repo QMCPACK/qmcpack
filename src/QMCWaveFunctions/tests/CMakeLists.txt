@@ -93,6 +93,7 @@ set(JASTROW_SRC
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
     test_J1OrbitalSoA.cpp
+    test_J1Spin.cpp
     test_J2_bspline.cpp
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC

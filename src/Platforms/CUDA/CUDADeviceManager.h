@@ -15,10 +15,7 @@
 #define QMCPLUSPLUS_CUDADEVICEMANAGER_H
 
 #include <stdexcept>
-#ifdef ENABLE_CUDA
-#include <cuda_runtime_api.h>
-#include "CUDA/cudaError.h"
-#endif
+#include "CUDAruntime.hpp"
 #include "Host/OutputManager.h"
 #include "determineDefaultDeviceNum.h"
 

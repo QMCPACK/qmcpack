@@ -32,7 +32,7 @@ private:
 public:
   //number of groups of the target particleset
   std::vector<FT*> RadFun;
-  std::vector<FT*> uniqueRadFun;
+  std::vector<std::unique_ptr<FT>> uniqueRadFun;
   std::vector<int> offsetPrms;
   int NumGroups;
   Matrix<int> PairID;
@@ -51,12 +51,10 @@ public:
     offsetPrms.resize(NumGroups * NumGroups, 0);
   }
 
-  ~Backflow_ee() override{};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_ee<FT>* clone = new Backflow_ee<FT>(tqp, tqp);
-    clone->first           = false;
+    auto clone   = std::make_unique<Backflow_ee<FT>>(tqp, tqp);
+    clone->first = false;
     clone->resize(NumTargets, NumTargets);
     clone->offsetPrms = offsetPrms;
     clone->numParams  = numParams;
@@ -65,15 +63,15 @@ public:
     clone->uniqueRadFun.resize(uniqueRadFun.size());
     clone->RadFun.resize(RadFun.size());
     for (int i = 0; i < uniqueRadFun.size(); i++)
-      clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
+      clone->uniqueRadFun[i] = std::make_unique<FT>(*(uniqueRadFun[i]));
     for (int i = 0; i < RadFun.size(); i++)
     {
       bool done = false;
       for (int k = 0; k < uniqueRadFun.size(); k++)
-        if (RadFun[i] == uniqueRadFun[k])
+        if (RadFun[i] == uniqueRadFun[k].get())
         {
           done             = true;
-          clone->RadFun[i] = clone->uniqueRadFun[k];
+          clone->RadFun[i] = clone->uniqueRadFun[k].get();
           break;
         }
       if (!done)
@@ -84,21 +82,21 @@ public:
     return clone;
   }
 
-  void addFunc(int ia, int ib, FT* rf)
+  void addFunc(int ia, int ib, std::unique_ptr<FT> rf)
   {
-    uniqueRadFun.push_back(rf);
     if (first)
     {
       // initialize all with rf the first time
       for (int i = 0; i < RadFun.size(); i++)
-        RadFun[i] = rf;
+        RadFun[i] = rf.get();
       first = false;
     }
     else
     {
-      RadFun[ia * NumGroups + ib] = rf;
-      RadFun[ib * NumGroups + ia] = rf;
+      RadFun[ia * NumGroups + ib] = rf.get();
+      RadFun[ib * NumGroups + ia] = rf.get();
     }
+    uniqueRadFun.push_back(std::move(rf));
   }
 
   void registerData(WFBufferType& buf) override

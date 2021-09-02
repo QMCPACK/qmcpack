@@ -29,14 +29,14 @@ namespace qmcplusplus
  */
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
                                                            std::shared_ptr<SPOSet>&& spos,
-                                                           BackflowTransformation* BF,
+                                                           std::shared_ptr<BackflowTransformation> BF,
                                                            int first)
     : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first)
 {
   Optimizable  = true;
   is_fermionic = true;
   registerTimers();
-  BFTrans      = BF;
+  BFTrans      = std::move(BF);
   NumParticles = ptcl.getTotalNum();
   NP           = 0;
 }

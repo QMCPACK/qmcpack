@@ -66,24 +66,14 @@ class MatrixUpdateOMPTarget
 public:
   using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
-  using Value = T;
-  using FullPrecValue = T_FP;
-  using LogValue = typename WFT::LogValue;
   template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadValueVector_t          = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
-  using OffloadPinnedValueVector_t    = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t    = Matrix<T, OffloadPinnedAllocator<T>>;
-  //using FullPrecReal = QMCTraits::FullPrecRealType;
+  using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 
+  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
+  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
+  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;
-
-private:
-  /// legacy single walker matrix inversion engine
+  /// matrix inversion engine
   DiracMatrix<T_FP> detEng;
 
   int inv_row_id_;
