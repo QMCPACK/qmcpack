@@ -20,19 +20,19 @@ The following is a summary of the jobs run in the CI process required for a PR:
 | Job Name with                 | Runner | Compiler | Tests         | Time | Trigger  |
 | Build Info                    | Host   |          | ctest -L      | min  | event    |
 +-------------------------------+--------+----------+---------------+------+----------+
-| gcc-openmpi-real-coverage*    | GitHub | gcc-9    | deterministic | 45   | PR/merge |
+| gcc-openmpi-real-coverage*    | GitHub | gcc-9    | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
-| gcc-openmpi-complex-coverage* | GitHub | gcc-9    | deterministic | 50   | PR/merge |
+| gcc-openmpi-complex-coverage* | GitHub | gcc-9    | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
-| gcc11-real-werror             | GitHub | gcc-11   | deterministic | 50   | PR/merge |
+| gcc11-real-werror             | GitHub | gcc-11   | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
-| gcc11-complex-werror          | GitHub | gcc-11   | deterministic | 50   | PR/merge |
+| gcc11-complex-werror          | GitHub | gcc-11   | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
-| clang-real-asan               | GitHub | clang-10 | unit          | 25   | PR/merge |
+| clang-real-asan               | GitHub | clang-10 | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
-| clang-complex-asan            | GitHub | clang-10 | unit          | 25   | PR/merge |
+| clang-complex-asan            | GitHub | clang-10 | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
-| clang-openmpi-real-ubsan      | GitHub | clang-10 | unit          | 55   | PR/merge |
+| clang-openmpi-real-ubsan      | GitHub | clang-10 | deterministic | 60   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
 | clang-latest-openmp-offload   | GitHub | clang-12 | unit          | 35   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+

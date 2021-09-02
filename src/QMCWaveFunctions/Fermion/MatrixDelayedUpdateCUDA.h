@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
-#include <cuda_runtime_api.h>
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
@@ -80,9 +80,11 @@ public:
   using Value = T;
   using FullPrecValue = T_FP;
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
+  template<typename DT>
+  using PinnedDualAllocator = PinnedDualAllocator<DT>;
   // Want to emphasize these because at least for cuda they can't be transferred async, which is bad.
   template<typename DT>
-  using UnpinnedDualVector       = Vector<DT, UnpinnedDualAllocator<DT>>;
+  using UnpinnedDualVector = Vector<DT, UnpinnedDualAllocator<DT>>;
   template<typename DT>
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>

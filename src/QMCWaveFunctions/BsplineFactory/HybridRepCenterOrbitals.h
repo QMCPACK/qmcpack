@@ -26,6 +26,9 @@
 
 namespace qmcplusplus
 {
+template<class BSPLINESPO>
+class HybridRepSetReader;
+
 template<typename ST>
 class AtomicOrbitals
 {
@@ -708,7 +711,7 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class HybridRepSetReader;
+  friend class qmcplusplus::HybridRepSetReader;
 };
 
 extern template class AtomicOrbitals<float>;

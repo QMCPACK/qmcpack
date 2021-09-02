@@ -64,6 +64,8 @@ class MatrixUpdateOMPTarget
 public:
   using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
+  template<typename DT>
+  using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;

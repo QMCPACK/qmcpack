@@ -1073,9 +1073,9 @@ bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
 
 void TrialWaveFunction::reset() {}
 
-TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
+std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking_, false);
+  auto myclone                 = std::make_unique<TrialWaveFunction>(myName, use_tasking_, false);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)

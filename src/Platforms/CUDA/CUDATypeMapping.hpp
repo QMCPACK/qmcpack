@@ -15,6 +15,13 @@
 
 #include <type_traits>
 #include "type_traits/type_mapping.hpp"
+#include "config.h"
+#ifndef QMC_CUDA2HIP
+#include <cuComplex.h>
+#else
+#include <hip/hip_complex.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 
 namespace qmcplusplus
 {

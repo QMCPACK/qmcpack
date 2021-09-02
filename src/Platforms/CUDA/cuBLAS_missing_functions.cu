@@ -12,16 +12,29 @@
 
 #include "cuBLAS_missing_functions.hpp"
 #include <stdexcept>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
-#include <thrust/complex.h>
 #include <thrust/system/cuda/detail/core/util.h>
-
 namespace qmcplusplus
 {
 namespace cuBLAS_MFs
 {
 using namespace thrust::cuda_cub::core;
+}
+}
 
+#else
+#include <hip/hip_complex.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#include "uninitialized_array.hpp"
+#endif
+#include <thrust/complex.h>
+
+namespace qmcplusplus
+{
+namespace cuBLAS_MFs
+{
 template<typename T, int ROWBS, int COLBS>
 __global__ void gemvT_batched_kernel(const int m, // number of columns in row major A
                                      const int n, // number of rows in row major A

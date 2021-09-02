@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.15.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
@@ -10,122 +10,40 @@ cmake_minimum_required(VERSION 3.14.0)
 # when doing link check
 cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0075 NEW)
-include(CMakeDependentOption)
 
 ######################################################################
-# QMCPACK
+# QMCPACK project
 ######################################################################
 project(
   qmcpack
   VERSION 3.11.9
   LANGUAGES C CXX)
 
-######################################################
+#--------------------------------------------------------------------
 # Directory where customize cmake files reside
-######################################################
+#--------------------------------------------------------------------
 set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_CMAKE})
+include(macros)
 
+#--------------------------------------------------------------------
+# Paths for library and executable for out-of-soruce compilation
+#--------------------------------------------------------------------
 set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
-
-include(CMake/macros.cmake)
-
-######################################################################
-# CTest
-######################################################################
-# The following option disables the extremely slow setup of full system run tests
-# This is a developer option
-# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
-# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
-# when rerunning cmake.
-#
-# On leconte: rerun of cmake with
-# slow custom commands 27 secs
-# without 8 secs
-option(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS "Disable the slow cmake custom commands for integration tests." OFF)
-mark_as_advanced(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-
-set(DROP_METHOD "http")
-set(DROP_SITE "cdash.qmcpack.org")
-set(DROP_LOCATION "/CDash/submit.php?project=QMCPACK")
-set(TRIGGER_SITE "")
-set(DROP_SITE_CDASH TRUE)
-# Increase timeout per test over the default of 1500 seconds (25 minutes)
-set(DART_TESTING_TIMEOUT
-    3600
-    CACHE STRING "Maximum time for one test")
-enable_testing()
-include(CTest)
-
-option(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead."
-       ON)
-
-if(QMC_SYMLINK_TEST_FILES)
-  set(SYMLINK_MSG
-      "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source."
-  )
-else()
-  set(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
-endif()
-message(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
-
-######################################################################
-# Verify Python3 available
-######################################################################
-include(CMake/python.cmake)
-find_package(Python3)
-if(NOT Python3_FOUND)
-  message(FATAL_ERROR "Could not find required python3")
-endif(NOT Python3_FOUND)
-
-######################################################################
-# Check if PySCF is available
-######################################################################
-if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(pyscf HAVE_PYSCF)
-  if(NOT HAVE_PYSCF)
-    message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
-  else()
-    message(STATUS "Successfully imported PySCF python module.")
-  endif()
-endif()
-
-######################################################################
-# Check if QE executables available at QE_BIN or on the PATH
-######################################################################
-if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  include("CMake/FindQE.cmake")
-  if(QE_FOUND)
-    message(STATUS "Found and using patched Quantum ESPRESSO (QE) with pw2qmcpack.x at ${QE_PW_DIR}")
-  else(QE_FOUND)
-    message(
-      STATUS "Did not find a patched Quantum ESPRESSO (QE) distribution with pw2qmcpack.x. QE tests will not be run.")
-  endif(QE_FOUND)
-endif()
-
-######################################################################
-# Build level
-######################################################################
-
-option(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
-message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
-
-######################################################################
-#define the paths for library and executable for out-of-soruce compilation
-######################################################################
-set(LIBRARY_OUTPUT_PATH
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
     ${qmcpack_BINARY_DIR}/lib
     CACHE PATH "Single output directory for building all libraries.")
-set(EXECUTABLE_OUTPUT_PATH
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
     ${qmcpack_BINARY_DIR}/bin
     CACHE PATH "Single output directory for building all executables.")
 
-##################################
-# Set C++ standard used by QMCPACK
-##################################
+######################################################################
+# Build and install options
+######################################################################
+
+#--------------------------------------------------------------------
+# Set C++ standard
+#--------------------------------------------------------------------
 set(QMC_CXX_STANDARD
     17
     CACHE STRING "QMCPACK C++ language standard")
@@ -134,67 +52,11 @@ if(NOT QMC_CXX_STANDARD EQUAL 17)
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
-######################################################################
-# Set the compiler-time parameters
-# WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
-#   props. Things like forces are per particle so you may need this to
-#   rather large.  Each property increases walker size by
-#   sizeof(FULLPRECREALTYPE)
-# OHMMS_DIM =  dimension of the problem
-# OHMMS_INDEXTYPE = type of index
-# OHMMS_PRECISION  = base precision, float, double etc
-# OHMMS_PRECISION_FULL  = full precision, double etc
-# QMC_COMPLEX = true if using complex wavefunctions
-# QMC_MPI =  enable MPI
-# QMC_OMP = enable OMP
-######################################################################
-set(WALKER_MAX_PROPERTIES
-    2048
-    CACHE STRING "Maximum number of properties tracked by walkers")
-mark_as_advanced(WALKER_MAX_PROPERTIES)
-set(OHMMS_DIM
-    3
-    CACHE STRING "Select physical dimension")
-set(OHMMS_INDEXTYPE int)
-message(STATUS "defining the float point precision")
-set(OHMMS_PRECISION_FULL double)
-
-if(QMC_CUDA)
-  set(QMC_MIXED_PRECISION
-      1
-      CACHE BOOL "Enable/disable mixed precision")
-  set(OHMMS_PRECISION double)
-  set(CUDA_PRECISION_FULL double)
-  if(QMC_MIXED_PRECISION)
-    set(CUDA_PRECISION float)
-  else(QMC_MIXED_PRECISION)
-    set(CUDA_PRECISION double)
-  endif(QMC_MIXED_PRECISION)
-  message("   Base precision = ${OHMMS_PRECISION}")
-  message("   Full precision = ${OHMMS_PRECISION_FULL}")
-  message("   CUDA base precision = ${CUDA_PRECISION}")
-  message("   CUDA full precision = ${CUDA_PRECISION_FULL}")
-else(QMC_CUDA)
-  set(QMC_MIXED_PRECISION
-      0
-      CACHE BOOL "Enable/disable mixed precision")
-  if(QMC_MIXED_PRECISION)
-    set(OHMMS_PRECISION float)
-    set(MIXED_PRECISION 1)
-  else(QMC_MIXED_PRECISION)
-    set(OHMMS_PRECISION double)
-  endif(QMC_MIXED_PRECISION)
-  message("   Base precision = ${OHMMS_PRECISION}")
-  message("   Full precision = ${OHMMS_PRECISION_FULL}")
-endif(QMC_CUDA)
-
-# Code coverage
-set(GCOV_SUPPORTED FALSE)
-option(ENABLE_GCOV "Enable code coverage" OFF)
-
-######################################################################
-# enable MPI and OPENMP  if possible
-######################################################################
+#--------------------------------------------------------------------
+# Programmind model related build options
+# MPI, OpenMP, GPU acceleration
+#--------------------------------------------------------------------
+include(CMakeDependentOption)
 option(QMC_MPI "Enable/disable MPI" ON)
 option(QMC_OMP "Enable/disable OpenMP" ON)
 option(QMC_COMPLEX "Build for complex binary" OFF)
@@ -218,48 +80,83 @@ option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
 if(ENABLE_CUDA AND QMC_CUDA)
-  message(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
+  message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
 endif(ENABLE_CUDA AND QMC_CUDA)
 
-option(QMC_VERBOSE_CONFIGURATION "Give details why specific tests are/are not added" OFF)
+#--------------------------------------------------------------------
+# Set compiler-time parameters
+# WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
+#   properties. Properties such forces are per particle so you may need this
+#   to be rather large.  Each property increases walker size by
+#   sizeof(FULLPRECREALTYPE)
+# OHMMS_DIM =  dimension of the problem
+# OHMMS_INDEXTYPE = type of index
+# OHMMS_PRECISION  = base precision, float, double etc
+# OHMMS_PRECISION_FULL  = full precision, double etc
+#--------------------------------------------------------------------
+set(WALKER_MAX_PROPERTIES
+    2048
+    CACHE STRING "Maximum number of properties tracked by walkers")
+mark_as_advanced(WALKER_MAX_PROPERTIES)
+set(OHMMS_DIM
+    3
+    CACHE STRING "Select physical dimension")
+set(OHMMS_INDEXTYPE int)
+set(OHMMS_PRECISION_FULL double)
 
-######################################################################
-# set debug printout
+if(QMC_VERBOSE_CONFIGURATION)
+  message(WARNING "QMC_VERBOSE_CONFIGURATION option has been removed. Use --log-level=VERBOSE cmake option instead.")
+endif()
+
+#--------------------------------------------------------------------
+message(STATUS "Defining the float point precision")
+#--------------------------------------------------------------------
+if(QMC_CUDA)
+  option(QMC_MIXED_PRECISION "Enable/disable mixed precision" ON)
+  set(OHMMS_PRECISION double)
+  set(CUDA_PRECISION_FULL double)
+  if(QMC_MIXED_PRECISION)
+    set(CUDA_PRECISION float)
+  else(QMC_MIXED_PRECISION)
+    set(CUDA_PRECISION double)
+  endif(QMC_MIXED_PRECISION)
+  message("   Base precision = ${OHMMS_PRECISION}")
+  message("   Full precision = ${OHMMS_PRECISION_FULL}")
+  message("   CUDA base precision = ${CUDA_PRECISION}")
+  message("   CUDA full precision = ${CUDA_PRECISION_FULL}")
+else(QMC_CUDA)
+  option(QMC_MIXED_PRECISION "Enable/disable mixed precision" OFF)
+  if(QMC_MIXED_PRECISION)
+    set(OHMMS_PRECISION float)
+    set(MIXED_PRECISION ON)
+  else(QMC_MIXED_PRECISION)
+    set(OHMMS_PRECISION double)
+  endif(QMC_MIXED_PRECISION)
+  message("   Base precision = ${OHMMS_PRECISION}")
+  message("   Full precision = ${OHMMS_PRECISION_FULL}")
+endif(QMC_CUDA)
+
+#--------------------------------------------------------------------
+# Set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
-######################################################################
-set(PRINT_DEBUG
-    0
-    CACHE BOOL "Enable/disable debug printing")
-set(DEBUG_PSIBUFFER_ON
-    0
-    CACHE BOOL "Debug messages for PSIBUFFER locator")
+#--------------------------------------------------------------------
+option(PRINT_DEBUG "Enable/disable debug printing" OFF)
+option(DEBUG_PSIBUFFER_ON "Debug messages for PSIBUFFER locator" OFF)
 mark_as_advanced(DEBUG_PSIBUFFER_ON)
-set(DEBUG_PER_STEP_ACCEPT_REJECT
-    0
-    CACHE BOOL "Print accepts and rejects at each step")
+option(DEBUG_PER_STEP_ACCEPT_REJECT "Print accepts and rejects at each step" OFF)
 mark_as_advanced(DEBUG_PER_STEP_ACCEPT_REJECT)
 
-######################################################################
-# Standard test
-######################################################################
-set(CMAKE_MODULE_PATH "${qmcpack_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+#--------------------------------------------------------------------
+# Set build feature options
+#--------------------------------------------------------------------
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
+message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
-######################################################################
-# add macros to compile einspline if necessary
-######################################################################
-include(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
-include(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
-include(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
-include(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
-
-check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
-
-######################################################################
-# Build options
-# QMC_BUILD_STATIC build static/dynamic  libraries
-# BUILD_QMCTOOLS   build utility programs
-# MPIP_PROFILE     profile mpi performance
-######################################################################
+option(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
+option(ENABLE_GCOV "Enable code coverage" OFF)
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
@@ -286,10 +183,13 @@ cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF
 # CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
 cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF
                        "ENABLE_TIMERS AND ( QMC_CUDA OR ENABLE_CUDA )" OFF)
+set(HAVE_EINSPLINE 1) # to be removed
+option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
+mark_as_advanced(QMC_EXP_THREADING)
 
-######################################################################
+#--------------------------------------------------------------------
 # Sanitizer options
-######################################################################
+#--------------------------------------------------------------------
 
 # Add optional sanitizers ASAN, UBSAN, MSAN
 set(VALID_SANITIZERS "none" "asan" "ubsan" "tsan" "msan")
@@ -305,52 +205,22 @@ else()
   message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
 endif()
 
-######################################################################
-# Install options
+#--------------------------------------------------------------------
 # INSTALL_NEXUS install Nexus alongside QMCPACK
-######################################################################
-set(INSTALL_NEXUS
-    1
-    CACHE BOOL "Install Nexus alongside QMCPACK")
-
-######################################################################
-#list of options to determine libraries. First, try to use libraries available
-#FindXYZ.cmake will set the values if successful
-######################################################################
-set(HAVE_EINSPLINE 1) # to be removed
-
-######################################################
-# Git information (see src/CMakeLists.txt for the
-# command to get repository information)
-######################################################
-find_package(Git)
-
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  set(IS_GIT_PROJECT 1)
+#--------------------------------------------------------------------
+option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
+if(INSTALL_NEXUS)
+  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
 endif()
 
-######################################################
-#COMPILER choose one of the cmake files to customize the compiler options
-#If nothing is chosen, default settings by cmake will  be used.
-#If the automatic detection does not work, comment out everything
-#upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
-######################################################
-include(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
-include(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
-
-######################################################
-# DO NOT MODIFY BELOW
-# If you like to customize your build, create a toolchain as instructed
-######################################################
-######################################################
-# now set the compiler flags and the macros in src/config.h
-######################################################
+######################################################################
+# Set the compiler specific options/flags
+######################################################################
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
-  message(STATUS "Trying to figure out .....")
+  message(STATUS "Trying to figure out compiler options ....")
   set(ENABLE_OPENMP 0)
-  set(HAVE_ACML 0)
 
   #------------------------
   # On Cray's machine
@@ -367,7 +237,7 @@ else(CMAKE_TOOLCHAIN_FILE)
     if(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
       message(WARNING "Cray Programming Environment uses static linking by default. "
                       "We prefer dynamic linking which makes library searching easier. "
-                      "Set environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
+                      "Setting environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
     endif()
 
     if(NOT DEFINED MPIEXEC_EXECUTABLE)
@@ -386,7 +256,7 @@ else(CMAKE_TOOLCHAIN_FILE)
     endif()
   endif()
 
-  include(CMake/inspectCompiler.cmake)
+  include(inspectCompiler)
 
 endif(CMAKE_TOOLCHAIN_FILE)
 
@@ -395,32 +265,59 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
 endif()
 
-###############################################
+#-----------------------------------------------------------------------
 # Set C++ minimum standard and run basic checks
-###############################################
+#-----------------------------------------------------------------------
 set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-#-----------------------------------------------------------------------
-# Check that a C++ compiler is compatiable with the underlying libstdc++
-#-----------------------------------------------------------------------
-include(CMake/Testlibstdc++.cmake)
+# Check that a C++ compiler is compatible with the underlying libstdc++
+include(Testlibstdc++)
 
-#---------------------------------------------------------
 # Check that a C++ standard library is configured properly
-#---------------------------------------------------------
-include(CMake/TestCxx17Library.cmake)
+include(TestCxx17Library)
 
+#-----------------------------------------------------------------------
+# SETUP SANITIZERS FLAGS
+#-----------------------------------------------------------------------
+if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
+  if(NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
+    message(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
+  endif()
+
+  if("${ENABLE_SANITIZER}" STREQUAL "asan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
+        CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "ubsan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=undefined"
+        CACHE STRING "UndefinedBehaviorSanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "msan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=memory"
+        CACHE STRING "MemorySanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "tsan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=thread"
+        CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
+  endif()
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
+
+endif()
+
+#-----------------------------------------------------------------------
+# verify code coverage compiler support
+#-----------------------------------------------------------------------
 if(ENABLE_GCOV)
-  if(NOT GCOV_SUPPORTED)
+  if(GCOV_SUPPORTED)
+    message(STATUS "GCOV is enabled")
+  else()
     message(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
   endif()
 endif(ENABLE_GCOV)
-
-if(BUILD_AFQMC AND NOT APPLE)
-  link_libraries("rt")
-endif()
 
 #-------------------------------------------------------------------------------
 # Check SIMD alignment for CPU only
@@ -432,7 +329,7 @@ endif()
 # A trap for macro __AVX512F__ always fails because the offload pass doesn't
 # carry '-march=skylake-avx512' but only takes '-march=sm_70'.
 #-------------------------------------------------------------------------------
-include(CMake/CheckSIMDAlignment.cmake)
+include(CheckSIMDAlignment)
 set(QMC_SIMD_ALIGNMENT
     ${default_alignment}
     CACHE STRING "Cache/SIMD alignment in bytes")
@@ -447,7 +344,7 @@ message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
 #---------------------------------------------------------
 # Determine if OpenMP taskloop works with the CXX compiler
 #---------------------------------------------------------
-include(CMake/TestOpenMPtaskloop.cmake)
+include(TestOpenMPtaskloop)
 option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
 message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 
@@ -458,8 +355,21 @@ if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
 endif()
 
+#---------------------------------------------------------
+# consider making this always on if OpenMP is no longer UB with Thread Support Library
+# We should test out abstractions consistently and c++17 stdlib's all have support for
+# std::thread and std::atomic
+#---------------------------------------------------------
+if(QMC_EXP_THREADING)
+  include(CheckAtomic)
+  if(HAVE_LIBATOMIC)
+    link_libraries("${HAVE_LIBATOMIC}")
+  endif(HAVE_LIBATOMIC)
+  add_definitions(-DQMC_EXP_THREADING)
+endif(QMC_EXP_THREADING)
+
 #-------------------------------------------------------------------
-#  check MPI installation
+# Check MPI installation. MPI is treated as a part of compiler
 #-------------------------------------------------------------------
 if(QMC_MPI)
   # for backward compatibility with MPIEXEC
@@ -522,10 +432,6 @@ if(QMC_MPI)
     message(WARNING ${MPI_WARNING_LIST})
   endif()
 
-  if(NOT TEST_MAX_PROCS)
-    set(TEST_MAX_PROCS 100)
-  endif()
-
   message(STATUS "MPI runner MPIEXEC_EXECUTABLE : ${MPIEXEC_EXECUTABLE}")
   message(STATUS "MPIEXEC_NUMPROC_FLAG : ${MPIEXEC_NUMPROC_FLAG}")
   message(STATUS "MPIEXEC_PREFLAGS : ${MPIEXEC_PREFLAGS}")
@@ -541,13 +447,15 @@ else(QMC_MPI)
   message(STATUS "MPI is disabled")
 endif(QMC_MPI)
 
-####################################################################
-#First check the required libraries. Abort if these are not found.
-#Changed the fall-back versions to use similar conventions to 2.8.0 and higher
-####################################################################
-# use customized cmake file for boost so that we can deal with multiple
-# installataions
-# list of libraries to be linked with the main applications using I/O
+######################################################################
+# Check external libraries.
+######################################################################
+
+#-------------------------------------------------------------------
+# check OS related libraries
+#-------------------------------------------------------------------
+include(CheckFunctionExists)
+check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 
 #-------------------------------------------------------------------
 # Check LAPACK/BLAS
@@ -589,7 +497,7 @@ add_library(Math::FFTW3 INTERFACE IMPORTED)
 
 # Detects MKL header files and other components.
 if(LAPACK_LIBRARIES MATCHES "mkl_core")
-  include(CMake/FindMKL.cmake)
+  include(FindMKL)
 endif()
 
 if(MKL_FOUND)
@@ -624,11 +532,11 @@ endif()
 
 # This needs to go before HAVE_SINCOS
 if(QMC_MATH_VENDOR STREQUAL "INTEL_VML")
-  include(CMake/FindMKLVML.cmake)
+  include(FindMKLVML)
 elseif(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
-  include(CMake/FindIBMMASS.cmake)
+  include(FindIBMMASS)
 elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
-  include(CMake/FindAMDLibM.cmake)
+  include(FindAMDLibM)
 endif()
 
 # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
@@ -636,7 +544,7 @@ if(NOT SINCOS_INCLUDE)
   set(SINCOS_INCLUDE cmath)
 endif(NOT SINCOS_INCLUDE)
 message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
-include(${PROJECT_CMAKE}/CheckSincos.cmake)
+include(CheckSincos)
 
 #-------------------------------------------------------------------
 #  set up FFTW3 library
@@ -748,7 +656,6 @@ endif(HDF5_FOUND)
 #-------------------------------------------------------------------
 #  set up libboost library, header only
 #-------------------------------------------------------------------
-#make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
 if(Boost_FOUND)
@@ -780,7 +687,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
       # Automatically set the default NVCC flags
       set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
       if(QMC_COMPLEX)
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX=${QMC_COMPLEX}")
       endif()
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
@@ -840,7 +747,7 @@ if(ENABLE_ROCM)
     if(HIP_MODULE_FILE_DIR)
       message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
     else()
-      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installiation.")
+      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installation.")
     endif()
     string(REGEX REPLACE "\/hip\/cmake" "" ROCM_ROOT "${HIP_MODULE_FILE_DIR}")
   endif()
@@ -899,12 +806,9 @@ if(ENABLE_HIP)
   endif()
 endif(ENABLE_HIP)
 
-######################################################
-# Add optional macros
-######################################################
-
-#include qmcpack/src build/src
-include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
+#-------------------------------------------------------------------
+# set up VTune ittnotify library
+#-------------------------------------------------------------------
 
 if(USE_VTUNE_API)
   message(STATUS "Enabling use of VTune ittnotify APIs")
@@ -928,96 +832,53 @@ else()
   message(STATUS "VTune ittnotify APIs disabled")
 endif()
 
-# consider making this always on if OpenMP is no longer UB with Thread Support Library
-# We should test out abstractions consistently and c++17 stdlib's all have support for
-# std::thread and std::atomic
-option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
-mark_as_advanced(QMC_EXP_THREADING)
-if(QMC_EXP_THREADING)
-  include(CheckAtomic)
-  if(HAVE_LIBATOMIC)
-    link_libraries("${HAVE_LIBATOMIC}")
-  endif(HAVE_LIBATOMIC)
-  add_definitions(-DQMC_EXP_THREADING)
-endif(QMC_EXP_THREADING)
-
-#include(ExternalProject)
-#  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
-#  set(einspline_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/einspline")
-#  set(einspline_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${einspline_INSTALL_DIR})
-#ExternalProject_Add(
-#   einspline
-#   SVN_REPOSITORY http://qmctools.googlecode.com/svn/ext-packages/einspline
-#   )
-#    INSTALL_DIR ${einspline_INSTALL_DIR}
-#    CMAKE_ARGS ${einspline_CMAKE_ARGS}
-#    )
-#  find_package(einspline REQUIRED)
-#  set(HAVE_EINSPLINE 1)
-
-###############################################################
-# for specific linker in the case of profiling like hpctoolkit.
-###############################################################
-if(CMAKE_CXX_LINKER)
-  set(CMAKE_CXX_LINK_EXECUTABLE
-      "${CMAKE_CXX_LINKER} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS>  <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-  message(STATUS "Linker is specified as '${CMAKE_CXX_LINKER}' instead of '${CMAKE_CXX_COMPILER}'")
-endif()
-
-###################################################
+#-------------------------------------------------------------------
 # Add user extra flags
-###################################################
+#-------------------------------------------------------------------
 if(QMC_INCLUDE)
   foreach(tmp ${QMC_INCLUDE})
     message(STATUS "Adding '${tmp}' to include directories")
     include_directories("${tmp}")
   endforeach()
 endif()
+
 if(QMC_EXTRA_LIBS)
   string(REPLACE " " ";" QMC_EXTRA_LIBS ${QMC_EXTRA_LIBS})
   set(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${QMC_EXTRA_LIBS})
   message("QMC_UTIL_LIBS=${QMC_UTIL_LIBS}")
 endif()
 
-# Avoid unused variables warnings (for now) by using for information purposes
-if(QMC_DATA)
-  message(STATUS "QMC_DATA is ${QMC_DATA}")
-endif()
-if(ENABLE_GCOV)
-  message(STATUS "GCOV is enabled")
+if(BUILD_AFQMC AND NOT APPLE)
+  link_libraries("rt")
 endif()
 
-# SETUP SANITIZERS FLAGS
-if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
-  if(NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
-    message(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
-  endif()
+######################################################################
+# All the settings related to building QMCPACK are complete
+######################################################################
 
-  if("${ENABLE_SANITIZER}" STREQUAL "asan")
-    set(CMAKE_CXX_FLAGS_SAN
-        "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
-        CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
-  elseif("${ENABLE_SANITIZER}" STREQUAL "ubsan")
-    set(CMAKE_CXX_FLAGS_SAN
-        "-fsanitize=undefined"
-        CACHE STRING "UndefinedBehaviorSanitizer C++ compiler builds." FORCE)
-  elseif("${ENABLE_SANITIZER}" STREQUAL "msan")
-    set(CMAKE_CXX_FLAGS_SAN
-        "-fsanitize=memory"
-        CACHE STRING "MemorySanitizer C++ compiler builds." FORCE)
-  elseif("${ENABLE_SANITIZER}" STREQUAL "tsan")
-    set(CMAKE_CXX_FLAGS_SAN
-        "-fsanitize=thread"
-        CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
-  endif()
+#include build/src
+include_directories(${qmcpack_BINARY_DIR}/src)
+#include qmcpack/src
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
+#-------------------------------------------------------------------
+# add definitions DO NOT EXPAND
+#-------------------------------------------------------------------
+add_definitions(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
 
-endif()
+#-------------------------------------------------------------------
+# qmcpack.settings
+#-------------------------------------------------------------------
+execute_process(
+  COMMAND hostname
+  OUTPUT_VARIABLE QMC_HOSTNAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+configure_file(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
+install(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
 
-############################################################
+#-------------------------------------------------------------------
 # FLAGS at the project level
-############################################################
+#-------------------------------------------------------------------
 #this might be redundant but maybe not in all CMake versions.
 string(TOUPPER "${CMAKE_BUILD_TYPE}" THIS_CONFIG)
 
@@ -1038,27 +899,107 @@ foreach(target_type IN ITEMS EXE SHARED)
   message("Project ${target_type}_LINKER_FLAGS: ${TMP_PROJECT_CMAKE_${target_type}_LINKER_FLAGS}")
 endforeach(target_type IN ITEMS EXE SHARED)
 
-###################################################
-# Done searching libraries. Start building qmcpack
-###################################################
+#-------------------------------------------------------------------
+# Git information (see src/CMakeLists.txt for the
+# command to get repository information)
+#-------------------------------------------------------------------
+find_package(Git)
 
-message(STATUS "Ready to build qmcpack")
-
-####################################################################
-# add definitions
-####################################################################
-
-add_definitions(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
-
-execute_process(
-  COMMAND hostname
-  OUTPUT_VARIABLE QMC_HOSTNAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-configure_file(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
-install(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
-if(INSTALL_NEXUS)
-  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+if(GIT_FOUND AND EXISTS "${qmcpack_SOURCE_DIR}/.git")
+  set(IS_GIT_PROJECT 1)
 endif()
+
+# set up config.h
+configure_file(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in ${qmcpack_BINARY_DIR}/src/config.h)
+
+######################################################################
+# Testing related settings
+######################################################################
+
+# The following option disables the extremely slow setup of full system run tests
+# This is a developer option
+# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
+# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
+# when rerunning cmake.
+#
+# On leconte: rerun of cmake with
+# slow custom commands 27 secs
+# without 8 secs
+option(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS "Disable the slow cmake custom commands for integration tests." OFF)
+mark_as_advanced(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+
+if(NOT TEST_MAX_PROCS)
+  set(TEST_MAX_PROCS 100)
+endif()
+
+option(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead."
+       ON)
+
+if(QMC_SYMLINK_TEST_FILES)
+  set(SYMLINK_MSG
+      "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source."
+  )
+else()
+  set(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
+endif()
+message(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
+
+if(QMC_DATA)
+  message(STATUS "QMC_DATA is ${QMC_DATA}")
+endif()
+
+#-------------------------------------------------------------------
+# CTest
+#-------------------------------------------------------------------
+set(DROP_METHOD "http")
+set(DROP_SITE "cdash.qmcpack.org")
+set(DROP_LOCATION "/CDash/submit.php?project=QMCPACK")
+set(TRIGGER_SITE "")
+set(DROP_SITE_CDASH TRUE)
+# Increase timeout per test over the default of 1500 seconds (25 minutes)
+set(DART_TESTING_TIMEOUT
+    3600
+    CACHE STRING "Maximum time for one test")
+enable_testing()
+include(CTest)
+
+#-------------------------------------------------------------------
+# Verify Python3 available
+#-------------------------------------------------------------------
+find_package(Python3)
+if(NOT Python3_FOUND)
+  message(FATAL_ERROR "Could not find required python3")
+endif(NOT Python3_FOUND)
+include(python)
+
+#-------------------------------------------------------------------
+# Check if PySCF is available
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  test_python_module(pyscf HAVE_PYSCF)
+  if(NOT HAVE_PYSCF)
+    message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
+  else()
+    message(STATUS "Successfully imported PySCF python module.")
+  endif()
+endif()
+
+#-------------------------------------------------------------------
+# Check if QE executables available at QE_BIN or on the PATH
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  include("CMake/FindQE.cmake")
+  if(QE_FOUND)
+    message(STATUS "Found and using patched Quantum ESPRESSO (QE) with pw2qmcpack.x at ${QE_PW_DIR}")
+  else(QE_FOUND)
+    message(
+      STATUS "Did not find a patched Quantum ESPRESSO (QE) distribution with pw2qmcpack.x. QE tests will not be run.")
+  endif(QE_FOUND)
+endif()
+
+######################################################################
+message(STATUS "Ready to parse QMCPACK source tree")
+######################################################################
 
 add_subdirectory(src)
 

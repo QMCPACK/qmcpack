@@ -1,6 +1,5 @@
-include("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
+# functions for pyscf workflow test
 
-# Runs unit tests
 function(ADD_PYSCF_TEST TESTNAME TEST_BINARY WORKDIR TEST_INPUT)
   add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${TEST_INPUT})
 
