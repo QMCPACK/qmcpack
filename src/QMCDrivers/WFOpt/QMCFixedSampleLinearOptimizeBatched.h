@@ -20,6 +20,7 @@
 
 #include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
 #include "Optimize/NRCOptimization.h"
+#include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
@@ -37,8 +38,8 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
-                                            private NRCOptimization<QMCTraits::RealType>
+
+class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched
 {
 public:
   ///Constructor.
@@ -60,9 +61,11 @@ public:
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl) override;
+  RealType costFunc(RealType dl);
 
 private:
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
