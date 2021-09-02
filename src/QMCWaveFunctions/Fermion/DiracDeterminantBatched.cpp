@@ -168,7 +168,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   // Must return early since illegal access to wfc_list etc. will otherwise occur.
   // I'm of the opinion that it shouldn't get called this way, but until this is fixed in
   // current code an assert or exception can't be done.
-  if(wfc_list.size() == 0)
+  if(wfc_list.size() == 0 || std::none_of(recompute_mask.begin(), recompute_mask.end(), [](bool compute){ return compute; }))
     return;
 
   // Now you might think the point of the recompute mask is to leave the psiM_temp_views and whatnot untouched.
@@ -198,6 +198,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   {
     ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
     // arguments here seem inconsistent, but there clearly is no effective unit test.
+
     wfc_leader.Phi->mw_evaluate_notranspose(phi_filtered_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
                                             psiM_temp_list, dpsiM_list, d2psiM_list);
   }

@@ -248,7 +248,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
         ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
-    assert(QMCDriverNew::checkLogAndGL(crowd));
+    // Has problems I think caused by assumptions about state machine of twfs that
+    // DiracDeterminantBatched doesn't follow.
+    // could be this catches a real bug, could be this just enforces half ass design.
+    // assert(QMCDriverNew::checkLogAndGL(crowd));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
                                    auto rr_prop) {

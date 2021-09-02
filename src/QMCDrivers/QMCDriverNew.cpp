@@ -539,7 +539,10 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;
-      std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
+      // since evaluating std::exp of these doesn't work in debugger.
+      auto exp_log_value =  std::exp(log_values[iw]);
+      auto exp_ref_log = std::exp(ref_log);
+      std::cout << "Logpsi walker[" << iw << "] " << exp_log_value << " ref " << exp_ref_log << std::endl;
     }
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
