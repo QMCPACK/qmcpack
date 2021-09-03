@@ -144,7 +144,7 @@ public:
    */
   void reportStatus(std::ostream& os);
 
-  void initialize_TWF_Prototype(ParticleSet& P,TWFPrototype& twf);
+  void initialize_TWF_Prototype(ParticleSet& P, TWFPrototype& twf);
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -482,7 +482,7 @@ private:
   ///diff of the phase of the trial wave function during ratio calls
   RealType PhaseDiff;
 
-  ///real part of trial wave function log 
+  ///real part of trial wave function log
   RealType log_real_;
 
   ///One over mass of target particleset, needed for Local Energy Derivatives

@@ -244,24 +244,24 @@ public:
                                        const std::vector<ValueType>& dlogpsi,
                                        std::vector<ValueType>& dhpsioverpsi);
 
-  void evaluateOneBodyOpMatrixContribution(ParticleSet& P, 
-                                           int iat,  
-                                           TWFPrototype& psi,
-                                           int iel,
-                                           RealType r,
-                                           const PosType& dr, 
-                                           std::vector<ValueMatrix_t>& B);
-  
-  void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P, 
-                                           ParticleSet& source,
+  void evaluateOneBodyOpMatrixContribution(ParticleSet& P,
                                            int iat,
-                                           int iat_src,  
                                            TWFPrototype& psi,
                                            int iel,
                                            RealType r,
-                                           const PosType& dr, 
-                                           std::vector<std::vector<ValueMatrix_t> >& dB);
-  
+                                           const PosType& dr,
+                                           std::vector<ValueMatrix_t>& B);
+
+  void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P,
+                                             ParticleSet& source,
+                                             int iat,
+                                             int iat_src,
+                                             TWFPrototype& psi,
+                                             int iel,
+                                             RealType r,
+                                             const PosType& dr,
+                                             std::vector<std::vector<ValueMatrix_t>>& dB);
+
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);

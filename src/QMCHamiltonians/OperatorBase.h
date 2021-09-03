@@ -326,23 +326,18 @@ struct OperatorBase : public QMCTraits
                                                       ParticleSet::ParticlePos_t& pulay_term)
   {
     //If there's no stochastic component, defaults to above defined evaluateWithIonDerivs.
-    //If not otherwise specified, this defaults to evaluate().  
-    return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
+    //If not otherwise specified, this defaults to evaluate().
+    return evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_term);
   }
 
-  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B)
-  {
-        
-  }
+  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B) {}
 
-  inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
-                                         ParticleSet& source, 
-                                         TWFPrototype& psi, 
-                                         int iat, 
-                                         std::vector<std::vector<ValueMatrix_t> >& Bforce)
-  {
-    
-  } 
+  inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                        ParticleSet& source,
+                                                        TWFPrototype& psi,
+                                                        int iat,
+                                                        std::vector<std::vector<ValueMatrix_t>>& Bforce)
+  {}
   /** update data associated with a particleset
    * @param s source particle set
    *

@@ -109,7 +109,7 @@ template<typename T>
 struct BareKineticEnergy : public OperatorBase
 {
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
-  using GradMatrix_t = SPOSet::GradMatrix_t;
+  using GradMatrix_t  = SPOSet::GradMatrix_t;
   ///true, if all the species have the same mass
   bool SameMass;
   ///mass of the particle
@@ -146,7 +146,7 @@ struct BareKineticEnergy : public OperatorBase
     streaming_kinetic_comp = false;
     streaming_momentum     = false;
     UpdateMode.set(OPTIMIZABLE, 1);
-    is_nondiag=true;
+    is_nondiag = true;
   }
 
   /** constructor with particleset
@@ -174,7 +174,7 @@ struct BareKineticEnergy : public OperatorBase
       SameMass &= (std::abs(tspecies(massind, i) - M) < 1e-6);
       MinusOver2M[i] = -1.0 / (2.0 * tspecies(massind, i));
     }
-    is_nondiag=true;
+    is_nondiag = true;
   }
   ///destructor
   ~BareKineticEnergy() override {}
@@ -496,57 +496,57 @@ struct BareKineticEnergy : public OperatorBase
     std::vector<ValueMatrix_t> M;
     std::vector<GradMatrix_t> grad_M;
     std::vector<ValueMatrix_t> lapl_M;
-    for(int ig=0; ig<ngroups; ig++)
+    for (int ig = 0; ig < ngroups; ig++)
     {
-      IndexType norbs = psi.num_orbitals(ig);
+      IndexType norbs    = psi.num_orbitals(ig);
       IndexType numptcls = psi.num_particles(ig);
 
       ValueMatrix_t zeromat;
       GradMatrix_t zerogradmat;
-      
-      zeromat.resize(numptcls,norbs);
-      zerogradmat.resize(numptcls,norbs);
-     
+
+      zeromat.resize(numptcls, norbs);
+      zerogradmat.resize(numptcls, norbs);
+
       M.push_back(zeromat);
       grad_M.push_back(zerogradmat);
       lapl_M.push_back(zeromat);
     }
 
-    psi.get_egrad_elapl_M(P,M,grad_M,lapl_M);
-    for(int ig=0; ig<ngroups; ig++)
-    {  
-      lapl_M[ig]*=MinusOver2M[ig];
-      B[ig]+= lapl_M[ig];
+    psi.get_egrad_elapl_M(P, M, grad_M, lapl_M);
+    for (int ig = 0; ig < ngroups; ig++)
+    {
+      lapl_M[ig] *= MinusOver2M[ig];
+      B[ig] += lapl_M[ig];
     }
   }
 
   //Bforce.  First index is the x, y, or z component.  so Bforce[0] would be the std::vector<ValueMatrix_t> of d/dx B.
-  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
-                                         ParticleSet& source, 
-                                         TWFPrototype& psi, 
-                                         int iat, 
-                                         std::vector<std::vector<ValueMatrix_t> >& Bforce) override
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         ParticleSet& source,
+                                         TWFPrototype& psi,
+                                         int iat,
+                                         std::vector<std::vector<ValueMatrix_t>>& Bforce) override
   {
     ScopedTimer dBketimer(*timer_manager.createTimer("NEW::KE::dB"));
     IndexType ngroups = P.groups();
     assert(Bforce.size() == OHMMS_DIM);
     assert(Bforce[0].size() == ngroups);
     std::vector<ValueMatrix_t> mtmp;
-    for(int ig=0; ig<ngroups; ig++)
+    for (int ig = 0; ig < ngroups; ig++)
     {
-      IndexType norbs = psi.num_orbitals(ig);
+      IndexType norbs    = psi.num_orbitals(ig);
       IndexType numptcls = psi.num_particles(ig);
 
       ValueMatrix_t zeromat;
       GradMatrix_t zerogradmat;
-      
-      zeromat.resize(numptcls,norbs);
-      zerogradmat.resize(numptcls,norbs);
-     
+
+      zeromat.resize(numptcls, norbs);
+      zerogradmat.resize(numptcls, norbs);
+
       mtmp.push_back(zeromat);
     }
 
-    std::vector<std::vector<ValueMatrix_t> > dm, dlapl;
+    std::vector<std::vector<ValueMatrix_t>> dm, dlapl;
     dm.push_back(mtmp);
     dm.push_back(mtmp);
     dm.push_back(mtmp);
@@ -556,16 +556,15 @@ struct BareKineticEnergy : public OperatorBase
     dlapl.push_back(mtmp);
 
     {
-    ScopedTimer gradorbtimer(*timer_manager.createTimer("NEW::KE::orb_grad"));
-    psi.get_igrad_igradelapl_M(P,source, iat, dm, dlapl);
+      ScopedTimer gradorbtimer(*timer_manager.createTimer("NEW::KE::orb_grad"));
+      psi.get_igrad_igradelapl_M(P, source, iat, dm, dlapl);
     }
-    for(int idim=0; idim<OHMMS_DIM; idim++)
-      for(int ig=0; ig<ngroups; ig++)
-      {  
-        dlapl[idim][ig]*=MinusOver2M[ig];
-        Bforce[idim][ig]+= dlapl[idim][ig];
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+      for (int ig = 0; ig < ngroups; ig++)
+      {
+        dlapl[idim][ig] *= MinusOver2M[ig];
+        Bforce[idim][ig] += dlapl[idim][ig];
       }
-     
   }
 };
 } // namespace qmcplusplus

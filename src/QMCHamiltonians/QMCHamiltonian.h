@@ -54,7 +54,7 @@ public:
   typedef OperatorBase::PropertySetType PropertySetType;
   typedef OperatorBase::BufferType BufferType;
   typedef OperatorBase::Walker_t Walker_t;
-  using WP = WalkerProperties::Indexes;
+  using WP            = WalkerProperties::Indexes;
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
   enum
   {
@@ -329,13 +329,13 @@ public:
   * @return Local Energy.
   */
   FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
-  
- /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+                                                  ParticleSet& ions,
+                                                  TrialWaveFunction& psi,
+                                                  ParticleSet::ParticlePos_t& hf_terms,
+                                                  ParticleSet::ParticlePos_t& pulay_terms,
+                                                  ParticleSet::ParticlePos_t& wf_grad);
+
+  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
   * @param psi Trial wave function
@@ -345,10 +345,10 @@ public:
   * @return Local Energy.
   */
   FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& dedr,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                                      ParticleSet& ions,
+                                                      TrialWaveFunction& psi,
+                                                      ParticleSet::ParticlePos_t& dedr,
+                                                      ParticleSet::ParticlePos_t& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */
@@ -487,19 +487,19 @@ private:
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
   static RefVectorWithLeader<OperatorBase> extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id);
 
-  std::vector<ValueMatrix_t> X;  //Working arrays for derivatives
-  std::vector<ValueMatrix_t> Minv;  //Working array for derivatives. 
+  std::vector<ValueMatrix_t> X;    //Working arrays for derivatives
+  std::vector<ValueMatrix_t> Minv; //Working array for derivatives.
   std::vector<ValueMatrix_t> B;
   std::vector<ValueMatrix_t> B_gs;
   std::vector<ValueMatrix_t> M;
   std::vector<ValueMatrix_t> M_gs;
 
-  std::vector<std::vector<ValueMatrix_t> > dM;
-  std::vector<std::vector<ValueMatrix_t> > dM_gs;
-  std::vector<std::vector<ValueMatrix_t> > dB;
-  std::vector<std::vector<ValueMatrix_t> > dB_gs;
+  std::vector<std::vector<ValueMatrix_t>> dM;
+  std::vector<std::vector<ValueMatrix_t>> dM_gs;
+  std::vector<std::vector<ValueMatrix_t>> dB;
+  std::vector<std::vector<ValueMatrix_t>> dB_gs;
 
-  TWFPrototype psi; 
+  TWFPrototype psi;
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables
   TraceRequest request;

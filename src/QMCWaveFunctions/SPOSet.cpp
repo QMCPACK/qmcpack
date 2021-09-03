@@ -120,7 +120,8 @@ void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
                                        ValueMatrix_t& d2logdet,
                                        ValueMatrix_t& dspinlogdet)
 {
-  APP_ABORT("Need specialization of " + className + "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
+  APP_ABORT("Need specialization of " + className +
+            "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -203,10 +204,10 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
 }
 
 void SPOSet::evaluateGradSourceRow(const ParticleSet& P,
-                                int iel,
-                                const ParticleSet& source,
-                                int iat_src,
-                                GradVector_t& gradphi)
+                                   int iel,
+                                   const ParticleSet& source,
+                                   int iat_src,
+                                   GradVector_t& gradphi)
 {
   APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
@@ -235,9 +236,7 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
-                      int iat,
-                      gpu::device_vector<CTS::ValueType*>& phi)
+void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";

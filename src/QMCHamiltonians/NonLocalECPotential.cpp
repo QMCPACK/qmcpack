@@ -67,7 +67,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
-  is_nondiag=true;
+  is_nondiag = true;
   for (size_t ig = 0; ig < els.groups(); ig++)
   {
     // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.
@@ -456,7 +456,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
 
 void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B)
 {
-  bool keepGrid=true;
+  bool keepGrid = true;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       if (!keepGrid)
@@ -477,24 +477,23 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& 
       const auto& displ              = myTable.getDisplRow(jel);
       std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
-       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          PP[iat]->evaluateOneBodyOpMatrixContribution(P,iat,psi, jel, dist[iat], -displ[iat], B);
+          PP[iat]->evaluateOneBodyOpMatrixContribution(P, iat, psi, jel, dist[iat], -displ[iat], B);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
     }
   }
-
 }
 
-void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
-                                         ParticleSet& source, 
-                                         TWFPrototype& psi, 
-                                         int iat_source, 
-                                         std::vector<std::vector<ValueMatrix_t> >& Bforce)
+void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                            ParticleSet& source,
+                                                            TWFPrototype& psi,
+                                                            int iat_source,
+                                                            std::vector<std::vector<ValueMatrix_t>>& Bforce)
 {
-  bool keepGrid=true;
+  bool keepGrid = true;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       if (!keepGrid)
@@ -515,15 +514,15 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       const auto& displ              = myTable.getDisplRow(jel);
       std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr  && dist[iat] < PP[iat]->getRmax())
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P,source, iat, iat_source, psi, jel, dist[iat], -displ[iat], Bforce);
+          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P, source, iat, iat_source, psi, jel, dist[iat], -displ[iat],
+                                                         Bforce);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
     }
   }
-
 }
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDeterministic(
     ParticleSet& P,
@@ -704,16 +703,18 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
   auto resource_index = collection.addResource(std::move(new_res));
 }
 
-void NonLocalECPotential::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
+void NonLocalECPotential::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& O_list) const
 {
   auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
-  auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  auto res_ptr   = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
   O_leader.mw_res_.reset(res_ptr);
 }
 
-void NonLocalECPotential::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
+void NonLocalECPotential::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& O_list) const
 {
   auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
   collection.takebackResource(std::move(O_leader.mw_res_));

@@ -636,10 +636,10 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P,
 }
 
 void LCAOrbitalSet::evaluateGradSourceRow(const ParticleSet& P,
-                                       int iel,
-                                       const ParticleSet& source,
-                                       int iat_src,
-                                       GradVector_t& gradphi)
+                                          int iel,
+                                          const ParticleSet& source,
+                                          int iat_src,
+                                          GradVector_t& gradphi)
 {
   if (Identity)
   {

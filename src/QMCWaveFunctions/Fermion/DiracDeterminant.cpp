@@ -372,7 +372,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
 {
-  twf.add_determinant(P,P.getGroupID(FirstIndex),Phi.get());
+  twf.add_determinant(P, P.getGroupID(FirstIndex), Phi.get());
 }
 
 
@@ -680,7 +680,7 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
   {
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    log_value_      = convertValueToLog(det);
+    log_value_    = convertValueToLog(det);
   }
   else
     invertPsiM(psiM_temp, psiM);
@@ -713,7 +713,8 @@ void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection) c
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection,
+                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
@@ -726,7 +727,8 @@ void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection, 
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection,
+                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);

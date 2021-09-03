@@ -70,11 +70,11 @@ public:
 
   void evaluateOneBodyOpMatrix(ParticleSet& P, TWFPrototype& psi, std::vector<ValueMatrix_t>& B) override;
 
-  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P, 
-                                         ParticleSet& source, 
-                                         TWFPrototype& psi, 
-                                         int iat, 
-                                         std::vector<std::vector<ValueMatrix_t> >& Bforce) override;
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         ParticleSet& source,
+                                         TWFPrototype& psi,
+                                         int iat,
+                                         std::vector<std::vector<ValueMatrix_t>>& Bforce) override;
   /** set non local moves options
    * @param cur the xml input
    */
@@ -138,8 +138,9 @@ public:
 
   /** Set the flag whether to compute forces or not.
    * @param val The boolean value for computing forces
-   */ 
-  inline void setComputeForces(bool val) override {ComputeForces=val;}
+   */
+  inline void setComputeForces(bool val) override { ComputeForces = val; }
+
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;

@@ -177,10 +177,10 @@ public:
                           GradMatrix_t& grad_phi) override;
 
   void evaluateGradSourceRow(const ParticleSet& P,
-                          int iel,
-                          const ParticleSet& source,
-                          int iat_src,
-                          GradVector_t& grad_phi) override;
+                             int iel,
+                             const ParticleSet& source,
+                             int iat_src,
+                             GradVector_t& grad_phi) override;
 
   /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.

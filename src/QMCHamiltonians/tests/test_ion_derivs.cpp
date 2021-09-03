@@ -247,58 +247,57 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(-5.2293234395150989));
 #endif
 
- //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
- //QMCHamiltonian level to make sure there are no crashes.  
- 
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //QMCHamiltonian level to make sure there are no crashes.
+
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham->evaluateIonDerivsDeterministic(elec,ions,*psi,hf_term,pulay_term,wf_grad);
- 
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
+  ham->evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+
+  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
+  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+
+  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
+  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
   RandomGenerator_t myrng;
   ham->setRandomGenerator(&myrng);
-  ham->evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
-  
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
+  ham->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+
+  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
+  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+
+  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
+  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 }
 
-TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
+TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 {
-  app_log() <<"========================================================================================\n";
-  app_log() <<"========================================================================================\n";
-  app_log() <<"====================Ion Derivative Test:  Prototype Single Slater+Jastrow===============\n";
-  app_log() <<"========================================================================================\n";
-  app_log() <<"========================================================================================\n";
-  using RealType = QMCTraits::RealType;
-  using ValueType = QMCTraits::ValueType;  
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "====================Ion Derivative Test:  Prototype Single Slater+Jastrow===============\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
   Communicate* c;
-  c= OHMMS::Controller;
+  c = OHMMS::Controller;
 
   ParticleSet ions;
   ParticleSet elec;
 
-  create_CN_particlesets(elec,ions);
+  create_CN_particlesets(elec, ions);
   //////////////////////////////////
   /////////////////////////////////
-    
+
   Libxml2Document doc2;
   bool okay = doc2.parse("cn.wfnoj.xml");
   REQUIRE(okay);
@@ -317,25 +316,25 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   TrialWaveFunction* psi = wff.getTWF();
   REQUIRE(psi != nullptr);
 
-//  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+  //  SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
-//  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
-//  REQUIRE(MO_base.size() == 1);
+  //  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+  //  REQUIRE(MO_base.size() == 1);
 
 
-//  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
-//  REQUIRE(bb != NULL);
+  //  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
+  //  REQUIRE(bb != NULL);
 
-//  OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-//  SPOSet* sposet_up = bb->createSPOSet(slater_base[0]);
-//  SPOSet* sposet_dn = bb->createSPOSet(slater_base[1]);
+  //  OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
+  //  SPOSet* sposet_up = bb->createSPOSet(slater_base[0]);
+  //  SPOSet* sposet_dn = bb->createSPOSet(slater_base[1]);
 
-    
+
   TWFPrototype twf;
- // twf.add_determinant(elec,0,sposet_up);
-//  twf.add_determinant(elec,1,sposet_dn);
+  // twf.add_determinant(elec,0,sposet_up);
+  //  twf.add_determinant(elec,1,sposet_dn);
 
-  psi->initialize_TWF_Prototype(elec,twf);
+  psi->initialize_TWF_Prototype(elec, twf);
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
   SPOSet::ValueVector_t d2psi;
@@ -375,21 +374,21 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
 
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
 
-  int IONINDEX=1;
+  int IONINDEX = 1;
 
   ValueMatrix_t upmat;
   ValueMatrix_t dnmat;
-  upmat.resize(5,14);
-  dnmat.resize(4,14);
+  upmat.resize(5, 14);
+  dnmat.resize(4, 14);
 
   std::vector<ValueMatrix_t> matlist;
   std::vector<ValueMatrix_t> Bkin;
   std::vector<ValueMatrix_t> B, M, X;
-  std::vector<std::vector<ValueMatrix_t> > dM;
-  std::vector<std::vector<ValueMatrix_t> > dB;
+  std::vector<std::vector<ValueMatrix_t>> dM;
+  std::vector<std::vector<ValueMatrix_t>> dB;
   matlist.push_back(upmat);
   matlist.push_back(dnmat);
-  
+
   dM.push_back(matlist);
   dM.push_back(matlist);
   dM.push_back(matlist);
@@ -410,11 +409,11 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   X.push_back(upmat);
   X.push_back(dnmat);
 
-  twf.get_M(elec,matlist);
-  
-  OperatorBase* kinop=ham->getHamiltonian(KINETIC);
- 
-  kinop-> evaluateOneBodyOpMatrix(elec,twf,B);
+  twf.get_M(elec, matlist);
+
+  OperatorBase* kinop = ham->getHamiltonian(KINETIC);
+
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
   std::vector<ValueMatrix_t> minv;
   std::vector<ValueMatrix_t> B_gs, M_gs;
@@ -425,20 +424,20 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   minv.push_back(upmat);
   minv.push_back(dnmat);
 
-  
-  twf.get_M(elec,matlist);
-  std::vector<std::vector<ValueMatrix_t> > dB_gs;
-  std::vector<std::vector<ValueMatrix_t> > dM_gs;
+
+  twf.get_M(elec, matlist);
+  std::vector<std::vector<ValueMatrix_t>> dB_gs;
+  std::vector<std::vector<ValueMatrix_t>> dM_gs;
   std::vector<ValueMatrix_t> tmp_gs;
-  twf.get_gs_matrix(B,B_gs);
-  twf.get_gs_matrix(matlist,M_gs);
-  twf.invert_M(M_gs,minv);
-  twf.build_X(minv,B_gs,X);
-  for(int id=0; id<matlist.size(); id++)
+  twf.get_gs_matrix(B, B_gs);
+  twf.get_gs_matrix(matlist, M_gs);
+  twf.invert_M(M_gs, minv);
+  twf.build_X(minv, B_gs, X);
+  for (int id = 0; id < matlist.size(); id++)
   {
     int ptclnum = twf.num_particles(id);
     ValueMatrix_t gs_m;
-    gs_m.resize(ptclnum,ptclnum);
+    gs_m.resize(ptclnum, ptclnum);
     tmp_gs.push_back(gs_m);
   }
 
@@ -450,36 +449,36 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
-  
+
   ParticleSet::ParticleGradient_t fkin_complex(ions.getTotalNum());
   ParticleSet::ParticlePos_t fkin(ions.getTotalNum());
 
-  
-  for(int ionid=0; ionid<ions.getTotalNum(); ionid++)
+
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
   {
-    for(int idim=0; idim<OHMMS_DIM; idim++)
-    {  
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
       twf.wipe_matrix(dB[idim]);
       twf.wipe_matrix(dM[idim]);
     }
-    
-    twf.get_igrad_M(elec,ions,ionid,dM);
-    kinop->evaluateOneBodyOpMatrixForceDeriv(elec,ions,twf,ionid,dB);
- 
-    for(int idim=0; idim<OHMMS_DIM; idim++)
+
+    twf.get_igrad_M(elec, ions, ionid, dM);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      twf.get_gs_matrix(dB[idim],dB_gs[idim]); 
-      twf.get_gs_matrix(dM[idim],dM_gs[idim]);
-      fkin_complex[ionid][idim]=twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim]);
+      twf.get_gs_matrix(dB[idim], dB_gs[idim]);
+      twf.get_gs_matrix(dM[idim], dM_gs[idim]);
+      fkin_complex[ionid][idim] = twf.compute_gs_derivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
-    convert(fkin_complex[ionid],fkin[ionid]);
+    convert(fkin_complex[ionid], fkin[ionid]);
   }
 
- 
+
   ValueType keval = 0.0;
-  RealType keobs=0.0;
-  keval=twf.trAB(minv,B_gs);
-  convert(keval,keobs);
+  RealType keobs  = 0.0;
+  keval           = twf.trAB(minv, B_gs);
+  convert(keval, keobs);
   REQUIRE(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
   REQUIRE(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
@@ -496,9 +495,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   REQUIRE(fkin[1][1] == Approx(-3.3743242489947529));
   REQUIRE(fkin[1][2] == Approx(7.5625192454964454));
 #endif
-  
-  app_log()<<" KEVal = "<<keval<<std::endl;
-/* 
+
+  app_log() << " KEVal = " << keval << std::endl;
+  /* 
   for(int idim=0; idim<OHMMS_DIM; idim++)
   {
     ValueType dwfn=0.0;
@@ -517,49 +516,49 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
   }
 */
 
-  
-  app_log()<<" Now evaluating nonlocalecp\n"; 
-  OperatorBase* nlppop=ham->getHamiltonian(NONLOCALECP);
-  app_log()<<"nlppop = "<<nlppop<<std::endl;
-  app_log()<<"  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
-  
+
+  app_log() << " Now evaluating nonlocalecp\n";
+  OperatorBase* nlppop = ham->getHamiltonian(NONLOCALECP);
+  app_log() << "nlppop = " << nlppop << std::endl;
+  app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
+
 
   twf.wipe_matrix(B);
   twf.wipe_matrix(B_gs);
-  twf.wipe_matrix(X); 
-  nlppop-> evaluateOneBodyOpMatrix(elec,twf,B);
-  twf.get_gs_matrix(B,B_gs);
-  twf.build_X(minv,B_gs,X);
-  
-  ValueType nlpp = 0.0;
-  RealType nlpp_obs=0.0;
-  nlpp=twf.trAB(minv,B_gs);
-  convert(nlpp,nlpp_obs);
+  twf.wipe_matrix(X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.get_gs_matrix(B, B_gs);
+  twf.build_X(minv, B_gs, X);
 
-  app_log()<<"NLPP = "<<nlpp<<std::endl;
-  
-  REQUIRE( nlpp_obs == Approx(1.3849558361e+01));  
+  ValueType nlpp    = 0.0;
+  RealType nlpp_obs = 0.0;
+  nlpp              = twf.trAB(minv, B_gs);
+  convert(nlpp, nlpp_obs);
+
+  app_log() << "NLPP = " << nlpp << std::endl;
+
+  REQUIRE(nlpp_obs == Approx(1.3849558361e+01));
 
   ParticleSet::ParticleGradient_t fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos_t fnlpp(ions.getTotalNum());
-  for(int ionid=0; ionid<ions.getTotalNum(); ionid++)
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
   {
-    for(int idim=0; idim<OHMMS_DIM; idim++)
-    {  
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
       twf.wipe_matrix(dB[idim]);
       twf.wipe_matrix(dM[idim]);
     }
-    
-    twf.get_igrad_M(elec,ions,ionid,dM);
-    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec,ions,twf,ionid,dB);
- 
-    for(int idim=0; idim<OHMMS_DIM; idim++)
+
+    twf.get_igrad_M(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      twf.get_gs_matrix(dB[idim],dB_gs[idim]); 
-      twf.get_gs_matrix(dM[idim],dM_gs[idim]);
-      fnlpp_complex[ionid][idim]=twf.compute_gs_derivative(minv,X,dM_gs[idim],dB_gs[idim]);
+      twf.get_gs_matrix(dB[idim], dB_gs[idim]);
+      twf.get_gs_matrix(dM[idim], dM_gs[idim]);
+      fnlpp_complex[ionid][idim] = twf.compute_gs_derivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
-    convert(fnlpp_complex[ionid],fnlpp[ionid]);
+    convert(fnlpp_complex[ionid], fnlpp[ionid]);
   }
 
 #if defined(MIXED_PRECISION)
