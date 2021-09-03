@@ -222,7 +222,7 @@ public:
    * Note: some distance table consumers (WaveFunctionComponent) have optimized code paths which require prepare_old = true for accepting a move.
    * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
-  virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
+  virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old = true) = 0;
 
   /** walker batched version of move. this function may be implemented asynchronously.
    * Additional synchroniziation for collecting results should be handled by the caller.
