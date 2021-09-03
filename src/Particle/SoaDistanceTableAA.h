@@ -104,8 +104,9 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     ScopedTimer local_timer(move_timer_);
 
     old_prepared_elec_id = prepare_old ? iat : -1;
+
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
-                                           N_targets, P.activePtcl);
+                                           N_targets, iat);
     // set up old_r_ and old_dr_ for moves may get accepted.
     if (prepare_old)
     {
