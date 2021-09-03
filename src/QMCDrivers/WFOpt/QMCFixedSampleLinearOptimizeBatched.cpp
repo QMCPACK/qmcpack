@@ -211,7 +211,7 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
 {
   if (do_output_matrices_csv_ && !output_matrices_initialized_)
   {
-    numParams = optTarget->getNumParams();
+    int numParams = optTarget->getNumParams();
     int N     = numParams + 1;
     output_overlap_.init_file(get_root_name(), "ovl", N);
     output_hamiltonian_.init_file(get_root_name(), "ham", N);
@@ -246,8 +246,8 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   bool Valid(true);
   int Total_iterations(0);
   //size of matrix
-  numParams = optTarget->getNumParams();
-  N         = numParams + 1;
+  int numParams = optTarget->getNumParams();
+  int N         = numParams + 1;
   //   where we are and where we are pointing
   std::vector<RealType> currentParameterDirections(N, 0);
   std::vector<RealType> currentParameters(numParams, 0);
@@ -835,10 +835,10 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  int numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  int N = numParams + 1;
 
   // prepare vectors to hold the parameter updates
   parameterDirections.resize(nshifts);
@@ -944,7 +944,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  int numParams = optTarget->getNumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -997,7 +997,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  int N = numParams + 1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -1242,10 +1242,10 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   start();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  int numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  int N = numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
   std::vector<RealType> currentParameters(numParams, 0.0);

@@ -83,8 +83,6 @@ public:
 
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
-  ///Dimension of matrix and number of parameters
-  int N, numParams;
   ///vmc engine
   std::unique_ptr<VMCBatched> vmcEngine;
   ///xml node to be dumped
