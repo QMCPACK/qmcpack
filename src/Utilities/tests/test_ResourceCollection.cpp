@@ -33,6 +33,15 @@ TEST_CASE("Resource", "[utilities]")
   REQUIRE(res_copy->data.size() == 5);
 }
 
+TEST_CASE("DummyResource", "[utilities]")
+{
+  DummyResource dummy;
+  std::unique_ptr<DummyResource> dummy2(dummy.makeClone());
+  REQUIRE(dummy.getName() == "Dummy");
+  DummyResource dummy_alt("dummy_alt_name");
+  REQUIRE(dummy_alt.getName() == "dummy_alt_name");
+}
+
 class WFCResourceConsumer
 {
 public:
