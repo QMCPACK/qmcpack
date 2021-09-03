@@ -591,8 +591,8 @@ def make_multidet(cell, mf, title):
     for idx,i in enumerate(a):
         occ_a = numpy.array(list(i[1][2:]),dtype=int)
         occ_b = numpy.array(list(i[2][2:]),dtype=int)
-        string_a =   '1'*cas_mo_start_a + i[1][2:] +  '0'*(len(mf.mo_coeff) - cas_mo_start_a - len(occ_a))
-        string_b =  '1'*cas_mo_start_b + i[2][2:] + '0'*(len(mf.mo_coeff) - cas_mo_start_b - len(occ_b))
+        string_a =     '0'*(len(mf.mo_coeff) - cas_mo_start_a - len(occ_a)) + i[1][2:] + '1'*cas_mo_start_a
+        string_b = '0'*(len(mf.mo_coeff) - cas_mo_start_b - len(occ_b)) + i[2][2:] + '1'*cas_mo_start_b
         chunks_a = [int(string_a[j:j+n],2) for j in range(0, len(string_a), n)]
         chunks_b = [int(string_b[j:j+n],2) for j in range(0, len(string_b), n)]
         dets_a.append(chunks_a)
