@@ -853,7 +853,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     { 
       for(int iorb=0; iorb<norbs; iorb++)
       {
-        dB[idim][detIndex][thisEIndex][iorb]+= -1.0*gpot[iorb][idim]-glpoly[iorb][idim]+gwfn[iorb][idim];
+        dB[idim][detIndex][thisEIndex][iorb]+= RealType(-1.0)*gpot[iorb][idim]-glpoly[iorb][idim]+gwfn[iorb][idim];
       }
     }
     }
