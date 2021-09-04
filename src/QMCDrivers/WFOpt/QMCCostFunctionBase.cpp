@@ -19,6 +19,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Optimize/LeastSquaredFit.h"
 #include <set>
@@ -27,8 +28,6 @@
 
 namespace qmcplusplus
 {
-using xmlCharUptr = std::unique_ptr<xmlChar, decltype(xmlFree)>;
-
 QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
                                          TrialWaveFunction& psi,
                                          QMCHamiltonian& h,
@@ -534,15 +533,11 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      auto iptr      = xmlCharUptr(xmlGetProp(cur, (const xmlChar*)"id"), xmlFree);
-      if (iptr == nullptr)
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr.get());
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (oit != OptVariablesForPsi.end())
-      {
+      if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
         paramNodes[aname] = cur;
-      }
     }
     xmlXPathFreeObject(result);
     //check radfunc
@@ -550,24 +545,19 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      auto iptr      = xmlCharUptr(xmlGetProp(cur, (const xmlChar*)"id"), xmlFree);
-      if (iptr == nullptr)
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr.get());
-      std::string expID = aname + "_E";
-      xmlAttrPtr aptr   = xmlHasProp(cur, (const xmlChar*)"exponent");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
       {
-        attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
+        std::string expID = aname + "_E";
+        if (auto oit = OptVariablesForPsi.find(expID); oit != OptVariablesForPsi.end())
+          attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
       }
       std::string cID = aname + "_C";
-      aptr            = xmlHasProp(cur, (const xmlChar*)"contraction");
-      oit             = OptVariablesForPsi.find(cID);
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"contraction"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(cID); oit != OptVariablesForPsi.end())
+          attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
     }
     xmlXPathFreeObject(result);
     //check ci
@@ -575,16 +565,14 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      auto iptr      = xmlCharUptr(xmlGetProp(cur, (const xmlChar*)"id"), xmlFree);
-      if (iptr == nullptr)
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr.get());
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     //check csf
@@ -592,16 +580,12 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      auto iptr      = xmlCharUptr(xmlGetProp(cur, (const xmlChar*)"id"), xmlFree);
-      if (iptr == nullptr)
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr.get());
-      xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     if (CI_Opt)
