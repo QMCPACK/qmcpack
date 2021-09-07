@@ -249,12 +249,8 @@ void RMC::resetRun()
   {
     Movers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-    // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1]);
-    wClones[ip]->reptile = W.ReptileList[ip];
-    //app_log()<<"Thread # "<<ip<< std::endl;
-    // printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
 
-    // wClones[ip]->reptile->printState();
+    wClones[ip]->reptile = W.ReptileList[ip].get();
     wClones[ip]->activeBead = 0;
     wClones[ip]->direction  = +1;
 
@@ -304,8 +300,6 @@ bool RMC::put(xmlNodePtr q)
 //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.
 void RMC::resetReptiles(int nReptiles_in, int nbeads_in, RealType tau)
 {
-  for (MCWalkerConfiguration::ReptileList_t::iterator it = W.ReptileList.begin(); it != W.ReptileList.end(); it++)
-    delete *it;
   W.ReptileList.clear();
   // Maybe we should be more vigorous in cleaning the MCWC WalkerList?
   std::vector<int> repWalkerSlice;
@@ -316,7 +310,7 @@ void RMC::resetReptiles(int nReptiles_in, int nbeads_in, RealType tau)
 
   for (int i = 0; i < nReptiles_in; i++)
   {
-    W.ReptileList.push_back(new Reptile(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
+    W.ReptileList.push_back(std::make_unique<Reptile>(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
     W.ReptileList[i]->setTau(tau);
   }
 }
