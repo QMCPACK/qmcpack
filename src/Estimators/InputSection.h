@@ -58,6 +58,7 @@ private:
   std::unordered_map<std::string, std::any> values;
   
 public:
+  // Query functions
   bool is_attribute(std::string name){return attributes.find(name)!=attributes.end();};
   bool is_parameter(std::string name){return parameters.find(name)!=parameters.end();};
   bool is_required(std::string name){return required.find(name)!=required.end();};
