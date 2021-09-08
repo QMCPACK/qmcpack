@@ -656,8 +656,8 @@ void QMCCostFunctionBase::updateXmlNodes()
       xmlNodePtr cur = cptr->children;
       while (cur != NULL)
       {
-        std::string cname((const char*)(cur->name));
-        if (cname == "lambda")
+        std::string childName((const char*)(cur->name));
+        if (childName == "lambda")
         {
           int i = 0;
           int j = -1;
