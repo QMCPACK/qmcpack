@@ -605,13 +605,13 @@ void QMCCostFunctionBase::updateXmlNodes()
     addCJParams(acontext, "//jastrow");
     xmlXPathFreeContext(acontext);
   }
-  for (auto& [pname, pptr] : paramNodes)
+  for (const auto& [pname, pptr] : paramNodes)
   {
     //FIXME real value is forced here to makde sure that the code builds
     Return_rt v = std::real(OptVariablesForPsi[pname]);
     getContent(v, pptr);
   }
-  for (auto& [aname, attrib] : attribNodes)
+  for (const auto& [aname, attrib] : attribNodes)
   {
     std::ostringstream vout;
     vout.setf(std::ios::scientific, std::ios::floatfield);
@@ -619,7 +619,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     vout << OptVariablesForPsi[aname];
     xmlSetProp(attrib.first, (const xmlChar*)attrib.second.c_str(), (const xmlChar*)vout.str().c_str());
   }
-  for (auto& [cname, cptr] : coeffNodes)
+  for (const auto& [cname, cptr] : coeffNodes)
   {
     std::string rname(cname);
     OhmmsAttributeSet cAttrib;
@@ -633,7 +633,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       //
       aname.append("_");
       std::vector<Return_rt> c;
-      for (auto& [name, value] : OptVariablesForPsi)
+      for (const auto& [name, value] : OptVariablesForPsi)
       {
         if (name.find(aname) == 0)
         {
