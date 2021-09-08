@@ -17,6 +17,8 @@
 
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+
+#include <memory>
 #include "Message/Communicate.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
@@ -29,8 +31,6 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
-
-#include <memory>
 
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
@@ -48,7 +48,7 @@ struct NLjob
 #endif
 
 ///forward declaration
-struct WaveFunctionComponent;
+class WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
 
@@ -69,8 +69,9 @@ class ResourceCollection;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-struct WaveFunctionComponent : public QMCTraits
+class WaveFunctionComponent : public QMCTraits
 {
+public:
   /** enum for a update mode */
   enum
   {
@@ -107,9 +108,6 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** current update mode */
   int UpdateMode;
-  /** current \f$\log\phi \f$
-   */
-  LogValueType LogValue;
   /** Pointer to the differential WaveFunctionComponent of this object
    *
    * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
@@ -128,6 +126,19 @@ struct WaveFunctionComponent : public QMCTraits
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
+protected:
+  /** Current \f$\log\phi \f$.
+   *  Exception! Slater Determinant most of the time has inconsistent a log_value inconsistent with the determinants
+   *  it contains dduring a move sequence. That case the log_value_ would be more safely calculated on the fly.
+   *
+   *  There could be others.
+   */
+  LogValueType log_value_;
+
+public:
+  const LogValueType get_log_value() const { return log_value_; }
+  LogValueType& log_value() { return log_value_; }
+
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
   ///default destructor
@@ -139,7 +150,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d);
 
   ///assembles the full value
-  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }
+  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -334,12 +345,14 @@ struct WaveFunctionComponent : public QMCTraits
                                     const std::vector<bool>& isAccepted,
                                     bool safe_to_delay = false) const;
 
-  /** complete all the delayed updates, must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   * Must be called at the end of each substep if p-by-p move is used.
+   * This function was initially introduced for determinant delayed updates to complete all the delayed operations.
+   * It has been extended to handle asynchronous operations on accellerators before leaving the p-by-p move region.
    */
   virtual void completeUpdates() {}
 
-  /** complete all the delayed updates for all the walkers in a batch
-   * must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations for all the walkers in a batch before leaving the p-by-p move region.
    */
   virtual void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const;
 
@@ -427,11 +440,11 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
 
   /** make clone
    * @param tqp target Quantum ParticleSet
@@ -474,7 +487,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
-    RealType myrat = std::real(LogToValue<PsiValueType>::convert(LogValue));
+    RealType myrat = std::real(LogToValue<PsiValueType>::convert(log_value_));
     for (int j = 0; j < myVars.size(); j++)
     {
       int loc = myVars.where(j);
@@ -513,7 +526,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios of all the virtual moves of all the walkers
    */
   virtual void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<const VirtualParticleSet>& vp_list,
+                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
 
   /** evaluate ratios to evaluate the non-local PP

@@ -38,7 +38,6 @@
 #include "QMCDrivers/WFOpt/QMCOptimizeBatched.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
-#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -104,10 +103,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   }
   else if (qmc_mode.find("linear") < nchars)
   {
-    if (qmc_mode.find("cslinear") < nchars)
-      das.new_run_type = QMCRunType::CS_LINEAR_OPTIMIZE;
-    else
-      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
+    das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
   }
   else if (qmc_mode.find("opt_batch") < nchars)
   {
@@ -305,18 +301,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                  MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
                                               primaryH),
                                  qmc_system.getSampleStack(), comm);
-    opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
-    new_driver.reset(opt);
-  }
-  else if (das.new_run_type == QMCRunType::CS_LINEAR_OPTIMIZE)
-  {
-#if defined(QMC_CUDA)
-    app_log() << "cslinear is not supported. Switch to linear method. " << std::endl;
-    QMCFixedSampleLinearOptimize* opt = new QMCFixedSampleLinearOptimize(qmc_system, *primaryPsi, *primaryH, comm);
-#else
-    QMCCorrelatedSamplingLinearOptimize* opt =
-        new QMCCorrelatedSamplingLinearOptimize(qmc_system, *primaryPsi, *primaryH, comm);
-#endif
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver.reset(opt);
   }

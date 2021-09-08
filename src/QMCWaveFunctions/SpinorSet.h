@@ -111,7 +111,7 @@ public:
    */
   void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi) override;
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
 private:
   //Sposet for the up and down channels of our spinors.

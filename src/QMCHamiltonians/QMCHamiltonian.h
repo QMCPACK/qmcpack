@@ -407,14 +407,14 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
   /** return a clone */
-  QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
 #ifdef QMC_CUDA
   ////////////////////////////////////////////

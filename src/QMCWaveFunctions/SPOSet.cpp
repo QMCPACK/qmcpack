@@ -46,7 +46,7 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
 }
 
 void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                   const RefVector<ValueVector_t>& psi_list,
                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const
@@ -159,10 +159,10 @@ void SPOSet::evaluate_notranspose(const ParticleSet& P,
 }
 
 
-SPOSet* SPOSet::makeClone() const
+std::unique_ptr<SPOSet> SPOSet::makeClone() const
 {
   APP_ABORT("Missing  SPOSet::makeClone for " + className);
-  return 0;
+  return std::unique_ptr<SPOSet>();
 }
 
 void SPOSet::basic_report(const std::string& pad) const

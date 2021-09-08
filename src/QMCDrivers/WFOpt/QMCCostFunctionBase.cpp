@@ -19,6 +19,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Optimize/LeastSquaredFit.h"
 #include <set>
@@ -81,7 +82,8 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  //     if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
+  if (m_doc_out != NULL)
+    xmlFreeDoc(m_doc_out);
   if (debug_stream)
     delete debug_stream;
 }
@@ -522,7 +524,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   {
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root, m_wfPtr);
+    xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
@@ -530,75 +532,60 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (oit != OptVariablesForPsi.end())
-      {
+      if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
         paramNodes[aname] = cur;
-      }
     }
     xmlXPathFreeObject(result);
     //check radfunc
     result = xmlXPathEvalExpression((const xmlChar*)"//radfunc", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      std::string expID = aname + "_E";
-      xmlAttrPtr aptr   = xmlHasProp(cur, (const xmlChar*)"exponent");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
       {
-        attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
+        std::string expID = aname + "_E";
+        if (auto oit = OptVariablesForPsi.find(expID); oit != OptVariablesForPsi.end())
+          attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
       }
       std::string cID = aname + "_C";
-      aptr            = xmlHasProp(cur, (const xmlChar*)"contraction");
-      oit             = OptVariablesForPsi.find(cID);
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"contraction"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(cID); oit != OptVariablesForPsi.end())
+          attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
     }
     xmlXPathFreeObject(result);
     //check ci
     result = xmlXPathEvalExpression((const xmlChar*)"//ci", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     //check csf
     result = xmlXPathEvalExpression((const xmlChar*)"//csf", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     if (CI_Opt)

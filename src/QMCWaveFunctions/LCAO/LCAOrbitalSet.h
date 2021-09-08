@@ -47,7 +47,7 @@ public:
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   void storeParamsBeforeRotation() override { C_copy = *C; }
 

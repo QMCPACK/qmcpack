@@ -9,7 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-message_verbose("Adding AFQMC numerics unit tests")
+message(VERBOSE "Adding AFQMC numerics unit tests")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 

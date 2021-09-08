@@ -1,8 +1,8 @@
-include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+include(test_labels)
 
 # Runs unit tests
 function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
-  message_verbose("Adding test ${TESTNAME}")
+  message(VERBOSE "Adding test ${TESTNAME}")
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   if(HAVE_MPI)
     add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
@@ -13,7 +13,7 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
       add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${ARGN})
       set(TEST_ADDED TRUE)
     else()
-      message_verbose("Disabling test ${TESTNAME} (building without MPI)")
+      message(VERBOSE "Disabling test ${TESTNAME} (building without MPI)")
     endif()
   endif()
 
@@ -23,6 +23,7 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
 
     if(QMC_CUDA
        OR ENABLE_CUDA
+       OR ENABLE_ROCM
        OR ENABLE_OFFLOAD)
       set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
     endif()

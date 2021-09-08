@@ -66,7 +66,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableData(target, target),
+        DistanceTableData(target, target, DTModes::ALL_OFF),
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
@@ -120,6 +120,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   const DistRow& getOldDists() const override { return old_r_; }
   const DisplRow& getOldDispls() const override { return old_dr_; }
 
+  const RealType* getMultiWalkerTempDataPtr() const override
+  {
+    if (!mw_mem_)
+      throw std::runtime_error("SoaDistanceTableAAOMPTarget mw_mem_ is nullptr");
+    return mw_mem_->nw_new_old_dist_displ.data();
+  }
+
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
@@ -131,13 +138,49 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SoaDistanceTableAAOMPTarget::acquireResource dynamic_cast failed");
-    dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_.reset(res_ptr);
+    assert(this == &dt_list.getLeader());
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    dt_leader.mw_mem_.reset(res_ptr);
+    auto& mw_mem             = *dt_leader.mw_mem_;
+    const size_t nw          = dt_list.size();
+    const size_t stride_size = Ntargets_padded * (D + 1);
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      dt.temp_r_.free();
+      dt.temp_dr_.free();
+      dt.old_r_.free();
+      dt.old_dr_.free();
+    }
+
+    auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
+    nw_new_old_dist_displ.resize(nw * 2 * stride_size);
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, Ntargets_padded);
+      dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
+                                  nw_new_old_dist_displ.data() + stride_size * iw + Ntargets_padded);
+      dt.old_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * (iw + nw), Ntargets_padded);
+      dt.old_dr_.attachReference(N_targets, Ntargets_padded,
+                                 nw_new_old_dist_displ.data() + stride_size * (iw + nw) + Ntargets_padded);
+    }
   }
 
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<DistanceTableData>& dt_list) const override
   {
     collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
+    const size_t nw = dt_list.size();
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      dt.temp_r_.free();
+      dt.temp_dr_.free();
+      dt.old_r_.free();
+      dt.old_dr_.free();
+    }
   }
 
   inline void evaluate(ParticleSet& P) override
@@ -159,8 +202,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
 
+    assert((prepare_old && iat >=0 && iat < N_targets) || !prepare_old);
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
-                                           N_targets, P.activePtcl);
+                                           N_targets, iat);
     // set up old_r_ and old_dr_ for moves may get accepted.
     if (prepare_old)
     {
@@ -187,15 +231,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   {
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
-    // make this class unit tests friendly without the need of setup resources.
-    if (!dt_leader.mw_mem_)
-    {
-      app_warning()
-          << "SoaDistanceTableAAOMPTarget: This message should not be seen in production (performance bug) runs but "
-             "only unit tests (expected)."
-          << std::endl;
-      dt_leader.mw_mem_ = std::make_unique<DTAAMultiWalkerMem>();
-    }
+    // multi walker resource must have been acquired;
+    assert(dt_leader.mw_mem_);
     auto& mw_mem      = *dt_leader.mw_mem_;
     auto& pset_leader = p_list.getLeader();
 
@@ -205,24 +242,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
     auto& rsoa_dev_list         = mw_mem.rsoa_dev_list;
-    nw_new_old_dist_displ.resize(nw * 2 * stride_size);
     rsoa_dev_list.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
       dt.old_prepared_elec_id = prepare_old ? iat : -1;
-      dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, Ntargets_padded);
-      dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
-                                  nw_new_old_dist_displ.data() + stride_size * iw + Ntargets_padded);
-      if (prepare_old)
-      {
-        dt.old_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * (iw + nw), Ntargets_padded);
-        dt.old_dr_.attachReference(N_targets, Ntargets_padded,
-                                   nw_new_old_dist_displ.data() + stride_size * (iw + nw) + Ntargets_padded);
-      }
-      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
-      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
+      auto& coordinates_soa   = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      rsoa_dev_list[iw]       = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;
@@ -291,6 +318,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
+    //ensure there are neighbors
+    assert(N_targets > 1);
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
     if (newpos)

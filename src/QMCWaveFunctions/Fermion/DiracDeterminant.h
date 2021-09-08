@@ -24,7 +24,7 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
 
@@ -97,7 +97,7 @@ public:
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVector<const VirtualParticleSet>& vp_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<ValueType>>& ratios) const override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
@@ -172,8 +172,8 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection) override;
-  void releaseResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
 
   /** cloning function
    * @param tqp target particleset
@@ -251,7 +251,7 @@ private:
 };
 
 extern template class DiracDeterminant<>;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

@@ -77,7 +77,7 @@ public:
    */
   inline RealType srDf(RealType r, RealType rinv) const override { return 0.0; }
 
-  void fillFk(KContainer& KList);
+  void fillFk(const KContainer& KList);
 };
 } // namespace qmcplusplus
 #endif

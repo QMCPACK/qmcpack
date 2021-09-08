@@ -22,7 +22,7 @@
 #include "mpi/collectives.h"
 #include "CPU/SIMD/simd.hpp"
 #include "CPU/BLAS.hpp"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

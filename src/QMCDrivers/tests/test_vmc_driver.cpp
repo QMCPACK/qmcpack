@@ -67,7 +67,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -148,7 +148,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -234,7 +234,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());

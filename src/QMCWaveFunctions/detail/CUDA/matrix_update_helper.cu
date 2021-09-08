@@ -11,10 +11,24 @@
 
 
 #include "matrix_update_helper.hpp"
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
+#include <thrust/system/cuda/detail/core/util.h>
+namespace qmcplusplus
+{
+namespace CUDA
+{
+using namespace thrust::cuda_cub::core;
+}
+}
+#else
+#include <hip/hip_complex.h>
+#include "ROCm/cuda2hip.h"
+#include "uninitialized_array.hpp"
+#endif
 #include "subtractOne.cuh"
 #include <thrust/complex.h>
-#include <thrust/system/cuda/detail/core/util.h>
 
 namespace qmcplusplus
 {
@@ -22,8 +36,6 @@ namespace qmcplusplus
  */
 namespace CUDA
 {
-
-using namespace thrust::cuda_cub::core;
 
 template<typename T, int COLBS>
 __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,

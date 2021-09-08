@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_KCONTAINER_H
 #define QMCPLUSPLUS_KCONTAINER_H
 
-#include "Particle/ParticleSet.h"
+#include "Configuration.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/IteratorUtility.h"
 namespace qmcplusplus
@@ -34,12 +34,8 @@ private:
   RealType kcut2;
 
 public:
-  //Typedef for the lattice-type. We don't need the full particle-set.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  ///typedef of vector containers
-  typedef std::vector<PosType> VContainer_t;
-  ///typedef of scalar containers
-  typedef std::vector<RealType> SContainer_t;
+  //Typedef for the lattice-type
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout_t;
 
   ///number of k-points
   int numk;
@@ -55,10 +51,10 @@ public:
   std::vector<TinyVector<int, DIM>> kpts;
   /** K-vector in Cartesian coordinates
    */
-  VContainer_t kpts_cart;
+  std::vector<PosType> kpts_cart;
   /** squre of kpts in Cartesian coordniates
    */
-  SContainer_t ksq;
+  std::vector<RealType> ksq;
   /** Given a k index, return index to -k
    */
   std::vector<int> minusk;
@@ -77,15 +73,15 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere = true);
+  void updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere = true);
 
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(ParticleLayout_t& lattice);
+  void FindApproxMMax(const ParticleLayout& lattice);
   /** construct the container for k-vectors */
-  void BuildKLists(ParticleLayout_t& lattice, bool useSphere);
+  void BuildKLists(const ParticleLayout& lattice, bool useSphere);
 };
 
 } // namespace qmcplusplus

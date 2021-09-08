@@ -153,7 +153,7 @@ public:
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
-    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ref);
   }
 
   //! return the current size
@@ -236,12 +236,12 @@ public:
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline pointer device_data()
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const_pointer device_data() const
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
 
   inline pointer first_address() { return X; }

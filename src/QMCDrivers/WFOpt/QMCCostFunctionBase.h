@@ -100,7 +100,7 @@ public:
                 Return_rt FiniteDiff = 0) override{};
   ///return the number of optimizable parameters
   inline int getNumParams() const override { return OptVariables.size(); }
-  ///return the number of optimizable parameters
+  ///return the global number of samples
   inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
@@ -204,7 +204,7 @@ protected:
   int PowerE;
   ///number of times cost function evaluated
   int NumCostCalls;
-  ///total number of samples to use in correlated sampling
+  /// global number of samples to use in correlated sampling
   int NumSamples;
   ///total number of optimizable variables
   int NumOptimizables;

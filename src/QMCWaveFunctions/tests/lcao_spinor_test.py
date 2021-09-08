@@ -41,10 +41,6 @@ def write_h5_file():
     asciiList = [n.encode("ascii", "ignore") for n in strList]
     app.create_dataset("code",(1,), mylen, asciiList)
     
-    #Nb_KPTS
-    nk = hf.create_group("Nb_KPTS")
-    nk.create_dataset("Nbkpts", data = np.array([1]))
-    
     #basisset
     bs = hf.create_group("basisset")
     bs.create_dataset("NbElements", data=np.array([1]))
@@ -110,7 +106,7 @@ def write_h5_file():
     dr.create_dataset("exponent", data=np.array([2.5]))
     
     
-    kpts = hf.create_group("KPTS_0")
+    kpts = hf.create_group("Super_Twist")
     kpts.create_dataset("eigenset_0", data=np.array([[0.25],[0.75]]))
     kpts.create_dataset("eigenset_0_imag", data=np.array([[0.75],[0.25]]))
     kpts.create_dataset("eigenset_1", data=np.array([[-0.2],[0.8]]))

@@ -20,6 +20,7 @@
 
 #include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
 #include "Optimize/NRCOptimization.h"
+#include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
@@ -37,8 +38,8 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
-                                            private NRCOptimization<QMCTraits::RealType>
+
+class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched
 {
 public:
   ///Constructor.
@@ -60,9 +61,11 @@ public:
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl) override;
+  RealType costFunc(RealType dl);
 
 private:
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -129,7 +132,6 @@ private:
                           const int bi,
                           const bool gu);
 
-  int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
   int nstabilizers;
@@ -205,7 +207,10 @@ private:
   bool doHybrid;
 
   // Output Hamiltonian and overlap matrices
-  bool do_output_matrices_;
+  bool do_output_matrices_csv_;
+
+  // Output Hamiltonian and overlap matrices in HDF format
+  bool do_output_matrices_hdf_;
 
   // Flag to open the files on first pass and print header line
   bool output_matrices_initialized_;

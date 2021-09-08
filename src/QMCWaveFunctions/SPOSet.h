@@ -214,7 +214,7 @@ public:
    * @param ratios_list a list of returning determinant ratios
    */
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const;
@@ -444,16 +444,16 @@ public:
 
   /** acquire a shared resource from collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
 
   /** return a shared resource to collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
 
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.
    */
-  virtual SPOSet* makeClone() const;
+  virtual std::unique_ptr<SPOSet> makeClone() const;
 
   /** Used only by cusp correction in AOS LCAO.
    * Ye: the SoA LCAO moves all this responsibility to the builder.

@@ -76,4 +76,24 @@ TEST_CASE("matrix", "[OhmmsPETE]")
   REQUIRE(A(1, 1) == 0.0);
 }
 
+TEST_CASE("matrix converting assignment", "[OhmmsPETE]")
+{
+  Matrix<double> mat_A(3,3);
+  Matrix<float> mat_B(3,3);
+
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      mat_A(i, j) = (i + j) * 2.1;
+    }
+  }
+
+  mat_B = mat_A;
+
+  CHECK(mat_B(0,0) == Approx(0));
+  CHECK(mat_B(1,1) == Approx(4.2));
+
+}
+
 } // namespace qmcplusplus

@@ -36,7 +36,7 @@ endif(QMC_OMP)
 add_definitions(-Drestrict=__restrict__)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstrict-aliasing")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -D__forceinline=inline")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing")
 
 # treat VLA as error
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=vla")

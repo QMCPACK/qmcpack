@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_TEST_DEVICE_VALUES_KERNELS_HPP
 #define QMCPLUSPLUS_TEST_DEVICE_VALUES_KERNELS_HPP
 
-#include <cuda_runtime_api.h>
+#include "CUDA/CUDAruntime.hpp"
 
 namespace qmcplusplus
 {
