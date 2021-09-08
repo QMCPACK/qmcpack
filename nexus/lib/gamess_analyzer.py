@@ -423,6 +423,19 @@ class GamessAnalyzer(SimulationAnalyzer):
 
 
     def analyze_punch(self):
+        pfname = self.info.files['punch']
+        pfile = os.path.join(self.info.path,pfname)
+        # Nexus first assumes the punch file has extension .F07
+        # If this file is not present, then look for .dat
+        # Exit if neither are present
+        if not os.path.exists(pfile):
+            pfile = os.path.join(self.info.path,'{}.dat'.format(self.info.prefix))
+            if os.path.exists(pfile):
+                self.info.files['punch'] = '{}.dat'.format(self.info.prefix)
+            else:
+                self.error('punch file not found. Please ensure .F07 or .dat file is written to filesystem.')
+            #end if
+        #end if
         # read the punch file
         try:
             text = self.get_output('punch')
