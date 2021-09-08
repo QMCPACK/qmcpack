@@ -244,10 +244,11 @@ class Qmcpack(Simulation):
                 #print(oldwfn)
                 #print(newwfn)
 
-                if hasattr(oldwfn.determinantset,'slaterdeterminant'):
-                    newwfn.determinantset.slaterdeterminant.determinants.updet.occupation = oldwfn.determinantset.slaterdeterminant.determinants.updet.occupation
-                    newwfn.determinantset.slaterdeterminant.determinants.downdet.occupation = oldwfn.determinantset.slaterdeterminant.determinants.downdet.occupation
-                elif hasattr(oldwfn.determinantset,'multideterminant'):
+                #if hasattr(oldwfn.determinantset,'slaterdeterminant'):
+                #    newwfn.determinantset.slaterdeterminant.determinants.updet.occupation = oldwfn.determinantset.slaterdeterminant.determinants.updet.occupation
+                #    newwfn.determinantset.slaterdeterminant.determinants.downdet.occupation = oldwfn.determinantset.slaterdeterminant.determinants.downdet.occupation
+                #elif hasattr(oldwfn.determinantset,'multideterminant'):
+                if hasattr(oldwfn.determinantset,'multideterminant'):
                     del newwfn.determinantset.slaterdeterminant
                     newwfn.determinantset['multideterminant'] = oldwfn.determinantset['multideterminant'] 
                     newwfn.determinantset['sposets'] = oldwfn.determinantset['sposets'] 
