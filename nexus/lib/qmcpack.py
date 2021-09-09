@@ -235,7 +235,6 @@ class Qmcpack(Simulation):
 
             elif isinstance(sim,Convert4qmc):
 
-                print(result.location)
                 res = QmcpackInput(result.location)
                 qs  = input.simulation.qmcsystem
                 oldwfn = qs.wavefunction
