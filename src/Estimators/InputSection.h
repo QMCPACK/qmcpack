@@ -28,13 +28,11 @@ namespace qmcplusplus
 
 class InputSection
 {
-
-public:
+protected:
   using Real               = QMCTraits::RealType;
   using PosType            = QMCTraits::PosType;
   static constexpr int DIM = QMCTraits::DIM;
 
-protected:
   // Internal data below comprise the input specification.
   //   Most apply attributes to input variables.
   //   Enables minimal listing of variable classification and default values in derived classes.
@@ -57,19 +55,8 @@ private:
   std::unordered_map<std::string, std::any> values;
   
 public:
-  // Query functions
-  bool is_attribute(std::string name){return attributes.find(name)!=attributes.end();};
-  bool is_parameter(std::string name){return parameters.find(name)!=parameters.end();};
-  bool is_required(std::string name){return required.find(name)!=required.end();};
-
-  bool is_string(std::string name){return strings.find(name)!=strings.end();};
-  bool is_bool(std::string name){return bools.find(name)!=bools.end();};
-  bool is_integer(std::string name){return integers.find(name)!=integers.end();};
-  bool is_real(std::string name){return reals.find(name)!=reals.end();};
-
-  bool has_default(std::string name){return default_values.find(name)!=default_values.end();};
+  // Query if a variable has been set
   bool has(std::string name){return values.find(name)!=values.end();};
-
 
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
@@ -102,6 +89,18 @@ public:
   void report();
 
 private:
+  // Query functions
+  bool is_attribute(std::string name){return attributes.find(name)!=attributes.end();};
+  bool is_parameter(std::string name){return parameters.find(name)!=parameters.end();};
+  bool is_required(std::string name){return required.find(name)!=required.end();};
+
+  bool is_string(std::string name){return strings.find(name)!=strings.end();};
+  bool is_bool(std::string name){return bools.find(name)!=bools.end();};
+  bool is_integer(std::string name){return integers.find(name)!=integers.end();};
+  bool is_real(std::string name){return reals.find(name)!=reals.end();};
+
+  bool has_default(std::string name){return default_values.find(name)!=default_values.end();};
+
   // Perform typed read and assignment of input variables
   void set_from_stream(std::string name, std::istringstream& svalue);
 
