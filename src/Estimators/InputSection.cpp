@@ -69,7 +69,7 @@ namespace qmcplusplus
   };
 
 
-  void InputSection::report()
+  void InputSection::report() const
   {
     auto& out = app_log();
     out<<"\n"<<section_name;

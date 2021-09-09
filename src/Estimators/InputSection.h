@@ -86,7 +86,7 @@ public:
   void readXML(xmlNodePtr cur);
 
   //  Simple write of contents.  Can be replaced/removed in any final implemenation.
-  void report();
+  void report() const;
 
 private:
   // Query functions
