@@ -3184,7 +3184,6 @@ class QmcpackInput(SimulationInput,Names):
             Param.metadata = self._metadata
         #end if
         base = self.get_base()
-        print('calling base.write')
         c+=base.write(first=True)
         Param.metadata = None
         set_rsqmc_mode()
