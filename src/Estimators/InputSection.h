@@ -56,12 +56,12 @@ private:
   
 public:
   // Query if a variable has been set
-  bool has(std::string name) const {return values.find(name)!=values.end();};
+  bool has(const std::string& name) const {return values.find(name)!=values.end();};
 
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
   template<typename T>
-  T get(std::string name) {return std::any_cast<T>(values[name]);};
+  T get(const std::string& name) {return std::any_cast<T>(values[name]);};
 
 
   // Later replace this with initializer_list/unordered_map initializer.
@@ -90,19 +90,19 @@ public:
 
 private:
   // Query functions
-  bool is_attribute(std::string name) const {return attributes.find(name)!=attributes.end();};
-  bool is_parameter(std::string name) const {return parameters.find(name)!=parameters.end();};
-  bool is_required(std::string name) const {return required.find(name)!=required.end();};
+  bool is_attribute(const std::string& name) const {return attributes.find(name)!=attributes.end();};
+  bool is_parameter(const std::string& name) const {return parameters.find(name)!=parameters.end();};
+  bool is_required(const std::string& name) const {return required.find(name)!=required.end();};
 
-  bool is_string(std::string name) const {return strings.find(name)!=strings.end();};
-  bool is_bool(std::string name) const {return bools.find(name)!=bools.end();};
-  bool is_integer(std::string name) const {return integers.find(name)!=integers.end();};
-  bool is_real(std::string name) const {return reals.find(name)!=reals.end();};
+  bool is_string(const std::string& name) const {return strings.find(name)!=strings.end();};
+  bool is_bool(const std::string& name) const {return bools.find(name)!=bools.end();};
+  bool is_integer(const std::string& name) const {return integers.find(name)!=integers.end();};
+  bool is_real(const std::string& name) const {return reals.find(name)!=reals.end();};
 
-  bool has_default(std::string name) const {return default_values.find(name)!=default_values.end();};
+  bool has_default(const std::string& name) const {return default_values.find(name)!=default_values.end();};
 
   // Perform typed read and assignment of input variables
-  void set_from_stream(std::string name, std::istringstream& svalue);
+  void set_from_stream(const std::string& name, std::istringstream& svalue);
 
   // Set default values for optional inputs.
   void set_defaults();

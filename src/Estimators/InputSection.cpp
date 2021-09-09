@@ -89,7 +89,7 @@ namespace qmcplusplus
   };
 
 
-  void InputSection::set_from_stream(std::string name, std::istringstream& svalue)
+  void InputSection::set_from_stream(const std::string& name, std::istringstream& svalue)
   {
     if (is_string(name))
     {
