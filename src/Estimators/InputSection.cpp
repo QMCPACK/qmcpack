@@ -16,10 +16,6 @@ namespace qmcplusplus
 
   void InputSection::readXML(xmlNodePtr cur)
   {
-    // The next two loops replace >4 classes and >600 lines of code 
-    // in bloated/obfuscated AttributeSet.h, ParameterSet.h, OhmmsParameter.h, OhmssElementBase.h
-    // while adding features like catching unrecognized inputs.
-
     // read attributes
     xmlAttrPtr att = cur->properties;
     while (att != NULL)
