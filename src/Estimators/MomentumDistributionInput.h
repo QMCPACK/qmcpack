@@ -29,7 +29,7 @@ public:
     strings        = {"type","name"};
     integers       = {"samples"};
     reals          = {"kmax","kmax0","kmax1","kmax2"};
-    default_values = { {"name"   , "nofk" },
+    default_values = { {"name"   , std::string("nofk") },
                        {"samples", 40     },
                        {"kmax"   , 0.0    },
                        {"kmax0"  , 0.0    },

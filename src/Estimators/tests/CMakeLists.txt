@@ -26,7 +26,9 @@ set(SRCS
     test_trace_manager.cpp
     SpinDensityTesting.cpp
     test_SpinDensityInput.cpp
-    test_SpinDensityNew.cpp)
+    test_SpinDensityNew.cpp
+    test_InputSection.cpp
+    )
 
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)

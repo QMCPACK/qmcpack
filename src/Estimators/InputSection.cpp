@@ -61,6 +61,37 @@ namespace qmcplusplus
     // assign default values for optional variables
     set_defaults();
 
+    // check input validity
+    check_valid();
+
+    //report();
+  };
+
+  
+  void InputSection::init(const std::unordered_map<std::string,std::any>& init_values)
+  {
+    for (auto &[name, value] : init_values)
+      if (is_string(name))
+        values[name] = std::any_cast<std::string>(value);
+      else if(is_bool(name))
+        values[name] = std::any_cast<bool>(value);
+      else if(is_integer(name))
+        values[name] = std::any_cast<int>(value);
+      else if(is_real(name))
+        values[name] = std::any_cast<Real>(value);
+      else
+      {
+        std::stringstream error;
+        error << "InputSection::init name "<<name<<" in "<<section_name<<" does not have a type\n";
+        throw UniformCommunicateError(error.str());
+      }
+
+    // assign default values for optional variables
+    set_defaults();
+
+    // check input validity
+    check_valid();
+
     //report();
   };
 
@@ -126,6 +157,19 @@ namespace qmcplusplus
     for (auto &[name, default_value] : default_values)
       if (!has(name))
         values[name] = default_value;
+  };
+
+
+  void InputSection::check_valid()
+  {
+    // check that all required inputs are present
+    for (auto& name : required)
+      if (!has(name))
+      {
+        std::stringstream error;
+        error << "InputSection::check_valid required variable "<<name<<" in "<<section_name<<" has not been assigned\n";
+        throw UniformCommunicateError(error.str());
+      }
   };
 
 }

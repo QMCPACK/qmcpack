@@ -63,27 +63,13 @@ public:
   template<typename T>
   T get(const std::string& name) {return std::any_cast<T>(values[name]);};
 
-
-  // Later replace this with initializer_list/unordered_map initializer.
-  //   Enforce correctness checks and immutability/read-only access thereafter.
-  //template<typename T>
-  //void set(std::string name, T& value)
-  //{
-  //  const std::type_info& Ttype = typeid(T);
-  //  bool correct_type = (Ttype == typeid(std::string)) & is_string(name);
-  //  correct_type |= (Ttype == typeid(bool)) & is_bool(name);
-  //  correct_type |= (Ttype == typeid(int))  & is_integer(name);
-  //  correct_type |= (Ttype == typeid(Real)) & is_real(name);
-  //  if (!correct_type)
-  //    throw UniformCommunicateError("InputSection::set  incorrect type assignment attempted");
-  //  values[name] = value;
-  //};
-
-
   // Read variable values (initialize) from XML input.
   //   Later, this should call a correctness checking function and enforce immutability.
   //   (required values are all provided, provided values fall in allowed ranges)
   void readXML(xmlNodePtr cur);
+
+  // Initialize from unordered_map/initializer list
+  void init(const std::unordered_map<std::string,std::any>& init_values);
 
   //  Simple write of contents.  Can be replaced/removed in any final implemenation.
   void report() const;
@@ -106,6 +92,9 @@ private:
 
   // Set default values for optional inputs.
   void set_defaults();
+
+  // Check validity of inputs
+  void check_valid();
 
 };
 
