@@ -4685,7 +4685,6 @@ def generate_determinantset(up             = 'u',
                             delay_rank     = None,
                             system         = None
                             ):
-    print('NOT OLD')
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
     #end if
