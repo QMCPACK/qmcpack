@@ -808,8 +808,6 @@ class QIxml(Names):
 
     def init_from_inputs(self,args,kwargs):
         if len(args)>0:
-            print('INIT FROM INPUTS')
-            print(args)
             if len(args)==1 and isinstance(args[0],self.__class__):
                 self.transfer_from(args[0])
             elif len(args)==1 and isinstance(args[0],dict):
