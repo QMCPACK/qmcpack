@@ -2,11 +2,11 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Lab
 //
-// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -289,6 +289,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<RealType>("samples");
@@ -296,6 +297,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<bool>("kmax");
@@ -303,6 +305,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<std::string>("full");
@@ -310,6 +313,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<RealType>("label");
@@ -317,6 +321,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<bool>("count");
@@ -324,6 +329,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<std::string>("width");
@@ -331,6 +337,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   catch(std::bad_cast& exception)
   {
   }
+
   try
   {
     auto v = ti.get<int>("rational");
