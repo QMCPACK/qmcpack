@@ -104,7 +104,7 @@ bool WaveFunctionTester::run()
   auto Rng1 = std::make_unique<RandomGenerator_t>();
   H.setRandomGenerator(Rng1.get());
   // Add to Rng so the object is eventually deleted
-  Rng.emplace_back(Rng1.release());
+  Rng.emplace_back(std::move(Rng1));
 
   if (checkSlaterDetOption == "no")
     checkSlaterDet = false;
@@ -1910,7 +1910,7 @@ void WaveFunctionTester::runDerivCloneTest()
   h_clone->setRandomGenerator(Rng2.get());
   H.setRandomGenerator(Rng1.get());
   // Add to Rng so the object is eventually deleted
-  Rng.emplace_back(Rng1.release());
+  Rng.emplace_back(std::move(Rng1));
   h_clone->setPrimary(true);
   int nat = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
