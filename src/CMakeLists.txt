@@ -190,7 +190,6 @@ else() #{{{
   if(BUILD_UNIT_TESTS) #{
     #Unit test directories
     add_subdirectory(Numerics/tests)
-    add_subdirectory(Utilities/tests)
     add_subdirectory(einspline/tests)
     add_subdirectory(spline2/tests)
     add_subdirectory(Concurrency/tests)
