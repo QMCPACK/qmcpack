@@ -111,10 +111,11 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(Particl
   return Value;
 }
 
-void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(O_list, p_list, false);
+  mw_evaluateImpl(o_list, wf_list, p_list, false);
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
@@ -126,13 +127,14 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
   return Value;
 }
 
-void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    mw_evaluateImpl(O_list, p_list, true);
+    mw_evaluateImpl(o_list, wf_list, p_list, true);
   else
-    mw_evaluateImpl(O_list, p_list, false);
+    mw_evaluateImpl(o_list, wf_list, p_list, false);
 }
 
 void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid)
@@ -240,21 +242,22 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
 #endif
 }
 
-void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           bool Tmove)
 {
-  auto& O_leader           = O_list.getCastedLeader<NonLocalECPotential>();
+  auto& O_leader           = o_list.getCastedLeader<NonLocalECPotential>();
   ParticleSet& pset_leader = p_list[0];
   const size_t ngroups     = pset_leader.groups();
-  const size_t nw          = O_list.size();
+  const size_t nw          = o_list.size();
   /// maximal number of jobs per spin
   std::vector<size_t> max_num_jobs(ngroups, 0);
 
 #pragma omp parallel for
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
+    auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
     ParticleSet& P(p_list[iw]);
 
     if (Tmove)
@@ -336,7 +339,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     {
       psi_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
-        psi_list.push_back(O_list.getCastedElement<NonLocalECPotential>(iw).Psi);
+        psi_list.push_back(o_list.getCastedElement<NonLocalECPotential>(iw).Psi);
       TrialWaveFunction::mw_prepareGroup(psi_list, p_list, ig);
     }
 
@@ -349,7 +352,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       batch_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
       {
-        auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
+        auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
         ParticleSet& P(p_list[iw]);
         if (jobid < O.nlpp_jobs[ig].size())
         {
@@ -632,18 +635,20 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
   auto resource_index = collection.addResource(std::move(new_res));
 }
 
-void NonLocalECPotential::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
+void NonLocalECPotential::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
-  auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
+  auto res_ptr   = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
   O_leader.mw_res_.reset(res_ptr);
 }
 
-void NonLocalECPotential::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const
+void NonLocalECPotential::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
+  auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
   collection.takebackResource(std::move(O_leader.mw_res_));
 }
 
