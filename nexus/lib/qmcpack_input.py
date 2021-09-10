@@ -4904,8 +4904,12 @@ def generate_determinantset_old(type           = 'bspline',
                 exc_orbs[0] *= -1
                 nel = elns.up_electron.count 
 
+                for sp in dset.sposets:
+                    sp.size=exc_orbs[1]
+                #end for
+
                 dset.multideterminant.detlist.nstates = exc_orbs[1]
-                dset.multideterminant.detlist.csf.occ = '2'*(nel-1)+'1'*(exc_orbs[1]-nel+1),
+                dset.multideterminant.detlist.csf.occ = '2'*(nel-1)+'0'*(exc_orbs[1]-nel)+'1',
 
                 dset.multideterminant.detlist.csf.dets[0].alpha = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
                 dset.multideterminant.detlist.csf.dets[0].beta = '1'*nel+'0'*(exc_orbs[1]-nel)
