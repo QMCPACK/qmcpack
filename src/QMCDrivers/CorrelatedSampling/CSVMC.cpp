@@ -228,7 +228,7 @@ void CSVMC::resetRun()
     CSMovers.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
 
 
 #pragma omp parallel for
@@ -241,7 +241,7 @@ void CSVMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*(RandomNumberControl::Children[ip]));
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")

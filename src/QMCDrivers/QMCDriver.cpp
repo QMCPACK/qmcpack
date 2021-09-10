@@ -160,7 +160,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
 QMCDriver::~QMCDriver()
 {
-  delete_iter(Rng.begin(), Rng.end());
   if (DriftModifier)
     delete DriftModifier;
 }

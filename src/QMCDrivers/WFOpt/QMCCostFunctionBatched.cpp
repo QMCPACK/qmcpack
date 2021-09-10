@@ -51,7 +51,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
 
 
 /** Clean up the vector */
-QMCCostFunctionBatched::~QMCCostFunctionBatched() { delete_iter(RngSaved.begin(), RngSaved.end()); }
+QMCCostFunctionBatched::~QMCCostFunctionBatched() { }
 
 void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,
@@ -266,7 +266,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   Psi.startOptimization();
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
-  H.setRandomGenerator(MoverRng[0]);
+  H.setRandomGenerator(MoverRng[0].get());
 
 
   // Create crowd-local storage for evaluation
@@ -492,7 +492,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   {
     //    synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
-    H.setRandomGenerator(MoverRng[0]);
+    H.setRandomGenerator(MoverRng[0].get());
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;

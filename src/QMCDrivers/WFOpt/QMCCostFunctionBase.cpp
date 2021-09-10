@@ -88,19 +88,20 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(std::vector<RandomGenerator_t*>& r)
+void QMCCostFunctionBase::setRng(UPtrVector<RandomGenerator_t>& r)
 {
   if (MoverRng.size() < r.size())
   {
-    delete_iter(MoverRng.begin(), MoverRng.end());
-    delete_iter(RngSaved.begin(), RngSaved.end());
+    //delete_iter(MoverRng.begin(), MoverRng.end());
+    //delete_iter(RngSaved.begin(), RngSaved.end());
     MoverRng.resize(r.size());
     RngSaved.resize(r.size());
   }
   for (int ip = 0; ip < r.size(); ++ip)
-    MoverRng[ip] = r[ip];
+    MoverRng[ip] = std::move(r[ip]);
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
+    if(MoverRng[ip])
+      RngSaved[ip] = std::make_unique<RandomGenerator_t>(*(MoverRng[ip].get()));
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)

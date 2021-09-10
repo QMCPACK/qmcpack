@@ -183,9 +183,9 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  std::vector<RandomGenerator_t*> RngCompatibility;
+  UPtrVector<RandomGenerator_t> RngCompatibility;
 
-  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
+  inline UPtrVector<RandomGenerator_t>& getRng() { return RngCompatibility; }
 
   // ///return the random generators
   //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }

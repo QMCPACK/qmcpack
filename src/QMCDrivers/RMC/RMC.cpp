@@ -203,7 +203,7 @@ void RMC::resetRun()
     Movers.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
     branchEngine->initReptile(W);
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -212,11 +212,11 @@ void RMC::resetRun()
       estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*(RandomNumberControl::Children[ip]));
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      hClones[ip]->setRandomGenerator(Rng[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         os << "  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast" << std::endl;

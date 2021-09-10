@@ -36,7 +36,6 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
 /** Clean up the vector */
 QMCCostFunction::~QMCCostFunction()
 {
-  delete_iter(RngSaved.begin(), RngSaved.end());
   delete_iter(RecordsOnNode.begin(), RecordsOnNode.end());
   delete_iter(DerivRecords.begin(), DerivRecords.end());
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
@@ -271,8 +270,9 @@ void QMCCostFunction::checkConfigurations()
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
-    (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    if(RngSaved[ip] && MoverRng[ip])
+      (*MoverRng[ip]) = (*RngSaved[ip]);
+    hClones[ip]->setRandomGenerator(MoverRng[ip].get());
     //int nat = wRef.getTotalNum();
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
@@ -398,7 +398,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    hClones[ip]->setRandomGenerator(MoverRng[ip].get());
     //int nat = wRef.getTotalNum();
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
@@ -537,8 +537,9 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     //    synchronize the random number generator with the node
-    (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    if(MoverRng[ip] && RngSaved[ip])
+      (*MoverRng[ip]) = (*RngSaved[ip]);
+    hClones[ip]->setRandomGenerator(MoverRng[ip].get());
   }
 
   const bool nlpp         = (includeNonlocalH != "no");

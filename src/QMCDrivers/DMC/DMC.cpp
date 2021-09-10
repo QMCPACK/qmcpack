@@ -83,7 +83,7 @@ void DMC::resetUpdateEngines()
     }
     //if(qmc_driver_mode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
@@ -120,10 +120,10 @@ void DMC::resetUpdateEngines()
       traceClones[ip] = Traces->makeClone();
 #endif
 #ifdef USE_FAKE_RNG
-      Rng[ip] = new FakeRandom();
+      Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
-      hClones[ip]->setRandomGenerator(Rng[ip]);
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
 #endif
       if (W.is_spinor_)
       {

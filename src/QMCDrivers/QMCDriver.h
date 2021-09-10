@@ -187,7 +187,7 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
+  inline UPtrVector<RandomGenerator_t>& getRng() { return Rng; }
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) override { return (*Rng[i]); }
@@ -320,7 +320,7 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> Rng;
+  UPtrVector<RandomGenerator_t> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

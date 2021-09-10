@@ -130,7 +130,8 @@ bool VMC::run()
   //copy back the random states
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ++ip)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    if(Rng[ip])
+      *(RandomNumberControl::Children[ip]) = *(Rng[ip].get());
 #endif
   ///write samples to a file
   bool wrotesamples = DumpConfig;
@@ -163,7 +164,7 @@ void VMC::resetRun()
     Movers.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
@@ -175,11 +176,11 @@ void VMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
 #ifdef USE_FAKE_RNG
-      Rng[ip] = new FakeRandom();
+      Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*(RandomNumberControl::Children[ip]));
 #endif
-      hClones[ip]->setRandomGenerator(Rng[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (W.is_spinor_)
       {
         spinors = true;
