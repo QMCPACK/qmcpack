@@ -10,11 +10,7 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 set(CONTAINER_SRCS MinimalContainers/ConstantSizeMatrix.cpp)
-if(USE_OBJECT_TARGET)
-  add_library(containers OBJECT ${CONTAINER_SRCS})
-else()
-  add_library(containers ${CONTAINER_SRCS})
-endif()
+add_library(containers ${CONTAINER_SRCS})
 
 target_include_directories(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(containers PUBLIC platform_runtime)

@@ -58,8 +58,6 @@ if(USE_OBJECT_TARGET)
     qmcwfs
     qmcparticle
     qmcutil
-    containers
-    platform_runtime
     platform_omptarget_LA)
 endif()
 
@@ -103,8 +101,6 @@ if(NOT QMC_CUDA)
       qmcwfs
       qmcparticle
       qmcutil
-      containers
-      platform_runtime
       platform_omptarget_LA)
   endif()
 
@@ -129,8 +125,6 @@ if(NOT QMC_CUDA)
         qmcwfs
         qmcparticle
         qmcutil
-        containers
-        platform_runtime
         platform_omptarget_LA)
     endif()
     # Right now the unified driver mpi tests are hard coded for 3 MPI ranks

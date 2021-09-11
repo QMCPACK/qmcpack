@@ -50,8 +50,6 @@ if(USE_OBJECT_TARGET)
     qmcwfs
     qmcparticle
     qmcutil
-    containers
-    platform_runtime
     platform_omptarget_LA)
 endif()
 

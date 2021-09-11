@@ -39,8 +39,6 @@ if(USE_OBJECT_TARGET)
     qmcwfs
     qmcparticle
     qmcutil
-    containers
-    platform_runtime
     platform_omptarget_LA
     utilities_for_test)
 endif()
@@ -62,8 +60,6 @@ if(HAVE_MPI)
       qmcwfs
       qmcparticle
       qmcutil
-      containers
-      platform_runtime
       platform_omptarget_LA
       utilities_for_test)
   endif()

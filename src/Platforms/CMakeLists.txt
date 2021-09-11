@@ -12,11 +12,7 @@
 
 # target for host and programming model runtime systems
 set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
-if(USE_OBJECT_TARGET)
-  add_library(platform_runtime OBJECT ${DEVICE_SRCS})
-else(USE_OBJECT_TARGET)
-  add_library(platform_runtime ${DEVICE_SRCS})
-endif(USE_OBJECT_TARGET)
+add_library(platform_runtime ${DEVICE_SRCS})
 target_link_libraries(platform_runtime PUBLIC platform_host_runtime)
 target_include_directories(platform_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

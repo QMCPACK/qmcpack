@@ -41,12 +41,3 @@ target_link_libraries(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil
 target_link_libraries(qmcestimators_unit PUBLIC containers qmcham_unit qmcparticle qmcutil)
 
 add_subdirectory(tests)
-
-# TARGET_LINK_LIBRARIES(qmcest PUBLIC qmcham)
-# TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
-# TARGET_LINK_LIBRARIES(qmcdriver PRIVATE platform_LA)
-# TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE platform_LA)
-# IF(BUILD_LMYENGINE_INTERFACE)
-#   TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
-#   TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
-# ENDIF()

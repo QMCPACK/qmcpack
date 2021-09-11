@@ -121,7 +121,7 @@ foreach(CATEGORY trialwf sposet jastrow determinant)
   target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
                         utilities_for_test container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
@@ -151,7 +151,7 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
                         utilities_for_test container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle containers platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle platform_omptarget_LA)
   endif()
 #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
