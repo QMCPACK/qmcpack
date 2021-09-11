@@ -38,12 +38,14 @@ endif(QMC_CUDA)
 
 if(ENABLE_CUDA)
   add_subdirectory(CUDA)
-  target_link_libraries(platform_runtime PUBLIC platform_cuda)
+  target_link_libraries(platform_runtime PUBLIC platform_cuda_runtime)
+  target_link_libraries(platform_LA INTERFACE platform_cuda_LA)
 endif(ENABLE_CUDA)
 
 if(ENABLE_ROCM)
   add_subdirectory(ROCm)
-  target_link_libraries(platform_runtime PUBLIC platform_rocm)
+  target_link_libraries(platform_runtime PUBLIC platform_rocm_runtime)
+  target_link_libraries(platform_LA INTERFACE platform_rocm_LA)
 endif(ENABLE_ROCM)
 
 add_subdirectory(tests)

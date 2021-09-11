@@ -9,9 +9,13 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(ROCM_SRCS hipBLAS.hip.cpp)
 
-set_source_files_properties(${ROCM_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
-hip_add_library(platform_rocm ${ROCM_SRCS})
-target_link_libraries(platform_rocm PUBLIC hip::host roc::hipblas roc::rocsolver)
-target_include_directories(platform_rocm PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
+add_library(platform_rocm_runtime INTERFACE)
+target_link_libraries(platform_rocm_runtime INTERFACE hip::host)
+
+set(ROCM_LA_SRCS hipBLAS.hip.cpp)
+set_source_files_properties(${ROCM_LA_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+hip_add_library(platform_rocm_LA ${ROCM_LA_SRCS})
+target_link_libraries(platform_rocm_LA PUBLIC roc::hipblas roc::rocsolver)
+target_include_directories(platform_rocm_LA PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
+target_link_libraries(platform_rocm_LA PRIVATE platform_rocm_runtime)
