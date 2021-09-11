@@ -59,7 +59,7 @@ foreach(CATEGORY coulomb force ham)
 
   target_link_libraries(${UTEST_EXE} catch_main qmcham)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omptarget)
+    target_link_libraries(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omptarget_LA)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

@@ -32,6 +32,6 @@ set(UTEST_SRCS
 
 add_executable(${UTEST_EXE} ${UTEST_SRCS})
 
-target_link_libraries(${UTEST_EXE} catch_main qmcutil Math::scalar_vector_functions)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil platform_runtime)
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

@@ -17,7 +17,7 @@ else()
 endif()
 
 target_include_directories(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(containers PUBLIC platform_device)
+target_link_libraries(containers PUBLIC platform_runtime)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)

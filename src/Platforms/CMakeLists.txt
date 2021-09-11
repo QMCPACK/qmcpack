@@ -10,47 +10,44 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-# Too much burden has been put on platform_device. It will be deprecated.
-# We will move to functionality based targets
-# platform_runtime handles device management, memory management
-# add_library(platform_runtime INTERFACE)
-# platform_lapack handles BLAS/LAPACK
-# add_library(platform_lapack INTERFACE)
+# target for host and programming model runtime systems
+set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
+if(USE_OBJECT_TARGET)
+  add_library(platform_runtime OBJECT ${DEVICE_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(platform_runtime ${DEVICE_SRCS})
+endif(USE_OBJECT_TARGET)
+target_link_libraries(platform_runtime PUBLIC platform_host_runtime)
+target_include_directories(platform_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+# target for host and device linear algebra libraries
+add_library(platform_LA INTERFACE)
+target_link_libraries(platform_LA INTERFACE platform_runtime)
 
 set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
-
-set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
-
-add_library(platform_host ${HOST_SRCS})
-
-if(USE_OBJECT_TARGET)
-  add_library(platform_device OBJECT ${DEVICE_SRCS})
-else(USE_OBJECT_TARGET)
-  add_library(platform_device ${DEVICE_SRCS})
-endif(USE_OBJECT_TARGET)
-
-target_include_directories(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(platform_device PUBLIC platform_host)
+add_library(platform_host_runtime ${HOST_SRCS})
 
 add_subdirectory(CPU)
-target_link_libraries(platform_device PUBLIC platform_cpu)
+target_link_libraries(platform_runtime PUBLIC platform_cpu_runtime)
+target_link_libraries(platform_LA INTERFACE platform_cpu_LA)
 
 add_subdirectory(OMPTarget)
-target_link_libraries(platform_device PUBLIC platform_omptarget)
+target_link_libraries(platform_runtime PUBLIC platform_omptarget_runtime)
+target_link_libraries(platform_LA INTERFACE platform_omptarget_LA)
 
 if(QMC_CUDA)
   add_subdirectory(CUDA_legacy)
-  target_link_libraries(platform_device PUBLIC platform_cuda_legacy)
+  target_link_libraries(platform_runtime PUBLIC platform_cuda_legacy)
 endif(QMC_CUDA)
 
 if(ENABLE_CUDA)
   add_subdirectory(CUDA)
-  target_link_libraries(platform_device PUBLIC platform_cuda)
+  target_link_libraries(platform_runtime PUBLIC platform_cuda)
 endif(ENABLE_CUDA)
 
 if(ENABLE_ROCM)
   add_subdirectory(ROCm)
-  target_link_libraries(platform_device PUBLIC platform_rocm)
+  target_link_libraries(platform_runtime PUBLIC platform_rocm)
 endif(ENABLE_ROCM)
 
 add_subdirectory(tests)

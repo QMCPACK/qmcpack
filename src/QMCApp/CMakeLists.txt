@@ -51,8 +51,8 @@ if(USE_OBJECT_TARGET)
     qmcparticle
     qmcutil
     containers
-    platform_device
-    platform_omptarget)
+    platform_runtime
+    platform_omptarget_LA)
 endif()
 
 if(BUILD_AFQMC)

@@ -22,7 +22,7 @@ add_executable(convert4qmc convert4qmc.cpp QMCGaussianParserBase.cpp GaussianFCH
 
 target_link_libraries(convert4qmc PUBLIC qmcparticle)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(convert4qmc PUBLIC qmcutil containers platform_omptarget)
+  target_link_libraries(convert4qmc PUBLIC qmcutil containers)
 endif()
 
 add_executable(qmc-extract-eshdf-kvectors qmc-extract-eshdf-kvectors.cpp)
@@ -47,7 +47,7 @@ target_link_libraries(fstool PUBLIC qmc qmcparticle qmcwfs)
 add_executable(qmcfinitesize qmcfinitesize.cpp)
 target_link_libraries(qmcfinitesize fstool)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(qmcfinitesize qmcparticle qmcutil containers platform_omptarget)
+  target_link_libraries(qmcfinitesize qmcparticle qmcutil containers)
 endif()
 
 install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize

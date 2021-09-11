@@ -40,8 +40,8 @@ if(USE_OBJECT_TARGET)
     qmcparticle
     qmcutil
     containers
-    platform_device
-    platform_omptarget
+    platform_runtime
+    platform_omptarget_LA
     utilities_for_test)
 endif()
 
@@ -63,8 +63,8 @@ if(HAVE_MPI)
       qmcparticle
       qmcutil
       containers
-      platform_device
-      platform_omptarget
+      platform_runtime
+      platform_omptarget_LA
       utilities_for_test)
   endif()
   target_link_libraries(${UTEST_EXE} catch_main qmcestimators_unit)

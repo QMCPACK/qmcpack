@@ -30,8 +30,8 @@ if(USE_OBJECT_TARGET)
     qmcparticle
     qmcutil
     containers
-    platform_device
-    platform_omptarget)
+    platform_runtime
+    platform_omptarget_LA)
   if(BUILD_AFQMC)
     target_link_libraries(${UTEST_EXE} afqmc)
   endif(BUILD_AFQMC)

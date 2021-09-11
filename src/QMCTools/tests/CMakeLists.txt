@@ -26,7 +26,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/si
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main fstool)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
+  target_link_libraries(${UTEST_EXE} qmcparticle qmcutil containers)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

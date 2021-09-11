@@ -66,7 +66,7 @@ add_library(
   lmyengine/var_dependencies.cpp)
 
 target_compile_definitions(formic_utils INTERFACE "HAVE_LMY_ENGINE")
-target_link_libraries(formic_utils PRIVATE Math::BLAS_LAPACK Boost::boost)
+target_link_libraries(formic_utils PRIVATE platform_LA Boost::boost)
 if(HAVE_MPI)
   target_link_libraries(formic_utils PUBLIC MPI::MPI_CXX)
 endif()
