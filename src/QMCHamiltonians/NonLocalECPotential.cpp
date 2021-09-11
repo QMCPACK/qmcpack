@@ -325,6 +325,11 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
   RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
   RefVectorWithLeader<TrialWaveFunction> psi_list(O_leader.Psi);
+  // we are moving away from internally stored Psi, double check before Psi gets finally removed.
+  assert(&O_leader.Psi == &wf_list.getLeader());
+  for (size_t iw = 0; iw < nw; iw++)
+    assert(&o_list.getCastedElement<NonLocalECPotential>(iw).Psi == &wf_list[iw]);
+
   RefVector<const NLPPJob<RealType>> batch_list;
   std::vector<RealType> pairpots(nw);
 
@@ -336,12 +341,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
   for (int ig = 0; ig < ngroups; ++ig) //loop over species
   {
-    {
-      psi_list.clear();
-      for (size_t iw = 0; iw < nw; iw++)
-        psi_list.push_back(o_list.getCastedElement<NonLocalECPotential>(iw).Psi);
-      TrialWaveFunction::mw_prepareGroup(psi_list, p_list, ig);
-    }
+    TrialWaveFunction::mw_prepareGroup(wf_list, p_list, ig);
 
     for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
     {
@@ -353,14 +353,13 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
-        ParticleSet& P(p_list[iw]);
         if (jobid < O.nlpp_jobs[ig].size())
         {
           const auto& job = O.nlpp_jobs[ig][jobid];
           ecp_potential_list.push_back(O);
           ecp_component_list.push_back(*O.PP[job.ion_id]);
-          pset_list.push_back(P);
-          psi_list.push_back(O.Psi);
+          pset_list.push_back(p_list[iw]);
+          psi_list.push_back(wf_list[iw]);
           batch_list.push_back(job);
         }
       }
