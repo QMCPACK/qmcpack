@@ -22,6 +22,7 @@ set(HAMSRCS
     OperatorBase.cpp
     QMCHamiltonian.cpp
     Hdispatcher.cpp
+    BareKineticEnergy.cpp
     CoulombPBCAA.cpp
     CoulombPBCAB.cpp
     NonLocalTOperator.cpp
