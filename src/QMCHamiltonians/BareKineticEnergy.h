@@ -102,10 +102,10 @@ public:
  *          this operator are added into hf_terms and pulay_terms.
  */
   Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                        ParticleSet& ions,
-                                        TrialWaveFunction& psi,
-                                        ParticleSet::ParticlePos_t& hf_terms,
-                                        ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   Return_t evaluate_sp(ParticleSet& P);
@@ -117,7 +117,8 @@ public:
    *
    * Nothing is done but should check the mass
    */
-  bool put(xmlNodePtr) override;
+  bool put(xmlNodePtr)
+  override;
 
   bool get(std::ostream& os) const override;
 
