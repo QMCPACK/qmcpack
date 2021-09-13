@@ -17,7 +17,7 @@
 #include <Configuration.h>
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "QMCHamiltonians/ObservableHelper.h"
 #include "Particle/DistanceTableData.h"
 

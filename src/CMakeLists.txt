@@ -137,7 +137,7 @@ endif()
 
 add_library(qmcutil ${UTILITIES})
 target_include_directories(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Utilities")
-target_link_libraries(qmcutil PUBLIC message containers qmcio)
+target_link_libraries(qmcutil PUBLIC message qmcio)
 target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
 
 # For unit tests, enable use for the fake RNG
