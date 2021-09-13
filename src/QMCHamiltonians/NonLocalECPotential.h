@@ -47,13 +47,15 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
-                   const RefVectorWithLeader<ParticleSet>& P_list) const override;
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
-                                const RefVectorWithLeader<ParticleSet>& P_list) const override;
+  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -106,11 +108,11 @@ public:
 
   /** acquire a shared resource from a collection
    */
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
   /** return a shared resource to a collection
    */
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
@@ -131,8 +133,9 @@ public:
 
   /** Set the flag whether to compute forces or not.
    * @param val The boolean value for computing forces
-   */ 
-  inline void setComputeForces(bool val) override {ComputeForces=val;}
+   */
+  inline void setComputeForces(bool val) override { ComputeForces = val; }
+
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;
@@ -186,12 +189,13 @@ private:
   void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
   /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
-   * @param O_list the list of NonLocalECPotential in a walker batch
-   * @param P_list the list of ParticleSet in a walker batch
+   * @param o_list the list of NonLocalECPotential in a walker batch
+   * @param p_list the list of ParticleSet in a walker batch
    * @param Tmove whether Txy for Tmove is updated
    */
-  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
+  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               bool Tmove);
 
   void evalIonDerivsImpl(ParticleSet& P,

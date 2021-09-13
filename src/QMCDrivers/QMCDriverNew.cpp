@@ -337,7 +337,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
-      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_elecs));
+      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_twfs, walker_elecs));
 
   // \todo rename these are sets not resets.
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy) {
