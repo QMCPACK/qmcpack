@@ -10,10 +10,11 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 if(BUILD_UNIT_TESTS)
+  add_subdirectory(CPU)
   if(ENABLE_CUDA)
     add_subdirectory(CUDA)
   endif()
-
-  add_subdirectory(OMPTarget)
-  add_subdirectory(CPU)
+  if(ENABLE_OFFLOAD)
+    add_subdirectory(OMPTarget)
+  endif(ENABLE_OFFLOAD)
 endif()

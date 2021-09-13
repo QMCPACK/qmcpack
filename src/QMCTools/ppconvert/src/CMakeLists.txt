@@ -8,4 +8,4 @@ target_sources(
           "${CMAKE_CURRENT_SOURCE_DIR}/XMLWriterClass2.cc" "${CMAKE_CURRENT_SOURCE_DIR}/NLPPClass.cc"
           "${CMAKE_CURRENT_SOURCE_DIR}/ParserClass.cc")
 
-target_link_libraries(ppconvert common Math::BLAS_LAPACK)
+target_link_libraries(ppconvert common platform_LA)
