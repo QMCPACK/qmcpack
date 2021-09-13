@@ -136,11 +136,7 @@ if(IS_GIT_PROJECT)
   set(UTILITIES "${UTILITIES};${GITREV_TMP}")
 endif()
 
-if(USE_OBJECT_TARGET)
-  add_library(qmcutil OBJECT ${UTILITIES})
-else(USE_OBJECT_TARGET)
-  add_library(qmcutil ${UTILITIES})
-endif(USE_OBJECT_TARGET)
+add_library(qmcutil ${UTILITIES})
 target_include_directories(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Utilities")
 target_link_libraries(qmcutil PUBLIC message containers qmcio)
 target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
@@ -194,7 +190,6 @@ else() #{{{
   if(BUILD_UNIT_TESTS) #{
     #Unit test directories
     add_subdirectory(Numerics/tests)
-    add_subdirectory(Utilities/tests)
     add_subdirectory(einspline/tests)
     add_subdirectory(spline2/tests)
     add_subdirectory(Concurrency/tests)

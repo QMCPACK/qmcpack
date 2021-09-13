@@ -119,7 +119,7 @@ else(ENABLE_CUDA)
 endif(ENABLE_CUDA)
 
 target_link_libraries(afqmc PUBLIC qmcutil)
-target_link_libraries(afqmc PRIVATE Math::BLAS_LAPACK Boost::boost)
+target_link_libraries(afqmc PRIVATE platform_LA Boost::boost)
 if(HAVE_MPI)
   target_compile_definitions(afqmc PRIVATE "USE_MPI")
 endif(HAVE_MPI)

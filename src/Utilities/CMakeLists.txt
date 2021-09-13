@@ -13,3 +13,7 @@
 #\todo move qmcutils here
 
 subdirs(for_testing)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

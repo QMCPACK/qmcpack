@@ -17,9 +17,9 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 add_executable(${UTEST_EXE} test_particle.cpp test_distance_table.cpp test_walker.cpp test_particle_pool.cpp
                             test_sample_stack.cpp test_DTModes.cpp test_SoaDistanceTableAA.cpp)
-target_link_libraries(${UTEST_EXE} catch_main qmcparticle Math::scalar_vector_functions)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} qmcutil containers platform_omptarget)
+  target_link_libraries(${UTEST_EXE} qmcutil)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
