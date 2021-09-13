@@ -52,7 +52,7 @@ public:
     collection.addResource(std::move(external_memory_handle));
   }
 
-  void acquireResource(ResourceCollection& collection)
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WFCResourceConsumer>& wfcrc_list)
   {
     auto res_ptr = dynamic_cast<MemoryResource*>(collection.lendResource().release());
     if (!res_ptr)
@@ -60,7 +60,7 @@ public:
     external_memory_handle.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection)
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WFCResourceConsumer>& wfcrc_list)
   {
     collection.takebackResource(std::move(external_memory_handle));
   }
@@ -74,18 +74,20 @@ private:
 TEST_CASE("ResourceCollection", "[utilities]")
 {
   ResourceCollection res_collection("abc");
-  WFCResourceConsumer wfc;
+  WFCResourceConsumer wfc, wfc1, wfc2;
   REQUIRE(wfc.getPtr() == nullptr);
 
   wfc.createResource(res_collection);
   REQUIRE(wfc.getPtr() == nullptr);
 
-  wfc.acquireResource(res_collection);
-  REQUIRE(wfc.getPtr() != nullptr);
-  REQUIRE(wfc.getPtr()->data.size() == 5);
+  RefVectorWithLeader wfc_list(wfc, {wfc, wfc1, wfc2});
 
-  res_collection.rewind();
-  wfc.releaseResource(res_collection);
+  {
+    ResourceCollectionTeamLock lock(res_collection, wfc_list);
+    REQUIRE(wfc.getPtr() != nullptr);
+    CHECK(wfc.getPtr()->data.size() == 5);
+  }
+
   REQUIRE(wfc.getPtr() == nullptr);
 }
 

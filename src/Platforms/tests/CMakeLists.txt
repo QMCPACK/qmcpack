@@ -9,12 +9,13 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-if(BUILD_UNIT_TESTS)
-  add_subdirectory(CPU)
-  if(ENABLE_CUDA)
-    add_subdirectory(CUDA)
-  endif()
-  if(ENABLE_OFFLOAD)
-    add_subdirectory(OMPTarget)
-  endif(ENABLE_OFFLOAD)
+
+add_subdirectory(CPU)
+
+if(ENABLE_CUDA)
+  add_subdirectory(CUDA)
 endif()
+
+if(ENABLE_OFFLOAD)
+  add_subdirectory(OMPTarget)
+endif(ENABLE_OFFLOAD)

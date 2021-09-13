@@ -61,4 +61,6 @@ if(ENABLE_ROCM)
   target_link_libraries(platform_LA INTERFACE platform_rocm_LA)
 endif(ENABLE_ROCM)
 
-add_subdirectory(tests)
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
