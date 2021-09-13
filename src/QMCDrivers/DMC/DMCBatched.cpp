@@ -247,7 +247,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
-        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
+        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
     assert(QMCDriverNew::checkLogAndGL(crowd));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
