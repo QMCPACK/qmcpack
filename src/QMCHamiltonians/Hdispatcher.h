@@ -29,13 +29,15 @@ public:
   Hdispatcher(bool use_batch);
 
   std::vector<FullPrecRealType> flex_evaluate(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                              const RefVectorWithLeader<ParticleSet>& p_list) const;
+                                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-  std::vector<FullPrecRealType> flex_evaluateWithToperator(
-      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<ParticleSet>& p_list) const;
+  std::vector<FullPrecRealType> flex_evaluateWithToperator(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                           const RefVectorWithLeader<ParticleSet>& p_list) const;
 
   std::vector<int> flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list) const;
 
 private:

@@ -177,7 +177,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                                                 crowd.get_walker_hamiltonians());
   ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
-      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_elecs));
+      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_twfs, walker_elecs));
   timers.hamiltonian_timer.stop();
 
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
