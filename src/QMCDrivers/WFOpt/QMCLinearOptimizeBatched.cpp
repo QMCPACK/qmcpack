@@ -71,109 +71,6 @@ QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvecto
                                                                                   std::vector<RealType>& ev)
 {
   int Nl(ev.size());
-  //Tested the single eigenvalue speed and It was no faster.
-  //segfault issues with single eigenvalue problem for some machines
-  //  bool singleEV(false);
-  //  if (singleEV)
-  //  {
-  /*
-    Matrix<double> TAU(Nl,Nl);
-    int INFO;
-    int LWORK(-1);
-    std::vector<RealType> WORK(1);
-    //optimal work size
-    dgeqrf( &Nl, &Nl, B.data(), &Nl, TAU.data(), &WORK[0], &LWORK, &INFO);
-    LWORK=int(WORK[0]);
-    WORK.resize(LWORK);
-    //QR factorization of S, or H2 matrix. to be applied to H before solve.
-    dgeqrf( &Nl, &Nl, B.data(), &Nl, TAU.data(), &WORK[0], &LWORK, &INFO);
-    char SIDE('L');
-    char TRANS('T');
-    LWORK=-1;
-    //optimal work size
-    dormqr(&SIDE, &TRANS, &Nl, &Nl, &Nl, B.data(), &Nl, TAU.data(), A.data(), &Nl, &WORK[0], &LWORK, &INFO);
-    LWORK=int(WORK[0]);
-    WORK.resize(LWORK);
-    //Apply Q^T to H
-    dormqr(&SIDE, &TRANS, &Nl, &Nl, &Nl, B.data(), &Nl, TAU.data(), A.data(), &Nl, &WORK[0], &LWORK, &INFO);
-    //now we have a pair (A,B)=(Q^T*H,Q^T*S) where B is upper triangular and A is general matrix.
-    //reduce the matrix pair to generalized upper Hesenberg form
-    char COMPQ('N'), COMPZ('I');
-    int ILO(1);
-    int LDQ(Nl);
-    Matrix<double> Z(Nl,Nl), Q(Nl,LDQ); //starts as unit matrix
-    for (int zi=0; zi<Nl; zi++)
-      Z(zi,zi)=1;
-    dgghrd(&COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &LDQ, Z.data(), &Nl, &INFO);
-    //Take the pair and reduce to shur form and get eigenvalues
-    std::vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
-    char JOB('S');
-    COMPQ='N';
-    COMPZ='V';
-    LWORK=-1;
-    //get optimal work size
-    dhgeqz(&JOB, &COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &Nl, &WORK[0], &LWORK, &INFO);
-    LWORK=int(WORK[0]);
-    WORK.resize(LWORK);
-    dhgeqz(&JOB, &COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &Nl, &WORK[0], &LWORK, &INFO);
-    //find the best eigenvalue
-    std::vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
-    for (int i=0; i<Nl; i++)
-    {
-      RealType evi(alphar[i]/beta[i]);
-      if (std::abs(evi)<1e10)
-      {
-        mappedEigenvalues[i].first=evi;
-        mappedEigenvalues[i].second=i;
-      }
-      else
-      {
-        mappedEigenvalues[i].first=1e100;
-        mappedEigenvalues[i].second=i;
-      }
-    }
-    std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-    int BestEV(mappedEigenvalues[0].second);
-//                   now we rearrange the  the matrices
-    if (BestEV!=0)
-    {
-      bool WANTQ(false);
-      bool WANTZ(true);
-      int ILST(1);
-      int IFST(BestEV+1);
-      LWORK=-1;
-      dtgexc(&WANTQ, &WANTZ, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &Nl, Z.data(), &Nl, &IFST, &ILST, &WORK[0], &LWORK, &INFO);
-      LWORK=int(WORK[0]);
-      WORK.resize(LWORK);
-      dtgexc(&WANTQ, &WANTZ, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &Nl, Z.data(), &Nl, &IFST, &ILST, &WORK[0], &LWORK, &INFO);
-    }
-    //now we compute the eigenvector
-    SIDE='R';
-    char HOWMNY('S');
-    int M(0);
-    Matrix<double> Z_I(Nl,Nl);
-    bool SELECT[Nl];
-    for (int zi=0; zi<Nl; zi++)
-      SELECT[zi]=false;
-    SELECT[0]=true;
-    WORK.resize(6*Nl);
-    dtgevc(&SIDE, &HOWMNY, &SELECT[0], &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &LDQ, Z_I.data(), &Nl, &Nl, &M, &WORK[0], &INFO);
-    std::vector<RealType> evec(Nl,0);
-    for (int i=0; i<Nl; i++)
-      for (int j=0; j<Nl; j++)
-        evec[i] += Z(j,i)*Z_I(0,j);
-    for (int i=0; i<Nl; i++)
-      ev[i] = evec[i]/evec[0];
-//     for (int i=0; i<Nl; i++) app_log()<<ev[i]<<" ";
-//     app_log()<< std::endl;
-    return mappedEigenvalues[0].first;
-    */
-  // a fake return to reduce warning.
-  //    return RealType(0.0);
-  //  }
-  //  else
-  //  {
-  // OLD ROUTINE. CALCULATES ALL EIGENVECTORS
   //   Getting the optimal worksize
   char jl('N');
   char jr('V');
@@ -188,18 +85,7 @@ QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvecto
                &Nl, &work[0], &lwork, &info);
   lwork = int(work[0]);
   work.resize(lwork);
-  //~ //Get an estimate of E_lin
-  //~ Matrix<RealType> H_tmp(HamT);
-  //~ Matrix<RealType> S_tmp(ST);
-  //~ dggev(&jl, &jr, &Nl, H_tmp.data(), &Nl, S_tmp.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
-  //~ RealType E_lin(alphar[0]/beta[0]);
-  //~ int e_min_indx(0);
-  //~ for (int i=1; i<Nl; i++)
-  //~ if (E_lin>(alphar[i]/beta[i]))
-  //~ {
-  //~ E_lin=alphar[i]/beta[i];
-  //~ e_min_indx=i;
-  //~ }
+
   LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
                &Nl, &work[0], &lwork, &info);
   if (info != 0)
@@ -225,7 +111,6 @@ QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvecto
   for (int i = 0; i < Nl; i++)
     ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
   return mappedEigenvalues[0].first;
-  //  }
 }
 
 
@@ -233,108 +118,7 @@ QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvecto
                                                                                   std::vector<RealType>& ev)
 {
   int Nl(ev.size());
-  //Tested the single eigenvalue speed and It was no faster.
-  //segfault issues with single eigenvalue problem for some machines
-  //  bool singleEV(false);
-  //     if (singleEV)
-  //     {
-  //         Matrix<double> TAU(Nl,Nl);
-  //         int INFO;
-  //         int LWORK(-1);
-  //         std::vector<RealType> WORK(1);
-  //         //optimal work size
-  //         dgeqrf( &Nl, &Nl, B.data(), &Nl, TAU.data(), &WORK[0], &LWORK, &INFO);
-  //         LWORK=int(WORK[0]);
-  //         WORK.resize(LWORK);
-  //         //QR factorization of S, or H2 matrix. to be applied to H before solve.
-  //         dgeqrf( &Nl, &Nl, B.data(), &Nl, TAU.data(), &WORK[0], &LWORK, &INFO);
-  //
-  //         char SIDE('L');
-  //         char TRANS('T');
-  //         LWORK=-1;
-  //         //optimal work size
-  //         dormqr(&SIDE, &TRANS, &Nl, &Nl, &Nl, B.data(), &Nl, TAU.data(), A.data(), &Nl, &WORK[0], &LWORK, &INFO);
-  //         LWORK=int(WORK[0]);
-  //         WORK.resize(LWORK);
-  //         //Apply Q^T to H
-  //         dormqr(&SIDE, &TRANS, &Nl, &Nl, &Nl, B.data(), &Nl, TAU.data(), A.data(), &Nl, &WORK[0], &LWORK, &INFO);
-  //
-  //         //now we have a pair (A,B)=(Q^T*H,Q^T*S) where B is upper triangular and A is general matrix.
-  //         //reduce the matrix pair to generalized upper Hesenberg form
-  //         char COMPQ('N'), COMPZ('I');
-  //         int ILO(1);
-  //         int LDQ(Nl);
-  //         Matrix<double> Z(Nl,Nl), Q(Nl,LDQ); //starts as unit matrix
-  //         for (int zi=0; zi<Nl; zi++) Z(zi,zi)=1;
-  //         dgghrd(&COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &LDQ, Z.data(), &Nl, &INFO);
-  //
-  //         //Take the pair and reduce to shur form and get eigenvalues
-  //         std::vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
-  //         char JOB('S');
-  //         COMPQ='N';
-  //         COMPZ='V';
-  //         LWORK=-1;
-  //         //get optimal work size
-  //         dhgeqz(&JOB, &COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &Nl, &WORK[0], &LWORK, &INFO);
-  //         LWORK=int(WORK[0]);
-  //         WORK.resize(LWORK);
-  //         dhgeqz(&JOB, &COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &Nl, &WORK[0], &LWORK, &INFO);
-  //         //find the best eigenvalue
-  //         std::vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
-  //         for (int i=0; i<Nl; i++)
-  //         {
-  //             RealType evi(alphar[i]/beta[i]);
-  //             if (std::abs(evi)<1e10)
-  //             {
-  //                 mappedEigenvalues[i].first=evi;
-  //                 mappedEigenvalues[i].second=i;
-  //             }
-  //             else
-  //             {
-  //                 mappedEigenvalues[i].first=1e100;
-  //                 mappedEigenvalues[i].second=i;
-  //             }
-  //         }
-  //         std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-  //         int BestEV(mappedEigenvalues[0].second);
-  //
-  // //                   now we rearrange the  the matrices
-  //         if (BestEV!=0)
-  //         {
-  //             bool WANTQ(false);
-  //             bool WANTZ(true);
-  //             int ILST(1);
-  //             int IFST(BestEV+1);
-  //             LWORK=-1;
-  //
-  //             dtgexc(&WANTQ, &WANTZ, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &Nl, Z.data(), &Nl, &IFST, &ILST, &WORK[0], &LWORK, &INFO);
-  //             LWORK=int(WORK[0]);
-  //             WORK.resize(LWORK);
-  //             dtgexc(&WANTQ, &WANTZ, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &Nl, Z.data(), &Nl, &IFST, &ILST, &WORK[0], &LWORK, &INFO);
-  //         }
-  //         //now we compute the eigenvector
-  //         SIDE='R';
-  //         char HOWMNY('S');
-  //         int M(0);
-  //         Matrix<double> Z_I(Nl,Nl);
-  //         bool SELECT[Nl];
-  //         for (int zi=0; zi<Nl; zi++) SELECT[zi]=false;
-  //         SELECT[0]=true;
-  //
-  //         WORK.resize(6*Nl);
-  //         dtgevc(&SIDE, &HOWMNY, &SELECT[0], &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &LDQ, Z_I.data(), &Nl, &Nl, &M, &WORK[0], &INFO);
-  //
-  //         std::vector<RealType> evec(Nl,0);
-  //         for (int i=0; i<Nl; i++) for (int j=0; j<Nl; j++) evec[i] += Z(j,i)*Z_I(0,j);
-  //         for (int i=0; i<Nl; i++) ev[i] = evec[i]/evec[0];
-  // //     for (int i=0; i<Nl; i++) app_log()<<ev[i]<<" ";
-  // //     app_log()<< std::endl;
-  //         return mappedEigenvalues[0].first;
-  //     }
-  //     else
-  //     {
-  // // OLD ROUTINE. CALCULATES ALL EIGENVECTORS
-  // //   Getting the optimal worksize
+  //   Getting the optimal worksize
   RealType zerozero = A(0, 0);
   char jl('N');
   char jr('V');
@@ -348,18 +132,7 @@ QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvecto
                &lwork, &info);
   lwork = int(work[0]);
   work.resize(lwork);
-  //~ //Get an estimate of E_lin
-  //~ Matrix<RealType> H_tmp(HamT);
-  //~ Matrix<RealType> S_tmp(ST);
-  //~ dggev(&jl, &jr, &Nl, H_tmp.data(), &Nl, S_tmp.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
-  //~ RealType E_lin(alphar[0]/beta[0]);
-  //~ int e_min_indx(0);
-  //~ for (int i=1; i<Nl; i++)
-  //~ if (E_lin>(alphar[i]/beta[i]))
-  //~ {
-  //~ E_lin=alphar[i]/beta[i];
-  //~ e_min_indx=i;
-  //~ }
+
   LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
                &lwork, &info);
   if (info != 0)
