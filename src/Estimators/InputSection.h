@@ -74,9 +74,6 @@ public:
   // Initialize from unordered_map/initializer list
   void init(const std::unordered_map<std::string, std::any>& init_values);
 
-  //  Simple write of contents.  Can be replaced/removed in any final implemenation.
-  void report() const;
-
 private:
   // Query functions
   bool is_attribute(const std::string& name) const { return attributes.find(name) != attributes.end(); };
@@ -90,14 +87,25 @@ private:
 
   bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); };
 
-  // Perform typed read and assignment of input variables
-  void set_from_stream(const std::string& name, std::istringstream& svalue);
-
   // Set default values for optional inputs.
   void set_defaults();
 
+  // Perform typed read and assignment of input variables from strings
+  void set_from_stream(const std::string& name, std::istringstream& svalue);
+
+  // Perform typed assignment of input variables from intrinsic types
+  template<typename T>
+  void set_from_value(const std::string& name, const T& svalue);
+
   // Check validity of inputs
   void check_valid();
+
+
+  // Simple write of contents.
+  //   Developer/debugging function of limited value.
+  //   May be removed at any time.
+  void report() const;
+
 };
 
 

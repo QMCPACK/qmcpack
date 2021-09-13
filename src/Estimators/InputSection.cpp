@@ -70,21 +70,9 @@ void InputSection::readXML(xmlNodePtr cur)
 
 void InputSection::init(const std::unordered_map<std::string, std::any>& init_values)
 {
+  // assign inputted values
   for (auto& [name, value] : init_values)
-    if (is_string(name))
-      values[name] = std::any_cast<std::string>(value);
-    else if (is_bool(name))
-      values[name] = std::any_cast<bool>(value);
-    else if (is_integer(name))
-      values[name] = std::any_cast<int>(value);
-    else if (is_real(name))
-      values[name] = std::any_cast<Real>(value);
-    else
-    {
-      std::stringstream error;
-      error << "InputSection::init name " << name << " in " << section_name << " does not have a type\n";
-      throw UniformCommunicateError(error.str());
-    }
+    set_from_value(name,value);
 
   // assign default values for optional variables
   set_defaults();
@@ -96,23 +84,11 @@ void InputSection::init(const std::unordered_map<std::string, std::any>& init_va
 };
 
 
-void InputSection::report() const
+void InputSection::set_defaults()
 {
-  auto& out = app_log();
-  out << "\n" << section_name;
-  for (auto& [name, value] : values)
-  {
-    out << "\n  " << name << " = ";
-    if (is_string(name))
-      out << std::any_cast<std::string>(value);
-    else if (is_bool(name))
-      out << std::any_cast<bool>(value);
-    else if (is_integer(name))
-      out << std::any_cast<int>(value);
-    else if (is_real(name))
-      out << std::any_cast<Real>(value);
-  }
-  out << "\n\n";
+  for (auto& [name, default_value] : default_values)
+    if (!has(name))
+      set_from_value(name,default_value);
 };
 
 
@@ -151,13 +127,24 @@ void InputSection::set_from_stream(const std::string& name, std::istringstream& 
   }
 };
 
-
-void InputSection::set_defaults()
+template<typename T>
+void InputSection::set_from_value(const std::string& name, const T& value)
 {
-  for (auto& [name, default_value] : default_values)
-    if (!has(name))
-      values[name] = default_value;
-};
+  if (is_string(name))
+    values[name] = std::any_cast<std::string>(value);
+  else if (is_bool(name))
+    values[name] = std::any_cast<bool>(value);
+  else if (is_integer(name))
+    values[name] = std::any_cast<int>(value);
+  else if (is_real(name))
+    values[name] = std::any_cast<Real>(value);
+  else
+  {
+    std::stringstream error;
+    error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
+    throw UniformCommunicateError(error.str());
+  }
+}; 
 
 
 void InputSection::check_valid()
@@ -172,5 +159,28 @@ void InputSection::check_valid()
       throw UniformCommunicateError(error.str());
     }
 };
+
+
+
+
+void InputSection::report() const
+{
+  auto& out = app_log();
+  out << "\n" << section_name;
+  for (auto& [name, value] : values)
+  {
+    out << "\n  " << name << " = ";
+    if (is_string(name))
+      out << std::any_cast<std::string>(value);
+    else if (is_bool(name))
+      out << std::any_cast<bool>(value);
+    else if (is_integer(name))
+      out << std::any_cast<int>(value);
+    else if (is_real(name))
+      out << std::any_cast<Real>(value);
+  }
+  out << "\n\n";
+};
+
 
 } // namespace qmcplusplus

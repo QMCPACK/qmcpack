@@ -19,6 +19,7 @@ namespace qmcplusplus
 
 /** Native representation for Momentum Distribution Estimators inputs
  */
+// clang-format: off
 class MomentumDistributionInput : public InputSection
 {
 public:
@@ -30,9 +31,15 @@ public:
     integers     = {"samples"};
     reals        = {"kmax", "kmax0", "kmax1", "kmax2"};
     default_values =
-        {{"name", std::string("nofk")}, {"samples", 40}, {"kmax", 0.0}, {"kmax0", 0.0}, {"kmax1", 0.0}, {"kmax2", 0.0}};
+        {{"name"   , std::string("nofk")}, 
+         {"samples", int(40)}, 
+         {"kmax"   , Real(0.0)}, 
+         {"kmax0"  , Real(0.0)}, 
+         {"kmax1"  , Real(0.0)}, 
+         {"kmax2"  , Real(0.0)}};
   };
 };
+// clang-format: on
 
 } // namespace qmcplusplus
 #endif /* MOMENTUMDISTRIBUTIONINPUT_H */
