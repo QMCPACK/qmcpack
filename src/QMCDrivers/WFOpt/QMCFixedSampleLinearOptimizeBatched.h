@@ -63,6 +63,22 @@ public:
 
   RealType costFunc(RealType dl);
 
+  ///common operation to start optimization
+  void start();
+
+#ifdef HAVE_LMY_ENGINE
+  using ValueType = QMCTraits::ValueType;
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                    DescentEngine& descentEngineObj,
+                    std::string MinMethod);
+#endif
+
+
+  ///common operation to finish optimization, used by the derived classes
+  void finish();
+
+  void generateSamples();
+
 private:
   NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
 

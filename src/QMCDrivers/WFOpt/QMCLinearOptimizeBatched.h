@@ -91,23 +91,12 @@ public:
   xmlNodePtr optNode;
 
 
-  ///common operation to start optimization, used by the derived classes
-  void start();
-#ifdef HAVE_LMY_ENGINE
-  using ValueType = QMCTraits::ValueType;
-  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
-                    DescentEngine& descentEngineObj,
-                    std::string MinMethod);
-#endif
-  ///common operation to finish optimization, used by the derived classes
-  void finish();
   //asymmetric generalized EV
   RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
   //asymmetric EV
   RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
   void getNonLinearRange(int& first, int& last);
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
-  void generateSamples();
 
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
