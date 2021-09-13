@@ -16,7 +16,6 @@
 #include "ValidSpinDensityInput.h"
 #include "SpinDensityNew.h"
 #include "RandomForTest.h"
-//#include "Utilities/SpeciesSet.h"
 #include "ParticleSet.h"
 #include "SpinDensityTesting.h"
 

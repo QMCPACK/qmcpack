@@ -12,7 +12,7 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(UTEST_EXE test_containers_pools)
-set(UTEST_NAME deterministic-unit_test_containers_pools)
+set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 add_executable(${UTEST_EXE} test_pooled_memory.cpp)
 target_link_libraries(${UTEST_EXE} catch_main containers)

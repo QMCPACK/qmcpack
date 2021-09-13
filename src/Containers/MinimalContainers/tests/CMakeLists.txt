@@ -10,9 +10,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-set(SRC_DIR MinimalContainers)
-set(UTEST_EXE test_${SRC_DIR})
-set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(UTEST_EXE test_containers_MinimalContainers)
+set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 set(SRCS test_ConstantSizeMatrix.cpp test_RecordArray.cpp)
 
