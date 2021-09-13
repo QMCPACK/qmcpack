@@ -105,7 +105,6 @@ private:
   //   Developer/debugging function of limited value.
   //   May be removed at any time.
   void report() const;
-
 };
 
 

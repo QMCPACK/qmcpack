@@ -72,7 +72,7 @@ void InputSection::init(const std::unordered_map<std::string, std::any>& init_va
 {
   // assign inputted values
   for (auto& [name, value] : init_values)
-    set_from_value(name,value);
+    set_from_value(name, value);
 
   // assign default values for optional variables
   set_defaults();
@@ -88,7 +88,7 @@ void InputSection::set_defaults()
 {
   for (auto& [name, default_value] : default_values)
     if (!has(name))
-      set_from_value(name,default_value);
+      set_from_value(name, default_value);
 };
 
 
@@ -144,7 +144,7 @@ void InputSection::set_from_value(const std::string& name, const T& value)
     error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
     throw UniformCommunicateError(error.str());
   }
-}; 
+};
 
 
 void InputSection::check_valid()
@@ -159,8 +159,6 @@ void InputSection::check_valid()
       throw UniformCommunicateError(error.str());
     }
 };
-
-
 
 
 void InputSection::report() const

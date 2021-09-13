@@ -37,9 +37,9 @@ public:
     integers       = {"samples", "count"};
     reals          = {"kmax", "width"};
     bools          = {"full", "rational"};
-    default_values = {{"name"    , std::string("demo")}, 
-                      {"samples" , int(20)}, 
-                      {"width"   , RealType(1.0)}, 
+    default_values = {{"name", std::string("demo")},
+                      {"samples", int(20)},
+                      {"width", RealType(1.0)},
                       {"rational", bool(false)}};
   };
 };
@@ -64,8 +64,8 @@ TEST_CASE("InputSection::InputSection", "[estimators]")
 
 TEST_CASE("InputSection::readXML", "[estimators]")
 {
-  SECTION("minimum required attributes and parameters"){
-
+  SECTION("minimum required attributes and parameters")
+  {
     // clang-format: off
     const char* xml = R"(
 <test full="no">
@@ -105,8 +105,8 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   }
 
 
-  SECTION("complete attributes and parameters"){
-
+  SECTION("complete attributes and parameters")
+  {
     // clang-format: off
     const char* xml = R"(
 <test name="alice" samples="10" kmax="3.0" full="no">
@@ -149,7 +149,8 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   }
 
 
-  SECTION("invalid inputs"){
+  SECTION("invalid inputs")
+  {
     //   cases that should result in thrown exception:
     //     required attribute/parameter is missing
     //     unrecognized attribute/parameter encountered
@@ -186,7 +187,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
       // read xml
       TestInput ti;
-      CHECK_THROWS_AS(ti.readXML(cur),std::runtime_error);
+      CHECK_THROWS_AS(ti.readXML(cur), std::runtime_error);
     }
   }
 }
@@ -194,7 +195,8 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
 TEST_CASE("InputSection::init", "[estimators]")
 {
-  SECTION("minimum required attributes and parameters"){
+  SECTION("minimum required attributes and parameters")
+  {
     // initialize
     TestInput ti;
     ti.init({{"full", bool(false)}, {"count", int(15)}});
@@ -220,7 +222,8 @@ TEST_CASE("InputSection::init", "[estimators]")
   }
 
 
-  SECTION("complete attributes and parameters"){
+  SECTION("complete attributes and parameters")
+  {
     // initialize
     TestInput ti;
     ti.init({
@@ -255,9 +258,10 @@ TEST_CASE("InputSection::init", "[estimators]")
   }
 
 
-  SECTION("invalid type assignment"){
+  SECTION("invalid type assignment")
+  {
     TestInput ti;
-    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", RealType(15.)}}),std::bad_cast);
+    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", RealType(15.)}}), std::bad_cast);
   }
 }
 
@@ -277,15 +281,14 @@ TEST_CASE("InputSection::get", "[estimators]")
   });
 
   // invalid type access results in thrown exception
-  CHECK_THROWS_AS(ti.get<int>("name"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("samples"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<bool>("kmax"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("full"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("label"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<bool>("count"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("width"),std::bad_cast);
-  CHECK_THROWS_AS(ti.get<int>("rational"),std::bad_cast);
-
+  CHECK_THROWS_AS(ti.get<int>("name"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<RealType>("samples"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<bool>("kmax"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<std::string>("full"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<RealType>("label"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<bool>("count"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<std::string>("width"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<int>("rational"), std::bad_cast);
 }
 
 
