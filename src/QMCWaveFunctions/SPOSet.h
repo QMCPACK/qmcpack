@@ -322,12 +322,12 @@ public:
   virtual void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
-   * @param P current ParticleSet
-   * @param first starting index of the particles
-   * @param last ending index of the particles
-   * @param logdet determinant matrix to be inverted
-   * @param dlogdet gradients
-   * @param d2logdet laplacians
+   * @param[in] P current ParticleSet
+   * @param[in] first starting index of the particles
+   * @param[in] last ending index of the particles
+   * @param[out] logdet determinant matrix to be inverted
+   * @param[out] dlogdet gradients
+   * @param[out] d2logdet laplacians
    *
    */
   virtual void evaluate_notranspose(const ParticleSet& P,

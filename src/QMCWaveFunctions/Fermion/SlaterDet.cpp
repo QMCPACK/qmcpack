@@ -118,14 +118,14 @@ void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
   constexpr LogValueType czero(0);
 
   for (WaveFunctionComponent& wfc : wfc_list)
-    wfc.log_value() = czero;
+    wfc.get_ref_log_value() = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto Det_list(extract_DetRef_list(wfc_list, i));
     Dets[i]->mw_evaluateLog(Det_list, p_list, G_list, L_list);
     for (int iw = 0; iw < wfc_list.size(); iw++)
-      wfc_list[iw].log_value() += Det_list[iw].get_log_value();
+      wfc_list[iw].get_ref_log_value() += Det_list[iw].get_log_value();
   }
 }
 
@@ -149,14 +149,14 @@ void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& 
   constexpr LogValueType czero(0);
 
   for (WaveFunctionComponent& wfc : wfc_list)
-    wfc.log_value() = czero;
+    wfc.get_ref_log_value() = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto Det_list(extract_DetRef_list(wfc_list, i));
     Dets[i]->mw_evaluateGL(Det_list, p_list, G_list, L_list, fromscratch);
     for (int iw = 0; iw < wfc_list.size(); iw++)
-      wfc_list[iw].log_value() += Det_list[iw].get_log_value();
+      wfc_list[iw].get_ref_log_value() += Det_list[iw].get_log_value();
   }
 }
 

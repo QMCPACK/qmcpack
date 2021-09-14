@@ -244,37 +244,36 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(-5.2293234395150989));
 #endif
 
- //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
- //QMCHamiltonian level to make sure there are no crashes.  
- 
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //QMCHamiltonian level to make sure there are no crashes.
+
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham->evaluateIonDerivsDeterministic(elec,ions,*psi,hf_term,pulay_term,wf_grad);
- 
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
+  ham->evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+
+  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
+  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+
+  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
+  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
   RandomGenerator_t myrng;
   ham->setRandomGenerator(&myrng);
-  ham->evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
-  
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
+  ham->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+
+  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
+  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+
+  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
+  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 }
 
 TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
@@ -429,37 +428,36 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(-4.5825638607333019));
 #endif
 
- //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
- //QMCHamiltonian level to make sure there are no crashes.  
- 
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //QMCHamiltonian level to make sure there are no crashes.
+
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham->evaluateIonDerivsDeterministic(elec,ions,*psi,hf_term,pulay_term,wf_grad);
- 
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
+  ham->evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+
+  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
+  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+
+  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
+  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
   RandomGenerator_t myrng;
   ham->setRandomGenerator(&myrng);
-  ham->evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
-  
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
+  ham->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+
+  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
+  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+
+  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
+  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 }
 
 TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")

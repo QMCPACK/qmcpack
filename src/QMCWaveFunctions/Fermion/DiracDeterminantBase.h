@@ -186,6 +186,9 @@ protected:
   ///number of particles which belong to this Dirac determinant
   const int NumPtcls;
 
+  // This is for debugging and testing in debug mode
+  // psiMinv is not a base class data member or public in most implementations
+  // it is frequently Dual and its consistency not guaranteed.
 #ifndef NDEBUG
   ValueMatrix_t dummy_vmt;
 #endif
