@@ -186,8 +186,6 @@ struct GaussianTimesRN : public OptimizableFunctorBase
 
   bool put(xmlNodePtr cur) override;
 
-  void addOptimizables(VarRegistry<real_type>& vlist) {}
-
   /** process cur xmlnode
    * @param cur root node
    * @param baseOff offset to the basePower

@@ -25,7 +25,6 @@
 #define QMCPLUSPLUS_LR_KSPACEJASTROW_H
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
