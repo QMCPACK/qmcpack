@@ -51,12 +51,6 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
       optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
-      generate_samples_timer_(
-          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
-      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       W(w)
 {
   //     //set the optimization flag
