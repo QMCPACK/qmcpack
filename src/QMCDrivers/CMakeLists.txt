@@ -32,7 +32,6 @@ set(QMCDRIVERS
     WFOpt/QMCOptimizeBatched.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
     WFOpt/QMCLinearOptimize.cpp
-    WFOpt/QMCLinearOptimizeBatched.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp

@@ -212,7 +212,7 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
 {
   for (int i = 0; i < optparm.size(); i++)
     optTarget->Params(i) = optparm[i] + dl * optdir[i];
-  QMCLinearOptimizeBatched::RealType c = optTarget->Cost(false);
+  QMCFixedSampleLinearOptimizeBatched::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
   objFuncWrapper_.validFuncVal = optTarget->IsValid;

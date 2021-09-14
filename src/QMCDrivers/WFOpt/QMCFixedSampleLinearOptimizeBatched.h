@@ -18,7 +18,10 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/NRCOptimization.h"
 #include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
@@ -37,6 +40,10 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC.
  */
+
+
+///forward declaration of a cost function
+class QMCCostFunctionBase;
 
 
 class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
