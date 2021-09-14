@@ -46,15 +46,9 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
                    "QMCLinearOptimizeBatched::",
                    comm,
                    "QMCLinearOptimizeBatched"),
-      param_tol(1e-4),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples)
 {
-  //     //set the optimization flag
-  qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
-  //read to use vmc output (just in case)
-  m_param.add(param_tol, "alloweddifference");
-  //Set parameters for line minimization:
 }
 
 } // namespace qmcplusplus

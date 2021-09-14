@@ -68,17 +68,6 @@ public:
   ///Run the Optimization algorithm.
   bool run() override = 0;
 
-  // ------------------------------------
-  // Used by legacy linear method algos
-
-  std::vector<RealType> optdir, optparm;
-
-  ///Number of iterations maximum before generating new configurations.
-  int Max_iterations;
-
-  RealType param_tol;
-  //-------------------------------------
-
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///vmc engine
@@ -86,8 +75,6 @@ public:
 
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
-
-  ParameterSet m_param;
 
 };
 } // namespace qmcplusplus

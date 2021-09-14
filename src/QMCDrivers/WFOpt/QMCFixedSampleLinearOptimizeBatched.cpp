@@ -64,6 +64,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       vdeps(1, std::vector<double>()),
 #endif
       Max_iterations(1),
+      param_tol(1e-4),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(50),
@@ -140,6 +141,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
   m_param.add(target_shift_i, "target_shift_i");
   m_param.add(crowd_size_, "opt_crowd_size");
   m_param.add(opt_num_crowds_, "opt_num_crowds");
+  m_param.add(param_tol, "alloweddifference");
+
 
 
 #ifdef HAVE_LMY_ENGINE

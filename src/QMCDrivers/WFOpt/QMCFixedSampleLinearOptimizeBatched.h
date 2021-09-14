@@ -162,8 +162,19 @@ private:
                           const int bi,
                           const bool gu);
 
+  // ------------------------------------
+  // Used by legacy linear method algos
+
+  std::vector<RealType> optdir, optparm;
+
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+
+  RealType param_tol;
+  //-------------------------------------
+
+
+  ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
   std::string GEVtype, StabilizerMethod, GEVSplit;
@@ -263,6 +274,7 @@ private:
   ///xml node for optimizer
   xmlNodePtr optNode;
 
+  ParameterSet m_param;
 
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.
