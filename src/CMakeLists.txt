@@ -127,9 +127,6 @@ set(UTILITIES
     Utilities/ResourceCollection.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
-    Numerics/OptimizableFunctorBase.cpp
-    Numerics/SmoothFunctions.cpp
-    Numerics/OneDimGridFactory.cpp
     Optimize/VariableSet.cpp)
 if(IS_GIT_PROJECT)
   set(UTILITIES "${UTILITIES};${GITREV_TMP}")
@@ -157,6 +154,7 @@ add_subdirectory(Message)
 add_subdirectory(Platforms)
 add_subdirectory(Particle)
 add_subdirectory(Utilities)
+add_subdirectory(Numerics)
 
 if(QMC_BUILD_SANDBOX_ONLY)
 
@@ -188,7 +186,6 @@ else() #{{{
 
   if(BUILD_UNIT_TESTS) #{
     #Unit test directories
-    add_subdirectory(Numerics/tests)
     add_subdirectory(einspline/tests)
     add_subdirectory(spline2/tests)
     add_subdirectory(Concurrency/tests)
