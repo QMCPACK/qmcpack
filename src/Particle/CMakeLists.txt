@@ -22,6 +22,7 @@ set(PARTICLE
     DynamicCoordinatesBuilder.cpp
     MCWalkerConfiguration.cpp
     WalkerConfigurations.cpp
+    SpeciesSet.cpp
     SampleStack.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
