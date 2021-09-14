@@ -53,3 +53,7 @@ target_compile_definitions(einspline INTERFACE "HAVE_EINSPLINE")
 #add_dependencies(time_multi ${PROJECT_BINARY_HOME}/include/einspline/bspline.h)
 #ADD_EXECUTABLE(test_multi_single test_multi_single.cpp)
 #target_link_libraries(test_multi_single einspline)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

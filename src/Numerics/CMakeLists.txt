@@ -9,12 +9,14 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(NUMERICS_SRCS
+    SmoothFunctions.cpp
+    OneDimGridFactory.cpp)
 
-set(UTEST_EXE test_containers_pools)
-set(UTEST_NAME deterministic-unit_${UTEST_EXE})
+add_library(qmcnumerics ${NUMERICS_SRCS})
+target_link_libraries(qmcnumerics qmcio containers)
+target_include_directories(qmcnumerics INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_executable(${UTEST_EXE} test_pooled_memory.cpp)
-target_link_libraries(${UTEST_EXE} catch_main containers)
-
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

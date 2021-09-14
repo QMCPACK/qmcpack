@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/TinyVector.h"
 //#include <cstdio>
@@ -35,7 +35,7 @@
  * optimizations. The virtual functions are intended for non-critical operations that
  * are executed infrequently during optimizations.
  *
- * This class handles myVars of opt_variables_type (Optimize/VariableSet.h). A derived class
+ * This class handles myVars of opt_variables_type (VariableSet.h). A derived class
  * can insert any number of variables it handles during optimizations, by calling
  * myVars.insert(name,value);
  * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according

@@ -20,6 +20,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 set(WFBASE_SRCS
+    OptimizableFunctorBase.cpp
+    VariableSet.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     DiffWaveFunctionComponent.cpp
@@ -194,6 +196,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     target_include_directories(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
     target_link_libraries(qmcwfs_cuda PUBLIC qmcparticle platform_LA)
   endif()
+  target_include_directories(qmcwfs_cuda PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
 endif(QMC_CUDA OR ENABLE_CUDA)
 
@@ -214,3 +217,7 @@ if(ENABLE_CUDA)
   # headers in this target contain full relative path from project root.
   target_link_libraries(qmcwfs PUBLIC qmcwfs_direct_inversion_cuda)
 endif(ENABLE_CUDA)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

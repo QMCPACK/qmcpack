@@ -54,3 +54,7 @@ install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-che
         RUNTIME DESTINATION bin)
 
 add_subdirectory(ppconvert)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

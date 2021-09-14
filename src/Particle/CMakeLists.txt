@@ -59,7 +59,7 @@ endif(USE_OBJECT_TARGET)
 
 target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
-target_link_libraries(qmcparticle PUBLIC qmcutil platform_runtime)
+target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
 
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)
