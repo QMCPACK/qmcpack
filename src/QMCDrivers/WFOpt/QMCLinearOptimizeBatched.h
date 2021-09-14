@@ -68,8 +68,6 @@ public:
   ///Run the Optimization algorithm.
   bool run() override = 0;
 
-  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
-
   // ------------------------------------
   // Used by legacy linear method algos
 
@@ -85,15 +83,9 @@ public:
   std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///vmc engine
   std::unique_ptr<VMCBatched> vmcEngine;
-  ///xml node to be dumped
-  xmlNodePtr wfNode;
-  ///xml node for optimizer
-  xmlNodePtr optNode;
 
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
-
-  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
 
   ParameterSet m_param;
 

@@ -54,6 +54,10 @@ public:
   ///Destructor
   ~QMCFixedSampleLinearOptimizeBatched() override;
 
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
+
+  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
+
   ///Run the Optimization algorithm.
   bool run() override;
   ///preprocess xml node
@@ -253,6 +257,12 @@ private:
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
   Timer t1;
+
+  ///xml node to be dumped
+  xmlNodePtr wfNode;
+  ///xml node for optimizer
+  xmlNodePtr optNode;
+
 
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.

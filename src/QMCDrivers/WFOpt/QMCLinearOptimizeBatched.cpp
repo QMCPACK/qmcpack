@@ -47,8 +47,6 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
                    comm,
                    "QMCLinearOptimizeBatched"),
       param_tol(1e-4),
-      wfNode(NULL),
-      optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples)
 {
