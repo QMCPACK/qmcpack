@@ -10,7 +10,6 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 set(NUMERICS_SRCS
-    OptimizableFunctorBase.cpp
     SmoothFunctions.cpp
     OneDimGridFactory.cpp)
 

@@ -15,7 +15,7 @@
  */
 #ifndef QMCPLUSPLUS_SHORTRANGECUSPFUNCTOR_H
 #define QMCPLUSPLUS_SHORTRANGECUSPFUNCTOR_H
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 #include <stdexcept>

@@ -20,6 +20,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 set(WFBASE_SRCS
+    OptimizableFunctorBase.cpp
+    VariableSet.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     DiffWaveFunctionComponent.cpp

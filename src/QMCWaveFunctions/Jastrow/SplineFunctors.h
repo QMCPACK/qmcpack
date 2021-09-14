@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_CUBICFUNCTORSFORJASTROW_H
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/CubicBspline.h"
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus

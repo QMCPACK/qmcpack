@@ -126,8 +126,7 @@ set(UTILITIES
     Utilities/unit_conversion.cpp
     Utilities/ResourceCollection.cpp
     OhmmsApp/ProjectData.cpp
-    OhmmsApp/RandomNumberControl.cpp
-    Optimize/VariableSet.cpp)
+    OhmmsApp/RandomNumberControl.cpp)
 if(IS_GIT_PROJECT)
   set(UTILITIES "${UTILITIES};${GITREV_TMP}")
 endif()
@@ -195,7 +194,6 @@ else() #{{{
     add_subdirectory(QMCDrivers/tests)
     add_subdirectory(QMCApp/tests)
     add_subdirectory(Message/tests)
-    add_subdirectory(Optimize/tests)
     add_subdirectory(QMCTools/tests)
   endif() #}
 
