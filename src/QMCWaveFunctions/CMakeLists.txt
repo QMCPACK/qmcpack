@@ -196,6 +196,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     target_include_directories(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
     target_link_libraries(qmcwfs_cuda PUBLIC qmcparticle platform_LA)
   endif()
+  target_include_directories(qmcwfs_cuda PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
 endif(QMC_CUDA OR ENABLE_CUDA)
 
