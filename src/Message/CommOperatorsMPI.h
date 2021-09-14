@@ -15,7 +15,7 @@
 
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include <stdint.h>
 ///dummy declarations to be specialized
 template<typename T>

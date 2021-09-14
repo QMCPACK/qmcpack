@@ -12,8 +12,8 @@
 
 #include "catch.hpp"
 
-#include "Utilities/PooledMemory.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledMemory.h"
+#include "Pools/PooledData.h"
 #include "Utilities/Timer.h"
 #include <iostream>
 #include <stdio.h>

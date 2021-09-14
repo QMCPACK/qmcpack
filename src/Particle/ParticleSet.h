@@ -24,7 +24,7 @@
 #include "DynamicCoordinates.h"
 #include "Walker.h"
 #include "SpeciesSet.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"

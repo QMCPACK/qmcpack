@@ -29,7 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
 #include "QMCDrivers/MCPopulation.h"

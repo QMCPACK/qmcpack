@@ -23,7 +23,6 @@ add_executable(
   test_runtime_manager.cpp
   test_prime_set.cpp
   test_partition.cpp
-  test_pooled_memory.cpp
   test_ResourceCollection.cpp
   test_infostream.cpp
   test_output_manager.cpp
