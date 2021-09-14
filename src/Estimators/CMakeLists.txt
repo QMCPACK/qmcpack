@@ -12,6 +12,7 @@
 ####################################
 
 set(QMCEST_SRC
+    InputSection.cpp
     CSEnergyEstimator.cpp
     LocalEnergyEstimator.cpp
     RMCLocalEnergyEstimator.cpp
