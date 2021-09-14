@@ -31,3 +31,7 @@ endif()
 add_library(catch_main_no_mpi catch_main.cpp)
 target_include_directories(catch_main_no_mpi PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 target_link_libraries(catch_main_no_mpi PRIVATE platform_runtime)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

@@ -119,6 +119,9 @@ add_subdirectory(Platforms)
 add_subdirectory(Particle)
 add_subdirectory(Utilities)
 add_subdirectory(Numerics)
+add_subdirectory(type_traits)
+add_subdirectory(Concurrency)
+add_subdirectory(spline2)
 
 if(QMC_BUILD_SANDBOX_ONLY)
 
@@ -147,18 +150,5 @@ else() #{{{
 
   add_subdirectory(QMCApp)
   add_subdirectory(QMCTools)
-
-  if(BUILD_UNIT_TESTS) #{
-    #Unit test directories
-    add_subdirectory(einspline/tests)
-    add_subdirectory(spline2/tests)
-    add_subdirectory(Concurrency/tests)
-    add_subdirectory(QMCWaveFunctions/tests)
-    add_subdirectory(QMCHamiltonians/tests)
-    add_subdirectory(type_traits/tests)
-    add_subdirectory(QMCDrivers/tests)
-    add_subdirectory(Message/tests)
-    add_subdirectory(QMCTools/tests)
-  endif() #}
 
 endif() #}}}

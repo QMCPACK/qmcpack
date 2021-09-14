@@ -217,3 +217,7 @@ if(ENABLE_CUDA)
   # headers in this target contain full relative path from project root.
   target_link_libraries(qmcwfs PUBLIC qmcwfs_direct_inversion_cuda)
 endif(ENABLE_CUDA)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

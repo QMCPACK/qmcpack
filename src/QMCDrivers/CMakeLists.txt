@@ -118,3 +118,7 @@ if(BUILD_LMYENGINE_INTERFACE)
   target_link_libraries(qmcdriver PRIVATE formic_utils)
   target_link_libraries(qmcdriver_unit PRIVATE formic_utils)
 endif()
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

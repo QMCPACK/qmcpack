@@ -117,3 +117,7 @@ target_link_libraries(qmcham_unit PUBLIC qmcwfs)
 
 target_link_libraries(qmcham PRIVATE einspline platform_LA Math::FFTW3)
 target_link_libraries(qmcham_unit PRIVATE einspline platform_LA Math::FFTW3)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
