@@ -2,12 +2,12 @@
 
 message(STATUS "Setting up AMD LibM libraries")
 message(WARNING "In limited benchmarks, AMD LibM slows down QMCPACK. "
-        "Please check carefully before using it in production runs.")
+                "Please check carefully before using it in production runs.")
 
 include(CheckCXXSourceCompiles)
 
 find_path(
-  AMD_LIBM_INCLUDE_DIR NAME amdlibm.h
+  AMD_LIBM_INCLUDE_DIR amdlibm.h
   HINTS ${AMD_LIBM_ROOT} ${AOCL_ROOT}
   PATH_SUFFIXES include)
 
@@ -18,7 +18,7 @@ else()
 endif()
 
 find_library(
-  AMD_LIBM_LIBRARY NAME amdlibm
+  AMD_LIBM_LIBRARY amdlibm
   HINTS ${AMD_LIBM_ROOT} ${AOCL_ROOT}
   PATH_SUFFIXES lib)
 

@@ -26,7 +26,9 @@ set(SRCS
     test_trace_manager.cpp
     SpinDensityTesting.cpp
     test_SpinDensityInput.cpp
-    test_SpinDensityNew.cpp)
+    test_SpinDensityNew.cpp
+    test_InputSection.cpp
+    )
 
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
@@ -39,9 +41,7 @@ if(USE_OBJECT_TARGET)
     qmcwfs
     qmcparticle
     qmcutil
-    containers
-    platform_device
-    platform_omptarget
+    platform_omptarget_LA
     utilities_for_test)
 endif()
 
@@ -62,9 +62,7 @@ if(HAVE_MPI)
       qmcwfs
       qmcparticle
       qmcutil
-      containers
-      platform_device
-      platform_omptarget
+      platform_omptarget_LA
       utilities_for_test)
   endif()
   target_link_libraries(${UTEST_EXE} catch_main qmcestimators_unit)

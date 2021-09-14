@@ -110,7 +110,6 @@ class ElectronGasComplexOrbitalBuilder : public WaveFunctionComponentBuilder
 public:
   ///constructor
   ElectronGasComplexOrbitalBuilder(Communicate* comm, ParticleSet& els);
-  //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;

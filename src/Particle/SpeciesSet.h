@@ -12,12 +12,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef OHMMS_SPECIES_SET_H
-#define OHMMS_SPECIES_SET_H
+#ifndef QMCPLUSPLUS_SPECIES_SET_H
+#define QMCPLUSPLUS_SPECIES_SET_H
 
 #include <string>
 #include <vector>
 
+namespace qmcplusplus
+{
 /** \class SpeciesSet
  *  \brief Custom container for set of attributes for a set of species.
  *
@@ -129,4 +131,5 @@ public:
     return -1;
   }
 };
+} // namespace qmcplusplus
 #endif

@@ -16,7 +16,7 @@
 #include "Particle/SampleStack.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/UniformCommunicateError.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 namespace qmcplusplus
 {

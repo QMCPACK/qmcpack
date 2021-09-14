@@ -28,7 +28,7 @@ add_executable(
   test_tensor_operations.cpp
   test_determinant.cpp
   test_misc_kernels.cpp)
-target_link_libraries(${UTEST_EXE} catch_main afqmc Math::BLAS_LAPACK)
+target_link_libraries(${UTEST_EXE} catch_main afqmc platform_LA)
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})

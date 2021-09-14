@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_LRBASIS_H
 
 #include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "coulomb_types.h"
 
 namespace qmcplusplus

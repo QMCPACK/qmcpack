@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_LONGRANGEJASTROW_BREAKUPUTILITY_H
 #define QMCPLUSPLUS_LONGRANGEJASTROW_BREAKUPUTILITY_H
 
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 
 namespace qmcplusplus
 {

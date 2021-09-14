@@ -23,7 +23,7 @@
 
 #include <cstdio>
 #include <memory>
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsPETE/OhmmsVector.h"

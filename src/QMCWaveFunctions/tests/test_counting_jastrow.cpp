@@ -14,7 +14,7 @@
 #include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 
 #include "QMCWaveFunctions/Jastrow/CountingGaussian.h"
 #include "QMCWaveFunctions/Jastrow/CountingGaussianRegion.h"

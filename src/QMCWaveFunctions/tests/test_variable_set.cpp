@@ -13,7 +13,7 @@
 #include "catch.hpp"
 #include "complex_approx.hpp"
 
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 
 #include <stdio.h>
 #include <string>
