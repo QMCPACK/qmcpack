@@ -254,6 +254,11 @@ private:
   NewTimer& cost_function_timer_;
   Timer t1;
 
+  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
+  // which still takes an MCWalkerConfiguration in the constructor.
+  MCWalkerConfiguration& W;
+
+
 };
 } // namespace qmcplusplus
 #endif

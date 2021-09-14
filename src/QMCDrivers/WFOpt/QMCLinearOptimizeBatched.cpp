@@ -50,8 +50,7 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
       wfNode(NULL),
       optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
-      samples_(samples),
-      W(w)
+      samples_(samples)
 {
   //     //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);

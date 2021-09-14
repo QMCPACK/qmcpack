@@ -97,9 +97,6 @@ public:
 
   ParameterSet m_param;
 
-  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
-  // which still takes an MCWalkerConfiguration in the constructor.
-  MCWalkerConfiguration& W;
 };
 } // namespace qmcplusplus
 #endif
