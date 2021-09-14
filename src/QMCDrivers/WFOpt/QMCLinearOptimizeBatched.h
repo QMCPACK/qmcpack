@@ -90,14 +90,6 @@ public:
   ///xml node for optimizer
   xmlNodePtr optNode;
 
-
-  //asymmetric generalized EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
-  //asymmetric EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  void getNonLinearRange(int& first, int& last);
-  RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
-
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
 

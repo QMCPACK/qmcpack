@@ -79,6 +79,9 @@ public:
 
   void generateSamples();
 
+
+
+
 private:
   NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
 
@@ -96,6 +99,13 @@ private:
                     const std::vector<RealType>& cv,
                     const std::vector<double>& sh,
                     const RealType ic) const;
+
+  //asymmetric generalized EV
+  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
+  //asymmetric EV
+  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
+  void getNonLinearRange(int& first, int& last);
+  RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
