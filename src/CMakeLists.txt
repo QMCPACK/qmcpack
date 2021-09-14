@@ -117,7 +117,6 @@ set(UTILITIES
     Utilities/qmc_common.cpp
     Utilities/RandomGenerator.cpp
     Utilities/OhmmsObject.cpp
-    Utilities/SpeciesSet.cpp
     Utilities/SimpleParser.cpp
     Utilities/Clock.cpp
     Utilities/NewTimer.cpp

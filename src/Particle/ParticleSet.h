@@ -23,7 +23,7 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include "Utilities/SpeciesSet.h"
+#include "SpeciesSet.h"
 #include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Utilities/TimerManager.h"
