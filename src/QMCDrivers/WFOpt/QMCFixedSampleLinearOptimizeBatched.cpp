@@ -51,14 +51,12 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                                          MCPopulation&& population,
                                                                          SampleStack& samples,
                                                                          Communicate* comm)
-    : QMCLinearOptimizeBatched(project_data,
-                               w,
-                               std::move(qmcdriver_input),
-                               std::move(vmcdriver_input),
-                               std::move(population),
-                               samples,
-                               comm,
-                               "QMCFixedSampleLinearOptimizeBatched"),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   std::move(population),
+                   "QMCLinearOptimizeBatched::",
+                   comm,
+                   "QMCLinearOptimizeBatched"),
       objFuncWrapper_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
@@ -113,6 +111,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
       optNode(NULL),
+      vmcdriver_input_(vmcdriver_input),
+      samples_(samples),
       W(w)
 
 {

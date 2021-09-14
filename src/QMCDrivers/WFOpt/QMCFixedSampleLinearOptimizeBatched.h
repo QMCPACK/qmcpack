@@ -39,7 +39,7 @@ namespace qmcplusplus
  */
 
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
@@ -275,6 +275,16 @@ private:
   xmlNodePtr optNode;
 
   ParameterSet m_param;
+
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
+
+  ///vmc engine
+  std::unique_ptr<VMCBatched> vmcEngine;
+
+  VMCDriverInput vmcdriver_input_;
+  SampleStack& samples_;
+
 
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.

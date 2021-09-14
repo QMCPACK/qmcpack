@@ -68,13 +68,6 @@ public:
   ///Run the Optimization algorithm.
   bool run() override = 0;
 
-  ///target cost function to optimize
-  std::unique_ptr<QMCCostFunctionBase> optTarget;
-  ///vmc engine
-  std::unique_ptr<VMCBatched> vmcEngine;
-
-  VMCDriverInput vmcdriver_input_;
-  SampleStack& samples_;
 
 };
 } // namespace qmcplusplus

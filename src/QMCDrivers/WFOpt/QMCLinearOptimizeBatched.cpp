@@ -45,9 +45,7 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_da
                    std::move(population),
                    "QMCLinearOptimizeBatched::",
                    comm,
-                   "QMCLinearOptimizeBatched"),
-      vmcdriver_input_(vmcdriver_input),
-      samples_(samples)
+                   "QMCLinearOptimizeBatched")
 {
 }
 
