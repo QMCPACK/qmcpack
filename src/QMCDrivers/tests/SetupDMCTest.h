@@ -19,7 +19,7 @@
 #include "Concurrency/UtilityFunctions.hpp"
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/SetupPools.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 namespace qmcplusplus
 {

@@ -37,7 +37,7 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 

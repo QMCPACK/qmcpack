@@ -25,6 +25,8 @@ add_executable(
   test_partition.cpp
   test_ResourceCollection.cpp
   test_infostream.cpp
+  test_project_data.cpp
+  test_rng_control.cpp
   test_output_manager.cpp
   test_StdRandom.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcutil)
