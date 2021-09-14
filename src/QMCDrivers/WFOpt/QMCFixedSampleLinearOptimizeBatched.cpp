@@ -144,7 +144,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
   m_param.add(param_tol, "alloweddifference");
 
 
-
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
   std::vector<double> shift_scales(3, 1.0);
@@ -251,8 +250,8 @@ void QMCFixedSampleLinearOptimizeBatched::start()
 
 #ifdef HAVE_LMY_ENGINE
 void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
-                                            DescentEngine& descentEngineObj,
-                                            std::string MinMethod)
+                                                       DescentEngine& descentEngineObj,
+                                                       std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -1601,9 +1600,10 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
 }
 #endif
 
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(Matrix<RealType>& A,
-                                                                                  Matrix<RealType>& B,
-                                                                                  std::vector<RealType>& ev)
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
+    Matrix<RealType>& A,
+    Matrix<RealType>& B,
+    std::vector<RealType>& ev)
 {
   int Nl(ev.size());
   //   Getting the optimal worksize
@@ -1648,8 +1648,9 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
   return mappedEigenvalues[0].first;
 }
 
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(Matrix<RealType>& A,
-                                                                                  std::vector<RealType>& ev)
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
+    Matrix<RealType>& A,
+    std::vector<RealType>& ev)
 {
   int Nl(ev.size());
   //   Getting the optimal worksize
@@ -1728,8 +1729,9 @@ void QMCFixedSampleLinearOptimizeBatched::getNonLinearRange(int& first, int& las
   //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
 }
 
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getNonLinearRescale(std::vector<RealType>& dP,
-                                                                                 Matrix<RealType>& S)
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getNonLinearRescale(
+    std::vector<RealType>& dP,
+    Matrix<RealType>& S)
 {
   int first(0), last(0);
   getNonLinearRange(first, last);
@@ -1746,9 +1748,6 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
   //     app_log()<<"rescale: "<<rescale<< std::endl;
   return rescale;
 }
-
-
-
 
 
 } // namespace qmcplusplus
