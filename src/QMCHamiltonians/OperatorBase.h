@@ -62,8 +62,9 @@ struct NonLocalData : public QMCTraits
  * Return_t is defined as RealTye.
  * The types should be checked when using complex wave functions.
  */
-struct OperatorBase : public QMCTraits
+class OperatorBase : public QMCTraits
 {
+public:
   /** type of return value of evaluate
    */
   typedef FullPrecRealType Return_t;
@@ -95,10 +96,6 @@ struct OperatorBase : public QMCTraits
     quantum_quantum
   };
 
-  ///quantum_domain of the (particle) operator, default = no_quantum_domain
-  quantum_domains quantum_domain;
-  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  energy_domains energy_domain;
   ///enum for UpdateMode
   enum
   {
@@ -112,19 +109,16 @@ struct OperatorBase : public QMCTraits
 
   ///set the current update mode
   std::bitset<8> UpdateMode;
-  ///starting index of this object
-  int myIndex;
+
   ///number of dependents: to be removed
   int Dependants;
   ///current value
   Return_t Value;
-  ///a new value for a proposed move
-  Return_t NewValue;
+
   /// This is used to store the value for force on the source
   /// ParticleSet.  It is accumulated if setComputeForces(true).
   ParticleSet::ParticlePos_t IonForce;
-  ///reference to the current walker
-  Walker_t* tWalker;
+
   //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
   ///name of this object
   std::string myName;
@@ -134,13 +128,7 @@ struct OperatorBase : public QMCTraits
 #if !defined(REMOVE_TRACEMANAGER)
   ///whether traces are being collected
   TraceRequest request;
-  bool streaming_scalars;
-  bool streaming_particles;
-  bool have_required_traces;
-  std::vector<RealType> ValueVector;
 
-  ///array to store sample value
-  Array<RealType, 1>* value_sample;
 #endif
 
   ///constructor
@@ -148,33 +136,6 @@ struct OperatorBase : public QMCTraits
 
   ///virtual destructor
   virtual ~OperatorBase() {}
-
-  ///set energy domain
-  void set_energy_domain(energy_domains edomain);
-
-  ///return whether the energy domain is valid
-  inline bool energy_domain_valid(energy_domains edomain) const { return edomain != no_energy_domain; }
-
-  ///return whether the energy domain is valid
-  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
-
-  ///set quantum domain
-  void set_quantum_domain(quantum_domains qdomain);
-
-  ///set quantum domain for one-body operator
-  void one_body_quantum_domain(const ParticleSet& P);
-
-  ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P);
-
-  ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
-
-  ///return whether the quantum domain is valid
-  bool quantum_domain_valid(quantum_domains qdomain);
-
-  ///return whether the quantum domain is valid
-  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
 
   inline bool is_classical() { return quantum_domain == classical; }
   inline bool is_quantum() { return quantum_domain == quantum; }
@@ -188,17 +149,6 @@ struct OperatorBase : public QMCTraits
   inline bool getMode(int i) { return UpdateMode[i]; }
 
   inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
-
-  /** named values to  the property list
-   * @param plist RecordNameProperty
-   *
-   * Previously addObservables but it is renamed and a non-virtial function.
-   */
-  inline void addValue(PropertySetType& plist)
-  {
-    if (!UpdateMode[COLLECTABLE])
-      myIndex = plist.add(myName.c_str());
-  }
 
   /** named values to  the property list
    * @param plist RecordNameProperty
@@ -338,11 +288,6 @@ struct OperatorBase : public QMCTraits
    */
   virtual Return_t getEnsembleAverage() { return 0.0; }
 
-  /** read the input parameter
-   * @param cur xml node for a OperatorBase object
-   */
-  virtual bool put(xmlNodePtr cur) = 0;
-
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
 
@@ -368,15 +313,6 @@ struct OperatorBase : public QMCTraits
   }
 
   virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
-  //virtual OperatorBase* makeDependants(ParticleSet& qp )
-  //{
-  //  return 0;
-  //}
-
-  virtual void setComputeForces(bool compute)
-  {
-    // empty
-  }
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///make trace quantities available
@@ -412,6 +348,31 @@ struct OperatorBase : public QMCTraits
     request.reset();
   }
 
+  virtual void get_required_traces(TraceManager& tm){};
+#endif
+
+protected:
+  ///starting index of this object
+  int myIndex;
+
+  ///a new value for a proposed move
+  Return_t NewValue;
+
+  ///reference to the current walker
+  Walker_t* tWalker;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  bool streaming_particles;
+  bool have_required_traces;
+#endif
+
+  /**
+   * Read the input parameter
+   * @param cur xml node for a OperatorBase object
+   */
+  virtual bool put(xmlNodePtr cur) = 0;
+
+#if !defined(REMOVE_TRACEMANAGER)
   virtual void contribute_scalar_quantities() { request.contribute_scalar(myName); }
 
   virtual void checkout_scalar_quantities(TraceManager& tm)
@@ -436,7 +397,6 @@ struct OperatorBase : public QMCTraits
   virtual void contribute_particle_quantities(){};
   virtual void checkout_particle_quantities(TraceManager& tm){};
   virtual void delete_particle_quantities(){};
-  virtual void get_required_traces(TraceManager& tm){};
 #endif
 
   virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
@@ -447,6 +407,65 @@ struct OperatorBase : public QMCTraits
   {
     addEnergy(W, LocalEnergy);
   }
+
+  virtual void setComputeForces(bool compute)
+  {
+    // empty
+  }
+
+  ///set energy domain
+  void set_energy_domain(energy_domains edomain);
+
+  ///set quantum domain
+  void set_quantum_domain(quantum_domains qdomain);
+
+  ///set quantum domain for one-body operator
+  void one_body_quantum_domain(const ParticleSet& P);
+
+  ///set quantum domain for two-body operator
+  void two_body_quantum_domain(const ParticleSet& P);
+
+  ///set quantum domain for two-body operator
+  void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
+
+  /**
+   * named values to  the property list
+   * @param plist RecordNameProperty
+   *
+   * Previously addObservables but it is renamed and a non-virtial function.
+   */
+  inline void addValue(PropertySetType& plist)
+  {
+    if (!UpdateMode[COLLECTABLE])
+      myIndex = plist.add(myName.c_str());
+  }
+
+private:
+  ///quantum_domain of the (particle) operator, default = no_quantum_domain
+  quantum_domains quantum_domain;
+  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
+  energy_domains energy_domain;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  bool streaming_scalars;
+
+  std::vector<RealType> ValueVector;
+
+  ///array to store sample value
+  Array<RealType, 1>* value_sample;
+#endif
+
+  ///return whether the energy domain is valid
+  inline bool energy_domain_valid(energy_domains edomain) const { return edomain != no_energy_domain; }
+
+  ///return whether the energy domain is valid
+  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
+
+  ///return whether the quantum domain is valid
+  bool quantum_domain_valid(quantum_domains qdomain);
+
+  ///return whether the quantum domain is valid
+  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
 };
 } // namespace qmcplusplus
 #endif
