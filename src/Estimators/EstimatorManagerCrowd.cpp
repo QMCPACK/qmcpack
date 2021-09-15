@@ -24,7 +24,7 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
     operator_ests_.emplace_back(upeb->clone());
 }
 
-void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
+void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns)
 {
   block_num_samples_ += walkers.size();
   for (MCPWalker& awalker : walkers)
