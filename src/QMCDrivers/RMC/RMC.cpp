@@ -250,7 +250,7 @@ void RMC::resetRun()
     Movers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
 
-    wClones[ip]->reptile = W.ReptileList[ip].get();
+    wClones[ip]->reptile    = W.ReptileList[ip].get();
     wClones[ip]->activeBead = 0;
     wClones[ip]->direction  = +1;
 
@@ -310,7 +310,8 @@ void RMC::resetReptiles(int nReptiles_in, int nbeads_in, RealType tau)
 
   for (int i = 0; i < nReptiles_in; i++)
   {
-    W.ReptileList.push_back(std::make_unique<Reptile>(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
+    W.ReptileList.push_back(
+        std::make_unique<Reptile>(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
     W.ReptileList[i]->setTau(tau);
   }
 }

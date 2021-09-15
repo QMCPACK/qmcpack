@@ -165,7 +165,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
       WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                          << MinNumWalkers * NumSamples)
+                                                                         << MinNumWalkers * NumSamples)
       IsValid = false;
     }
   }
@@ -270,7 +270,7 @@ void QMCCostFunction::checkConfigurations()
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
-    if(RngSaved[ip] && MoverRng[ip])
+    if (RngSaved[ip] && MoverRng[ip])
       (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip].get());
     //int nat = wRef.getTotalNum();
@@ -537,7 +537,7 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     //    synchronize the random number generator with the node
-    if(MoverRng[ip] && RngSaved[ip])
+    if (MoverRng[ip] && RngSaved[ip])
       (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip].get());
   }
