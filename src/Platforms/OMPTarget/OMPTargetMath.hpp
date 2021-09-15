@@ -17,12 +17,12 @@
 
 namespace omptarget
 {
-inline void sincos(double a, double* s, double* c)
+inline void sincos(double a, double* restrict s, double* restrict c)
 {
   ::sincos(a,s,c);
 }
 
-inline void sincos(float a, float* s, float* c)
+inline void sincos(float a, float* restrict s, float* restrict c)
 {
   ::sincosf(a,s,c);
 }
