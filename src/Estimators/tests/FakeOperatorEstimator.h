@@ -29,7 +29,7 @@ public:
 
   ~FakeOperatorEstimator() override {};
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override {}
+  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns) override {}
 
   void registerOperatorEstimator(hid_t gid) override {}
 

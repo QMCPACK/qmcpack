@@ -63,7 +63,7 @@ public:
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
    */
-  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *

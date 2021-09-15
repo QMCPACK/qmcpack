@@ -17,6 +17,7 @@
 #include "SpinDensityNew.h"
 #include "RandomForTest.h"
 #include "ParticleSet.h"
+#include "TrialWaveFunction.h"
 #include "SpinDensityTesting.h"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -52,10 +53,13 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
       pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
     }
 
+    std::vector<TrialWaveFunction> wfns;
+
     auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
+    auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets);
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns);
   }
 }
 
@@ -84,10 +88,13 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
       pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
     }
 
+    std::vector<TrialWaveFunction> wfns;
+
     auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
+    auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets);
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns);
   }
 }
 
@@ -161,10 +168,13 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
     pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   }
 
+  std::vector<TrialWaveFunction> wfns;
+
   auto ref_walkers = makeRefVector<MCPWalker>(walkers);
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
+  auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-  sdn.accumulate(ref_walkers, ref_psets);
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns);
 
   std::vector<QMCT::RealType>& data_ref = sdn.get_data_ref();
   // There should be a check that the discretization of particle locations expressed in lattice coords
