@@ -129,6 +129,8 @@ public:
   ///whether traces are being collected
   TraceRequest request;
 
+  std::vector<RealType> ValueVector;
+
 #endif
 
   ///constructor
@@ -351,6 +353,15 @@ public:
   virtual void get_required_traces(TraceManager& tm){};
 #endif
 
+  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+
+  virtual void addEnergy(MCWalkerConfiguration& W,
+                         std::vector<RealType>& LocalEnergy,
+                         std::vector<std::vector<NonLocalData>>& Txy)
+  {
+    addEnergy(W, LocalEnergy);
+  }
+
 protected:
   ///starting index of this object
   int myIndex;
@@ -399,15 +410,6 @@ protected:
   virtual void delete_particle_quantities(){};
 #endif
 
-  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-
-  virtual void addEnergy(MCWalkerConfiguration& W,
-                         std::vector<RealType>& LocalEnergy,
-                         std::vector<std::vector<NonLocalData>>& Txy)
-  {
-    addEnergy(W, LocalEnergy);
-  }
-
   virtual void setComputeForces(bool compute)
   {
     // empty
@@ -448,8 +450,6 @@ private:
 
 #if !defined(REMOVE_TRACEMANAGER)
   bool streaming_scalars;
-
-  std::vector<RealType> ValueVector;
 
   ///array to store sample value
   Array<RealType, 1>* value_sample;
