@@ -19,7 +19,7 @@
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Particle/Reptile.h"

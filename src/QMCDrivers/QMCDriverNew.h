@@ -29,7 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
 #include "QMCDrivers/MCPopulation.h"
@@ -37,7 +37,7 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 

@@ -14,7 +14,7 @@
 
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 
 #include <stdio.h>

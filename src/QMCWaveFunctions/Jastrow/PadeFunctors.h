@@ -20,7 +20,7 @@
  */
 #ifndef QMCPLUSPLUS_PADEFUNCTORS_H
 #define QMCPLUSPLUS_PADEFUNCTORS_H
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 // #include <vector>
@@ -487,7 +487,6 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   /** process input xml node
    * @param cur current xmlNode from which the data members are reset
    *
-   * T1 is the type of VarRegistry, typically double.
    * Read in the Pade parameters from the xml input file.
    */
   bool put(xmlNodePtr cur) override
@@ -795,7 +794,6 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
   /** process input xml node
    * @param cur current xmlNode from which the data members are reset
    *
-   * T1 is the type of VarRegistry, typically double.
    * Read in the Pade parameters from the xml input file.
    */
   bool put(xmlNodePtr cur) override

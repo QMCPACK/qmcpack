@@ -31,10 +31,7 @@ set(INTEGRATION_TEST_SRC
 
 add_executable(${UTEST_EXE} ${INTEGRATION_TEST_SRC})
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(${UTEST_EXE} catch_main containers container_testing platform_device utilities_for_test)
+target_link_libraries(${UTEST_EXE} catch_main containers container_testing platform_LA utilities_for_test)
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} platform_omptarget)
-endif()

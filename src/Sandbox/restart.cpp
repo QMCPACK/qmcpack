@@ -19,7 +19,7 @@
 #include "Particle/HDFWalkerOutput.h"
 #include "hdf/HDFVersion.h"
 #include "Particle/HDFWalkerInput_0_4.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/FairDivide.h"

@@ -16,7 +16,6 @@
 #include "ValidSpinDensityInput.h"
 #include "SpinDensityNew.h"
 #include "RandomForTest.h"
-#include "Utilities/SpeciesSet.h"
 #include "ParticleSet.h"
 #include "SpinDensityTesting.h"
 
@@ -29,7 +28,7 @@ namespace qmcplusplus
 {
 
 using QMCT = QMCTraits;
-  
+
 void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
   for (int iops = 0; iops < ncrowds; ++iops)

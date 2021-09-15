@@ -23,7 +23,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"

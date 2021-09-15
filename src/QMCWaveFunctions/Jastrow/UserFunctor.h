@@ -28,7 +28,7 @@
  */
 #ifndef QMCPLUSPLUS_USERFUNCTOR_H
 #define QMCPLUSPLUS_USERFUNCTOR_H
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 // #include <vector>

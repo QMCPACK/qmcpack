@@ -254,11 +254,12 @@ struct OperatorBase : public QMCTraits
    */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
-                           const RefVectorWithLeader<ParticleSet>& P_list) const;
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
-                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<ParticleSet>& p_list,
                                                    const opt_variables_type& optvars,
                                                    RecordArray<ValueType>& dlogpsi,
                                                    RecordArray<ValueType>& dhpsioverpsi) const;
@@ -272,10 +273,11 @@ struct OperatorBase : public QMCTraits
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
 
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
-                                        const RefVectorWithLeader<ParticleSet>& P_list) const
+  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                        const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-    mw_evaluate(O_list, P_list);
+    mw_evaluate(o_list, wf_list, p_list);
   }
 
   /** evaluate value and derivatives wrt the optimizables
@@ -322,8 +324,8 @@ struct OperatorBase : public QMCTraits
                                                       ParticleSet::ParticlePos_t& pulay_term)
   {
     //If there's no stochastic component, defaults to above defined evaluateWithIonDerivs.
-    //If not otherwise specified, this defaults to evaluate().  
-    return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
+    //If not otherwise specified, this defaults to evaluate().
+    return evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_term);
   }
   /** update data associated with a particleset
    * @param s source particle set
@@ -350,11 +352,11 @@ struct OperatorBase : public QMCTraits
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& O_list) const {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const {}
 
   virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 

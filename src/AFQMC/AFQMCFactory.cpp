@@ -17,7 +17,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Configuration.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/qmc_common.h"
 
 #include "config.h"
