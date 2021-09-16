@@ -182,6 +182,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   const size_t noffset            = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
+  // enforce full precision reduction due to numerical sensitivity
   QTFull::GradType g_sum;
   for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
   {
@@ -294,6 +295,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
                     map(always, to: Grads_copy_ptr[:Grads_copy.size()])")
     for (size_t iw = 0; iw < nw; iw++)
     {
+      // enforce full precision reduction due to numerical sensitivity
       PsiValueType psi_local(0);
       PsiValueType grad_local_x(0);
       PsiValueType grad_local_y(0);
@@ -1136,6 +1138,7 @@ void MultiSlaterDeterminantFast::precomputeC_otherDs(const ParticleSet& P, int i
   std::fill(C_otherDs[ig].begin(), C_otherDs[ig].end(), ValueType(0));
   for (size_t i = 0; i < C->size(); i++)
   {
+    // enforce full precision reduction on C_otherDs due to numerical sensitivity
     PsiValueType product = (*C)[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != ig)
