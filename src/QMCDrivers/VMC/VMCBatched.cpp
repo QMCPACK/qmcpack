@@ -215,8 +215,9 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+  auto& rng    = context_for_steps[crowd_id]->get_random_gen();
 
-  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  crowd.setRNGForHamiltonian(rng);
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
   // \todo delete
@@ -225,7 +226,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
-  crowd.accumulate();
+  crowd.accumulate(rng);
 }
 
 void VMCBatched::process(xmlNodePtr node)
