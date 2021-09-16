@@ -248,17 +248,16 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                                           bool Tmove)
 {
   auto& O_leader           = o_list.getCastedLeader<NonLocalECPotential>();
-  ParticleSet& pset_leader = p_list[0];
-  const size_t ngroups     = pset_leader.groups();
+  ParticleSet& pset_leader = p_list.getLeader();
   const size_t nw          = o_list.size();
-  /// maximal number of jobs per spin
-  std::vector<size_t> max_num_jobs(ngroups, 0);
 
-#pragma omp parallel for
+  if (O_leader.ComputeForces)
+    APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
+
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
-    ParticleSet& P(p_list[iw]);
+    const ParticleSet& P(p_list[iw]);
 
     if (Tmove)
       O.nonLocalOps.reset();
@@ -274,9 +273,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       O.IonNeighborElecs.getNeighborList(iat).clear();
     for (int jel = 0; jel < P.getTotalNum(); jel++)
       O.ElecNeighborIons.getNeighborList(jel).clear();
-
-    if (O.ComputeForces)
-      APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
 
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
@@ -296,8 +292,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
             joblist.emplace_back(iat, jel, P.R[jel], dist[iat], -displ[iat]);
           }
       }
-      // find the max number of jobs of all the walkers
-      max_num_jobs[ig] = std::max(max_num_jobs[ig], joblist.size());
     }
 
     O.Value = 0.0;
@@ -339,11 +333,19 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   psi_list.reserve(nw);
   batch_list.reserve(nw);
 
-  for (int ig = 0; ig < ngroups; ++ig) //loop over species
+  for (int ig = 0; ig < pset_leader.groups(); ++ig) //loop over species
   {
     TrialWaveFunction::mw_prepareGroup(wf_list, p_list, ig);
 
-    for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
+    // find the max number of jobs of all the walkers
+    size_t max_num_jobs = 0;
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      const auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
+      max_num_jobs = std::max(max_num_jobs, O.nlpp_jobs[ig].size());
+    }
+
+    for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
     {
       ecp_potential_list.clear();
       ecp_component_list.clear();
