@@ -182,13 +182,14 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   const size_t noffset            = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
+  QTFull::GradType g_sum;
   for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
   {
     psi += detValues0[i] * C_otherDs[det_id][i];
-    g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
+    g_sum += C_otherDs[det_id][i] * grads(i, iat - noffset);
   }
 
-  g_at *= PsiValueType(1.0) / psi;
+  g_at = g_sum / psi;
   return psi;
 }
 
@@ -294,9 +295,9 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
     for (size_t iw = 0; iw < nw; iw++)
     {
       PsiValueType psi_local(0);
-      ValueType grad_local_x(0);
-      ValueType grad_local_y(0);
-      ValueType grad_local_z(0);
+      PsiValueType grad_local_x(0);
+      PsiValueType grad_local_y(0);
+      PsiValueType grad_local_z(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+:psi_local, grad_local_x, grad_local_y, grad_local_z)")
       for (size_t i = 0; i < ndets; i++)
       {
@@ -1135,7 +1136,7 @@ void MultiSlaterDeterminantFast::precomputeC_otherDs(const ParticleSet& P, int i
   std::fill(C_otherDs[ig].begin(), C_otherDs[ig].end(), ValueType(0));
   for (size_t i = 0; i < C->size(); i++)
   {
-    auto product = (*C)[i];
+    PsiValueType product = (*C)[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != ig)
         product *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
