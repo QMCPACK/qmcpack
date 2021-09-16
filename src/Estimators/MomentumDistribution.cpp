@@ -38,7 +38,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi, size
   auto kmax2 = input_.get<RealType>("kmax2");
 
   //dims of a grid for generating k points (obtained below)
-  size_t kgrid = 0;
+  int kgrid = 0;
   // minimal length as 2 x WS radius.
   RealType min_Length = Lattice.WignerSeitzRadius_G * 4.0 * M_PI;
   PosType vec_length;
