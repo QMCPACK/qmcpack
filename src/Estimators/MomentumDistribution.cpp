@@ -11,6 +11,7 @@
 
 #include "MomentumDistribution.h"
 #include "CPU/e2iphi.h"
+#include "TrialWaveFunction.h"
 
 #include <iostream>
 #include <numeric>
@@ -234,13 +235,14 @@ void MomentumDistribution::startBlock(int steps)
 /** Gets called every step and writes to thread local data.
  *
  */
-void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
+void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
-    MCPWalker& walker = walkers[iw];
-    ParticleSet& pset = psets[iw];
-    RealType weight   = walker.Weight;
+    MCPWalker& walker      = walkers[iw];
+    ParticleSet& pset      = psets[iw];
+    TrialWaveFunction& psi = wfns[iw];
+    RealType weight        = walker.Weight;
 
     const int np = pset.getTotalNum();
     const int nk = kPoints.size();
@@ -249,14 +251,12 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const
     for (int s = 0; s < M; ++s)
     {
       PosType newpos;
-      // JTK: restore this once access to RNG is provided
-      //for (int i = 0; i < OHMMS_DIM; ++i)
-      //  newpos[i] = myRNG();
+      for (int i = 0; i < OHMMS_DIM; ++i)
+        newpos[i] = rng();
       //make it cartesian
       vPos[s] = Lattice.toCart(newpos);
       pset.makeVirtualMoves(vPos[s]);
-      // JTK: restore this with addition of RefVector<TrialWaveFunction>
-      //refPsi.evaluateRatiosAlltoOne(P, psi_ratios);
+      psi.evaluateRatiosAlltoOne(pset, psi_ratios);
       for (int i = 0; i < np; ++i)
         psi_ratios_all[s][i] = psi_ratios[i];
       

@@ -39,8 +39,6 @@ public:
   MomentumDistributionInput input_;
   ///number of samples
   int M;
-  ///reference to the trial wavefunction for ratio evaluations
-  //TrialWaveFunction& refPsi;
   ///twist angle
   PosType twist;
   ///lattice vector
@@ -87,7 +85,7 @@ public:
 
   /** accumulate 1 or more walkers of MomentumDistribution samples
    */
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override;
+  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of MomentumDistribution's data.
