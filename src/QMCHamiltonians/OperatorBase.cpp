@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0)
+OperatorBase::OperatorBase() : Dependants(0), Value(0.0), myIndex(-1), tWalker(0)
 {
   quantum_domain = no_quantum_domain;
   energy_domain  = no_energy_domain;
