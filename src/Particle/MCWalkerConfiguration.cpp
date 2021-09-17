@@ -26,6 +26,7 @@
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
+#include "Particle/Reptile.h"
 #include "hdf/hdf_hyperslab.h"
 #include "hdf/HDFVersion.h"
 #include <map>
@@ -78,6 +79,8 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
   Properties       = mcw.Properties;
   //initPropertyList();
 }
+
+MCWalkerConfiguration::~MCWalkerConfiguration() = default;
 
 void MCWalkerConfiguration::createWalkers(int n)
 {

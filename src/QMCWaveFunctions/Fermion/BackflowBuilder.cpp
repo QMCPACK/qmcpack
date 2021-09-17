@@ -250,16 +250,16 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
       for (int i = 0; i < funs.size(); i++)
       {
         //           BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusps[i]);
-        BsplineFunctor<RealType>* bsp = new BsplineFunctor<RealType>();
-        bsp->cutoff_radius            = targetPtcl.Lattice.WignerSeitzRadius;
+        auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
+        bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
         bsp->put(funs[i]);
         if (bsp->cutoff_radius > cutOff)
           cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::BACKFLOW_P);
         //bsp->print();
-        dum->uniqueRadFun.push_back(bsp);
         offsets.push_back(num_params);
         num_params += bsp->NumParams;
+        dum->uniqueRadFun.push_back(std::move(bsp));
       }
       dum->derivs.resize(num_params);
       dum->offsetPrms.resize(nIons);
@@ -270,7 +270,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
         {
           APP_ABORT("backflowTransformation::put() ion not mapped to radial function.\n");
         }
-        dum->RadFun[i]     = dum->uniqueRadFun[ion2functor[i]];
+        dum->RadFun[i]     = dum->uniqueRadFun[ion2functor[i]].get();
         dum->offsetPrms[i] = offsets[ion2functor[i]];
       }
       tbf = std::move(dum);

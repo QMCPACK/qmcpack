@@ -325,17 +325,15 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
-    QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
-    QMC_INCLUDE               Add extra include paths
-    QMC_EXTRA_LIBS            Add extra link libraries
-    QMC_BUILD_STATIC          ON/OFF(default). Add -static flags to build
-    QMC_SYMLINK_TEST_FILES    Set to zero to require test files to be copied. Avoids space
-                              saving default use of symbolic links for test files. Useful
-                              if the build is on a separate filesystem from the source, as
-                              required on some HPC systems.
-    QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                              including details of which tests are enabled.
+    QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+    QMC_INCLUDE            Add extra include paths
+    QMC_EXTRA_LIBS         Add extra link libraries
+    QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
+    QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                           saving default use of symbolic links for test files. Useful
+                           if the build is on a separate filesystem from the source, as
+                           required on some HPC systems.
 
 - BLAS/LAPACK related
 
@@ -571,7 +569,6 @@ than usually needed for comprehensiveness:
 
   export CXX=mpic++
   export CC=mpicc
-  export ACML_HOME=/opt/acml-5.3.1/gfortran64
   export HDF5_ROOT=/opt/hdf5
   export BOOST_ROOT=/opt/boost
 
@@ -583,7 +580,6 @@ than usually needed for comprehensiveness:
     -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
     -D FFTW_INCLUDE_DIRS=/usr/include                 \
     -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-    -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
     -D QMC_DATA=/projects/QMCPACK/qmc-data            \
     ..
 
@@ -1850,7 +1846,7 @@ To build the fastest version of QMCPACK we recommend the following:
   system. Substantial gains have been made optimizing C++ in recent
   years.
 
-- Use a vendor-optimized BLAS library such as Intel MKL and AMD ACML. Although
+- Use a vendor-optimized BLAS library such as Intel MKL and AMD AOCL. Although
   QMC does not make extensive use of linear algebra, it is used in the
   VMC wavefunction optimizer to apply the orbital coefficients in local basis
   calculations and in the Slater determinant update.

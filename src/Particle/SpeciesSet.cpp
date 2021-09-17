@@ -15,6 +15,8 @@
 
 #include "SpeciesSet.h"
 
+namespace qmcplusplus
+{
 void SpeciesSet::create(unsigned m)
 {
   if (m > 0)
@@ -65,3 +67,4 @@ int SpeciesSet::getAttribute(const std::string& aname)
   return attribName.size();
 }
 
+} // namespace qmcplusplus

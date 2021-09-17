@@ -716,7 +716,7 @@ void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection, 
 }
 
 template class DiracDeterminant<>;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

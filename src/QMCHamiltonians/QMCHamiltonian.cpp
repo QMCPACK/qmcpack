@@ -555,6 +555,7 @@ void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, Partic
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& ham_leader = ham_list.getLeader();
@@ -581,7 +582,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     //   op.setObservables(ham.Observables);
     //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
     // };
-    ham_leader.H[i_ham_op]->mw_evaluate(HC_list, p_list);
+    ham_leader.H[i_ham_op]->mw_evaluate(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
       updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
   }
@@ -623,6 +624,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivativesInner(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     const opt_variables_type& optvars,
     RecordArray<ValueType>& dlogpsi,
@@ -662,6 +664,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivatives(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     const opt_variables_type& optvars,
     RecordArray<ValueType>& dlogpsi,
@@ -671,9 +674,9 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   if (compute_deriv)
     local_energies =
-        QMCHamiltonian::mw_evaluateValueAndDerivativesInner(ham_list, p_list, optvars, dlogpsi, dhpsioverpsi);
+        QMCHamiltonian::mw_evaluateValueAndDerivativesInner(ham_list, wf_list, p_list, optvars, dlogpsi, dhpsioverpsi);
   else
-    local_energies = QMCHamiltonian::mw_evaluate(ham_list, p_list);
+    local_energies = QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
 
   return local_energies;
 }
@@ -787,6 +790,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithToperator(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
 {
   for (QMCHamiltonian& ham : ham_list)
@@ -799,7 +803,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
     ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
 
-    ham_leader.H[i_ham_op]->mw_evaluateWithToperator(HC_list, p_list);
+    ham_leader.H[i_ham_op]->mw_evaluateWithToperator(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); ++iw)
       updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
   }
@@ -965,6 +969,7 @@ int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
 
 
 std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                                      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                       const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& ham_leader = ham_list.getLeader();
@@ -984,7 +989,8 @@ void QMCHamiltonian::createResource(ResourceCollection& collection) const
     H[i]->createResource(collection);
 }
 
-void QMCHamiltonian::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list)
+void QMCHamiltonian::acquireResource(ResourceCollection& collection,
+                                     const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
   auto& ham_leader = ham_list.getLeader();
   for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
@@ -994,7 +1000,8 @@ void QMCHamiltonian::acquireResource(ResourceCollection& collection, const RefVe
   }
 }
 
-void QMCHamiltonian::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list)
+void QMCHamiltonian::releaseResource(ResourceCollection& collection,
+                                     const RefVectorWithLeader<QMCHamiltonian>& ham_list)
 {
   auto& ham_leader = ham_list.getLeader();
   for (int i_ham_op = 0; i_ham_op < ham_leader.H.size(); ++i_ham_op)
@@ -1004,9 +1011,9 @@ void QMCHamiltonian::releaseResource(ResourceCollection& collection, const RefVe
   }
 }
 
-QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<QMCHamiltonian> QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  QMCHamiltonian* myclone = new QMCHamiltonian(myName);
+  auto myclone = std::make_unique<QMCHamiltonian>(myName);
   for (int i = 0; i < H.size(); ++i)
     H[i]->add2Hamiltonian(qp, psi, *myclone);
   for (int i = 0; i < auxH.size(); ++i)

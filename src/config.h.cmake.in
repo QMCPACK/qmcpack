@@ -99,9 +99,6 @@
 /* Find ESSL library */
 #cmakedefine HAVE_ESSL @HAVE_ESSL@
 
-/* Find acml library */
-#cmakedefine HAVE_ACML @HAVE_ACML@
-
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
 

@@ -42,8 +42,6 @@ struct GridExternalPotential : public OperatorBase
     one_body_quantum_domain(P);
   }
 
-  ~GridExternalPotential() override {}
-
   //unneeded interface functions
   void resetTargetParticleSet(ParticleSet& P) override {}
 

@@ -20,9 +20,7 @@
 #include <atomic>
 #include "config.h"
 #include "allocator_traits.hpp"
-#ifdef ENABLE_CUDA
-#include <cuda_runtime_api.h>
-#endif
+
 namespace qmcplusplus
 {
 extern std::atomic<size_t> OMPallocator_device_mem_allocated;

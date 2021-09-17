@@ -21,11 +21,12 @@ Hdispatcher::Hdispatcher(bool use_batch) : use_batch_(use_batch) {}
 
 std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluate(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(ham_list.size() == p_list.size());
   if (use_batch_)
-    return QMCHamiltonian::mw_evaluate(ham_list, p_list);
+    return QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
   else
   {
     std::vector<FullPrecRealType> local_energies(ham_list.size());
@@ -37,11 +38,12 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluate(
 
 std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluateWithToperator(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(ham_list.size() == p_list.size());
   if (use_batch_)
-    return QMCHamiltonian::mw_evaluateWithToperator(ham_list, p_list);
+    return QMCHamiltonian::mw_evaluateWithToperator(ham_list, wf_list, p_list);
   else
   {
     std::vector<FullPrecRealType> local_energies(ham_list.size());
@@ -52,11 +54,12 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluateWithTope
 }
 
 std::vector<int> Hdispatcher::flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                                     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                      const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(ham_list.size() == p_list.size());
   if (use_batch_)
-    return QMCHamiltonian::mw_makeNonLocalMoves(ham_list, p_list);
+    return QMCHamiltonian::mw_makeNonLocalMoves(ham_list, wf_list, p_list);
   else
   {
     std::vector<int> num_accepts(ham_list.size());

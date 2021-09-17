@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2020 QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
@@ -10,41 +10,57 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-# Too much burden has been put on platform_device. It will be deprecated.
-# We will move to functionality based targets
-# platform_runtime handles device management, memory management
-# add_library(platform_runtime INTERFACE)
-# platform_lapack handles BLAS/LAPACK
-# add_library(platform_lapack INTERFACE)
+# Targets under Platforms are designed to abstract external libraries
+# platform_runtime, platform_LA may be used outside Platforms.
+# Device specific targets should not be referenced used outside Platforms.
 
-set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
-
+# platform_runtime is for host and programming model runtime systems which inclues
+# Device management: device assignement, memory management. Note: CPU is a device
+# Math functions: scalar and vector math funcitons from OS or vendors
 set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
+add_library(platform_runtime ${DEVICE_SRCS})
+target_link_libraries(platform_runtime PUBLIC platform_host_runtime)
+target_include_directories(platform_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(platform_host ${HOST_SRCS})
+# platform_LA is for host and device linear algebra libraries
+add_library(platform_LA INTERFACE)
+target_link_libraries(platform_LA INTERFACE platform_runtime)
 
-if(USE_OBJECT_TARGET)
-  add_library(platform_device OBJECT ${DEVICE_SRCS})
-else(USE_OBJECT_TARGET)
-  add_library(platform_device ${DEVICE_SRCS})
-endif(USE_OBJECT_TARGET)
+# platform_host_runtime is the target for host runtime system which includes
+# interaction with OS libraries
+set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
+add_library(platform_host_runtime ${HOST_SRCS})
 
-target_include_directories(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-
+# include CPU platform
 add_subdirectory(CPU)
-target_link_libraries(platform_device PUBLIC platform_cpu)
+target_link_libraries(platform_runtime PUBLIC platform_cpu_runtime)
+target_link_libraries(platform_LA INTERFACE platform_cpu_LA)
 
+# include OpenMP targert platform
 add_subdirectory(OMPTarget)
-target_link_libraries(platform_device PUBLIC platform_omptarget)
+target_link_libraries(platform_runtime PUBLIC platform_omptarget_runtime)
+target_link_libraries(platform_LA INTERFACE platform_omptarget_LA)
 
+# include CUDA platform, legacy implementation
 if(QMC_CUDA)
   add_subdirectory(CUDA_legacy)
-  target_link_libraries(platform_device PUBLIC platform_cuda_legacy)
+  target_link_libraries(platform_runtime PUBLIC platform_cuda_legacy)
 endif(QMC_CUDA)
 
+# include CUDA platform
 if(ENABLE_CUDA)
   add_subdirectory(CUDA)
-  target_link_libraries(platform_device PUBLIC platform_cuda)
+  target_link_libraries(platform_runtime PUBLIC platform_cuda_runtime)
+  target_link_libraries(platform_LA INTERFACE platform_cuda_LA)
 endif(ENABLE_CUDA)
 
-add_subdirectory(tests)
+# include ROCm platform
+if(ENABLE_ROCM)
+  add_subdirectory(ROCm)
+  target_link_libraries(platform_runtime PUBLIC platform_rocm_runtime)
+  target_link_libraries(platform_LA INTERFACE platform_rocm_LA)
+endif(ENABLE_ROCM)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

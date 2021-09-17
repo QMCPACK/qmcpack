@@ -202,8 +202,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
 
+    assert((prepare_old && iat >=0 && iat < N_targets) || !prepare_old);
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
-                                           N_targets, P.activePtcl);
+                                           N_targets, iat);
     // set up old_r_ and old_dr_ for moves may get accepted.
     if (prepare_old)
     {

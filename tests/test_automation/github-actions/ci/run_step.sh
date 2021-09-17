@@ -137,12 +137,6 @@ case "$1" in
     # Run only deterministic tests (reasonable for CI) by default
     TEST_LABEL="-L deterministic"
     
-    # Enable ASAN_OPTION=suppression=suppresion_file
-    if [[ "${GH_JOBNAME}" =~ (asan) ]]
-    then
-      TEST_LABEL="-L unit"
-    fi
-    
     if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"

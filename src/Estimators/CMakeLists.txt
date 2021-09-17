@@ -12,6 +12,7 @@
 ####################################
 
 set(QMCEST_SRC
+    InputSection.cpp
     CSEnergyEstimator.cpp
     LocalEnergyEstimator.cpp
     RMCLocalEnergyEstimator.cpp
@@ -41,12 +42,3 @@ target_link_libraries(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil
 target_link_libraries(qmcestimators_unit PUBLIC containers qmcham_unit qmcparticle qmcutil)
 
 add_subdirectory(tests)
-
-# TARGET_LINK_LIBRARIES(qmcest PUBLIC qmcham)
-# TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
-# TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
-# TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
-# IF(BUILD_LMYENGINE_INTERFACE)
-#   TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
-#   TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
-# ENDIF()

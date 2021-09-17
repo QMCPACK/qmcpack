@@ -16,9 +16,6 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 add_executable(${UTEST_EXE} test_aligned_allocator.cpp test_e2iphi.cpp)
-target_link_libraries(${UTEST_EXE} platform_device catch_main)
-if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} platform_omptarget)
-endif()
+target_link_libraries(${UTEST_EXE} platform_runtime catch_main)
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

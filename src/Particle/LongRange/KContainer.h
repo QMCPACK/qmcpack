@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_KCONTAINER_H
 
 #include "Configuration.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/IteratorUtility.h"
 namespace qmcplusplus
 {

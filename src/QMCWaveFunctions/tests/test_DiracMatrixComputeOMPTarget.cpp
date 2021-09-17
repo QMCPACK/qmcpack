@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrixComputeOMPTarget.hpp"
 #include "makeRngSpdMatrix.hpp"
+#include "Utilities/Resource.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/PinnedAllocator.h"
@@ -35,7 +36,7 @@ template<typename T>
 using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
-  
+
 TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][fermion]")
 {
   OffloadPinnedMatrix<double> mat_a;
@@ -48,7 +49,10 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   inv_mat_a.resize(4, 4);
   DiracMatrixComputeOMPTarget<double> dmc_omp;
 
-  dmc_omp.invert_transpose(mat_a, inv_mat_a, log_values[0]);
+  DummyResource dummy;
+  std::complex<double> log_value;
+  dmc_omp.invert_transpose(dummy, mat_a, inv_mat_a, log_value);
+  CHECK(log_value == LogComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
 
 
   OffloadPinnedMatrix<double> mat_b;
@@ -70,7 +74,8 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
   log_values.resize(2);
-  dmc_omp.mw_invertTranspose(a_mats, inv_a_mats, log_values, {true, true});
+  DummyResource dummy_res;
+  dmc_omp.mw_invertTranspose(dummy_res, a_mats, inv_a_mats, log_values, {true, true});
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -92,7 +97,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats3{inv_mat_a, inv_mat_a2, inv_mat_a3};
 
   log_values.resize(3);
-  dmc_omp.mw_invertTranspose(a_mats3, inv_a_mats3, log_values, {true, true, true});
+  dmc_omp.mw_invertTranspose(dummy_res, a_mats3, inv_a_mats3, log_values, {true, true, true});
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -134,7 +139,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
       mat_a2(i, j) = mat_spd2(i, j);
-  
+
   OffloadPinnedVector<std::complex<double>> log_values;
   log_values.resize(2);
   OffloadPinnedMatrix<double> inv_mat_a;
@@ -145,13 +150,15 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
   RefVector<OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
-  dmc_omp.mw_invertTranspose(a_mats, inv_a_mats, log_values, {true, true});
+
+  DummyResource dummy_res;
+  dmc_omp.mw_invertTranspose(dummy_res, a_mats, inv_a_mats, log_values, {true, true});
 
   DiracMatrix<double> dmat;
   Matrix<double> inv_mat_test(n, n);
   std::complex<double> det_log_value;
   dmat.invert_transpose(mat_spd, inv_mat_test, det_log_value);
-  
+
   auto check_matrix_result = checkMatrix(inv_mat_a, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 

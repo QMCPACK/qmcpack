@@ -30,7 +30,8 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
-
+  using HandleResource = DummyResource;
+  
   // constant array value T(1)
   OffloadValueVector_t cone_vec;
   // constant array value T(0)
@@ -64,6 +65,8 @@ class MatrixUpdateOMPTarget
 public:
   using WFT = WaveFunctionTypes<T, T_FP>;
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
+  template<typename DT>
+  using PinnedDualAllocator = OffloadPinnedAllocator<DT>;
 
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;

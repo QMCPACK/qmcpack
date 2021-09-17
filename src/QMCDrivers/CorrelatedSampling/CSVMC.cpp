@@ -19,7 +19,7 @@
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
@@ -242,7 +242,6 @@ void CSVMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")
