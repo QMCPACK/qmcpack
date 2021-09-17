@@ -23,27 +23,16 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DET_ENGINE>
-DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first)
-    : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first),
-      ndelay(1),
+DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay)
+    : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
+      ndelay_(ndelay),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
-{}
-
-/** set the index of the first particle in the determinant and reset the size of the determinant
- *@param first index of first particle
- *@param nel number of particles in the determinant
- */
-template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
 {
-  FirstIndex = first;
-  ndelay     = delay;
-
-  resize(nel, nel);
+  resize(NumPtcls, NumPtcls);
 
   if (Optimizable)
-    Phi->buildOptVariables(nel);
+    Phi->buildOptVariables(NumPtcls);
 }
 
 template<typename DET_ENGINE>
@@ -88,11 +77,7 @@ void DiracDeterminantBatched<DET_ENGINE>::resize(int nel, int morb)
   dpsiM.attachReference(reinterpret_cast<GradType*>(psiM_vgl.data(1)), nel, norb);
   d2psiM.attachReference(psiM_vgl.data(4), nel, norb);
 
-  LastIndex   = FirstIndex + nel;
-  NumPtcls    = nel;
-  NumOrbitals = norb;
-
-  det_engine_.resize(norb, ndelay);
+  det_engine_.resize(norb, ndelay_);
 
   auto& engine_psiMinv = det_engine_.get_psiMinv();
   psiMinv.attachReference(engine_psiMinv.data(), engine_psiMinv.rows(), engine_psiMinv.cols());
@@ -925,8 +910,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
 template<typename DET_ENGINE>
 DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminantBatched<DET_ENGINE>* dclone = new DiracDeterminantBatched<DET_ENGINE>(std::move(spo));
-  dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
+  DiracDeterminantBatched<DET_ENGINE>* dclone = new DiracDeterminantBatched<DET_ENGINE>(std::move(spo), FirstIndex, LastIndex, ndelay_);
   return dclone;
 }
 

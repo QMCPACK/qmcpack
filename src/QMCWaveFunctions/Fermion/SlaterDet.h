@@ -40,16 +40,10 @@ public:
   /**  constructor
    * @param targetPtcl target Particleset
    */
-  SlaterDet(ParticleSet& targetPtcl, const std::string& class_name = "SlaterDet");
+  SlaterDet(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, const std::string& class_name = "SlaterDet");
 
   ///destructor
   ~SlaterDet() override;
-
-  ///add a new DiracDeterminant to the list of determinants
-  virtual void add(std::unique_ptr<Determinant_t> det, int ispin);
-
-  ///set BF pointers
-  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   void checkInVariables(opt_variables_type& active) override;
 

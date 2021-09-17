@@ -64,12 +64,10 @@ void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(3);
-  DetType ddb(std::move(spo_init));
+  const int norb = 3;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 3;
-  ddb.set(0, norb);
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -159,12 +157,10 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddb(std::move(spo_init));
+  const int norb = 4;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 4;
-  ddb.set(0, norb);
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -286,13 +282,11 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddc(std::move(spo_init));
-  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
-
-  int norb = 4;
+  const int norb = 4;
+  spo_init->setOrbitalSetSize(norb);
   // maximum delay 2
-  ddc.set(0, norb, 2);
+  DetType ddc(std::move(spo_init), 0, norb, 2);
+  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
