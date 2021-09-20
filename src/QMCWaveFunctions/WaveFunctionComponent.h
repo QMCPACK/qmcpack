@@ -136,8 +136,7 @@ protected:
   LogValueType log_value_;
 
 public:
-  const LogValueType get_log_value() const { return log_value_; }
-  LogValueType& get_ref_log_value() { return log_value_; }
+  const LogValueType& get_log_value() const { return log_value_; }
 
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
