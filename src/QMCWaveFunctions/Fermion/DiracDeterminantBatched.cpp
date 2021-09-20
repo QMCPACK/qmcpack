@@ -920,7 +920,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       const_psiM_temp_list.push_back(det.psiM_temp);
       psiMinv_list.push_back(det.get_det_engine().get_ref_psiMinv());
     }
-    auto& mw_res = *wfc_leader.mw_res_;
     mw_invertPsiM(wfc_filtered_list, const_psiM_temp_list, psiMinv_list, recompute);
     PRAGMA_OFFLOAD("omp taskwait")
   }

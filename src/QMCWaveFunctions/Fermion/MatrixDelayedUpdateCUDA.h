@@ -96,7 +96,11 @@ public:
 private:
   /// legacy single walker matrix inversion engine
   DiracMatrix<FullPrecValue> detEng;
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+  /* inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+   * Only NumOrbitals x NumOrbitals subblock has meaningful data
+   * The number of rows is equal to NumOrbitals
+   * The number of columns in each row is padded to a multiple of QMC_SIMD_ALIGNMENT
+   */
   DualMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
   UnpinnedDualVector<Value> temp;
