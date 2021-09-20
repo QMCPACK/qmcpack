@@ -33,19 +33,10 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPO
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
-}
-
-/** set the index of the first particle in the determinant and reset the size of the determinant
- *@param first index of first particle
- *@param nel number of particles in the determinant
- */
-template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
-{
   resize(NumPtcls, NumPtcls);
-
   if (Optimizable)
     Phi->buildOptVariables(NumPtcls);
+
 }
 
 template<typename DET_ENGINE>
@@ -710,8 +701,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVe
   grad_grad_source_psiM.resize(psiMinv.rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Matrix<Value> psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
-  Matrix<Grad> dpsiM_host(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM_host, grad_grad_source_psiM);
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp, det_engine_.get_ref_psiMinv());
 
   phi_alpha_Minv      = 0.0;
@@ -880,8 +870,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   RefVectorWithLeader<ParticleSet> p_filtered_list(p_list.getLeader());
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
   std::vector<Matrix<Value>> psiM_host_views;
-  std::vector<Matrix<Grad>> dpsiM_host_views;
-  std::vector<Matrix<Value>> d2psiM_host_views;
   RefVector<Matrix<Value>> psiM_temp_list;
   RefVector<Matrix<Grad>> dpsiM_list;
   RefVector<Matrix<Value>> d2psiM_list;
@@ -890,8 +878,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   p_filtered_list.reserve(nw);
   phi_list.reserve(nw);
   psiM_host_views.reserve(nw);
-  dpsiM_host_views.reserve(nw);
-  d2psiM_host_views.reserve(nw);
   psiM_temp_list.reserve(nw);
   dpsiM_list.reserve(nw);
   d2psiM_list.reserve(nw);
@@ -906,10 +892,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       phi_list.push_back(*det.Phi);
       psiM_host_views.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
       psiM_temp_list.push_back(psiM_host_views.back());
-      dpsiM_host_views.emplace_back(det.dpsiM.data(), det.dpsiM.rows(), det.dpsiM.cols());
-      dpsiM_list.push_back(dpsiM_host_views.back());
-      d2psiM_host_views.emplace_back(det.d2psiM.data(), det.d2psiM.rows(), det.d2psiM.cols());
-      d2psiM_list.push_back(d2psiM_host_views.back());
+      dpsiM_list.push_back(det.dpsiM);
+      d2psiM_list.push_back(det.d2psiM);
     }
 
   if (!wfc_filtered_list.size())
