@@ -67,36 +67,39 @@ class OperatorBase : public QMCTraits
 public:
   /** type of return value of evaluate
    */
-  typedef FullPrecRealType Return_t;
+  using Return_t = FullPrecRealType;
+
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
    */
-  typedef ParticleSet::Buffer_t BufferType;
+  using BufferType = ParticleSet::Buffer_t;
+
   ///typedef for the walker
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
+
   ///typedef for the ParticleScalar
-  typedef ParticleSet::Scalar_t ParticleScalar_t;
+  using ParticleScalar_t = ParticleSet::Scalar_t;
 
   ///enum to denote energy domain of operators
-  enum energy_domains
+  enum EnergyDomains
   {
-    kinetic = 0,
-    potential,
-    no_energy_domain
+    KINETIC = 0,
+    POTENTIAL,
+    NO_ENERGY_DOMAIN
   };
 
-  enum quantum_domains
+  enum QuantumDomains
   {
-    no_quantum_domain = 0,
-    classical,
-    quantum,
-    classical_classical,
-    quantum_classical,
-    quantum_quantum
+    NO_QUANTUM_DOMAIN = 0,
+    CLASSICAL,
+    QUANTUM,
+    CLASSICAL_CLASSICAL,
+    QUANTUM_CLASSICAL,
+    QUANTUM_QUANTUM
   };
 
-  ///enum for UpdateMode
+  ///enum for update_mode
   enum
   {
     PRIMARY     = 0,
@@ -107,50 +110,57 @@ public:
     NONLOCAL    = 5,
   };
 
-  ///set the current update mode
-  std::bitset<8> UpdateMode;
-
-  ///number of dependents: to be removed
-  int Dependants;
-  ///current value
-  Return_t Value;
-
-  /// This is used to store the value for force on the source
-  /// ParticleSet.  It is accumulated if setComputeForces(true).
-  ParticleSet::ParticlePos_t IonForce;
-
-  //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
-  ///name of this object
-  std::string myName;
-  ///name of dependent object: to be removed
-  std::string depName;
-
-#if !defined(REMOVE_TRACEMANAGER)
-  ///whether traces are being collected
-  TraceRequest request;
-
-  std::vector<RealType> ValueVector;
-
-#endif
-
   ///constructor
   OperatorBase();
 
   ///virtual destructor
   virtual ~OperatorBase() {}
 
-  inline bool is_classical() { return quantum_domain == classical; }
-  inline bool is_quantum() { return quantum_domain == quantum; }
-  inline bool is_classical_classical() { return quantum_domain == classical_classical; }
-  inline bool is_quantum_classical() { return quantum_domain == quantum_classical; }
-  inline bool is_quantum_quantum() { return quantum_domain == quantum_quantum; }
+  // getter for update_mode member
+  /**
+   * @brief get update_mode_ 
+   * @return std::bitset<8>& reference of get_update_mode_
+   */
+  std::bitset<8>& getUpdateMode() noexcept;
+
+  /**
+   * @brief get a copy of value_
+   * @return Return_t copy of value_
+   */
+  Return_t getValue() const noexcept;
+
+  /**
+   * @brief getter a copy of my_name_, rvalue small string optimization
+   * @return std::string copy of my_name_ member
+   */
+  std::string getName() const noexcept;
+
+  /**
+   * @brief Set my_name member, uses small string optimization (pass by value)
+   * @param name input
+   */
+  void setName(const std::string name) noexcept;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  /**
+   * @brief Get request_ member
+   * @return TraceRequest& reference to request_
+   */
+  TraceRequest& getRequest() noexcept;
+#endif
+
+  inline bool is_classical() { return quantum_domain == CLASSICAL; }
+  inline bool is_quantum() { return quantum_domain == QUANTUM; }
+  inline bool is_classical_classical() { return quantum_domain == CLASSICAL_CLASSICAL; }
+  inline bool is_quantum_classical() { return quantum_domain == QUANTUM_CLASSICAL; }
+  inline bool is_quantum_quantum() { return quantum_domain == QUANTUM_QUANTUM; }
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
    */
-  inline bool getMode(int i) { return UpdateMode[i]; }
+  inline bool getMode(int i) { return update_mode_[i]; }
 
-  inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
+  inline bool isNonLocal() const { return update_mode_[NONLOCAL]; }
 
   /** named values to  the property list
    * @param plist RecordNameProperty
@@ -183,9 +193,9 @@ public:
    * Default implementation is to assign Value which is updated
    * by evaluate  function using myIndex.
    */
-  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = Value; }
+  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = value_; }
 
-  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
+  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = value_; }
 
   //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
   virtual void setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
@@ -347,7 +357,7 @@ public:
     streaming_scalars    = false;
     streaming_particles  = false;
     have_required_traces = false;
-    request.reset();
+    request_.reset();
   }
 
   virtual void get_required_traces(TraceManager& tm){};
@@ -363,6 +373,20 @@ public:
   }
 
 protected:
+  ///set the current update mode
+  std::bitset<8> update_mode_;
+
+  ///current value
+  Return_t value_;
+
+  ///name of this object
+  std::string name_;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  ///whether traces are being collected
+  TraceRequest request_;
+#endif
+
   ///starting index of this object
   int myIndex;
 
@@ -384,19 +408,19 @@ protected:
   virtual bool put(xmlNodePtr cur) = 0;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_scalar_quantities() { request.contribute_scalar(myName); }
+  virtual void contribute_scalar_quantities() { request_.contribute_scalar(name_); }
 
   virtual void checkout_scalar_quantities(TraceManager& tm)
   {
-    streaming_scalars = request.streaming_scalar(myName);
+    streaming_scalars = request_.streaming_scalar(name_);
     if (streaming_scalars)
-      value_sample = tm.checkout_real<1>(myName);
+      value_sample = tm.checkout_real<1>(name_);
   }
 
   virtual void collect_scalar_quantities()
   {
     if (streaming_scalars)
-      (*value_sample)(0) = Value;
+      (*value_sample)(0) = value_;
   }
 
   virtual void delete_scalar_quantities()
@@ -416,10 +440,10 @@ protected:
   }
 
   ///set energy domain
-  void set_energy_domain(energy_domains edomain);
+  void set_energy_domain(EnergyDomains edomain);
 
   ///set quantum domain
-  void set_quantum_domain(quantum_domains qdomain);
+  void set_quantum_domain(QuantumDomains qdomain);
 
   ///set quantum domain for one-body operator
   void one_body_quantum_domain(const ParticleSet& P);
@@ -438,15 +462,15 @@ protected:
    */
   inline void addValue(PropertySetType& plist)
   {
-    if (!UpdateMode[COLLECTABLE])
-      myIndex = plist.add(myName.c_str());
+    if (!update_mode_[COLLECTABLE])
+      myIndex = plist.add(name_.c_str());
   }
 
 private:
   ///quantum_domain of the (particle) operator, default = no_quantum_domain
-  quantum_domains quantum_domain;
+  QuantumDomains quantum_domain;
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  energy_domains energy_domain;
+  EnergyDomains energy_domain;
 
 #if !defined(REMOVE_TRACEMANAGER)
   bool streaming_scalars;
@@ -456,13 +480,13 @@ private:
 #endif
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid(energy_domains edomain) const { return edomain != no_energy_domain; }
+  inline bool energy_domain_valid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
 
   ///return whether the energy domain is valid
   inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
 
   ///return whether the quantum domain is valid
-  bool quantum_domain_valid(quantum_domains qdomain);
+  bool quantum_domain_valid(QuantumDomains qdomain);
 
   ///return whether the quantum domain is valid
   inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }

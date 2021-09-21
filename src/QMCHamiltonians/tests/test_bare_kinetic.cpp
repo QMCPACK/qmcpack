@@ -68,10 +68,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  // This constructor has compile errors (Ps member not initialized)
-  //BareKineticEnergy<double> bare_ke;
-
-  BareKineticEnergy<double> bare_ke(elec);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   elec.L[0] = 1.0;
@@ -212,7 +209,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy<double> bare_ke(elec);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   // update all distance tables

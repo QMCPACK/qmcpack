@@ -30,7 +30,7 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
       d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
-  myName = "Chiesa_Force_Base_PBCAB";
+  name_  = "Chiesa_Force_Base_PBCAB";
   prefix = "FChiesaPBC";
   //Defaults for the chiesa S-wave polynomial filtering.
   Rcut          = 0.4;
@@ -227,7 +227,7 @@ void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P) { dAB->resetTarget
 
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.add(myName.c_str());
+  myIndex = plist.add(name_.c_str());
   addObservablesF(plist);
 }
 
