@@ -25,9 +25,6 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  ///number of targets with padding
-  int Ntargets_padded;
-
   ///actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
 
@@ -40,6 +37,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        Ntargets_padded(getAlignedSize<T>(N_targets)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
                                                        "_" + target.getName(),
                                                    timer_level_fine)),
@@ -67,7 +65,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   void resize()
   {
     // initialize memory containers and views
-    Ntargets_padded         = getAlignedSize<T>(N_targets);
     const size_t total_size = compute_size(N_targets);
     memory_pool_.resize(total_size * (1 + D));
     distances_.resize(N_targets);
@@ -202,6 +199,8 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   }
 
 private:
+  ///number of targets with padding
+  const int Ntargets_padded;
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
   /// timer for move()
