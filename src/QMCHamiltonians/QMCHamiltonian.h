@@ -201,7 +201,7 @@ public:
   inline void setPrimary(bool primary)
   {
     for (int i = 0; i < H.size(); i++)
-      H[i]->UpdateMode.set(OperatorBase::PRIMARY, primary);
+      H[i]->getUpdateMode().set(OperatorBase::PRIMARY, primary);
   }
 
   /////Set Tau inside each of the Hamiltonian elements
@@ -435,7 +435,7 @@ private:
   /////////////////////
   // Vectorized data //
   /////////////////////
-  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
+  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, AuxEnergyVector;
 #endif
 
 private:

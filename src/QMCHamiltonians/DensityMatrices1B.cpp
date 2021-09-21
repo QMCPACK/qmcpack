@@ -82,7 +82,7 @@ void DensityMatrices1B::reset()
   eindex         = -1;
   uniform_random = NULL;
   // basic HamiltonianBase info
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   // default values
   energy_mat             = false;
   integrator             = uniform_grid;
@@ -104,13 +104,13 @@ void DensityMatrices1B::reset()
   check_overlap          = false;
   check_derivatives      = false;
   // trace data is required
-  request.request_scalar("weight");
-  request.request_array("Kinetic_complex");
-  request.request_array("Vq");
-  request.request_array("Vc");
-  request.request_array("Vqq");
-  request.request_array("Vqc");
-  request.request_array("Vcc");
+  request_.request_scalar("weight");
+  request_.request_array("Kinetic_complex");
+  request_.request_array("Vq");
+  request_.request_array("Vc");
+  request_.request_array("Vqq");
+  request_.request_array("Vqc");
+  request_.request_array("Vcc");
   // has not been initialized
   initialized = false;
 }
@@ -546,7 +546,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   int nentries = ng[0] * ng[1];
 #endif
 
-  std::string dname = myName;
+  std::string dname = name_;
   hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
 
   std::string nname = "number_matrix";

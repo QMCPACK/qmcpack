@@ -35,7 +35,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       firstTimeStress(true)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
-  myName = "StressPBC";
+  name_  = "StressPBC";
   prefix = "StressPBC";
   //This sets up the long range breakups.
   initBreakup(PtclTarg);
@@ -105,7 +105,8 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     {
 #if defined(USE_REAL_STRUCT_FACTOR)
       esum += Qspec[j] *
-          AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
+          AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j],
+                             RhoKB.rhok_i[j]);
 #else
       esum += Qspec[j] * AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
 

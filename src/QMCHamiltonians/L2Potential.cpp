@@ -18,7 +18,7 @@ namespace qmcplusplus
 {
 L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi) : IonConfig(ions)
 {
-  set_energy_domain(potential);
+  set_energy_domain(POTENTIAL);
   two_body_quantum_domain(ions, els);
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
@@ -62,7 +62,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 
   // compute v_L2(r)*L^2 for all electron-ion pairs
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value              = 0.0;
+  value_              = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {
@@ -87,9 +87,9 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
         esum += v * PP[iat]->evaluate(dist[iat]);
       }
     }
-    Value += esum;
+    value_ += esum;
   }
-  return Value;
+  return value_;
 }
 
 
