@@ -247,7 +247,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
-        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
+        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
     assert(QMCDriverNew::checkLogAndGL(crowd));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
@@ -440,11 +440,11 @@ bool DMCBatched::run()
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
       // \todo make task block
       // probably something smart can be done to include reduction over crowds below
-      for (UPtr<Crowd>& crowd_ptr : crowds_)
+      for (int crowd_id=0; crowd_id<crowds_.size(); ++crowd_id)
       {
-        Crowd& crowd_ref = *crowd_ptr;
-        if (crowd_ref.size() > 0)
-          crowd_ref.accumulate();
+        Crowd& crowd = *(crowds_[crowd_id]);
+        if (crowd.size() > 0)
+          crowd.accumulate(step_contexts_[crowd_id]->get_random_gen());
       }
 
       {

@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
-
+#include "checkMatrix.hpp"
 #ifdef QMC_COMPLEX //This is for the spinor test.
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #endif
@@ -49,27 +49,13 @@ typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFu
 typedef DiracDeterminantBatched<> DetType;
 #endif
 
-template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
-void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
-{
-  REQUIRE(a.rows() >= b.rows());
-  REQUIRE(a.cols() >= b.cols());
-  for (int i = 0; i < b.rows(); i++)
-    for (int j = 0; j < b.cols(); j++)
-    {
-      REQUIRE(a(i, j) == ValueApprox(b(i, j)));
-    }
-}
-
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(3);
-  DetType ddb(std::move(spo_init));
+  const int norb = 3;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 3;
-  ddb.set(0, norb);
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -94,8 +80,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  check_matrix(ddb.psiMinv, b);
-
+  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
 
   ParticleSet::GradType grad;
   PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
@@ -114,7 +99,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  check_matrix(ddb.psiMinv, b);
+  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);
@@ -159,12 +144,10 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddb(std::move(spo_init));
+  const int norb = 4;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 4;
-  ddb.set(0, norb);
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -188,7 +171,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddb.psiMinv, b);
+  //check_matrix(ddb.getPsiMinv(), b);
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a_update1, scratchT;
@@ -277,22 +260,20 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   std::cout << "original " << std::endl;
   std::cout << orig_a << std::endl;
   std::cout << "block update " << std::endl;
-  std::cout << ddb.psiMinv << std::endl;
+  std::cout << ddb.getPsiMinv() << std::endl;
 #endif
 
-  check_matrix(ddb.psiMinv, orig_a);
+  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), orig_a);
 }
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddc(std::move(spo_init));
-  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
-
-  int norb = 4;
+  const int norb = 4;
+  spo_init->setOrbitalSetSize(norb);
   // maximum delay 2
-  ddc.set(0, norb, 2);
+  DetType ddc(std::move(spo_init), 0, norb, 2);
+  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
@@ -316,7 +297,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddc.psiMinv, b);
+  //check_matrix(ddc.getPsiMinv(), b);
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a_update1, scratchT;
@@ -370,7 +351,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  check_matrix(ddc.psiMinv, a_update1);
+  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
 
   grad = ddc.evalGrad(elec, 1);
 
@@ -421,11 +402,11 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   std::cout << "original " << std::endl;
   std::cout << orig_a << std::endl;
   std::cout << "delayed update " << std::endl;
-  std::cout << ddc.psiMinv << std::endl;
+  std::cout << ddc.getPsiMinv() << std::endl;
 #endif
 
-  // compare all the elements of psiMinv in ddc and orig_a
-  check_matrix(ddc.psiMinv, orig_a);
+  // compare all the elements of get_ref_psiMinv() in ddc and orig_a
+  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
 }
 
 } // namespace qmcplusplus

@@ -67,7 +67,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -77,7 +77,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -148,7 +148,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -158,7 +158,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -234,7 +234,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -244,7 +244,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

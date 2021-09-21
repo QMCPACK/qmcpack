@@ -58,9 +58,7 @@ if(USE_OBJECT_TARGET)
     qmcwfs
     qmcparticle
     qmcutil
-    containers
-    platform_device
-    platform_omptarget)
+    platform_omptarget_LA)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
@@ -103,9 +101,7 @@ if(NOT QMC_CUDA)
       qmcwfs
       qmcparticle
       qmcutil
-      containers
-      platform_device
-      platform_omptarget)
+      platform_omptarget_LA)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 8 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
@@ -129,9 +125,7 @@ if(NOT QMC_CUDA)
         qmcwfs
         qmcparticle
         qmcutil
-        containers
-        platform_device
-        platform_omptarget)
+        platform_omptarget_LA)
     endif()
     # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
     add_unit_test(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

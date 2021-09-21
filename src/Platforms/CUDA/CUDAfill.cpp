@@ -12,8 +12,7 @@
 
 #include "CUDAfill.hpp"
 #include <stdexcept>
-#include <cuda_runtime_api.h>
-#include "cudaError.h"
+#include "CUDAruntime.hpp"
 
 namespace qmcplusplus
 {

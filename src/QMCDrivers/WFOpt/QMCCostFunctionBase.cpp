@@ -19,6 +19,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Optimize/LeastSquaredFit.h"
 #include <set>
@@ -532,75 +533,59 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      xmlChar* iptr  = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      xmlFree(iptr);
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (oit != OptVariablesForPsi.end())
-      {
+      if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
         paramNodes[aname] = cur;
-      }
     }
     xmlXPathFreeObject(result);
     //check radfunc
     result = xmlXPathEvalExpression((const xmlChar*)"//radfunc", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      std::string expID = aname + "_E";
-      xmlAttrPtr aptr   = xmlHasProp(cur, (const xmlChar*)"exponent");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
       {
-        attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
+        std::string expID = aname + "_E";
+        if (auto oit = OptVariablesForPsi.find(expID); oit != OptVariablesForPsi.end())
+          attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
       }
       std::string cID = aname + "_C";
-      aptr            = xmlHasProp(cur, (const xmlChar*)"contraction");
-      oit             = OptVariablesForPsi.find(cID);
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"contraction"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(cID); oit != OptVariablesForPsi.end())
+          attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
     }
     xmlXPathFreeObject(result);
     //check ci
     result = xmlXPathEvalExpression((const xmlChar*)"//ci", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     //check csf
     result = xmlXPathEvalExpression((const xmlChar*)"//csf", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     if (CI_Opt)
@@ -620,53 +605,43 @@ void QMCCostFunctionBase::updateXmlNodes()
     addCJParams(acontext, "//jastrow");
     xmlXPathFreeContext(acontext);
   }
-  //     Psi.reportStatus(app_log());
-  std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
-  while (pit != pit_end)
+  for (const auto& [pname, pptr] : paramNodes)
   {
     //FIXME real value is forced here to makde sure that the code builds
-    Return_rt v = std::real(OptVariablesForPsi[(*pit).first]);
-    getContent(v, (*pit).second);
-    //         vout <<(*pit).second<< std::endl;
-    ++pit;
+    Return_rt v = std::real(OptVariablesForPsi[pname]);
+    getContent(v, pptr);
   }
-  std::map<std::string, std::pair<xmlNodePtr, std::string>>::iterator ait(attribNodes.begin()),
-      ait_end(attribNodes.end());
-  while (ait != ait_end)
+  for (const auto& [aname, attrib] : attribNodes)
   {
     std::ostringstream vout;
     vout.setf(std::ios::scientific, std::ios::floatfield);
     vout.precision(16);
-    vout << OptVariablesForPsi[(*ait).first];
-    xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(), (const xmlChar*)vout.str().c_str());
-    ++ait;
+    vout << OptVariablesForPsi[aname];
+    xmlSetProp(attrib.first, (const xmlChar*)attrib.second.c_str(), (const xmlChar*)vout.str().c_str());
   }
-  std::map<std::string, xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
-  while (cit != cit_end)
+  for (const auto& [cname, cptr] : coeffNodes)
   {
-    std::string rname((*cit).first);
+    std::string rname(cname);
     OhmmsAttributeSet cAttrib;
     std::string datatype("none");
     std::string aname("0");
     cAttrib.add(datatype, "type");
     cAttrib.add(aname, "id");
-    cAttrib.put((*cit).second);
+    cAttrib.put(cptr);
     if (datatype == "Array")
     {
       //
       aname.append("_");
-      opt_variables_type::iterator vit(OptVariablesForPsi.begin());
       std::vector<Return_rt> c;
-      while (vit != OptVariablesForPsi.end())
+      for (const auto& [name, value] : OptVariablesForPsi)
       {
-        if ((*vit).first.find(aname) == 0)
+        if (name.find(aname) == 0)
         {
           //FIXME real value is forced here to makde sure that the code builds
-          c.push_back(std::real((*vit).second));
+          c.push_back(std::real(value));
         }
-        ++vit;
       }
-      xmlNodePtr contentPtr = cit->second;
+      xmlNodePtr contentPtr = cptr;
       if (xmlNodeIsText(contentPtr->children))
         contentPtr = contentPtr->children;
       getContent(c, contentPtr);
@@ -674,15 +649,15 @@ void QMCCostFunctionBase::updateXmlNodes()
     // counting jastrow variables
     else if (rname.find("cj_") == 0)
     {
-      printCJParams(cit->second, rname);
+      printCJParams(cptr, rname);
     }
     else
     {
-      xmlNodePtr cur = (*cit).second->children;
+      xmlNodePtr cur = cptr->children;
       while (cur != NULL)
       {
-        std::string cname((const char*)(cur->name));
-        if (cname == "lambda")
+        std::string childName((const char*)(cur->name));
+        if (childName == "lambda")
         {
           int i = 0;
           int j = -1;
@@ -708,7 +683,6 @@ void QMCCostFunctionBase::updateXmlNodes()
         cur = cur->next;
       }
     }
-    ++cit;
   }
 }
 

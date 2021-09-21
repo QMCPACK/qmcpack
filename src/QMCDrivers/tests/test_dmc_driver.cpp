@@ -74,7 +74,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -84,7 +84,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy<double>> p_bke = std::make_unique<BareKineticEnergy<double>>(elec);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
@@ -159,7 +159,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -169,7 +169,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy<double>> p_bke = std::make_unique<BareKineticEnergy<double>>(elec);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 

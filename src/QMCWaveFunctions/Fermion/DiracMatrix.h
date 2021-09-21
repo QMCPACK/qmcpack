@@ -21,17 +21,18 @@
 
 namespace qmcplusplus
 {
+
+/** wrappers around xgetrf lapack routines 
+ *  \param[in] n      rows
+ *  \param[in] m      cols
+ *  \param[inout] a   matrix contains LU matrix after call
+ *  \param[in] lda    leading dimension of a
+ *  \param[out] piv   pivot vector
+ */
 inline int Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
 {
   int status;
   sgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
-inline int Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
-{
-  int status;
-  sgetri(n, a, lda, piv, work, lwork, status);
   return status;
 }
 
@@ -42,7 +43,28 @@ inline int Xgetrf(int n, int m, std::complex<float>* restrict a, int lda, int* r
   return status;
 }
 
+inline int Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
+{
+  int status;
+  dgetrf(n, m, a, lda, piv, status);
+  return status;
+}
+
+inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
+{
+  int status;
+  zgetrf(n, m, a, lda, piv, status);
+  return status;
+}
+
 /** inversion of a float matrix after lu factorization*/
+inline int Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
+{
+  int status;
+  sgetri(n, a, lda, piv, work, lwork, status);
+  return status;
+}
+
 inline int Xgetri(int n,
                   std::complex<float>* restrict a,
                   int lda,
@@ -55,24 +77,10 @@ inline int Xgetri(int n,
   return status;
 }
 
-inline int Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
-{
-  int status;
-  dgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
 inline int Xgetri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
 {
   int status;
   dgetri(n, a, lda, piv, work, lwork, status);
-  return status;
-}
-
-inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
-{
-  int status;
-  zgetrf(n, m, a, lda, piv, status);
   return status;
 }
 
@@ -126,7 +134,7 @@ class DiracMatrix
       msg << "Xgetri failed with error " << status << std::endl;
       throw std::runtime_error(msg.str());
     }
-        
+
     convert(tmp, lw);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
