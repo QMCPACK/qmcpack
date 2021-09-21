@@ -247,6 +247,10 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const
     const int np = pset.getTotalNum();
     const int nk = kPoints.size();
 
+    // accumulate weight 
+    //  (required by all estimators, otherwise inf results)
+    walkers_weight_ += weight;
+
     // compute phase factors
     for (int s = 0; s < M; ++s)
     {
@@ -291,7 +295,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const
 
     // accumulate data
     for (int ik = 0; ik < nofK.size(); ++ik)
-      (*data_)[ik] += weight * nofK[ik];
+      (*data_)[ik] += weight * nofK[ik] * norm_nofK;
 
   }
 };
