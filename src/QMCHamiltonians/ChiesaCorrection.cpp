@@ -27,7 +27,7 @@ std::unique_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, Trial
   return std::make_unique<ChiesaCorrection>(qp, psi);
 }
 
-ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return Value = psi_ref.KECorrection(); }
+ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return value_ = psi_ref.KECorrection(); }
 #ifdef QMC_CUDA
 void ChiesaCorrection::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {

@@ -606,7 +606,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
   for (int iw = 0; iw < nw; iw++)
   {
     auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
-    wfc.log_value() += wfc.Uat[iat] - mw_vgl[iw][0];
+    wfc.log_value_ += wfc.Uat[iat] - mw_vgl[iw][0];
   }
 
   /* this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates */
@@ -739,7 +739,7 @@ void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCompon
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& wfc    = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
-    wfc.log_value() = wfc.computeGL(G_list[iw], L_list[iw]);
+    wfc.log_value_ = wfc.computeGL(G_list[iw], L_list[iw]);
   }
 }
 

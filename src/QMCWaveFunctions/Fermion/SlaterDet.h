@@ -184,7 +184,7 @@ public:
     // having log_value_ as a data member asks for this sort of consistency issue when wfc can contain wfc.
     for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
-        wfc_list[iw].log_value() = czero;
+        wfc_list.getCastedElement<SlaterDet>(iw).log_value_ = czero;
 
     for (int i = 0; i < Dets.size(); ++i)
     {
@@ -195,7 +195,7 @@ public:
 
       for (int iw = 0; iw < wfc_list.size(); iw++)
         if (isAccepted[iw])
-          wfc_list[iw].log_value() += Det_list[iw].get_log_value();
+          wfc_list.getCastedElement<SlaterDet>(iw).log_value_ += Det_list[iw].get_log_value();
     }
   }
 
