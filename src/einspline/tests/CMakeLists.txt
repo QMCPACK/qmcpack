@@ -9,7 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR einspline)
 set(UTEST_EXE test_${SRC_DIR})
@@ -29,4 +29,4 @@ endif()
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main ${CUDATESTLIB} einspline qmcutil)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

@@ -10,10 +10,10 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR hamiltonian)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
                  test_coulomb_pbcAA_ewald.cpp)
@@ -62,6 +62,6 @@ foreach(CATEGORY coulomb force ham)
     target_link_libraries(${UTEST_EXE} qmcwfs qmcparticle qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()

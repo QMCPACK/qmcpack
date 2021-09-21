@@ -29,7 +29,6 @@ include(macros)
 #--------------------------------------------------------------------
 # Paths for library and executable for out-of-soruce compilation
 #--------------------------------------------------------------------
-set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
     ${qmcpack_BINARY_DIR}/lib
     CACHE PATH "Single output directory for building all libraries.")

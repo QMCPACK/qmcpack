@@ -9,7 +9,7 @@
 #// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(SRC_DIR Concurrency)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -23,4 +23,4 @@ add_executable(${UTEST_EXE} ${SRCS})
 
 target_link_libraries(${UTEST_EXE} catch_main)
 
-add_unit_test(${UTEST_NAME} 1 3 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 3 $<TARGET_FILE:${UTEST_EXE}>)

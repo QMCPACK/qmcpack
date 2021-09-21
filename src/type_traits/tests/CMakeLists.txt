@@ -10,14 +10,11 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR type_traits)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/type_traits)
-
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
 set(TEST_SRCS test_qmctypes.cpp test_template_types.cpp)
 if(QMC_CUDA)
@@ -26,4 +23,4 @@ endif(QMC_CUDA)
 add_executable(${UTEST_EXE} ${TEST_SRCS})
 target_link_libraries(${UTEST_EXE} catch_main containers)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

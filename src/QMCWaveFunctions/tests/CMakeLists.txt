@@ -10,10 +10,10 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR wavefunction)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/${SRC_DIR})
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
@@ -125,7 +125,7 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()
 
@@ -141,7 +141,7 @@ if(ENABLE_CUDA)
     target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
   endif()
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
 
 if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
@@ -156,5 +156,5 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   endif()
 #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
