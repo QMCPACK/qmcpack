@@ -108,17 +108,17 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override { request_.contribute_array(my_name_); }
+  void contribute_particle_quantities() override { request_.contribute_array(name_); }
 
   void checkout_particle_quantities(TraceManager& tm) override
   {
-    streaming_particles = request_.streaming_array(my_name_);
+    streaming_particles = request_.streaming_array(name_);
     if (streaming_particles)
     {
-      Va_sample = tm.checkout_real<1>(my_name_, Pa);
+      Va_sample = tm.checkout_real<1>(name_, Pa);
       if (!is_AA)
       {
-        Vb_sample = tm.checkout_real<1>(my_name_, Pb);
+        Vb_sample = tm.checkout_real<1>(name_, Pb);
       }
       else if (!is_active)
         evaluate_spAA(Pa.getDistTable(myTableIndex), Pa.Z.first_address());

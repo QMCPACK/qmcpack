@@ -89,7 +89,7 @@ bool LatticeDeviationEstimator::put(xmlNodePtr cur)
 
 bool LatticeDeviationEstimator::get(std::ostream& os) const
 { // class description
-  os << "LatticeDeviationEstimator: " << my_name_ << "lattice = " << spset.getName();
+  os << "LatticeDeviationEstimator: " << name_ << "lattice = " << spset.getName();
   return true;
 }
 
@@ -176,12 +176,12 @@ void LatticeDeviationEstimator::addObservables(PropertySetType& plist, BufferTyp
     {
       std::stringstream ss;
       ss << idir;
-      plist.add(my_name_ + "_dir" + ss.str());
+      plist.add(name_ + "_dir" + ss.str());
     }
   }
   else
   {
-    myIndex = plist.add(my_name_); // same as OperatorBase::addObservables
+    myIndex = plist.add(name_); // same as OperatorBase::addObservables
   }
 
   // get h5_index for stat.h5
@@ -238,7 +238,7 @@ void LatticeDeviationEstimator::registerCollectables(std::vector<ObservableHelpe
     }
 
     // open hdf5 entry and resize
-    h5desc.emplace_back(my_name_);
+    h5desc.emplace_back(name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, h5_index);
     h5o.open(gid);

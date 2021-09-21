@@ -60,7 +60,7 @@ bool SpeciesKineticEnergy::put(xmlNodePtr cur)
 
 bool SpeciesKineticEnergy::get(std::ostream& os) const
 { // class description
-  os << "SpeciesKineticEnergy: " << my_name_;
+  os << "SpeciesKineticEnergy: " << name_;
   return true;
 }
 
@@ -69,7 +69,7 @@ void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& co
   myIndex = plist.size();
   for (int ispec = 0; ispec < num_species; ispec++)
   { // make columns named "$myName_u", "$myName_d" etc.
-    plist.add(my_name_ + "_" + species_names[ispec]);
+    plist.add(name_ + "_" + species_names[ispec]);
   }
   if (hdf5_out)
   { // make room in h5 file and save its index
@@ -84,7 +84,7 @@ void SpeciesKineticEnergy::registerCollectables(std::vector<ObservableHelper>& h
   if (hdf5_out)
   {
     std::vector<int> ndim(1, num_species);
-    h5desc.emplace_back(my_name_);
+    h5desc.emplace_back(name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, h5_index);
     h5o.open(gid);

@@ -124,7 +124,7 @@ void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5des
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
-  h5desc.emplace_back(my_name_);
+  h5desc.emplace_back(name_);
   auto& h5o = h5desc.back();
   h5o.set_dimensions(ng, myIndex);
   h5o.open(gid);
@@ -172,7 +172,7 @@ bool DensityEstimator::put(xmlNodePtr cur)
 
 bool DensityEstimator::get(std::ostream& os) const
 {
-  os << my_name_ << " bin =" << Delta << " bohrs " << std::endl;
+  os << name_ << " bin =" << Delta << " bohrs " << std::endl;
   return true;
 }
 

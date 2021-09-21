@@ -62,24 +62,24 @@ void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 
 void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.add(my_name_.c_str());
+  myIndex = plist.add(name_.c_str());
   if (ComputeForces)
     addObservablesF(plist);
 }
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAB::contribute_particle_quantities() { request_.contribute_array(my_name_); }
+void CoulombPBCAB::contribute_particle_quantities() { request_.contribute_array(name_); }
 
 void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(my_name_);
+  streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
   {
     Pion.turnOnPerParticleSK();
     Peln.turnOnPerParticleSK();
-    Ve_sample = tm.checkout_real<1>(my_name_, Peln);
-    Vi_sample = tm.checkout_real<1>(my_name_, Pion);
+    Ve_sample = tm.checkout_real<1>(name_, Peln);
+    Vi_sample = tm.checkout_real<1>(name_, Pion);
   }
 }
 

@@ -56,13 +56,13 @@ struct HarmonicExternalPotential : public OperatorBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   //traces interface
-  void contribute_particle_quantities() override { request_.contribute_array(my_name_); }
+  void contribute_particle_quantities() override { request_.contribute_array(name_); }
 
   void checkout_particle_quantities(TraceManager& tm) override
   {
-    streaming_particles = request_.streaming_array(my_name_);
+    streaming_particles = request_.streaming_array(name_);
     if (streaming_particles)
-      V_sample = tm.checkout_real<1>(my_name_, Ps);
+      V_sample = tm.checkout_real<1>(name_, Ps);
   }
 
   void delete_particle_quantities() override

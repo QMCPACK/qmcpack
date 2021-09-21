@@ -35,8 +35,8 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       firstTimeStress(true)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
-  my_name_ = "StressPBC";
-  prefix   = "StressPBC";
+  name_  = "StressPBC";
+  prefix = "StressPBC";
   //This sets up the long range breakups.
   initBreakup(PtclTarg);
   stress_eI_const = 0.0;

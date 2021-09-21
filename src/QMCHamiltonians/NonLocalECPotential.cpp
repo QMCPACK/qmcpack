@@ -77,15 +77,15 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
 NonLocalECPotential::~NonLocalECPotential() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
-void NonLocalECPotential::contribute_particle_quantities() { request_.contribute_array(my_name_); }
+void NonLocalECPotential::contribute_particle_quantities() { request_.contribute_array(name_); }
 
 void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(my_name_);
+  streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
   {
-    Ve_sample = tm.checkout_real<1>(my_name_, Peln);
-    Vi_sample = tm.checkout_real<1>(my_name_, IonConfig);
+    Ve_sample = tm.checkout_real<1>(name_, Peln);
+    Vi_sample = tm.checkout_real<1>(name_, IonConfig);
   }
 }
 

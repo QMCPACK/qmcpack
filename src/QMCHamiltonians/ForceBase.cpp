@@ -137,8 +137,8 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
 
 BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions))
 {
-  my_name_ = "HF_Force_Base";
-  prefix   = "HFBase";
+  name_  = "HF_Force_Base";
+  prefix = "HFBase";
 }
 
 void BareForce::resetTargetParticleSet(ParticleSet& P) {}

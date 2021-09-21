@@ -43,7 +43,7 @@ BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
   streaming_kinetic      = false;
   streaming_kinetic_comp = false;
   streaming_momentum     = false;
-  UpdateMode.set(OPTIMIZABLE, 1);
+  update_mode_.set(OPTIMIZABLE, 1);
   SpeciesSet& tspecies(p.getSpeciesSet());
   MinusOver2M.resize(tspecies.size());
   int massind = tspecies.addAttribute("mass");
@@ -63,19 +63,19 @@ BareKineticEnergy::~BareKineticEnergy() = default;
 #if !defined(REMOVE_TRACEMANAGER)
 void BareKineticEnergy::contribute_particle_quantities()
 {
-  request.contribute_array(myName);
-  request.contribute_array(myName + "_complex");
-  request.contribute_array("momentum");
+  request_.contribute_array(name_);
+  request_.contribute_array(name_ + "_complex");
+  request_.contribute_array("momentum");
 }
 
 void BareKineticEnergy::checkout_particle_quantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName) || request.streaming_array(myName + "_complex") ||
-      request.streaming_array("momentum");
+  streaming_particles = request_.streaming_array(name_) || request_.streaming_array(name_ + "_complex") ||
+      request_.streaming_array("momentum");
   if (streaming_particles)
   {
-    T_sample      = tm.checkout_real<1>(myName, Ps);
-    T_sample_comp = tm.checkout_complex<1>(myName + "_complex", Ps);
+    T_sample      = tm.checkout_real<1>(name_, Ps);
+    T_sample_comp = tm.checkout_complex<1>(name_ + "_complex", Ps);
     p_sample      = tm.checkout_complex<2>("momentum", Ps, DIM);
   }
 }
@@ -97,7 +97,7 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
 #if !defined(REMOVE_TRACEMANAGER)
   if (streaming_particles)
   {
-    Value = evaluate_sp(P);
+    value_ = evaluate_sp(P);
   }
   else
 #endif
@@ -105,25 +105,25 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
   {
 //app_log() << "Here" << std::endl;
 #ifdef QMC_COMPLEX
-    Value = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
-    Value *= -OneOver2M;
+    value_ = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
+    value_ *= -OneOver2M;
 #else
-    Value = Dot(P.G, P.G) + Sum(P.L);
-    Value *= -OneOver2M;
+    value_ = Dot(P.G, P.G) + Sum(P.L);
+    value_ *= -OneOver2M;
 #endif
   }
   else
   {
-    Value = 0.0;
+    value_ = 0.0;
     for (int i = 0; i < MinusOver2M.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      Value += x * MinusOver2M[i];
+      value_ += x * MinusOver2M[i];
     }
   }
-  return Value;
+  return value_;
 }
 
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -225,25 +225,25 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
 
   if (SameMass)
   {
-    Value = Dot(P.G, P.G) + Sum(P.L);
-    Value *= -OneOver2M;
+    value_ = Dot(P.G, P.G) + Sum(P.L);
+    value_ *= -OneOver2M;
   }
   else
   {
-    Value = 0.0;
+    value_ = 0.0;
     for (int i = 0; i < MinusOver2M.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      Value += x * MinusOver2M[i];
+      value_ += x * MinusOver2M[i];
     }
   }
-  pulaytmpreal_ -= Value * iongradpsireal_;
+  pulaytmpreal_ -= value_ * iongradpsireal_;
 
 
   pulay_terms += pulaytmpreal_;
-  return Value;
+  return value_;
 }
 
 
@@ -255,7 +255,7 @@ Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
   Array<std::complex<RealType>, 2>& p_samp      = *p_sample;
   std::complex<RealType> t1                     = 0.0;
   const RealType clambda(-OneOver2M);
-  Value = 0.0;
+  value_ = 0.0;
   if (SameMass)
   {
     for (int i = 0; i < P.getTotalNum(); i++)
@@ -266,7 +266,7 @@ Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
       T_samp_comp(i) = t1;
       for (int d = 0; d < DIM; ++d)
         p_samp(i, d) = P.G[i][d];
-      Value += real(t1);
+      value_ += real(t1);
     }
   }
   else
@@ -283,12 +283,12 @@ Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
         T_samp_comp(i) = t1;
         for (int d = 0; d < DIM; ++d)
           p_samp(i, d) = P.G[i][d];
-        Value += real(t1);
+        value_ += real(t1);
       }
     }
   }
 #if defined(TRACE_CHECK)
-  RealType Vnow = Value;
+  RealType Vnow = value_;
   RealType Vsum = T_samp.sum();
   RealType Vold = evaluate_orig(P);
   if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
@@ -306,7 +306,7 @@ Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
     APP_ABORT("Trace check failed");
   }
 #endif
-  return Value;
+  return value_;
 }
 
 #endif
@@ -315,21 +315,21 @@ Return_t BareKineticEnergy::evaluate_orig(ParticleSet& P)
 {
   if (SameMass)
   {
-    Value = Dot(P.G, P.G) + Sum(P.L);
-    Value *= -OneOver2M;
+    value_ = Dot(P.G, P.G) + Sum(P.L);
+    value_ *= -OneOver2M;
   }
   else
   {
-    Value = 0.0;
+    value_ = 0.0;
     for (int i = 0; i < MinusOver2M.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      Value += x * MinusOver2M[i];
+      value_ += x * MinusOver2M[i];
     }
   }
-  return Value;
+  return value_;
 }
 
 /** implements the virtual function.

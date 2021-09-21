@@ -58,15 +58,15 @@ void LocalECPotential::add(int groupID, std::unique_ptr<RadialPotentialType>&& p
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
-void LocalECPotential::contribute_particle_quantities() { request_.contribute_array(my_name_); }
+void LocalECPotential::contribute_particle_quantities() { request_.contribute_array(name_); }
 
 void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(my_name_);
+  streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
   {
-    Ve_sample = tm.checkout_real<1>(my_name_, Peln);
-    Vi_sample = tm.checkout_real<1>(my_name_, Pion);
+    Ve_sample = tm.checkout_real<1>(name_, Peln);
+    Vi_sample = tm.checkout_real<1>(name_, Pion);
   }
 }
 

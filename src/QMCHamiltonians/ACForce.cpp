@@ -29,8 +29,8 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
       useSpaceWarp(false),
       swt(target, source)
 {
-  prefix   = "ACForce";
-  my_name_ = prefix;
+  prefix = "ACForce";
+  name_  = prefix;
 
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
@@ -80,7 +80,7 @@ void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamilt
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi, ham_in);
   if (myclone)
   {
-    ham_in.addOperator(std::move(myclone), my_name_, update_mode_[PHYSICAL]);
+    ham_in.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
   }
 }
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)

@@ -39,9 +39,9 @@ std::bitset<8>& OperatorBase::getUpdateMode() noexcept { return update_mode_; }
 
 OperatorBase::Return_t OperatorBase::getValue() const noexcept { return value_; }
 
-std::string OperatorBase::getMyName() const noexcept { return my_name_; }
+std::string OperatorBase::getName() const noexcept { return name_; }
 
-void OperatorBase::setMyName(const std::string name) noexcept { my_name_ = name; }
+void OperatorBase::setName(const std::string name) noexcept { name_ = name; }
 
 #if !defined(REMOVE_TRACEMANAGER)
 TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
@@ -175,7 +175,7 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
   if (myclone)
   {
-    targetH.addOperator(std::move(myclone), my_name_, update_mode_[PHYSICAL]);
+    targetH.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
   }
 }
 
@@ -185,7 +185,7 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
   //exclude collectables
   if (!collect)
   {
-    h5desc.emplace_back(my_name_);
+    h5desc.emplace_back(name_);
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
     oh.set_dimensions(onedim, myIndex);
@@ -195,7 +195,7 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
 
 void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  APP_ABORT("Need specialization for " + my_name_ +
+  APP_ABORT("Need specialization for " + name_ +
             "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
 }
 

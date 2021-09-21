@@ -134,15 +134,15 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAA::contribute_particle_quantities() { request_.contribute_array(my_name_); }
+void CoulombPBCAA::contribute_particle_quantities() { request_.contribute_array(name_); }
 
 void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(my_name_);
+  streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
   {
     Ps.turnOnPerParticleSK();
-    V_sample = tm.checkout_real<1>(my_name_, Ps);
+    V_sample = tm.checkout_real<1>(name_, Ps);
     if (!is_active)
       evaluate_sp(Ps);
   }

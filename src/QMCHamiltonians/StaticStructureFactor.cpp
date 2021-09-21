@@ -37,7 +37,7 @@ StaticStructureFactor::StaticStructureFactor(ParticleSet& P) : Pinit(P)
 
 void StaticStructureFactor::reset()
 {
-  my_name_ = "StaticStructureFactor";
+  name_ = "StaticStructureFactor";
   update_mode_.set(COLLECTABLE, 1);
   ecut     = -1.0;
   nkpoints = -1;
@@ -58,7 +58,7 @@ bool StaticStructureFactor::put(xmlNodePtr cur)
 
   std::string write_report = "no";
   OhmmsAttributeSet attrib;
-  attrib.add(my_name_, "name");
+  attrib.add(name_, "name");
   //attrib.add(ecut,"ecut");
   attrib.add(write_report, "report");
   attrib.put(cur);
@@ -89,7 +89,7 @@ bool StaticStructureFactor::put(xmlNodePtr cur)
 void StaticStructureFactor::report(const std::string& pad)
 {
   app_log() << pad << "StaticStructureFactor report" << std::endl;
-  app_log() << pad << "  name     = " << my_name_ << std::endl;
+  app_log() << pad << "  name     = " << name_ << std::endl;
   app_log() << pad << "  ecut     = " << ecut << std::endl;
   app_log() << pad << "  nkpoints = " << nkpoints << std::endl;
   app_log() << pad << "  nspecies = " << nspecies << std::endl;
@@ -109,7 +109,7 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 
 void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
+  hid_t sgid = H5Gcreate(gid, name_.c_str(), 0);
   h5desc.emplace_back("kpoints");
   auto& oh = h5desc.back();
   oh.open(sgid); // add to SkAll hdf group

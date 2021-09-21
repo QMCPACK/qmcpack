@@ -546,7 +546,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   int nentries = ng[0] * ng[1];
 #endif
 
-  std::string dname = my_name_;
+  std::string dname = name_;
   hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
 
   std::string nname = "number_matrix";

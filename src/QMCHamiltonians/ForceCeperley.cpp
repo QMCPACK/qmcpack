@@ -29,8 +29,8 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
     : ForceBase(ions, elns), d_aa_ID(ions.addTable(ions)), d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceCeperley", "ForceCeperley");
-  my_name_ = "Ceperley_Force_Base";
-  prefix   = "HFCep";
+  name_  = "Ceperley_Force_Base";
+  prefix = "HFCep";
   // Defaults
   Rcut    = 0.4;
   m_exp   = 2;

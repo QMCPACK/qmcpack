@@ -312,7 +312,7 @@ void PairCorrEstimator::report()
 
 bool PairCorrEstimator::get(std::ostream& os) const
 {
-  os << my_name_ << " dmax=" << Dmax << std::endl;
+  os << name_ << " dmax=" << Dmax << std::endl;
   return true;
 }
 

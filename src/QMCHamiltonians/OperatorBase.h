@@ -133,13 +133,13 @@ public:
    * @brief getter a copy of my_name_, rvalue small string optimization
    * @return std::string copy of my_name_ member
    */
-  std::string getMyName() const noexcept;
+  std::string getName() const noexcept;
 
   /**
    * @brief Set my_name member, uses small string optimization (pass by value)
    * @param name input
    */
-  void setMyName(const std::string name) noexcept;
+  void setName(const std::string name) noexcept;
 
 #if !defined(REMOVE_TRACEMANAGER)
   /**
@@ -380,7 +380,7 @@ protected:
   Return_t value_;
 
   ///name of this object
-  std::string my_name_;
+  std::string name_;
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///whether traces are being collected
@@ -408,13 +408,13 @@ protected:
   virtual bool put(xmlNodePtr cur) = 0;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_scalar_quantities() { request_.contribute_scalar(my_name_); }
+  virtual void contribute_scalar_quantities() { request_.contribute_scalar(name_); }
 
   virtual void checkout_scalar_quantities(TraceManager& tm)
   {
-    streaming_scalars = request_.streaming_scalar(my_name_);
+    streaming_scalars = request_.streaming_scalar(name_);
     if (streaming_scalars)
-      value_sample = tm.checkout_real<1>(my_name_);
+      value_sample = tm.checkout_real<1>(name_);
   }
 
   virtual void collect_scalar_quantities()
@@ -463,7 +463,7 @@ protected:
   inline void addValue(PropertySetType& plist)
   {
     if (!update_mode_[COLLECTABLE])
-      myIndex = plist.add(my_name_.c_str());
+      myIndex = plist.add(name_.c_str());
   }
 
 private:
