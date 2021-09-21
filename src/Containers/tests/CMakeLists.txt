@@ -20,8 +20,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(SRC_DIR dualallocators)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-integration_${SRC_DIR})
 

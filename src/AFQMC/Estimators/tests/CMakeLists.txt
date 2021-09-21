@@ -15,7 +15,6 @@ set(SRC_DIR afqmc_estimators)
 set(UTEST_EXE test_${SRC_DIR})
 
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
 add_executable(${UTEST_EXE} test_estimators.cpp)
 target_link_libraries(${UTEST_EXE} catch_main afqmc)
