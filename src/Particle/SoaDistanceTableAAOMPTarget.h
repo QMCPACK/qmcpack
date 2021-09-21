@@ -111,9 +111,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     old_r_mem_.resize(N_targets);
     old_dr_mem_.resize(N_targets);
-    // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
-    // temp_r_ is padded explicitly while temp_dr_ is padded internally
-    temp_r_mem_.resize(Ntargets_padded);
+    temp_r_mem_.resize(N_targets);
     temp_dr_mem_.resize(N_targets);
   }
 
@@ -358,16 +356,15 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   }
 
   /** After accepting the iat-th particle, update the iat-th row of distances_ and displacements_.
-   * Since the upper triangle is not needed in the later computation,
-   * only the [0,iat-1) columns need to save the new values.
-   * The memory copy goes up to the padded size only for better performance.
+   * Upper triangle is not needed in the later computation and thus not updated
    */
   inline void update(IndexType iat) override
   {
     ScopedTimer local_timer(update_timer_);
-    //update by a cache line
-    const int nupdate = getAlignedSize<T>(iat);
+    //update [0, iat) columns
+    const int nupdate = iat;
     //copy row
+    assert(nupdate <= temp_r_.size());
     std::copy_n(temp_r_.data(), nupdate, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), nupdate, displacements_[iat].data(idim));
@@ -383,11 +380,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   {
     ScopedTimer local_timer(update_timer_);
 
-    //update by a cache line
-    const int nupdate = getAlignedSize<T>(jat);
+    //update [0, jat)
+    const int nupdate = jat;
     if (from_temp)
     {
       //copy row
+      assert(nupdate <= temp_r_.size());
       std::copy_n(temp_r_.data(), nupdate, distances_[jat].data());
       for (int idim = 0; idim < D; ++idim)
         std::copy_n(temp_dr_.data(idim), nupdate, displacements_[jat].data(idim));
@@ -396,6 +394,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     {
       assert(old_prepared_elec_id == jat);
       //copy row
+      assert(nupdate <= old_r_.size());
       std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
       for (int idim = 0; idim < D; ++idim)
         std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
