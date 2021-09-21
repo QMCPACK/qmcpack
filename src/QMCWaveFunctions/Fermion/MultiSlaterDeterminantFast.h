@@ -89,11 +89,6 @@ public:
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
-  void BackFlowStopper(const std::string& func_name) const
-  {
-    if (usingBF)
-      throw std::runtime_error(func_name + " not implemented!\n");
-  }
 
   LogValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,
@@ -244,10 +239,6 @@ private:
    * @param ig group id
    */
   void precomputeC_otherDs(const ParticleSet& P, int ig);
-
-  // transformation
-  std::shared_ptr<BackflowTransformation> BFTrans;
-  bool usingBF;
 
   ///the last particle of each group
   std::vector<int> Last;
