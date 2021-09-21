@@ -41,7 +41,7 @@ private:
   ///multi walker shared memory buffer
   struct DTABMultiWalkerMem : public Resource
   {
-    ///accelerator output array for multiple walkers, N_targets x N_sources_padded x (D+1) (distances, displacements)
+    ///accelerator output array for multiple walkers, [1+D][N_targets][N_sources_padded] (distances, displacements)
     OffloadPinnedVector<T> mw_r_dr;
     ///accelerator input buffer for multiple data set
     OffloadPinnedVector<char> offload_input;
@@ -231,8 +231,8 @@ public:
 
           PRAGMA_OFFLOAD("omp parallel for")
           for (int iel = first; iel < last; iel++)
-            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
-                                                          iel);
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, N_sources_padded, r_iat_ptr, dr_iat_ptr,
+                                                          N_sources_padded, iel);
         }
     }
   }
@@ -337,8 +337,8 @@ public:
 
           PRAGMA_OFFLOAD("omp parallel for")
           for (int iel = first; iel < last; iel++)
-            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
-                                                          iel);
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, N_sources_padded, r_iat_ptr, dr_iat_ptr,
+                                                          N_sources_padded, iel);
         }
 
       if (!(modes_ & DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST))
@@ -405,8 +405,6 @@ public:
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
-    //ensure there are neighbors
-    assert(N_sources > 1);
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
     if (newpos)
@@ -437,6 +435,7 @@ public:
         dr = displacements_[iat][index];
       }
     }
+    assert(index >= 0 && index < N_sources);
     return index;
   }
 
