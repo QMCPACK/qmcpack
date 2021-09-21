@@ -67,36 +67,39 @@ class OperatorBase : public QMCTraits
 public:
   /** type of return value of evaluate
    */
-  typedef FullPrecRealType Return_t;
+  using Return_t = FullPrecRealType;
+
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
    */
-  typedef ParticleSet::Buffer_t BufferType;
+  using BufferType = ParticleSet::Buffer_t;
+
   ///typedef for the walker
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
+
   ///typedef for the ParticleScalar
-  typedef ParticleSet::Scalar_t ParticleScalar_t;
+  using ParticleScalar_t = ParticleSet::Scalar_t;
 
   ///enum to denote energy domain of operators
-  enum energy_domains
+  enum EnergyDomains
   {
-    kinetic = 0,
-    potential,
-    no_energy_domain
+    KINETIC = 0,
+    POTENTIAL,
+    NO_ENERGY_DOMAIN
   };
 
-  enum quantum_domains
+  enum QuantumDomains
   {
-    no_quantum_domain = 0,
-    classical,
-    quantum,
-    classical_classical,
-    quantum_classical,
-    quantum_quantum
+    NO_QUANTUM_DOMAIN = 0,
+    CLASSICAL,
+    QUANTUM,
+    CLASSICAL_CLASSICAL,
+    QUANTUM_CLASSICAL,
+    QUANTUM_QUANTUM
   };
 
-  ///enum for UpdateMode
+  ///enum for update_mode
   enum
   {
     PRIMARY     = 0,
@@ -139,11 +142,11 @@ public:
   ///virtual destructor
   virtual ~OperatorBase() {}
 
-  inline bool is_classical() { return quantum_domain == classical; }
-  inline bool is_quantum() { return quantum_domain == quantum; }
-  inline bool is_classical_classical() { return quantum_domain == classical_classical; }
-  inline bool is_quantum_classical() { return quantum_domain == quantum_classical; }
-  inline bool is_quantum_quantum() { return quantum_domain == quantum_quantum; }
+  inline bool is_classical() { return quantum_domain == CLASSICAL; }
+  inline bool is_quantum() { return quantum_domain == QUANTUM; }
+  inline bool is_classical_classical() { return quantum_domain == CLASSICAL_CLASSICAL; }
+  inline bool is_quantum_classical() { return quantum_domain == QUANTUM_CLASSICAL; }
+  inline bool is_quantum_quantum() { return quantum_domain == QUANTUM_QUANTUM; }
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
@@ -416,10 +419,10 @@ protected:
   }
 
   ///set energy domain
-  void set_energy_domain(energy_domains edomain);
+  void set_energy_domain(EnergyDomains edomain);
 
   ///set quantum domain
-  void set_quantum_domain(quantum_domains qdomain);
+  void set_quantum_domain(QuantumDomains qdomain);
 
   ///set quantum domain for one-body operator
   void one_body_quantum_domain(const ParticleSet& P);
@@ -444,9 +447,9 @@ protected:
 
 private:
   ///quantum_domain of the (particle) operator, default = no_quantum_domain
-  quantum_domains quantum_domain;
+  QuantumDomains quantum_domain;
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  energy_domains energy_domain;
+  EnergyDomains energy_domain;
 
 #if !defined(REMOVE_TRACEMANAGER)
   bool streaming_scalars;
@@ -456,13 +459,13 @@ private:
 #endif
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid(energy_domains edomain) const { return edomain != no_energy_domain; }
+  inline bool energy_domain_valid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
 
   ///return whether the energy domain is valid
   inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
 
   ///return whether the quantum domain is valid
-  bool quantum_domain_valid(quantum_domains qdomain);
+  bool quantum_domain_valid(QuantumDomains qdomain);
 
   ///return whether the quantum domain is valid
   inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }

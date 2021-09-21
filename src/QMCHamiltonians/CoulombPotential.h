@@ -72,7 +72,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         is_active(active),
         ComputeForces(computeForces)
   {
-    set_energy_domain(potential);
+    set_energy_domain(POTENTIAL);
     two_body_quantum_domain(s, s);
     nCenters = s.getTotalNum();
     prefix   = "F_AA";
@@ -102,7 +102,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         is_active(active),
         ComputeForces(false)
   {
-    set_energy_domain(potential);
+    set_energy_domain(POTENTIAL);
     two_body_quantum_domain(s, t);
     nCenters = s.getTotalNum();
   }
@@ -406,7 +406,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       {
         W.loadWalker(*walkers[iw], false);
         W.update();
-        Value = evaluate(W);
+        Value                                                       = evaluate(W);
         walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
         LocalEnergy[iw] += Value;
       }

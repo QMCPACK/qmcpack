@@ -38,7 +38,7 @@ using Return_t = BareKineticEnergy::Return_t;
    */
 BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
 {
-  set_energy_domain(kinetic);
+  set_energy_domain(KINETIC);
   one_body_quantum_domain(p);
   streaming_kinetic      = false;
   streaming_kinetic_comp = false;

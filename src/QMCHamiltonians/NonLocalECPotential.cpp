@@ -56,7 +56,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       UseTMove(TMOVE_OFF),
       nonLocalOps(els.getTotalNum())
 {
-  set_energy_domain(potential);
+  set_energy_domain(POTENTIAL);
   two_body_quantum_domain(ions, els);
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
@@ -342,7 +342,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     for (size_t iw = 0; iw < nw; iw++)
     {
       const auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
-      max_num_jobs = std::max(max_num_jobs, O.nlpp_jobs[ig].size());
+      max_num_jobs  = std::max(max_num_jobs, O.nlpp_jobs[ig].size());
     }
 
     for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
