@@ -1041,7 +1041,6 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& e
   if (LocalEnergyVector.size() != nw)
   {
     LocalEnergyVector.resize(nw);
-    KineticEnergyVector.resize(nw);
     AuxEnergyVector.resize(nw);
   }
   if (energyVector.size() != nw)
@@ -1082,7 +1081,6 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
   if (LocalEnergyVector.size() != nw)
   {
     LocalEnergyVector.resize(nw);
-    KineticEnergyVector.resize(nw);
     AuxEnergyVector.resize(nw);
   }
   if (energyVector.size() != nw)
