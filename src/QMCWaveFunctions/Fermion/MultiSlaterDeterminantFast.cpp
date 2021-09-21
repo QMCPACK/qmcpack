@@ -54,9 +54,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
     Last[i] = targetPtcl.last(i) - 1;
-
-  usingBF = false;
-  BFTrans = 0;
 }
 
 void MultiSlaterDeterminantFast::initialize()
@@ -78,11 +75,6 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(Par
     dets_clone.emplace_back(std::make_unique<MultiDiracDeterminant>(*det));
 
   auto clone = std::make_unique<MultiSlaterDeterminantFast>(tqp, std::move(dets_clone), use_pre_computing_);
-  if (usingBF)
-  {
-    auto tr = BFTrans->makeClone(tqp);
-    clone->setBF(std::move(tr));
-  }
 
   clone->C2node = C2node;
   clone->C      = C;
@@ -90,7 +82,6 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(Par
 
   clone->Optimizable = Optimizable;
   clone->usingCSF    = usingCSF;
-  clone->usingBF     = usingBF;
 
   clone->CI_Optimizable = CI_Optimizable;
 
@@ -402,8 +393,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
 
 WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
 {
-  BackFlowStopper("Fast MSD+BF: evalGrad");
-
   ScopedTimer local_timer(EvalGradTimer);
 
   GradType grad_iat;
@@ -419,8 +408,6 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(Par
                                                                              int iat,
                                                                              ComplexType& spingrad)
 {
-  BackFlowStopper("Fast MSD+BF: evalGrad");
-
   ScopedTimer local_timer(EvalGradTimer);
 
   GradType grad_iat;
@@ -438,7 +425,6 @@ void MultiSlaterDeterminantFast::mw_evalGrad(const RefVectorWithLeader<WaveFunct
                                              int iat,
                                              std::vector<GradType>& grad_now) const
 {
-  BackFlowStopper("Fast MSD+BF: mw_evalGrad");
   if (!use_pre_computing_)
   {
     WaveFunctionComponent::mw_evalGrad(WFC_list, P_list, iat, grad_now);
@@ -454,8 +440,6 @@ void MultiSlaterDeterminantFast::mw_evalGrad(const RefVectorWithLeader<WaveFunct
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  BackFlowStopper("Fast MSD+BF: ratioGrad");
-
   ScopedTimer local_timer(RatioGradTimer);
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -476,8 +460,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpi
                                                                                   GradType& grad_iat,
                                                                                   ComplexType& spingrad_iat)
 {
-  BackFlowStopper("Fast MSD+BF: ratioGrad");
-
   ScopedTimer local_timer(RatioGradTimer);
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -501,7 +483,6 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
                                               std::vector<WaveFunctionComponent::PsiValueType>& ratios,
                                               std::vector<GradType>& grad_new) const
 {
-  BackFlowStopper("Fast MSD+BF: mw_ratioGrad");
   if (!use_pre_computing_)
   {
     WaveFunctionComponent::mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
@@ -577,8 +558,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
 // use ci_node for this routine only
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
 {
-  BackFlowStopper("Fast MSD+BF: ratio");
-
   ScopedTimer local_timer(RatioTimer);
   UpdateMode = ORB_PBYP_RATIO;
 
@@ -597,7 +576,6 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
                                               int iat,
                                               std::vector<PsiValueType>& ratios) const
 {
-  BackFlowStopper("Fast MSD+BF: mw_calcRatio");
   if (!use_pre_computing_)
   {
     WaveFunctionComponent::mw_calcRatio(WFC_list, P_list, iat, ratios);
@@ -668,7 +646,6 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
 
 void MultiSlaterDeterminantFast::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  BackFlowStopper("Fast MSD+BF: evaluateRatios");
   ScopedTimer local_timer(RatioTimer);
 
   const int det_id = getDetID(VP.refPtcl);
@@ -706,8 +683,6 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
 {
   // this should depend on the type of update, ratio / ratioGrad
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
-  BackFlowStopper("Fast MSD+BF: acceptMove");
-
   ScopedTimer local_timer(AccRejTimer);
   // update psi_ratio_to_ref_det_,myG_temp,myL_temp
   psi_ratio_to_ref_det_ = new_psi_ratio_to_new_ref_det_;
@@ -719,8 +694,6 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
 
 void MultiSlaterDeterminantFast::restore(int iat)
 {
-  BackFlowStopper("Fast MSD+BF: restore");
-
   ScopedTimer local_timer(AccRejTimer);
   Dets[getDetID(iat)]->restore(iat);
   curRatio = 1.0;
@@ -728,8 +701,6 @@ void MultiSlaterDeterminantFast::restore(int iat)
 
 void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  BackFlowStopper("Fast MSD+BF: restore");
-
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->registerData(P, buf);
 
@@ -760,7 +731,6 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
-  BackFlowStopper("Fast MSD+BF: copyFromBuffer");
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
 

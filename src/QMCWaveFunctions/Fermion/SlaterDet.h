@@ -33,9 +33,9 @@ namespace qmcplusplus
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminantBase Determinant_t;
+  using Determinant_t = DiracDeterminantBase;
   ///container for the DiracDeterminants
-  std::vector<std::unique_ptr<Determinant_t>> Dets;
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
 
   /**  constructor
    * @param targetPtcl target Particleset

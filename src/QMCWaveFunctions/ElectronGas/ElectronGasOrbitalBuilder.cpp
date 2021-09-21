@@ -119,14 +119,13 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     PtclPoolType dummy;
     BackflowBuilder bfbuilder(targetPtcl, dummy);
     auto BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
-    std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
+    std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dets;
     //create up determinant
-    dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psiu), nullptr, 0, nup));
+    dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(std::move(psiu), *BFTrans, 0, nup));
     //create down determinant
     if (ndn > 0)
-      dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psid), nullptr, nup, nup + ndn));
-    auto sdet    = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dets), nullptr);
-    sdet->setBF(std::move(BFTrans));
+      dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(std::move(psid), *BFTrans, nup, nup + ndn));
+    auto sdet = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dets), std::move(BFTrans));
     return sdet;
   }
   else
@@ -137,7 +136,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     //create down determinant
     if (ndn > 0)
       dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psid), nup, nup + ndn));
-    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));;
+    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
   }
 }
 
