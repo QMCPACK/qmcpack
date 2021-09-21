@@ -45,7 +45,7 @@ FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P)
   {
     const auto LocalEnergyComponent = Hrefs_[i].get().evaluate(P);
     if (std::isnan(LocalEnergyComponent))
-      APP_ABORT("QMCHamiltonian::evaluate component " + Hrefs_[i].get().myName + " returns NaN\n");
+      APP_ABORT("QMCHamiltonian::evaluate component " + Hrefs_[i].get().getMyName() + " returns NaN\n");
     LocalEnergy += LocalEnergyComponent;
   }
   return LocalEnergy;

@@ -110,37 +110,44 @@ public:
     NONLOCAL    = 5,
   };
 
-  ///set the current update mode
-  std::bitset<8> UpdateMode;
-
-  ///number of dependents: to be removed
-  int Dependants;
-  ///current value
-  Return_t Value;
-
-  /// This is used to store the value for force on the source
-  /// ParticleSet.  It is accumulated if setComputeForces(true).
-  ParticleSet::ParticlePos_t IonForce;
-
-  //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
-  ///name of this object
-  std::string myName;
-  ///name of dependent object: to be removed
-  std::string depName;
-
-#if !defined(REMOVE_TRACEMANAGER)
-  ///whether traces are being collected
-  TraceRequest request;
-
-  std::vector<RealType> ValueVector;
-
-#endif
-
   ///constructor
   OperatorBase();
 
   ///virtual destructor
   virtual ~OperatorBase() {}
+
+  // getter for update_mode member
+  /**
+   * @brief get update_mode_ 
+   * @return std::bitset<8>& reference of get_update_mode_
+   */
+  std::bitset<8>& getUpdateMode() noexcept;
+
+  /**
+   * @brief get a copy of value_
+   * @return Return_t copy of value_
+   */
+  Return_t getValue() const noexcept;
+
+  /**
+   * @brief getter a copy of my_name_, rvalue small string optimization
+   * @return std::string copy of my_name_ member
+   */
+  std::string getMyName() const noexcept;
+
+  /**
+   * @brief Set my_name member, uses small string optimization (pass by value)
+   * @param name input
+   */
+  void setMyName(const std::string name) noexcept;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  /**
+   * @brief Get request_ member
+   * @return TraceRequest& reference to request_
+   */
+  TraceRequest& getRequest() noexcept;
+#endif
 
   inline bool is_classical() { return quantum_domain == CLASSICAL; }
   inline bool is_quantum() { return quantum_domain == QUANTUM; }
@@ -151,9 +158,9 @@ public:
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
    */
-  inline bool getMode(int i) { return UpdateMode[i]; }
+  inline bool getMode(int i) { return update_mode_[i]; }
 
-  inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
+  inline bool isNonLocal() const { return update_mode_[NONLOCAL]; }
 
   /** named values to  the property list
    * @param plist RecordNameProperty
@@ -186,9 +193,9 @@ public:
    * Default implementation is to assign Value which is updated
    * by evaluate  function using myIndex.
    */
-  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = Value; }
+  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = value_; }
 
-  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = Value; }
+  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = value_; }
 
   //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
   virtual void setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
@@ -350,7 +357,7 @@ public:
     streaming_scalars    = false;
     streaming_particles  = false;
     have_required_traces = false;
-    request.reset();
+    request_.reset();
   }
 
   virtual void get_required_traces(TraceManager& tm){};
@@ -366,6 +373,20 @@ public:
   }
 
 protected:
+  ///set the current update mode
+  std::bitset<8> update_mode_;
+
+  ///current value
+  Return_t value_;
+
+  ///name of this object
+  std::string my_name_;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  ///whether traces are being collected
+  TraceRequest request_;
+#endif
+
   ///starting index of this object
   int myIndex;
 
@@ -387,19 +408,19 @@ protected:
   virtual bool put(xmlNodePtr cur) = 0;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_scalar_quantities() { request.contribute_scalar(myName); }
+  virtual void contribute_scalar_quantities() { request_.contribute_scalar(my_name_); }
 
   virtual void checkout_scalar_quantities(TraceManager& tm)
   {
-    streaming_scalars = request.streaming_scalar(myName);
+    streaming_scalars = request_.streaming_scalar(my_name_);
     if (streaming_scalars)
-      value_sample = tm.checkout_real<1>(myName);
+      value_sample = tm.checkout_real<1>(my_name_);
   }
 
   virtual void collect_scalar_quantities()
   {
     if (streaming_scalars)
-      (*value_sample)(0) = Value;
+      (*value_sample)(0) = value_;
   }
 
   virtual void delete_scalar_quantities()
@@ -441,8 +462,8 @@ protected:
    */
   inline void addValue(PropertySetType& plist)
   {
-    if (!UpdateMode[COLLECTABLE])
-      myIndex = plist.add(myName.c_str());
+    if (!update_mode_[COLLECTABLE])
+      myIndex = plist.add(my_name_.c_str());
   }
 
 private:

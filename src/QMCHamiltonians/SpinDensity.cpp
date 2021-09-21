@@ -47,8 +47,8 @@ SpinDensity::SpinDensity(ParticleSet& P)
 
 void SpinDensity::reset()
 {
-  myName = "SpinDensity";
-  UpdateMode.set(COLLECTABLE, 1);
+  my_name_ = "SpinDensity";
+  update_mode_.set(COLLECTABLE, 1);
   corner = 0.0;
 }
 
@@ -66,7 +66,7 @@ bool SpinDensity::put(xmlNodePtr cur)
   reset();
   std::string write_report = "no";
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(my_name_, "name");
   attrib.add(write_report, "report");
   attrib.put(cur);
 
@@ -192,7 +192,7 @@ void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectable
 
 void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)

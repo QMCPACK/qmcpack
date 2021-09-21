@@ -35,7 +35,7 @@ void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
-  Value = 0.0;
+  value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
@@ -54,12 +54,12 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
       {
         RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
-        Value += pairpot;
+        value_ += pairpot;
         NeighborIons.push_back(iat);
         IonNeighborElecs.getNeighborList(iat).push_back(jel);
       }
   }
-  return Value;
+  return value_;
 }
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-OperatorBase::OperatorBase() : Dependants(0), Value(0.0), myIndex(-1), tWalker(0)
+OperatorBase::OperatorBase() : value_(0.0), myIndex(-1), tWalker(0)
 {
   quantum_domain = NO_QUANTUM_DOMAIN;
   energy_domain  = NO_ENERGY_DOMAIN;
@@ -32,8 +32,20 @@ OperatorBase::OperatorBase() : Dependants(0), Value(0.0), myIndex(-1), tWalker(0
   streaming_particles  = false;
   have_required_traces = false;
 #endif
-  UpdateMode.set(PRIMARY, 1);
+  update_mode_.set(PRIMARY, 1);
 }
+
+std::bitset<8>& OperatorBase::getUpdateMode() noexcept { return update_mode_; }
+
+OperatorBase::Return_t OperatorBase::getValue() const noexcept { return value_; }
+
+std::string OperatorBase::getMyName() const noexcept { return my_name_; }
+
+void OperatorBase::setMyName(const std::string name) noexcept { my_name_ = name; }
+
+#if !defined(REMOVE_TRACEMANAGER)
+TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
+#endif
 
 /** The correct behavior of this routine requires estimators with non-deterministic components
  * in their evaluate() function to override this function.
@@ -163,17 +175,17 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
   if (myclone)
   {
-    targetH.addOperator(std::move(myclone), myName, UpdateMode[PHYSICAL]);
+    targetH.addOperator(std::move(myclone), my_name_, update_mode_[PHYSICAL]);
   }
 }
 
 void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  bool collect = UpdateMode.test(COLLECTABLE);
+  bool collect = update_mode_.test(COLLECTABLE);
   //exclude collectables
   if (!collect)
   {
-    h5desc.emplace_back(myName);
+    h5desc.emplace_back(my_name_);
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
     oh.set_dimensions(onedim, myIndex);
@@ -183,7 +195,7 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
 
 void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  APP_ABORT("Need specialization for " + myName +
+  APP_ABORT("Need specialization for " + my_name_ +
             "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
 }
 

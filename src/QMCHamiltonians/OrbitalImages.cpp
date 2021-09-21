@@ -74,7 +74,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   app_log() << "OrbitalImages::put" << std::endl;
 
   //set defaults
-  myName      = "OrbitalImages";
+  my_name_    = "OrbitalImages";
   derivatives = false;
   center_grid = false;
   corner      = 0.0;
@@ -84,7 +84,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   std::string write_report = "yes";
   std::string ion_psname   = "ion0";
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(my_name_, "name");
   attrib.add(ion_psname, "ions");
   attrib.add(write_report, "report");
   attrib.put(cur);

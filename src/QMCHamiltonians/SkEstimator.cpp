@@ -23,7 +23,7 @@ namespace qmcplusplus
 SkEstimator::SkEstimator(ParticleSet& source)
 {
   sourcePtcl = &source;
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   NumSpecies = source.getSpeciesSet().getTotalNum();
   NumK       = source.SK->getKLists().numk;
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());
@@ -142,7 +142,7 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
   if (hdf5_out)
   {
     std::vector<int> ndim(1, NumK);
-    h5desc.emplace_back(myName);
+    h5desc.emplace_back(my_name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, myIndex);
     h5o.open(gid);
@@ -150,7 +150,7 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
     hsize_t kdims[2];
     kdims[0]          = NumK;
     kdims[1]          = OHMMS_DIM;
-    std::string kpath = myName + "/kpoints";
+    std::string kpath = my_name_ + "/kpoints";
     hid_t k_space     = H5Screate_simple(2, kdims, NULL);
     hid_t k_set       = H5Dcreate(gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
     hid_t mem_space   = H5Screate_simple(2, kdims, NULL);

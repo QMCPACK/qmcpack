@@ -29,7 +29,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   ions          = &source;
   NumeSpecies   = elns->getSpeciesSet().getTotalNum();
   NumIonSpecies = ions->getSpeciesSet().getTotalNum();
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
 
   NumK      = source.SK->getKLists().numk;
   OneOverN  = 1.0 / static_cast<RealType>(source.getTotalNum());
@@ -175,9 +175,9 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
   {
     for (int k = 0, count = 0; k < NumK; k++)
     {
-      value[NumK + count] = w * rhok[k].real();
+      value_[NumK + count] = w * rhok[k].real();
       count++;
-      value[NumK + count] = w * rhok[k].imag();
+      value_[NumK + count] = w * rhok[k].imag();
       count++;
     }
   }
@@ -273,7 +273,7 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   if (hdf5_out)
   {
     // Create HDF group in stat.h5 with SkAllEstimator's name
-    hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+    hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
 
     // Add k-point information
     h5desc.emplace_back("kpoints");

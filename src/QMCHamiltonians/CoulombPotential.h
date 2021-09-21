@@ -81,7 +81,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     {
       if (!copy)
         s.update();
-      Value = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
+      value_ = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
       if (ComputeForces)
         evaluateAAForces(s.getDistTable(myTableIndex), s.Z.first_address());
     }
@@ -108,17 +108,17 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override { request.contribute_array(myName); }
+  void contribute_particle_quantities() override { request_.contribute_array(my_name_); }
 
   void checkout_particle_quantities(TraceManager& tm) override
   {
-    streaming_particles = request.streaming_array(myName);
+    streaming_particles = request_.streaming_array(my_name_);
     if (streaming_particles)
     {
-      Va_sample = tm.checkout_real<1>(myName, Pa);
+      Va_sample = tm.checkout_real<1>(my_name_, Pa);
       if (!is_AA)
       {
-        Vb_sample = tm.checkout_real<1>(myName, Pb);
+        Vb_sample = tm.checkout_real<1>(my_name_, Pb);
       }
       else if (!is_active)
         evaluate_spAA(Pa.getDistTable(myTableIndex), Pa.Z.first_address());
@@ -327,7 +327,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   {
     if (is_AA)
     {
-      Value = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
+      value_ = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
     }
   }
 
@@ -336,11 +336,11 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     if (is_active)
     {
       if (is_AA)
-        Value = evaluateAA(P.getDistTable(myTableIndex), P.Z.first_address());
+        value_ = evaluateAA(P.getDistTable(myTableIndex), P.Z.first_address());
       else
-        Value = evaluateAB(P.getDistTable(myTableIndex), Pa.Z.first_address(), P.Z.first_address());
+        value_ = evaluateAB(P.getDistTable(myTableIndex), Pa.Z.first_address(), P.Z.first_address());
     }
-    return Value;
+    return value_;
   }
 
   inline Return_t evaluateWithIonDerivs(ParticleSet& P,
@@ -350,10 +350,10 @@ struct CoulombPotential : public OperatorBase, public ForceBase
                                         ParticleSet::ParticlePos_t& pulay_terms) override
   {
     if (is_active)
-      Value = evaluate(P); // No forces for the active
+      value_ = evaluate(P); // No forces for the active
     else
       hf_terms -= forces; // No Pulay here
-    return Value;
+    return value_;
   }
 
   bool put(xmlNodePtr cur) override { return true; }
@@ -406,17 +406,17 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       {
         W.loadWalker(*walkers[iw], false);
         W.update();
-        Value                                                       = evaluate(W);
-        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
-        LocalEnergy[iw] += Value;
+        value_                                                      = evaluate(W);
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = value_;
+        LocalEnergy[iw] += value_;
       }
     }
     else
       // assuminig the same results for all the walkers when the set is not active
       for (int iw = 0; iw < LocalEnergy.size(); iw++)
       {
-        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
-        LocalEnergy[iw] += Value;
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = value_;
+        LocalEnergy[iw] += value_;
       }
   }
 };
