@@ -405,8 +405,6 @@ public:
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
-    //ensure there are neighbors
-    assert(N_sources > 1);
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
     if (newpos)
@@ -437,6 +435,7 @@ public:
         dr = displacements_[iat][index];
       }
     }
+    assert(index >= 0 && index < N_sources);
     return index;
   }
 
