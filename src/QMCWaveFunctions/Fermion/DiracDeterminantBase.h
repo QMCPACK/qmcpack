@@ -70,9 +70,6 @@ public:
   virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
 #endif
 
-  ///set BF pointers
-  virtual void setBF(std::shared_ptr<BackflowTransformation> BFTrans) {}
-
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
