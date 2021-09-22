@@ -15,13 +15,10 @@ target_link_libraries(container_testing utilities_for_test containers)
 # This test is always built and works due to openmp pragmas becoming no ops
 # even in versions of the code that do not use OMPAllocator.
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR dualallocators)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/integration)
-
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-integration_${SRC_DIR})
@@ -33,5 +30,5 @@ add_executable(${UTEST_EXE} ${INTEGRATION_TEST_SRC})
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries(${UTEST_EXE} catch_main containers container_testing platform_LA utilities_for_test)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})

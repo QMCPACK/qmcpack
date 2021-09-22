@@ -9,7 +9,7 @@
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR estimators)
 set(UTEST_EXE test_${SRC_DIR})
@@ -47,7 +47,7 @@ if(USE_OBJECT_TARGET)
 endif()
 
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 
 if(HAVE_MPI)
   set(UTEST_EXE test_${SRC_DIR}_mpi)
@@ -69,5 +69,5 @@ if(HAVE_MPI)
   endif()
   target_link_libraries(${UTEST_EXE} catch_main qmcestimators_unit)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  add_unit_test(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

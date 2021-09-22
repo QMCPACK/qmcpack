@@ -26,11 +26,6 @@ set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_CMAKE})
 include(macros)
 
-#--------------------------------------------------------------------
-# Paths for library and executable for out-of-soruce compilation
-#--------------------------------------------------------------------
-set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
-
 ######################################################################
 # Build and install options
 ######################################################################
