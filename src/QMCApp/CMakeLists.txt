@@ -30,7 +30,7 @@ target_link_libraries(qmc PUBLIC qmcdriver)
 # QMCPACK application
 ####################################
 add_executable(qmcpack qmcapp.cpp)
-
+set_target_properties(qmcpack PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${qmcpack_BINARY_DIR}/bin)
 if(QMC_COMPLEX)
   set_target_properties(qmcpack PROPERTIES OUTPUT_NAME "qmcpack_complex")
 endif(QMC_COMPLEX)
