@@ -15,3 +15,7 @@ add_library(qmcio_hdf ${IO_HDF5_SRC})
 
 #TARGET_INCLUDE_DIRECTORIES(qmcio_hdf PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcio_hdf PUBLIC containers IO::HDF5 message)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
