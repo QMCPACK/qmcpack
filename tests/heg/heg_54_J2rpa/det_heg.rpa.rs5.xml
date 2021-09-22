@@ -23,7 +23,7 @@ xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <determinantset type="electron-gas" shell="3" twist="0.25 0.25 0.25"/>
+      <determinantset type="electron-gas" shell="3" twist="0.22 0.23 0.24"/>
       <jastrow name="Jee" type="Two-Body" spin="yes" function="rpa">
       </jastrow>
     </wavefunction>
