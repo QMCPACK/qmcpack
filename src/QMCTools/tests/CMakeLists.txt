@@ -9,7 +9,6 @@
 #// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR tools)
 set(UTEST_EXE test_${SRC_DIR})

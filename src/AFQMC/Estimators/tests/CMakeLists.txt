@@ -9,7 +9,6 @@
 #// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR afqmc_estimators)
 set(UTEST_EXE test_${SRC_DIR})

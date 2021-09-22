@@ -11,7 +11,6 @@
 
 message(VERBOSE "Adding test test_sharedwset")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR afqmc_walkers)
 set(UTEST_EXE test_${SRC_DIR})

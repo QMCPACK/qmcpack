@@ -9,7 +9,6 @@
 #// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(UTEST_EXE test_containers_MinimalContainers)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 

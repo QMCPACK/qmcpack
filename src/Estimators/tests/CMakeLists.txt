@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR estimators)
 set(UTEST_EXE test_${SRC_DIR})

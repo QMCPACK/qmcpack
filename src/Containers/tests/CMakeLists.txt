@@ -15,7 +15,6 @@ target_link_libraries(container_testing utilities_for_test containers)
 # This test is always built and works due to openmp pragmas becoming no ops
 # even in versions of the code that do not use OMPAllocator.
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR dualallocators)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})

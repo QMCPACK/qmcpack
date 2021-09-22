@@ -11,7 +11,6 @@
 
 message(VERBOSE "Adding AFQMC Slater Determinant Operations unit tests")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(SRC_DIR afqmc_slaterdeterminantoperations)
 set(UTEST_EXE test_${SRC_DIR})
