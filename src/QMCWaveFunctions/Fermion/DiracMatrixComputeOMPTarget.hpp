@@ -45,8 +45,8 @@ class DiracMatrixComputeOMPTarget : public Resource
 {
 public:
   using FullPrecReal = RealAlias<VALUE_FP>;
-  using LogValue = std::complex<FullPrecReal>;
-  
+  using LogValue     = std::complex<FullPrecReal>;
+
   // This class only works with OMPallocator so explicitly call OffloadAllocator what it
   // is and not DUAL
   template<typename T>
@@ -118,10 +118,7 @@ private:
    * \param[out]   log_value  log a_mat before inversion
    */
   template<typename TMAT>
-  inline void computeInvertAndLog(OffloadPinnedMatrix<TMAT>& a_mat,
-                                  const int n,
-                                  const int lda,
-                                  LogValue& log_value)
+  inline void computeInvertAndLog(OffloadPinnedMatrix<TMAT>& a_mat, const int n, const int lda, LogValue& log_value)
   {
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
@@ -175,11 +172,10 @@ public:
    *                                  DiracMatrixComputeCUDA but is fine for OMPTarget        
    */
   template<typename TMAT>
-  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(
-      HandleResource& resource,
-      const OffloadPinnedMatrix<TMAT>& a_mat,
-      OffloadPinnedMatrix<TMAT>& inv_a_mat,
-      LogValue& log_value)
+  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
+                                                                                const OffloadPinnedMatrix<TMAT>& a_mat,
+                                                                                OffloadPinnedMatrix<TMAT>& inv_a_mat,
+                                                                                LogValue& log_value)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
@@ -196,11 +192,10 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT>
-  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(
-      HandleResource& resource,
-      const OffloadPinnedMatrix<TMAT>& a_mat,
-      OffloadPinnedMatrix<TMAT>& inv_a_mat,
-      LogValue& log_value)
+  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
+                                                                                 const OffloadPinnedMatrix<TMAT>& a_mat,
+                                                                                 OffloadPinnedMatrix<TMAT>& inv_a_mat,
+                                                                                 LogValue& log_value)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
@@ -224,7 +219,7 @@ public:
    */
   template<typename TMAT>
   inline void mw_invertTranspose(HandleResource& resource,
-                                 RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
+                                 RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
                                  RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values,
                                  const std::vector<bool>& recompute)

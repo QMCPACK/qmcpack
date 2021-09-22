@@ -70,7 +70,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   OffloadPinnedMatrix<double> inv_mat_a2;
   inv_mat_a2.resize(4, 4);
 
-  RefVector<const OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
+  RefVector<OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
   log_values.resize(2);
@@ -93,7 +93,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
 
   a_mats[1] = mat_a3;
 
-  RefVector<const OffloadPinnedMatrix<double>> a_mats3{mat_a, mat_a2, mat_a3};
+  RefVector<OffloadPinnedMatrix<double>> a_mats3{mat_a, mat_a2, mat_a3};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats3{inv_mat_a, inv_mat_a2, inv_mat_a3};
 
   log_values.resize(3);
@@ -147,7 +147,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
   OffloadPinnedMatrix<double> inv_mat_a2;
   inv_mat_a2.resize(n, n);
 
-  RefVector<const OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
+  RefVector<OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
 

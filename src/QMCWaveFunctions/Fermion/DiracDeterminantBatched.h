@@ -279,7 +279,7 @@ private:
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
   void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                     RefVector<const DualMatrix<Value>>& logdetT_list,
+                     RefVector<DualMatrix<Value>>& logdetT_list,
                      RefVector<DualMatrix<Value>>& a_inv_list,
                      const std::vector<bool>& compute_mask) const;
 
@@ -311,7 +311,7 @@ private:
   const int ndelay_;
 
   /// timers
-  NewTimer &D2HTimer, &H2DTimer;
+  NewTimer &D2HTimer, &H2DTimer, &batched_inverse_timer_;
 };
 
 extern template class DiracDeterminantBatched<>;

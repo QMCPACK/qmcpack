@@ -44,8 +44,8 @@ template<typename VALUE_FP>
 class DiracMatrixComputeCUDA : public Resource
 {
   using FullPrecReal = RealAlias<VALUE_FP>;
-  using LogValue = std::complex<FullPrecReal>;
-  
+  using LogValue     = std::complex<FullPrecReal>;
+
   template<typename T>
   using DualMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
@@ -102,7 +102,7 @@ class DiracMatrixComputeCUDA : public Resource
     int ldinv = inv_a_mats[0].get().cols();
     Vector<const VALUE_FP*> M_ptr_buffer(reinterpret_cast<const TMAT**>(psiM_ptrs_.data()), nw);
     Vector<const VALUE_FP*> invM_ptr_buffer(reinterpret_cast<const TMAT**>(invM_ptrs_.data()), nw);
-    cudaStream_t hstream = cuda_handles.hstream;
+    cudaStream_t hstream    = cuda_handles.hstream;
     cublasHandle_t h_cublas = cuda_handles.h_cublas;
 
     for (int iw = 0; iw < nw; ++iw)
@@ -141,9 +141,8 @@ class DiracMatrixComputeCUDA : public Resource
                                      inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::inv_psiM to host");
     }
-    cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),
-                                   log_values.size() * sizeof(LogValue), cudaMemcpyDeviceToHost,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(), log_values.size() * sizeof(LogValue),
+                                   cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
   }
@@ -182,7 +181,7 @@ class DiracMatrixComputeCUDA : public Resource
     infos_.resize(nw);
     LU_diags_fp_.resize(n * nw);
 
-    cudaStream_t hstream = cuda_handles.hstream;
+    cudaStream_t hstream    = cuda_handles.hstream;
     cublasHandle_t h_cublas = cuda_handles.h_cublas;
     cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, hstream),
@@ -210,9 +209,8 @@ class DiracMatrixComputeCUDA : public Resource
     cudaErrorCheck(cudaMemcpyAsync(inv_Ms.data(), inv_Ms.device_data(), inv_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed copying back DiracMatrixBatch::invM_fp from device");
-    cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),
-                                   log_values.size() * sizeof(LogValue), cudaMemcpyDeviceToHost,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(), log_values.size() * sizeof(LogValue),
+                                   cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
   }
@@ -242,15 +240,14 @@ public:
                         DualMatrix<TMAT>& inv_a_mat,
                         DualVector<LogValue>& log_values)
   {
-    const int n        = a_mat.rows();
-    const int lda      = a_mat.cols();
+    const int n   = a_mat.rows();
+    const int lda = a_mat.cols();
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
     std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
-    cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(),
-                                   log_values.size() * sizeof(LogValue), cudaMemcpyHostToDevice,
-                                   cuda_handles.hstream),
+    cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(LogValue),
+                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(VALUE_FP),
@@ -282,21 +279,20 @@ public:
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
-    int nw             = a_mats.size();
-    const int n        = a_mats[0].get().rows();
-    const int lda      = a_mats[0].get().cols();
-    size_t nsqr        = n * n;
+    int nw        = a_mats.size();
+    const int n   = a_mats[0].get().rows();
+    const int lda = a_mats[0].get().cols();
+    size_t nsqr   = n * n;
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);
     std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
-    cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(),
-                                   log_values.size() * sizeof(LogValue), cudaMemcpyHostToDevice,
-                                   cuda_handles.hstream),
+    cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(LogValue),
+                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
-    mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
+    mw_computeInvertAndLog(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
       DualMatrix<VALUE_FP> data_ref_matrix;
@@ -313,8 +309,8 @@ public:
 
   /** Batched inversion and calculation of log determinants.
    *  When TMAT is full precision we can use the a_mat and inv_mat directly
-   *  Side effect of this is after this call a_mats contains the LU factorization
-   *  matrix.
+   *  Side effect of this is after this call the device copy of  a_mats contains
+   *  the LU factorization matrix.
    */
   template<typename TMAT>
   inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
