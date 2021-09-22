@@ -530,7 +530,13 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
   ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
-  const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
+  RealType threshold;
+  // mixed precision can't make this test with cuda direct inversion
+  if constexpr (std::is_same<RealType, FullPrecRealType>::value)
+    threshold = 100 * std::numeric_limits<float>::epsilon();
+  else
+    threshold = 0.5e-5;
+
   for (int iw = 0; iw < log_values.size(); iw++)
   {
     auto& ref_G = walker_twfs[iw].G;
