@@ -15,3 +15,7 @@ add_library(qmcio_xml ${IO_XML_SRC})
 
 #TARGET_INCLUDE_DIRECTORIES(qmcio_xml PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcio_xml PUBLIC containers LibXml2::LibXml2)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
