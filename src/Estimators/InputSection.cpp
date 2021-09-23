@@ -65,7 +65,7 @@ void InputSection::readXML(xmlNodePtr cur)
   check_valid();
 
   //report();
-};
+}
 
 
 void InputSection::init(const std::unordered_map<std::string, std::any>& init_values)
@@ -81,7 +81,7 @@ void InputSection::init(const std::unordered_map<std::string, std::any>& init_va
   check_valid();
 
   //report();
-};
+}
 
 
 void InputSection::set_defaults()
@@ -89,7 +89,7 @@ void InputSection::set_defaults()
   for (auto& [name, default_value] : default_values)
     if (!has(name))
       set_from_value(name, default_value);
-};
+}
 
 
 void InputSection::set_from_stream(const std::string& name, std::istringstream& svalue)
@@ -125,7 +125,7 @@ void InputSection::set_from_stream(const std::string& name, std::istringstream& 
     error << "InputSection::set_from_stream name " << name << " in " << section_name << " does not have a type\n";
     throw UniformCommunicateError(error.str());
   }
-};
+}
 
 template<typename T>
 void InputSection::set_from_value(const std::string& name, const T& value)
@@ -144,7 +144,7 @@ void InputSection::set_from_value(const std::string& name, const T& value)
     error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
     throw UniformCommunicateError(error.str());
   }
-};
+}
 
 
 void InputSection::check_valid()
@@ -158,7 +158,7 @@ void InputSection::check_valid()
             << " has not been assigned\n";
       throw UniformCommunicateError(error.str());
     }
-};
+}
 
 
 void InputSection::report() const
@@ -178,7 +178,7 @@ void InputSection::report() const
       out << std::any_cast<Real>(value);
   }
   out << "\n\n";
-};
+}
 
 
 } // namespace qmcplusplus
