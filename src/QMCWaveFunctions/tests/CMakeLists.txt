@@ -10,10 +10,9 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR wavefunction)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/${SRC_DIR})
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
@@ -24,7 +23,7 @@ set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_
 set(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5)
 set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h5)
 set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
@@ -125,7 +124,7 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()
 
@@ -141,7 +140,7 @@ if(ENABLE_CUDA)
     target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
   endif()
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
 
 if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
@@ -156,5 +155,5 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   endif()
 #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

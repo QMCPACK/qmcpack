@@ -38,7 +38,7 @@ public:
   typedef SPOSet::GradMatrix_t GradMatrix_t;
   typedef ParticleSet::Walker_t Walker_t;
 
-  DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first = 0);
+  DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:

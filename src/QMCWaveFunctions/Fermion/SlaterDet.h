@@ -33,23 +33,17 @@ namespace qmcplusplus
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminantBase Determinant_t;
+  using Determinant_t = DiracDeterminantBase;
   ///container for the DiracDeterminants
-  std::vector<std::unique_ptr<Determinant_t>> Dets;
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
 
   /**  constructor
    * @param targetPtcl target Particleset
    */
-  SlaterDet(ParticleSet& targetPtcl, const std::string& class_name = "SlaterDet");
+  SlaterDet(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, const std::string& class_name = "SlaterDet");
 
   ///destructor
   ~SlaterDet() override;
-
-  ///add a new DiracDeterminant to the list of determinants
-  virtual void add(std::unique_ptr<Determinant_t> det, int ispin);
-
-  ///set BF pointers
-  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   void checkInVariables(opt_variables_type& active) override;
 
@@ -190,7 +184,7 @@ public:
     // having log_value_ as a data member asks for this sort of consistency issue when wfc can contain wfc.
     for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
-        wfc_list[iw].log_value() = czero;
+        wfc_list.getCastedElement<SlaterDet>(iw).log_value_ = czero;
 
     for (int i = 0; i < Dets.size(); ++i)
     {
@@ -201,7 +195,7 @@ public:
 
       for (int iw = 0; iw < wfc_list.size(); iw++)
         if (isAccepted[iw])
-          wfc_list[iw].log_value() += Det_list[iw].get_log_value();
+          wfc_list.getCastedElement<SlaterDet>(iw).log_value_ += Det_list[iw].get_log_value();
     }
   }
 

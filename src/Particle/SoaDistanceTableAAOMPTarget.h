@@ -30,9 +30,6 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  ///number of targets with padding
-  int Ntargets_padded;
-
   ///actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
 
@@ -50,7 +47,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///multi walker shared memory buffer
   struct DTAAMultiWalkerMem : public Resource
   {
-    ///dist displ
+    ///dist displ for temporary and old pairs
     Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
 
     Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list;
@@ -67,6 +64,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target, DTModes::ALL_OFF),
+        Ntargets_padded(getAlignedSize<T>(N_targets)),
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
@@ -98,7 +96,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void resize()
   {
     // initialize memory containers and views
-    Ntargets_padded         = getAlignedSize<T>(N_targets);
     const size_t total_size = compute_size(N_targets);
     memory_pool_.resize(total_size * (1 + D));
     distances_.resize(N_targets);
@@ -111,9 +108,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     old_r_mem_.resize(N_targets);
     old_dr_mem_.resize(N_targets);
-    // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
-    // temp_r_ is padded explicitly while temp_dr_ is padded internally
-    temp_r_mem_.resize(Ntargets_padded);
+    temp_r_mem_.resize(N_targets);
     temp_dr_mem_.resize(N_targets);
   }
 
@@ -202,7 +197,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
 
-    assert((prepare_old && iat >=0 && iat < N_targets) || !prepare_old);
+    assert((prepare_old && iat >= 0 && iat < N_targets) || !prepare_old);
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            N_targets, iat);
     // set up old_r_ and old_dr_ for moves may get accepted.
@@ -287,8 +282,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
-                                                            iel, activePtcl_local);
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, N_sources_padded, r_iw_ptr, dr_iw_ptr,
+                                                            N_sources_padded, iel, activePtcl_local);
           }
 
           if (prepare_old)
@@ -302,8 +297,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
-                                                            iel, iat);
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, N_sources_padded, r_iw_ptr, dr_iw_ptr,
+                                                            N_sources_padded, iel, iat);
             r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }
         }
@@ -358,16 +353,15 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   }
 
   /** After accepting the iat-th particle, update the iat-th row of distances_ and displacements_.
-   * Since the upper triangle is not needed in the later computation,
-   * only the [0,iat-1) columns need to save the new values.
-   * The memory copy goes up to the padded size only for better performance.
+   * Upper triangle is not needed in the later computation and thus not updated
    */
   inline void update(IndexType iat) override
   {
     ScopedTimer local_timer(update_timer_);
-    //update by a cache line
-    const int nupdate = getAlignedSize<T>(iat);
+    //update [0, iat) columns
+    const int nupdate = iat;
     //copy row
+    assert(nupdate <= temp_r_.size());
     std::copy_n(temp_r_.data(), nupdate, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), nupdate, displacements_[iat].data(idim));
@@ -383,11 +377,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   {
     ScopedTimer local_timer(update_timer_);
 
-    //update by a cache line
-    const int nupdate = getAlignedSize<T>(jat);
+    //update [0, jat)
+    const int nupdate = jat;
     if (from_temp)
     {
       //copy row
+      assert(nupdate <= temp_r_.size());
       std::copy_n(temp_r_.data(), nupdate, distances_[jat].data());
       for (int idim = 0; idim < D; ++idim)
         std::copy_n(temp_dr_.data(idim), nupdate, displacements_[jat].data(idim));
@@ -396,6 +391,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     {
       assert(old_prepared_elec_id == jat);
       //copy row
+      assert(nupdate <= old_r_.size());
       std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
       for (int idim = 0; idim < D; ++idim)
         std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
@@ -425,6 +421,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   }
 
 private:
+  ///number of targets with padding
+  const int Ntargets_padded;
   /// timer for offload portion
   NewTimer& offload_timer_;
   /// timer for evaluate()

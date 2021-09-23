@@ -28,7 +28,7 @@ namespace qmcplusplus
 MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
     : M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   psi_ratios.resize(elns.getTotalNum());
   twist = elns.getTwist();
 }
@@ -107,7 +107,7 @@ void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5de
     h5o.set_dimensions(ng, myIndex);
     h5o.open(gid);
     h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");    
+    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
   }
 }
 

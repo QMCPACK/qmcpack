@@ -26,14 +26,14 @@ namespace qmcplusplus
 EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   defKE      = defaultKE;
   nsamples   = 0;
   ion_points = false;
   nions      = -1;
-  request.request_scalar("weight");
-  request.request_array("Kinetic");
-  request.request_array("LocalPotential");
+  request_.request_scalar("weight");
+  request_.request_array("Kinetic");
+  request_.request_array("LocalPotential");
 }
 
 
@@ -53,11 +53,11 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
 {
   input_xml = cur;
   //initialize simple xml attributes
-  myName = "EnergyDensity";
+  name_ = "EnergyDensity";
   std::string dyn, stat = "";
   ion_points = false;
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(name_, "name");
   attrib.add(dyn, "dynamic");
   attrib.add(stat, "static");
   attrib.add(ion_points, "ion_points");
@@ -480,7 +480,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 
 void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t g = H5Gcreate(gid, myName.c_str(), 0);
+  hid_t g = H5Gcreate(gid, name_.c_str(), 0);
   h5desc.emplace_back("variables");
   auto& oh = h5desc.back();
   oh.open(g);

@@ -50,10 +50,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet& ptcl,
-                               std::shared_ptr<SPOSet>&& spos,
-                               std::shared_ptr<BackflowTransformation> BF,
-                               int first = 0);
+  DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos, BackflowTransformation& BF, int first, int last);
 
   ///default destructor
   ~DiracDeterminantWithBackflow() override;
@@ -61,20 +58,6 @@ public:
   // copy constructor and assign operator disabled
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
-
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   *@param delay dummy argument
-   */
-  void set(int first, int nel, int delay = 1) final
-  {
-    FirstIndex = first;
-    resize(nel, nel);
-  }
-
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf) override { BFTrans = std::move(bf); }
 
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
@@ -96,9 +79,6 @@ public:
                            Matrix<RealType>& dlogpsi,
                            Array<GradType, OHMMS_DIM>& dG,
                            Matrix<RealType>& dL) override;
-
-  ///reset the size: with the number of particles and number of orbtials
-  void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -132,7 +112,9 @@ public:
    */
   void restore(int iat) override;
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -141,7 +123,24 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo, BackflowTransformation& BF) const;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  {
+    throw std::runtime_error("makeCopy spo should not be called.");
+    return nullptr;
+  }
+
+  void testDerivFjj(ParticleSet& P, int pa);
+  void testGGG(ParticleSet& P);
+  void testGG(ParticleSet& P);
+  void testDerivLi(ParticleSet& P, int pa);
+  void testL(ParticleSet& P);
+
+  BackflowTransformation& BFTrans_;
+
+private:
+  ///reset the size: with the number of particles and number of orbtials
+  void resize(int nel, int morb);
 
   inline ValueType rcdot(TinyVector<RealType, OHMMS_DIM>& lhs, TinyVector<ValueType, OHMMS_DIM>& rhs)
   {
@@ -150,6 +149,7 @@ public:
       ret += lhs[i] * rhs[i];
     return ret;
   };
+
 #ifdef QMC_COMPLEX
   inline ValueType rcdot(TinyVector<ValueType, OHMMS_DIM>& lhs, TinyVector<RealType, OHMMS_DIM>& rhs)
   {
@@ -159,6 +159,7 @@ public:
     return ret;
   };
 #endif
+
   ///total number of particles. Ye: used to track first time allocation but I still feel it very strange.
   int NP;
   int NumParticles;
@@ -167,7 +168,6 @@ public:
   HessVector_t grad_gradV;
   HessMatrix_t grad_grad_psiM_temp;
   GGGMatrix_t grad_grad_grad_psiM;
-  std::shared_ptr<BackflowTransformation> BFTrans;
   ParticleSet::ParticleGradient_t Gtemp;
   ValueType La1, La2, La3;
   HessMatrix_t Ajk_sum, Qmat;
@@ -209,13 +209,7 @@ public:
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
 
-  void testDerivFjj(ParticleSet& P, int pa);
-  void testGGG(ParticleSet& P);
-  void testGG(ParticleSet& P);
-  void testDerivLi(ParticleSet& P, int pa);
-  void testL(ParticleSet& P);
   void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
-
 
   void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
   void evaluate_SPO(ValueMatrix_t& logdet,

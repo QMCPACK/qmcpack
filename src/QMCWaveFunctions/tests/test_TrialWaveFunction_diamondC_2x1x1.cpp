@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "QMCHamiltonians/NLPPJob.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -35,13 +36,20 @@ struct double_tag
 struct float_tag
 {};
 
+/** Templated test of TrialWF with different DiracDet flavors.
+ *  If QMC_CUDA there is no testing converage beyond setup.
+ *  \todo at the very least the prepocessor define QMC_CUDA shouldn't be 
+ *  used and a constexpr based on DeterminantTypes that actually depend on legacy cuda.
+ */
 template<class DiracDet, class SPO_precision>
 void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 {
 #if defined(MIXED_PRECISION)
-  const double precision = 1e-4;
+  const double grad_precision  = 1e-4;
+  const double ratio_precision = 2e-4;
 #else
-  const double precision = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
+  const double grad_precision               = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
+  const double ratio_precision              = std::is_same<SPO_precision, float_tag>::value ? 2e-4 : 1e-5;
 #endif
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
@@ -102,7 +110,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec_.addTable(ions_);
+  const int ei_table_index = elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 
@@ -135,15 +143,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto det_up_uptr = std::make_unique<DiracDet>(spo->makeClone());
-  auto det_up      = det_up_uptr.get();
-  det_up->set(0, 2, ndelay);
-  auto det_dn = std::make_unique<DiracDet>(spo->makeClone());
-  det_dn->set(2, 2, ndelay);
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
+  auto det_up_ptr = std::make_unique<DiracDet>(spo->makeClone(), 0, 2, ndelay);
+  auto det_up     = det_up_ptr.get();
+  dets.push_back(std::move(det_up_ptr));
+  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4, ndelay));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_);
-  slater_det->add(std::move(det_up_uptr), 0);
-  slater_det->add(std::move(det_dn), 1);
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
 
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));
@@ -291,19 +297,19 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031926441)).epsilon(precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031928415)).epsilon(precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032018344)).epsilon(precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(118.02653358655, -0.0022419843505538)).epsilon(precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655, -0.0022419843498631)).epsilon(precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634, 0.0022419843493758)).epsilon(precision));
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031926441)).epsilon(grad_precision));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031928415)).epsilon(grad_precision));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032018344)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(118.02653358655, -0.0022419843505538)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655, -0.0022419843498631)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634, 0.0022419843493758)).epsilon(grad_precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(713.69119517454).epsilon(2. * precision));
-  REQUIRE(grad_old[0][1] == Approx(713.69119517455).epsilon(2. * precision));
-  REQUIRE(grad_old[0][2] == Approx(-768.40759023681).epsilon(2. * precision));
-  REQUIRE(grad_old[1][0] == Approx(118.0287755709).epsilon(precision));
-  REQUIRE(grad_old[1][1] == Approx(118.0287755709).epsilon(precision));
-  REQUIRE(grad_old[1][2] == Approx(-118.46550094069).epsilon(precision));
+  REQUIRE(grad_old[0][0] == Approx(713.69119517454).epsilon(2. * grad_precision));
+  REQUIRE(grad_old[0][1] == Approx(713.69119517455).epsilon(2. * grad_precision));
+  REQUIRE(grad_old[0][2] == Approx(-768.40759023681).epsilon(2. * grad_precision));
+  REQUIRE(grad_old[1][0] == Approx(118.0287755709).epsilon(grad_precision));
+  REQUIRE(grad_old[1][1] == Approx(118.0287755709).epsilon(grad_precision));
+  REQUIRE(grad_old[1][2] == Approx(-118.46550094069).epsilon(grad_precision));
 #endif
   PosType delta_sign_changed(0.1, 0.1, -0.2);
   std::vector<PosType> displs{delta_sign_changed, delta_sign_changed};
@@ -311,23 +317,23 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
-  GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
-  std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
-            << grad_temp[1] << " " << grad_temp[2] << std::endl;
+    ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
+    GradType grad_temp;
+    ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
+    std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
+              << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
-  REQUIRE(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
-  REQUIRE(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
-  REQUIRE(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
-  REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
+    REQUIRE(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
+    REQUIRE(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
+    REQUIRE(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
+    REQUIRE(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
+    REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
 #else
-  REQUIRE(r_0 == Approx(253.71904054638).epsilon(2e-4));
-  REQUIRE(r_1 == Approx(36.915700247239));
-  REQUIRE(grad_temp[0] == Approx(1.4564444046733));
-  REQUIRE(grad_temp[1] == Approx(1.4564444046734));
-  REQUIRE(grad_temp[2] == Approx(-1.2928240654738));
+    REQUIRE(r_0 == Approx(253.71904054638).epsilon(2e-4));
+    REQUIRE(r_1 == Approx(36.915700247239));
+    REQUIRE(grad_temp[0] == Approx(1.4564444046733));
+    REQUIRE(grad_temp[1] == Approx(1.4564444046734));
+    REQUIRE(grad_temp[2] == Approx(-1.2928240654738));
 #endif
   }
 
@@ -356,12 +362,12 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
+    ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+    ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
-            << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
+    std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+              << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
+              << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
@@ -371,22 +377,22 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)).epsilon(5e-5));
-  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031942702)).epsilon(precision));
-  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031944677)).epsilon(precision));
-  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032035842)).epsilon(precision));
+  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031942702)).epsilon(grad_precision));
+  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031944677)).epsilon(grad_precision));
+  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032035842)).epsilon(grad_precision));
   REQUIRE(ratios[1] == ComplexApprox(ValueType(0.12487384604679, 0)));
-  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(713.71203320656, 0.020838031892613)).epsilon(precision));
-  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(713.71203320657, 0.020838031894628)).epsilon(precision));
-  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-768.42842826892, -0.020838031981896)).epsilon(precision));
+  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(713.71203320656, 0.020838031892613)).epsilon(grad_precision));
+  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(713.71203320657, 0.020838031894628)).epsilon(grad_precision));
+  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-768.42842826892, -0.020838031981896)).epsilon(grad_precision));
 #else
   REQUIRE(ratios[0] == Approx(1).epsilon(5e-5));
-  REQUIRE(grad_new[0][0] == Approx(713.69119517463).epsilon(precision));
-  REQUIRE(grad_new[0][1] == Approx(713.69119517463).epsilon(precision));
-  REQUIRE(grad_new[0][2] == Approx(-768.40759023689).epsilon(precision));
+  REQUIRE(grad_new[0][0] == Approx(713.69119517463).epsilon(grad_precision));
+  REQUIRE(grad_new[0][1] == Approx(713.69119517463).epsilon(grad_precision));
+  REQUIRE(grad_new[0][2] == Approx(-768.40759023689).epsilon(grad_precision));
   REQUIRE(ratios[1] == Approx(0.12487384604697));
-  REQUIRE(grad_new[1][0] == Approx(713.69119517467).epsilon(precision));
-  REQUIRE(grad_new[1][1] == Approx(713.69119517468).epsilon(precision));
-  REQUIRE(grad_new[1][2] == Approx(-768.40759023695).epsilon(precision));
+  REQUIRE(grad_new[1][0] == Approx(713.69119517467).epsilon(grad_precision));
+  REQUIRE(grad_new[1][1] == Approx(713.69119517468).epsilon(grad_precision));
+  REQUIRE(grad_new[1][2] == Approx(-768.40759023695).epsilon(grad_precision));
 #endif
 
   std::vector<bool> isAccepted(2, true);
@@ -415,35 +421,35 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
             << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
 #if defined(MIXED_PRECISION)
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(grad_precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(precision));
-  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(precision));
+  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(grad_precision));
+  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(grad_precision));
+  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(grad_precision));
+  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(grad_precision));
+  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(grad_precision));
+  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(grad_precision));
 #endif
 #else
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(precision));
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(grad_precision));
 #else
-  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(precision));
-  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(precision));
-  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(precision));
-  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(precision));
+  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(grad_precision));
+  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(grad_precision));
+  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(grad_precision));
+  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(grad_precision));
+  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(grad_precision));
+  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(grad_precision));
 #endif
 #endif
 
@@ -477,6 +483,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   TrialWaveFunction::mw_completeUpdates(wf_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
+#ifndef NDEBUG
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
             << " " << std::endl;
@@ -491,6 +498,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
   REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
+#endif // NDEBUG
   std::vector<LogValueType> log_values(wf_ref_list.size());
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
@@ -511,7 +519,37 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   for (int iw = 0; iw < log_values.size(); iw++)
     REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
-#endif
+  // test NLPP related APIs
+  const int nknot = 3;
+  VirtualParticleSet vp(elec_, nknot), vp_clone(elec_clone, nknot);
+  RefVectorWithLeader<VirtualParticleSet> vp_list(vp, {vp, vp_clone});
+  ResourceCollection vp_res("test_vp_res");
+  vp.createResource(vp_res);
+  ResourceCollectionTeamLock<VirtualParticleSet> mw_vp_lock(vp_res, vp_list);
+
+  const auto& ei_table1 = elec_.getDistTable(ei_table_index);
+  // make virtual move of elec 0, reference ion 1
+  NLPPJob<RealType> job1(1, 0, elec_.R[0], ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
+  const auto& ei_table2 = elec_clone.getDistTable(ei_table_index);
+  // make virtual move of elec 1, reference ion 3
+  NLPPJob<RealType> job2(3, 1, elec_clone.R[1], ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
+
+  std::vector<PosType> deltaV1{{0.1, 0.2, 0.3}, {0.1, 0.3, 0.2}, {0.2, 0.1, 0.3}};
+  std::vector<PosType> deltaV2{{0.02, 0.01, 0.03}, {0.02, 0.03, 0.01}, {0.03, 0.01, 0.02}};
+
+  VirtualParticleSet::mw_makeMoves(vp_list, {deltaV1, deltaV2}, {job1, job2}, false);
+
+  std::vector<ValueType> nlpp1_ratios(nknot), nlpp2_ratios(nknot);
+  TrialWaveFunction::mw_evaluateRatios(wf_ref_list, RefVectorWithLeader<const VirtualParticleSet>(vp, {vp, vp_clone}),
+                                       {nlpp1_ratios, nlpp2_ratios});
+
+  CHECK(ValueApprox(nlpp1_ratios[0]).epsilon(ratio_precision) == ValueType(2.4229926733));
+  CHECK(ValueApprox(nlpp1_ratios[1]).epsilon(ratio_precision) == ValueType(-3.2054654296));
+  CHECK(ValueApprox(nlpp1_ratios[2]).epsilon(ratio_precision) == ValueType(2.3982171406));
+  CHECK(ValueApprox(nlpp2_ratios[0]).epsilon(ratio_precision) == ValueType(-0.3505144708));
+  CHECK(ValueApprox(nlpp2_ratios[1]).epsilon(ratio_precision) == ValueType(-3.350712448));
+  CHECK(ValueApprox(nlpp2_ratios[2]).epsilon(ratio_precision) == ValueType(-2.0885822923));
+#endif // QMC_CUDA
 }
 
 TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
@@ -519,21 +557,29 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   using VT   = QMCTraits::ValueType;
   using FPVT = QMCTraits::QTFull::ValueType;
 
-
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2);
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2);
+  }
 #endif
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2);
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2);
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2);
+  }
 }
 
 } // namespace qmcplusplus
