@@ -61,9 +61,9 @@ public:
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
   template<typename T>
-  T get(const std::string& name)
+  T get(const std::string& name) const
   {
-    return std::any_cast<T>(values[name]);
+    return std::any_cast<T>(values.at(name));
   };
 
   // Read variable values (initialize) from XML input.
