@@ -32,7 +32,7 @@ public:
     reals          = {"kmax", "kmax0", "kmax1", "kmax2"};
     default_values = {{"name", std::string("nofk")}, {"samples", int(40)}, {"kmax", Real(0.0)},
                       {"kmax0", Real(0.0)},          {"kmax1", Real(0.0)}, {"kmax2", Real(0.0)}};
-  };
+  }
 };
 // clang-format: on
 
