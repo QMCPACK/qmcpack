@@ -37,16 +37,14 @@ public:
   //data members set only during construction
   ///input values
   MomentumDistributionInput input_;
+  ///twist angle
+  const PosType twist;
+  ///lattice vector
+  const LatticeType Lattice;
   ///number of samples
   int M;
-  ///twist angle
-  PosType twist;
-  ///lattice vector
-  LatticeType Lattice;
   ///normalization factor for n(k)
   RealType norm_nofK;
-  ///random generator
-  RandomGenerator_t myRNG;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
