@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -36,15 +36,15 @@ public:
 
   //data members set only during construction
   ///input values
-  MomentumDistributionInput input_;
+  const MomentumDistributionInput input_;
   ///twist angle
   const PosType twist;
   ///lattice vector
   const LatticeType Lattice;
   ///number of samples
-  int M;
+  const int M;
   ///normalization factor for n(k)
-  RealType norm_nofK;
+  const RealType norm_nofK;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
@@ -69,7 +69,11 @@ public:
 
   /** Constructor for MomentumDistributionInput 
    */
-  MomentumDistribution(MomentumDistributionInput&& mdi, size_t np, const PosType& twist, const LatticeType& lattice, DataLocality dl = DataLocality::crowd);
+  MomentumDistribution(MomentumDistributionInput&& mdi,
+                       size_t np,
+                       const PosType& twist,
+                       const LatticeType& lattice,
+                       DataLocality dl = DataLocality::crowd);
 
   //MomentumDistribution(const MomentumDistribution& md);
 
@@ -83,7 +87,10 @@ public:
 
   /** accumulate 1 or more walkers of MomentumDistribution samples
    */
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator_t& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of MomentumDistribution's data.
@@ -107,7 +114,6 @@ public:
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hid_t gid) override;
-
 };
 
 } // namespace qmcplusplus

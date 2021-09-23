@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -19,17 +19,22 @@
 
 namespace qmcplusplus
 {
-MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi, size_t np, const PosType& twist_in, const LatticeType& lattice, DataLocality dl)
-    : OperatorEstBase(dl), input_(std::move(mdi)), twist(twist_in), Lattice(lattice)
+MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
+                                           size_t np,
+                                           const PosType& twist_in,
+                                           const LatticeType& lattice,
+                                           DataLocality dl)
+    : OperatorEstBase(dl),
+      input_(std::move(mdi)),
+      twist(twist_in),
+      Lattice(lattice),
+      M(input_.get<int>("samples")),
+      norm_nofK(1.0 / RealType(M))
 {
-  data_locality_ = dl;
   psi_ratios.resize(np);
 
   myName = input_.get<std::string>("name");
-  M      = input_.get<int>("samples");
 
-  norm_nofK = 1.0 / RealType(M);
-  
   //maximum k-value in the k-grid in cartesian coordinates
   auto kmax = input_.get<RealType>("kmax");
   //maximum k-values in the k-grid along the reciprocal cell axis
@@ -45,7 +50,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi, size
   //length of reciprocal lattice vector
   for (int i = 0; i < OHMMS_DIM; i++)
     vec_length[i] = 2.0 * M_PI * std::sqrt(dot(Lattice.Gv[i], Lattice.Gv[i]));
-  PosType kmaxs = {kmax0,kmax1,kmax2};
+  PosType kmaxs      = {kmax0, kmax1, kmax2};
   RealType sum_kmaxs = kmaxs[0] + kmaxs[1] + kmaxs[2];
   RealType sphere_kmax;
   bool sphere      = kmax > 0.0 ? true : false;
@@ -106,7 +111,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi, size
       }
     }
   }
-  app_log() <<"\n  MomentumDistribution named "<<myName<<"\n";
+  app_log() << "\n  MomentumDistribution named " << myName << "\n";
   if (sphere && !directional)
   {
     app_log() << "    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < " << sphere_kmax
@@ -167,9 +172,8 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi, size
   psi_ratios_all.resize(M, psi_ratios.size());
 
   // allocate data storage
-  size_t data_size  = nofK.size();
-  data_             = createLocalData(data_size, data_locality_);
-
+  size_t data_size = nofK.size();
+  data_            = createLocalData(data_size, data_locality_);
 }
 
 
@@ -178,21 +182,21 @@ MomentumDistribution* MomentumDistribution::clone()
   auto* md = new MomentumDistribution(*this);
   if (md->data_locality_ == DataLocality::crowd)
   {
-    app_log()<<"MD::clone dl crowd\n";
+    app_log() << "MD::clone dl crowd\n";
     size_t data_size = data_->size();
     md->data_        = createLocalData(data_size, data_locality_);
   }
   else if (md->data_locality_ == DataLocality::rank)
   {
-    app_log()<<"MD::clone dl rank\n";
+    app_log() << "MD::clone dl rank\n";
     assert(data_locality_ == DataLocality::rank);
-    size_t data_size  = 10; // jtk fix
-    md->data_locality_    = DataLocality::queue;
-    md->data_             = createLocalData(data_size, data_locality_);
+    size_t data_size   = 10; // jtk fix
+    md->data_locality_ = DataLocality::queue;
+    md->data_          = createLocalData(data_size, data_locality_);
   }
   else
-    app_log()<<"MD::clone dl other\n";
-  
+    app_log() << "MD::clone dl other\n";
+
   return md;
 }
 
@@ -229,13 +233,15 @@ void MomentumDistribution::startBlock(int steps)
   //}
   //else
   //  app_log()<<"MD::startBlock dl other\n";
-
 }
 
 /** Gets called every step and writes to thread local data.
  *
  */
-void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng)
+void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
+                                      const RefVector<ParticleSet>& psets,
+                                      const RefVector<TrialWaveFunction>& wfns,
+                                      RandomGenerator_t& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -247,7 +253,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const
     const int np = pset.getTotalNum();
     const int nk = kPoints.size();
 
-    // accumulate weight 
+    // accumulate weight
     //  (required by all estimators, otherwise inf results)
     walkers_weight_ += weight;
 
@@ -263,7 +269,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const
       psi.evaluateRatiosAlltoOne(pset, psi_ratios);
       for (int i = 0; i < np; ++i)
         psi_ratios_all[s][i] = psi_ratios[i];
-      
+
       for (int ik = 0; ik < nk; ++ik)
         kdotp[ik] = -dot(kPoints[ik], vPos[s]);
       eval_e2iphi(nk, kdotp.data(), phases_vPos[s].data(0), phases_vPos[s].data(1));
@@ -289,16 +295,15 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers, const
 #pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s : QMC_SIMD_ALIGNMENT)
         for (int ik = 0; ik < nk; ++ik)
           nofK_here[ik] += (phases_c[ik] * phases_vPos_c[ik] - phases_s[ik] * phases_vPos_s[ik]) * ratio_c -
-            (phases_s[ik] * phases_vPos_c[ik] + phases_c[ik] * phases_vPos_s[ik]) * ratio_s;
+              (phases_s[ik] * phases_vPos_c[ik] + phases_c[ik] * phases_vPos_s[ik]) * ratio_s;
       }
     }
 
     // accumulate data
     for (int ik = 0; ik < nofK.size(); ++ik)
       (*data_)[ik] += weight * nofK[ik] * norm_nofK;
-
   }
-};
+}
 
 
 void MomentumDistribution::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
@@ -326,7 +331,7 @@ void MomentumDistribution::registerOperatorEstimator(hid_t gid)
   h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
   h5o->open(gid);
   h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");    
+  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
 }
 
 
