@@ -316,10 +316,7 @@ public:
     return 0;
   }
 
-  inline void print(std::ostream& os)
-  {
-    throw std::runtime_error("DistanceTableData::print is not supported");
-  }
+  inline void print(std::ostream& os) { throw std::runtime_error("DistanceTableData::print is not supported"); }
 
   /// initialize a shared resource and hand it to a collection
   virtual void createResource(ResourceCollection& collection) const {}

@@ -63,8 +63,8 @@ private:
       return;
 
     // initialize memory containers and views
-    const int num_padded = getAlignedSize<T>(num_sources_);
-    const int stride_size      = getPerTargetPctlStrideSize();
+    const int num_padded  = getAlignedSize<T>(num_sources_);
+    const int stride_size = getPerTargetPctlStrideSize();
     r_dr_memorypool_.resize(stride_size * num_targets_);
 
     distances_.resize(num_targets_);
@@ -90,8 +90,8 @@ private:
       dt.r_dr_memorypool_.free();
     }
 
-    const int num_sources_        = dt_leader.num_sources_;
-    const int num_padded = getAlignedSize<T>(dt_leader.num_sources_);
+    const int num_sources_     = dt_leader.num_sources_;
+    const int num_padded       = getAlignedSize<T>(dt_leader.num_sources_);
     const int stride_size      = num_padded * (D + 1);
     const size_t total_targets = count_targets;
     auto& mw_r_dr              = dt_leader.mw_mem_->mw_r_dr;
@@ -191,9 +191,9 @@ public:
 
     ScopedTimer local_timer(evaluate_timer_);
     // be aware of the sign of Displacement
-    const int num_targets__local  = num_targets_;
-    const int num_sources__local  = num_sources_;
-    const int num_padded = getAlignedSize<T>(num_sources_);
+    const int num_targets_local = num_targets_;
+    const int num_sources_local = num_sources_;
+    const int num_padded        = getAlignedSize<T>(num_sources_);
 
     target_pos.resize(num_targets_ * D);
     for (size_t iat = 0; iat < num_targets_; iat++)
@@ -216,11 +216,12 @@ public:
                         map(to: source_pos_ptr[:num_padded*D]) \
                         map(always, to: target_pos_ptr[:num_targets_*D]) \
                         map(always, from: r_dr_ptr[:num_targets_*stride_size])")
-      for (int iat = 0; iat < num_targets__local; ++iat)
+      for (int iat = 0; iat < num_targets_local; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
           const int first = ChunkSizePerTeam * team_id;
-          const int last  = (first + ChunkSizePerTeam) > num_sources__local ? num_sources__local : first + ChunkSizePerTeam;
+          const int last =
+              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
 
           T pos[D];
           for (int idim = 0; idim < D; idim++)
@@ -309,9 +310,9 @@ public:
     const int ChunkSizePerTeam = 256;
     const int num_teams        = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
-    auto* r_dr_ptr            = mw_r_dr.data();
-    auto* input_ptr           = offload_input.data();
-    const int num_sources__local = num_sources_;
+    auto* r_dr_ptr              = mw_r_dr.data();
+    auto* input_ptr             = offload_input.data();
+    const int num_sources_local = num_sources_;
 
     {
       ScopedTimer offload(dt_leader.offload_timer_);
@@ -329,7 +330,8 @@ public:
           auto* dr_iat_ptr     = r_dr_ptr + iat * num_padded * (D + 1) + num_padded;
 
           const int first = ChunkSizePerTeam * team_id;
-          const int last  = (first + ChunkSizePerTeam) > num_sources__local ? num_sources__local : first + ChunkSizePerTeam;
+          const int last =
+              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
 
           T pos[D];
           for (int idim = 0; idim < D; idim++)

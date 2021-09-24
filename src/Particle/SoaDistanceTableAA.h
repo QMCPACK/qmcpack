@@ -39,7 +39,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
         DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
-        old_prepared_elec_id(-1),
+        old_prepared_elec_id_(-1),
 #endif
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
                                                        "_" + target.getName(),
@@ -60,8 +60,8 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   size_t compute_size(int N) const
   {
-    const size_t num_padded  = getAlignedSize<T>(N);
-    const size_t Alignment = getAlignment<T>();
+    const size_t num_padded = getAlignedSize<T>(N);
+    const size_t Alignment  = getAlignment<T>();
     return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
   }
 
@@ -102,7 +102,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     ScopedTimer local_timer(move_timer_);
 
 #if !defined(NDEBUG)
-    old_prepared_elec_id = prepare_old ? iat : -1;
+    old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            num_targets_, iat);
@@ -193,7 +193,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
     else
     {
-      assert(old_prepared_elec_id == jat);
+      assert(old_prepared_elec_id_ == jat);
       //copy row
       assert(nupdate <= old_r_.size());
       std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
@@ -209,7 +209,7 @@ private:
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
    */
-  int old_prepared_elec_id;
+  int old_prepared_elec_id_;
 #endif
   /// timer for evaluate()
   NewTimer& evaluate_timer_;

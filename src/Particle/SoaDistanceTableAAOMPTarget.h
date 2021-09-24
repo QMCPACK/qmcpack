@@ -66,7 +66,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         DistanceTableData(target, target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
-        old_prepared_elec_id(-1),
+        old_prepared_elec_id_(-1),
 #endif
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
@@ -91,8 +91,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   size_t compute_size(int N) const
   {
-    const size_t num_padded  = getAlignedSize<T>(N);
-    const size_t Alignment = getAlignment<T>();
+    const size_t num_padded = getAlignedSize<T>(N);
+    const size_t Alignment  = getAlignment<T>();
     return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
   }
 
@@ -197,7 +197,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     ScopedTimer local_timer(move_timer_);
 
 #if !defined(NDEBUG)
-    old_prepared_elec_id = prepare_old ? iat : -1;
+    old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
@@ -246,12 +246,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
 #if !defined(NDEBUG)
-      dt.old_prepared_elec_id = prepare_old ? iat : -1;
+      dt.old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif
-      auto& coordinates_soa   = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
-      rsoa_dev_list[iw]       = coordinates_soa.getDevicePtr();
+      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;
@@ -259,13 +259,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
-    const auto activePtcl_local = pset_leader.activePtcl;
-    const auto num_sources__local  = num_targets_;
-    const auto num_padded = num_targets_padded_;
-    auto* rsoa_dev_list_ptr     = rsoa_dev_list.data();
-    auto* r_dr_ptr              = nw_new_old_dist_displ.data();
-    auto* new_pos_ptr           = coordinates_leader.getFusedNewPosBuffer().data();
-    const size_t new_pos_stride = coordinates_leader.getFusedNewPosBuffer().capacity();
+    const auto activePtcl_local  = pset_leader.activePtcl;
+    const auto num_sources_local = num_targets_;
+    const auto num_padded        = num_targets_padded_;
+    auto* rsoa_dev_list_ptr      = rsoa_dev_list.data();
+    auto* r_dr_ptr               = nw_new_old_dist_displ.data();
+    auto* new_pos_ptr            = coordinates_leader.getFusedNewPosBuffer().data();
+    const size_t new_pos_stride  = coordinates_leader.getFusedNewPosBuffer().capacity();
 
     {
       ScopedTimer offload(offload_timer_);
@@ -277,7 +277,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         {
           auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
           const int first      = ChunkSizePerTeam * team_id;
-          const int last = (first + ChunkSizePerTeam) > num_sources__local ? num_sources__local : first + ChunkSizePerTeam;
+          const int last =
+              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
 
           { // temp
             auto* r_iw_ptr  = r_dr_ptr + iw * stride_size;
@@ -396,7 +397,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
     else
     {
-      assert(old_prepared_elec_id == jat);
+      assert(old_prepared_elec_id_ == jat);
       //copy row
       assert(nupdate <= old_r_.size());
       std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
@@ -434,7 +435,7 @@ private:
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
    */
-  int old_prepared_elec_id;
+  int old_prepared_elec_id_;
 #endif
   /// timer for offload portion
   NewTimer& offload_timer_;
