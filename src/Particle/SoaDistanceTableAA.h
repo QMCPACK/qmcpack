@@ -204,7 +204,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
 private:
   ///number of targets with padding
-  const int num_targets_padded_;
+  const size_t num_targets_padded_;
 #if !defined(NDEBUG)
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.

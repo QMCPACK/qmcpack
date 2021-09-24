@@ -63,8 +63,8 @@ private:
       return;
 
     // initialize memory containers and views
-    const int num_padded  = getAlignedSize<T>(num_sources_);
-    const int stride_size = getPerTargetPctlStrideSize();
+    const size_t num_padded  = getAlignedSize<T>(num_sources_);
+    const size_t stride_size = getPerTargetPctlStrideSize();
     r_dr_memorypool_.resize(stride_size * num_targets_);
 
     distances_.resize(num_targets_);
@@ -90,9 +90,9 @@ private:
       dt.r_dr_memorypool_.free();
     }
 
-    const int num_sources_     = dt_leader.num_sources_;
-    const int num_padded       = getAlignedSize<T>(dt_leader.num_sources_);
-    const int stride_size      = num_padded * (D + 1);
+    const size_t num_sources   = dt_leader.num_sources_;
+    const size_t num_padded    = getAlignedSize<T>(dt_leader.num_sources_);
+    const size_t stride_size   = num_padded * (D + 1);
     const size_t total_targets = count_targets;
     auto& mw_r_dr              = dt_leader.mw_mem_->mw_r_dr;
     mw_r_dr.resize(total_targets * stride_size);
@@ -108,8 +108,8 @@ private:
 
       for (int i = 0; i < dt.targets(); ++i)
       {
-        dt.distances_[i].attachReference(mw_r_dr.data() + (i + count_targets) * stride_size, num_sources_);
-        dt.displacements_[i].attachReference(num_sources_, num_padded,
+        dt.distances_[i].attachReference(mw_r_dr.data() + (i + count_targets) * stride_size, num_sources);
+        dt.displacements_[i].attachReference(num_sources, num_padded,
                                              mw_r_dr.data() + (i + count_targets) * stride_size + num_padded);
       }
       count_targets += dt.targets();
@@ -207,7 +207,7 @@ public:
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int num_teams        = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
     const size_t stride_size   = getPerTargetPctlStrideSize();
 
     {
@@ -308,7 +308,7 @@ public:
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int num_teams        = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* r_dr_ptr              = mw_r_dr.data();
     auto* input_ptr             = offload_input.data();

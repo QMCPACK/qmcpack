@@ -49,8 +49,8 @@ protected:
   // FIXME. once DT takes only DynamicCoordinates, change this type as well.
   const ParticleSet& origin_;
 
-  const int num_sources_;
-  const int num_targets_;
+  const size_t num_sources_;
+  const size_t num_targets_;
 
   ///name of the table
   const std::string name_;
@@ -115,13 +115,13 @@ public:
   const ParticleSet& get_origin() const { return origin_; }
 
   ///returns the number of centers
-  inline IndexType centers() const { return origin_.getTotalNum(); }
+  inline size_t centers() const { return origin_.getTotalNum(); }
 
   ///returns the number of centers
-  inline IndexType targets() const { return num_targets_; }
+  inline size_t targets() const { return num_targets_; }
 
   ///returns the number of source particles
-  inline IndexType sources() const { return num_sources_; }
+  inline size_t sources() const { return num_sources_; }
 
   /// return multi walker temporary pair distance table data pointer
   virtual const RealType* getMultiWalkerTempDataPtr() const
@@ -310,11 +310,7 @@ public:
    *        if false, use the data in distance_[iat] and displacements_[iat]
    * @return the id of the nearest particle, -1 not found
    */
-  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
-  {
-    throw std::runtime_error("DistanceTableData::get_first_neighbor is not implemented in calling base class");
-    return 0;
-  }
+  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const = 0;
 
   inline void print(std::ostream& os) { throw std::runtime_error("DistanceTableData::print is not supported"); }
 

@@ -255,7 +255,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
 
     const int ChunkSizePerTeam = 256;
-    const int num_teams        = (num_targets_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const size_t num_teams     = (num_targets_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
@@ -430,7 +430,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
 private:
   ///number of targets with padding
-  const int num_targets_padded_;
+  const size_t num_targets_padded_;
 #if !defined(NDEBUG)
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
