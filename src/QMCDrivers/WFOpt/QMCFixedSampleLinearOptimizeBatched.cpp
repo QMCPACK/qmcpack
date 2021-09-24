@@ -68,9 +68,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       bigChange(50),
       exp0(-16),
       stepsize(0.25),
-      GEVtype("mixed"),
-      StabilizerMethod("best"),
-      GEVSplit("no"),
       bestShift_i(-1.0),
       bestShift_s(-1.0),
       shift_i_input(0.01),
@@ -185,18 +182,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
 
 
   //   stale parameters
-  //   m_param.add(eigCG,"eigcg");
-  //   m_param.add(TotalCGSteps,"cgsteps");
-  //   m_param.add(w_beta,"beta");
-  //   quadstep=-1.0;
-  //   m_param.add(quadstep,"quadstep");
   //   m_param.add(stepsize,"stepsize");
-  //   m_param.add(exp1,"exp1");
-  //   m_param.add(GEVtype,"GEVMethod");
-  //   m_param.add(GEVSplit,"GEVSplit");
-  //   m_param.add(StabilizerMethod,"StabilizerMethod");
-  //   m_param.add(LambdaMax,"LambdaMax");
-  //Set parameters for line minimization:
 }
 
 /** Clean up the vector */

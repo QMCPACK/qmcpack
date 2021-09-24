@@ -181,13 +181,7 @@ private:
 
   ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
-  RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
-  RealType w_beta;
-  /// number of previous steps to orthogonalize to.
-  int eigCG;
-  /// total number of cg steps per iterations
-  int TotalCGSteps;
+  RealType stabilizerScale, bigChange, exp0, stepsize;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
