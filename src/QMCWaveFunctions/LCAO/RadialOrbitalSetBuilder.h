@@ -23,7 +23,7 @@
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
 #include "MultiQuinticSpline1D.h"

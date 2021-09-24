@@ -66,7 +66,7 @@ public:
   {
     NumKShells = yk.size();
     Fk         = yk;
-    NumKVecs   = P.SK->KLists.kshell[NumKShells + 1];
+    NumKVecs   = P.SK->getKLists().kshell[NumKShells + 1];
     Rhok.resize(NumKVecs);
     if (Optimize)
       numParams = NumKShells;
@@ -74,11 +74,9 @@ public:
 
   void resize(int NT) { NumTargets = NT; }
 
-  ~Backflow_ee_kSpace() override{};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_ee_kSpace>(CenterSys, tqp);
     clone->resize(NumTargets);
     //       clone->uniqueRadFun.resize(uniqueRadFun.size());
     //       clone->RadFun.resize(RadFun.size());
@@ -264,8 +262,8 @@ public:
     copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
       accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-    std::vector<int>& kshell(P.SK->KLists.kshell);
+    const auto& Kcart(P.SK->getKLists().kpts_cart);
+    std::vector<int>& kshell(P.SK->getKLists().kshell);
     for (int iel = 0; iel < NumTargets; iel++)
     {
       const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
@@ -302,15 +300,15 @@ public:
     copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
       accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-    std::vector<int>& kshell(P.SK->KLists.kshell);
+    const auto& Kcart(P.SK->getKLists().kpts_cart);
+    std::vector<int>& kshell(P.SK->getKLists().kshell);
     GradType fact;
     HessType kakb;
     for (int iel = 0; iel < NumTargets; iel++)
     {
       const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
       const ComplexType* restrict rhok_ptr(Rhok.data());
-      const RealType* restrict ksq_ptr(P.SK->KLists.ksq.data());
+      const RealType* restrict ksq_ptr(P.SK->getKLists().ksq.data());
       int ki = 0;
       for (int ks = 0; ks < NumKShells; ks++, ksq_ptr++)
       {

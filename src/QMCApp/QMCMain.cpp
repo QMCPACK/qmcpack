@@ -21,7 +21,7 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCMain.h"
-#include "accelerators.hpp"
+#include "DeviceManager.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -34,6 +34,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
@@ -62,10 +63,10 @@ QMCMain::QMCMain(Communicate* c)
       traces_xml(NULL)
 #endif
 {
-  Communicate NodeComm;
-  NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+  Communicate node_comm;
+  node_comm.initializeAsNodeComm(*OHMMS::Controller);
   // assign accelerators within a node
-  const int num_accelerators = assignAccelerators(NodeComm);
+  DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
   app_summary() << "\n=====================================================\n"
                 << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -86,9 +87,9 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
-      << "\n  MPI ranks per node        = " << NodeComm.size()
+      << "\n  MPI ranks per node        = " << node_comm.size()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
-      << "\n  Accelerators per node     = " << num_accelerators
+      << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
   // clang-format on
@@ -144,7 +145,12 @@ QMCMain::QMCMain(Communicate* c)
 }
 
 ///destructor
-QMCMain::~QMCMain() {}
+QMCMain::~QMCMain()
+{
+  // free last_driver before clearing P,Psi,H clones
+  last_driver.reset();
+  CloneManager::clearClones();
+}
 
 
 bool QMCMain::execute()

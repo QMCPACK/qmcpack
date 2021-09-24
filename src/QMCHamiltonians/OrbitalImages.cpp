@@ -29,18 +29,42 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, 
   comm = mpicomm;
 }
 
+OrbitalImages::OrbitalImages(const OrbitalImages& other)
+    : OperatorBase(other),
+      psetpool(other.psetpool),
+      Peln(other.Peln),
+      Pion(other.Pion),
+      comm(other.comm),
+      format(other.format),
+      value_types(other.value_types),
+      derivatives(other.derivatives),
+      sposet_names(other.sposet_names),
+      sposet_indices(other.sposet_indices),
+      center_grid(other.center_grid),
+      cell(other.cell),
+      corner(other.corner),
+      grid(other.grid),
+      gdims(other.gdims),
+      npoints(other.npoints),
+      batch_size(other.batch_size),
+      spo_vtmp(other.spo_vtmp),
+      spo_gtmp(other.spo_gtmp),
+      spo_ltmp(other.spo_ltmp),
+      batch_values(other.batch_values),
+      batch_gradients(other.batch_gradients),
+      batch_laplacians(other.batch_laplacians),
+      orbital(other.orbital),
+      wf_factory_(other.wf_factory_)
+{
+  for (auto& element : other.sposets)
+    sposets.push_back(element->makeClone());
+}
 
 std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
   std::unique_ptr<OrbitalImages> clone = std::make_unique<OrbitalImages>(*this);
   clone->Peln                          = &P;
-  for (int i = 0; i < sposets.size(); ++i)
-  {
-    //FIXME eliminate new
-    clone->sposet_indices[i] = new std::vector<int>(*sposet_indices[i]);
-    clone->sposets[i]        = sposets[i]->makeClone();
-  }
   return clone;
 }
 
@@ -50,7 +74,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   app_log() << "OrbitalImages::put" << std::endl;
 
   //set defaults
-  myName      = "OrbitalImages";
+  name_       = "OrbitalImages";
   derivatives = false;
   center_grid = false;
   corner      = 0.0;
@@ -60,7 +84,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   std::string write_report = "yes";
   std::string ion_psname   = "ion0";
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(name_, "name");
   attrib.add(ion_psname, "ions");
   attrib.add(write_report, "report");
   attrib.put(cur);
@@ -130,8 +154,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
 
   //second pass parameter read to get orbital indices
   //  each parameter is named after the corresponding sposet
-  for (int i = 0; i < sposet_names.size(); ++i)
-    sposet_indices.push_back(new std::vector<int>);
+  sposet_indices->resize(sposet_names.size());
   for (int n = 0; n < other_elements.size(); ++n)
   {
     xmlNodePtr element = other_elements[n];
@@ -141,7 +164,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
       const XMLAttrString name(element, "name");
       for (int i = 0; i < sposet_names.size(); ++i)
         if (name == sposet_names[i])
-          putContent(*sposet_indices[i], element);
+          putContent((*sposet_indices)[i], element);
     }
   }
 
@@ -190,8 +213,8 @@ bool OrbitalImages::put(xmlNodePtr cur)
     SPOSet* sposet = wf_factory_.getSPOSet(sposet_names[i]);
     if (sposet == 0)
       APP_ABORT("OrbitalImages::put  sposet " + sposet_names[i] + " does not exist");
-    sposets.push_back(sposet);
-    std::vector<int>& sposet_inds = *sposet_indices[i];
+    sposets.push_back(sposet->makeClone());
+    std::vector<int>& sposet_inds = (*sposet_indices)[i];
     if (sposet_inds.size() == 0)
       for (int n = 0; n < sposet->size(); ++n)
         sposet_inds.push_back(n);
@@ -248,11 +271,11 @@ void OrbitalImages::report(const std::string& pad)
 {
   app_log() << pad << "OrbitalImages report" << std::endl;
   app_log() << pad << "  derivatives = " << derivatives << std::endl;
-  app_log() << pad << "  nsposets    = " << sposets.size() << " " << sposet_names.size() << " " << sposet_indices.size()
-            << std::endl;
+  app_log() << pad << "  nsposets    = " << sposets.size() << " " << sposet_names.size() << " "
+            << sposet_indices->size() << std::endl;
   for (int i = 0; i < sposet_names.size(); ++i)
   {
-    std::vector<int>& sposet_inds = *sposet_indices[i];
+    std::vector<int>& sposet_inds = (*sposet_indices)[i];
     SPOSet& sposet                = *sposets[i];
     if (sposet_inds.size() == sposet.size())
       app_log() << pad << "  " << sposet_names[i] << " = all " << sposet.size() << " orbitals" << std::endl;
@@ -314,7 +337,7 @@ OrbitalImages::Return_t OrbitalImages::evaluate(ParticleSet& P)
       //get sposet information
       const std::string& sposet_name = sposet_names[i];
       app_log() << "  evaluating orbitals in " + sposet_name + " on the grid" << std::endl;
-      std::vector<int>& sposet_inds = *sposet_indices[i];
+      std::vector<int>& sposet_inds = (*sposet_indices)[i];
       SPOSet& sposet                = *sposets[i];
       int nspo                      = sposet_inds.size();
 

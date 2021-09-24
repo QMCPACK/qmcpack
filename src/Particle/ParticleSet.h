@@ -23,8 +23,8 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include "Utilities/SpeciesSet.h"
-#include "Utilities/PooledData.h"
+#include "SpeciesSet.h"
+#include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
@@ -663,6 +663,7 @@ public:
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);
   static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
+  static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
   /** map to handle distance tables

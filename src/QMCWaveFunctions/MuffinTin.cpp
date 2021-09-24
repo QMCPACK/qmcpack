@@ -20,7 +20,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Particle/DistanceTableData.h"
 #include "MuffinTin.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 
 namespace qmcplusplus

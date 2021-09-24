@@ -15,7 +15,3 @@ add_subdirectory(OhmmsData)
 add_library(qmcio INTERFACE)
 target_include_directories(qmcio INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcio INTERFACE qmcio_hdf qmcio_xml)
-
-if(BUILD_UNIT_TESTS)
-  add_subdirectory(tests)
-endif()

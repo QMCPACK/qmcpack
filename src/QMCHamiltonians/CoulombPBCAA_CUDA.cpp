@@ -17,7 +17,7 @@
 #include "CoulombPBCAA_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -70,11 +70,11 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
   if (is_active)
   {
     StructFact& SK = *(P.SK);
-    Numk           = SK.KLists.numk;
+    Numk           = SK.getKLists().numk;
     gpu::host_vector<CUDA_PRECISION_FULL> kpointsHost(OHMMS_DIM * Numk);
     for (int ik = 0; ik < Numk; ik++)
       for (int dim = 0; dim < OHMMS_DIM; dim++)
-        kpointsHost[ik * OHMMS_DIM + dim] = SK.KLists.kpts_cart[ik][dim];
+        kpointsHost[ik * OHMMS_DIM + dim] = SK.getKLists().kpts_cart[ik][dim];
     kpointsGPU = kpointsHost;
     gpu::host_vector<CUDA_PRECISION_FULL> FkHost(Numk);
     for (int ik = 0; ik < Numk; ik++)
@@ -91,8 +91,8 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   {
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
-      LocalEnergy[iw] += Value;
+      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = value_;
+      LocalEnergy[iw] += value_;
     }
     return;
   }

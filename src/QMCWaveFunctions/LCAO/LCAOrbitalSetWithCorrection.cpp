@@ -28,7 +28,10 @@ void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 }
 
 
-SPOSet* LCAOrbitalSetWithCorrection::makeClone() const { return new LCAOrbitalSetWithCorrection(*this); }
+std::unique_ptr<SPOSet> LCAOrbitalSetWithCorrection::makeClone() const
+{
+  return std::make_unique<LCAOrbitalSetWithCorrection>(*this);
+}
 
 void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {

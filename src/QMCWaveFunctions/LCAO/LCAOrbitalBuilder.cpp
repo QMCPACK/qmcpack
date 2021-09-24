@@ -33,7 +33,7 @@
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -490,6 +490,15 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if !defined(QMC_COMPLEX)
   if (doCuspCorrection)
   {
+    // Create a temporary particle set to use for cusp initialization.
+    // The particle coordinates left at the end are unsuitable for futher computations.
+    // The coordinates get set to nuclear positions, which leads to zero e-N distance,
+    // which causes a NaN in SoaAtomicBasisSet.h
+    // This problem only appears when the electron positions are specified in the input.
+    // The random particle placement step executes after this part of the code, overwriting
+    // the leftover positions from the cusp initialization.
+    ParticleSet tmp_targetPtcl(targetPtcl);
+
     const int num_centers = sourcePtcl.getTotalNum();
     auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
@@ -513,9 +522,9 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
           broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
 #endif
     if (!valid)
-      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, lcwc, id, *myComm);
+      generateCuspInfo(orbital_set_size, num_centers, info, tmp_targetPtcl, sourcePtcl, lcwc, id, *myComm);
 
-    applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, lcwc, id);
+    applyCuspCorrection(info, num_centers, orbital_set_size, tmp_targetPtcl, sourcePtcl, lcwc, id);
   }
 #endif
 

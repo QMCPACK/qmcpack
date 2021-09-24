@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
@@ -143,8 +144,18 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   psi.evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
 
+  // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection twf_res("test_twf_res");
+
+  elec.createResource(pset_res);
+  psi.createResource(twf_res);
+
   RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_list);
 
   // Test list with one wavefunction
 
@@ -258,6 +269,17 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
   auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
+  // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection twf_res("test_twf_res");
+
+  elec1b.createResource(pset_res);
+  psi.createResource(twf_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_list);
+
+  
   TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list,
                                               fixedL_list);
 

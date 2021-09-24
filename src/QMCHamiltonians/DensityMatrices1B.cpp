@@ -38,11 +38,16 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc), wf_factory_(master.wf_factory_)
+    : OperatorBase(master),
+      basis_functions(master.basis_functions),
+      Lattice(P.Lattice),
+      Psi(psi),
+      Pq(P),
+      Pc(master.Pc),
+      wf_factory_(master.wf_factory_)
 {
   reset();
   set_state(master);
-  basis_functions.clone_from(master.basis_functions);
   initialize();
   for (int i = 0; i < basis_size; ++i)
     basis_norms[i] = master.basis_norms[i];
@@ -77,7 +82,7 @@ void DensityMatrices1B::reset()
   eindex         = -1;
   uniform_random = NULL;
   // basic HamiltonianBase info
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   // default values
   energy_mat             = false;
   integrator             = uniform_grid;
@@ -99,13 +104,13 @@ void DensityMatrices1B::reset()
   check_overlap          = false;
   check_derivatives      = false;
   // trace data is required
-  request.request_scalar("weight");
-  request.request_array("Kinetic_complex");
-  request.request_array("Vq");
-  request.request_array("Vc");
-  request.request_array("Vqq");
-  request.request_array("Vqc");
-  request.request_array("Vcc");
+  request_.request_scalar("weight");
+  request_.request_array("Kinetic_complex");
+  request_.request_array("Vq");
+  request_.request_array("Vc");
+  request_.request_array("Vqq");
+  request_.request_array("Vqc");
+  request_.request_array("Vcc");
   // has not been initialized
   initialized = false;
 }
@@ -255,7 +260,10 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    basis_functions.add(wf_factory_.getSPOSet(sposets[i]));
+    SPOSet* sposet = wf_factory_.getSPOSet(sposets[i]);
+    if (sposet == 0)
+      APP_ABORT("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist");
+    basis_functions.add(sposet->makeClone());
   }
   basis_size = basis_functions.size();
 
@@ -538,7 +546,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   int nentries = ng[0] * ng[1];
 #endif
 
-  std::string dname = myName;
+  std::string dname = name_;
   hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
 
   std::string nname = "number_matrix";

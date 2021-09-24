@@ -24,9 +24,7 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
-#include <cuda_runtime_api.h>
-#include "config.h"
-#include "cudaError.h"
+#include "CUDAruntime.hpp"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
 

@@ -106,8 +106,8 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(const ParticleS
 
   double u = A * r12 / (B * r12 + 1) - A / B;
 
-  LogValue = -Z * (r1 + r2) + std::log(norm * norm) - u;
-  return LogValue;
+  log_value_ = -Z * (r1 + r2) + std::log(norm * norm) - u;
+  return log_value_;
 }
 
 ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)

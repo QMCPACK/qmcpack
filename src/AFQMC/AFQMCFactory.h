@@ -14,7 +14,7 @@
 #include <algorithm>
 #include "Message/MPIObjectBase.h"
 #include "Utilities/TimerManager.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 
 #include "mpi3/communicator.hpp"
 

@@ -868,7 +868,7 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp"
            "-11.60307190 0.0002")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp"
-           "1.92162757 0.0001")
+           "1.92162757 0.0003")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples"
            "144.00000000 0.0")
       # DMC
@@ -1006,5 +1006,5 @@ if(NOT QMC_CUDA)
   )
 
 else()
-  message_verbose("Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
 endif()

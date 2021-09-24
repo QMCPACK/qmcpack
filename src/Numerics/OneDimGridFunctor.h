@@ -18,7 +18,6 @@
 
 #include <memory>
 #include "Numerics/OneDimGridBase.h"
-#include "Optimize/VarList.h"
 
 namespace qmcplusplus
 {
@@ -159,14 +158,6 @@ struct OneDimGridFunctor
    * Derivatives are storged.
    */
   inline value_type evaluateAll(point_type r, point_type rinv) { return Y = splint(r, dY, d2Y); }
-
-  /////reset the values: do nothing
-  //virtual void reset() { }
-  /////reset the values from the pool
-  //virtual void resetParameters(VarRegistry<point_type>& vlist)
-  //{
-  //  ///DO NOTHING
-  //}
 
   virtual value_type splint(point_type r, value_type& du, value_type& d2u) const { return 0.0; }
 

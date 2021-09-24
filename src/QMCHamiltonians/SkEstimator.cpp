@@ -23,11 +23,11 @@ namespace qmcplusplus
 SkEstimator::SkEstimator(ParticleSet& source)
 {
   sourcePtcl = &source;
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   NumSpecies = source.getSpeciesSet().getTotalNum();
-  NumK       = source.SK->KLists.numk;
+  NumK       = source.SK->getKLists().numk;
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell     = source.SK->KLists.kshell;
+  Kshell     = source.SK->getKLists().kshell;
   MaxKshell  = Kshell.size() - 1;
 #if defined(USE_REAL_STRUCT_FACTOR)
   RhokTot_r.resize(NumK);
@@ -40,7 +40,7 @@ SkEstimator::SkEstimator(ParticleSet& source)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.SK->KLists.ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.SK->getKLists().ksq[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
   hdf5_out = true;
@@ -142,7 +142,7 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
   if (hdf5_out)
   {
     std::vector<int> ndim(1, NumK);
-    h5desc.emplace_back(myName);
+    h5desc.emplace_back(name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, myIndex);
     h5o.open(gid);
@@ -150,11 +150,11 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
     hsize_t kdims[2];
     kdims[0]          = NumK;
     kdims[1]          = OHMMS_DIM;
-    std::string kpath = myName + "/kpoints";
+    std::string kpath = name_ + "/kpoints";
     hid_t k_space     = H5Screate_simple(2, kdims, NULL);
     hid_t k_set       = H5Dcreate(gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
     hid_t mem_space   = H5Screate_simple(2, kdims, NULL);
-    RealType* ptr     = &(sourcePtcl->SK->KLists.kpts_cart[0][0]);
+    auto* ptr         = &(sourcePtcl->SK->getKLists().kpts_cart[0][0]);
     herr_t ret        = H5Dwrite(k_set, H5T_NATIVE_DOUBLE, mem_space, k_space, H5P_DEFAULT, ptr);
     H5Dclose(k_set);
     H5Sclose(mem_space);

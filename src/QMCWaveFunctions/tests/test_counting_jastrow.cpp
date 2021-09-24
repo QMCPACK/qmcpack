@@ -14,7 +14,7 @@
 #include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 
 #include "QMCWaveFunctions/Jastrow/CountingGaussian.h"
 #include "QMCWaveFunctions/Jastrow/CountingGaussianRegion.h"
@@ -395,7 +395,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     optVars[p] = 0;
   cj->resetParameters(optVars);
   cj->recompute(elec);
-  REQUIRE( cj->LogValue == LogValueType(0) );
+  REQUIRE( cj->get_log_value() == LogValueType(0) );
 #endif
 
 }

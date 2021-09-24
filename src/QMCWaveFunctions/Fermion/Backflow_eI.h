@@ -31,7 +31,7 @@ private:
 
 public:
   std::vector<FT*> RadFun;
-  std::vector<FT*> uniqueRadFun;
+  std::vector<std::unique_ptr<FT>> uniqueRadFun;
   std::vector<int> offsetPrms;
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions))
@@ -49,11 +49,9 @@ public:
       RadFun.push_back(RF);
   }
 
-  ~Backflow_eI() override{};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const override
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_eI<FT>>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);
     clone->indexOfFirstParam = indexOfFirstParam;
     clone->offsetPrms        = offsetPrms;
@@ -62,15 +60,15 @@ public:
     clone->uniqueRadFun.resize(uniqueRadFun.size());
     clone->RadFun.resize(RadFun.size());
     for (int i = 0; i < uniqueRadFun.size(); i++)
-      clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
+      clone->uniqueRadFun[i] = std::make_unique<FT>(*(uniqueRadFun[i]));
     for (int i = 0; i < RadFun.size(); i++)
     {
       bool done = false;
       for (int k = 0; k < uniqueRadFun.size(); k++)
-        if (RadFun[i] == uniqueRadFun[k])
+        if (RadFun[i] == uniqueRadFun[k].get())
         {
           done             = true;
-          clone->RadFun[i] = clone->uniqueRadFun[k];
+          clone->RadFun[i] = clone->uniqueRadFun[k].get();
           break;
         }
       if (!done)

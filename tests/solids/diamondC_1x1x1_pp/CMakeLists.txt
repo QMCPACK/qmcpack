@@ -73,7 +73,7 @@ if(NOT QMC_CUDA AND NOT ENABLE_OFFLOAD)
     DIAMOND_KSPACE_SCALARS # VMC
   )
 else()
-  message_verbose("Skipping k-space Jastrow tests because they are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping k-space Jastrow tests because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()
 
 # Reference OPT run in qmc-ref
@@ -176,7 +176,7 @@ if(NOT QMC_CUDA)
     DIAMOND_DMC_SCALARS # DMC
   )
 else()
-  message_verbose(
+  message(VERBOSE
     "Skipping diamondC_1x1x1_pp all particle move VMC/DMC tests because they are not supported by CUDA build (QMC_CUDA=1)"
   )
 endif()
@@ -283,7 +283,7 @@ if(NOT QMC_CUDA AND NOT ENABLE_OFFLOAD)
     LONG_DIAMOND_KSPACE_SCALARS # VMC
   )
 else()
-  message_verbose("Skipping k-space Jastrow tests because they are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping k-space Jastrow tests because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
@@ -607,7 +607,7 @@ if(add_estimator_tests)
       -r
       qmc-ref/qmc_1rdm_J2_long${OFEXT}.s000.stat_ref_1rdm.dat)
   else()
-    message_verbose("Skipping diamond 1rdm test because CUDA is not supported")
+    message(VERBOSE "Skipping diamond 1rdm test because CUDA is not supported")
   endif()
 
   if(NOT QMC_CUDA)
@@ -733,7 +733,7 @@ if(add_estimator_tests)
       qmc-ref/qmc_edens_cell_dmc_long.s001.stat_ref_energydensity.dat)
 
   else()
-    message_verbose("Skipping diamond 1rdm test because CUDA is not supported")
+    message(VERBOSE "Skipping diamond 1rdm test because CUDA is not supported")
   endif()
 
 endif()

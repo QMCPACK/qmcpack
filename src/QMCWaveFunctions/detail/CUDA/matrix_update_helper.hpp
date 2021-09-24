@@ -14,7 +14,13 @@
 #define CUDA_MATRIX_UPDATE_HELPER_H
 
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "ROCm/cuda2hip.h"
+#endif
 
 namespace qmcplusplus
 {

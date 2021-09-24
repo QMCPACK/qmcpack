@@ -73,7 +73,7 @@ public:
 
   /** return a clone of Phi
    */
-  SPOSetPtr clonePhi() const;
+  std::unique_ptr<SPOSet> clonePhi() const;
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
@@ -85,8 +85,6 @@ public:
    * Note: ciConfigList should have been populated when calling this function
    */
   void set(int first, int nel, int ref_det_id);
-
-  void setBF(BackflowTransformation* bf) {}
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }

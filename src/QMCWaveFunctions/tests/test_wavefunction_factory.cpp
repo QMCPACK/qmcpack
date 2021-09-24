@@ -46,7 +46,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
-         <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\"> \
+         <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\" gpu=\"no\"> \
             <correlation speciesA=\"u\" speciesB=\"d\" size=\"8\" cutoff=\"10.0\"> \
                <coefficients id=\"ud\" type=\"Array\"> \
 0.5954603818 0.5062051797 0.3746940461 0.2521010502 0.1440163317 0.07796688253 \

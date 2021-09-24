@@ -22,6 +22,7 @@ set(HAMSRCS
     OperatorBase.cpp
     QMCHamiltonian.cpp
     Hdispatcher.cpp
+    BareKineticEnergy.cpp
     CoulombPBCAA.cpp
     CoulombPBCAB.cpp
     NonLocalTOperator.cpp
@@ -115,5 +116,9 @@ target_include_directories(qmcham_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcham PUBLIC qmcwfs)
 target_link_libraries(qmcham_unit PUBLIC qmcwfs)
 
-target_link_libraries(qmcham PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3)
-target_link_libraries(qmcham_unit PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3)
+target_link_libraries(qmcham PRIVATE einspline platform_LA Math::FFTW3)
+target_link_libraries(qmcham_unit PRIVATE einspline platform_LA Math::FFTW3)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

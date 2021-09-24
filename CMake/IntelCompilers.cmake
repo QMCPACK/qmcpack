@@ -1,3 +1,6 @@
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
 # Check compiler version
 message(DEBUG "CMAKE_CXX_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION}")
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
@@ -40,7 +43,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND)
   add_compile_definitions(restrict=__restrict__)
 
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstrict-aliasing")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -D__forceinline=inline")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing")
 
   # Force frame-pointer kept in DEBUG build.
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")

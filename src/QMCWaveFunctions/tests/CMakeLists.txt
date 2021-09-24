@@ -10,10 +10,9 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR wavefunction)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/${SRC_DIR})
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
@@ -24,7 +23,7 @@ set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_
 set(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5)
 set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h5)
 set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
@@ -66,6 +65,7 @@ if(NOT QMC_CUDA)
   endif()
 endif()
 
+set(COMMON_SRC test_variable_set.cpp)
 set(TRIALWF_SRC
     test_TrialWaveFunction.cpp
     test_wavefunction_factory.cpp
@@ -93,6 +93,7 @@ set(JASTROW_SRC
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
     test_J1OrbitalSoA.cpp
+    test_J1Spin.cpp
     test_J2_bspline.cpp
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC
@@ -111,19 +112,19 @@ if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
-foreach(CATEGORY trialwf sposet jastrow determinant)
+foreach(CATEGORY common trialwf sposet jastrow determinant)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)
   add_executable(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
 
-  target_link_libraries(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions
+  target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
                         utilities_for_test container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
+    target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()
 
@@ -136,10 +137,10 @@ if(ENABLE_CUDA)
   add_executable(${UTEST_EXE} test_cuBLAS_LU.cpp)
   target_link_libraries(${UTEST_EXE} qmcwfs_direct_inversion_cuda utilities_for_test catch_main_no_mpi)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} platform_omptarget)
+    target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
   endif()
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
 
 if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
@@ -147,12 +148,12 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
-  target_link_libraries(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions
+  target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
                         utilities_for_test container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle containers platform_omptarget)
+    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle platform_omptarget_LA)
   endif()
 #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

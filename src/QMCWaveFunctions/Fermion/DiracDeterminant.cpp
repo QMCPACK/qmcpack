@@ -29,30 +29,19 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first), ndelay(1), invRow_id(-1)
-{}
-
-/** set the index of the first particle in the determinant and reset the size of the determinant
- *@param first index of first particle
- *@param nel number of particles in the determinant
- */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay)
+    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last), ndelay_(ndelay), invRow_id(-1)
 {
-  FirstIndex = first;
-  ndelay     = delay;
-
-  resize(nel, nel);
+  resize(NumPtcls, NumPtcls);
 
   if (Optimizable)
-    Phi->buildOptVariables(nel);
+    Phi->buildOptVariables(NumPtcls);
 
-  if (Phi->getOrbitalSetSize() < nel)
+  if (Phi->getOrbitalSetSize() < NumPtcls)
   {
     std::ostringstream err_msg;
     err_msg << "The SPOSet " << Phi->getName() << " only has " << Phi->getOrbitalSetSize() << " orbitals "
-            << "but this determinant needs at least " << nel << std::endl;
+            << "but this determinant needs at least " << NumPtcls << std::endl;
     throw std::runtime_error(err_msg.str());
   }
 }
@@ -61,7 +50,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
-  updateEng.invert_transpose(logdetT, invMat, LogValue);
+  updateEng.invert_transpose(logdetT, invMat, log_value_);
 }
 
 
@@ -74,16 +63,13 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  updateEng.resize(norb, ndelay);
+  updateEng.resize(norb, ndelay_);
   psiM.resize(nel, norb);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
-  LastIndex   = FirstIndex + nel;
-  NumPtcls    = nel;
-  NumOrbitals = norb;
 
   dpsiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);
@@ -237,7 +223,7 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to
   ScopedTimer local_timer(UpdateTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
-  LogValue += convertValueToLog(curRatio);
+  log_value_ += convertValueToLog(curRatio);
   updateEng.acceptRow(psiM, WorkingIndex, psiV, curRatio);
   if (!safe_to_delay)
     updateEng.updateInvMat(psiM);
@@ -324,7 +310,7 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
     // std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
 #endif
   }
-  buf.add(LogValue);
+  buf.add(log_value_);
 }
 
 template<typename DU_TYPE>
@@ -338,7 +324,7 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
     evaluateLog(P, G, L);
   else
     updateAfterSweep(P, G, L);
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DU_TYPE>
@@ -350,9 +336,9 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::upda
   {
     ScopedTimer local_timer(BufferTimer);
     buf.forward(Bytes_in_WFBuffer);
-    buf.put(LogValue);
+    buf.put(log_value_);
   }
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DU_TYPE>
@@ -362,7 +348,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
   dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
-  buf.get(LogValue);
+  buf.get(log_value_);
   // start with invRow labelled invalid
   invRow_id = -1;
   updateEng.initializeInv(psiM);
@@ -658,7 +644,7 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
       L[iat] += lap - dot(rv, rv);
     }
   }
-  return LogValue;
+  return log_value_;
 }
 
 template<typename DU_TYPE>
@@ -672,7 +658,7 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
   {
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    LogValue      = convertValueToLog(det);
+    log_value_      = convertValueToLog(det);
   }
   else
     invertPsiM(psiM_temp, psiM);
@@ -693,8 +679,7 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo));
-  dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
+  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo), FirstIndex, LastIndex, ndelay_);
   return dclone;
 }
 
@@ -731,7 +716,7 @@ void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection, 
 }
 
 template class DiracDeterminant<>;
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
