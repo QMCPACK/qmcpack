@@ -80,8 +80,6 @@ public:
   /// matrix inversion engine
   DiracMatrix<VALUE_FP> detEng;
 
-  int inv_row_id_;
-
   /** matrix inversion engine this crowd scope resouce and only the leader engine gets it.
    *  With some care this could be the DiracMatrixComputeCUDA 
    *  as well as DiracMatrixComputeOMPTarget
@@ -158,8 +156,6 @@ public:
 
   const OffloadMatrix<Value>& get_psiMinv() const { return psiMinv_; }
   OffloadMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
-  const int get_inv_row_id() const { return inv_row_id_; }
-  int& inv_row_id() { return inv_row_id_; }
 
   inline Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
 
