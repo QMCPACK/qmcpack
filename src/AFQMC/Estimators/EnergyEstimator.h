@@ -52,9 +52,9 @@ public:
 
   ~EnergyEstimator() {}
 
-  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) {}
+  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) override {}
 
-  void accumulate_block(WalkerSet& wset)
+  void accumulate_block(WalkerSet& wset) override
   {
     ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
@@ -101,7 +101,7 @@ public:
     }
   }
 
-  void tags(std::ofstream& out)
+  void tags(std::ofstream& out) override
   {
     if (TG.Global().root())
     {
@@ -117,7 +117,7 @@ public:
     }
   }
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     if (TG.Global().root())
     {
