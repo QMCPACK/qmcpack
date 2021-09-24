@@ -108,7 +108,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getModes());
+    addTable(p.DistTables[i]->get_origin(), p.DistTables[i]->getModes());
   if (p.SK)
   {
     LRBox = p.LRBox;                             //copy LRBox
