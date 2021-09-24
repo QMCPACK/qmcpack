@@ -45,10 +45,10 @@ template<class DiracDet, class SPO_precision>
 void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 {
 #if defined(MIXED_PRECISION)
-  const double grad_precision  = 1e-4;
+  const double grad_precision  = 1.3e-4;
   const double ratio_precision = 2e-4;
 #else
-  const double grad_precision               = std::is_same<SPO_precision, float_tag>::value ? 1e-4 : 1e-8;
+  const double grad_precision               = std::is_same<SPO_precision, float_tag>::value ? 1.3e-4 : 1e-8;
   const double ratio_precision              = std::is_same<SPO_precision, float_tag>::value ? 2e-4 : 1e-5;
 #endif
   OHMMS::Controller->initialize(0, NULL);
@@ -419,7 +419,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
   std::cout << "evalGrad next electron " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " "
             << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
-#if defined(MIXED_PRECISION)
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
   REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
@@ -434,23 +433,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(grad_precision));
   REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(grad_precision));
   REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(grad_precision));
-#endif
-#else
-#if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(grad_precision));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(grad_precision));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(grad_precision));
-#else
-  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(grad_precision));
-  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(grad_precision));
-  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(grad_precision));
-  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(grad_precision));
-  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(grad_precision));
-  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(grad_precision));
-#endif
 #endif
 
   std::vector<PosType> displ(2);
