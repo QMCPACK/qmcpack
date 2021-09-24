@@ -12,9 +12,9 @@
 set(CUDA_LEGACY_SRCS cuda_inverse.cu gpu_vector.cpp gpu_misc.cpp)
 
 if(NOT QMC_CUDA2HIP)
-  cuda_add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
-  cuda_add_cublas_to_target(platform_cuda_legacy)
-  target_link_libraries(platform_cuda_legacy PRIVATE ${CUDA_LIBRARIES})
+  add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
+  target_include_directories(platform_cuda_legacy PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+  target_link_libraries(platform_cuda_legacy PRIVATE CUDA::cublas)
 else()
   hip_add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
   target_link_libraries(platform_cuda_legacy PUBLIC platform_rocm_runtime platform_rocm_LA)

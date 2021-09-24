@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.17.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
@@ -14,6 +14,7 @@ cmake_policy(SET CMP0075 NEW)
 ######################################################################
 # QMCPACK project
 ######################################################################
+
 project(
   qmcpack
   VERSION 3.11.9
@@ -39,6 +40,17 @@ set(QMC_CXX_STANDARD
 if(NOT QMC_CXX_STANDARD EQUAL 17)
   message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
+endif()
+
+#--------------------------------------------------------------------
+# Set CUDA standard
+#--------------------------------------------------------------------
+set(QMC_CUDA_STANDARD
+    14
+    CACHE STRING "QMCPACK CUDA C++ language standard")
+if(NOT QMC_CUDA_STANDARD EQUAL 14)
+	message(WARNING "C++14 is the only CUDA language standard officially supported by this QMCPACK version. "
+                        "Using other versions of the CUDA C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
 #--------------------------------------------------------------------
@@ -260,6 +272,8 @@ endif()
 set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CUDA_STANDARD ${QMC_CUDA_STANDARD})
+set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 
 # Check that a C++ compiler is compatible with the underlying libstdc++
 include(Testlibstdc++)
@@ -662,38 +676,19 @@ if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
   else(QMC_CUDA2HIP)
-    # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
-    # It happened -ffast-math from host caused numerical issue in CUDA kernels.
-    option(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
-    find_package(CUDA REQUIRED)
-    set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
-    #set(CUDA_NVCC_FLAGS
-    #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
-    if(CUDA_NVCC_FLAGS MATCHES "arch")
-      # User defined NVCC flags
-      message(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-    else(CUDA_NVCC_FLAGS MATCHES "arch")
-      # Automatically set the default NVCC flags
-      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
-      if(QMC_COMPLEX)
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX=${QMC_COMPLEX}")
-      endif()
-      if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
-      else()
-        # Temporarily disable fast_math because it causes multiple test failures
-        # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
-      endif()
-      set(CUDA_ARCH
-          sm_70
-          CACHE STRING "CUDA architecture sm_XX")
-      set(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
-    endif(CUDA_NVCC_FLAGS MATCHES "arch")
-    include_directories(${CUDA_INCLUDE_DIRS})
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+      set(CMAKE_CUDA_ARCHITECTURES 70)
+    endif()
+    # Automatically set the default NVCC flags
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
+    if(QMC_COMPLEX)
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DQMC_COMPLEX=${QMC_COMPLEX}")
+    endif()
     set(HAVE_CUDA 1)
-    message("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-  endif(QMC_CUDA2HIP)
+    message("   CMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}")
+  endif()
 else(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(FATAL_ERROR "QMC_CUDA2HIP requires QMC_CUDA=ON or ENABLE_CUDA=ON.")
