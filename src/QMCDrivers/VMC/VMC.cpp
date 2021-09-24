@@ -129,9 +129,11 @@ bool VMC::run()
 #endif
   //copy back the random states
 #ifndef USE_FAKE_RNG
-  for (int ip = 0; ip < NumThreads; ++ip)
-    if (Rng[ip])
-      *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+  for (int ip = 0; ip < NumThreads; ++ip){
+    assert((Rng[i]));
+    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+      
+  }
 #endif
   ///write samples to a file
   bool wrotesamples = DumpConfig;
