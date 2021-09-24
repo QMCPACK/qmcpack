@@ -181,7 +181,7 @@ private:
 
   ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
-  RealType stabilizerScale, bigChange, exp0, stepsize;
+  RealType stabilizerScale, bigChange, exp0;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
