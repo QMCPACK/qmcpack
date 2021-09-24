@@ -52,6 +52,9 @@ protected:
   const int num_sources_;
   const int num_targets_;
 
+  ///name of the table
+  const std::string name_;
+
   /**defgroup SoA data */
   /*@{*/
   /** distances_[i][j] , [num_targets_][num_sources_]
@@ -83,23 +86,14 @@ protected:
   ///operation modes defined by DTModes
   DTModes modes_;
 
-  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
-   * It is intended only for safety checks, not for codepath selection.
-   */
-  int old_prepared_elec_id;
-
-  ///name of the table
-  const std::string name_;
-
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : origin_(source),
         num_sources_(source.getTotalNum()),
         num_targets_(target.getTotalNum()),
-        modes_(modes),
-        old_prepared_elec_id(-1),
-        name_(source.getName() + "_" + target.getName())
+        name_(source.getName() + "_" + target.getName()),
+        modes_(modes)
   {}
 
   /// copy constructor. deleted

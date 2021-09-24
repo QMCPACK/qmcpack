@@ -38,6 +38,9 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
+#if !defined(NDEBUG)
+        old_prepared_elec_id(-1),
+#endif
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
                                                        "_" + target.getName(),
                                                    timer_level_fine)),
@@ -98,8 +101,9 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   {
     ScopedTimer local_timer(move_timer_);
 
+#if !defined(NDEBUG)
     old_prepared_elec_id = prepare_old ? iat : -1;
-
+#endif
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            num_targets_, iat);
     // set up old_r_ and old_dr_ for moves may get accepted.
@@ -201,6 +205,12 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 private:
   ///number of targets with padding
   const int num_targets_padded_;
+#if !defined(NDEBUG)
+  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
+   * It is intended only for safety checks, not for codepath selection.
+   */
+  int old_prepared_elec_id;
+#endif
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
   /// timer for move()

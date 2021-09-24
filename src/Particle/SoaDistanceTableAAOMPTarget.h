@@ -65,6 +65,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
+#if !defined(NDEBUG)
+        old_prepared_elec_id(-1),
+#endif
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
@@ -193,7 +196,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   {
     ScopedTimer local_timer(move_timer_);
 
+#if !defined(NDEBUG)
     old_prepared_elec_id = prepare_old ? iat : -1;
+#endif
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
 
@@ -242,7 +247,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+#if !defined(NDEBUG)
       dt.old_prepared_elec_id = prepare_old ? iat : -1;
+#endif
       auto& coordinates_soa   = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
       rsoa_dev_list[iw]       = coordinates_soa.getDevicePtr();
     }
@@ -423,6 +430,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 private:
   ///number of targets with padding
   const int num_targets_padded_;
+#if !defined(NDEBUG)
+  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
+   * It is intended only for safety checks, not for codepath selection.
+   */
+  int old_prepared_elec_id;
+#endif
   /// timer for offload portion
   NewTimer& offload_timer_;
   /// timer for evaluate()
