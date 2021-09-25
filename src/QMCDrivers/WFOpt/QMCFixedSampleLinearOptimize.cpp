@@ -472,7 +472,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices");
+  m_param.add(OutputMatrices, "output_matrices_csv");
   m_param.add(FreezeParameters, "freeze_parameters");
 
   oAttrib.put(q);

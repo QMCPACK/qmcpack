@@ -25,7 +25,7 @@ namespace qmcplusplus
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
     : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   num_species = elns.groups();
   n_vec.resize(num_species, 0);
   for (int i = 0; i < num_species; i++)
@@ -62,8 +62,8 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   std::vector<std::string> slist, dlist;
   const int ntables = elns.getNumDistTables();
   for (int k = 0; k < ntables; ++k)
-    if (elns.getName() != elns.getDistTable(k).origin().getName())
-      dlist.push_back(elns.getDistTable(k).origin().getName());
+    if (elns.getName() != elns.getDistTable(k).get_origin().getName())
+      dlist.push_back(elns.getDistTable(k).get_origin().getName());
   parsewords(sources.c_str(), slist);
   std::set<int> others_sorted;
   for (int i = 0; i < slist.size(); ++i)
@@ -88,7 +88,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
     const DistanceTableData& t(elns.getDistTable(other_ids[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets[k] = toff;
-    const SpeciesSet& species(t.origin().getSpeciesSet());
+    const SpeciesSet& species(t.get_origin().getSpeciesSet());
     int ng = species.size();
     for (int i = 0; i < ng; ++i)
     {
@@ -125,7 +125,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   for (int k = 0; k < other_ids.size(); ++k)
   {
     const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+    const ParticleSet::ParticleIndex_t& gid(d1.get_origin().GroupID);
     int koff        = other_offsets[k];
     RealType overNI = 1.0 / d1.centers();
     for (int iat = 0; iat < d1.targets(); ++iat)
@@ -312,7 +312,7 @@ void PairCorrEstimator::report()
 
 bool PairCorrEstimator::get(std::ostream& os) const
 {
-  os << myName << " dmax=" << Dmax << std::endl;
+  os << name_ << " dmax=" << Dmax << std::endl;
   return true;
 }
 

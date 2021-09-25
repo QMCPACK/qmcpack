@@ -40,7 +40,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
     PreFactors[1] = 2.0 * std::sqrt(M_PI) / (Sigma * Area); //\f$  \frac{2\pi}{A}\frac{1}{Sigma\pi}\f$
     PreFactors[2] = 1.0 / (2 * Sigma);                      //Used for the k-dependent term
   }
-  fillFk(ref.SK->KLists);
+  fillFk(ref.SK->getKLists());
 }
 
 EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
@@ -51,7 +51,7 @@ EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
     kMag = aLR.kMag;
 }
 
-void EwaldHandler::fillFk(KContainer& KList)
+void EwaldHandler::fillFk(const KContainer& KList)
 {
   Fk.resize(KList.kpts_cart.size());
   const std::vector<int>& kshell(KList.kshell);

@@ -29,11 +29,11 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   ions          = &source;
   NumeSpecies   = elns->getSpeciesSet().getTotalNum();
   NumIonSpecies = ions->getSpeciesSet().getTotalNum();
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
 
-  NumK      = source.SK->KLists.numk;
+  NumK      = source.SK->getKLists().numk;
   OneOverN  = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell    = source.SK->KLists.kshell;
+  Kshell    = source.SK->getKLists().kshell;
   MaxKshell = Kshell.size() - 1;
 
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -50,7 +50,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.SK->KLists.ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.SK->getKLists().ksq[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
   hdf5_out = false;
@@ -75,7 +75,7 @@ void SkAllEstimator::evaluateIonIon()
 
   for (int k = 0; k < NumK; k++)
   {
-    PosType kvec = ions->SK->KLists.kpts_cart[k];
+    PosType kvec = ions->SK->getKLists().kpts_cart[k];
 
     filebuffer << kvec;
     for (int i = 0; i < NumIonSpecies; i++)
@@ -175,9 +175,9 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
   {
     for (int k = 0, count = 0; k < NumK; k++)
     {
-      value[NumK + count] = w * rhok[k].real();
+      value_[NumK + count] = w * rhok[k].real();
       count++;
-      value[NumK + count] = w * rhok[k].imag();
+      value_[NumK + count] = w * rhok[k].imag();
       count++;
     }
   }
@@ -273,13 +273,13 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   if (hdf5_out)
   {
     // Create HDF group in stat.h5 with SkAllEstimator's name
-    hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+    hid_t sgid = H5Gcreate(gid, name_.c_str(), 0);
 
     // Add k-point information
     h5desc.emplace_back("kpoints");
     auto& ohKPoints = h5desc.back();
     ohKPoints.open(sgid); // add to SkAll hdf group
-    ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->SK->KLists.kpts_cart), "value");
+    ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->SK->getKLists().kpts_cart), "value");
 
     // Add electron-electron S(k)
     std::vector<int> ng(1);

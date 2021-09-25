@@ -24,7 +24,7 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
     operator_ests_.emplace_back(upeb->clone());
 }
 
-void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
+void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng)
 {
   block_num_samples_ += walkers.size();
   for (MCPWalker& awalker : walkers)
@@ -35,7 +35,7 @@ void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, cons
   for (int i = 0; i < num_scalar_estimators; ++i)
     scalar_estimators_[i]->accumulate(walkers);
   for (int i = 0; i < operator_ests_.size(); ++i)
-    operator_ests_[i]->accumulate(walkers, psets);
+    operator_ests_[i]->accumulate(walkers, psets, wfns, rng);
 }
 
 

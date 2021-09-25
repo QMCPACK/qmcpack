@@ -9,18 +9,19 @@
 // File refactored from: SpinDensity.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+
 #include "SpinDensityNew.h"
 
 #include <iostream>
 #include <numeric>
+#include <SpeciesSet.h>
 
 namespace qmcplusplus
 {
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species, DataLocality dl)
-    : OperatorEstBase(dl), input_(std::move(input)), species_(species)
+    : OperatorEstBase(dl), input_(std::move(input)), species_(species), species_size_(getSpeciesSize(species))
 {
-  myName         = "SpinDensity";
-  data_locality_ = dl;
+  myName = "SpinDensity";
 
   if (input_.get_cell().explicitly_defined == true)
     lattice_ = input_.get_cell();
@@ -29,8 +30,6 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
                              "with an explicit lattice defined");
 
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-
-  species_size_ = getSpeciesSize(species_);
 
   data_ = createLocalData(getFullDataSize(), data_locality_);
 
@@ -42,7 +41,11 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
                                const Lattice& lattice,
                                const SpeciesSet& species,
                                const DataLocality dl)
-    : OperatorEstBase(dl), input_(std::move(input)), species_(species), lattice_(lattice)
+    : OperatorEstBase(dl),
+      input_(std::move(input)),
+      species_(species),
+      species_size_(getSpeciesSize(species)),
+      lattice_(lattice)
 {
   myName = "SpinDensity";
   std::cout << "SpinDensity constructor called\n";
@@ -54,13 +57,12 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
     throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
 
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-  species_size_       = getSpeciesSize(species_);
   data_               = createLocalData(getFullDataSize(), data_locality_);
   if (input_.get_write_report())
     report("  ");
 }
 
-std::vector<int> SpinDensityNew::getSpeciesSize(SpeciesSet& species)
+std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 {
   std::vector<int> species_size;
   int index = species.findAttribute("membersize");
@@ -83,9 +85,9 @@ SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
     : OperatorEstBase(sdn),
       input_(sdn.input_),
       species_(sdn.species_),
+      species_size_(sdn.species_size_),
       lattice_(sdn.lattice_),
-      derived_parameters_(sdn.derived_parameters_),
-      species_size_(sdn.species_size_)
+      derived_parameters_(sdn.derived_parameters_)
 {
   if (data_locality_ == DataLocality::crowd)
   {
@@ -120,7 +122,10 @@ void SpinDensityNew::startBlock(int steps)
  *  I tried for readable and not doing the optimizers job.
  *  The offsets into bare data are already bad enough.
  */
-void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
+void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
+                                const RefVector<ParticleSet>& psets,
+                                const RefVector<TrialWaveFunction>& wfns,
+                                RandomGenerator_t& rng)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -144,7 +149,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers, const RefVe
         accumulateToData(point, weight);
       }
   }
-};
+}
 
 void SpinDensityNew::accumulateToData(size_t point, QMCT::RealType weight)
 {

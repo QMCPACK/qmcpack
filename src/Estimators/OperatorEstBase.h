@@ -42,7 +42,7 @@ public:
    */
   using Data = UPtr<std::vector<QMCT::RealType>>;
 
-  /// locality for accumulation data
+  /// locality for accumulation data. FIXME full documentation of this state machine.
   DataLocality data_locality_;
 
   ///name of this object
@@ -63,7 +63,10 @@ public:
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
    */
-  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>& walkers,
+                          const RefVector<ParticleSet>& psets,
+                          const RefVector<TrialWaveFunction>& wfns,
+                          RandomGenerator_t& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -78,7 +81,7 @@ public:
   virtual void normalize(QMCT::RealType invToWgt);
 
   virtual void startBlock(int steps) = 0;
-  
+
   std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
 
   Data& get_data() { return data_; };
@@ -107,10 +110,11 @@ public:
   /** Return the total walker weight for this block
    */
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+
 protected:
   QMCT::FullPrecRealType walkers_weight_;
 
-  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator  
+  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
   /** create the typed data block for the Operator.

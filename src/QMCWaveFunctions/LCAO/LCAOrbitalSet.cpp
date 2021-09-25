@@ -79,7 +79,7 @@ void LCAOrbitalSet::checkObject() const
   }
 }
 
-SPOSet* LCAOrbitalSet::makeClone() const { return new LCAOrbitalSet(*this); }
+std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {

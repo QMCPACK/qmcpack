@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_POLYNOMIAL3D_FUNCTOR_H
 #define QMCPLUSPLUS_POLYNOMIAL3D_FUNCTOR_H
 
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/LinearFit.h"

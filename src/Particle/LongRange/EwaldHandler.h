@@ -95,7 +95,7 @@ public:
 
   mRealType evaluate_vlr_k(mRealType k) const override;
 
-  void fillFk(KContainer& KList);
+  void fillFk(const KContainer& KList);
 
   /** evaluate k-dependent
    */

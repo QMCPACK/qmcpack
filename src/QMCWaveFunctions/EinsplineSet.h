@@ -495,7 +495,7 @@ public:
   PosType get_k(int orb) override { return kPoints[orb]; }
 
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   EinsplineSetExtended()
       : MultiSpline(NULL),
@@ -651,7 +651,7 @@ public:
 
   std::string Type();
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   EinsplineSetHybrid();
 };

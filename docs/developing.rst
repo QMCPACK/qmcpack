@@ -176,7 +176,7 @@ used to separate words.
 Class data members
 ~~~~~~~~~~~~~~~~~~
 
-Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``).
+Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``). The use of public member functions is discourage, rethink the need for it in the first place. Instead ``get`` and ``set`` functions are the preferred access method.
 
 (Member) function names
 ~~~~~~~~~~~~~~~~~~~~~~~

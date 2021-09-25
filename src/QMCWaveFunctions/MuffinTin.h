@@ -20,7 +20,6 @@
 #include <vector>
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Optimize/VarList.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Lattice/CrystalLattice.h"
 #include "einspline/bspline_base.h"

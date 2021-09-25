@@ -26,21 +26,22 @@ class CompositeSPOSet : public SPOSet
 {
 public:
   ///component SPOSets
-  std::vector<SPOSet*> components;
+  std::vector<std::unique_ptr<SPOSet>> components;
   ///temporary storage for values
-  std::vector<ValueVector_t*> component_values;
+  std::vector<ValueVector_t> component_values;
   ///temporary storage for gradients
-  std::vector<GradVector_t*> component_gradients;
+  std::vector<GradVector_t> component_gradients;
   ///temporary storage for laplacians
-  std::vector<ValueVector_t*> component_laplacians;
+  std::vector<ValueVector_t> component_laplacians;
   ///store the precomputed offsets
   std::vector<int> component_offsets;
 
   CompositeSPOSet();
+  CompositeSPOSet(const CompositeSPOSet& other);
   ~CompositeSPOSet() override;
 
   ///add a sposet component to this composite sposet
-  void add(SPOSet* component);
+  void add(std::unique_ptr<SPOSet> component);
 
   ///print out component info
   void report();
@@ -49,12 +50,7 @@ public:
   ///size is determined by component sposets and nothing else
   inline void setOrbitalSetSize(int norbs) override {}
 
-  SPOSet* makeClone() const override;
-
-  /** add sposet clones from another Composite SPOSet
-     *   should only be used in makeClone functions following shallow copy
-     */
-  void clone_from(const CompositeSPOSet& master);
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 

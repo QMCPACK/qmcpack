@@ -248,9 +248,9 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi,
   dpsi = eye * (eis * psi_work_up - emis * psi_work_down);
 }
 
-SPOSet* SpinorSet::makeClone() const
+std::unique_ptr<SPOSet> SpinorSet::makeClone() const
 {
-  SpinorSet* myclone = new SpinorSet();
+  auto myclone = std::make_unique<SpinorSet>();
   std::unique_ptr<SPOSet> cloneup(spo_up->makeClone());
   std::unique_ptr<SPOSet> clonedn(spo_dn->makeClone());
   myclone->set_spos(std::move(cloneup), std::move(clonedn));

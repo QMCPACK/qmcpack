@@ -20,9 +20,6 @@ endif(QMC_OMP)
 
 add_definitions(-Drestrict=__restrict__)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__forceinline=inline")
-
 # Suppress compile warnings
 # 177 variable "XX" was declared but never referenced
 # 550 variable "XX" was set but never used

@@ -19,7 +19,7 @@
 #include <vector>
 #include <libxml/tree.h>
 #include "Message/Communicate.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include "QMCDrivers/Optimizers/OptimizerTypes.h"
 
 

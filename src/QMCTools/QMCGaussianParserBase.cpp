@@ -35,6 +35,17 @@ std::map<int, std::string> QMCGaussianParserBase::IonName;
 std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
 
+const std::vector<double> QMCGaussianParserBase::gCoreTable = {
+    0,                                      /* index zero*/
+    1,  2,                                  /*H He */
+    2,  2,  2,  2,  2,  2,  2,  10,         /*Li-Ne*/
+    10, 10, 10, 10, 10, 10, 10, 18,         /*Na-Ar*/
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
+    28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
+    46, 46, 46, 46, 46, 54                  /*In-Xe*/
+};
+
 QMCGaussianParserBase::QMCGaussianParserBase()
     : multideterminant(false),
       multidetH5(false),
@@ -94,7 +105,6 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       gBound(0),
       Occ_alpha(0),
       Occ_beta(0),
-      gridPtr(0),
       X(0),
       Y(0),
       Z(0)
@@ -159,7 +169,6 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       gBound(0),
       Occ_alpha(0),
       Occ_beta(0),
-      gridPtr(0),
       X(0),
       Y(0),
       Z(0)
@@ -427,23 +436,18 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     IonSystem.R *= ang_to_bohr;
   }
-  double CoreTable[] = {
-      0,                                      /* index zero*/
-      1,  2,                                  /*H He */
-      2,  2,  2,  2,  2,  2,  2,  10,         /*Li-Ne*/
-      10, 10, 10, 10, 10, 10, 10, 18,         /*Na-Ar*/
-      18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
-      28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
-      36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
-      46, 46, 46, 46, 46, 54                  /*In-Xe*/
-  };
-  SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+  SpeciesSet& ionSpecies = IonSystem.getSpeciesSet();
   for (int i = 0; i < ionSpecies.getTotalNum(); i++)
   {
     int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
     double valence = ionSpecies(IonChargeIndex, i);
-    if (valence > CoreTable[z] && FixValence != true)
-      valence -= CoreTable[z];
+    if (FixValence)
+    {
+      if (z > gCoreTable.size())
+        return nullptr;
+      else if (valence > gCoreTable[z])
+        valence -= gCoreTable[z];
+    }
     ionSpecies(ValenceChargeIndex, i) = valence;
     ionSpecies(AtomicNumberIndex, i)  = z;
   }
@@ -477,8 +481,13 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
       hout.push(SpecieID.str().c_str(), true);
       int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
       double valence = ionSpecies(IonChargeIndex, i);
-      if (valence > CoreTable[z] && FixValence != true)
-        valence -= CoreTable[z];
+      if (FixValence)
+      {
+        if (z > gCoreTable.size())
+          return nullptr;
+        else if (valence > gCoreTable[z])
+          valence -= gCoreTable[z];
+      }
       hout.write(z, "charge");
       hout.write(z, "atomic_number");
       hout.write(valence, "core");
@@ -1342,7 +1351,7 @@ xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_)
   xmlNewProp(abasis, (const xmlChar*)"type", (const xmlChar*)basisType.c_str());
   xmlNewProp(abasis, (const xmlChar*)"elementType", (const xmlChar*)CurrentCenter.c_str());
   xmlNewProp(abasis, (const xmlChar*)"normalized", (const xmlChar*)Normalized.c_str());
-  xmlAddChild(abasis, xmlCopyNode(gridPtr, 1));
+  xmlAddChild(abasis, xmlCopyNode(gridPtr.get(), 1));
   for (int ig = gBound[iat], n = 0; ig < gBound[iat + 1]; ig++, n++)
   {
     createShell(n, ig, off_, abasis);
@@ -1605,7 +1614,7 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
 
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 {
-  gridPtr = xmlNewNode(NULL, (const xmlChar*)"grid");
+  gridPtr = std::unique_ptr<xmlNode, void (*)(xmlNodePtr)>(xmlNewNode(NULL, (const xmlChar*)"grid"), xmlFreeNode);
   std::string gridType("log");
   std::string gridFirst("1.e-6");
   std::string gridLast("1.e2");
@@ -1636,10 +1645,10 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
     }
     ++iargc;
   }
-  xmlNewProp(gridPtr, (const xmlChar*)"type", (const xmlChar*)gridType.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"ri", (const xmlChar*)gridFirst.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"rf", (const xmlChar*)gridLast.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"type", (const xmlChar*)gridType.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"ri", (const xmlChar*)gridFirst.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"rf", (const xmlChar*)gridLast.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
 }
 
 void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& ion_tag)
@@ -1688,12 +1697,23 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       exit(0);
       // xmlAddChild(qm_root_p, createCell());
     }
-    xmlAddChild(qm_root_p, createIonSet());
-    xmlAddChild(qm_root_p, createElectronSet(ion_tag));
-    xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title + ".structure.xml";
-    xmlSaveFormatFile(fname.c_str(), doc_p, 1);
-    xmlFreeDoc(doc_p);
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dump, check out of "
+                               "bounds for valence calculation\n");
+    }
     Structure = true;
   }
   xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");
@@ -1717,7 +1737,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       //BASISSET
       {
         if (UseHDF5)
+        {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
+          xmlFreeNode(bsetPtr);
+        }
         else
         {
           if (!singledetH5)
@@ -1824,12 +1847,24 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     if (PBC)
       xmlAddChild(qm_root_p, createCell());
-    xmlAddChild(qm_root_p, createIonSet());
-    xmlAddChild(qm_root_p, createElectronSet(ion_tag));
-    xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title + ".structure.xml";
-    xmlSaveFormatFile(fname.c_str(), doc_p, 1);
-    xmlFreeDoc(doc_p);
+
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dumpPBC, check out of "
+                               "bounds for valence calculation\n");
+    }
     Structure = true;
   }
   xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");

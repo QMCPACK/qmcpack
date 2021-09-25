@@ -18,7 +18,7 @@
 #include "CPU/e2iphi.h"
 #include "EinsplineSet.h"
 #include "einspline/multi_bspline.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -1753,9 +1753,9 @@ void EinsplineSetExtended<StorageType>::registerTimers()
 
 
 template<typename StorageType>
-SPOSet* EinsplineSetExtended<StorageType>::makeClone() const
+std::unique_ptr<SPOSet> EinsplineSetExtended<StorageType>::makeClone() const
 {
-  EinsplineSetExtended<StorageType>* clone = new EinsplineSetExtended<StorageType>(*this);
+  auto clone = std::make_unique<EinsplineSetExtended<StorageType>>(*this);
   clone->registerTimers();
   for (int iat = 0; iat < clone->AtomicOrbitals.size(); iat++)
     clone->AtomicOrbitals[iat].registerTimers();
@@ -1778,9 +1778,9 @@ std::string EinsplineSetHybrid<double>::Type()
 
 
 template<typename StorageType>
-SPOSet* EinsplineSetHybrid<StorageType>::makeClone() const
+std::unique_ptr<SPOSet> EinsplineSetHybrid<StorageType>::makeClone() const
 {
-  EinsplineSetHybrid<StorageType>* clone = new EinsplineSetHybrid<StorageType>(*this);
+  auto clone = std::make_unique<EinsplineSetHybrid<StorageType>>(*this);
   clone->registerTimers();
   return clone;
 }

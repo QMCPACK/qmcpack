@@ -9,19 +9,17 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR afqmc_hamiltonian_operations)
 set(UTEST_EXE test_${SRC_DIR})
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/HamiltonianOperations)
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(${UTEST_EXE} test_hamiltonian_operations.cpp)
 target_link_libraries(${UTEST_EXE} catch_main afqmc)
 if(QMC_COMPLEX)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc_wfn_rhf)
   add_unit_test(
-    ${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+    ${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>
     "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5"
     "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.h5")
   #ELSE()

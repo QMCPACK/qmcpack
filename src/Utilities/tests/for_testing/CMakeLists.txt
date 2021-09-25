@@ -7,7 +7,6 @@
 #// File developed by: Peter Doak, , doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(TEST_NAME utilities_for_testing)
 set(UTEST_EXE test_${TEST_NAME})
@@ -17,4 +16,4 @@ add_executable(${UTEST_EXE} test_checkMatrix.cpp test_RandomForTest.cpp)
 target_link_libraries(${UTEST_EXE} catch_main_no_mpi utilities_for_test containers)
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

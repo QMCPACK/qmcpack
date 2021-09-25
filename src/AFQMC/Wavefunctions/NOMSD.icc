@@ -20,7 +20,7 @@
 #include <tuple>
 #include <mutex>
 
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/Timer.h"
 #include "Utilities/FairDivide.h"
 #include "AFQMC/config.h"

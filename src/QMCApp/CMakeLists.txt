@@ -18,7 +18,7 @@
 ####################################
 # create libqmc
 ####################################
-set(QMCAPPDIR QMCAppBase.cpp QMCMainState.cpp QMCMain.cpp CoupledMC.cpp accelerators.cpp)
+set(QMCAPPDIR QMCAppBase.cpp QMCMainState.cpp QMCMain.cpp CoupledMC.cpp)
 if(USE_OBJECT_TARGET)
   add_library(qmc OBJECT ${QMCAPPDIR})
 else()
@@ -30,7 +30,7 @@ target_link_libraries(qmc PUBLIC qmcdriver)
 # QMCPACK application
 ####################################
 add_executable(qmcpack qmcapp.cpp)
-
+set_target_properties(qmcpack PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${qmcpack_BINARY_DIR}/bin)
 if(QMC_COMPLEX)
   set_target_properties(qmcpack PROPERTIES OUTPUT_NAME "qmcpack_complex")
 endif(QMC_COMPLEX)
@@ -50,9 +50,7 @@ if(USE_OBJECT_TARGET)
     qmcwfs
     qmcparticle
     qmcutil
-    containers
-    platform_device
-    platform_omptarget)
+    platform_omptarget_LA)
 endif()
 
 if(BUILD_AFQMC)

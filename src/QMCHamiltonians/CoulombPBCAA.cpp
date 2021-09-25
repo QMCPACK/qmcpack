@@ -32,7 +32,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       d_aa_ID(ref.addTable(ref))
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
-  set_energy_domain(potential);
+  set_energy_domain(POTENTIAL);
   two_body_quantum_domain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
   initBreakup(ref);
@@ -62,7 +62,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     }
 
     RealType Vii_ref        = ewaldref::ewaldEnergy(A, R, Q);
-    RealType Vdiff_per_atom = std::abs(Value - Vii_ref) / NumCenters;
+    RealType Vdiff_per_atom = std::abs(value_ - Vii_ref) / NumCenters;
     app_log() << "Checking ion-ion Ewald energy against reference..." << std::endl;
     if (Vdiff_per_atom > Ps.Lattice.LR_tol)
     {
@@ -71,9 +71,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       msg << "in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
       msg << std::endl;
       msg << "  Reference ion-ion energy: " << Vii_ref << std::endl;
-      msg << "  QMCPACK   ion-ion energy: " << Value << std::endl;
-      msg << "            ion-ion diff  : " << Value - Vii_ref << std::endl;
-      msg << "            diff/atom     : " << (Value - Vii_ref) / NumCenters << std::endl;
+      msg << "  QMCPACK   ion-ion energy: " << value_ << std::endl;
+      msg << "            ion-ion diff  : " << value_ - Vii_ref << std::endl;
+      msg << "            diff/atom     : " << (value_ - Vii_ref) / NumCenters << std::endl;
       msg << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
       msg << std::endl;
       msg << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
@@ -94,7 +94,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << Value << std::endl;
+  app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << value_ << std::endl;
 }
 
 CoulombPBCAA::~CoulombPBCAA() = default;
@@ -120,7 +120,7 @@ void CoulombPBCAA::update_source(ParticleSet& s)
     eL = evalLR(s);
     eS = evalSR(s);
   }
-  NewValue = Value = eL + eS + myConst;
+  NewValue = value_ = eL + eS + myConst;
 }
 
 void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
@@ -134,15 +134,15 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAA::contribute_particle_quantities() { request.contribute_array(myName); }
+void CoulombPBCAA::contribute_particle_quantities() { request_.contribute_array(name_); }
 
 void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
+  streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
   {
     Ps.turnOnPerParticleSK();
-    V_sample = tm.checkout_real<1>(myName, Ps);
+    V_sample = tm.checkout_real<1>(name_, Ps);
     if (!is_active)
       evaluate_sp(Ps);
   }
@@ -162,12 +162,12 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
   {
 #if !defined(REMOVE_TRACEMANAGER)
     if (streaming_particles)
-      Value = evaluate_sp(P);
+      value_ = evaluate_sp(P);
     else
 #endif
-      Value = evalLR(P) + evalSR(P) + myConst;
+      value_ = evalLR(P) + evalSR(P) + myConst;
   }
-  return Value;
+  return value_;
 }
 
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
@@ -179,7 +179,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
   if (ComputeForces and !is_active)
     hf_terms -= forces;
   //No pulay term.
-  return Value;
+  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -229,10 +229,10 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         {
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += z * Zspec[s] *
-              AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
+              AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
                            PtclRhoK.eikr_i[i]);
 #else
-          v1 += z * Zspec[s] * AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[s], PtclRhoK.eikr[i]);
+          v1 += z * Zspec[s] * AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok[s], PtclRhoK.eikr[i]);
 #endif
         }
         V_samp(i) += v1;
@@ -242,7 +242,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   }
   for (int i = 0; i < V_samp.size(); ++i)
     V_samp(i) += V_const(i);
-  Value = Vsr + Vlr + Vc;
+  value_ = Vsr + Vlr + Vc;
 #if defined(TRACE_CHECK)
   RealType Vlrnow = evalLR(P);
   RealType Vsrnow = evalSR(P);
@@ -265,7 +265,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     APP_ABORT("Trace check failed");
   }
 #endif
-  return Value;
+  return value_;
 }
 #endif
 
@@ -479,7 +479,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       for (int jat = 0; jat < iat; ++jat)
         u += Zat[jat] *
             AA->evaluate_slab(-d_slab[jat], //JK: Could be wrong. Check the SIGN
-                              PtclRhoK.KLists.kshell, PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
+                              PtclRhoK.getKLists().kshell, PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
 #endif
       res += Zat[iat] * u;
     }
@@ -492,10 +492,10 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
-        mRealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
+        mRealType temp = AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                                       PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
 #else
-        mRealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+        mRealType temp = AA->evaluate(PtclRhoK.getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
 #endif
         if (spec2 == spec1)
           temp *= 0.5;

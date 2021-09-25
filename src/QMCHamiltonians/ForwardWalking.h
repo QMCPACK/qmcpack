@@ -34,7 +34,7 @@ struct ForwardWalking : public OperatorBase
 
   /** constructor
    */
-  ForwardWalking() { UpdateMode.set(OPTIMIZABLE, 1); }
+  ForwardWalking() { update_mode_.set(OPTIMIZABLE, 1); }
 
   ///destructor
   ~ForwardWalking() override {}

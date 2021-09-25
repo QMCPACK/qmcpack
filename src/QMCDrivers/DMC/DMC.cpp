@@ -28,7 +28,7 @@
 #include "Message/OpenMP.h"
 #include "Utilities/Timer.h"
 #include "Utilities/RunTimeManager.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/qmc_common.h"
 #include "Utilities/FairDivide.h"

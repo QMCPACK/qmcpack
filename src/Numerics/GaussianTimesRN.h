@@ -14,7 +14,9 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
-#include "Numerics/OptimizableFunctorBase.h"
+
+// this reference to OptimizableFunctorBase.h in QMCWaveFunctions is ugly
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
@@ -185,8 +187,6 @@ struct GaussianTimesRN : public OptimizableFunctorBase
   }
 
   bool put(xmlNodePtr cur) override;
-
-  void addOptimizables(VarRegistry<real_type>& vlist) {}
 
   /** process cur xmlnode
    * @param cur root node

@@ -38,11 +38,9 @@ struct GridExternalPotential : public OperatorBase
   //construction/destruction
   GridExternalPotential(ParticleSet& P) : Ps(P)
   {
-    set_energy_domain(potential);
+    set_energy_domain(POTENTIAL);
     one_body_quantum_domain(P);
   }
-
-  ~GridExternalPotential() override {}
 
   //unneeded interface functions
   void resetTargetParticleSet(ParticleSet& P) override {}
@@ -58,13 +56,13 @@ struct GridExternalPotential : public OperatorBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   //traces interface
-  void contribute_particle_quantities() override { request.contribute_array(myName); }
+  void contribute_particle_quantities() override { request_.contribute_array(name_); }
 
   void checkout_particle_quantities(TraceManager& tm) override
   {
-    streaming_particles = request.streaming_array(myName);
+    streaming_particles = request_.streaming_array(name_);
     if (streaming_particles)
-      V_sample = tm.checkout_real<1>(myName, Ps);
+      V_sample = tm.checkout_real<1>(name_, Ps);
   }
 
   void delete_particle_quantities() override

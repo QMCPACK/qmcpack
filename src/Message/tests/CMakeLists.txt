@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, mdewing@ganl.gov Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR message)
 set(UTEST_EXE test_${SRC_DIR})
@@ -18,7 +17,7 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 add_executable(${UTEST_EXE} test_communciate.cpp)
 target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 
 if(HAVE_MPI)
   set(UTEST_EXE test_${SRC_DIR}_mpi)
@@ -29,5 +28,5 @@ if(HAVE_MPI)
   #Way too many depenedencies make for very slow test linking
   target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  add_unit_test(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif(HAVE_MPI)

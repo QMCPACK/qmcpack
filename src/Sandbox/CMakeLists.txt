@@ -6,6 +6,6 @@ set(ESTEST diff_distancetables einspline_spo einspline_spo_nested determinant re
 foreach(p ${ESTEST})
   add_executable(${p} ${p}.cpp)
   target_link_libraries(${p} einspline qmcparticle)
-  add_unit_test(sandbox_${p} 1 3 ${qmcpack_BINARY_DIR}/bin/${p})
+  add_unit_test(sandbox_${p} 1 3 $<TARGET_FILE:${p}>)
 
 endforeach(p ${ESTEST})

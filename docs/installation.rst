@@ -111,7 +111,7 @@ newer versions are faster; see :ref:`buildperformance` for performance suggestio
 unsupported and untested by the developers although they may still work.
 
 -  C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
-   are required to support the C++ 14 standard. Use of recent (“current
+   are required to support the C++ 17 standard. Use of recent (“current
    year version”) compilers is strongly encouraged.
 
 -  An MPI library such as OpenMPI (http://open-mpi.org) or a
@@ -143,7 +143,7 @@ Many of the utilities provided with QMCPACK require Python (v3). The numpy
 and matplotlib libraries are required for full functionality.
 
 
-C++ 14 standard library
+C++ 17 standard library
 -----------------------
 
 The C++ standard consists of language features—which are implemented in
@@ -151,15 +151,15 @@ the compiler—and library features—which are implemented in the standard
 library. GCC includes its own standard library and headers, but many
 compilers do not and instead reuse those from an existing GCC install.
 Depending on setup and installation, some of these compilers might not
-default to using a GCC with C++ 14 headers (e.g., GCC 4.8 is common as a
+default to using a GCC with C++ 17 headers (e.g., GCC 4.8 is common as a
 base system compiler, but its standard library only supports C++ 11).
 
-The symptom of having header files that do not support the C++ 14
+The symptom of having header files that do not support the C++ 17
 standard is usually compile errors involving standard include header
 files. Look for the GCC library version, which should be present in the
-path to the include file in the error message, and ensure that it is 5.0
+path to the include file in the error message, and ensure that it is 8.1
 or greater. To avoid these errors occurring at compile time, QMCPACK
-tests for a C++ 14 standard library during configuration and will halt
+tests for a C++ 17 standard library during configuration and will halt
 with an error if one is not found.
 
 At sites that use modules, it is often sufficient to simply load a newer
@@ -168,14 +168,14 @@ GCC.
 Intel compiler
 ~~~~~~~~~~~~~~
 
-The Intel compiler version must be 19 or newer due to use of C++14 and bugs and limitations in earlier versions.
+The Intel compiler version must be 19 or newer due to use of C++17 and bugs and limitations in earlier versions.
 
 If a newer GCC is needed, the ``-cxxlib`` option can be used to point to a different
 GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Be sure to
 pass this flag to the C compiler in addition to the C++ compiler. This
 is necessary because CMake extracts some library paths from the C
 compiler, and those paths usually also contain to the C++ library. The
-symptom of this problem is C++ 14 standard library functions not found
+symptom of this problem is C++ 17 standard library functions not found
 at link time.
 
 .. _cmake:
@@ -186,8 +186,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.6, which is the oldest version to
-support correct application of C++ 14 flags for the Intel compiler. Most
+minimum required version of CMake is 3.14.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 
@@ -326,17 +325,15 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
-    QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
-    QMC_INCLUDE               Add extra include paths
-    QMC_EXTRA_LIBS            Add extra link libraries
-    QMC_BUILD_STATIC          ON/OFF(default). Add -static flags to build
-    QMC_SYMLINK_TEST_FILES    Set to zero to require test files to be copied. Avoids space
-                              saving default use of symbolic links for test files. Useful
-                              if the build is on a separate filesystem from the source, as
-                              required on some HPC systems.
-    QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                              including details of which tests are enabled.
+    QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+    QMC_INCLUDE            Add extra include paths
+    QMC_EXTRA_LIBS         Add extra link libraries
+    QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
+    QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                           saving default use of symbolic links for test files. Useful
+                           if the build is on a separate filesystem from the source, as
+                           required on some HPC systems.
 
 - BLAS/LAPACK related
 
@@ -345,6 +342,12 @@ the path to the source directory.
     BLA_VENDOR          If set, checks only the specified vendor, if not set checks all the possibilities.
                         See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
     MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
+
+- Scalar and vector math functions
+
+  ::
+    QMC_MATH_VENDOR     Select a vendor optimized library for scalar and vector math functions.
+                        Providers are GENERIC INTEL_VML IBM_MASS AMD_LIBM
 
 - libxml2 related
 
@@ -566,7 +569,6 @@ than usually needed for comprehensiveness:
 
   export CXX=mpic++
   export CC=mpicc
-  export ACML_HOME=/opt/acml-5.3.1/gfortran64
   export HDF5_ROOT=/opt/hdf5
   export BOOST_ROOT=/opt/boost
 
@@ -578,7 +580,6 @@ than usually needed for comprehensiveness:
     -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
     -D FFTW_INCLUDE_DIRS=/usr/include                 \
     -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-    -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
     -D QMC_DATA=/projects/QMCPACK/qmc-data            \
     ..
 
@@ -1845,7 +1846,7 @@ To build the fastest version of QMCPACK we recommend the following:
   system. Substantial gains have been made optimizing C++ in recent
   years.
 
-- Use a vendor-optimized BLAS library such as Intel MKL and AMD ACML. Although
+- Use a vendor-optimized BLAS library such as Intel MKL and AMD AOCL. Although
   QMC does not make extensive use of linear algebra, it is used in the
   VMC wavefunction optimizer to apply the orbital coefficients in local basis
   calculations and in the Slater determinant update.
