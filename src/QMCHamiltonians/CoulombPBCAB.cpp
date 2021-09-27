@@ -32,8 +32,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
-  set_energy_domain(POTENTIAL);
-  two_body_quantum_domain(ions, elns);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, elns);
   if (ComputeForces)
     PtclA.turnOnPerParticleSK();
   initBreakup(elns);
@@ -69,9 +69,9 @@ void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectabl
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAB::contribute_particle_quantities() { request_.contribute_array(name_); }
+void CoulombPBCAB::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
+void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
 {
   streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
@@ -83,7 +83,7 @@ void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAB::delete_particle_quantities()
+void CoulombPBCAB::deleteParticleQuantities()
 {
   if (streaming_particles)
   {

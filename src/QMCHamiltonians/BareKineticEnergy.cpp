@@ -38,8 +38,8 @@ using Return_t = BareKineticEnergy::Return_t;
    */
 BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
 {
-  set_energy_domain(KINETIC);
-  one_body_quantum_domain(p);
+  setEnergyDomain(KINETIC);
+  oneBodyQuantumDomain(p);
   streaming_kinetic      = false;
   streaming_kinetic_comp = false;
   streaming_momentum     = false;
@@ -61,14 +61,14 @@ BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
 BareKineticEnergy::~BareKineticEnergy() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
-void BareKineticEnergy::contribute_particle_quantities()
+void BareKineticEnergy::contributeParticleQuantities()
 {
   request_.contribute_array(name_);
   request_.contribute_array(name_ + "_complex");
   request_.contribute_array("momentum");
 }
 
-void BareKineticEnergy::checkout_particle_quantities(TraceManager& tm)
+void BareKineticEnergy::checkoutParticleQuantities(TraceManager& tm)
 {
   streaming_particles = request_.streaming_array(name_) || request_.streaming_array(name_ + "_complex") ||
       request_.streaming_array("momentum");
@@ -80,7 +80,7 @@ void BareKineticEnergy::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void BareKineticEnergy::delete_particle_quantities()
+void BareKineticEnergy::deleteParticleQuantities()
 {
   if (streaming_particles)
   {

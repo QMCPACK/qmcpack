@@ -40,22 +40,22 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
-  void delete_particle_quantities() override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
+  void mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                  const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                  const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVectorWithLeader<ParticleSet>& p_list) const override;
+  void mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -188,7 +188,7 @@ private:
    */
   void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
-  /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
+  /** the actual implementation for batched walkers, used by mwEvaluate and mwEvaluateWithToperator
    * @param o_list the list of NonLocalECPotential in a walker batch
    * @param p_list the list of ParticleSet in a walker batch
    * @param Tmove whether Txy for Tmove is updated

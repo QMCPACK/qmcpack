@@ -72,8 +72,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         is_active(active),
         ComputeForces(computeForces)
   {
-    set_energy_domain(POTENTIAL);
-    two_body_quantum_domain(s, s);
+    setEnergyDomain(POTENTIAL);
+    twoBodyQuantumDomain(s, s);
     nCenters = s.getTotalNum();
     prefix   = "F_AA";
 
@@ -102,15 +102,15 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         is_active(active),
         ComputeForces(false)
   {
-    set_energy_domain(POTENTIAL);
-    two_body_quantum_domain(s, t);
+    setEnergyDomain(POTENTIAL);
+    twoBodyQuantumDomain(s, t);
     nCenters = s.getTotalNum();
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override { request_.contribute_array(name_); }
+  void contributeParticleQuantities() override { request_.contribute_array(name_); }
 
-  void checkout_particle_quantities(TraceManager& tm) override
+  void checkoutParticleQuantities(TraceManager& tm) override
   {
     streaming_particles = request_.streaming_array(name_);
     if (streaming_particles)
@@ -125,7 +125,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
   }
 
-  void delete_particle_quantities() override
+  void deleteParticleQuantities() override
   {
     if (streaming_particles)
     {
@@ -323,7 +323,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
   ~CoulombPotential() override {}
 
-  void update_source(ParticleSet& s) override
+  void updateSource(ParticleSet& s) override
   {
     if (is_AA)
     {

@@ -56,9 +56,9 @@ OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { ret
  * really should reduce vector of local_energies. matching the ordering and size of o list
  * the this can be call for 1 or more QMCHamiltonians
  */
-void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                               const RefVectorWithLeader<ParticleSet>& p_list) const
+void OperatorBase::mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(this == &o_list.getLeader());
 /**  Temporary raw omp pragma for simple thread parallelism
@@ -90,11 +90,11 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     o_list[iw].evaluate(p_list[iw]);
 }
 
-void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                                       const opt_variables_type& optvars,
-                                                       RecordArray<ValueType>& dlogpsi,
-                                                       RecordArray<ValueType>& dhpsioverpsi) const
+void OperatorBase::mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                                      const opt_variables_type& optvars,
+                                                      RecordArray<ValueType>& dlogpsi,
+                                                      RecordArray<ValueType>& dhpsioverpsi) const
 {
   const int nparam = dlogpsi.nparam();
   std::vector<ValueType> tmp_dlogpsi(nparam);
@@ -116,43 +116,43 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader
 }
 
 
-void OperatorBase::set_energy_domain(EnergyDomains edomain)
+void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 {
-  if (energy_domain_valid(edomain))
+  if (energyDomainValid(edomain))
     energy_domain = edomain;
   else
-    APP_ABORT("QMCHamiltonainBase::set_energy_domain\n  input energy domain is invalid");
+    APP_ABORT("QMCHamiltonainBase::setEnergyDomain\n  input energy domain is invalid");
 }
 
-void OperatorBase::set_quantum_domain(QuantumDomains qdomain)
+void OperatorBase::setQuantumDomain(QuantumDomains qdomain)
 {
-  if (quantum_domain_valid(qdomain))
+  if (quantumDomainValid(qdomain))
     quantum_domain = qdomain;
   else
-    APP_ABORT("QMCHamiltonainBase::set_quantum_domain\n  input quantum domain is invalid");
+    APP_ABORT("QMCHamiltonainBase::setQuantumDomain\n  input quantum domain is invalid");
 }
 
-void OperatorBase::one_body_quantum_domain(const ParticleSet& P)
+void OperatorBase::oneBodyQuantumDomain(const ParticleSet& P)
 {
   if (P.is_classical())
     quantum_domain = CLASSICAL;
   else if (P.is_quantum())
     quantum_domain = QUANTUM;
   else
-    APP_ABORT("OperatorBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
+    APP_ABORT("OperatorBase::oneBodyQuantumDomain\n  quantum domain of input particles is invalid");
 }
 
-void OperatorBase::two_body_quantum_domain(const ParticleSet& P)
+void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P)
 {
   if (P.is_classical())
     quantum_domain = CLASSICAL_CLASSICAL;
   else if (P.is_quantum())
     quantum_domain = QUANTUM_QUANTUM;
   else
-    APP_ABORT("OperatorBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
+    APP_ABORT("OperatorBase::twoBodyQuantumDomain(P)\n  quantum domain of input particles is invalid");
 }
 
-void OperatorBase::two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2)
+void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2)
 {
   bool c1 = P1.is_classical();
   bool c2 = P2.is_classical();
@@ -165,10 +165,10 @@ void OperatorBase::two_body_quantum_domain(const ParticleSet& P1, const Particle
   else if (q1 && q2)
     quantum_domain = QUANTUM_QUANTUM;
   else
-    APP_ABORT("OperatorBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
+    APP_ABORT("OperatorBase::twoBodyQuantumDomain(P1,P2)\n  quantum domain of input particles is invalid");
 }
 
-bool OperatorBase::quantum_domain_valid(QuantumDomains qdomain) { return qdomain != NO_QUANTUM_DOMAIN; }
+bool OperatorBase::quantumDomainValid(QuantumDomains qdomain) { return qdomain != NO_QUANTUM_DOMAIN; }
 
 void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {

@@ -23,8 +23,8 @@ namespace qmcplusplus
 SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
     : myRNG(nullptr), IonConfig(ions), Psi(psi), Peln(els), ElecNeighborIons(els), IonNeighborElecs(ions)
 {
-  set_energy_domain(POTENTIAL);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, els);
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   PP.resize(NumIons, nullptr);

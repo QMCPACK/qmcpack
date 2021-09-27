@@ -188,8 +188,8 @@ public:
    * @param P the target particle set
    */
   virtual void evaluate(ParticleSet& P) = 0;
-  virtual void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list) const
+  virtual void mwEvaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const
   {
 #pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)

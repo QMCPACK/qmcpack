@@ -393,7 +393,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       else
       {
         // Energy
-        auto energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
+        auto energy_list = QMCHamiltonian::mwEvaluate(h_list, wf_list, p_list);
 
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
@@ -594,7 +594,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
         int is = base_sample_index + ib;
         wf_list[ib].G += *gradPsi[is];
         wf_list[ib].L += *lapPsi[is];
-        // This is needed to get the KE correct in QMCHamiltonian::mw_evaluate below
+        // This is needed to get the KE correct in QMCHamiltonian::mwEvaluate below
         p_list[ib].G += *gradPsi[is];
         p_list[ib].L += *lapPsi[is];
         Return_rt weight            = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
@@ -637,7 +637,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       else
       {
         // Just energy needed if no gradients
-        auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, wf_list, p_list);
+        auto energy_list = QMCHamiltonian::mwEvaluate(h0_list, wf_list, p_list);
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
           int is                        = base_sample_index + ib;

@@ -487,7 +487,7 @@ void DensityMatrices1B::report(const std::string& pad)
 }
 
 
-void DensityMatrices1B::get_required_traces(TraceManager& tm)
+void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 {
   w_trace = tm.get_real_trace("weight");
   if (energy_mat)

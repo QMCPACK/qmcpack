@@ -149,11 +149,11 @@ public:
   TraceRequest& getRequest() noexcept;
 #endif
 
-  inline bool is_classical() { return quantum_domain == CLASSICAL; }
-  inline bool is_quantum() { return quantum_domain == QUANTUM; }
-  inline bool is_classical_classical() { return quantum_domain == CLASSICAL_CLASSICAL; }
-  inline bool is_quantum_classical() { return quantum_domain == QUANTUM_CLASSICAL; }
-  inline bool is_quantum_quantum() { return quantum_domain == QUANTUM_QUANTUM; }
+  inline bool isClassical() { return quantum_domain == CLASSICAL; }
+  inline bool isQuantum() { return quantum_domain == QUANTUM; }
+  inline bool isClassicalClassical() { return quantum_domain == CLASSICAL_CLASSICAL; }
+  inline bool isQuantumClassical() { return quantum_domain == QUANTUM_CLASSICAL; }
+  inline bool isQuantumQuantum() { return quantum_domain == QUANTUM_QUANTUM; }
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
@@ -216,15 +216,15 @@ public:
    */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list) const;
+  virtual void mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                   const RefVectorWithLeader<ParticleSet>& p_list,
-                                                   const opt_variables_type& optvars,
-                                                   RecordArray<ValueType>& dlogpsi,
-                                                   RecordArray<ValueType>& dhpsioverpsi) const;
+  virtual void mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                                  const opt_variables_type& optvars,
+                                                  RecordArray<ValueType>& dlogpsi,
+                                                  RecordArray<ValueType>& dhpsioverpsi) const;
 
 
   virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
@@ -235,11 +235,11 @@ public:
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
 
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                        const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                        const RefVectorWithLeader<ParticleSet>& p_list) const
+  virtual void mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-    mw_evaluate(o_list, wf_list, p_list);
+    mwEvaluate(o_list, wf_list, p_list);
   }
 
   /** evaluate value and derivatives wrt the optimizables
@@ -294,7 +294,7 @@ public:
    *
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
    */
-  virtual void update_source(ParticleSet& s) {}
+  virtual void updateSource(ParticleSet& s) {}
 
   /** return an average value by collective operation
    */
@@ -328,39 +328,39 @@ public:
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///make trace quantities available
-  inline void contribute_trace_quantities()
+  inline void contributeTraceQuantities()
   {
-    contribute_scalar_quantities();
-    contribute_particle_quantities();
+    contributeScalarQuantities();
+    contributeParticleQuantities();
   }
 
   ///checkout trace arrays
-  inline void checkout_trace_quantities(TraceManager& tm)
+  inline void checkoutTraceQuantities(TraceManager& tm)
   {
     //derived classes must guard individual checkouts using request info
-    checkout_scalar_quantities(tm);
-    checkout_particle_quantities(tm);
+    checkoutScalarQuantities(tm);
+    checkoutParticleQuantities(tm);
   }
 
   ///collect scalar trace data
-  inline void collect_scalar_traces()
+  inline void collectScalarTraces()
   {
-    //app_log()<<"OperatorBase::collect_scalar_traces"<< std::endl;
-    collect_scalar_quantities();
+    //app_log()<<"OperatorBase::collectScalarTraces"<< std::endl;
+    collectScalarQuantities();
   }
 
   ///delete trace arrays
-  inline void delete_trace_quantities()
+  inline void deleteTraceQuantities()
   {
-    delete_scalar_quantities();
-    delete_particle_quantities();
+    deleteScalarQuantities();
+    deleteParticleQuantities();
     streaming_scalars    = false;
     streaming_particles  = false;
     have_required_traces = false;
     request_.reset();
   }
 
-  virtual void get_required_traces(TraceManager& tm){};
+  virtual void getRequiredTraces(TraceManager& tm){};
 #endif
 
   virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
@@ -408,30 +408,30 @@ protected:
   virtual bool put(xmlNodePtr cur) = 0;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_scalar_quantities() { request_.contribute_scalar(name_); }
+  virtual void contributeScalarQuantities() { request_.contribute_scalar(name_); }
 
-  virtual void checkout_scalar_quantities(TraceManager& tm)
+  virtual void checkoutScalarQuantities(TraceManager& tm)
   {
     streaming_scalars = request_.streaming_scalar(name_);
     if (streaming_scalars)
       value_sample = tm.checkout_real<1>(name_);
   }
 
-  virtual void collect_scalar_quantities()
+  virtual void collectScalarQuantities()
   {
     if (streaming_scalars)
       (*value_sample)(0) = value_;
   }
 
-  virtual void delete_scalar_quantities()
+  virtual void deleteScalarQuantities()
   {
     if (streaming_scalars)
       delete value_sample;
   }
 
-  virtual void contribute_particle_quantities(){};
-  virtual void checkout_particle_quantities(TraceManager& tm){};
-  virtual void delete_particle_quantities(){};
+  virtual void contributeParticleQuantities(){};
+  virtual void checkoutParticleQuantities(TraceManager& tm){};
+  virtual void deleteParticleQuantities(){};
 #endif
 
   virtual void setComputeForces(bool compute)
@@ -440,19 +440,19 @@ protected:
   }
 
   ///set energy domain
-  void set_energy_domain(EnergyDomains edomain);
+  void setEnergyDomain(EnergyDomains edomain);
 
   ///set quantum domain
-  void set_quantum_domain(QuantumDomains qdomain);
+  void setQuantumDomain(QuantumDomains qdomain);
 
   ///set quantum domain for one-body operator
-  void one_body_quantum_domain(const ParticleSet& P);
+  void oneBodyQuantumDomain(const ParticleSet& P);
 
   ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P);
+  void twoBodyQuantumDomain(const ParticleSet& P);
 
   ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
+  void twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2);
 
   /**
    * named values to  the property list
@@ -480,16 +480,16 @@ private:
 #endif
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
+  inline bool energyDomainValid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
+  inline bool energyDomainValid() const { return energyDomainValid(energy_domain); }
 
   ///return whether the quantum domain is valid
-  bool quantum_domain_valid(QuantumDomains qdomain);
+  bool quantumDomainValid(QuantumDomains qdomain);
 
   ///return whether the quantum domain is valid
-  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
+  inline bool quantumDomainValid() { return quantumDomainValid(quantum_domain); }
 };
 } // namespace qmcplusplus
 #endif

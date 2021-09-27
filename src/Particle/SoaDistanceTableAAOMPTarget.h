@@ -425,7 +425,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     // if the distance table is not updated by mw_move during p-by-p, needs to recompute the whole table
     // before being used by Hamiltonian.
     if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
-      mw_evaluate(dt_list, p_list);
+      mwEvaluate(dt_list, p_list);
   }
 
 private:

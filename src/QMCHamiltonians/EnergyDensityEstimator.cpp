@@ -203,7 +203,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 }
 
 
-void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
+void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
   w_trace    = tm.get_real_trace("weight");

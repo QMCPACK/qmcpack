@@ -92,7 +92,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       ParentName(p.parentName()),
       coordinates_(p.coordinates_->makeClone())
 {
-  set_quantum_domain(p.quantum_domain);
+  setQuantumDomain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
   Mass = p.Mass;
@@ -155,12 +155,12 @@ void ParticleSet::create(const std::vector<int>& agroup)
   }
 }
 
-void ParticleSet::set_quantum_domain(quantum_domains qdomain)
+void ParticleSet::setQuantumDomain(quantum_domains qdomain)
 {
-  if (quantum_domain_valid(qdomain))
+  if (quantumDomainValid(qdomain))
     quantum_domain = qdomain;
   else
-    APP_ABORT("ParticleSet::set_quantum_domain\n  input quantum domain is not valid for particles");
+    APP_ABORT("ParticleSet::setQuantumDomain\n  input quantum domain is not valid for particles");
 }
 
 void ParticleSet::resetGroups()
@@ -413,7 +413,7 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   for (int i = 0; i < dts.size(); ++i)
   {
     const auto dt_list(extractDTRefList(p_list, i));
-    dts[i]->mw_evaluate(dt_list, p_list);
+    dts[i]->mwEvaluate(dt_list, p_list);
   }
 
   if (!skipSK && p_leader.SK)

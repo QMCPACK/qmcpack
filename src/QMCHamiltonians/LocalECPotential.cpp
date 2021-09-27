@@ -23,8 +23,8 @@ namespace qmcplusplus
 {
 LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : IonConfig(ions), Peln(els), Pion(ions)
 {
-  set_energy_domain(POTENTIAL);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, els);
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
   //allocate null
@@ -58,9 +58,9 @@ void LocalECPotential::add(int groupID, std::unique_ptr<RadialPotentialType>&& p
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
-void LocalECPotential::contribute_particle_quantities() { request_.contribute_array(name_); }
+void LocalECPotential::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
+void LocalECPotential::checkoutParticleQuantities(TraceManager& tm)
 {
   streaming_particles = request_.streaming_array(name_);
   if (streaming_particles)
@@ -70,7 +70,7 @@ void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void LocalECPotential::delete_particle_quantities()
+void LocalECPotential::deleteParticleQuantities()
 {
   if (streaming_particles)
   {
