@@ -36,7 +36,7 @@ void ChiesaCorrection::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
   auto& walkers = W.WalkerList;
   for (int iw = 0; iw < LocalEnergy.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = corr;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = corr;
     LocalEnergy[iw] += corr;
   }
 }

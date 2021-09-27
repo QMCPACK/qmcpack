@@ -43,7 +43,7 @@ void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
-  RealType wgt = tWalker->Weight;
+  RealType wgt = t_walker_->Weight;
   if (Periodic)
   {
     for (int iat = 0; iat < P.getTotalNum(); ++iat)
@@ -110,7 +110,7 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
 void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   //current index
-  myIndex = collectables.current();
+  my_index_ = collectables.current();
   std::vector<RealType> tmp(NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
   //potentialIndex=collectables.current();
@@ -126,7 +126,7 @@ void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5des
     ng[i] = NumGrids[i];
   h5desc.emplace_back(name_);
   auto& h5o = h5desc.back();
-  h5o.set_dimensions(ng, myIndex);
+  h5o.set_dimensions(ng, my_index_);
   h5o.open(gid);
 }
 

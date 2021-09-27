@@ -32,8 +32,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
-  set_energy_domain(POTENTIAL);
-  two_body_quantum_domain(ions, elns);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, elns);
   if (ComputeForces)
     PtclA.turnOnPerParticleSK();
   initBreakup(elns);
@@ -62,19 +62,19 @@ void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 
 void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.add(name_.c_str());
+  my_index_ = plist.add(name_.c_str());
   if (ComputeForces)
     addObservablesF(plist);
 }
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAB::contribute_particle_quantities() { request_.contribute_array(name_); }
+void CoulombPBCAB::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
+void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(name_);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
     Pion.turnOnPerParticleSK();
     Peln.turnOnPerParticleSK();
@@ -83,9 +83,9 @@ void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAB::delete_particle_quantities()
+void CoulombPBCAB::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -103,7 +103,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
   }
   else
 #if !defined(REMOVE_TRACEMANAGER)
-      if (streaming_particles)
+      if (streaming_particles_)
     value_ = evaluate_sp(P);
   else
 #endif

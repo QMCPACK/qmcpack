@@ -98,7 +98,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   value_ = 0.0;
   std::fill(xyz2.begin(), xyz2.end(), 0.0);
 
-  RealType wgt        = tWalker->Weight;
+  RealType wgt        = t_walker_->Weight;
   const auto& d_table = P.getDistTable(myTableID_);
 
   // temp variables
@@ -171,7 +171,7 @@ void LatticeDeviationEstimator::addObservables(PropertySetType& plist, BufferTyp
   // get myIndex for scalar.dat
   if (per_xyz)
   {
-    myIndex = plist.size();
+    my_index_ = plist.size();
     for (int idir = 0; idir < OHMMS_DIM; idir++)
     {
       std::stringstream ss;
@@ -181,7 +181,7 @@ void LatticeDeviationEstimator::addObservables(PropertySetType& plist, BufferTyp
   }
   else
   {
-    myIndex = plist.add(name_); // same as OperatorBase::addObservables
+    my_index_ = plist.add(name_); // same as OperatorBase::addObservables
   }
 
   // get h5_index for stat.h5
@@ -205,11 +205,11 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
 {
   if (per_xyz)
   {
-    copy(xyz2.begin(), xyz2.end(), plist.begin() + myIndex);
+    copy(xyz2.begin(), xyz2.end(), plist.begin() + my_index_);
   }
   else
   {
-    plist[myIndex] = value_; // default behavior
+    plist[my_index_] = value_; // default behavior
   }
 }
 

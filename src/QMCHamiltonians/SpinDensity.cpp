@@ -184,7 +184,7 @@ void SpinDensity::report(const std::string& pad)
 
 void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.current();
+  my_index_ = collectables.current();
   std::vector<RealType> tmp(nspecies * npoints);
   collectables.add(tmp.begin(), tmp.end());
 }
@@ -205,7 +205,7 @@ void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
   {
     h5desc.emplace_back(species_name[s]);
     auto& oh = h5desc.back();
-    oh.set_dimensions(ng, myIndex + s * npoints);
+    oh.set_dimensions(ng, my_index_ + s * npoints);
     oh.open(sgid);
   }
 }
@@ -213,9 +213,9 @@ void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
 
 SpinDensity::Return_t SpinDensity::evaluate(ParticleSet& P)
 {
-  RealType w = tWalker->Weight;
+  RealType w = t_walker_->Weight;
   int p      = 0;
-  int offset = myIndex;
+  int offset = my_index_;
   for (int s = 0; s < nspecies; ++s, offset += npoints)
     for (int ps = 0; ps < species_size[s]; ++ps, ++p)
     {
@@ -291,7 +291,7 @@ void SpinDensity::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& Loc
     Walker_t& w     = *W.WalkerList[iw];
     RealType weight = w.Weight / nw;
     int p           = 0;
-    int offset      = myIndex;
+    int offset      = my_index_;
     for (int s = 0; s < nspecies; ++s, offset += npoints)
       for (int ps = 0; ps < species_size[s]; ++ps, ++p)
       {

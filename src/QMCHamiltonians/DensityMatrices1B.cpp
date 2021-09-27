@@ -487,7 +487,7 @@ void DensityMatrices1B::report(const std::string& pad)
 }
 
 
-void DensityMatrices1B::get_required_traces(TraceManager& tm)
+void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 {
   w_trace = tm.get_real_trace("weight");
   if (energy_mat)
@@ -504,7 +504,7 @@ void DensityMatrices1B::get_required_traces(TraceManager& tm)
 
     E_samp.resize(nparticles);
   }
-  have_required_traces = true;
+  have_required_traces_ = true;
 }
 
 
@@ -518,8 +518,8 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 #else
   int nentries = basis_size * basis_size * nspecies;
 #endif
-  myIndex = collectables.current();
-  nindex  = myIndex;
+  my_index_ = collectables.current();
+  nindex    = my_index_;
   std::vector<RealType> ntmp(nentries);
   collectables.add(ntmp.begin(), ntmp.end());
   if (energy_mat)
@@ -596,7 +596,7 @@ void DensityMatrices1B::warmup_sampling()
 DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
 {
   ScopedTimer t(timers[DM_eval]);
-  if (have_required_traces || !energy_mat)
+  if (have_required_traces_ || !energy_mat)
   {
     if (check_derivatives)
       test_derivatives();
@@ -621,7 +621,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   if (energy_mat)
     weight = w_trace->sample[0] * metric;
   else
-    weight = tWalker->Weight * metric;
+    weight = t_walker_->Weight * metric;
 
   if (energy_mat)
     get_energies(E_N); // energies        : particles x 1
@@ -848,7 +848,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
   if (energy_mat)
     weight = w_trace->sample[0] * metric;
   else
-    weight = tWalker->Weight * metric;
+    weight = t_walker_->Weight * metric;
   int nparticles = P.getTotalNum();
   generate_samples(weight);
   int n = 0;

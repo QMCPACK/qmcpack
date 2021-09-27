@@ -125,7 +125,7 @@ struct ConservedEnergy : public OperatorBase
 #else
       flux = lap + 2 * gradsq;
 #endif
-      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
+      w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = flux;
     }
   }
 #endif

@@ -77,7 +77,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
     ions->R[iat] += deltaR[iat];
 
     ions->update(); //update position and distance table of itself
-    primaryH->update_source(*ions);
+    primaryH->updateSource(*ions);
 
     qmcSystem->update();
     double logpsi2 = primaryPsi->evaluateLog(*qmcSystem);
@@ -91,7 +91,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 
     ions->R[iat] -= deltaR[iat];
     ions->update(); //update position and distance table of itself
-    primaryH->update_source(*ions);
+    primaryH->updateSource(*ions);
 
     qmcSystem->update();
     double logpsi3 = primaryPsi->evaluateLog(*qmcSystem);
@@ -108,7 +108,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   //{
   //  ions->R[i]+=deltaR(i);
   //  ions->update();
-  //  primaryH->update_source(*ions);
+  //  primaryH->updateSource(*ions);
   //  qmcDriver->run();
   //}
   return success;

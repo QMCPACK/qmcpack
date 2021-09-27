@@ -96,9 +96,6 @@ public:
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
 
-  // ///collect scalar trace data
-  //void collect_scalar_traces();
-
   ///collect walker trace data
   void collect_walker_traces(Walker_t& walker, int step);
 
@@ -178,7 +175,7 @@ public:
     copy(first + myIndex, first + myIndex + Observables.size(), Observables.begin());
   }
 
-  void update_source(ParticleSet& s);
+  void updateSource(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
   inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
