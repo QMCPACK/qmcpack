@@ -37,7 +37,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
-        Ntargets_padded(getAlignedSize<T>(N_targets)),
+        num_targets_padded_(getAlignedSize<T>(num_targets_)),
+#if !defined(NDEBUG)
+        old_prepared_elec_id_(-1),
+#endif
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
                                                        "_" + target.getName(),
                                                    timer_level_fine)),
@@ -57,28 +60,28 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   size_t compute_size(int N) const
   {
-    const size_t N_padded  = getAlignedSize<T>(N);
-    const size_t Alignment = getAlignment<T>();
-    return (N_padded * (2 * N - N_padded + 1) + (Alignment - 1) * N_padded) / 2;
+    const size_t num_padded = getAlignedSize<T>(N);
+    const size_t Alignment  = getAlignment<T>();
+    return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
   }
 
   void resize()
   {
     // initialize memory containers and views
-    const size_t total_size = compute_size(N_targets);
+    const size_t total_size = compute_size(num_targets_);
     memory_pool_.resize(total_size * (1 + D));
-    distances_.resize(N_targets);
-    displacements_.resize(N_targets);
-    for (int i = 0; i < N_targets; ++i)
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
     {
       distances_[i].attachReference(memory_pool_.data() + compute_size(i), i);
       displacements_[i].attachReference(i, total_size, memory_pool_.data() + total_size + compute_size(i));
     }
 
-    old_r_.resize(N_targets);
-    old_dr_.resize(N_targets);
-    temp_r_.resize(N_targets);
-    temp_dr_.resize(N_targets);
+    old_r_.resize(num_targets_);
+    old_dr_.resize(num_targets_);
+    temp_r_.resize(num_targets_);
+    temp_dr_.resize(num_targets_);
   }
 
   const DistRow& getOldDists() const override { return old_r_; }
@@ -88,7 +91,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   {
     ScopedTimer local_timer(evaluate_timer_);
     constexpr T BigR = std::numeric_limits<T>::max();
-    for (int iat = 1; iat < N_targets; ++iat)
+    for (int iat = 1; iat < num_targets_; ++iat)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
                                              displacements_[iat], 0, iat, iat);
   }
@@ -98,16 +101,17 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   {
     ScopedTimer local_timer(move_timer_);
 
-    old_prepared_elec_id = prepare_old ? iat : -1;
-
+#if !defined(NDEBUG)
+    old_prepared_elec_id_ = prepare_old ? iat : -1;
+#endif
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
-                                           N_targets, iat);
+                                           num_targets_, iat);
     // set up old_r_ and old_dr_ for moves may get accepted.
     if (prepare_old)
     {
       //recompute from scratch
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), old_r_.data(), old_dr_,
-                                             0, N_targets, iat);
+                                             0, num_targets_, iat);
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
     }
   }
@@ -115,12 +119,12 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     //ensure there are neighbors
-    assert(N_targets > 1);
+    assert(num_targets_ > 1);
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
     if (newpos)
     {
-      for (int jat = 0; jat < N_targets; ++jat)
+      for (int jat = 0; jat < num_targets_; ++jat)
         if (temp_r_[jat] < min_dist && jat != iat)
         {
           min_dist = temp_r_[jat];
@@ -137,7 +141,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
           min_dist = distances_[iat][jat];
           index    = jat;
         }
-      for (int jat = iat + 1; jat < N_targets; ++jat)
+      for (int jat = iat + 1; jat < num_targets_; ++jat)
         if (distances_[jat][iat] < min_dist)
         {
           min_dist = distances_[jat][iat];
@@ -167,7 +171,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), nupdate, displacements_[iat].data(idim));
     //copy column
-    for (size_t i = iat + 1; i < N_targets; ++i)
+    for (size_t i = iat + 1; i < num_targets_; ++i)
     {
       distances_[i][iat]     = temp_r_[i];
       displacements_[i](iat) = -temp_dr_[i];
@@ -189,7 +193,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
     else
     {
-      assert(old_prepared_elec_id == jat);
+      assert(old_prepared_elec_id_ == jat);
       //copy row
       assert(nupdate <= old_r_.size());
       std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
@@ -200,7 +204,13 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
 private:
   ///number of targets with padding
-  const int Ntargets_padded;
+  const size_t num_targets_padded_;
+#if !defined(NDEBUG)
+  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
+   * It is intended only for safety checks, not for codepath selection.
+   */
+  int old_prepared_elec_id_;
+#endif
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
   /// timer for move()
