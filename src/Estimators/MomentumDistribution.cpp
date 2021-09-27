@@ -327,7 +327,7 @@ void MomentumDistribution::registerOperatorEstimator(hid_t gid)
   ng[0] = nofK.size();
   h5desc_.emplace_back(std::make_unique<ObservableHelper>("nofk"));
   auto& h5o = h5desc_.back();
-  //h5o.set_dimensions(ng, myIndex);
+  //h5o.set_dimensions(ng, my_index_);
   h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
   h5o->open(gid);
   h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");

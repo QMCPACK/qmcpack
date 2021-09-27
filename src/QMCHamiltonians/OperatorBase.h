@@ -149,11 +149,11 @@ public:
   TraceRequest& getRequest() noexcept;
 #endif
 
-  inline bool isClassical() { return quantum_domain == CLASSICAL; }
-  inline bool isQuantum() { return quantum_domain == QUANTUM; }
-  inline bool isClassicalClassical() { return quantum_domain == CLASSICAL_CLASSICAL; }
-  inline bool isQuantumClassical() { return quantum_domain == QUANTUM_CLASSICAL; }
-  inline bool isQuantumQuantum() { return quantum_domain == QUANTUM_QUANTUM; }
+  inline bool isClassical() { return quantum_domain_ == CLASSICAL; }
+  inline bool isQuantum() { return quantum_domain_ == QUANTUM; }
+  inline bool isClassicalClassical() { return quantum_domain_ == CLASSICAL_CLASSICAL; }
+  inline bool isQuantumClassical() { return quantum_domain_ == QUANTUM_CLASSICAL; }
+  inline bool isQuantumQuantum() { return quantum_domain_ == QUANTUM_QUANTUM; }
 
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
@@ -193,12 +193,12 @@ public:
    * Default implementation is to assign Value which is updated
    * by evaluate  function using myIndex.
    */
-  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = value_; }
+  virtual void setObservables(PropertySetType& plist) { plist[my_index_] = value_; }
 
-  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = value_; }
+  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[my_index_ + offset] = value_; }
 
   //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
-  virtual void setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
+  virtual void setHistories(Walker_t& ThisWalker) { t_walker_ = &(ThisWalker); }
 
   /** reset the data with the target ParticleSet
    * @param P new target ParticleSet
@@ -354,9 +354,9 @@ public:
   {
     deleteScalarQuantities();
     deleteParticleQuantities();
-    streaming_scalars    = false;
-    streaming_particles  = false;
-    have_required_traces = false;
+    streaming_scalars_    = false;
+    streaming_particles_  = false;
+    have_required_traces_ = false;
     request_.reset();
   }
 
@@ -388,17 +388,17 @@ protected:
 #endif
 
   ///starting index of this object
-  int myIndex;
+  int my_index_;
 
   ///a new value for a proposed move
-  Return_t NewValue;
+  Return_t new_value_;
 
   ///reference to the current walker
-  Walker_t* tWalker;
+  Walker_t* t_walker_;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  bool streaming_particles;
-  bool have_required_traces;
+  bool streaming_particles_;
+  bool have_required_traces_;
 #endif
 
   /**
@@ -412,21 +412,21 @@ protected:
 
   virtual void checkoutScalarQuantities(TraceManager& tm)
   {
-    streaming_scalars = request_.streaming_scalar(name_);
-    if (streaming_scalars)
-      value_sample = tm.checkout_real<1>(name_);
+    streaming_scalars_ = request_.streaming_scalar(name_);
+    if (streaming_scalars_)
+      value_sample_ = tm.checkout_real<1>(name_);
   }
 
   virtual void collectScalarQuantities()
   {
-    if (streaming_scalars)
-      (*value_sample)(0) = value_;
+    if (streaming_scalars_)
+      (*value_sample_)(0) = value_;
   }
 
   virtual void deleteScalarQuantities()
   {
-    if (streaming_scalars)
-      delete value_sample;
+    if (streaming_scalars_)
+      delete value_sample_;
   }
 
   virtual void contributeParticleQuantities(){};
@@ -463,33 +463,33 @@ protected:
   inline void addValue(PropertySetType& plist)
   {
     if (!update_mode_[COLLECTABLE])
-      myIndex = plist.add(name_.c_str());
+      my_index_ = plist.add(name_.c_str());
   }
 
 private:
-  ///quantum_domain of the (particle) operator, default = no_quantum_domain
-  QuantumDomains quantum_domain;
+  ///quantum_domain_ of the (particle) operator, default = no_quantum_domain
+  QuantumDomains quantum_domain_;
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  EnergyDomains energy_domain;
+  EnergyDomains energy_domain_;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  bool streaming_scalars;
+  bool streaming_scalars_;
 
   ///array to store sample value
-  Array<RealType, 1>* value_sample;
+  Array<RealType, 1>* value_sample_;
 #endif
 
   ///return whether the energy domain is valid
   inline bool energyDomainValid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
 
   ///return whether the energy domain is valid
-  inline bool energyDomainValid() const { return energyDomainValid(energy_domain); }
+  inline bool energyDomainValid() const { return energyDomainValid(energy_domain_); }
 
   ///return whether the quantum domain is valid
   bool quantumDomainValid(QuantumDomains qdomain);
 
   ///return whether the quantum domain is valid
-  inline bool quantumDomainValid() { return quantumDomainValid(quantum_domain); }
+  inline bool quantumDomainValid() { return quantumDomainValid(quantum_domain_); }
 };
 } // namespace qmcplusplus
 #endif

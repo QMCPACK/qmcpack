@@ -22,15 +22,15 @@
 
 namespace qmcplusplus
 {
-OperatorBase::OperatorBase() : value_(0.0), myIndex(-1), tWalker(0)
+OperatorBase::OperatorBase() : value_(0.0), my_index_(-1), t_walker_(0)
 {
-  quantum_domain = NO_QUANTUM_DOMAIN;
-  energy_domain  = NO_ENERGY_DOMAIN;
+  quantum_domain_ = NO_QUANTUM_DOMAIN;
+  energy_domain_  = NO_ENERGY_DOMAIN;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  streaming_scalars    = false;
-  streaming_particles  = false;
-  have_required_traces = false;
+  streaming_scalars_    = false;
+  streaming_particles_  = false;
+  have_required_traces_ = false;
 #endif
   update_mode_.set(PRIMARY, 1);
 }
@@ -119,7 +119,7 @@ void OperatorBase::mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<
 void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 {
   if (energyDomainValid(edomain))
-    energy_domain = edomain;
+    energy_domain_ = edomain;
   else
     APP_ABORT("QMCHamiltonainBase::setEnergyDomain\n  input energy domain is invalid");
 }
@@ -127,7 +127,7 @@ void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 void OperatorBase::setQuantumDomain(QuantumDomains qdomain)
 {
   if (quantumDomainValid(qdomain))
-    quantum_domain = qdomain;
+    quantum_domain_ = qdomain;
   else
     APP_ABORT("QMCHamiltonainBase::setQuantumDomain\n  input quantum domain is invalid");
 }
@@ -135,9 +135,9 @@ void OperatorBase::setQuantumDomain(QuantumDomains qdomain)
 void OperatorBase::oneBodyQuantumDomain(const ParticleSet& P)
 {
   if (P.is_classical())
-    quantum_domain = CLASSICAL;
+    quantum_domain_ = CLASSICAL;
   else if (P.is_quantum())
-    quantum_domain = QUANTUM;
+    quantum_domain_ = QUANTUM;
   else
     APP_ABORT("OperatorBase::oneBodyQuantumDomain\n  quantum domain of input particles is invalid");
 }
@@ -145,9 +145,9 @@ void OperatorBase::oneBodyQuantumDomain(const ParticleSet& P)
 void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P)
 {
   if (P.is_classical())
-    quantum_domain = CLASSICAL_CLASSICAL;
+    quantum_domain_ = CLASSICAL_CLASSICAL;
   else if (P.is_quantum())
-    quantum_domain = QUANTUM_QUANTUM;
+    quantum_domain_ = QUANTUM_QUANTUM;
   else
     APP_ABORT("OperatorBase::twoBodyQuantumDomain(P)\n  quantum domain of input particles is invalid");
 }
@@ -159,11 +159,11 @@ void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet
   bool q1 = P1.is_quantum();
   bool q2 = P2.is_quantum();
   if (c1 && c2)
-    quantum_domain = CLASSICAL_CLASSICAL;
+    quantum_domain_ = CLASSICAL_CLASSICAL;
   else if ((q1 && c2) || (c1 && q2))
-    quantum_domain = QUANTUM_CLASSICAL;
+    quantum_domain_ = QUANTUM_CLASSICAL;
   else if (q1 && q2)
-    quantum_domain = QUANTUM_QUANTUM;
+    quantum_domain_ = QUANTUM_QUANTUM;
   else
     APP_ABORT("OperatorBase::twoBodyQuantumDomain(P1,P2)\n  quantum domain of input particles is invalid");
 }
@@ -188,7 +188,7 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
     h5desc.emplace_back(name_);
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
-    oh.set_dimensions(onedim, myIndex);
+    oh.set_dimensions(onedim, my_index_);
     oh.open(gid);
   }
 }

@@ -60,14 +60,14 @@ struct HarmonicExternalPotential : public OperatorBase
 
   void checkoutParticleQuantities(TraceManager& tm) override
   {
-    streaming_particles = request_.streaming_array(name_);
-    if (streaming_particles)
+    streaming_particles_ = request_.streaming_array(name_);
+    if (streaming_particles_)
       V_sample = tm.checkout_real<1>(name_, Ps);
   }
 
   void deleteParticleQuantities() override
   {
-    if (streaming_particles)
+    if (streaming_particles_)
       delete V_sample;
   }
 

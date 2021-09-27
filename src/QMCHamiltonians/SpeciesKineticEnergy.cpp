@@ -66,7 +66,7 @@ bool SpeciesKineticEnergy::get(std::ostream& os) const
 
 void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.size();
+  my_index_ = plist.size();
   for (int ispec = 0; ispec < num_species; ispec++)
   { // make columns named "$myName_u", "$myName_d" etc.
     plist.add(name_ + "_" + species_names[ispec]);
@@ -93,13 +93,13 @@ void SpeciesKineticEnergy::registerCollectables(std::vector<ObservableHelper>& h
 
 void SpeciesKineticEnergy::setObservables(PropertySetType& plist)
 { // slots in plist must be allocated by addObservables() first
-  copy(species_kinetic.begin(), species_kinetic.end(), plist.begin() + myIndex);
+  copy(species_kinetic.begin(), species_kinetic.end(), plist.begin() + my_index_);
 }
 
 SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
 {
   std::fill(species_kinetic.begin(), species_kinetic.end(), 0.0);
-  RealType wgt = tWalker->Weight;
+  RealType wgt = t_walker_->Weight;
 
   for (int iat = 0; iat < P.getTotalNum(); iat++)
   {

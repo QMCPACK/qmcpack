@@ -112,8 +112,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
   void checkoutParticleQuantities(TraceManager& tm) override
   {
-    streaming_particles = request_.streaming_array(name_);
-    if (streaming_particles)
+    streaming_particles_ = request_.streaming_array(name_);
+    if (streaming_particles_)
     {
       Va_sample = tm.checkout_real<1>(name_, Pa);
       if (!is_AA)
@@ -127,7 +127,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
   void deleteParticleQuantities() override
   {
-    if (streaming_particles)
+    if (streaming_particles_)
     {
       delete Va_sample;
       if (!is_AA)
@@ -148,7 +148,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   {
     T res = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
+    if (streaming_particles_)
       res = evaluate_spAA(d, Z);
     else
 #endif
@@ -189,7 +189,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     constexpr T czero(0);
     T res = czero;
 #if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
+    if (streaming_particles_)
       res = evaluate_spAB(d, Za, Zb);
     else
 #endif
@@ -230,11 +230,11 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
     res *= 2.0;
 #if defined(TRACE_CHECK)
-    auto sptmp          = streaming_particles;
-    streaming_particles = false;
-    T Vnow              = res;
-    T Vsum              = Va_samp.sum();
-    T Vorig             = evaluateAA(d, Z);
+    auto sptmp           = streaming_particles_;
+    streaming_particles_ = false;
+    T Vnow               = res;
+    T Vsum               = Va_samp.sum();
+    T Vorig              = evaluateAA(d, Z);
     if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "versiontest: CoulombPotential::evaluateAA()" << std::endl;
@@ -249,7 +249,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       app_log() << "accumtest:   sum:" << Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    streaming_particles = sptmp;
+    streaming_particles_ = sptmp;
 #endif
     return res;
   }
@@ -281,13 +281,13 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     res *= 2.0;
 
 #if defined(TRACE_CHECK)
-    auto sptmp          = streaming_particles;
-    streaming_particles = false;
-    T Vnow              = res;
-    T Vasum             = Va_samp.sum();
-    T Vbsum             = Vb_samp.sum();
-    T Vsum              = Vasum + Vbsum;
-    T Vorig             = evaluateAB(d, Za, Zb);
+    auto sptmp           = streaming_particles_;
+    streaming_particles_ = false;
+    T Vnow               = res;
+    T Vasum              = Va_samp.sum();
+    T Vbsum              = Vb_samp.sum();
+    T Vsum               = Vasum + Vbsum;
+    T Vorig              = evaluateAB(d, Za, Zb);
     if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "versiontest: CoulombPotential::evaluateAB()" << std::endl;
@@ -309,7 +309,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       app_log() << "sharetest:   b share:" << Vbsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    streaming_particles = sptmp;
+    streaming_particles_ = sptmp;
 #endif
     return res;
   }
@@ -406,8 +406,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       {
         W.loadWalker(*walkers[iw], false);
         W.update();
-        value_                                                      = evaluate(W);
-        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = value_;
+        value_                                                        = evaluate(W);
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = value_;
         LocalEnergy[iw] += value_;
       }
     }
@@ -415,7 +415,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       // assuminig the same results for all the walkers when the set is not active
       for (int iw = 0; iw < LocalEnergy.size(); iw++)
       {
-        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = value_;
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = value_;
         LocalEnergy[iw] += value_;
       }
   }

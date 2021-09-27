@@ -59,14 +59,14 @@ int HamiltonianRef::addObservables(ParticleSet& P)
   P.Collectables.rewind();
   for (int i = 0; i < Hrefs_.size(); ++i)
     Hrefs_[i].get().addObservables(Observables, P.Collectables);
-  int myIndex = P.PropertyList.add(Observables.Names[0]);
+  int my_index_ = P.PropertyList.add(Observables.Names[0]);
   for (int i = 1; i < Observables.size(); ++i)
     P.PropertyList.add(Observables.Names[i]);
   P.Collectables.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size() << " to P::PropertyList "
             << "\n    " << P.Collectables.size() << " to P::Collectables "
-            << "\n    starting Index of the observables in P::PropertyList = " << myIndex << std::endl;
+            << "\n    starting Index of the observables in P::PropertyList = " << my_index_ << std::endl;
   return Observables.size();
 }
 

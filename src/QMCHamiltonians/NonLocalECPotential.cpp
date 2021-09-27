@@ -81,8 +81,8 @@ void NonLocalECPotential::contributeParticleQuantities() { request_.contribute_a
 
 void NonLocalECPotential::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(name_);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
     Ve_sample = tm.checkout_real<1>(name_, Peln);
     Vi_sample = tm.checkout_real<1>(name_, IonConfig);
@@ -91,7 +91,7 @@ void NonLocalECPotential::checkoutParticleQuantities(TraceManager& tm)
 
 void NonLocalECPotential::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -146,7 +146,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
 #if !defined(REMOVE_TRACEMANAGER)
   auto& Ve_samp = *Ve_sample;
   auto& Vi_samp = *Vi_sample;
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     Ve_samp = 0.0;
     Vi_samp = 0.0;
@@ -207,7 +207,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
             value_ += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
-            if (streaming_particles)
+            if (streaming_particles_)
             {
               Ve_samp(jel) += 0.5 * pairpot;
               Vi_samp(iat) += 0.5 * pairpot;
@@ -218,7 +218,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
   }
 
 #if !defined(TRACE_CHECK)
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     Return_t Vnow  = value_;
     RealType Visum = Vi_sample->sum();

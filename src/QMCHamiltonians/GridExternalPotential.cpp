@@ -106,7 +106,7 @@ std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P, T
 GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
+  if (streaming_particles_)
     value_ = evaluate_sp(P);
   else
   {
@@ -132,7 +132,7 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
 GridExternalPotential::Return_t GridExternalPotential::evaluate_sp(ParticleSet& P)
 {
   Array<TraceReal, 1>& V_samp = *V_sample;
-  value_                       = 0.0;
+  value_                      = 0.0;
   for (int i = 0; i < P.getTotalNum(); ++i)
   {
     PosType r   = P.R[i];

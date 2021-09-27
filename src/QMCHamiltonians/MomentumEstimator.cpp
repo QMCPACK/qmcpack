@@ -80,8 +80,8 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   }
   if (hdf5_out)
   {
-    RealType w = tWalker->Weight * norm_nofK;
-    int j      = myIndex;
+    RealType w = t_walker_->Weight * norm_nofK;
+    int j      = my_index_;
     for (int ik = 0; ik < nofK.size(); ++ik, ++j)
       P.Collectables[j] += w * nofK[ik];
   }
@@ -104,7 +104,7 @@ void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5de
     ng[0] = nofK.size();
     h5desc.emplace_back("nofk");
     auto& h5o = h5desc.back();
-    h5o.set_dimensions(ng, myIndex);
+    h5o.set_dimensions(ng, my_index_);
     h5o.open(gid);
     h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
     h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
@@ -116,12 +116,12 @@ void MomentumEstimator::addObservables(PropertySetType& plist, BufferType& colle
 {
   if (hdf5_out)
   {
-    myIndex = collectables.size();
+    my_index_ = collectables.size();
     collectables.add(nofK.begin(), nofK.end());
   }
   else
   {
-    myIndex = plist.size();
+    my_index_ = plist.size();
     for (int i = 0; i < nofK.size(); i++)
     {
       std::stringstream sstr;
@@ -136,7 +136,7 @@ void MomentumEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
   {
-    copy(nofK.begin(), nofK.end(), plist.begin() + myIndex);
+    copy(nofK.begin(), nofK.end(), plist.begin() + my_index_);
   }
 }
 
@@ -144,7 +144,7 @@ void MomentumEstimator::setParticlePropertyList(PropertySetType& plist, int offs
 {
   if (!hdf5_out)
   {
-    copy(nofK.begin(), nofK.end(), plist.begin() + myIndex + offset);
+    copy(nofK.begin(), nofK.end(), plist.begin() + my_index_ + offset);
   }
 }
 
@@ -425,7 +425,7 @@ std::unique_ptr<OperatorBase> MomentumEstimator::makeClone(ParticleSet& qp, Tria
 {
   std::unique_ptr<MomentumEstimator> myclone = std::make_unique<MomentumEstimator>(qp, psi);
   myclone->resize(kPoints, M);
-  myclone->myIndex   = myIndex;
+  myclone->my_index_ = my_index_;
   myclone->norm_nofK = norm_nofK;
   myclone->hdf5_out  = hdf5_out;
   return myclone;

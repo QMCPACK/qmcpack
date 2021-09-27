@@ -120,7 +120,7 @@ void CoulombPBCAA::updateSource(ParticleSet& s)
     eL = evalLR(s);
     eS = evalSR(s);
   }
-  NewValue = value_ = eL + eS + myConst;
+  new_value_ = value_ = eL + eS + myConst;
 }
 
 void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
@@ -138,8 +138,8 @@ void CoulombPBCAA::contributeParticleQuantities() { request_.contribute_array(na
 
 void CoulombPBCAA::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(name_);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
     Ps.turnOnPerParticleSK();
     V_sample = tm.checkout_real<1>(name_, Ps);
@@ -150,7 +150,7 @@ void CoulombPBCAA::checkoutParticleQuantities(TraceManager& tm)
 
 void CoulombPBCAA::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
     delete V_sample;
 }
 #endif
@@ -161,7 +161,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
   if (is_active)
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
+    if (streaming_particles_)
       value_ = evaluate_sp(P);
     else
 #endif

@@ -329,7 +329,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
   {
     // if (std::isnan(esum[iw]))
     // 	app_log() << "NAN in esum.\n";
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }
@@ -445,7 +445,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
     }
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }
