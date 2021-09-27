@@ -96,9 +96,6 @@ public:
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
 
-  // ///collect scalar trace data
-  //void collectScalarTraces();
-
   ///collect walker trace data
   void collect_walker_traces(Walker_t& walker, int step);
 
