@@ -284,7 +284,6 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 
   Rng.resize(num_crowds);
 
-  RngCompatibility.resize(num_crowds);
 
   if (RandomNumberControl::Children.size() == 0)
   {
@@ -298,7 +297,6 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
     Rng[i].reset(RandomNumberControl::Children[i].release());
     step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
-    RngCompatibility[i] = std::move(Rng[i]);
   }
 }
 

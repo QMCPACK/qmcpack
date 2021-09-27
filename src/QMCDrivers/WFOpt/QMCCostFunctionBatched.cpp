@@ -266,7 +266,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   Psi.startOptimization();
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
-  H.setRandomGenerator(MoverRng[0].get());
+  H.setRandomGenerator(MoverRng[0]);
 
 
   // Create crowd-local storage for evaluation
@@ -493,7 +493,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   {
     //    synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
-    H.setRandomGenerator(MoverRng[0].get());
+    H.setRandomGenerator(MoverRng[0]);
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;

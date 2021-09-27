@@ -272,7 +272,7 @@ void QMCCostFunction::checkConfigurations()
     //    synchronize the random number generator with the node
     assert((RngSaved[ip]  && MoverRng[ip]));
     (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip].get());
+    hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
@@ -398,7 +398,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip].get());
+    hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
@@ -539,7 +539,7 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
     //    synchronize the random number generator with the node
     assert((MoverRng[ip] && RngSaved[ip]));
     (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip].get());
+    hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }
 
   const bool nlpp         = (includeNonlocalH != "no");

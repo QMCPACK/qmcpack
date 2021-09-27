@@ -96,10 +96,9 @@ void QMCCostFunctionBase::setRng(UPtrVector<RandomGenerator_t>& r)
     RngSaved.resize(r.size());
   }
   for (int ip = 0; ip < r.size(); ++ip)
-    MoverRng[ip] = std::move(r[ip]);
+    MoverRng[ip] = r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip){
-    assert((MoverRng[ip]));
-    RngSaved[ip] = std::make_unique<RandomGenerator_t>(*(MoverRng[ip]));
+    RngSaved[ip] = std::make_unique<RandomGenerator_t>(*(r[ip]));
   }
 }
 

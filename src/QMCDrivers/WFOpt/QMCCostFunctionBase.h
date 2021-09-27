@@ -287,7 +287,8 @@ protected:
   std::string RootName;
 
   ///Random number generators
-  UPtrVector<RandomGenerator_t> RngSaved, MoverRng;
+  UPtrVector<RandomGenerator_t> RngSaved;
+  std::vector<RandomGenerator_t*> MoverRng;
   std::string includeNonlocalH;
 
 
