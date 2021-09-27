@@ -413,7 +413,7 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   for (int i = 0; i < dts.size(); ++i)
   {
     const auto dt_list(extractDTRefList(p_list, i));
-    dts[i]->mwEvaluate(dt_list, p_list);
+    dts[i]->mw_evaluate(dt_list, p_list);
   }
 
   if (!skipSK && p_leader.SK)

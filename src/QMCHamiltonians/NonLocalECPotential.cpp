@@ -111,9 +111,9 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(Particl
   return value_;
 }
 
-void NonLocalECPotential::mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                                     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                     const RefVectorWithLeader<ParticleSet>& p_list) const
+void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   mw_evaluateImpl(o_list, wf_list, p_list, false);
 }
@@ -127,9 +127,9 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
   return value_;
 }
 
-void NonLocalECPotential::mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                  const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                  const RefVectorWithLeader<ParticleSet>& p_list) const
+void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                   const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
     mw_evaluateImpl(o_list, wf_list, p_list, true);

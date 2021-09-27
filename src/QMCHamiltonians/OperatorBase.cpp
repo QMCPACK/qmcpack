@@ -56,9 +56,9 @@ OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { ret
  * really should reduce vector of local_energies. matching the ordering and size of o list
  * the this can be call for 1 or more QMCHamiltonians
  */
-void OperatorBase::mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                              const RefVectorWithLeader<ParticleSet>& p_list) const
+void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(this == &o_list.getLeader());
 /**  Temporary raw omp pragma for simple thread parallelism
@@ -90,11 +90,11 @@ void OperatorBase::mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     o_list[iw].evaluate(p_list[iw]);
 }
 
-void OperatorBase::mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                      const RefVectorWithLeader<ParticleSet>& p_list,
-                                                      const opt_variables_type& optvars,
-                                                      RecordArray<ValueType>& dlogpsi,
-                                                      RecordArray<ValueType>& dhpsioverpsi) const
+void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const opt_variables_type& optvars,
+                                                       RecordArray<ValueType>& dlogpsi,
+                                                       RecordArray<ValueType>& dhpsioverpsi) const
 {
   const int nparam = dlogpsi.nparam();
   std::vector<ValueType> tmp_dlogpsi(nparam);

@@ -244,9 +244,10 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> mwEvaluate(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                                  const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                                  const RefVectorWithLeader<ParticleSet>& p_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -256,7 +257,7 @@ public:
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> mwEvaluateWithToperator(
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateWithToperator(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list);

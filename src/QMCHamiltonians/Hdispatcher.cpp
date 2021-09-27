@@ -26,7 +26,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluate(
 {
   assert(ham_list.size() == p_list.size());
   if (use_batch_)
-    return QMCHamiltonian::mwEvaluate(ham_list, wf_list, p_list);
+    return QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
   else
   {
     std::vector<FullPrecRealType> local_energies(ham_list.size());
@@ -43,7 +43,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluateWithTope
 {
   assert(ham_list.size() == p_list.size());
   if (use_batch_)
-    return QMCHamiltonian::mwEvaluateWithToperator(ham_list, wf_list, p_list);
+    return QMCHamiltonian::mw_evaluateWithToperator(ham_list, wf_list, p_list);
   else
   {
     std::vector<FullPrecRealType> local_energies(ham_list.size());

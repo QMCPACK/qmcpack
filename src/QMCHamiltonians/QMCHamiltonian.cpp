@@ -553,7 +553,7 @@ void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, Partic
   pset.PropertyList[WP::LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
 }
 
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mwEvaluate(
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
@@ -582,7 +582,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mwEvaluate(
     //   op.setObservables(ham.Observables);
     //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
     // };
-    ham_leader.H[i_ham_op]->mwEvaluate(HC_list, wf_list, p_list);
+    ham_leader.H[i_ham_op]->mw_evaluate(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); iw++)
       updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
   }
@@ -643,7 +643,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
       ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
       const auto HC_list(extract_HC_list(ham_list, i_ham_op));
 
-      ham_leader.H[i_ham_op]->mwEvaluateWithParameterDerivatives(HC_list, p_list, optvars, dlogpsi, dhpsioverpsi);
+      ham_leader.H[i_ham_op]->mw_evaluateWithParameterDerivatives(HC_list, p_list, optvars, dlogpsi, dhpsioverpsi);
 
       for (int iw = 0; iw < ham_list.size(); iw++)
         updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
@@ -676,7 +676,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
     local_energies =
         QMCHamiltonian::mw_evaluateValueAndDerivativesInner(ham_list, wf_list, p_list, optvars, dlogpsi, dhpsioverpsi);
   else
-    local_energies = QMCHamiltonian::mwEvaluate(ham_list, wf_list, p_list);
+    local_energies = QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
 
   return local_energies;
 }
@@ -788,7 +788,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
   return LocalEnergy;
 }
 
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mwEvaluateWithToperator(
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithToperator(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
@@ -803,7 +803,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mwEvaluateWithTope
     ScopedTimer local_timer(ham_leader.my_timers_[i_ham_op]);
     const auto HC_list(extract_HC_list(ham_list, i_ham_op));
 
-    ham_leader.H[i_ham_op]->mwEvaluateWithToperator(HC_list, wf_list, p_list);
+    ham_leader.H[i_ham_op]->mw_evaluateWithToperator(HC_list, wf_list, p_list);
     for (int iw = 0; iw < ham_list.size(); ++iw)
       updateNonKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
   }

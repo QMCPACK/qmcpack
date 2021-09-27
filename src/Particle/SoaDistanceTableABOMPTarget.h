@@ -238,8 +238,8 @@ public:
     }
   }
 
-  inline void mwEvaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
-                         const RefVectorWithLeader<ParticleSet>& p_list) const override
+  inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
@@ -358,7 +358,7 @@ public:
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            const std::vector<bool>& recompute) const override
   {
-    mwEvaluate(dt_list, p_list);
+    mw_evaluate(dt_list, p_list);
   }
 
   ///evaluate the temporary pair relations

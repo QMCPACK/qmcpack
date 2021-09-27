@@ -47,15 +47,15 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                  const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                  const RefVectorWithLeader<ParticleSet>& p_list) const override;
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                               const RefVectorWithLeader<ParticleSet>& p_list) const override;
+  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -188,7 +188,7 @@ private:
    */
   void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
-  /** the actual implementation for batched walkers, used by mwEvaluate and mwEvaluateWithToperator
+  /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
    * @param o_list the list of NonLocalECPotential in a walker batch
    * @param p_list the list of ParticleSet in a walker batch
    * @param Tmove whether Txy for Tmove is updated

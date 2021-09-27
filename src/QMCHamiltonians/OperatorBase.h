@@ -216,15 +216,15 @@ public:
    */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mwEvaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list) const;
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-  virtual void mwEvaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                  const RefVectorWithLeader<ParticleSet>& p_list,
-                                                  const opt_variables_type& optvars,
-                                                  RecordArray<ValueType>& dlogpsi,
-                                                  RecordArray<ValueType>& dhpsioverpsi) const;
+  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                                   const opt_variables_type& optvars,
+                                                   RecordArray<ValueType>& dlogpsi,
+                                                   RecordArray<ValueType>& dhpsioverpsi) const;
 
 
   virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
@@ -235,11 +235,11 @@ public:
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
 
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mwEvaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                       const RefVectorWithLeader<ParticleSet>& p_list) const
+  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                        const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-    mwEvaluate(o_list, wf_list, p_list);
+    mw_evaluate(o_list, wf_list, p_list);
   }
 
   /** evaluate value and derivatives wrt the optimizables
