@@ -534,17 +534,17 @@ protected:
   void addValue(PropertySetType& plist);
 
 private:
-  ///quantum_domain_ of the (particle) operator, default = no_quantum_domain
-  QuantumDomains quantum_domain_;
-  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  EnergyDomains energy_domain_;
-
 #if !defined(REMOVE_TRACEMANAGER)
   bool streaming_scalars_;
 
   ///array to store sample value
   Array<RealType, 1>* value_sample_;
 #endif
+
+  ///quantum_domain_ of the (particle) operator, default = no_quantum_domain
+  QuantumDomains quantum_domain_;
+  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
+  EnergyDomains energy_domain_;
 
   ///return whether the energy domain is valid
   bool energyDomainValid(EnergyDomains edomain) const noexcept;

@@ -31,13 +31,10 @@ OperatorBase::OperatorBase()
 #if !defined(REMOVE_TRACEMANAGER)
       streaming_particles_(false),
       have_required_traces_(false),
+      streaming_scalars_(false),
 #endif
       quantum_domain_(NO_QUANTUM_DOMAIN),
       energy_domain_(NO_ENERGY_DOMAIN)
-#if !defined(REMOVE_TRACEMANAGER)
-      ,
-      streaming_scalars_(false)
-#endif
 {
   update_mode_.set(PRIMARY, 1);
 }
