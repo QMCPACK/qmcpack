@@ -11,6 +11,12 @@ if(QE_FOUND)
   add_subdirectory(pw2qmcpack)
 endif()
 
+#TODO: fix this
+#if(RMG_FOUND)
+  add_subdirectory(rmg)
+  message("adding RMG tests")
+#endif()
+
 message("Adding system tests for QMCPACK")
 
 if(NOT TEST_MAX_PROCS)
