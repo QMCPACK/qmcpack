@@ -492,38 +492,26 @@ protected:
   //////VIRTUAL FUNCTIONS
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contributeScalarQuantities() { request_.contribute_scalar(name_); }
+  virtual void contributeScalarQuantities();
 
-  virtual void checkoutScalarQuantities(TraceManager& tm)
-  {
-    streaming_scalars_ = request_.streaming_scalar(name_);
-    if (streaming_scalars_)
-      value_sample_ = tm.checkout_real<1>(name_);
-  }
+  virtual void checkoutScalarQuantities(TraceManager& tm);
 
-  virtual void collectScalarQuantities()
-  {
-    if (streaming_scalars_)
-      (*value_sample_)(0) = value_;
-  }
+  virtual void collectScalarQuantities();
 
-  virtual void deleteScalarQuantities()
-  {
-    if (streaming_scalars_)
-      delete value_sample_;
-  }
+  virtual void deleteScalarQuantities();
 
-  virtual void contributeParticleQuantities(){};
-  virtual void checkoutParticleQuantities(TraceManager& tm){};
-  virtual void deleteParticleQuantities(){};
+  virtual void contributeParticleQuantities();
+  virtual void checkoutParticleQuantities(TraceManager& tm);
+  virtual void deleteParticleQuantities();
 #endif
 
-  virtual void setComputeForces(bool compute)
-  {
-    // empty
-  }
+  virtual void setComputeForces(bool compute);
 
-  ///set energy domain
+  /**
+   * @brief Set the Energy Domain
+   * 
+   * @param edomain 
+   */
   void setEnergyDomain(EnergyDomains edomain);
 
   ///set quantum domain
@@ -539,16 +527,12 @@ protected:
   void twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2);
 
   /**
-   * named values to  the property list
+   * @brief named values to  the property list
    * @param plist RecordNameProperty
    *
    * Previously addObservables but it is renamed and a non-virtial function.
    */
-  inline void addValue(PropertySetType& plist)
-  {
-    if (!update_mode_[COLLECTABLE])
-      my_index_ = plist.add(name_.c_str());
-  }
+  void addValue(PropertySetType& plist);
 
 private:
   ///quantum_domain_ of the (particle) operator, default = no_quantum_domain

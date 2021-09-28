@@ -48,7 +48,7 @@ void OperatorBase::setName(const std::string name) noexcept { name_ = name; }
 TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
 #endif
 
-//////// VIRTUAL FUNCTIONS ////////////////
+////////  FUNCTIONS ////////////////
 void OperatorBase::addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
 
 void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
@@ -213,7 +213,7 @@ void OperatorBase::addEnergy(MCWalkerConfiguration& W,
   addEnergy(W, LocalEnergy);
 }
 
-// END VIRTUAL FUNCTIONS //
+// END  FUNCTIONS //
 
 bool OperatorBase::isClassical() const noexcept { return quantum_domain_ == CLASSICAL; }
 
@@ -259,6 +259,35 @@ void OperatorBase::deleteTraceQuantities()
 #endif
 
 ////// PROTECTED FUNCTIONS
+#if !defined(REMOVE_TRACEMANAGER)
+void OperatorBase::contributeScalarQuantities() { request_.contribute_scalar(name_); }
+
+void OperatorBase::checkoutScalarQuantities(TraceManager& tm)
+{
+  streaming_scalars_ = request_.streaming_scalar(name_);
+  if (streaming_scalars_)
+    value_sample_ = tm.checkout_real<1>(name_);
+}
+
+void OperatorBase::collectScalarQuantities()
+{
+  if (streaming_scalars_)
+    (*value_sample_)(0) = value_;
+}
+
+void OperatorBase::deleteScalarQuantities()
+{
+  if (streaming_scalars_)
+    delete value_sample_;
+}
+
+void OperatorBase::contributeParticleQuantities(){};
+void OperatorBase::checkoutParticleQuantities(TraceManager& tm){};
+void OperatorBase::deleteParticleQuantities(){};
+#endif
+
+void OperatorBase::setComputeForces(bool compute) {}
+
 void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 {
   if (energyDomainValid(edomain))
@@ -297,10 +326,10 @@ void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P)
 
 void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2)
 {
-  bool c1 = P1.is_classical();
-  bool c2 = P2.is_classical();
-  bool q1 = P1.is_quantum();
-  bool q2 = P2.is_quantum();
+  const bool c1 = P1.is_classical();
+  const bool c2 = P2.is_classical();
+  const bool q1 = P1.is_quantum();
+  const bool q2 = P2.is_quantum();
   if (c1 && c2)
     quantum_domain_ = CLASSICAL_CLASSICAL;
   else if ((q1 && c2) || (c1 && q2))
@@ -309,6 +338,12 @@ void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet
     quantum_domain_ = QUANTUM_QUANTUM;
   else
     APP_ABORT("OperatorBase::twoBodyQuantumDomain(P1,P2)\n  quantum domain of input particles is invalid");
+}
+
+void OperatorBase::addValue(PropertySetType& plist)
+{
+  if (!update_mode_[COLLECTABLE])
+    my_index_ = plist.add(name_.c_str());
 }
 
 bool OperatorBase::quantumDomainValid(QuantumDomains qdomain) { return qdomain != NO_QUANTUM_DOMAIN; }
