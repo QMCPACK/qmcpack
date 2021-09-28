@@ -158,12 +158,12 @@ class DiracMatrixComputeCUDA : public Resource
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
    *
    */
-  inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
-                                     DualVector<VALUE_FP>& psi_Ms,
-                                     DualVector<VALUE_FP>& inv_Ms,
-                                     const int n,
-                                     const int lda,
-                                     DualVector<LogValue>& log_values)
+  inline void mw_computeInvertAndLog_stride(CUDALinearAlgebraHandles& cuda_handles,
+                                            DualVector<VALUE_FP>& psi_Ms,
+                                            DualVector<VALUE_FP>& inv_Ms,
+                                            const int n,
+                                            const int lda,
+                                            DualVector<LogValue>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
@@ -252,7 +252,7 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
-    mw_computeInvertAndLog(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
+    mw_computeInvertAndLog_stride(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
     DualMatrix<VALUE_FP> data_ref_matrix;
 
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
@@ -291,7 +291,7 @@ public:
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
-    mw_computeInvertAndLog(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
+    mw_computeInvertAndLog_stride(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
       DualMatrix<VALUE_FP> data_ref_matrix;
