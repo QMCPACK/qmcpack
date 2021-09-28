@@ -82,6 +82,15 @@ class DiracMatrixComputeCUDA : public Resource
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
    *
    *  On Volta so far little seems to be achieved by having the mats continuous.
+   *
+   *  List of operations:
+   *  1. matrix-by-matrix. Copy a_mat to inv_a_mat on host, transfer inv_a_mat to device, transpose inv_a_mat to a_mat on device.
+   *  2. batched. LU and invert
+   *  3. matrix-by-matrix. Transfer inv_a_mat to host
+   *
+   *  Pros and cons:
+   *  1. \todo try to do like mw_computeInvertAndLog_stride, copy and transpose to psiM_fp_ and fuse transfer.
+   *  3. \todo Remove Transfer inv_a_mat to host and let the upper level code handle it.
    */
   inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
                                      RefVector<DualMatrix<VALUE_FP>>& a_mats,
@@ -152,6 +161,11 @@ class DiracMatrixComputeCUDA : public Resource
    *  \param[in]      lda         leading dimension of each matrix					
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
    *
+   *  List of operations:
+   *  1. batched. Transfer psi_Ms to device
+   *  2. batched. LU and invert
+   *  3. batched. Transfer inv_Ms to host
+   *  \todo Remove 1 and 3. Handle transfer at upper level.
    */
   inline void mw_computeInvertAndLog_stride(CUDALinearAlgebraHandles& cuda_handles,
                                             DualVector<VALUE_FP>& psi_Ms,
@@ -256,6 +270,15 @@ public:
   /** Mixed precision specialization
    *  When TMAT is not full precision we need to still do the inversion and log
    *  at full precision. This is not yet optimized to transpose on the GPU
+   *
+   *  List of operations:
+   *  1. matrix-by-matrix. Transpose a_mat to psiM_fp_ used on host
+   *  2. batched. Call mw_computeInvertAndLog_stride, H2D, invert, D2H
+   *  3. matrix-by-matrix. Copy invM_fp_ to inv_a_mat on host. Transfer inv_a_mat to device.
+   *
+   *  Pros and cons:
+   *  1. transfer is batched but double the transfer size due to precision promotion
+   *  3. \todo Copy invM_fp_ to inv_a_mat on device is desired. Transfer inv_a_mat to host should be handled by the upper level code.
    */
   template<typename TMAT>
   inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
