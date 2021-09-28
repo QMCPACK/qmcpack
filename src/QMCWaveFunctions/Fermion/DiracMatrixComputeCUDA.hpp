@@ -247,7 +247,7 @@ public:
 
     // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
     // smaller of the two's dimensions
-    inv_a_mat.assignUpperRight(data_ref_matrix);
+    inv_a_mat.assignUpperLeft(data_ref_matrix);
     cudaErrorCheck(cudaMemcpyAsync(inv_a_mat.device_data(), inv_a_mat.data(), inv_a_mat.size() * sizeof(TMAT),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync of inv_a_mat to device failed!");
@@ -286,7 +286,7 @@ public:
       data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, lda);
       // We can't use operator= with different lda, ldb which can happen so we use this assignment which is over the
       // smaller of the two's dimensions
-      inv_a_mats[iw].get().assignUpperRight(data_ref_matrix);
+      inv_a_mats[iw].get().assignUpperLeft(data_ref_matrix);
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().device_data(), inv_a_mats[iw].get().data(),
                                      inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice,
                                      cuda_handles.hstream),

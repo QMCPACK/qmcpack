@@ -150,14 +150,14 @@ public:
    *  This is unoptimized.
    */
   template<typename CONTAINER>
-  void assignUpperRight(const CONTAINER& other)
+  void assignUpperLeft(const CONTAINER& from)
   {
     auto& this_ref = *this;
-    size_t cols = std::max(this_ref.cols(), other.cols());
-    size_t rows = std::max(this_ref.rows(), other.rows());
-    for(int j = 0; j < cols; ++j)
-      for(int i = 0; i < rows; ++i)
-        this_ref(i,j) = other(i,j);
+    const size_t cols = std::min(this_ref.cols(), from.cols());
+    const size_t rows = std::min(this_ref.rows(), from.rows());
+    for(int i = 0; i < rows; ++i)
+      for(int j = 0; j < cols; ++j)
+        this_ref(i,j) = from(i,j);
   }
   
   // Assignment Operators
