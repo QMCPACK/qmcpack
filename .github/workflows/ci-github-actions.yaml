@@ -112,7 +112,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Dependencies
-        run: brew install ninja hdf5 libxml2 openblas lapack boost fftw
+        run: brew install ninja hdf5 fftw boost
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
