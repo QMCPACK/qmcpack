@@ -346,6 +346,9 @@ void OperatorBase::addValue(PropertySetType& plist)
     my_index_ = plist.add(name_.c_str());
 }
 
-bool OperatorBase::quantumDomainValid(QuantumDomains qdomain) { return qdomain != NO_QUANTUM_DOMAIN; }
+////// PRIVATE FUNCTIONS
+bool OperatorBase::energyDomainValid(EnergyDomains edomain) const noexcept { return edomain != NO_ENERGY_DOMAIN; }
+
+bool OperatorBase::quantumDomainValid(QuantumDomains qdomain) const noexcept { return qdomain != NO_QUANTUM_DOMAIN; }
 
 } // namespace qmcplusplus

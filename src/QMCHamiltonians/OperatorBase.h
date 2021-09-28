@@ -548,16 +548,10 @@ private:
 #endif
 
   ///return whether the energy domain is valid
-  inline bool energyDomainValid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
-
-  ///return whether the energy domain is valid
-  inline bool energyDomainValid() const { return energyDomainValid(energy_domain_); }
+  bool energyDomainValid(EnergyDomains edomain) const noexcept;
 
   ///return whether the quantum domain is valid
-  bool quantumDomainValid(QuantumDomains qdomain);
-
-  ///return whether the quantum domain is valid
-  inline bool quantumDomainValid() { return quantumDomainValid(quantum_domain_); }
+  bool quantumDomainValid(QuantumDomains qdomain) const noexcept;
 };
 } // namespace qmcplusplus
 #endif
