@@ -234,7 +234,8 @@ public:
   // clone
   std::vector<TinyVector<int, OHMMS_DIM>> UseTwists;
   std::vector<int> IncludeTwists, DistinctTwists;
-  bool UseRealOrbitals;
+  /// if false, splines are conceptually complex valued
+  bool use_real_splines_;
   int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
   // This is true if the corresponding twist in DistinctTwists should
   // should be used to generate two distinct orbitals from the real and
