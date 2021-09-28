@@ -22,6 +22,7 @@
 
 namespace qmcplusplus
 {
+// PUBLIC
 OperatorBase::OperatorBase() : value_(0.0), my_index_(-1), t_walker_(0)
 {
   quantum_domain_ = NO_QUANTUM_DOMAIN;
@@ -47,15 +48,33 @@ void OperatorBase::setName(const std::string name) noexcept { name_ = name; }
 TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
 #endif
 
-/** The correct behavior of this routine requires estimators with non-deterministic components
- * in their evaluate() function to override this function.
- */
+//////// VIRTUAL FUNCTIONS ////////////////
+void OperatorBase::addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
+
+void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+{
+  const bool collect = update_mode_.test(COLLECTABLE);
+  //exclude collectables
+  if (!collect)
+  {
+    h5desc.emplace_back(name_);
+    auto& oh = h5desc.back();
+    std::vector<int> onedim(1, 1);
+    oh.set_dimensions(onedim, my_index_);
+    oh.open(gid);
+  }
+}
+
+void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
+
+void OperatorBase::setObservables(PropertySetType& plist) { plist[my_index_] = value_; }
+
+void OperatorBase::setParticlePropertyList(PropertySetType& plist, int offset) { plist[my_index_ + offset] = value_; }
+
+void OperatorBase::setHistories(Walker_t& ThisWalker) { t_walker_ = &(ThisWalker); }
+
 OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { return evaluate(P); }
-/** Take o_list and p_list update evaluation result variables in o_list?
- *
- * really should reduce vector of local_energies. matching the ordering and size of o list
- * the this can be call for 1 or more QMCHamiltonians
- */
+
 void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list) const
@@ -64,7 +83,7 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
 /**  Temporary raw omp pragma for simple thread parallelism
    *   ignoring the driver level concurrency
    *   
-   *  \todo replace this with a proper abstraction. It should adequately describe the behavior
+   *  TODO: replace this with a proper abstraction. It should adequately describe the behavior
    *  and strictly limit the activation of this level concurrency to when it is intended.
    *  It is unlikely to belong in this function.
    *  
@@ -115,7 +134,131 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader
   }
 }
 
+OperatorBase::Return_t OperatorBase::rejectedMove(ParticleSet& P) { return 0; }
 
+OperatorBase::Return_t OperatorBase::evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
+
+void OperatorBase::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                            const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                            const RefVectorWithLeader<ParticleSet>& p_list) const
+{
+  mw_evaluate(o_list, wf_list, p_list);
+}
+
+OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
+                                                                 const opt_variables_type& optvars,
+                                                                 const std::vector<ValueType>& dlogpsi,
+                                                                 std::vector<ValueType>& dhpsioverpsi)
+{
+  return evaluate(P);
+}
+
+OperatorBase::Return_t OperatorBase::evaluateWithIonDerivs(ParticleSet& P,
+                                                           ParticleSet& ions,
+                                                           TrialWaveFunction& psi,
+                                                           ParticleSet::ParticlePos_t& hf_term,
+                                                           ParticleSet::ParticlePos_t& pulay_term)
+{
+  return evaluate(P);
+}
+
+OperatorBase::Return_t OperatorBase::evaluateWithIonDerivsDeterministic(ParticleSet& P,
+                                                                        ParticleSet& ions,
+                                                                        TrialWaveFunction& psi,
+                                                                        ParticleSet::ParticlePos_t& hf_term,
+                                                                        ParticleSet::ParticlePos_t& pulay_term)
+{
+  return evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_term);
+}
+
+void OperatorBase::updateSource(ParticleSet& s) {}
+
+OperatorBase::Return_t OperatorBase::getEnsembleAverage() { return 0.0; }
+
+void OperatorBase::createResource(ResourceCollection& collection) const {}
+
+void OperatorBase::acquireResource(ResourceCollection& collection,
+                                   const RefVectorWithLeader<OperatorBase>& o_list) const
+{}
+
+void OperatorBase::releaseResource(ResourceCollection& collection,
+                                   const RefVectorWithLeader<OperatorBase>& o_list) const
+{}
+
+void OperatorBase::setRandomGenerator(RandomGenerator_t* rng) {}
+
+void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
+{
+  std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
+  if (myclone)
+  {
+    targetH.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
+  }
+}
+
+#if !defined(REMOVE_TRACEMANAGER)
+void OperatorBase::getRequiredTraces(TraceManager& tm){};
+#endif
+
+void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+{
+  APP_ABORT("Need specialization for " + name_ +
+            "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
+}
+
+void OperatorBase::addEnergy(MCWalkerConfiguration& W,
+                             std::vector<RealType>& LocalEnergy,
+                             std::vector<std::vector<NonLocalData>>& Txy)
+{
+  addEnergy(W, LocalEnergy);
+}
+
+// END VIRTUAL FUNCTIONS //
+
+bool OperatorBase::isClassical() const noexcept { return quantum_domain_ == CLASSICAL; }
+
+bool OperatorBase::isQuantum() const noexcept { return quantum_domain_ == QUANTUM; }
+
+bool OperatorBase::isClassicalClassical() const noexcept { return quantum_domain_ == CLASSICAL_CLASSICAL; }
+
+bool OperatorBase::isQuantumClassical() const noexcept { return quantum_domain_ == QUANTUM_CLASSICAL; }
+
+bool OperatorBase::isQuantumQuantum() const noexcept { return quantum_domain_ == QUANTUM_QUANTUM; }
+
+bool OperatorBase::getMode(const int i) const noexcept { return update_mode_[i]; }
+
+bool OperatorBase::isNonLocal() const noexcept { return update_mode_[NONLOCAL]; }
+
+
+#if !defined(REMOVE_TRACEMANAGER)
+
+void OperatorBase::contributeTraceQuantities()
+{
+  contributeScalarQuantities();
+  contributeParticleQuantities();
+}
+
+void OperatorBase::checkoutTraceQuantities(TraceManager& tm)
+{
+  checkoutScalarQuantities(tm);
+  checkoutParticleQuantities(tm);
+}
+
+void OperatorBase::collectScalarTraces() { collectScalarQuantities(); }
+
+void OperatorBase::deleteTraceQuantities()
+{
+  deleteScalarQuantities();
+  deleteParticleQuantities();
+  streaming_scalars_    = false;
+  streaming_particles_  = false;
+  have_required_traces_ = false;
+  request_.reset();
+}
+
+#endif
+
+////// PROTECTED FUNCTIONS
 void OperatorBase::setEnergyDomain(EnergyDomains edomain)
 {
   if (energyDomainValid(edomain))
@@ -169,34 +312,5 @@ void OperatorBase::twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet
 }
 
 bool OperatorBase::quantumDomainValid(QuantumDomains qdomain) { return qdomain != NO_QUANTUM_DOMAIN; }
-
-void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
-{
-  std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
-  if (myclone)
-  {
-    targetH.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
-  }
-}
-
-void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
-{
-  bool collect = update_mode_.test(COLLECTABLE);
-  //exclude collectables
-  if (!collect)
-  {
-    h5desc.emplace_back(name_);
-    auto& oh = h5desc.back();
-    std::vector<int> onedim(1, 1);
-    oh.set_dimensions(onedim, my_index_);
-    oh.open(gid);
-  }
-}
-
-void OperatorBase::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  APP_ABORT("Need specialization for " + name_ +
-            "::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
-}
 
 } // namespace qmcplusplus
