@@ -79,10 +79,8 @@ class DiracMatrixComputeCUDA : public Resource
    *  \param[in,out]  a_mats      dual A matrices, they will be transposed on the device side as a side effect.
    *  \param[out]     inv_a_mats  dual invM matrices
    *  \param[in]      n           matrices rank.								
-   *  \param[in]      lda         leading dimension of each matrix					
    *  \param[out]     log_values  log determinant value for each matrix, batch_size = log_values.size()
    *
-   *  This is the prefered interface for calling computeInvertAndLog when the VALUE_FP and VALUE_FP are equal.
    *  On Volta so far little seems to be achieved by having the mats continuous.
    */
   inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
@@ -91,13 +89,13 @@ class DiracMatrixComputeCUDA : public Resource
                                      const int n,
                                      DualVector<LogValue>& log_values)
   {
-    int nw = a_mats.size();
+    const int nw = a_mats.size();
     assert(a_mats.size() == inv_a_mats.size());
 
     psiM_ptrs_.resize(nw);
     invM_ptrs_.resize(nw);
-    const int lda   = a_mats[0].get().cols();
-    const int ldinv = inv_a_mats[0].get().cols();
+    const int lda           = a_mats[0].get().cols();
+    const int ldinv         = inv_a_mats[0].get().cols();
     cudaStream_t hstream    = cuda_handles.hstream;
     cublasHandle_t h_cublas = cuda_handles.h_cublas;
     psiM_fp_.resize(n * ldinv * nw);
@@ -127,9 +125,10 @@ class DiracMatrixComputeCUDA : public Resource
     cudaErrorCheck(cudaMemcpyAsync(invM_ptrs_.device_data(), invM_ptrs_.data(), invM_ptrs_.size() * sizeof(VALUE_FP*),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync invM_ptrs_ failed!");
-    cuBLAS_LU::computeInverseAndDetLog_batched(h_cublas, hstream, n, ldinv, psiM_ptrs_.device_data(), invM_ptrs_.device_data(),
-                                               LU_diags_fp_.device_data(), pivots_.device_data(), infos_.data(),
-                                               infos_.device_data(), log_values.device_data(), nw);
+    cuBLAS_LU::computeInverseAndDetLog_batched(h_cublas, hstream, n, ldinv, psiM_ptrs_.device_data(),
+                                               invM_ptrs_.device_data(), LU_diags_fp_.device_data(),
+                                               pivots_.device_data(), infos_.data(), infos_.device_data(),
+                                               log_values.device_data(), nw);
     for (int iw = 0; iw < nw; ++iw)
     {
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().data(), inv_a_mats[iw].get().device_data(),
@@ -162,7 +161,7 @@ class DiracMatrixComputeCUDA : public Resource
                                             DualVector<LogValue>& log_values)
   {
     // This is probably dodgy
-    int nw = log_values.size();
+    const int nw = log_values.size();
     psiM_ptrs_.resize(nw);
     invM_ptrs_.resize(nw);
     for (int iw = 0; iw < nw; ++iw)
@@ -185,9 +184,10 @@ class DiracMatrixComputeCUDA : public Resource
     cudaErrorCheck(cudaMemcpyAsync(invM_ptrs_.device_data(), invM_ptrs_.data(), invM_ptrs_.size() * sizeof(VALUE_FP*),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync invM_ptrs_ failed!");
-    cuBLAS_LU::computeInverseAndDetLog_batched(h_cublas, hstream, n, lda, psiM_ptrs_.device_data(), invM_ptrs_.device_data(),
-                                               LU_diags_fp_.device_data(), pivots_.device_data(), infos_.data(),
-                                               infos_.device_data(), log_values.device_data(), nw);
+    cuBLAS_LU::computeInverseAndDetLog_batched(h_cublas, hstream, n, lda, psiM_ptrs_.device_data(),
+                                               invM_ptrs_.device_data(), LU_diags_fp_.device_data(),
+                                               pivots_.device_data(), infos_.data(), infos_.device_data(),
+                                               log_values.device_data(), nw);
 #if NDEBUG
     // This is very useful to see whether the data after all kernels and cublas calls are run is wrong on the device or due to copy.
     // cuBLAS_LU::peekinvM_batched(hstream, psiM_mw_ptr, invM_mw_ptr, pivots_.device_data(), infos_.device_data(),
@@ -266,7 +266,7 @@ public:
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
-    int nw        = a_mats.size();
+    const int nw  = a_mats.size();
     const int n   = a_mats[0].get().rows();
     const int lda = a_mats[0].get().cols();
     size_t nsqr   = n * n;
@@ -308,7 +308,7 @@ public:
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
-    const int n   = a_mats[0].get().rows();
+    const int n = a_mats[0].get().rows();
     mw_computeInvertAndLog(cuda_handles, a_mats, inv_a_mats, n, log_values);
   }
 };

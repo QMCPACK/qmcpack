@@ -77,7 +77,7 @@ private:
    */
   inline void reset(OffloadPinnedVector<VALUE_FP>& psi_Ms, const int n, const int lda, const int batch_size)
   {
-    int nw = batch_size;
+    const int nw = batch_size;
     pivots_.resize(lda * nw);
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -137,7 +137,7 @@ private:
                                   const int lda,
                                   OffloadPinnedVector<LogValue>& log_values)
   {
-    int nw = log_values.size();
+    const int nw = log_values.size();
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
       reset(psi_Ms, n, lda, nw);
@@ -224,7 +224,7 @@ public:
                                  OffloadPinnedVector<LogValue>& log_values,
                                  const std::vector<bool>& recompute)
   {
-    int nw           = a_mats.size();
+    const int nw     = a_mats.size();
     const size_t n   = a_mats[0].get().rows();
     const size_t lda = a_mats[0].get().cols();
     const size_t ldb = inv_a_mats[0].get().cols();
