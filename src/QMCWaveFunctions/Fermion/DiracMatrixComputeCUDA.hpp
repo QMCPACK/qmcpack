@@ -66,7 +66,7 @@ class DiracMatrixComputeCUDA : public Resource
   //DualMatrix<T_FP> temp_mat_;
 
   // For device pointers to matrices
-  Vector<VALUE_FP*, OffloadPinnedAllocator<VALUE_FP*>> psiM_ptrs_; //FIXME really should be const VALUE_FP*
+  Vector<VALUE_FP*, OffloadPinnedAllocator<VALUE_FP*>> psiM_ptrs_; // \todo FIXME really should be const VALUE_FP*
   Vector<VALUE_FP*, OffloadPinnedAllocator<VALUE_FP*>> invM_ptrs_;
 
   // cuBLAS geam wants these.
