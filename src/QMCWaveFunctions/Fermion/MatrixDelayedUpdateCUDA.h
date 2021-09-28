@@ -137,9 +137,6 @@ private:
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-  // psi(r')/psi(r) during a PbyP move
-  FullPrecValue cur_ratio_;
-
   /** @ingroup Resources
    *  @{ */
   // CUDA stream, cublas handle object
@@ -449,13 +446,6 @@ public:
       throw std::logic_error(
           "Null det_inverter_, Even for testing proper resource creation and acquisition must be made.");
     }
-  }
-
-
-  inline void invert_transpose(const Matrix<Value>& log_det, Matrix<Value>& a_inv, LogValue& log_value)
-  {
-    guard_no_delay();
-    detEng.invert_transpose(log_det, a_inv, log_value);
   }
 
   Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
