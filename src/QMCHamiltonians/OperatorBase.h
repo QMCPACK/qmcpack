@@ -480,7 +480,6 @@ protected:
   bool have_required_traces_;
 #endif
 
-
   /////PURELY VIRTUAL FUNCTIONS
 
   /**

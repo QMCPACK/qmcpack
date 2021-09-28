@@ -23,16 +23,22 @@
 namespace qmcplusplus
 {
 // PUBLIC
-OperatorBase::OperatorBase() : value_(0.0), my_index_(-1), t_walker_(0)
-{
-  quantum_domain_ = NO_QUANTUM_DOMAIN;
-  energy_domain_  = NO_ENERGY_DOMAIN;
 
+OperatorBase::OperatorBase()
+    : value_(0.0),
+      my_index_(-1),
+      t_walker_(0),
 #if !defined(REMOVE_TRACEMANAGER)
-  streaming_scalars_    = false;
-  streaming_particles_  = false;
-  have_required_traces_ = false;
+      streaming_particles_(false),
+      have_required_traces_(false),
 #endif
+      quantum_domain_(NO_QUANTUM_DOMAIN),
+      energy_domain_(NO_ENERGY_DOMAIN)
+#if !defined(REMOVE_TRACEMANAGER)
+      ,
+      streaming_scalars_(false)
+#endif
+{
   update_mode_.set(PRIMARY, 1);
 }
 
