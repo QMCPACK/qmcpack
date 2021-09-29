@@ -14,7 +14,6 @@ cmake_policy(SET CMP0075 NEW)
 ######################################################################
 # QMCPACK project
 ######################################################################
-
 project(
   qmcpack
   VERSION 3.11.9
@@ -40,17 +39,6 @@ set(QMC_CXX_STANDARD
 if(NOT QMC_CXX_STANDARD EQUAL 17)
   message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
-endif()
-
-#--------------------------------------------------------------------
-# Set CUDA standard
-#--------------------------------------------------------------------
-set(QMC_CUDA_STANDARD
-    14
-    CACHE STRING "QMCPACK CUDA C++ language standard")
-if(NOT QMC_CUDA_STANDARD EQUAL 14)
-	message(WARNING "C++14 is the only CUDA language standard officially supported by this QMCPACK version. "
-                        "Using other versions of the CUDA C++ standard is unsupported and done entirely at user's own risk.")
 endif()
 
 #--------------------------------------------------------------------
@@ -272,8 +260,9 @@ endif()
 set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CUDA_STANDARD ${QMC_CUDA_STANDARD})
+set(CMAKE_CUDA_STANDARD ${QMC_CXX_STANDARD})
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+set(CMAKE_CUDA_EXTENSIONS OFF)
 
 # Check that a C++ compiler is compatible with the underlying libstdc++
 include(Testlibstdc++)
@@ -679,11 +668,14 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if (CMAKE_VERSION VERSION_LESS 3.17.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.17.0 or later")
     endif()
-    enable_language(CUDA)
-    find_package(CUDAToolkit REQUIRED)
+    if(DEFINED CUDA_ARCH)
+      message(FATAL_ERROR "Use CMAKE_CUDA_ARCHITECTURES instead of CUDA_ARCH variable")
+    endif()
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
       set(CMAKE_CUDA_ARCHITECTURES 70)
     endif()
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
     # Automatically set the default NVCC flags
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
     if(QMC_COMPLEX)
