@@ -221,8 +221,7 @@ public:
   inline void mw_invertTranspose(HandleResource& resource,
                                  RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
                                  RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-                                 OffloadPinnedVector<LogValue>& log_values,
-                                 const std::vector<bool>& recompute)
+                                 OffloadPinnedVector<LogValue>& log_values)
   {
     const int nw     = a_mats.size();
     const size_t n   = a_mats[0].get().rows();

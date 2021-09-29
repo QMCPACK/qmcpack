@@ -75,7 +75,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
 
   log_values.resize(2);
   DummyResource dummy_res;
-  dmc_omp.mw_invertTranspose(dummy_res, a_mats, inv_a_mats, log_values, {true, true});
+  dmc_omp.mw_invertTranspose(dummy_res, a_mats, inv_a_mats, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -97,7 +97,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats3{inv_mat_a, inv_mat_a2, inv_mat_a3};
 
   log_values.resize(3);
-  dmc_omp.mw_invertTranspose(dummy_res, a_mats3, inv_a_mats3, log_values, {true, true, true});
+  dmc_omp.mw_invertTranspose(dummy_res, a_mats3, inv_a_mats3, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -152,7 +152,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wav
 
 
   DummyResource dummy_res;
-  dmc_omp.mw_invertTranspose(dummy_res, a_mats, inv_a_mats, log_values, {true, true});
+  dmc_omp.mw_invertTranspose(dummy_res, a_mats, inv_a_mats, log_values);
 
   DiracMatrix<double> dmat;
   Matrix<double> inv_mat_test(n, n);

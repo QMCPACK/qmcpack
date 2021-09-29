@@ -94,7 +94,7 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
   log_values.resize(2);
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, {true, true});
+  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -116,7 +116,7 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats3{inv_mat_a, inv_mat_a2, inv_mat_a3};
 
   log_values.resize(3);
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats3, inv_a_mats3, log_values, {true, true});
+  dmcc.mw_invertTranspose(*cuda_handles, a_mats3, inv_a_mats3, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -170,7 +170,7 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
   RefVector<OffloadPinnedMatrix<std::complex<double>>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<std::complex<double>>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, {true, true});
+  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values);
 
   DiracMatrix<std::complex<double>> dmat;
   Matrix<std::complex<double>> inv_mat_test(n, n);
@@ -225,7 +225,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
   RefVector<OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, {true, true});
+  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values);
 
   DiracMatrix<double> dmat;
   Matrix<double> inv_mat_test(n, n);

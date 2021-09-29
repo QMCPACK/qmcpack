@@ -469,13 +469,12 @@ public:
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
                                  RefVector<DualMatrix<Value>>& psiM_list,
                                  RefVector<DualMatrix<Value>>& psiMinv_list,
-                                 DualVector<LogValue>& log_values,
-                                 const std::vector<bool>& compute_mask)
+                                 DualVector<LogValue>& log_values)
   {
     auto& engine_leader = engines.getLeader();
     engine_leader.guard_no_delay();
     engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), psiM_list, psiMinv_list,
-                                                        log_values, compute_mask);
+                                                        log_values);
   }
 
   // prepare invRow and compute the old gradients.

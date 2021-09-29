@@ -285,8 +285,7 @@ public:
       CUDALinearAlgebraHandles& cuda_handles,
       RefVector<DualMatrix<TMAT>>& a_mats,
       RefVector<DualMatrix<TMAT>>& inv_a_mats,
-      DualVector<LogValue>& log_values,
-      const std::vector<bool>& compute_mask)
+      DualVector<LogValue>& log_values)
   {
     assert(log_values.size() == a_mats.size());
     const int nw  = a_mats.size();
@@ -327,8 +326,7 @@ public:
       CUDALinearAlgebraHandles& cuda_handles,
       RefVector<DualMatrix<TMAT>>& a_mats,
       RefVector<DualMatrix<TMAT>>& inv_a_mats,
-      DualVector<LogValue>& log_values,
-      const std::vector<bool>& compute_mask)
+      DualVector<LogValue>& log_values)
   {
     assert(log_values.size() == a_mats.size());
     const int n = a_mats[0].get().rows();

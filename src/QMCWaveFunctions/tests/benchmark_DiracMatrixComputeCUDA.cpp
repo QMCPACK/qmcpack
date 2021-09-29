@@ -97,7 +97,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   std::vector<bool> compute_mask(params.batch_size, true);
   BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
-    meter.measure([&] { dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, compute_mask); });
+    meter.measure([&] { dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values ); });
   };
 
   DiracMatrix<double> dmat;
@@ -149,7 +149,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   std::vector<bool> compute_mask(params.batch_size, true);
   BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
-    meter.measure([&] { dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, compute_mask); });
+    meter.measure([&] { dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values); });
   };
 
 

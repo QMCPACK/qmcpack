@@ -57,8 +57,7 @@ void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(const DualMatrix<Value>& ps
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                         RefVector<DualMatrix<Value>>& logdetT_list,
-                                                        RefVector<DualMatrix<Value>>& a_inv_list,
-                                                        const std::vector<bool>& compute_mask) const
+                                                        RefVector<DualMatrix<Value>>& a_inv_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
@@ -77,7 +76,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
     wfc_leader.mw_res_->log_values[iw] = {0.0, 0.0};
   }
 
-  DET_ENGINE::mw_invertTranspose(engine_list, logdetT_list, a_inv_list, wfc_leader.mw_res_->log_values, compute_mask);
+  DET_ENGINE::mw_invertTranspose(engine_list, logdetT_list, a_inv_list, wfc_leader.mw_res_->log_values);
   for (int iw = 0; iw < nw; ++iw)
   {
     auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
@@ -915,7 +914,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
                                             psiM_host_list, dpsiM_list, d2psiM_list);
   }
 
-  mw_invertPsiM(wfc_filtered_list, psiM_temp_list, psiMinv_list, recompute);
+  mw_invertPsiM(wfc_filtered_list, psiM_temp_list, psiMinv_list);
 
   { // transfer dpsiM, d2psiM, psiMinv to device
     ScopedTimer d2h(H2DTimer);
