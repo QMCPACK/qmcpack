@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.17.0)
+cmake_minimum_required(VERSION 3.15.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
@@ -676,6 +676,9 @@ if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
   else(QMC_CUDA2HIP)
+    if (CMAKE_VERSION VERSION_LESS 3.17.0)
+      message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.17.0 or later")
+    endif()
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
