@@ -38,9 +38,9 @@ else()
   
   softlink_rmg_input( ${RMG_TEST_NAME} 1-16 rmg-${RMG_SYSTEM}  LAST_TEST_NAME)
   # TODO: do larger run to get better reference
-  list(APPEND DIAMOND2_GAMMA_SCALARS "kinetic" "11.78992 0.005")
-  list(APPEND DIAMOND2_GAMMA_SCALARS "localecp" "-7.34003 0.005")
-  list(APPEND DIAMOND2_GAMMA_SCALARS "samples" "1600000 0.0")
+  list(APPEND DIAMOND2_GAMMA_SCALARS "kinetic" "11.78992 0.05")
+  list(APPEND DIAMOND2_GAMMA_SCALARS "localecp" "-7.34003 0.05")
+  list(APPEND DIAMOND2_GAMMA_SCALARS "samples" "16000 0.0")
   
   #set(THIS_TEST_NAME "${RMG_TEST_NAME}-Diamond2_1x1x1-gamma-ccECP-vmc_noj")
   set(THIS_TEST_NAME "${RMG_TEST_NAME}")
