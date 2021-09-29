@@ -72,12 +72,13 @@ public:
   using Position = QMCTraits::PosType;
   using Real     = QMCTraits::FullPrecRealType;
 
-  OneBodyDensityMatricesInput();
+  OneBodyDensityMatricesInput() = default;
   OneBodyDensityMatricesInput(xmlNodePtr cur);
 
 private:
   OneBodyDensityMatrixInputSection input_section_;
 
+  // Default parameters for OneBodyDensityMatrices
   bool energy_matrix_     = false;
   bool use_drift_         = false;
   bool normalized_        = true;
