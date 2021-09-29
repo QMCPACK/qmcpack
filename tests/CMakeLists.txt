@@ -11,11 +11,10 @@ if(QE_FOUND)
   add_subdirectory(pw2qmcpack)
 endif()
 
-#TODO: fix this
-#if(RMG_FOUND)
+if(RMG_FOUND)
   add_subdirectory(rmg)
   message("adding RMG tests")
-#endif()
+endif()
 
 message("Adding system tests for QMCPACK")
 
