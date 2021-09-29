@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include <SpeciesSet.h>
 
 namespace qmcplusplus
 {

@@ -28,6 +28,7 @@ set(SRCS
     test_SpinDensityNew.cpp
     test_InputSection.cpp
     test_OneBodyDensityMatricesInput.cpp
+    test_OneBodyDensityMatrices.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})

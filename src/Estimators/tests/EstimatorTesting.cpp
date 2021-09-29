@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorTesting.h"
-
+#include <SpeciesSet.h>
 namespace qmcplusplus
 {
 namespace testing
@@ -24,6 +24,15 @@ Lattice makeTestLattice()
   lattice.reset();
   lattice.explicitly_defined = true;
   return lattice;
+}
+
+SpeciesSet makeSpeciesSet()
+{
+  SpeciesSet species_set;
+  int ispecies                      = species_set.addSpecies("C");
+  int iattribute                    = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 2;
+  return species_set;
 }
 } // namespace testing
 } // namespace qmcplusplus
