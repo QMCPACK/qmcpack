@@ -24,7 +24,8 @@ set(QMCEST_SRC
     OperatorEstBase.cpp
     SpinDensityNew.cpp
     MomentumDistribution.cpp
-    OneBodyDensityMatricesInput.cpp)
+    OneBodyDensityMatricesInput.cpp
+    OneBodyDensityMatrices.cpp)
 
 ####################################
 # create libqmcestimators
