@@ -311,7 +311,7 @@ private:
   const int ndelay_;
 
   /// timers
-  NewTimer &D2HTimer, &H2DTimer, &batched_inverse_timer_;
+  NewTimer &D2HTimer, &H2DTimer;
 };
 
 extern template class DiracDeterminantBatched<>;

@@ -33,8 +33,7 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPO
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
       ndelay_(ndelay),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
-      H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine)),
-      batched_inverse_timer_(*timer_manager.createTimer("DiracDeterminantBatched::batched_inverse", timer_level_fine))
+      H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
   resize(NumPtcls, NumPtcls);
@@ -62,7 +61,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
                                                         const std::vector<bool>& compute_mask) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  ScopedTimer inverse_timer(wfc_leader.batched_inverse_timer_);
+  ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
   RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
@@ -916,9 +915,10 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
                                             psiM_host_list, dpsiM_list, d2psiM_list);
   }
 
+  mw_invertPsiM(wfc_filtered_list, psiM_temp_list, psiMinv_list, recompute);
+
   { // transfer dpsiM, d2psiM, psiMinv to device
     ScopedTimer d2h(H2DTimer);
-
 
     for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
     {
@@ -927,7 +927,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       size_t stride      = wfc_leader.psiM_vgl.capacity();
       PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
     }
-    mw_invertPsiM(wfc_filtered_list, psiM_temp_list, psiMinv_list, recompute);
     PRAGMA_OFFLOAD("omp taskwait")
   }
 }
