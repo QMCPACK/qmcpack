@@ -5562,7 +5562,7 @@ def _getseekpath(
         structure = structure.folded_structure
     #end if
     structure = structure.copy()
-    if structure.units is not 'A':
+    if structure.units != 'A':
         structure.change_units('A')
     #end if
     axes       = structure.axes
@@ -6783,9 +6783,9 @@ class Crystal(Structure):
         pos  = []
         if basis_vectors is None:
             basis_vectors = axes
-        elif basis_vectors is 'primitive':
+        elif basis_vectors=='primitive':
             basis_vectors = axes_prim
-        elif basis_vectors is 'conventional':
+        elif basis_vectors=='conventional':
             basis_vectors = axes_conv
         #end if
         nbasis = len(atoms)
