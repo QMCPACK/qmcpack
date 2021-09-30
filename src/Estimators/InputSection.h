@@ -61,7 +61,7 @@ public:
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
   template<typename T>
-  T get(const std::string& name) const
+  const T get(const std::string& name) const
   {
     return std::any_cast<T>(values.at(name));
   }
@@ -74,6 +74,13 @@ public:
   // Initialize from unordered_map/initializer list
   void init(const std::unordered_map<std::string, std::any>& init_values);
 
+protected:
+  /** Do validation for a particular subtype of InputSection
+   *  Called by check_valid.
+   *  Default implementation is noop
+   */
+  virtual void checkParticularValidity() {}
+  
 private:
   // Query functions
   bool is_attribute(const std::string& name) const { return attributes.find(name) != attributes.end(); }

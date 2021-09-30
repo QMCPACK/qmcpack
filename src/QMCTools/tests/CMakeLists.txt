@@ -10,6 +10,7 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
+unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 set(SRC_DIR tools)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})

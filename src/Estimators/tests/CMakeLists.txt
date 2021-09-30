@@ -23,10 +23,11 @@ set(SRCS
     test_manager.cpp
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp
-    SpinDensityTesting.cpp
+    EstimatorTesting.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
+    test_OneBodyDensityMatricesInput.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
