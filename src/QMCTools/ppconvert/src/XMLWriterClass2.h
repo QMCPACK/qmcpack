@@ -19,6 +19,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <memory> // std::shared_ptr
 
 
 class XMLAttribute
@@ -38,8 +39,8 @@ public:
 
 class XMLElement
 {
-  std::vector<XMLAttribute*> Attributes;
-  std::vector<XMLElement*> Children;
+  std::vector<std::shared_ptr<XMLAttribute>> Attributes;
+  std::vector<std::shared_ptr<XMLElement>> Children;
   std::string Name, Content;
   int Level;
   void Indent(std::ostream& out);
@@ -49,9 +50,9 @@ public:
 
   inline int GetLevel() { return Level; }
 
-  void AddElement(XMLElement* elem) { Children.push_back(elem); }
+  void AddElement(std::shared_ptr<XMLElement>& elem) { Children.push_back(elem); }
 
-  void AddAttribute(XMLAttribute* attr) { Attributes.push_back(attr); }
+  void AddAttribute(std::shared_ptr<XMLAttribute>& attr) { Attributes.push_back(attr); }
 
   void AddContent(std::string content) { Content += content; }
 
@@ -70,7 +71,7 @@ public:
 class XMLWriterClass
 {
 private:
-  std::vector<XMLElement*> Elements;
+  std::vector<std::shared_ptr<XMLElement>> Elements;
   void Write();
   std::ofstream Out;
 
