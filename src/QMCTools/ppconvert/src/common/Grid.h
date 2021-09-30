@@ -65,7 +65,7 @@ public:
   virtual int ReverseMap(double r)             = 0;
   virtual void Write(IOSectionClass& out)      = 0;
   virtual void Read(IOSectionClass& inSection) = 0;
-  virtual ~Grid() {}
+  virtual ~Grid(){}
 };
 
 
