@@ -289,7 +289,7 @@ the path to the source directory.
                           particularly for large electron counts.
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC. Pre-production quality for real-space.
-                          Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
     ENABLE_TIMERS         ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                           to avoid potential slowdown in tiny systems.
@@ -448,7 +448,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
