@@ -6783,10 +6783,12 @@ class Crystal(Structure):
         pos  = []
         if basis_vectors is None:
             basis_vectors = axes
-        elif basis_vectors=='primitive':
-            basis_vectors = axes_prim
-        elif basis_vectors=='conventional':
-            basis_vectors = axes_conv
+        elif isinstance(basis_vectors,str):
+            if basis_vectors=='primitive':
+                basis_vectors = axes_prim
+            elif basis_vectors=='conventional':
+                basis_vectors = axes_conv
+            #end if
         #end if
         nbasis = len(atoms)
         for point in points:
