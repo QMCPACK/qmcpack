@@ -72,6 +72,17 @@ if(ENABLE_CUDA AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
 endif(ENABLE_CUDA AND QMC_CUDA)
 
+# set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
+if(ENABLE_CUDA OR QMC_CUDA AND NOT QMC_CUDA2HIP)
+  if(DEFINED CUDA_ARCH)
+    unset(CUDA_ARCH CACHE)
+    message(FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
+  endif()
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 70)
+  endif()
+endif()
+
 #--------------------------------------------------------------------
 # Set compiler-time parameters
 # WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
@@ -665,19 +676,12 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if (CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
-    if(DEFINED CUDA_ARCH)
-      unset(CUDA_ARCH CACHE)
-      message(FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
-    endif()
     # a few production machines use CUDA 10 which only supports C++14.
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
       set(CMAKE_CUDA_STANDARD 14)
     endif()
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CMAKE_CUDA_EXTENSIONS OFF)
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-      set(CMAKE_CUDA_ARCHITECTURES 70)
-    endif()
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
     # Automatically set the default NVCC flags
