@@ -33,7 +33,7 @@ private:
   Potential* pot;
 
 public:
-  Grid* grid;
+  std::shared_ptr<Grid> grid;
   CubicSplineCommon u, dudr;
   int n, l, CoreNodes;
   double Energy, Occupancy, Weight;
@@ -49,7 +49,7 @@ public:
   double LogDerivative();
   void Solve(double tolerance = 1.0e-8);
   void Normalize();
-  void SetGrid(Grid* newgrid);
+  void SetGrid(std::shared_ptr<Grid>& newgrid);
   void SetPotential(Potential* newPot);
   Potential* GetPotential();
   void Write(IOSectionClass& out);

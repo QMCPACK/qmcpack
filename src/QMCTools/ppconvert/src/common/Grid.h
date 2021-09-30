@@ -65,7 +65,7 @@ public:
   virtual int ReverseMap(double r)             = 0;
   virtual void Write(IOSectionClass& out)      = 0;
   virtual void Read(IOSectionClass& inSection) = 0;
-  virtual ~Grid(){}
+  virtual ~Grid() {}
 };
 
 
@@ -630,31 +630,31 @@ public:
 };
 
 
-inline Grid* ReadGrid(IOSectionClass& inSection)
+inline std::shared_ptr<Grid> ReadGrid(IOSectionClass& inSection)
 {
   std::string Type;
   assert(inSection.ReadVar("Type", Type));
 
-  Grid* newGrid;
+  std::shared_ptr<Grid> newGrid;
   if (Type == "Linear")
-    newGrid = new LinearGrid;
+    newGrid = std::make_shared<LinearGrid>();
   else if (Type == "General")
-    newGrid = new GeneralGrid;
+    newGrid = std::make_shared<GeneralGrid>();
   else if (Type == "Optimal")
-    newGrid = new OptimalGrid;
+    newGrid = std::make_shared<OptimalGrid>();
   else if (Type == "Optimal2")
-    newGrid = new OptimalGrid2;
+    newGrid = std::make_shared<OptimalGrid2>();
   else if (Type == "Log")
-    newGrid = new LogGrid;
+    newGrid = std::make_shared<LogGrid>();
   else if (Type == "Cluster")
-    newGrid = new ClusterGrid;
+    newGrid = std::make_shared<ClusterGrid>();
   else
   {
     std::cerr << "Unrecognized Grid type " << Type << "\n";
     exit(1);
   }
   newGrid->Read(inSection);
-  return (newGrid);
+  return newGrid;
 }
 
 

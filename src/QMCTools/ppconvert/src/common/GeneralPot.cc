@@ -8,27 +8,25 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
 #include "GeneralPot.h"
 
-void
-GeneralPot::Read(IOSectionClass &in)
+void GeneralPot::Read(IOSectionClass& in)
 {
-  assert (in.OpenSection("Grid"));
-  PotGrid = ReadGrid (in);
+  assert(in.OpenSection("Grid"));
+  PotGrid = ReadGrid(in);
   in.CloseSection();
-  Array<double,1> vdata;
-  assert (in.ReadVar("V", vdata));
-  assert (in.ReadVar("Z", Z));
-  PotSpline.Init (PotGrid, vdata);
+  Array<double, 1> vdata;
+  assert(in.ReadVar("V", vdata));
+  assert(in.ReadVar("Z", Z));
+  PotSpline.Init(PotGrid, vdata);
 }
 
-void
-GeneralPot::Write(IOSectionClass &out)
+void GeneralPot::Write(IOSectionClass& out)
 {
   out.NewSection("Grid");
   PotGrid->Write(out);
@@ -38,41 +36,29 @@ GeneralPot::Write(IOSectionClass &out)
   out.WriteVar("Type", "General");
 }
 
-double
-GeneralPot::V(double r)
+double GeneralPot::V(double r)
 {
   if (r < PotGrid->End)
     return PotSpline(r);
   else
-    return (-Z/r);
+    return (-Z / r);
 }
 
-double
-GeneralPot::dVdr (double r)
+double GeneralPot::dVdr(double r)
 {
   if (r < PotGrid->End)
     return PotSpline.Deriv(r);
   else
-    return Z/(r*r);
+    return Z / (r * r);
 }
 
-double
-GeneralPot::d2Vdr2 (double r)
+double GeneralPot::d2Vdr2(double r)
 {
   if (r < PotGrid->End)
     return PotSpline.Deriv2(r);
   else
-    return -2.0*Z/(r*r*r);
+    return -2.0 * Z / (r * r * r);
 }
 
 
-GeneralPot::GeneralPot() : PotGrid(NULL)
-{
-
-}
-
-GeneralPot::~GeneralPot()
-{
-  if (PotGrid != NULL)
-    delete PotGrid;
-}
+GeneralPot::GeneralPot() : PotGrid(NULL) {}
