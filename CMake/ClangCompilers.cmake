@@ -21,10 +21,13 @@ if(QMC_OMP)
 
     if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "nvptx64" AND DEFINED CMAKE_CUDA_ARCHITECTURES)
       list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)
-      if(NOT NUMBER_CUDA_ARCHITECTURES EQUAL "1")
-        message(FATAL_ERROR "LLVM does not support offload to multiple architectures!")
+      if(NUMBER_CUDA_ARCHITECTURES EQUAL "1")
+        set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
+      else()
+        message(FATAL_ERROR "LLVM does not yet support offload to multiple architectures! "
+                            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
+                            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH")
       endif()
-      set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
     endif()
 
     if(DEFINED OFFLOAD_ARCH)
