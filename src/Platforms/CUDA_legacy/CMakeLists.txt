@@ -13,7 +13,7 @@ set(CUDA_LEGACY_SRCS cuda_inverse.cu gpu_vector.cpp gpu_misc.cpp)
 
 if(NOT QMC_CUDA2HIP)
   add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
-  target_link_libraries(platform_cuda_legacy PUBLIC CUDA::cublas)
+  target_link_libraries(platform_cuda_legacy PUBLIC CUDA::cublas CUDA::cudart)
 else()
   hip_add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
   target_link_libraries(platform_cuda_legacy PUBLIC platform_rocm_runtime platform_rocm_LA)
