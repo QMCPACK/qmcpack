@@ -32,28 +32,29 @@ module load llvm/main-20210811-cuda10.1
 TYPE=Release
 Compiler=Clang
 
-source_folder=..
+source_folder=~/opt/qmcpack
 
 for name in offload_cuda_real_MP offload_cuda_real offload_cuda_cplx_MP offload_cuda_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D QMC_MATH_VENDOR=IBM_MASS -D MASS_ROOT=/sw/summit/xl/16.1.1-10/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16;--smpiargs=off'"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DQMC_MATH_VENDOR=IBM_MASS -DMASS_ROOT=/sw/summit/xl/16.1.1-10/xlmass/9.1.1 -DMPIEXEC_EXECUTABLE=`which jsrun` -DMPIEXEC_NUMPROC_FLAG='-n' -DMPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16;--smpiargs=off' -DCMAKE_CXX_STANDARD_LIBRARIES=/sw/summit/gcc/9.3.0-2/lib64/libstdc++.a"
 
 if [[ $name == *"cplx"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
 fi
 
 if [[ $name == *"_MP"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_MIXED_PRECISION=1"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -DOFFLOAD_ARCH=sm_70"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DUSE_OBJECT_TARGET=ON -DOFFLOAD_ARCH=sm_70"
 fi
 
 if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=/usr/bin/gcc -D CUDA_NVCC_FLAGS='-Xcompiler;-mno-float128'"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=70 -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++"
+  CUDA_FLAGS="-Xcompiler -mno-float128"
 fi
 
 folder=build_summit_${Compiler}_${name}
@@ -64,7 +65,7 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpicc -D CMAKE_CXX_COMPILER=mpicxx $source_folder
+cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_CUDA_FLAGS="$CUDA_FLAGS" $source_folder
 cmake .
 fi
 make -j16

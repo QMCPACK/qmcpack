@@ -47,7 +47,7 @@ elif [[ $build == *"MI60"* ]]; then
 fi
 
 if [[ $build == *"cuda"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=ON -DCUDA_ARCH=sm_70 -DCUDA_TOOLKIT_ROOT_DIR=$CUDA_ROOT -DCUDA_HOST_COMPILER=`which gcc`"
+  CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=70 -DCUDAToolkit_ROOT=$CUDA_ROOT -DCMAKE_CUDA_HOST_COMPILER=`which g++`"
 fi
 
 if [[ $build == *"cplx"* ]]; then
