@@ -1024,7 +1024,12 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     std::cerr << " CI configuration list is empty. \n";
     exit(101);
   }
-  if (CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
+  if (CIcoeff.size() != CIalpha.size())
+  {
+    std::cerr << " Problem with CI configuration lists. \n";
+    exit(102);
+  }
+  if (!isSpinor && CIcoeff.size() != CIbeta.size())
   {
     std::cerr << " Problem with CI configuration lists. \n";
     exit(102);
@@ -1094,7 +1099,8 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     }
   }
   hout.write(tempAlpha, "CI_Alpha");
-  hout.write(tempBeta, "CI_Beta");
+  if (!isSpinor)
+    hout.write(tempBeta, "CI_Beta");
 
   hout.pop();
   xmlAddChild(multislaterdet, detlist);
