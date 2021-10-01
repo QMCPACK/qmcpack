@@ -690,10 +690,8 @@ void DiracParser::parseCOSCIOrbInfo(std::istream& is, const int irrep_idx, OrbTy
   }
 }
 
-int DiracParser::sortAndStoreCOSCIOrbs(OrbType type)
+int DiracParser::sortAndStoreCOSCIOrbs(OrbType type, const int spinor_component)
 {
-  std::vector<int> spinor_component = {0, 2, 1, 3};
-
   int total = 0;
   for (int ir = 0; ir < irreps.size(); ir++)
   {
@@ -708,33 +706,30 @@ int DiracParser::sortAndStoreCOSCIOrbs(OrbType type)
       }
     }
 
-    for (int d = 0; d < 4; d++)
+    for (int i = 0; i < idx.size(); i++)
     {
-      for (int i = 0; i < idx.size(); i++)
+      if (spinor_component == 0)
       {
-        if (d == 0)
-        {
-          EigVal_alpha.push_back(idx[i].first);
-          total++;
-        }
-        int ir = idx[i].second.first;
-        int mo = idx[i].second.second;
-        for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
-          EigVec.push_back(irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component[d]]);
+        EigVal_alpha.push_back(idx[i].first);
+        total++;
       }
-      //now store KP for this irrep
-      for (int i = 0; i < idx.size(); i++)
+      int ir = idx[i].second.first;
+      int mo = idx[i].second.second;
+      for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
+        EigVec.push_back(irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component]);
+    }
+    //now store KP for this irrep
+    for (int i = 0; i < idx.size(); i++)
+    {
+      if (spinor_component == 0)
       {
-        if (d == 0)
-        {
-          EigVal_alpha.push_back(idx[i].first);
-          total++;
-        }
-        int ir = idx[i].second.first;
-        int mo = idx[i].second.second;
-        for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
-          EigVec.push_back(kp_irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component[d]]);
+        EigVal_alpha.push_back(idx[i].first);
+        total++;
       }
+      int ir = idx[i].second.first;
+      int mo = idx[i].second.second;
+      for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
+        EigVec.push_back(kp_irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component]);
     }
   }
 
@@ -786,9 +781,23 @@ void DiracParser::getCOSCI(std::istream& is)
   EigVec.clear();
   EigVal_alpha.clear();
   EigVal_beta.clear();
-  int total_core    = sortAndStoreCOSCIOrbs(OrbType::CORE);
-  int total_active  = sortAndStoreCOSCIOrbs(OrbType::ACTIVE);
-  int total_virtual = sortAndStoreCOSCIOrbs(OrbType::VIRTUAL);
+  //save real part of up component of spinor in EigVec first
+  int total_core    = sortAndStoreCOSCIOrbs(OrbType::CORE, 0);
+  int total_active  = sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 0);
+  int total_virtual = sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 0);
+  //save real part of dn compeonent of spinor in Eigvec
+  sortAndStoreCOSCIOrbs(OrbType::CORE, 2);
+  sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 2);
+  sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 2);
+  //save imag part of up compeonent of spinor in Eigvec
+  sortAndStoreCOSCIOrbs(OrbType::CORE, 1);
+  sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 1);
+  sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 1);
+  //save imag part of dn compeonent of spinor in Eigvec
+  sortAndStoreCOSCIOrbs(OrbType::CORE, 3);
+  sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 3);
+  sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 3);
+  
 
   //set occstrs for core and virtual
   std::string core_occstr;

@@ -931,14 +931,18 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   xmlNewProp(spoUP, (const xmlChar*)"size", (const xmlChar*)nstates_alpha.str().c_str());
 
   //create a spoDN
-  xmlNewProp(spoDN, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
-  xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
+  if (!isSpinor)
+  {
+    xmlNewProp(spoDN, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
+    xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
+  }
 
 
   if (DoCusp == true)
   {
     xmlNewProp(spoUP, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
-    xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
+    if (!isSpinor)
+      xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
   }
 
 
@@ -962,32 +966,68 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
       n++;
     }
 
-
   hout.write(Ctemp, "eigenset_0");
 
-
-  //add occupation DN
-  occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
-  xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
-  xmlAddChild(spoDN, occ_data);
-
-  coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
-  xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
-  if (SpinRestricted)
-    xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
-  else
+  if (isSpinor)
   {
-    xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"1");
     n = numMO * SizeOfBasisSet;
     for (int i = 0; i < numMO; i++)
+    {
       for (int j = 0; j < SizeOfBasisSet; j++)
       {
         Ctemp[i][j] = EigVec[n];
         n++;
       }
+    }
     hout.write(Ctemp, "eigenset_1");
+    n = 2 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_0_imag");
+    n = 3 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_1_imag");
+
+    hout.write(EigVal_alpha, "eigenval_0");
   }
-  xmlAddChild(spoDN, coeff_data);
+  else
+  {
+    //add occupation DN
+    occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
+    xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
+    xmlAddChild(spoDN, occ_data);
+
+    coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+    xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+    if (SpinRestricted)
+      xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
+    else
+    {
+      xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"1");
+      n = numMO * SizeOfBasisSet;
+      for (int i = 0; i < numMO; i++)
+        for (int j = 0; j < SizeOfBasisSet; j++)
+        {
+          Ctemp[i][j] = EigVec[n];
+          n++;
+        }
+      hout.write(Ctemp, "eigenset_1");
+    }
+    xmlAddChild(spoDN, coeff_data);
+  }
 
   hout.close();
 }

@@ -96,7 +96,7 @@ private:
   std::vector<cosciRep> cosciReps;
 
   void parseCOSCIOrbInfo(std::istream& is, const int irrep_idx, OrbType type);
-  int sortAndStoreCOSCIOrbs(OrbType type);
+  int sortAndStoreCOSCIOrbs(OrbType type, const int spinor_component);
 };
 
 
