@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -12,17 +12,17 @@
 
 #include <vector>
 #include "QMCDrivers/MCPopulation.h"
-#include "Estimators/EstimatorManagerBase.h"
-#include "Estimators/EstimatorManagerCrowd.h"
 #include "RandomGenerator.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
+#include "Estimators/EstimatorManagerCrowd.h"
 
 namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
-
+class EstimatorManagerNew;
+class EstimatorManagerCrowd;
 /** Driver synchronized step context
  * 
  *  assumed to live inside the drivers scope
@@ -44,7 +44,8 @@ public:
    */
   Crowd(EstimatorManagerNew& emb,
         const DriverWalkerResourceCollection& driverwalker_res,
-        const MultiWalkerDispatchers& dispatchers);
+        const MultiWalkerDispatchers& dispatchers,
+        const ParticleSet& elecs);
 
   ~Crowd();
   /** Because so many vectors allocate them upfront.
@@ -72,7 +73,7 @@ public:
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, rng);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, crowd_elecs_, walker_elecs_, walker_twfs_, rng);
   }
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
@@ -117,9 +118,13 @@ private:
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
 
-  // proivides multi walker resource
+  // Crowd scope elecs
+  // for cases when another elec mutable particleset is needed
+  // Seems to be always returned to "starting" state by the end of a function at crowd scope
+  ParticleSet crowd_elecs_;
+  // provides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
-
+  /// per crowd estimator manager
   EstimatorManagerCrowd estimator_manager_crowd_;
 
   /** @name Step State

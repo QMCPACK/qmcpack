@@ -64,6 +64,7 @@ public:
    *  the single thread write directly into the OperatorEstimator data.
    */
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
+                          const ParticleSet& pset_target,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
                           RandomGenerator_t& rng) = 0;

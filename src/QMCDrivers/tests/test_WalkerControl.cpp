@@ -35,6 +35,7 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
     throw std::runtime_error("Bad Rank Count, WalkerControlMPI tests can only be run with 3 MPI ranks.");
   pop_ =
       std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
+                                     dpools_.particle_pool->getParticleSet("i"),
                                      dpools_.particle_pool->getParticleSet("e"),
                                      dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
 

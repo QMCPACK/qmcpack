@@ -50,7 +50,6 @@ private:
   Lattice lattice_;
   SpeciesSet species_;
   //data members
-  bool energy_mat;
   CompositeSPOSet basis_functions;
   Vector<Value> basis_values;
   Vector<Value> basis_norms;
@@ -98,14 +97,9 @@ private:
   Matrix_t Phi_MBtmp;
 #endif
 
-  int points;
-  Real scale;
   Position center, rcorner;
   Real volume;
   bool periodic;
-  int warmup;
-  Real timestep;
-  bool use_drift;
   int nmoves;
   int naccepted;
   Real acceptance_ratio;
@@ -134,7 +128,7 @@ public:
 
   OneBodyDensityMatrices* clone() override;
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
+  void accumulate(const RefVector<MCPWalker>& walkers, const ParticleSet& pset_target, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
 
   void normalize(Real invToWgt) override;
   
@@ -184,31 +178,31 @@ public:
   //  printing
   void report(const std::string& pad = "");
   //  sample generation
-  void warmup_sampling(ParticleSet& pset_source);
-  void generate_samples(Real weight, ParticleSet& pset_source, int steps = 0);
+  void warmup_sampling(ParticleSet& pset_target);
+  void generate_samples(Real weight, ParticleSet& pset_target, int steps = 0);
   void generate_uniform_grid(RandomGenerator_t& rng);
   void generate_uniform_samples(RandomGenerator_t& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng, ParticleSet& pset_source);
+  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng, ParticleSet& pset_target);
   void diffusion(Real sqt, Position& diff);
-  void density_only(const Position& r, Real& dens, ParticleSet& pset_source);
-  void density_drift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_source);
+  void density_only(const Position& r, Real& dens, ParticleSet& pset_target);
+  void density_drift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
   void get_energies(std::vector<Vector<Value>*>& E_n);
-  void generate_sample_basis(Matrix<Value>& Phi_mb, ParticleSet& pset_source, TrialWaveFunction& psi_target);
-  void generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm, ParticleSet& pset_source, TrialWaveFunction& psi_target);
-  void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>*>& Phi_nb, ParticleSet& pset_source);
+  void generate_sample_basis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
+  void generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm, ParticleSet& pset_target, TrialWaveFunction& psi_target);
+  void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>*>& Phi_nb, ParticleSet& pset_target);
   //  basis set updates
-  void update_basis(const Position& r, ParticleSet& pset_source);
-  void update_basis_d012(const Position& r, ParticleSet& pset_source);
+  void update_basis(const Position& r, ParticleSet& pset_target);
+  void update_basis_d012(const Position& r, ParticleSet& pset_target);
   //  testing
-  void test_overlap(ParticleSet& pset_source);
-  void test_derivatives(ParticleSet& pset_source);
+  void test_overlap(ParticleSet& pset_target);
+  void test_derivatives(ParticleSet& pset_target);
   //  original loop implementation
-  void integrate(ParticleSet& P, ParticleSet& pset_source, TrialWaveFunction& psi_target, int n);
-  FullPrecReal evaluateLoop(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_source, TrialWaveFunction& psi_target);
+  void integrate(ParticleSet& P, ParticleSet& pset_target, TrialWaveFunction& psi_target, int n);
+  FullPrecReal evaluateLoop(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_target, TrialWaveFunction& psi_target);
   //  matrix implementation
   FullPrecReal evaluate_check(ParticleSet& P);
-  FullPrecReal evaluate_matrix(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_source, TrialWaveFunction& psi_target);
+  FullPrecReal evaluate_matrix(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_target, TrialWaveFunction& psi_target);
 
 
   bool match(Value e1, Value e2, Real tol = 1e-12);
@@ -226,7 +220,7 @@ public:
                bool diff_only = true);
 
 private:
-  void normalize(ParticleSet& pset_source);
+  void normalize(ParticleSet& pset_target);
   
   struct OneBodyDensityMatrixTimers
   {

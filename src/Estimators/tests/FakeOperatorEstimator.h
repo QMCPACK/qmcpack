@@ -27,9 +27,14 @@ public:
 
   FakeOperatorEstimator(const FakeOperatorEstimator& foe);
 
-  ~FakeOperatorEstimator() override {};
+  ~FakeOperatorEstimator() override{};
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override {}
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const ParticleSet& pset_target,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator_t& rng) override
+  {}
 
   void registerOperatorEstimator(hid_t gid) override {}
 

@@ -9,13 +9,19 @@
 
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "Estimators/EstimatorManagerBase.h"
+#include "Estimators/EstimatorManagerCrowd.h"
 
 namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,
              const DriverWalkerResourceCollection& driverwalker_res,
-             const MultiWalkerDispatchers& dispatchers)
-    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+             const MultiWalkerDispatchers& dispatchers,
+             const ParticleSet& elecs)
+    : dispatchers_(dispatchers),
+      crowd_elecs_(elecs),
+      driverwalker_resource_collection_(driverwalker_res),
+      estimator_manager_crowd_(emb)
 {}
 
 Crowd::~Crowd() = default;
@@ -61,9 +67,6 @@ void Crowd::startBlock(int num_steps)
   estimator_manager_crowd_.startBlock(num_steps);
 }
 
-void Crowd::stopBlock()
-{
-  estimator_manager_crowd_.stopBlock();
-}
+void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
 
 } // namespace qmcplusplus

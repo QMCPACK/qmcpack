@@ -41,11 +41,11 @@ public:
   std::vector<TinyVector<double, 3>> tpos;
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   const MultiWalkerDispatchers dispatchers_;
-
+  ParticleSet pset_target;
 public:
   CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
   {
-    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_);
+    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_, pset_target);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -83,7 +83,10 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   const MultiWalkerDispatchers dispatchers(true);
   DriverWalkerResourceCollection driverwalker_resource_collection_;
-  Crowd crowd(em, driverwalker_resource_collection_, dispatchers);
+
+  ParticleSet pset_target;
+
+  Crowd crowd(em, driverwalker_resource_collection_, dispatchers, pset_target);
 }
 
 TEST_CASE("Crowd redistribute walkers")
