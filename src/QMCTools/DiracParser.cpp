@@ -841,6 +841,7 @@ void DiracParser::getCOSCI(std::istream& is)
           std::string tmp = core_occstr + currentWords[1] + virt_occstr;
           ci_occs.push_back(tmp);
           std::reverse(tmp.begin(), tmp.end());
+
         }
       }
       //finished reading CI coeffs for state
@@ -878,6 +879,8 @@ void DiracParser::getCOSCI(std::istream& is)
         found      = true;
         ci_nstates = CIalpha[0].size();
         ci_size    = CIcoeff.size();
+        ci_nca     = 0;
+        ci_nea     = NumberOfEls;
       }
       state_count++;
     }
