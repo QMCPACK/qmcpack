@@ -72,7 +72,7 @@ public:
    *  \param[inout]  rng             crowd scope RandomGenerator_t
    */ 
   void accumulate(const RefVector<MCPWalker>& walkers,
-                  const ParticleSet& pset_target,
+                  ParticleSet& pset_target,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator_t& rng);

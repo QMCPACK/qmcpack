@@ -128,7 +128,7 @@ public:
 
   OneBodyDensityMatrices* clone() override;
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const ParticleSet& pset_target, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
+  void accumulate(const RefVector<MCPWalker>& walkers, ParticleSet& pset_target, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
 
   void normalize(Real invToWgt) override;
   

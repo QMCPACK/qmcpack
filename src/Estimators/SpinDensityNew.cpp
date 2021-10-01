@@ -123,7 +123,7 @@ void SpinDensityNew::startBlock(int steps)
  *  The offsets into bare data are already bad enough.
  */
 void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
-                                const ParticleSet& pset_target,
+                                ParticleSet& pset_target,
                                 const RefVector<ParticleSet>& psets,
                                 const RefVector<TrialWaveFunction>& wfns,
                                 RandomGenerator_t& rng)

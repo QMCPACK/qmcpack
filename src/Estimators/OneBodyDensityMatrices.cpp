@@ -75,25 +75,6 @@ void OneBodyDensityMatrices::warmup_sampling(ParticleSet& pset_target)
   }
 }
 
-// void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
-//                                         const RefVector<ParticleSet>& psets,
-//                                         const RefVector<TrialWaveFunction>& wfns,
-//                                         RandomGenerator_t& rng)
-// {
-//   ScopedTimer scope_timer(timers_.eval_timer);
-//   for (int iw = 0; iw < walkers.size(); ++iw)
-//   {
-//     if (check_derivatives)
-//       test_derivatives();
-//   if (input_.get_evaluator() == loop)
-//     evaluate_loop(P);
-//   else if (input_.get_evaluator() == matrix)
-//     evaluate_matrix(P);
-//   else
-//     throw logic_error("OneBodyDensityMatrices::accumulate called with invalid evaluator, developer error");
-//   }
-//   return 0.0;
-// }
 
 OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluate_matrix(ParticleSet& P,
                                                                              MCPWalker& walker,
@@ -458,7 +439,7 @@ void OneBodyDensityMatrices::density_drift(const Position& r, Real& dens, Positi
 }
 
 void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
-                                        const ParticleSet& pset_target,
+                                        ParticleSet& pset_target,
                                         const RefVector<ParticleSet>& psets,
                                         const RefVector<TrialWaveFunction>& wfns,
                                         RandomGenerator_t& rng)
