@@ -110,33 +110,40 @@ public:
     NONLOCAL    = 5,
   };
 
-  ///constructor
+  /**
+   * @brief Construct a new Operator Base object
+   * Default and unique empty constructor. Initializes with default values.
+   */
   OperatorBase();
 
-  ///virtual destructor
-  virtual ~OperatorBase() {}
+  virtual ~OperatorBase() = default;
 
-  // getter for update_mode member
+  //////// GETTER AND SETTER FUNCTIONS ////////////////
+
   /**
-   * @brief get update_mode_ 
+   * @brief get update_mode_ reference
+   * 
    * @return std::bitset<8>& reference of get_update_mode_
    */
   std::bitset<8>& getUpdateMode() noexcept;
 
   /**
    * @brief get a copy of value_
+   * 
    * @return Return_t copy of value_
    */
   Return_t getValue() const noexcept;
 
   /**
    * @brief getter a copy of my_name_, rvalue small string optimization
+   * 
    * @return std::string copy of my_name_ member
    */
   std::string getName() const noexcept;
 
   /**
    * @brief Set my_name member, uses small string optimization (pass by value)
+   * 
    * @param name input
    */
   void setName(const std::string name) noexcept;
@@ -144,233 +151,305 @@ public:
 #if !defined(REMOVE_TRACEMANAGER)
   /**
    * @brief Get request_ member
+   * 
    * @return TraceRequest& reference to request_
    */
   TraceRequest& getRequest() noexcept;
 #endif
 
-  inline bool is_classical() { return quantum_domain == CLASSICAL; }
-  inline bool is_quantum() { return quantum_domain == QUANTUM; }
-  inline bool is_classical_classical() { return quantum_domain == CLASSICAL_CLASSICAL; }
-  inline bool is_quantum_classical() { return quantum_domain == QUANTUM_CLASSICAL; }
-  inline bool is_quantum_quantum() { return quantum_domain == QUANTUM_QUANTUM; }
-
-  /** return the mode i
-   * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
-   */
-  inline bool getMode(int i) { return update_mode_[i]; }
-
-  inline bool isNonLocal() const { return update_mode_[NONLOCAL]; }
-
-  /** named values to  the property list
-   * @param plist RecordNameProperty
-   * @param collectables Observables that are accumulated by evaluate
-   *
-   * Default implementaton uses addValue(plist)
-   */
-  virtual void addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
-
-  /*** add to observable descriptor for hdf5
-   * @param h5desc contains a set of hdf5 descriptors for a scalar observable
-   * @param gid hdf5 group to which the observables belong
-   *
-   * The default implementation is to register a scalar for this->Value
-   */
-  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
-
-  /*** add to collectables descriptor for hdf5
-   * @param h5desc contains a set of hdf5 descriptors for a scalar observable
-   * @param gid hdf5 group to which the observables belong
-   *
-   * The default implementation does nothing. The derived classes which compute
-   * big data, e.g. density, should overwrite this function.
-   */
-  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
-
-  /** set the values evaluated by this object to plist
-   * @param plist RecordNameProperty
-   *
-   * Default implementation is to assign Value which is updated
-   * by evaluate  function using myIndex.
-   */
-  virtual void setObservables(PropertySetType& plist) { plist[myIndex] = value_; }
-
-  virtual void setParticlePropertyList(PropertySetType& plist, int offset) { plist[myIndex + offset] = value_; }
-
-  //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
-  virtual void setHistories(Walker_t& ThisWalker) { tWalker = &(ThisWalker); }
-
-  /** reset the data with the target ParticleSet
+  //////// PURELY VIRTUAL FUNCTIONS ////////////////
+  /** 
+   * @brief Reset the data with the target ParticleSet
    * @param P new target ParticleSet
    */
   virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
-  /** Evaluate the local energy contribution of this component
-   *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian component
+  /** 
+   * @brief Evaluate the local energy contribution of this component
+   * @param P input configuration containing N particles
+   * @return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
-  /** Evaluate the local energy contribution of this component, deterministically based on current state.
-   *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian component
+
+  /** write about the class */
+  virtual bool get(std::ostream& os) const = 0;
+
+  // TODO: add docs
+  virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+
+  //////// VIRTUAL FUNCTIONS ////////////////
+
+  /** 
+   * @brief named values to  the property list
+   * Default implementaton uses addValue(plist_)
+   * 
+   * @param plist RecordNameProperty
+   * @param collectables Observables that are accumulated by evaluate
+   */
+  virtual void addObservables(PropertySetType& plist, BufferType& collectables);
+
+  /** 
+   * @brief add to observable descriptor for hdf5
+   * The default implementation is to register a scalar for this->value_
+   * 
+   * @param h5desc contains a set of hdf5 descriptors for a scalar observable
+   * @param gid hdf5 group to which the observables belong
+   */
+  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+
+  /*** 
+   * @brief add to collectables descriptor for hdf5
+   * The default implementation does nothing. The derived classes which compute
+   * big data, e.g. density, should overwrite this function.
+   * 
+   * @param h5desc contains a set of hdf5 descriptors for a scalar observable
+   * @param gid hdf5 group to which the observables belong
+   */
+  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+
+  /** 
+   * @brief Set the values evaluated by this object to plist
+   * Default implementation is to assign Value which is updated
+   * by evaluate function using my_index_.
+   *
+   * @param plist RecordNameProperty
+   */
+  virtual void setObservables(PropertySetType& plist);
+
+  // TODO: add docs
+  virtual void setParticlePropertyList(PropertySetType& plist, int offset);
+
+  // TODO: add docs
+  virtual void setHistories(Walker_t& ThisWalker);
+
+  /** 
+   * @brief Evaluate the local energy contribution of this component, deterministically based on current state.
+   * The correct behavior of this routine requires estimators with non-deterministic components
+   * in their evaluate() function to override this function.
+
+   * @param P input configuration containing N particles
+   * @return the value of the Hamiltonian component
    */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
-  /** Evaluate the contribution of this component of multiple walkers */
+
+  /**
+   * @brief Evaluate the contribution of this component of multiple walkers.
+   * Take o_list and p_list update evaluation result variables in o_list?
+   * really should reduce vector of local_energies. matching the ordering and size of o list
+   * the this can be call for 1 or more QMCHamiltonians
+
+   * @param o_list 
+   * @param wf_list 
+   * @param p_list 
+   */
   virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                            const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                            const RefVectorWithLeader<ParticleSet>& p_list) const;
 
+  /**
+   * @brief TODO: add docs
+
+   * @param o_list 
+   * @param p_list 
+   * @param optvars 
+   * @param dlogpsi 
+   * @param dhpsioverpsi 
+   */
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                                    const opt_variables_type& optvars,
                                                    RecordArray<ValueType>& dlogpsi,
                                                    RecordArray<ValueType>& dhpsioverpsi) const;
 
-
-  virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
-  /** Evaluate the local energy contribution of this component with Toperators updated if requested
-   *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian component
+  /**
+   * @brief TODO: add docs
+   * 
+   * @param P 
+   * @return Return_t 
    */
-  virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
+  virtual Return_t rejectedMove(ParticleSet& P);
 
-  /** Evaluate the contribution of this component of multiple walkers */
+  /** 
+   * @brief Evaluate the local energy contribution of this component with Toperators updated if requested
+
+   * @param P input configuration containing N particles
+   * @return the value of the Hamiltonian component
+   */
+  virtual Return_t evaluateWithToperator(ParticleSet& P);
+
+  /**
+   * @brief Evaluate the contribution of this component of multiple walkers
+
+   * @param o_list 
+   * @param wf_list 
+   * @param p_list 
+   */
   virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                        const RefVectorWithLeader<ParticleSet>& p_list) const
-  {
-    mw_evaluate(o_list, wf_list, p_list);
-  }
+                                        const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-  /** evaluate value and derivatives wrt the optimizables
-   *
-   * Default uses evaluate
+  /**
+   * @brief Evaluate value and derivatives wrt the optimizables. Default uses evaluate.
+
+   * @param P 
+   * @param optvars 
+   * @param dlogpsi 
+   * @param dhpsioverpsi 
+   * @return Return_t 
    */
   virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                const std::vector<ValueType>& dlogpsi,
-                                               std::vector<ValueType>& dhpsioverpsi)
-  {
-    return evaluate(P);
-  }
+                                               std::vector<ValueType>& dhpsioverpsi);
 
-  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
-  * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
-  * @return Contribution of OperatorBase to Local Energy.
-  */
+  /** 
+   * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
+
+   * @param P target particle set (electrons)
+   * @param ions source particle set (ions)
+   * @param psi Trial wave function
+   * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
+   * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
+   * @return Contribution of OperatorBase to Local Energy.
+   */
   virtual Return_t evaluateWithIonDerivs(ParticleSet& P,
                                          ParticleSet& ions,
                                          TrialWaveFunction& psi,
                                          ParticleSet::ParticlePos_t& hf_term,
-                                         ParticleSet::ParticlePos_t& pulay_term)
-  {
-    return evaluate(P);
-  }
+                                         ParticleSet::ParticlePos_t& pulay_term);
 
-  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
-  * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
-  * @return Contribution of OperatorBase to Local Energy.
-  */
+  /** 
+   * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.
+   * If there's no stochastic component, defaults to evaluateWithIonDerivs.
+   * If not otherwise specified, this defaults to evaluate().
+
+   * @param P target particle set (electrons)
+   * @param ions source particle set (ions)
+   * @param psi Trial wave function
+   * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
+   * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
+   * @return Contribution of OperatorBase to Local Energy.
+   */
   virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                                       ParticleSet& ions,
                                                       TrialWaveFunction& psi,
                                                       ParticleSet::ParticlePos_t& hf_term,
-                                                      ParticleSet::ParticlePos_t& pulay_term)
-  {
-    //If there's no stochastic component, defaults to above defined evaluateWithIonDerivs.
-    //If not otherwise specified, this defaults to evaluate().
-    return evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_term);
-  }
-  /** update data associated with a particleset
-   * @param s source particle set
-   *
+                                                      ParticleSet::ParticlePos_t& pulay_term);
+
+  /** 
+   * @brief Update data associated with a particleset.
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
+
+   * @param s source particle set
    */
-  virtual void update_source(ParticleSet& s) {}
+  virtual void updateSource(ParticleSet& s);
 
-  /** return an average value by collective operation
+  /** 
+   * @brief Return an average value by collective operation
    */
-  virtual Return_t getEnsembleAverage() { return 0.0; }
+  virtual Return_t getEnsembleAverage();
 
-  /** write about the class */
-  virtual bool get(std::ostream& os) const = 0;
+  /**
+   * @brief Initialize a shared resource and hand it to a collection
 
-  /** initialize a shared resource and hand it to a collection
+   * @param collection 
    */
-  virtual void createResource(ResourceCollection& collection) const {}
+  virtual void createResource(ResourceCollection& collection) const;
 
-  /** acquire a shared resource from a collection
+  /**
+   * @brief Acquire a shared resource from a collection
+
+   * @param collection 
+   * @param o_list 
    */
-  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const;
 
-  /** return a shared resource to a collection
+  /**
+   * @brief Return a shared resource to a collection
+   * 
+   * @param collection 
+   * @param o_list 
    */
-  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const;
 
-  virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+  /**
+   * @brief Set the Random Generator object
+   * TODO: add docs
+   * @param rng 
+   */
+  virtual void setRandomGenerator(RandomGenerator_t* rng);
 
-  //virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
-
-  virtual void setRandomGenerator(RandomGenerator_t* rng)
-  {
-    //empty
-  }
-
+  /**
+   * @brief TODO: add docs
+   * 
+   * @param qp 
+   * @param psi 
+   * @param targetH 
+   */
   virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
 
 #if !defined(REMOVE_TRACEMANAGER)
-  ///make trace quantities available
-  inline void contribute_trace_quantities()
-  {
-    contribute_scalar_quantities();
-    contribute_particle_quantities();
-  }
-
-  ///checkout trace arrays
-  inline void checkout_trace_quantities(TraceManager& tm)
-  {
-    //derived classes must guard individual checkouts using request info
-    checkout_scalar_quantities(tm);
-    checkout_particle_quantities(tm);
-  }
-
-  ///collect scalar trace data
-  inline void collect_scalar_traces()
-  {
-    //app_log()<<"OperatorBase::collect_scalar_traces"<< std::endl;
-    collect_scalar_quantities();
-  }
-
-  ///delete trace arrays
-  inline void delete_trace_quantities()
-  {
-    delete_scalar_quantities();
-    delete_particle_quantities();
-    streaming_scalars    = false;
-    streaming_particles  = false;
-    have_required_traces = false;
-    request_.reset();
-  }
-
-  virtual void get_required_traces(TraceManager& tm){};
+  /**
+   * @brief TODO: add docs
+   * 
+   * @param tm 
+   */
+  virtual void getRequiredTraces(TraceManager& tm);
 #endif
+
+  // TODO: add docs
 
   virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
   virtual void addEnergy(MCWalkerConfiguration& W,
                          std::vector<RealType>& LocalEnergy,
-                         std::vector<std::vector<NonLocalData>>& Txy)
-  {
-    addEnergy(W, LocalEnergy);
-  }
+                         std::vector<std::vector<NonLocalData>>& Txy);
+
+  bool isClassical() const noexcept;
+  bool isQuantum() const noexcept;
+  bool isClassicalClassical() const noexcept;
+  bool isQuantumClassical() const noexcept;
+  bool isQuantumQuantum() const noexcept;
+
+  /** 
+   * @brief Return the mode i
+   * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
+   */
+  bool getMode(const int i) const noexcept;
+
+  /**
+   * @brief TODO: add docs
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool isNonLocal() const noexcept;
+
+
+#if !defined(REMOVE_TRACEMANAGER)
+
+  /**
+   * @brief Make trace quantities available
+   */
+  void contributeTraceQuantities();
+
+  /**
+   * @brief Checkout trace arrays 
+   * Derived classes must guard individual checkouts using request info 
+   * @param tm 
+   */
+  void checkoutTraceQuantities(TraceManager& tm);
+
+  /**
+   * @brief Collect scalar trace data
+   */
+  void collectScalarTraces();
+
+  /**
+   * @brief delete trace arrays
+   */
+  void deleteTraceQuantities();
+#endif
 
 protected:
   ///set the current update mode
@@ -388,18 +467,20 @@ protected:
 #endif
 
   ///starting index of this object
-  int myIndex;
+  int my_index_;
 
   ///a new value for a proposed move
-  Return_t NewValue;
+  Return_t new_value_;
 
   ///reference to the current walker
-  Walker_t* tWalker;
+  Walker_t* t_walker_;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  bool streaming_particles;
-  bool have_required_traces;
+  bool streaming_particles_;
+  bool have_required_traces_;
 #endif
+
+  /////PURELY VIRTUAL FUNCTIONS
 
   /**
    * Read the input parameter
@@ -407,89 +488,69 @@ protected:
    */
   virtual bool put(xmlNodePtr cur) = 0;
 
+  //////VIRTUAL FUNCTIONS
+
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_scalar_quantities() { request_.contribute_scalar(name_); }
+  virtual void contributeScalarQuantities();
 
-  virtual void checkout_scalar_quantities(TraceManager& tm)
-  {
-    streaming_scalars = request_.streaming_scalar(name_);
-    if (streaming_scalars)
-      value_sample = tm.checkout_real<1>(name_);
-  }
+  virtual void checkoutScalarQuantities(TraceManager& tm);
 
-  virtual void collect_scalar_quantities()
-  {
-    if (streaming_scalars)
-      (*value_sample)(0) = value_;
-  }
+  virtual void collectScalarQuantities();
 
-  virtual void delete_scalar_quantities()
-  {
-    if (streaming_scalars)
-      delete value_sample;
-  }
+  virtual void deleteScalarQuantities();
 
-  virtual void contribute_particle_quantities(){};
-  virtual void checkout_particle_quantities(TraceManager& tm){};
-  virtual void delete_particle_quantities(){};
+  virtual void contributeParticleQuantities();
+  virtual void checkoutParticleQuantities(TraceManager& tm);
+  virtual void deleteParticleQuantities();
 #endif
 
-  virtual void setComputeForces(bool compute)
-  {
-    // empty
-  }
-
-  ///set energy domain
-  void set_energy_domain(EnergyDomains edomain);
-
-  ///set quantum domain
-  void set_quantum_domain(QuantumDomains qdomain);
-
-  ///set quantum domain for one-body operator
-  void one_body_quantum_domain(const ParticleSet& P);
-
-  ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P);
-
-  ///set quantum domain for two-body operator
-  void two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2);
+  virtual void setComputeForces(bool compute);
 
   /**
-   * named values to  the property list
+   * @brief Set the Energy Domain
+   * 
+   * @param edomain 
+   */
+  void setEnergyDomain(EnergyDomains edomain);
+
+  ///set quantum domain
+  void setQuantumDomain(QuantumDomains qdomain);
+
+  ///set quantum domain for one-body operator
+  void oneBodyQuantumDomain(const ParticleSet& P);
+
+  ///set quantum domain for two-body operator
+  void twoBodyQuantumDomain(const ParticleSet& P);
+
+  ///set quantum domain for two-body operator
+  void twoBodyQuantumDomain(const ParticleSet& P1, const ParticleSet& P2);
+
+  /**
+   * @brief named values to  the property list
    * @param plist RecordNameProperty
    *
    * Previously addObservables but it is renamed and a non-virtial function.
    */
-  inline void addValue(PropertySetType& plist)
-  {
-    if (!update_mode_[COLLECTABLE])
-      myIndex = plist.add(name_.c_str());
-  }
+  void addValue(PropertySetType& plist);
 
 private:
-  ///quantum_domain of the (particle) operator, default = no_quantum_domain
-  QuantumDomains quantum_domain;
-  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
-  EnergyDomains energy_domain;
-
 #if !defined(REMOVE_TRACEMANAGER)
-  bool streaming_scalars;
+  bool streaming_scalars_;
 
   ///array to store sample value
-  Array<RealType, 1>* value_sample;
+  Array<RealType, 1>* value_sample_;
 #endif
 
-  ///return whether the energy domain is valid
-  inline bool energy_domain_valid(EnergyDomains edomain) const { return edomain != NO_ENERGY_DOMAIN; }
+  ///quantum_domain_ of the (particle) operator, default = no_quantum_domain
+  QuantumDomains quantum_domain_;
+  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
+  EnergyDomains energy_domain_;
 
   ///return whether the energy domain is valid
-  inline bool energy_domain_valid() const { return energy_domain_valid(energy_domain); }
+  bool energyDomainValid(EnergyDomains edomain) const noexcept;
 
   ///return whether the quantum domain is valid
-  bool quantum_domain_valid(QuantumDomains qdomain);
-
-  ///return whether the quantum domain is valid
-  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
+  bool quantumDomainValid(QuantumDomains qdomain) const noexcept;
 };
 } // namespace qmcplusplus
 #endif

@@ -38,8 +38,8 @@ using Return_t = BareKineticEnergy::Return_t;
    */
 BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
 {
-  set_energy_domain(KINETIC);
-  one_body_quantum_domain(p);
+  setEnergyDomain(KINETIC);
+  oneBodyQuantumDomain(p);
   streaming_kinetic      = false;
   streaming_kinetic_comp = false;
   streaming_momentum     = false;
@@ -61,18 +61,18 @@ BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
 BareKineticEnergy::~BareKineticEnergy() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
-void BareKineticEnergy::contribute_particle_quantities()
+void BareKineticEnergy::contributeParticleQuantities()
 {
   request_.contribute_array(name_);
   request_.contribute_array(name_ + "_complex");
   request_.contribute_array("momentum");
 }
 
-void BareKineticEnergy::checkout_particle_quantities(TraceManager& tm)
+void BareKineticEnergy::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(name_) || request_.streaming_array(name_ + "_complex") ||
+  streaming_particles_ = request_.streaming_array(name_) || request_.streaming_array(name_ + "_complex") ||
       request_.streaming_array("momentum");
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     T_sample      = tm.checkout_real<1>(name_, Ps);
     T_sample_comp = tm.checkout_complex<1>(name_ + "_complex", Ps);
@@ -80,9 +80,9 @@ void BareKineticEnergy::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void BareKineticEnergy::delete_particle_quantities()
+void BareKineticEnergy::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     delete T_sample;
     delete T_sample_comp;
@@ -95,7 +95,7 @@ void BareKineticEnergy::delete_particle_quantities()
 Return_t BareKineticEnergy::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     value_ = evaluate_sp(P);
   }
@@ -359,9 +359,9 @@ void BareKineticEnergy::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   auto& walkers = W.WalkerList;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    Walker_t& w                                      = *(walkers[iw]);
-    RealType KE                                      = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
-    w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = KE;
+    Walker_t& w                                        = *(walkers[iw]);
+    RealType KE                                        = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
+    w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = KE;
     LocalEnergy[iw] += KE;
   }
 }

@@ -227,7 +227,7 @@ void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P) { dAB->resetTarget
 
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.add(name_.c_str());
+  my_index_ = plist.add(name_.c_str());
   addObservablesF(plist);
 }
 

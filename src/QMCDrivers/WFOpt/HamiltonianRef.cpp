@@ -59,7 +59,7 @@ int HamiltonianRef::addObservables(ParticleSet& P)
   P.Collectables.rewind();
   for (int i = 0; i < Hrefs_.size(); ++i)
     Hrefs_[i].get().addObservables(Observables, P.Collectables);
-  int myIndex = P.PropertyList.add(Observables.Names[0]);
+  const int myIndex = P.PropertyList.add(Observables.Names[0]);
   for (int i = 1; i < Observables.size(); ++i)
     P.PropertyList.add(Observables.Names[i]);
   P.Collectables.size();

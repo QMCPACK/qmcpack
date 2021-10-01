@@ -63,7 +63,6 @@ void InputSection::readXML(xmlNodePtr cur)
 
   // check input validity
   check_valid();
-
   //report();
 }
 
@@ -79,7 +78,6 @@ void InputSection::init(const std::unordered_map<std::string, std::any>& init_va
 
   // check input validity
   check_valid();
-
   //report();
 }
 
@@ -90,7 +88,6 @@ void InputSection::set_defaults()
     if (!has(name))
       set_from_value(name, default_value);
 }
-
 
 void InputSection::set_from_stream(const std::string& name, std::istringstream& svalue)
 {
@@ -158,7 +155,8 @@ void InputSection::check_valid()
             << " has not been assigned\n";
       throw UniformCommunicateError(error.str());
     }
-}
+  this->checkParticularValidity();
+};
 
 
 void InputSection::report() const

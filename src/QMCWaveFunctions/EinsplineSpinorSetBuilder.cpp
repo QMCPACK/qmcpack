@@ -168,7 +168,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   std::string useGPU("no");
 #if !defined(QMC_COMPLEX)
-  if (UseRealOrbitals)
+  if (use_real_splines_)
   {
     if (MixedSplineReader == 0)
     {

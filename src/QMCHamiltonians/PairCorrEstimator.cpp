@@ -118,7 +118,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         const int loc     = static_cast<int>(DeltaInv * r);
         const int jg      = P.GroupID[j];
         const int pair_id = ig * (ig + 1) / 2 + jg;
-        collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
+        collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
       }
     }
   }
@@ -138,7 +138,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         {
           int toff = (gid[j] + koff) * NumBins;
           int loc  = static_cast<int>(DeltaInv * r);
-          collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
+          collectables[toff + loc + my_index_] += norm_factor(0, loc) * overNI;
         }
       }
     }
@@ -149,7 +149,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   std::vector<int> onedim(1, NumBins);
-  int offset = myIndex;
+  int offset = my_index_;
   for (int i = 0; i < gof_r_prefix.size(); ++i)
   {
     h5list.emplace_back(gof_r_prefix[i]);
@@ -168,7 +168,7 @@ void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5li
 
 void PairCorrEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.size();
+  my_index_ = collectables.size();
   std::vector<RealType> g(gof_r_prefix.size() * NumBins, 0);
   collectables.add(g.begin(), g.end());
   ////only while debugging

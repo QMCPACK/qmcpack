@@ -210,7 +210,7 @@ public:
   bool put(xmlNodePtr cur) override;
 
   ///specify quantum_domain of particles
-  void set_quantum_domain(quantum_domains qdomain);
+  void setQuantumDomain(quantum_domains qdomain);
 
   void set_quantum() { quantum_domain = quantum; }
 
@@ -219,10 +219,10 @@ public:
   inline bool is_quantum() const { return quantum_domain == quantum; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
+  inline bool quantumDomainValid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid() const { return quantum_domain_valid(quantum_domain); }
+  inline bool quantumDomainValid() const { return quantumDomainValid(quantum_domain); }
 
   /** add a distance table
    * @param psrc source particle set

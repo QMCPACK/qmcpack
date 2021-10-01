@@ -32,20 +32,20 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       d_aa_ID(ref.addTable(ref))
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
-  set_energy_domain(POTENTIAL);
-  two_body_quantum_domain(ref);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
   initBreakup(ref);
 
   if (ComputeForces)
   {
     ref.turnOnPerParticleSK();
-    update_source(ref);
+    updateSource(ref);
   }
   if (!is_active)
   {
     ref.update();
-    update_source(ref);
+    updateSource(ref);
 
     ewaldref::RealMat A;
     ewaldref::PosArray R;
@@ -106,7 +106,7 @@ void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectabl
     addObservablesF(plist);
 }
 
-void CoulombPBCAA::update_source(ParticleSet& s)
+void CoulombPBCAA::updateSource(ParticleSet& s)
 {
   mRealType eL(0.0), eS(0.0);
   if (ComputeForces)
@@ -120,7 +120,7 @@ void CoulombPBCAA::update_source(ParticleSet& s)
     eL = evalLR(s);
     eS = evalSR(s);
   }
-  NewValue = value_ = eL + eS + myConst;
+  new_value_ = value_ = eL + eS + myConst;
 }
 
 void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
@@ -134,12 +134,12 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAA::contribute_particle_quantities() { request_.contribute_array(name_); }
+void CoulombPBCAA::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
+void CoulombPBCAA::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request_.streaming_array(name_);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
     Ps.turnOnPerParticleSK();
     V_sample = tm.checkout_real<1>(name_, Ps);
@@ -148,9 +148,9 @@ void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAA::delete_particle_quantities()
+void CoulombPBCAA::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
     delete V_sample;
 }
 #endif
@@ -161,7 +161,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
   if (is_active)
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
+    if (streaming_particles_)
       value_ = evaluate_sp(P);
     else
 #endif

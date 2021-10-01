@@ -117,7 +117,7 @@ void LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Real
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }

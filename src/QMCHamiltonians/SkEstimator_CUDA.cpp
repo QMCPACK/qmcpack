@@ -39,13 +39,13 @@ void SkEstimator_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
     if (hdf5_out)
     {
       for (int ik = 0; ik < NumK; ik++)
-        W.Collectables[myIndex + ik] += OneOverN * OneOverNW *
+        W.Collectables[my_index_ + ik] += OneOverN * OneOverNW *
             (rhok_total[2 * ik + 0] * rhok_total[2 * ik + 0] + rhok_total[2 * ik + 1] * rhok_total[2 * ik + 1]);
     }
     else
     {
       for (int ik = 0; ik < NumK; ik++)
-        W.WalkerList[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex + ik] = OneOverN *
+        W.WalkerList[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_ + ik] = OneOverN *
             (rhok_total[2 * ik + 0] * rhok_total[2 * ik + 0] + rhok_total[2 * ik + 1] * rhok_total[2 * ik + 1]);
     }
   }

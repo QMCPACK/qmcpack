@@ -203,7 +203,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 }
 
 
-void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
+void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
   w_trace    = tm.get_real_trace("weight");
@@ -211,7 +211,7 @@ void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
   Vd_trace   = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
   if (Pstatic)
     Vs_trace = tm.get_real_combined_trace(*Pstatic, "LocalPotential");
-  have_required_traces = true;
+  have_required_traces_ = true;
 }
 
 
@@ -257,7 +257,7 @@ void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
 {
-  if (have_required_traces)
+  if (have_required_traces_)
   {
     Pdynamic = &P;
     //Collect positions from ParticleSets
@@ -457,7 +457,7 @@ void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
 
 void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.size();
+  my_index_ = collectables.size();
   //allocate space for energy density outside of any spacegrid
   outside_buffer_offset = collectables.size();
   int nvalues           = (int)nEDValues;

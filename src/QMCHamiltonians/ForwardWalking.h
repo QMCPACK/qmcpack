@@ -45,10 +45,10 @@ struct ForwardWalking : public OperatorBase
   {
     for (int i = 0; i < nObservables; i++)
     {
-      int lastindex = tWalker->PHindex[Pindices[i]] - 1;
+      int lastindex = t_walker_->PHindex[Pindices[i]] - 1;
       if (lastindex < 0)
         lastindex += walkerLengths[i][2];
-      tWalker->addPropertyHistoryPoint(Pindices[i], tWalker->PropertyHistory[Pindices[i]][lastindex]);
+      t_walker_->addPropertyHistoryPoint(Pindices[i], t_walker_->PropertyHistory[Pindices[i]][lastindex]);
     }
     calculate(P);
     return 0.0;
@@ -60,18 +60,18 @@ struct ForwardWalking : public OperatorBase
     for (int i = 0; i < nObservables; i++)
     {
       int j       = 0;
-      int FWindex = tWalker->PHindex[Pindices[i]] - 1;
+      int FWindex = t_walker_->PHindex[Pindices[i]] - 1;
       while (j < walkerLengths[i][1])
       {
         FWindex -= walkerLengths[i][0];
         if (FWindex < 0)
           FWindex += walkerLengths[i][2];
-        (*Vit) = tWalker->PropertyHistory[Pindices[i]][FWindex];
+        (*Vit) = t_walker_->PropertyHistory[Pindices[i]][FWindex];
         j++;
         Vit++;
       }
     }
-    copy(Values.begin(), Values.end(), tWalker->getPropertyBase() + FirstHamiltonian + myIndex);
+    copy(Values.begin(), Values.end(), t_walker_->getPropertyBase() + FirstHamiltonian + my_index_);
     return 0.0;
   }
 
@@ -79,7 +79,7 @@ struct ForwardWalking : public OperatorBase
   inline Return_t evaluate(ParticleSet& P) override
   {
     for (int i = 0; i < nObservables; i++)
-      tWalker->addPropertyHistoryPoint(Pindices[i], P.PropertyList[Hindices[i]]);
+      t_walker_->addPropertyHistoryPoint(Pindices[i], P.PropertyList[Hindices[i]]);
     calculate(P);
     return 0.0;
   }
@@ -101,11 +101,14 @@ struct ForwardWalking : public OperatorBase
 
   void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist) override { copy(Values.begin(), Values.end(), plist.begin() + myIndex); }
+  void setObservables(PropertySetType& plist) override
+  {
+    copy(Values.begin(), Values.end(), plist.begin() + my_index_);
+  }
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override
   {
-    copy(Values.begin(), Values.end(), plist.begin() + myIndex + offset);
+    copy(Values.begin(), Values.end(), plist.begin() + my_index_ + offset);
   }
 };
 } // namespace qmcplusplus

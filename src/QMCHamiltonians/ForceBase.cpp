@@ -151,7 +151,7 @@ std::unique_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp, TrialWaveFun
 void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   addObservablesF(plist);
-  myIndex = FirstForceIndex;
+  my_index_ = FirstForceIndex;
 }
 
 BareForce::Return_t BareForce::evaluate(ParticleSet& P)
