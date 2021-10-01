@@ -242,8 +242,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, particle_pool.getParticleSet("e"),
-                                             &qmc_system, primaryPsi, primaryH),
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 qmc_system.getSampleStack(), comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
@@ -255,8 +254,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, particle_pool.getParticleSet("e"),
-                                             &qmc_system, primaryPsi, primaryH),
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 comm));
   }
   else if (das.new_run_type == QMCRunType::RMC)
@@ -275,8 +273,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     QMCOptimizeBatched* opt =
         QMCWFOptFactoryNew(cur, project_data_, qmc_system,
-                           MCPopulation(comm->size(), comm->rank(), qmc_system, particle_pool.getParticleSet("e"),
-                                        &qmc_system, primaryPsi, primaryH),
+                           MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                            qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver.reset(opt);
@@ -301,7 +298,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
         QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
-                                 MCPopulation(comm->size(), comm->rank(), qmc_system, particle_pool.getParticleSet("e"),
+                                 MCPopulation(comm->size(), comm->rank(), qmc_system, 
                                               &qmc_system, primaryPsi, primaryH),
                                  qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));

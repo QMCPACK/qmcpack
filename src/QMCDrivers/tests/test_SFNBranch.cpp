@@ -45,7 +45,7 @@ public:
 
   std::unique_ptr<SFNBranch> operator()(ParticleSet& pset_ions, ParticleSet& pset, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
-    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs_, &pset_ions, &pset, &twf, &ham);
+    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs_, &pset, &twf, &ham);
     // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
     pop_->createWalkers(2);
 

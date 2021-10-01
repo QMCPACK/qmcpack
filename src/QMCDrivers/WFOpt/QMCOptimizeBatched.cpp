@@ -153,7 +153,7 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
     vmcEngine = new VMCBatched(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                            population_.get_golden_ions(), population_.get_golden_electrons(), &population_.get_golden_twf(),
+                                            population_.get_golden_electrons(), &population_.get_golden_twf(),
                                             &population_.get_golden_hamiltonian()),
                                samples_, myComm);
 

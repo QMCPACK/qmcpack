@@ -74,12 +74,8 @@ private:
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
   TrialWaveFunction* trial_wf_;
-  ParticleSet* ion_particle_set_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
-
-  UPtrVector<ParticleSet> crowd_ion_particle_sets_;
-
   // At the moment these are "clones" but I think this design pattern smells.
   UPtrVector<ParticleSet> walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
@@ -106,7 +102,6 @@ public:
   MCPopulation(int num_ranks,
                int this_rank,
                WalkerConfigurations& mcwc,
-               ParticleSet* ions,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_);
@@ -155,7 +150,6 @@ public:
       {
         walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
                                        *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
-
         ++walker_index;
       }
     }
@@ -188,8 +182,6 @@ public:
   //const Properties& get_properties() const { return properties_; }
 
   // accessor to the gold copy
-  ParticleSet* get_golden_ions() { return ion_particle_set_; }
-  ParticleSet& get_golden_ions_ref() { return *ion_particle_set_; }
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }

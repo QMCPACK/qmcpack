@@ -23,12 +23,10 @@ namespace qmcplusplus
 MCPopulation::MCPopulation(int num_ranks,
                            int this_rank,
                            WalkerConfigurations& mcwc,
-                           ParticleSet* ions,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian)
     : trial_wf_(trial_wf),
-      ion_particle_set_(ions),
       elec_particle_set_(elecs),
       hamiltonian_(hamiltonian),
       num_ranks_(num_ranks),
