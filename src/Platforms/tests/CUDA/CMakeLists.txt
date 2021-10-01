@@ -15,7 +15,7 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 if(NOT QMC_CUDA2HIP)
-  cuda_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+  add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
 else()
   hip_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
 endif()
