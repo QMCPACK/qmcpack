@@ -26,7 +26,7 @@ if(QMC_OMP)
       else()
         message(FATAL_ERROR "LLVM does not yet support offload to multiple architectures! "
                             "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
-                            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH")
+                            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
       endif()
     endif()
 

@@ -416,13 +416,7 @@ to be reached. The following compilers have been verified:
   ::
 
     OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
-    OFFLOAD_ARCH for the target architecture if not using the compiler default.
-
-- IBM XL 16.1. Support NVIDIA GPUs.
-  
-  ::
-
-    -D ENABLE_OFFLOAD=ON
+    OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
 
 - AMD AOMP Clang 11.8. Support AMD GPUs.
   
@@ -448,7 +442,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CMAKE_CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
