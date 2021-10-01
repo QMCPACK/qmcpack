@@ -150,7 +150,7 @@ XMLWriterClass::StartElement(std::string name)
 {
   int level = Elements.size();
   
-  XMLElement* elem = new XMLElement(name, level);
+  auto elem = std::make_shared<XMLElement>(name, level);
   if (level > 0)
     Elements.back()->AddElement (elem);
   Elements.push_back(elem);
@@ -175,7 +175,7 @@ XMLWriterClass::FullEndElement()
 bool
 XMLWriterClass::WriteAttribute (std::string name, std::string content)
 {
-  XMLAttribute *attr = new XMLAttribute (name, content);
+  auto attr = std::make_shared<XMLAttribute>(name, content);
   Elements.back()->AddAttribute (attr);
   return true;
 }
@@ -189,7 +189,7 @@ XMLWriterClass::WriteAttribute (std::string name, double val, bool scientific)
     content << std::setprecision(14);
   }
   content << val;
-  XMLAttribute *attr = new XMLAttribute (name, content.str());
+  auto attr = std::make_shared<XMLAttribute>(name, content.str());
   Elements.back()->AddAttribute (attr);
   return true;
 }
@@ -199,7 +199,7 @@ XMLWriterClass::WriteAttribute (std::string name, int val)
 {
   std::stringstream content;
   content << val;
-  XMLAttribute *attr = new XMLAttribute (name, content.str());
+  auto attr = std::make_shared<XMLAttribute>(name, content.str());
   Elements.back()->AddAttribute (attr);
   return true;
 }
@@ -223,7 +223,7 @@ bool
 XMLWriterClass::WriteElement (std::string name, std::vector<double> data)
 {
   int level = Elements.size();
-  XMLElement *elem = new XMLElement (name, level);
+  auto elem = std::make_shared<XMLElement>(name, level);
   elem->AddContent (data);
   if (level > 0)
     Elements.back()->AddElement (elem);

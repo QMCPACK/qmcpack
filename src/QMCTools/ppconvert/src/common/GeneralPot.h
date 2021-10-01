@@ -22,7 +22,7 @@
 class GeneralPot : public Potential
 {
 protected:
-  Grid* PotGrid;
+  std::shared_ptr<Grid> PotGrid;
   CubicSplineCommon PotSpline;
   double Z;
 
@@ -34,7 +34,7 @@ public:
   void Write(IOSectionClass& out) override;
   void Read(IOSectionClass& in) override;
   GeneralPot();
-  ~GeneralPot();
+  ~GeneralPot() = default;
 };
 
 #endif
