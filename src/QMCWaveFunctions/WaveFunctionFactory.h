@@ -53,6 +53,7 @@ public:
   ///get SPOSet
   SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
 
+  ParticleSet& getTargetParticleSet() const { return targetPtcl; }
 private:
   /** process xmlNode to populate targetPsi
    */

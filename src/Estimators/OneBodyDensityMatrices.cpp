@@ -11,8 +11,8 @@
 // File refactored from: QMCHamiltonians/DensityMatrices1B.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "OneBodyDensityMatrices.h"
+#include <cmath>
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/MatrixOperators.h"
@@ -20,57 +20,157 @@
 #include "Utilities/string_utils.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 
-
 namespace qmcplusplus
 {
 using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
-UPtr<OneBodyDensityMatrices> createOneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
-                                                          const PtclOnLatticeTraits::ParticleLayout_t& lattice,
-                                                          const SpeciesSet& species)
+OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
+                                               const Lattice& lattice,
+                                               const SpeciesSet& species,
+                                               const WaveFunctionFactory& wf_factory)
+    : OperatorEstBase(DataLocality::crowd),
+      input_(obdmi),
+      lattice_(lattice),
+      species_(species),
+      wf_factory_(wf_factory),
+      timers_("OneBodyDensityMatrix")
 {
-  return std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), lattice, species);
+  lattice_.reset();
+  if (input_.get_center_defined())
+    center_ = input_.get_center();
+  else
+    center_ = lattice_.Center;
+
+  volume_   = lattice_.Volume * std::exp(OHMMS_DIM * std::log(input_.get_scale()));
+  periodic_ = lattice_.SuperCellEnum != SUPERCELL_OPEN;
+  rcorner_  = center_ - input_.get_scale() * lattice_.Center;
+
+  // Here we discover sampling is derived (this may belong in input class)
+  switch (input_.get_integrator())
+  {
+  case Integrator::UNIFORM_GRID:
+    sampling_    = Sampling::VOLUME_BASED;
+    samples_     = pow(input_.get_points(), OHMMS_DIM);
+    metric_      = volume_ / samples_;
+    ind_dims_[0] = pow(input_.get_points(), OHMMS_DIM - 1);
+    for (int d = 1; d < OHMMS_DIM; ++d)
+      ind_dims_[d] = ind_dims_[d - 1] / input_.get_points();
+    break;
+  case Integrator::UNIFORM:
+    sampling_ = Sampling::VOLUME_BASED;
+    samples_  = input_.get_samples();
+    metric_   = volume_ / samples_;
+    break;
+  case Integrator::DENSITY:
+    sampling_ = Sampling::METROPOLIS;
+    samples_  = input_.get_samples();
+    metric_   = 1.0 / samples_;
+    break;
+  }
+  rsamples.resize(samples_);
+
+  // get the sposets that form the basis
+  auto& sposets = input_.get_basis_sets();
+
+  for (int i = 0; i < sposets.size(); ++i)
+  {
+    SPOSet* sposet = wf_factory.getSPOSet(sposets[i]);
+    if (sposet == 0)
+      throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices sposet " + sposets[i] +
+                                    " does not exist");
+    basis_functions.add(sposet->makeClone());
+  }
+  basis_size = basis_functions.size();
+
+  if (basis_size < 1)
+    throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices basis_size must be greater than one");
+
+  int nspecies        = species.size();
+  if (! species_.hasAttribute("membersize"))
+    throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices error: Species set does not have the required attribute 'membersize'");
+  int isize = species.getAttribute("membersize");
+  // We have the count per species at least a fundamental as the  total particles.
+  // the sume of species membersize and total particles should be an invariant.
+  int nparticles = 0;
+  for (int s = 0; s < nspecies; ++s)
+    nparticles += species(isize, s);
+  for (int s = 0; s < nspecies; ++s)
+    species_size.push_back(species(isize, s));
+  for (int s = 0; s < nspecies; ++s)
+    species_name.push_back(species.speciesName[s]);
+
+  basis_values.resize(basis_size);
+  integrated_values.resize(basis_size);
+  basis_norms.resize(basis_size);
+
+  Real bn_standard = 1.0;
+  if (input_.get_volume_normalized())
+    bn_standard = 1.0 / std::sqrt(volume_);
+  for (int i = 0; i < basis_size; ++i)
+    basis_norms[i] = bn_standard;
+
+  rsamples.resize(samples_);
+  sample_weights.resize(samples_);
+  psi_ratios.resize(nparticles);
+
+  if (input_.get_evaluator() == Evaluator::MATRIX)
+  {
+    Phi_MB.resize(samples_, basis_size);
+    Phi_NB.reserve(nspecies);
+    Psi_NM.reserve(nspecies);
+    Phi_Psi_NB.reserve(nspecies);
+    N_BB.reserve(nspecies);
+    for (int s = 0; s < nspecies; ++s)
+    {
+      int specs_size = species_size[s];
+      Phi_NB.emplace_back(specs_size, basis_size);
+      Psi_NM.emplace_back(specs_size, samples_);
+      Phi_Psi_NB.emplace_back(specs_size, basis_size);
+      N_BB.emplace_back(basis_size, basis_size);
+    }
+  }
+
+  if (sampling_ == Sampling::METROPOLIS)
+  {
+    basis_gradients.resize(basis_size);
+    basis_laplacians.resize(basis_size);
+  }
+
+  // so if the input is not normalized, normalize it.
+  // with respect to what?
+  if(!input_.get_normalized())
+  {
+    auto& pset_target = wf_factory_.getTargetParticleSet();
+    normalize(pset_target);
+  }
 }
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
-    : OperatorEstBase(obdm.data_locality_),
-      input_(obdm.input_),
-      lattice_(obdm.lattice_),
-      basis_functions(obdm.basis_functions),
-      timers_("OneBodyDensityMatrix")
-{}
-
-OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
-                                               const Lattice& lattice,
-                                               const SpeciesSet& species)
-    : OperatorEstBase(DataLocality::crowd), lattice_(lattice), species_(species), timers_("OneBodyDensityMatrix")
+    : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_), obdm.lattice_, obdm.species_, obdm.wf_factory_)
 {}
 
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
-
 
 OneBodyDensityMatrices* OneBodyDensityMatrices::clone() { return new OneBodyDensityMatrices(*this); }
 
 void OneBodyDensityMatrices::startBlock(int steps) {}
 
-void OneBodyDensityMatrices::setRandomGenerator(RandomGenerator_t* rng) { uniform_random = rng; }
-
-void OneBodyDensityMatrices::warmup_sampling(ParticleSet& pset_target)
+void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RandomGenerator_t& rng)
 {
-  if (input_.get_sampling() == Samplings::METROPOLIS)
+  if (sampling_ == Sampling::METROPOLIS)
   {
     if (!warmed_up)
     {
-      diffusion(std::sqrt(input_.get_timestep()), rpcur);
-      rpcur += center;
-      if (input_.get_integrator() == Integrators::DENSITY)
+      rpcur = diffusion(std::sqrt(input_.get_timestep()), rng);
+      rpcur += center_;
+      if (input_.get_integrator() == Integrator::DENSITY)
         density_drift(rpcur, rhocur, dpcur, pset_target);
       else
-        APP_ABORT("OneBodyDensityMatrices::warmup_sampling  invalid integrator");
+        APP_ABORT("OneBodyDensityMatrices::warmup_sampling invalid integrator");
     }
-    generate_samples(1.0, pset_target, input_.get_warmup_samples());
+    generateSamples(1.0, pset_target, rng, input_.get_warmup_samples());
     warmed_up = true;
   }
 }
@@ -79,17 +179,16 @@ void OneBodyDensityMatrices::warmup_sampling(ParticleSet& pset_target)
 OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluate_matrix(ParticleSet& P,
                                                                              MCPWalker& walker,
                                                                              ParticleSet& pset_target,
-                                                                             TrialWaveFunction& psi_target)
+                                                                             TrialWaveFunction& psi_target,
+                                                                             RandomGenerator_t& rng)
 {
-  //perform warmup sampling the first time
-  if (!warmed_up)
-    warmup_sampling(pset_target);
+  warmupSampling(pset_target, rng);
   // get weight and single particle energy trace data
   Real weight;
-  weight = walker.Weight * metric;
+  weight = walker.Weight * metric_;
 
   // compute sample positions (monte carlo or deterministic)
-  generate_samples(weight, pset_target);
+  generateSamples(weight, pset_target, rng);
   // compute basis and wavefunction ratio values in matrix form
   generate_sample_basis(Phi_MB, pset_target, psi_target);  // basis           : samples   x basis_size
   generate_sample_ratios(Psi_NM, pset_target, psi_target); // conj(Psi ratio) : particles x samples
@@ -97,14 +196,14 @@ OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluate_matrix(Par
   // perform integration via matrix products
   {
     ScopedTimer local_mp_timer(timers_.matrix_products_timer);
-    for (int s = 0; s < nspecies; ++s)
+    for (int s = 0; s < species_.size(); ++s)
     {
-      Matrix<Value>& Psi_nm     = *Psi_NM[s];
-      Matrix<Value>& Phi_Psi_nb = *Phi_Psi_NB[s];
-      Matrix<Value>& Phi_nb     = *Phi_NB[s];
+      Matrix<Value>& Psi_nm     = Psi_NM[s];
+      Matrix<Value>& Phi_Psi_nb = Phi_Psi_NB[s];
+      Matrix<Value>& Phi_nb     = Phi_NB[s];
       diag_product(Psi_nm, sample_weights, Psi_nm);
       product(Psi_nm, Phi_MB, Phi_Psi_nb);       // ratio*basis : particles x basis_size
-      product_AtB(Phi_nb, Phi_Psi_nb, *N_BB[s]); // conj(basis)^T*ratio*basis : basis_size^2
+      product_AtB(Phi_nb, Phi_Psi_nb, N_BB[s]); // conj(basis)^T*ratio*basis : basis_size^2
     }
   }
   // accumulate data into collectables
@@ -112,10 +211,10 @@ OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluate_matrix(Par
     ScopedTimer local_timer(timers_.accumulate_timer);
     const int basis_size2 = basis_size * basis_size;
     int ij                = nindex;
-    for (int s = 0; s < nspecies; ++s)
+    for (int s = 0; s < species_.size(); ++s)
     {
       //int ij=nindex; // for testing
-      const Matrix<Value>& NDM = *N_BB[s];
+      const Matrix<Value>& NDM = N_BB[s];
       for (int n = 0; n < basis_size2; ++n)
       {
         Value val = NDM(n);
@@ -180,7 +279,7 @@ OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluate_check(Part
       for (int m = 0; m < samples; ++m)
       {
         PosType& rsamp = rsamples[m];
-        update_basis(rsamp);
+        update_basis(rsamp, P);
         PosType dr = rsamp - P.R[n];
         P.makeMove(n, dr);
         Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.calcRatio(P, n));
@@ -213,24 +312,23 @@ OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluate_check(Part
 }
 
 
-OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluateLoop(ParticleSet& P,
+OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluateLoop(ParticleSet& pset_target,
                                                                           MCPWalker& walker,
-                                                                          ParticleSet& pset_target,
-                                                                          TrialWaveFunction& psi_target)
+                                                                          TrialWaveFunction& psi_target,
+                                                                          RandomGenerator_t& rng)
 {
   const int basis_size2 = basis_size * basis_size;
-  if (!warmed_up)
-    warmup_sampling(pset_target);
+  warmupSampling(pset_target, rng);
   Real weight;
-  weight = walker.Weight * metric;
-  generate_samples(weight, pset_target);
+  weight = walker.Weight * metric_;
+  generateSamples(weight, pset_target, rng);
   int n = 0;
-  for (int s = 0; s < nspecies; ++s)
+  for (int s = 0; s < species_.size(); ++s)
   {
     for (int ns = 0; ns < species_size[s]; ++ns, ++n)
     {
-      integrate(P, pset_target, psi_target, n);
-      update_basis(P.R[n], pset_target);
+      integrate(pset_target, psi_target, n);
+      update_basis(pset_target.R[n], pset_target);
       int ij = nindex + s * basis_size2;
       for (int i = 0; i < basis_size; ++i)
       {
@@ -238,10 +336,10 @@ OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluateLoop(Partic
         for (int j = 0; j < basis_size; ++j)
         {
           Value val = phi_i * integrated_values[j];
-          P.Collectables[ij] += real(val);
+          pset_target.Collectables[ij] += real(val);
           ij++;
 #if defined(QMC_COMPLEX)
-          P.Collectables[ij] += imag(val);
+          pset_target.Collectables[ij] += imag(val);
           ij++;
 #endif
         }
@@ -251,27 +349,35 @@ OneBodyDensityMatrices::FullPrecReal OneBodyDensityMatrices::evaluateLoop(Partic
   return 0.0;
 }
 
-
-inline void OneBodyDensityMatrices::generate_samples(Real weight, ParticleSet& pset_target, int steps)
+template<class RAN_GEN>
+void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_target, RAN_GEN& rng, int steps)
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
-  RandomGenerator_t& rng = *uniform_random;
-  bool save              = false;
+
+  // \todo make this an ifndef NDEBUG section which is much clearer.
+  bool save = false;
   if (steps == 0)
   {
     save  = true;
-    steps = samples;
+    steps = samples_;
   }
-  if (input_.get_integrator() == Integrators::UNIFORM_GRID)
+
+  switch (input_.get_integrator())
+  {
+  case Integrator::UNIFORM_GRID:
     generate_uniform_grid(rng);
-  else if (input_.get_integrator() == Integrators::UNIFORM)
+    break;
+  case Integrator::UNIFORM:
     generate_uniform_samples(rng);
-  else if (input_.get_integrator() == Integrators::DENSITY)
+    break;
+  case Integrator::DENSITY:
     generate_density_samples(save, steps, rng, pset_target);
+    break;
+  }
 
   if (save)
   {
-    if (input_.get_sampling() == Samplings::METROPOLIS)
+    if (sampling_ == Sampling::METROPOLIS)
     {
       sample_weights *= weight;
     }
@@ -282,7 +388,7 @@ inline void OneBodyDensityMatrices::generate_samples(Real weight, ParticleSet& p
   }
 
   // temporary check
-  if (write_rstats && omp_get_thread_num() == 0)
+  if (input_.get_rstats() && omp_get_thread_num() == 0)
   {
     Position rmin  = std::numeric_limits<Real>::max();
     Position rmax  = -std::numeric_limits<Real>::max();
@@ -309,44 +415,44 @@ inline void OneBodyDensityMatrices::generate_samples(Real weight, ParticleSet& p
   }
 }
 
-
-inline void OneBodyDensityMatrices::generate_uniform_grid(RandomGenerator_t& rng)
+template<typename RNG_GEN>
+inline void OneBodyDensityMatrices::generate_uniform_grid(RNG_GEN& rng)
 {
   Position rp;
   Position ushift = 0.0;
   Real du         = input_.get_scale() / input_.get_points();
   for (int d = 0; d < OHMMS_DIM; ++d)
     ushift[d] += rng() * du;
-  for (int s = 0; s < samples; ++s)
+  for (int s = 0; s < samples_; ++s)
   {
     int nrem = s;
     for (int d = 0; d < OHMMS_DIM - 1; ++d)
     {
-      int ind = nrem / ind_dims[d];
+      int ind = nrem / ind_dims_[d];
       rp[d]   = ind * du + ushift[d];
-      nrem -= ind * ind_dims[d];
+      nrem -= ind * ind_dims_[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + ushift[OHMMS_DIM - 1];
-    rsamples[s]       = lattice_.toCart(rp) + rcorner;
+    rsamples[s]       = lattice_.toCart(rp) + rcorner_;
   }
 }
 
-
-inline void OneBodyDensityMatrices::generate_uniform_samples(RandomGenerator_t& rng)
+template<typename RAN_GEN>
+inline void OneBodyDensityMatrices::generate_uniform_samples(RAN_GEN& rng)
 {
   Position rp;
-  for (int s = 0; s < samples; ++s)
+  for (int s = 0; s < samples_; ++s)
   {
     for (int d = 0; d < OHMMS_DIM; ++d)
       rp[d] = input_.get_scale() * rng();
-    rsamples[s] = lattice_.toCart(rp) + rcorner;
+    rsamples[s] = lattice_.toCart(rp) + rcorner_;
   }
 }
 
-
+template<typename RAN_GEN>
 inline void OneBodyDensityMatrices::generate_density_samples(bool save,
                                                              int steps,
-                                                             RandomGenerator_t& rng,
+                                                             RAN_GEN& rng,
                                                              ParticleSet& pset_target)
 {
   const auto timestep = input_.get_timestep();
@@ -358,20 +464,25 @@ inline void OneBodyDensityMatrices::generate_density_samples(bool save,
   for (int s = 0; s < steps; ++s)
   {
     nmoves++;
-    Position n, rp, dp, ds; //diffusion, trial pos/drift, drift sum
-    Real rhop, ratio, Pacc; //trial density, dens ratio, acc prob
-    diffusion(sqt, n);      //get diffusion
+    // trial pos
+    Position rp;
+    // trial drift
+    Position dp;
+    // drift sum
+    Position ds;
+    Real rhop, ratio, Pacc;              //trial density, dens ratio, acc prob
+    Position diff = diffusion(sqt, rng); //get diffusion
     if (input_.get_use_drift())
     {
-      rp = r + n + d;                                                  //update trial position
-      density_drift(rp, rhop, dp, pset_target);                        //get trial drift and density
-      ratio = rhop / rho;                                              //density ratio
-      ds    = dp + d;                                                  //drift sum
-      Pacc  = ratio * std::exp(-ot * (dot(n, ds) + .5 * dot(ds, ds))); //acceptance probability
+      rp = r + diff + d;                                                  //update trial position
+      density_drift(rp, rhop, dp, pset_target);                           //get trial drift and density
+      ratio = rhop / rho;                                                 //density ratio
+      ds    = dp + d;                                                     //drift sum
+      Pacc  = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))); //acceptance probability
     }
     else
     {
-      rp = r + n;                          //update trial position
+      rp = r + diff;                       //update trial position
       density_only(rp, rhop, pset_target); //get trial density
       ratio = rhop / rho;                  //density ratio
       Pacc  = ratio;                       //acceptance probability
@@ -399,11 +510,13 @@ inline void OneBodyDensityMatrices::generate_density_samples(bool save,
   rhocur = rho;
 }
 
-
-inline void OneBodyDensityMatrices::diffusion(Real sqt, Position& diff)
+template<typename RAN_GEN>
+OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffusion(const Real sqt, RAN_GEN& rng)
 {
-  assignGaussRand(&diff[0], OHMMS_DIM, *uniform_random);
+  Position diff;
+  assignGaussRand(&diff[0], OHMMS_DIM, rng);
   diff *= sqt;
+  return diff;
 }
 
 
@@ -442,7 +555,24 @@ void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         const RefVector<ParticleSet>& psets,
                                         const RefVector<TrialWaveFunction>& wfns,
                                         RandomGenerator_t& rng)
-{}
+{
+  ScopedTimer scope_timer(timers_.eval_timer);
+  for (int iw = 0; iw < walkers.size(); ++iw)
+  {
+    auto& pset_target = psets[iw];
+    if (check_derivatives)
+      test_derivatives(pset_target, rng);
+    if (input_.get_evaluator() == Evaluator::LOOP)
+      evaluateLoop(psets[iw], walkers[iw], wfns[iw], rng);
+  }
+  //   else if (input_.get_evaluator() == matrix)
+  //     evaluate_matrix(P);
+  //   else
+  //     throw logic_error("OneBodyDensityMatrices::accumulate called with invalid evaluator, developer error");
+  // }
+  // return 0.0;
+}
+
 
 void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
                                                    ParticleSet& pset_target,
@@ -450,7 +580,7 @@ void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
 {
   ScopedTimer local_timer(timers_.gen_sample_basis_timer);
   int mb = 0;
-  for (int m = 0; m < samples; ++m)
+  for (int m = 0; m < samples_; ++m)
   {
     update_basis(rsamples[m], pset_target);
     for (int b = 0; b < basis_size; ++b, ++mb)
@@ -459,12 +589,12 @@ void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
 }
 
 
-void OneBodyDensityMatrices::generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm,
+void OneBodyDensityMatrices::generate_sample_ratios(std::vector<Matrix<Value>>& Psi_nm,
                                                     ParticleSet& pset_target,
                                                     TrialWaveFunction& psi_target)
 {
   ScopedTimer t(timers_.gen_sample_ratios_timer);
-  for (int m = 0; m < samples; ++m)
+  for (int m = 0; m < samples_; ++m)
   {
     // get N ratios for the current sample point
     pset_target.makeVirtualMoves(rsamples[m]);
@@ -472,9 +602,9 @@ void OneBodyDensityMatrices::generate_sample_ratios(std::vector<Matrix<Value>*> 
 
     // collect ratios into per-species matrices
     int p = 0;
-    for (int s = 0; s < nspecies; ++s)
+    for (int s = 0; s < species_.size(); ++s)
     {
-      Matrix<Value>& P_nm = *Psi_nm[s];
+      Matrix<Value>& P_nm = Psi_nm[s];
       for (int n = 0; n < species_size[s]; ++n, ++p)
       {
         P_nm(n, m) = qmcplusplus::conj(psi_ratios[p]);
@@ -485,15 +615,15 @@ void OneBodyDensityMatrices::generate_sample_ratios(std::vector<Matrix<Value>*> 
 
 
 void OneBodyDensityMatrices::generate_particle_basis(ParticleSet& P,
-                                                     std::vector<Matrix<Value>*>& Phi_nb,
+                                                     std::vector<Matrix<Value>>& Phi_nb,
                                                      ParticleSet& pset_target)
 {
   ScopedTimer t(timers_.gen_particle_basis_timer);
   int p = 0;
-  for (int s = 0; s < nspecies; ++s)
+  for (int s = 0; s < species_.size(); ++s)
   {
     int nb              = 0;
-    Matrix<Value>& P_nb = *Phi_nb[s];
+    Matrix<Value>& P_nb = Phi_nb[s];
     for (int n = 0; n < species_size[s]; ++n, ++p)
     {
       update_basis(P.R[p], pset_target);
@@ -504,19 +634,16 @@ void OneBodyDensityMatrices::generate_particle_basis(ParticleSet& P,
 }
 
 
-inline void OneBodyDensityMatrices::integrate(ParticleSet& P,
-                                              ParticleSet& pset_target,
-                                              TrialWaveFunction& psi_target,
-                                              int n)
+inline void OneBodyDensityMatrices::integrate(ParticleSet& pset_target, TrialWaveFunction& psi_target, int n)
 {
   std::fill(integrated_values.begin(), integrated_values.end(), 0.0);
-  for (int s = 0; s < samples; ++s)
+  for (int s = 0; s < samples_; ++s)
   {
     Position& rsamp = rsamples[s];
     update_basis(rsamp, pset_target);
-    P.makeMove(n, rsamp - P.R[n]);
-    Value ratio = sample_weights[s] * qmcplusplus::conj(psi_target.calcRatio(P, n));
-    P.rejectMove(n);
+    pset_target.makeMove(n, rsamp - pset_target.R[n]);
+    Value ratio = sample_weights[s] * qmcplusplus::conj(psi_target.calcRatio(pset_target, n));
+    pset_target.rejectMove(n);
     for (int i = 0; i < basis_size; ++i)
       integrated_values[i] += ratio * basis_values[i];
   }
@@ -525,6 +652,7 @@ inline void OneBodyDensityMatrices::integrate(ParticleSet& P,
 
 inline void OneBodyDensityMatrices::update_basis(const Position& r, ParticleSet& pset_target)
 {
+  // This is ridiculous in the case of splines, still necessary for hybrid/LCAO
   pset_target.makeMove(0, r - pset_target.R[0]);
   basis_functions.evaluateValue(pset_target, 0, basis_values);
   pset_target.rejectMove(0);
@@ -550,13 +678,10 @@ inline void OneBodyDensityMatrices::normalize(Real invToWgt) {}
 
 inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
 {
-  /** I feel like we should give the user what they want or abort.
-   *  but is there an expectation that this test depends on the user set points?
-   */
   int ngrid = std::max(200, input_.get_points());
   int ngtot = pow(ngrid, OHMMS_DIM);
   Real du   = input_.get_scale() / ngrid;
-  Real dV   = volume / ngtot;
+  Real dV   = volume_ / ngtot;
   Position rp;
   Vector<Value> bnorms;
   int gdims[OHMMS_DIM];
@@ -577,7 +702,7 @@ inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
       nrem -= ind * gdims[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + du / 2;
-    rp                = lattice_.toCart(rp) + rcorner;
+    rp                = lattice_.toCart(rp) + rcorner_;
     update_basis(rp, pset_target);
     for (int i = 0; i < basis_size; ++i)
       bnorms[i] += qmcplusplus::conj(basis_values[i]) * basis_values[i] * dV;
@@ -587,6 +712,51 @@ inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
   normalized = true;
 }
 
+
+void OneBodyDensityMatrices::test_derivatives(ParticleSet& pset_target, RandomGenerator_t& rng)
+{
+  app_log() << "OneBodyDensityMatrices::test_derivatives  checking drift" << std::endl;
+
+  Position r, rtmp;
+
+  Real delta = 1e-5;
+
+  Real dens, densp, densm;
+  Position drift, driftn, drifttmp;
+
+  app_log() << "  warming up" << std::endl;
+  warmupSampling(pset_target, rng);
+  app_log() << "  generating samples" << std::endl;
+  generateSamples(1.0, pset_target, rng);
+
+  app_log() << "  testing derivatives at sample points" << std::endl;
+  for (int s = 0; s < rsamples.size(); ++s)
+  {
+    r = rsamples[s];
+
+    density_drift(r, dens, drift, pset_target);
+
+    for (int d = 0; d < OHMMS_DIM; ++d)
+    {
+      rtmp = r;
+
+      rtmp[d] = r[d] + delta;
+      density_drift(rtmp, densp, drifttmp, pset_target);
+
+      rtmp[d] = r[d] - delta;
+      density_drift(rtmp, densm, drifttmp, pset_target);
+
+      driftn[d] = (densp - densm) / (2 * delta);
+    }
+    driftn *= .5 * input_.get_timestep() / dens;
+
+    app_log() << s << std::endl;
+    app_log() << "  " << driftn << std::endl;
+    app_log() << "  " << drift << std::endl;
+  }
+
+  APP_ABORT("OneBodyDensityMatrices::test_derivatives");
+}
 
 inline void OneBodyDensityMatrices::test_overlap(ParticleSet& pset_target)
 {
@@ -598,7 +768,7 @@ inline void OneBodyDensityMatrices::test_overlap(ParticleSet& pset_target)
 
   Position rp;
   Real du = input_.get_scale() / ngrid;
-  Real dV = volume / ngtot;
+  Real dV = volume_ / ngtot;
 
   Position rmin = std::numeric_limits<Real>::max();
   Position rmax = -std::numeric_limits<Real>::max();
@@ -623,7 +793,7 @@ inline void OneBodyDensityMatrices::test_overlap(ParticleSet& pset_target)
       nrem -= ind * gdims[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + du / 2;
-    rp                = lattice_.toCart(rp) + rcorner;
+    rp                = lattice_.toCart(rp) + rcorner_;
     update_basis(rp, pset_target);
     for (int i = 0; i < basis_size; ++i)
       for (int j = 0; j < basis_size; ++j)
@@ -648,52 +818,6 @@ inline void OneBodyDensityMatrices::test_overlap(ParticleSet& pset_target)
   }
   app_log() << std::endl;
   APP_ABORT("OneBodyDensityMatrices::test_overlap");
-}
-
-
-void OneBodyDensityMatrices::test_derivatives(ParticleSet& pset_target)
-{
-  app_log() << "OneBodyDensityMatrices::test_derivatives  checking drift" << std::endl;
-
-  Position r, rtmp;
-
-  Real delta = 1e-5;
-
-  Real dens, densp, densm;
-  Position drift, driftn, drifttmp;
-
-  app_log() << "  warming up" << std::endl;
-  warmup_sampling(pset_target);
-  app_log() << "  generating samples" << std::endl;
-  generate_samples(1.0, pset_target);
-
-  app_log() << "  testing derivatives at sample points" << std::endl;
-  for (int s = 0; s < rsamples.size(); ++s)
-  {
-    r = rsamples[s];
-
-    density_drift(r, dens, drift, pset_target);
-
-    for (int d = 0; d < OHMMS_DIM; ++d)
-    {
-      rtmp = r;
-
-      rtmp[d] = r[d] + delta;
-      density_drift(rtmp, densp, drifttmp, pset_target);
- 
-      rtmp[d] = r[d] - delta;
-      density_drift(rtmp, densm, drifttmp, pset_target);
-
-      driftn[d] = (densp - densm) / (2 * delta);
-    }
-    driftn *= .5 * input_.get_timestep() / dens;
-
-    app_log() << s << std::endl;
-    app_log() << "  " << driftn << std::endl;
-    app_log() << "  " << drift << std::endl;
-  }
-
-  APP_ABORT("OneBodyDensityMatrices::test_derivatives");
 }
 
 
@@ -761,5 +885,12 @@ void OneBodyDensityMatrices::compare(const std::string& name,
                     << real(m1(i, j) / m2(i, j)) << std::endl;
 }
 
-
+template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
+                                                                         ParticleSet& pset_target,
+                                                                         RandomGenerator_t& rng,
+                                                                         int steps);
+template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
+                                                                         ParticleSet& pset_target,
+                                                                         StdRandom<double>& rng,
+                                                                         int steps);
 } // namespace qmcplusplus

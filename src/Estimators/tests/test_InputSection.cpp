@@ -23,6 +23,26 @@ namespace qmcplusplus
 {
 using RealType = QMCTraits::RealType;
 
+enum class TestEnum1
+{
+  VALUE1,
+  VALUE2
+};
+
+enum class TestEnum2
+{
+  VALUE1,
+  VALUE2
+};
+
+std::unordered_map<std::string, std::any> lookup_input_enum_value
+{
+  {"testenum1-value1", TestEnum1::VALUE1},
+  {"testenum1-value2", TestEnum1::VALUE2},
+  {"testenum2-value1", TestEnum2::VALUE1},
+  {"testenum2-value2", TestEnum2::VALUE2}
+};
+
 // clang-format: off
 class TestInput : public InputSection
 {
@@ -31,18 +51,29 @@ public:
   {
     section_name   = "Test";
     attributes     = {"name", "samples", "kmax", "full"};
-    parameters     = {"label", "count", "width", "rational"};
+    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets"};
     required       = {"count", "full"};
     strings        = {"name", "label"};
+    multi_strings  = {"sposets"};
     integers       = {"samples", "count"};
     reals          = {"kmax", "width"};
+
     bools          = {"full", "rational"};
+    enums          = {"testenum1", "testenum2"};
     default_values = {{"name", std::string("demo")},
                       {"samples", int(20)},
                       {"width", RealType(1.0)},
                       {"rational", bool(false)}};
   };
+  std::any assignAnyEnum(const std::string& name) const override
+  {
+    std::string enum_value_str(name + "-" + get<std::string>(name));
+    tolower(enum_value_str);
+    return lookup_input_enum_value.at(enum_value_str);
+  }
 };
+
+
 // clang-format: on
 
 
@@ -59,6 +90,7 @@ TEST_CASE("InputSection::InputSection", "[estimators]")
   CHECK(!ti.has("count"));
   CHECK(!ti.has("width"));
   CHECK(!ti.has("rational"));
+  CHECK(!ti.has("sposets"));
 }
 
 
@@ -95,6 +127,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     // unassigned
     CHECK(!ti.has("kmax"));
     CHECK(!ti.has("label"));
+    CHECK(!ti.has("sposets"));
     // check value correctness
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<int>("count") == 15);
@@ -114,6 +147,9 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   <parameter name="count"   >  15        </parameter>
   <parameter name="width"   >  2.5       </parameter>
   <parameter name="rational">  yes       </parameter>
+  <parameter name="testenum1"> Value1 </parameter>
+  <parameter name="testenum2"> Value2 </parameter>
+  <parameter name="sposets"> spo1 spo2 </parameter>
 </test>
 )";
     // clang-format: on
@@ -137,6 +173,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.has("count"));
     CHECK(ti.has("width"));
     CHECK(ti.has("rational"));
+    CHECK(ti.has("sposets"));
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
@@ -146,6 +183,9 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<RealType>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
+    CHECK(ti.get<TestEnum1>("testenum1") == TestEnum1::VALUE1);
+    CHECK(ti.get<TestEnum2>("testenum2") == TestEnum2::VALUE2);
+    CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
   }
 
 
@@ -235,6 +275,7 @@ TEST_CASE("InputSection::init", "[estimators]")
         {"count", int(15)},
         {"width", RealType(2.5)},
         {"rational", bool(true)},
+        {"sposets", std::vector<std::string>{"spo1","spo2"}}
     });
 
     // assigned from initializer-list
@@ -255,6 +296,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<RealType>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
+    CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
   }
 
 
@@ -278,6 +320,7 @@ TEST_CASE("InputSection::get", "[estimators]")
       {"count", int(15)},
       {"width", RealType(2.5)},
       {"rational", bool(true)},
+      {"sposets", std::vector<std::string>{"spo1","spo2"}}
   });
 
   // invalid type access results in thrown exception
@@ -289,6 +332,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   CHECK_THROWS_AS(ti.get<bool>("count"), std::bad_cast);
   CHECK_THROWS_AS(ti.get<std::string>("width"), std::bad_cast);
   CHECK_THROWS_AS(ti.get<int>("rational"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<std::string>("sposets"), std::bad_cast);
 }
 
 

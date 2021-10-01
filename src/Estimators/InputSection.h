@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 //////////////////////////////////////////////////////////////////////////////////////
 #ifndef QMCPLUSPLUS_INPUTSECTION_H
@@ -43,11 +44,15 @@ protected:
   std::unordered_set<std::string> parameters; // list of parameter variables
   std::unordered_set<std::string> required;   // list of required variables
 
-  std::unordered_set<std::string> strings;  // list of string variables
+  std::unordered_set<std::string> strings;  // list of string variables that can have one value
+  std::unordered_set<std::string> multi_strings;  // list of string variables that can one or more values
   std::unordered_set<std::string> bools;    // list of boolean variables
   std::unordered_set<std::string> integers; // list of integer variables
   std::unordered_set<std::string> reals;    // list of real variables
-
+  /** list of enum inputs which allow a finite set of strings to map to enum values
+   *  The enum class types and values need only be known to IS subtypes
+   */
+  std::unordered_set<std::string> enums;
   std::unordered_map<std::string, std::any> default_values; // default values for optional variables
 
 private:
@@ -63,9 +68,36 @@ public:
   template<typename T>
   T get(const std::string& name) const
   {
-    return std::any_cast<T>(values.at(name));
+    if constexpr (std::is_enum<T>::value)
+    {
+        std::any any_enum = assignAnyEnum(name);
+        return std::any_cast<T>(any_enum);
+    }
+    else
+      return std::any_cast<T>(values.at(name));
   }
 
+  /** set var if input section has read the tag
+   *  \param[out] var  external variable to be set if tag was defined
+   *  \param[in]  tag  string tag of value could be parameter or atttribute name
+   *  \return          whether input section has tag
+   *
+   *  use this is you prefer have native c++ types for input class members
+   *  as well as set default via native c++ declaration. See
+   *  OneBodyDensityMatricesInput for example.
+   */
+  template<typename T>
+  bool setIfInInput(T& var, const std::string& tag)
+  {
+    if (has(tag))
+    {
+      var = get<T>(tag);
+      return true;
+    }
+    else
+      return false;
+  }
+  
   // Read variable values (initialize) from XML input.
   //   Later, this should call a correctness checking function and enforce immutability.
   //   (required values are all provided, provided values fall in allowed ranges)
@@ -80,14 +112,25 @@ protected:
    *  Default implementation is noop
    */
   virtual void checkParticularValidity() {}
-  
+  /** Derived class overrides this to get proper assignment of scoped enum values.
+   *
+   *  See test_InputSection.cpp and OneBodyDensityMatricesInput
+   *  You really should do this if your input class has a finite set of string values for an input
+   *  example: OneBodyDensityMatricesInput
+   *
+   *  can't be bothered then just define your enum option as a string.
+   */
+  virtual std::any assignAnyEnum(const std::string& tag) const { return std::any(); };
+
 private:
   // Query functions
   bool is_attribute(const std::string& name) const { return attributes.find(name) != attributes.end(); }
   bool is_parameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
   bool is_required(const std::string& name) const { return required.find(name) != required.end(); }
 
+  bool is_enum_string(const std::string& name) const { return enums.find(name) != enums.end(); }
   bool is_string(const std::string& name) const { return strings.find(name) != strings.end(); }
+  bool is_multi_string(const std::string& name) const { return multi_strings.find(name) != multi_strings.end(); }
   bool is_bool(const std::string& name) const { return bools.find(name) != bools.end(); }
   bool is_integer(const std::string& name) const { return integers.find(name) != integers.end(); }
   bool is_real(const std::string& name) const { return reals.find(name) != reals.end(); }

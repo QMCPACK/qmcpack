@@ -23,9 +23,16 @@
 #include "OneBodyDensityMatricesInput.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <SpeciesSet.h>
+#include <StdRandom.h>
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+template<typename T>
+class OneBodyDensityMatricesTests;
+}
 
 class OneBodyDensityMatrices : public OperatorEstBase
 {
@@ -38,17 +45,26 @@ public:
   using Lattice       = PtclOnLatticeTraits::ParticleLayout_t;
   using Position      = QMCTraits::PosType;
 
-  using Evaluators = OneBodyDensityMatricesInput::Evaluators;
-  using Integrators = OneBodyDensityMatricesInput::Integrators;
-  using Samplings = OneBodyDensityMatricesInput::Samplings;
+  using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
+  using Integrator = OneBodyDensityMatricesInput::Integrator;
 
-  typedef std::vector<Position> pts_t;
-  typedef std::vector<Real> dens_t;
+  enum class Sampling
+  {
+    VOLUME_BASED,
+    METROPOLIS,
+    NO_SAMPLING
+  };
 
 private:
   OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
+ 
+  /// actual WaveFunctionFactory instance must be owned by the same or enclosing scope
+  const WaveFunctionFactory& wf_factory_;
+  /// samples_ are altered based on integrator_ so always have a simulation object copy.
+  size_t samples_;
+  Sampling sampling_;
   //data members
   CompositeSPOSet basis_functions;
   Vector<Value> basis_values;
@@ -64,28 +80,16 @@ private:
   Position drift;
   int nindex;
   int eindex;
-  // TraceSample<TraceReal>* w_trace;
-  // TraceSample<TraceComp>* T_trace;
-  // CombinedTraceSample<TraceReal>* Vq_trace;
-  // CombinedTraceSample<TraceReal>* Vc_trace;
-  // CombinedTraceSample<TraceReal>* Vqq_trace;
-  // CombinedTraceSample<TraceReal>* Vqc_trace;
-
-  // CombinedTraceSample<TraceReal>* Vcc_trace;
   std::vector<Value> E_samp;
-  // CombinedTraceSample<TraceReal>* E_trace;
 
   bool initialized;
   bool normalized;
   bool volume_normed;
   int basis_size;
-  int samples;
-  int nparticles;
-  int nspecies;
   std::vector<int> species_size;
   std::vector<std::string> species_name;
   std::vector<Vector<Value>*> E_N;
-  std::vector<Matrix<Value>*> Phi_NB, Psi_NM, Phi_Psi_NB, N_BB, E_BB;
+  std::vector<Matrix<Value>> Phi_NB, Psi_NM, Phi_Psi_NB, N_BB, E_BB;
   Matrix<Value> Phi_MB;
   bool check_overlap;
   bool check_derivatives;
@@ -97,43 +101,67 @@ private:
   Matrix_t Phi_MBtmp;
 #endif
 
-  Position center, rcorner;
-  Real volume;
-  bool periodic;
-  int nmoves;
-  int naccepted;
-  Real acceptance_ratio;
+  /// If not defined in OBDMI taken from lattic
+  Position center_;
+  /// with respect to center_;
+  Position rcorner_;
+  Real volume_;
+  bool periodic_;
+
+  /** @ingroup DensityIntegration only used for density integration
+   *  @{
+   */
+  /// number of moves
+  int nmoves = 0;
+  /// number of accepted samples
+  int naccepted = 0;
+  /// running acceptance ratio over all samples
+  Real acceptance_ratio = 0.0;
   bool write_acceptance_ratio;
-  bool write_rstats;
+  int ind_dims_[OHMMS_DIM];
+  /// }@
 
-  int ind_dims[OHMMS_DIM];
-  Real metric;
+  Real metric_;
 
+  /// current position
   Position rpcur;
+  /// current drift
   Position dpcur;
+  /// current density
   Real rhocur;
-
-  RandomGenerator_t* uniform_random;
 
 public:
   /** Standard Constructor
    *  If you are making a new OBDM this is what you should be calling
+   *
+   *  \param[in] pset_target  should be returned in the same state but cycled through
+                              make moves and reject to update DM basis.
+   *  Only in the case of hybrid or LCAO orbitals is the pset_target actually needed.
+   *  A simple dummy can be used in the spline case since only r's are actually being
+   *  evaluated over.
    */
-  OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi, const Lattice& lattice, const SpeciesSet& species);
+  OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
+                         const Lattice& lattice,
+                         const SpeciesSet& species,
+                         const WaveFunctionFactory& wf_factory);
 
-  /** actual copy constructor
+  /** copy constructor delegates to standard constructor
+   *  This results in a copy construct and move of OneBodyDensityMatricesInput
+   *  But for the OBDM itself its as if it went through the standard construction.
+   *  This could be optimized.
    */
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
+
   ~OneBodyDensityMatrices() override;
 
   OneBodyDensityMatrices* clone() override;
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator_t& rng) override;
 
   void normalize(Real invToWgt) override;
-  
-  void setRandomGenerator(RandomGenerator_t* rng);
-
   void startBlock(int steps) override;
 
   /** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
@@ -147,41 +175,53 @@ public:
 private:
   //local functions
   //  initialization/finalization
-  void reset();
-  void set_state(xmlNodePtr cur);
-  void set_state(OneBodyDensityMatrices& master);
-  void initialize();
   void finalize();
-  void normalize();
+  void normalize(ParticleSet& pset_target);
   //  printing
   void report(const std::string& pad = "");
   //  sample generation
-  void warmup_sampling(ParticleSet& pset_target);
-  void generate_samples(Real weight, ParticleSet& pset_target, int steps = 0);
-  void generate_uniform_grid(RandomGenerator_t& rng);
-  void generate_uniform_samples(RandomGenerator_t& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng, ParticleSet& pset_target);
-  void diffusion(Real sqt, Position& diff);
+  void warmupSampling(ParticleSet& pset_target, RandomGenerator_t& rng);
+  template<class RNG_GEN>
+  void generateSamples(Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
+  template<class RNG_GEN>
+  void generate_uniform_grid(RNG_GEN& rng);
+  template<class RNG_GEN>
+  void generate_uniform_samples(RNG_GEN& rng);
+  template<class RNG_GEN>
+  void generate_density_samples(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
+  /// produce a position difference vector from timestep
+  template<class RNG_GEN>
+  Position diffusion(const Real sqt, RNG_GEN& rng);
   void density_only(const Position& r, Real& dens, ParticleSet& pset_target);
   void density_drift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
   void get_energies(std::vector<Vector<Value>*>& E_n);
   void generate_sample_basis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-  void generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-  void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>*>& Phi_nb, ParticleSet& pset_target);
+  void generate_sample_ratios(std::vector<Matrix<Value>>& Psi_nm,
+                              ParticleSet& pset_target,
+                              TrialWaveFunction& psi_target);
+  void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>>& Phi_nb, ParticleSet& pset_target);
   //  basis set updates
   void update_basis(const Position& r, ParticleSet& pset_target);
   void update_basis_d012(const Position& r, ParticleSet& pset_target);
   //  testing
   void test_overlap(ParticleSet& pset_target);
-  void test_derivatives(ParticleSet& pset_target);
+  /** dump a bunch of derivatives and that abort
+   */
+  void test_derivatives(ParticleSet& pset_target, RandomGenerator_t& rng);
   //  original loop implementation
-  void integrate(ParticleSet& P, ParticleSet& pset_target, TrialWaveFunction& psi_target, int n);
-  FullPrecReal evaluateLoop(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_target, TrialWaveFunction& psi_target);
+  void integrate(ParticleSet& pset_target, TrialWaveFunction& psi_target, int n);
+  FullPrecReal evaluateLoop(ParticleSet& pset_target,
+                            MCPWalker& walker,
+                            TrialWaveFunction& psi_target,
+                            RandomGenerator_t& rng);
   //  matrix implementation
   FullPrecReal evaluate_check(ParticleSet& P);
-  FullPrecReal evaluate_matrix(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-
+  FullPrecReal evaluate_matrix(ParticleSet& P,
+                               MCPWalker& walker,
+                               ParticleSet& pset_target,
+                               TrialWaveFunction& psi_target,
+                               RandomGenerator_t& rng);
 
   bool match(Value e1, Value e2, Real tol = 1e-12);
   bool same(Vector<Value>& v1, Vector<Value>& v2, Real tol = 1e-6);
@@ -197,8 +237,6 @@ private:
                bool write     = false,
                bool diff_only = true);
 
-  void normalize(ParticleSet& pset_target);
-  
   struct OneBodyDensityMatrixTimers
   {
     NewTimer& eval_timer;
@@ -220,6 +258,10 @@ private:
   };
 
   OneBodyDensityMatrixTimers timers_;
+
+public:
+  template<typename T>
+  friend class testing::OneBodyDensityMatricesTests;
 };
 
 /** OneBodyDensityMatrices factory function
@@ -229,6 +271,14 @@ UPtr<OneBodyDensityMatrices> createOneBodyDensityMatrices(OneBodyDensityMatrices
                                                           const SpeciesSet& species);
 
 
+extern template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
+                                                                                ParticleSet& pset_target,
+                                                                                RandomGenerator_t& rng,
+                                                                                int steps);
+extern template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
+                                                                                ParticleSet& pset_target,
+                                                                                StdRandom<double>& rng,
+                                                                                int steps);
 } // namespace qmcplusplus
 
 #endif
