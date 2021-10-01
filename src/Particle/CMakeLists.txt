@@ -63,7 +63,7 @@ target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
 
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)
-    cuda_add_library(qmcparticle_cuda accept_kernel.cu)
+    add_library(qmcparticle_cuda accept_kernel.cu)
   else()
     hip_add_library(qmcparticle_cuda accept_kernel.cu)
   endif(NOT QMC_CUDA2HIP)
