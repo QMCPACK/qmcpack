@@ -32,7 +32,18 @@ module load llvm/main-20210811-cuda10.1
 TYPE=Release
 Compiler=Clang
 
-source_folder=~/opt/qmcpack
+if [[ $# -eq 0 ]]; then
+  source_folder=`pwd`
+else
+  source_folder=$1
+fi
+
+if [[ -f $source_folder/CMakeLists.txt ]]; then
+  echo Using QMCPACK source directory $source_folder
+else
+  echo "Source directory $source_folder doesn't contain CMakeLists.txt. Pass QMCPACK source directory as the first argument."
+  exit
+fi
 
 for name in offload_cuda_real_MP offload_cuda_real offload_cuda_cplx_MP offload_cuda_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
