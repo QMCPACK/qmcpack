@@ -270,7 +270,6 @@ void QMCCostFunction::checkConfigurations()
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
-    assert((RngSaved[ip]  && MoverRng[ip]));
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
@@ -537,7 +536,6 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     //    synchronize the random number generator with the node
-    assert((MoverRng[ip] && RngSaved[ip]));
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }

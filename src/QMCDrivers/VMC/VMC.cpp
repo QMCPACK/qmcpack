@@ -130,7 +130,6 @@ bool VMC::run()
   //copy back the random states
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ++ip){
-    assert((Rng[i]));
     *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
       
   }
