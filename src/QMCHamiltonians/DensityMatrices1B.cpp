@@ -82,7 +82,7 @@ void DensityMatrices1B::reset()
   eindex         = -1;
   uniform_random = NULL;
   // basic HamiltonianBase info
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   // default values
   energy_mat             = false;
   integrator             = uniform_grid;
@@ -104,13 +104,13 @@ void DensityMatrices1B::reset()
   check_overlap          = false;
   check_derivatives      = false;
   // trace data is required
-  request.request_scalar("weight");
-  request.request_array("Kinetic_complex");
-  request.request_array("Vq");
-  request.request_array("Vc");
-  request.request_array("Vqq");
-  request.request_array("Vqc");
-  request.request_array("Vcc");
+  request_.request_scalar("weight");
+  request_.request_array("Kinetic_complex");
+  request_.request_array("Vq");
+  request_.request_array("Vc");
+  request_.request_array("Vqq");
+  request_.request_array("Vqc");
+  request_.request_array("Vcc");
   // has not been initialized
   initialized = false;
 }
@@ -487,7 +487,7 @@ void DensityMatrices1B::report(const std::string& pad)
 }
 
 
-void DensityMatrices1B::get_required_traces(TraceManager& tm)
+void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 {
   w_trace = tm.get_real_trace("weight");
   if (energy_mat)
@@ -504,7 +504,7 @@ void DensityMatrices1B::get_required_traces(TraceManager& tm)
 
     E_samp.resize(nparticles);
   }
-  have_required_traces = true;
+  have_required_traces_ = true;
 }
 
 
@@ -518,8 +518,8 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 #else
   int nentries = basis_size * basis_size * nspecies;
 #endif
-  myIndex = collectables.current();
-  nindex  = myIndex;
+  my_index_ = collectables.current();
+  nindex    = my_index_;
   std::vector<RealType> ntmp(nentries);
   collectables.add(ntmp.begin(), ntmp.end());
   if (energy_mat)
@@ -546,7 +546,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   int nentries = ng[0] * ng[1];
 #endif
 
-  std::string dname = myName;
+  std::string dname = name_;
   hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
 
   std::string nname = "number_matrix";
@@ -596,7 +596,7 @@ void DensityMatrices1B::warmup_sampling()
 DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
 {
   ScopedTimer t(timers[DM_eval]);
-  if (have_required_traces || !energy_mat)
+  if (have_required_traces_ || !energy_mat)
   {
     if (check_derivatives)
       test_derivatives();
@@ -621,7 +621,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   if (energy_mat)
     weight = w_trace->sample[0] * metric;
   else
-    weight = tWalker->Weight * metric;
+    weight = t_walker_->Weight * metric;
 
   if (energy_mat)
     get_energies(E_N); // energies        : particles x 1
@@ -848,7 +848,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
   if (energy_mat)
     weight = w_trace->sample[0] * metric;
   else
-    weight = tWalker->Weight * metric;
+    weight = t_walker_->Weight * metric;
   int nparticles = P.getTotalNum();
   generate_samples(weight);
   int n = 0;

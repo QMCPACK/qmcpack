@@ -218,6 +218,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
       PRAGMA_OFFLOAD("omp parallel for reduction(+: val_sum, grad_x, grad_y, grad_z, lapl)")
       for (int j = 0; j < n_src; j++)
       {
+        if (j == iat) continue;
         const int ig    = grp_ids[j];
         const T* coefs  = mw_coefs[ig];
         T DeltaRInv     = mw_DeltaRInv[ig];
@@ -227,7 +228,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
         T u(0);
         T dudr(0);
         T d2udr2(0);
-        if (j != iat && r < cutoff_radius)
+        if (r < cutoff_radius)
         {
           u = evaluate_impl(dist[j], coefs, DeltaRInv, dudr, d2udr2);
           dudr *= T(1) / r;
@@ -541,7 +542,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
       T* mw_DeltaRInv       = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
       T* mw_cutoff_radius   = mw_DeltaRInv + num_groups;
       int* accepted_indices = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(T*) + sizeof(T) * 2) * num_groups);
-      int ip                = accepted_indices[iw];
+      const int ip          = accepted_indices[iw];
 
       const T* dist_new   = mw_dist + ip * dist_stride;
       const T* dipl_x_new = dist_new + n_padded;
@@ -564,6 +565,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
       PRAGMA_OFFLOAD("omp parallel for")
       for (int j = 0; j < n_src; j++)
       {
+        if (j == iat) continue;
         const int ig    = grp_ids[j];
         const T* coefs  = mw_coefs[ig];
         T DeltaRInv     = mw_DeltaRInv[ig];
@@ -573,7 +575,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
         T u(0);
         T dudr(0);
         T d2udr2(0);
-        if (j != iat && r < cutoff_radius)
+        if (r < cutoff_radius)
         {
           u = evaluate_impl(dist_old[j], coefs, DeltaRInv, dudr, d2udr2);
           dudr *= T(1) / r;

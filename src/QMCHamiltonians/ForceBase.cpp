@@ -137,7 +137,7 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
 
 BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions))
 {
-  myName = "HF_Force_Base";
+  name_  = "HF_Force_Base";
   prefix = "HFBase";
 }
 
@@ -151,7 +151,7 @@ std::unique_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp, TrialWaveFun
 void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   addObservablesF(plist);
-  myIndex = FirstForceIndex;
+  my_index_ = FirstForceIndex;
 }
 
 BareForce::Return_t BareForce::evaluate(ParticleSet& P)

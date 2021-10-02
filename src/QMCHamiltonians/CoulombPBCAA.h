@@ -89,7 +89,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms) override;
-  void update_source(ParticleSet& s) override;
+  void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }
@@ -105,10 +105,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   void initBreakup(ParticleSet& P);
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  void delete_particle_quantities() override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evalSR(ParticleSet& P);

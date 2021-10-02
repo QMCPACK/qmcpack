@@ -516,8 +516,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set));
-  dd->resize(nelec, norb);
+  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
 
   psi.addComponent(std::move(dd));
 

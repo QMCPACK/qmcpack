@@ -369,7 +369,7 @@ RadialWF::CountNodes()
 }
 
 void 
-RadialWF::SetGrid(Grid *newgrid)
+RadialWF::SetGrid(std::shared_ptr<Grid>& newgrid)
 {
   grid = newgrid;
   int N = grid->NumPoints;

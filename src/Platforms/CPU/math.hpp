@@ -29,36 +29,36 @@ namespace qmcplusplus
 /// sincos function wrapper
 #if defined(__APPLE__)
 
-inline void sincos(double a, double* s, double* c)
+inline void sincos(double a, double* restrict s, double* restrict c)
 {
   ::__sincos(a,s,c);
 }
 
-inline void sincos(float a, float* s, float* c)
+inline void sincos(float a, float* restrict s, float* restrict c)
 {
   ::__sincosf(a,s,c);
 }
 
 #elif defined(HAVE_AMD_LIBM)
 
-inline void sincos(double a, double* s, double* c)
+inline void sincos(double a, double* restrict s, double* restrict c)
 {
   ::amd_sincos(a,s,c);
 }
 
-inline void sincos(float a, float* s, float* c)
+inline void sincos(float a, float* restrict s, float* restrict c)
 {
   ::amd_sincosf(a,s,c);
 }
 
 #elif defined(HAVE_SINCOS)
 
-inline void sincos(double a, double* s, double* c)
+inline void sincos(double a, double* restrict s, double* restrict c)
 {
   ::sincos(a,s,c);
 }
 
-inline void sincos(float a, float* s, float* c)
+inline void sincos(float a, float* restrict s, float* restrict c)
 {
 #if defined(HAVE_MASS)
   // there is no sincosf in libmass

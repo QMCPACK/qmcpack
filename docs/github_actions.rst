@@ -36,6 +36,8 @@ The following is a summary of the jobs run in the CI process required for a PR:
 +-------------------------------+--------+----------+---------------+------+----------+
 | clang-latest-openmp-offload   | GitHub | clang-12 | unit          | 35   | PR/merge |
 +-------------------------------+--------+----------+---------------+------+----------+
+| macOS-gcc11-real              | GitHub | gcc-11   | deterministic | 27   | PR/merge |
++-------------------------------+--------+----------+---------------+------+----------+
 | gcc-real-gpu-cuda-mixed       | sulfur | clang-11 | deterministic | 2    | manual   |
 +-------------------------------+--------+----------+---------------+------+----------+
 | gcc-complex-gpu-cuda-mixed    | sulfur | clang-11 | deterministic | 2    | manual   |
@@ -47,7 +49,7 @@ The following is a summary of the jobs run in the CI process required for a PR:
 
 Jobs running on GitHub hosted runners are triggered automatically. Permission from an admin is required to run jobs on self-hosted runners (e.g. sulfur) for security reasons. In addition, jobs running on GitHub hosted runners run automatically in parallel and the time each job takes may vary depending on system utilization. For information on the underlying hardware see the GitHub Actions `docs on the topic <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>`_.  
 
-All jobs Github Runner hosts currently use the `williamfgc/qmcpack-ci:ubuntu20-openmpi <https://hub.docker.com/r/williamfgc/qmcpack-ci>`_ docker image, if you would like to reproduce theses tests exactly using docker, please refer to `Running QMCPACK on Docker Containers <https://qmcpack.readthedocs.io/en/develop/running_docker.html>`_ section in the QMCPACK documentation.
+All Linux jobs Github Runner hosts currently use the `williamfgc/qmcpack-ci:ubuntu20-openmpi <https://hub.docker.com/r/williamfgc/qmcpack-ci>`_ docker image, if you would like to reproduce theses tests exactly using docker, please refer to `Running QMCPACK on Docker Containers <https://qmcpack.readthedocs.io/en/develop/running_docker.html>`_ section in the QMCPACK documentation. The macOS job runs directly on the `macos-latest GitHub Actions VM runner <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources>`_
 
 
 .. note::
@@ -169,6 +171,21 @@ linux (clang-latest-openmp-offload)
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Duration      | ~35 Minutes                                                                                                                                                                |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+macOS (macOS-gcc11-real)
+"""""""""""""""""""""""""""""""""""
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | gcc-11                                                                                                                                                                      |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 -DQMC_MPI=0 -DQMC_COMPLEX=0 ..`                                                                                       |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `ctest --output-on-failure -L deterministic`                                                                                                                                        |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for macOS CI using Accelerate framework and gcc-11 for openmp                                                                                                        |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~27 Minutes                                                                                                                                                                |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
 
 Self-Hosted Runners
 -------------------

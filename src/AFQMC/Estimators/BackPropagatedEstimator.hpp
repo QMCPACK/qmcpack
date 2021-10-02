@@ -136,9 +136,9 @@ public:
 
   ~BackPropagatedEstimator() {}
 
-  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) {}
+  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) override {}
 
-  void accumulate_block(WalkerSet& wset)
+  void accumulate_block(WalkerSet& wset) override
   {
     // MAM: BP will not work as written if steps in execute don't sync with steps in BP.
     //      Maybe keep track of which steps in nback_prop_steps have been done
@@ -251,13 +251,13 @@ public:
     }
   }
 
-  void tags(std::ofstream& out)
+  void tags(std::ofstream& out) override
   {
     if (writer)
       out << "BP_timer ";
   }
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     // I doubt we will ever collect a billion blocks of data.
     if (writer)

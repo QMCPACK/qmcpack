@@ -63,22 +63,22 @@ std::unique_ptr<OperatorBase> HarmonicExternalPotential::makeClone(ParticleSet& 
 HarmonicExternalPotential::Return_t HarmonicExternalPotential::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-    Value = evaluate_sp(P);
+  if (streaming_particles_)
+    value_ = evaluate_sp(P);
   else
   {
 #endif
-    Value              = 0.0;
+    value_             = 0.0;
     RealType prefactor = .5 * energy / (length * length);
     for (int i = 0; i < P.getTotalNum(); ++i)
     {
       PosType r = P.R[i] - center;
-      Value += prefactor * dot(r, r);
+      value_ += prefactor * dot(r, r);
     }
 #if !defined(REMOVE_TRACEMANAGER)
   }
 #endif
-  return Value;
+  return value_;
 }
 
 
@@ -86,16 +86,16 @@ HarmonicExternalPotential::Return_t HarmonicExternalPotential::evaluate(Particle
 HarmonicExternalPotential::Return_t HarmonicExternalPotential::evaluate_sp(ParticleSet& P)
 {
   Array<TraceReal, 1>& V_samp = *V_sample;
-  Value                       = 0.0;
+  value_                      = 0.0;
   RealType prefactor          = .5 * energy / (length * length);
   for (int i = 0; i < P.getTotalNum(); ++i)
   {
     PosType r   = P.R[i] - center;
     RealType v1 = prefactor * dot(r, r);
     V_samp(i)   = v1;
-    Value += v1;
+    value_ += v1;
   }
-  return Value;
+  return value_;
 }
 #endif
 

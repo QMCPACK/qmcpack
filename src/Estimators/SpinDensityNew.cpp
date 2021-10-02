@@ -21,8 +21,7 @@ namespace qmcplusplus
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species, DataLocality dl)
     : OperatorEstBase(dl), input_(std::move(input)), species_(species), species_size_(getSpeciesSize(species))
 {
-  myName         = "SpinDensity";
-  data_locality_ = dl;
+  myName = "SpinDensity";
 
   if (input_.get_cell().explicitly_defined == true)
     lattice_ = input_.get_cell();
@@ -123,7 +122,10 @@ void SpinDensityNew::startBlock(int steps)
  *  I tried for readable and not doing the optimizers job.
  *  The offsets into bare data are already bad enough.
  */
-void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
+void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
+                                const RefVector<ParticleSet>& psets,
+                                const RefVector<TrialWaveFunction>& wfns,
+                                RandomGenerator_t& rng)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -147,7 +149,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers, const RefVe
         accumulateToData(point, weight);
       }
   }
-};
+}
 
 void SpinDensityNew::accumulateToData(size_t point, QMCT::RealType weight)
 {
