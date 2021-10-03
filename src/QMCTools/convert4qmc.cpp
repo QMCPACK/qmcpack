@@ -219,6 +219,7 @@ int main(int argc, char** argv)
         {
           WARNMSG("Creating LCAOHDFParser")
           parser = std::make_unique<LCAOHDFParser>(argc, argv);
+          h5      = true;
         }
         else if (ext == "out")
         {
