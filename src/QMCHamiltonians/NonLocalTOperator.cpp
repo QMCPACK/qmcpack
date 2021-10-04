@@ -114,7 +114,7 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vect
   const RealType target = prob * wgt_t;
   // find ibar which satisify sum(txy[0..ibar-1].Weight) <= target < sum(txy[0..ibar].Weight)
   int ibar = 0;
-  while ( txy_scan_[ibar] <= target && ibar < txy.size())
+  while (ibar < txy_scan_.size() && txy_scan_[ibar] <= target)
     ibar++;
 
   return ibar > 0 ? &(txy[ibar - 1]) : nullptr;

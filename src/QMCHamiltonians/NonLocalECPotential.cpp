@@ -382,8 +382,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         }
         ecp_potential_list[j].get().value_ += pairpots[j];
         if (Tmove)
-          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id,
-                                              ecp_potential_list[j].get().tmove_xy_);
+          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id, ecp_potential_list[j].get().tmove_xy_);
       }
     }
   }
