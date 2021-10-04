@@ -797,7 +797,7 @@ void DiracParser::getCOSCI(std::istream& is)
   sortAndStoreCOSCIOrbs(OrbType::CORE, 3);
   sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 3);
   sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 3);
-  
+
 
   //set occstrs for core and virtual
   std::string core_occstr;
@@ -850,7 +850,6 @@ void DiracParser::getCOSCI(std::istream& is)
           std::string tmp = core_occstr + currentWords[1] + virt_occstr;
           ci_occs.push_back(tmp);
           std::reverse(tmp.begin(), tmp.end());
-
         }
       }
       //finished reading CI coeffs for state

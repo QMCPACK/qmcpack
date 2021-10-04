@@ -429,9 +429,10 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   //Reference values from QWalk with SOC
 
-  std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase() << std::endl;
+  std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
+            << std::endl;
   CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
-        LogComplexApprox(std::complex<double>(-9.653087,  3.311467)));
+        LogComplexApprox(std::complex<double>(-9.653087, 3.311467)));
 
   twf.prepareGroup(elec_, 0);
   ParticleSet::ComplexType spingrad_old;
