@@ -97,42 +97,39 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
     throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
   return v_tmove;
 }
-void NonLocalTOperator::reset() { Txy.clear(); }
 
-const NonLocalData* NonLocalTOperator::selectMove(RealType prob, std::vector<NonLocalData>& txy) const
+const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)
 {
   RealType wgt_t = 1.0;
+  txy_scan_.resize(txy.size());
   for (int i = 0; i < txy.size(); i++)
   {
+    txy_scan_[i] = wgt_t;
     if (txy[i].Weight > 0)
-      wgt_t += txy[i].Weight *= plusFactor;
+      wgt_t += txy[i].Weight * plusFactor;
     else
-      wgt_t += txy[i].Weight *= minusFactor;
+      wgt_t += txy[i].Weight * minusFactor;
   }
 
   const RealType target = prob * wgt_t;
   // find ibar which satisify sum(txy[0..ibar-1].Weight) <= target < sum(txy[0..ibar].Weight)
-  int ibar      = 0;
-  RealType wsum = 1.0;
-  while (wsum <= target && ibar < txy.size())
-  {
-    wsum += txy[ibar].Weight;
+  int ibar = 0;
+  while ( txy_scan_[ibar] <= target && ibar < txy.size())
     ibar++;
-  }
 
   return ibar > 0 ? &(txy[ibar - 1]) : nullptr;
 }
 
-void NonLocalTOperator::group_by_elec(size_t num_elec)
+void NonLocalTOperator::group_by_elec(size_t num_elec, const std::vector<NonLocalData>& txy)
 {
-  Txy_by_elec.resize(num_elec);
+  txy_by_elec_.resize(num_elec);
   for (int i = 0; i < num_elec; i++)
-    Txy_by_elec[i].clear();
+    txy_by_elec_[i].clear();
 
-  for (int i = 0; i < Txy.size(); i++)
+  for (int i = 0; i < txy.size(); i++)
   {
-    assert(Txy[i].PID >= 0 && Txy[i].PID < num_elec);
-    Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
+    assert(txy[i].PID >= 0 && txy[i].PID < num_elec);
+    txy_by_elec_[txy[i].PID].push_back(txy[i]);
   }
 }
 

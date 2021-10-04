@@ -22,7 +22,6 @@ TEST_CASE("NonLocalTOperator", "[hamiltonian]")
   using PosType = QMCTraits::PosType;
   NonLocalTOperator t_op;
   t_op.thingsThatShouldBeInMyConstructor("v0", 1.0, 0.0, 0.0);
-  t_op.reset();
 
   std::vector<NonLocalData> Txy;
   Txy.emplace_back(0, 0.4, PosType(0.1, 0.2, 0.3));
