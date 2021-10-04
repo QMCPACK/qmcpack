@@ -100,7 +100,7 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob, const std::vector<NonLocalData>& txy)
 {
-  // txy_scan_[0] = 1.0, txy_scan_[i>0] = txy_scan_[i-1] + txy[i].Weight (modified)
+  // txy_scan_[0] = 1.0, txy_scan_[i>0] = txy_scan_[i-1] + txy[i-1].Weight (modified)
   txy_scan_.resize(txy.size());
   RealType wgt_t = 1.0;
   for (int i = 0; i < txy.size(); i++)
