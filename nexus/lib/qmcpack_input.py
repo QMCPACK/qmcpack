@@ -5377,7 +5377,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     corrs = []
     for i in range(len(elements)):
         element = elements[i]
-        if cusp is 'Z':
+        if cusp == 'Z':
             QmcpackInput.class_error('need to implement Z cusp','generate_jastrow1')
         else:
             lcusp  = cusp
