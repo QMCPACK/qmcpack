@@ -831,7 +831,7 @@ void DiracParser::getCOSCI(std::istream& is)
     {
       std::vector<double> ci_coeffs;
       std::vector<std::string> ci_occs;
-      double energy;
+      double energy = 0.0;
       while (getline(is, aline))
       {
         if (aline.size() == 0)
