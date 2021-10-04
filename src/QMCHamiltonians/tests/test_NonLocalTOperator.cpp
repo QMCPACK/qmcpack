@@ -57,7 +57,7 @@ TEST_CASE("NonLocalTOperator", "[hamiltonian]")
   REQUIRE(select6 != nullptr);
   CHECK(select6->PID == 2);
 
-  t_op.group_by_elec(4, Txy);
+  t_op.groupByElectron(4, Txy);
 
   auto select7 = t_op.selectMove(0.7, 1);
   REQUIRE(select7 != nullptr);

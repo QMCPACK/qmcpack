@@ -530,7 +530,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   else if (UseTMove == TMOVE_V3)
   {
     elecTMAffected.assign(P.getTotalNum(), false);
-    nonLocalOps.group_by_elec(P.getTotalNum(), tmove_xy_);
+    nonLocalOps.groupByElectron(P.getTotalNum(), tmove_xy_);
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species

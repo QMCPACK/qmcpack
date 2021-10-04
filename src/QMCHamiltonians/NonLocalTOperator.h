@@ -39,15 +39,6 @@ struct NonLocalTOperator
   typedef NonLocalData::RealType RealType;
   typedef NonLocalData::PosType PosType;
 
-  RealType Tau;
-  RealType Alpha;
-  RealType Gamma;
-  RealType plusFactor;
-  RealType minusFactor;
-
-  std::vector<RealType> txy_scan_;
-  std::vector<std::vector<NonLocalData>> txy_by_elec_;
-
   NonLocalTOperator();
 
   /** replacement for put because wouldn't it be cool to know what the classes configuration actually
@@ -75,7 +66,20 @@ struct NonLocalTOperator
   inline const NonLocalData* selectMove(RealType prob, int iel) { return selectMove(prob, txy_by_elec_[iel]); }
 
   /** sort all the Txy elements by electron */
-  void group_by_elec(size_t num_elec, const std::vector<NonLocalData>& txy);
+  void groupByElectron(size_t num_elec, const std::vector<NonLocalData>& txy);
+
+private:
+  RealType tau_;
+  RealType alpha_;
+  RealType gamma_;
+  /// factor applied on >0 weight
+  RealType plusFactor;
+  /// factor applied on <=0 weight
+  RealType minusFactor;
+  // for selecting a move
+  std::vector<RealType> txy_scan_;
+  // txy grouped by electron id
+  std::vector<std::vector<NonLocalData>> txy_by_elec_;
 };
 
 } // namespace qmcplusplus
