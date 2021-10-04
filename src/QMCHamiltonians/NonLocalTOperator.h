@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 #define QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 
-#include "QMCHamiltonians/OperatorBase.h"
+#include "NonLocalData.h"
 
 namespace qmcplusplus
 {
