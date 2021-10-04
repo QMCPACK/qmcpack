@@ -26,10 +26,10 @@ using std::string;
 
 namespace qmcplusplus
 {
-using PosType   = ParticleSet::PosType;
-using RealType  = ParticleSet::RealType;
-using ValueType = ParticleSet::ValueType;
-using GradType  = ParticleSet::GradType;
+using PosType      = ParticleSet::PosType;
+using RealType     = ParticleSet::RealType;
+using ValueType    = ParticleSet::ValueType;
+using GradType     = ParticleSet::GradType;
 using LogValueType = WaveFunctionComponent::LogValueType;
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
@@ -181,7 +181,6 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
     CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
     CHECK(std::real(ratios2[1]) == Approx(-1.0830708458));
-
   }
 
   //test acceptMove
@@ -267,7 +266,6 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(grad_new[1][1] == ValueApprox(0.8245347691));
     CHECK(grad_new[1][2] == ValueApprox(-5.1513380151));
   }
-
 }
 
 TEST_CASE("LiH multi Slater dets table_method", "[wavefunction]")
@@ -388,11 +386,11 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.R[3] = {-1.488849594, 0.7470552741, 0.6659555498};
   elec_.R[4] = {-1.448485879, 0.7337274141, 0.02687190951};
 
-  elec_.spins[0] = 4.882003828;
-  elec_.spins[1] = 0.06469299507;
-  elec_.spins[2] = 5.392168887;
-  elec_.spins[3] = 5.33941214;
-  elec_.spins[4] = 3.127416326;
+  elec_.spins[0]   = 4.882003828;
+  elec_.spins[1]   = 0.06469299507;
+  elec_.spins[2]   = 5.392168887;
+  elec_.spins[3]   = 5.33941214;
+  elec_.spins[4]   = 3.127416326;
   elec_.is_spinor_ = true;
 
   SpeciesSet& tspecies     = elec_.getSpeciesSet();
@@ -431,18 +429,17 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   //Reference values from QWalk with SOC
 
-  std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
-            << std::endl;
+  std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase() << std::endl;
   CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
-        LogComplexApprox(std::complex<double>(-10.0084091, 1.153302116)));
+        LogComplexApprox(std::complex<double>(-9.653087,  3.311467)));
 
   twf.prepareGroup(elec_, 0);
   ParticleSet::ComplexType spingrad_old;
   auto grad_old = twf.evalGradWithSpin(elec_, 1, spingrad_old);
   std::cout << "twf.evalGrad grad_old " << std::setprecision(16) << grad_old << std::endl;
-  CHECK(grad_old[0] == ComplexApprox(ValueType(0.2037139, -0.0468526)).epsilon(1e-4));
-  CHECK(grad_old[1] == ComplexApprox(ValueType(-0.2452648, 0.0711994)).epsilon(1e-4));
-  CHECK(grad_old[2] == ComplexApprox(ValueType(0.0371131, 0.0239808)).epsilon(1e-4));
+  CHECK(grad_old[0] == ComplexApprox(ValueType(0.060932, -0.285244)).epsilon(1e-4));
+  CHECK(grad_old[1] == ComplexApprox(ValueType(-0.401769, 0.180544)).epsilon(1e-4));
+  CHECK(grad_old[2] == ComplexApprox(ValueType(0.174010, 0.140642)).epsilon(1e-4));
 
   PosType delta(0.464586, 0.75017, 1.184383);
   double ds = 0.12;
@@ -452,14 +449,14 @@ void test_Bi_msd(const std::string& spo_xml_string,
   ParticleSet::ComplexType spingrad_new;
   auto ratio = twf.calcRatioGradWithSpin(elec_, 0, grad_new, spingrad_new);
   std::cout << "twf.calcRatioGrad ratio " << ratio << " grad_new " << grad_new << std::endl;
-  CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.650438041).epsilon(1e-4));
-  CHECK(grad_new[0] == ComplexApprox(ValueType(-0.947982, -0.1390323)).epsilon(1e-4));
-  CHECK(grad_new[1] == ComplexApprox(ValueType(-0.428998, -0.3268736)).epsilon(1e-4));
-  CHECK(grad_new[2] == ComplexApprox(ValueType(-0.587935, -0.2278003)).epsilon(1e-4));
+  CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.991503).epsilon(1e-4));
+  CHECK(grad_new[0] == ComplexApprox(ValueType(-0.631184, -0.136918)).epsilon(1e-4));
+  CHECK(grad_new[1] == ComplexApprox(ValueType(0.074214, -0.080204)).epsilon(1e-4));
+  CHECK(grad_new[2] == ComplexApprox(ValueType(-0.073180, -0.133539)).epsilon(1e-4));
 
   ratio = twf.calcRatio(elec_, 0);
   std::cout << "twf.calcRatio ratio " << ratio << std::endl;
-  CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.650438041).epsilon(1e-4));
+  CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.991503).epsilon(1e-4));
 }
 
 TEST_CASE("Bi-spinor multi Slater dets", "[wavefunction]")
@@ -469,46 +466,61 @@ TEST_CASE("Bi-spinor multi Slater dets", "[wavefunction]")
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
-        <sposet name=\"myspo\" size=\"8\"> \
+        <sposet name=\"myspo\" size=\"16\"> \
             <occupation mode=\"ground\"/> \
         </sposet> \
     </sposet_builder> \
     <determinantset> \
         <multideterminant optimize=\"no\" spo_0=\"myspo\" algorithm=\"table_method\"> \
-            <detlist size=\"5\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"8\" cutoff=\"1e-20\"> \
-               <ci coeff=\"-0.8586\" occ0=\"11111000\"/> \
-               <ci coeff=\"-0.2040\" occ0=\"11101100\"/> \
-               <ci coeff=\"0.2040\" occ0=\"11100011\"/> \
-               <ci coeff=\"0.2340\" occ0=\"11001011\"/> \
-               <ci coeff=\"0.3534\" occ0=\"11010101\"/> \
+            <detlist size=\"4\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"16\" cutoff=\"1e-20\"> \
+               <ci coeff=\" 0.8586\" occ0=\"1110110000000000\"/> \
+               <ci coeff=\"-0.2040\" occ0=\"1101110000000000\"/> \
+               <ci coeff=\" 0.4081\" occ0=\"1110101000000000\"/> \
+               <ci coeff=\"-0.2340\" occ0=\"1101101000000000\"/> \
             </detlist> \
         </multideterminant> \
     </determinantset> \
 </wavefunction>";
-  test_Bi_msd(spo_xml_string1, "myspo", 8, 123);
+  test_Bi_msd(spo_xml_string1, "myspo", 16, 123);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "Bi using the table method with new optimization" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1_new = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
-        <sposet name=\"myspo\" size=\"8\"> \
+        <sposet name=\"myspo\" size=\"16\"> \
             <occupation mode=\"ground\"/> \
         </sposet> \
     </sposet_builder> \
     <determinantset> \
         <multideterminant optimize=\"no\" spo_0=\"myspo\" algorithm=\"precomputed_table_method\"> \
-            <detlist size=\"5\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"8\" cutoff=\"1e-20\"> \
-               <ci coeff=\"-0.8586\" occ0=\"11111000\"/> \
-               <ci coeff=\"-0.2040\" occ0=\"11101100\"/> \
-               <ci coeff=\"0.2040\" occ0=\"11100011\"/> \
-               <ci coeff=\"0.2340\" occ0=\"11001011\"/> \
-               <ci coeff=\"0.3534\" occ0=\"11010101\"/> \
+            <detlist size=\"4\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"16\" cutoff=\"1e-20\"> \
+               <ci coeff=\" 0.8586\" occ0=\"1110110000000000\"/> \
+               <ci coeff=\"-0.2040\" occ0=\"1101110000000000\"/> \
+               <ci coeff=\" 0.4081\" occ0=\"1110101000000000\"/> \
+               <ci coeff=\"-0.2340\" occ0=\"1101101000000000\"/> \
             </detlist> \
         </multideterminant> \
     </determinantset> \
 </wavefunction>";
-  test_Bi_msd(spo_xml_string1_new, "myspo", 8, 123);
+  test_Bi_msd(spo_xml_string1_new, "myspo", 16, 123);
+
+  app_log() << "-----------------------------------------------------------------" << std::endl;
+  app_log() << "Bi using the table method with new optimization, read from hdf5" << std::endl;
+  app_log() << "-----------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string2_new = "<wavefunction name=\"psi0\" target=\"e\"> \
+    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
+        <sposet name=\"myspo\" size=\"16\"> \
+            <occupation mode=\"ground\"/> \
+        </sposet> \
+    </sposet_builder> \
+    <determinantset> \
+        <multideterminant optimize=\"no\" spo_0=\"myspo\" algorithm=\"precomputed_table_method\"> \
+            <detlist size=\"4\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"16\" cutoff=\"1e-20\" href=\"Bi.orbs.h5\"/> \
+        </multideterminant> \
+    </determinantset> \
+</wavefunction>";
+  test_Bi_msd(spo_xml_string2_new, "myspo", 16, 123);
 }
 #endif
 } // namespace qmcplusplus
