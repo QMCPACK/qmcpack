@@ -47,9 +47,8 @@ struct NonLocalTOperator
 
   std::vector<NonLocalData> Txy;
   std::vector<std::vector<NonLocalData>> Txy_by_elec;
-  size_t Nelec;
 
-  NonLocalTOperator(size_t N);
+  NonLocalTOperator();
 
   inline int size() const { return Txy.size(); }
 
@@ -90,7 +89,7 @@ struct NonLocalTOperator
   inline const NonLocalData* selectMove(RealType prob, int iel) { return selectMove(prob, Txy_by_elec[iel]); }
 
   /** sort all the Txy elements by electron */
-  void group_by_elec();
+  void group_by_elec(size_t num_elec);
 };
 
 } // namespace qmcplusplus

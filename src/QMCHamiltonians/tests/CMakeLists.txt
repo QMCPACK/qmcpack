@@ -19,6 +19,7 @@ set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulom
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
+    test_NonLocalTOperator.cpp
     test_ecp.cpp
     test_hamiltonian_pool.cpp
     test_hamiltonian_factory.cpp

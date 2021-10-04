@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-NonLocalTOperator::NonLocalTOperator(size_t N) : Tau(0.01), Alpha(0.0), Gamma(0.0), Nelec(N) {}
+NonLocalTOperator::NonLocalTOperator() : Tau(0.01), Alpha(0.0), Gamma(0.0) {}
 
 /** process options related to TMoves
  * @return Tmove version
@@ -105,35 +105,33 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob, std::vector<Non
   for (int i = 0; i < txy.size(); i++)
   {
     if (txy[i].Weight > 0)
-    {
       wgt_t += txy[i].Weight *= plusFactor;
-    }
     else
-    {
       wgt_t += txy[i].Weight *= minusFactor;
-    }
   }
-  prob *= wgt_t;
-  RealType wsum = 1.0;
+
+  const RealType target = prob * wgt_t;
+  // find ibar which satisify sum(txy[0..ibar-1].Weight) <= target < sum(txy[0..ibar].Weight)
   int ibar      = 0;
-  while (wsum < prob)
+  RealType wsum = 1.0;
+  while (wsum <= target && ibar < txy.size())
   {
     wsum += txy[ibar].Weight;
     ibar++;
   }
+
   return ibar > 0 ? &(txy[ibar - 1]) : nullptr;
 }
 
-void NonLocalTOperator::group_by_elec()
+void NonLocalTOperator::group_by_elec(size_t num_elec)
 {
-  Txy_by_elec.resize(Nelec);
-  for (int i = 0; i < Nelec; i++)
-  {
+  Txy_by_elec.resize(num_elec);
+  for (int i = 0; i < num_elec; i++)
     Txy_by_elec[i].clear();
-  }
 
   for (int i = 0; i < Txy.size(); i++)
   {
+    assert(Txy[i].PID >= 0 && Txy[i].PID < num_elec);
     Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
   }
 }

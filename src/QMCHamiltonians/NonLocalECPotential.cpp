@@ -53,8 +53,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       Peln(els),
       ElecNeighborIons(els),
       IonNeighborElecs(ions),
-      UseTMove(TMOVE_OFF),
-      nonLocalOps(els.getTotalNum())
+      UseTMove(TMOVE_OFF)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -534,7 +533,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   else if (UseTMove == TMOVE_V3)
   {
     elecTMAffected.assign(P.getTotalNum(), false);
-    nonLocalOps.group_by_elec();
+    nonLocalOps.group_by_elec(P.getTotalNum());
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
