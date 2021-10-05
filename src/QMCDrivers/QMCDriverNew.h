@@ -221,7 +221,7 @@ public:
    *        And these are the arguments to the branch_engine and estimator_manager
    *        Constructors or these objects should be created elsewhere.
    */
-  void startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc);
+  void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
