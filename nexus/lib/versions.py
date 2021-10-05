@@ -81,6 +81,7 @@ raw_version_data = dict(
     #   3.7  https://www.python.org/dev/peps/pep-0537/
     #   3.8  https://www.python.org/dev/peps/pep-0569/
     #   3.9  https://www.python.org/dev/peps/pep-0596/
+    #   3.10 https://www.python.org/dev/peps/pep-0619/
     python3 = '''
         3.3.0  2012-09-29
         3.3.1  2013-04-06
@@ -107,6 +108,7 @@ raw_version_data = dict(
         3.7.4  2019-07-08
         3.8.0  2019-10-21
         3.9.0  2020-06-08
+        3.10.0 2021-10-04
         ''',
     # numpy releases
     #   https://github.com/numpy/numpy/releases
