@@ -1829,7 +1829,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
             {
               createSPOSetsH5(spoupPtr, spodnPtr);
               xmlAddChild(detPtr, spoupPtr);
-              if (!isSpinor)
+              //for spinors, we don't need the spodn so just free it
+              if (isSpinor)
+                xmlFreeNode(spodnPtr);
+              else
                 xmlAddChild(detPtr, spodnPtr);
               xmlNodePtr multislaterdetPtr = NULL;
               if (usingCSF)
