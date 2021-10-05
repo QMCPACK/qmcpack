@@ -843,6 +843,7 @@ pydot_available      = False
 spglib_available     = False
 pycifrw_available    = False
 seekpath_available   = False
+cif2cell_available   = False
 
 numpy_supported      = False
 scipy_supported      = False
@@ -852,6 +853,7 @@ pydot_supported      = False
 spglib_supported     = False
 pycifrw_supported    = False
 seekpath_supported   = False
+cif2cell_supported   = False
 
 try: # versioning info is never worth failure
     versions = Versions()
@@ -864,6 +866,7 @@ try: # versioning info is never worth failure
     spglib_available     = versions.available('spglib')
     pycifrw_available    = versions.available('pycifrw')
     seekpath_available   = versions.available('seekpath')
+    cif2cell_available   = versions.available('cif2cell')
 
     numpy_supported      = versions.supported('numpy')
     scipy_supported      = versions.supported('scipy')
@@ -873,6 +876,7 @@ try: # versioning info is never worth failure
     spglib_supported     = versions.supported('spglib')
     pycifrw_supported    = versions.supported('pycifrw')
     seekpath_supported   = versions.supported('seekpath')
+    cif2cell_available   = versions.supported('cif2cell')
 except:
     versions = None
 #end try
