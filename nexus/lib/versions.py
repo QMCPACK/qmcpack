@@ -878,7 +878,7 @@ try: # versioning info is never worth failure
     spglib_supported     = versions.supported('spglib')
     pycifrw_supported    = versions.supported('pycifrw')
     seekpath_supported   = versions.supported('seekpath')
-    cif2cell_available   = versions.supported('cif2cell')
+    cif2cell_supported   = versions.supported('cif2cell')
 except:
     versions = None
 #end try
