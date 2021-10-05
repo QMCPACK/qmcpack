@@ -136,6 +136,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  filepath    = None,   # alias for template
                  text        = None,   # full text of (and alternate to) template 
                  calculation = None,   # obj w/ Calculation variables
+                 chkfile     = None,   # obj w/ Calculation variables
                  twist_num   = None,   # Twist index
                  ):
         if filepath is None and template is not None:
@@ -152,7 +153,7 @@ class PyscfInput(SimulationInputTemplateDev):
 
 import numpy as np
 from numpy import array
-from pyscf.pbc import df, scf
+$pyscfimport
 
 
 $system
@@ -166,6 +167,7 @@ $calculation
         self.save_qmc   = save_qmc
         self.checkpoint = checkpoint
         self.addendum   = None     # used for save2qmcpack
+        self.chkfile    = chkfile
 
         if custom is not None:
             self.assign(**custom)
@@ -321,6 +323,21 @@ $calculation
             else:
                 pyscf_u_idx = None
             #end if
+            if 'max_cycle' in calculation.keys():
+                pyscf_max_cycle = int(calculation.max_cycle)
+            else:
+                pyscf_max_cycle = None
+            #end if
+            if 'level_shift' in calculation.keys():
+                pyscf_level_shift = float(calculation.level_shift)
+            else:
+                pyscf_level_shift = None
+            #end if
+            if 'chkfile' in calculation.keys():
+                pyscf_chkfile = calculation.chkfile
+            else:
+                pyscf_chkfile = None
+            #end if
             if 'u_val' in calculation.keys():
                 pyscf_u_val = array(calculation.u_val)
             else:
@@ -339,11 +356,11 @@ $calculation
             if sys_name is not None:
                 df_str = '.density_fit()' if pyscf_df_fitting else ''
                 if sys_name == 'mole':
-                    c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var)
-                    c += 'mydf.auxbasis = \'weigend\'\n'
-                    c += 'dfpath = \'df_ints.h5\'\n'
-                    c += 'mydf._cderi_to_save = dfpath\n'
-                    c += 'mydf.build()\n\n'
+                    #c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var)
+                    #c += 'mydf.auxbasis = \'weigend\'\n'
+                    #c += 'dfpath = \'df_ints.h5\'\n'
+                    #c += 'mydf._cderi_to_save = dfpath\n'
+                    #c += 'mydf.build()\n\n'
                     if pyscf_u_idx is None:
                         c += 'mf = scf.{}({}){}\n'.format(pyscf_method,sys_var,df_str)
                     else:
@@ -363,16 +380,33 @@ $calculation
                         c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(pyscf_method,sys_var,'kpts',render_array(pyscf_u_idx,1),render_array(pyscf_u_val,1),pyscf_c_ao_lo,df_str)    
                     c += 'mf.exxdiv      = \'{}\'\n'.format(pyscf_exxdiv)
                 #end if
+                if pyscf_max_cycle is not None: 
+                    c += 'mf.max_cycle={}\n'.format(pyscf_max_cycle)
+                #end if
+                if pyscf_level_shift is not None: 
+                    c += 'mf.level_shift={}\n'.format(pyscf_level_shift)
+                #end if
+                if pyscf_chkfile is not None: 
+                    c += 'mf.chkfile=\'{}\'\n'.format(pyscf_chkfile)
+                #end if
             #end if
             c += 'mf.xc          = \'{}\'\n'.format(pyscf_xc)
             c += 'mf.tol         = \'{}\'\n'.format(pyscf_tol)
-            if pyscf_df_fitting:
+            if pyscf_df_fitting and not is_mole:
                 c += 'mf.with_df     = mydf\n'
             #end if
             c += 'e_scf = mf.kernel()\n'
 
             c += '### end generated calculation text ###\n\n'
             self.assign(calculation=c)
+            cimp = '\n### generated pyscfimport text ###\n'
+            if is_mole:
+                cimp += 'from pyscf import df, scf, dft\n'
+            elif is_cell:
+                cimp += 'from pyscf.pbc import df, scf\n'
+            #endif
+            cimp += '### end generated pyscfimport text ###\n\n'
+            self.assign(pyscfimport=cimp)
         #end if
 
         if sys_name is not None:
@@ -462,12 +496,14 @@ $calculation
             self.addendum = '\n'+s+'\n'
         #end if
 
-        if checkpoint:
+        if checkpoint and 'chkfile' not in self.values:
             if prefix is None:
                 self.error('cannot set $chkpoint variable\nplease provide input variable "prefix"')
             #end if
             chkfile = '{}.chk'.format(prefix)
+            print(chkfile)
             self.chkfile = chkfile
+            print(self.chkfile)
             self.assign(chkfile="'"+chkfile+"'")
         #end if
 
