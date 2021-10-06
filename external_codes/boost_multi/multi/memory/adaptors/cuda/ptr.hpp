@@ -48,12 +48,16 @@ private:
 	raw_pointer rp_;
 	template<typename, typename> friend struct ptr;
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
-	ptr(raw_pointer rp) : rp_{rp}{}
+	explicit ptr(raw_pointer rp) : rp_{rp} {}
 public:
 	ptr() = default;
 	ptr(ptr const&) = default;
+
+	// cppcheck-suppress noExplicitConstructor ; initialize from nullptr
 	ptr(std::nullptr_t n) : rp_{n}{}
+
 	template<class Other, typename = decltype(raw_pointer{std::declval<Other const&>().rp_})>
+	// cppcheck-suppress noExplicitConstructor ; any other pointer can be converted to void const pointer
 	ptr(Other const& o) : rp_{o.rp_}{}
 	ptr& operator=(ptr const&) = default;
 	explicit operator bool() const{return rp_;}
@@ -79,16 +83,21 @@ protected:
 private:
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
 	template<class, class> friend struct ptr;
-	ptr(raw_pointer rp) : rp_{rp}{}
+	explicit ptr(raw_pointer rp) : rp_{rp}{}
 	operator raw_pointer() const{return rp_;}
 	friend ptr<void> malloc(std::size_t);
 	friend void free(ptr<void>);
 public:
 	ptr() = default;
 	ptr(ptr const& other) : rp_{other.rp_}{}//= default;
+
+	// cppcheck-suppress noExplicitConstructor ; initialize from nullptr
 	ptr(std::nullptr_t n) : rp_{n}{}
+
 	template<class Other, typename = decltype(raw_pointer{std::declval<Other const&>().rp_})>
+	// cppcheck-suppress noExplicitConstructor ; any pointer can be converted to void pointer
 	ptr(Other const& o) : rp_{o.rp_}{}
+
 	ptr& operator=(ptr const&) = default;
 	friend constexpr bool operator==(ptr const& s, ptr const& o){return s.rp_==o.rp_;}
 	friend constexpr bool operator!=(ptr const& s, ptr const& o){return s.rp_!=o.rp_;}
@@ -107,7 +116,10 @@ struct ptr{
 	using raw_pointer = RawPtr;
 	using default_allocator_type = typename cuda::allocator<std::decay_t<T>>;
 	raw_pointer rp_ = {};
-protected:
+
+	static_assert( not std::is_same<raw_pointer, void*>{} , "!");
+
+ protected:
 	using raw_pointer_traits = typename std::pointer_traits<raw_pointer>;
 	template<class TT> friend class allocator;
 
@@ -116,24 +128,31 @@ protected:
 
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
 	friend struct managed::ptr<T, RawPtr>;
-public:
+
+ public:
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
 
 	template<class Other, typename = std::enable_if_t<std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{} >>
-	/*explicit(false)*/ constexpr ptr(ptr<Other> const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
+	// cppcheck-suppress noExplicitConstructor ;
+	constexpr /*explicit(false)*/ ptr(ptr<Other> const& o) : rp_{static_cast<raw_pointer>(o.rp_)} {}
 	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{}>, typename = decltype(static_cast<raw_pointer>(std::declval<ptr<Other>>().rp_))>
-	explicit/*(true)*/ constexpr ptr(ptr<Other> const& o, void** = 0) : rp_{static_cast<raw_pointer>(o.rp_)}{}
-	explicit constexpr ptr(raw_pointer rp)  : rp_{rp}{}
+	explicit/*(true)*/ constexpr ptr(ptr<Other> const& o, void** = 0) : rp_{static_cast<raw_pointer>(o.rp_)} {}
+	explicit constexpr ptr(raw_pointer rp) : rp_{rp} {}
 
 	template<class TT> friend auto reinterpret_pointer_cast(ptr p)
 	->decltype(ptr<TT>{reinterpret_cast<TT*>(std::declval<raw_pointer>())}){
 		return ptr<TT>{reinterpret_cast<TT*>(p.rp_)};}
 
-	template<class Other, typename = decltype(static_cast<raw_pointer>(std::declval<Other const&>().rp_))> 
-	explicit constexpr ptr(Other const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
+	template<class Other, typename = decltype(static_cast<raw_pointer>(std::declval<Other const&>().rp_))>
+	constexpr explicit ptr(Other const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
 	ptr() = default;
+
+	// cppcheck-suppress noExplicitConstructor ; bug in cppcheck 2.3
 	ptr(ptr const&) = default;
+
+	// cppcheck-suppress noExplicitConstructor ; initialize from nullptr
 	constexpr ptr(std::nullptr_t nu) : rp_{nu}{}
+
 	ptr& operator=(ptr const&) = default;
 //	constexpr bool operator==(ptr const& other) const{return rp_==other.rp_;}
 //	constexpr bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
@@ -161,20 +180,31 @@ public:
 	explicit constexpr operator void const*() const{return rp_;}
 	template<class TT=T, typename = decltype(static_cast<TT*>(raw_pointer{}))>
 	explicit constexpr operator TT*() const{return static_cast<TT*>(rp_);}
-	ptr& operator++(){++rp_; return *this;}
+	ptr& operator++() {
+		static_assert(not std::is_same<raw_pointer, void*>{}, "!");
+		++rp_;
+		return *this;
+	}
 	ptr& operator--(){--rp_; return *this;}
 	ptr  operator++(int){auto tmp = *this; ++(*this); return tmp;}
 	ptr  operator--(int){auto tmp = *this; --(*this); return tmp;}
 	constexpr ptr& operator+=(difference_type n){rp_+=n; return *this;}
 	constexpr ptr& operator-=(difference_type n){rp_-=n; return *this;}
-	constexpr ptr operator+(difference_type n) const{return ptr{rp_ + n};}
-	constexpr ptr operator-(difference_type n) const{return ptr{rp_ - n};}
+
+	constexpr ptr operator+(difference_type n) const {
+	//	static_cast(not std::is_same<raw_pointer, void*>{} , "!");
+		return ptr{rp_ + n};
+	}
+	constexpr ptr operator-(difference_type n) const {return ptr{rp_ - n};}
+
 	using reference = ref<element_type>;
-	constexpr reference operator*() const{ return {*this}; }
-	constexpr reference operator[](difference_type n) const{return *((*this)+n);}
+
+	constexpr auto operator*() const {return reference{*this};}
+	constexpr auto operator[](difference_type n) const {return reference{*((*this)+n)};}
+
 	friend constexpr ptr to_address(ptr const& p){return p;}
 	constexpr difference_type operator-(ptr const& o) const{return rp_-o.rp_;}
-	operator ptr<void>(){return {rp_};}
+	operator ptr<void>(){return ptr<void>{rp_};}
 	auto get() const{return rp_;}
 	explicit constexpr operator raw_pointer() const{return rp_;}
 	constexpr raw_pointer raw_pointer_cast() const{return this->rp_;}
@@ -201,7 +231,8 @@ template<
 	std::enable_if_t<std::is_trivially_constructible<ForwardV, InputV>{}, int> =0
 >
 ForwardIt uninitialized_copy_n(InputIt f, Size n, ptr<T...> d){
-	return memcpy(d, f, n*sizeof(ForwardV)) + n;
+	memcpy(d, f, n*sizeof(ForwardV));
+	return d + n;
 }
 
 template<class It, typename Size, class T2, class Q2, typename T = typename std::iterator_traits<It>::value_type, typename = std::enable_if_t<std::is_trivially_constructible<T2, T>{}>>
@@ -217,10 +248,9 @@ auto uninitialized_move_n(It first, Size count, boost::multi::iterator<T2, 1, pt
 template<class... T1, class Size, class... T2, class Element = typename std::pointer_traits<ptr<T1...>>::element_type>
 auto uninitialized_move_n(ptr<T1...> first, Size n, ptr<T2...> dest){
 	assert(( std::is_trivially_constructible<Element, Element>{} ));
-	return memcpy(dest, first, n*sizeof(Element)) + n; // TODO, this is not correct whe InputIt is not a pointer
+	memcpy(dest, first, n*sizeof(Element));
+	return dest + n;
 }
-//->decltype(memcpy2D(base(result), sizeof(T2)*stride(result), first, sizeof(T)*stride(first), sizeof(T), count), result + count){
-//{	return memcpy2D(base(result), sizeof(T2)*stride(result), base(first), sizeof(T)*stride(first), sizeof(T), count), result + count;}
 
 
 #if 0
@@ -250,9 +280,10 @@ template<
 //	, typename = std::enable_if_t<std::is_constructible<ForwardV, InputV>{}>
 >
 ForwardIt alloc_uninitialized_copy_n(Alloc&, InputIt f, Size n, ptr<T...> d){ 
-	if(std::is_trivially_constructible<ForwardV, InputV>{})
-		return memcpy(d, f, n*sizeof(ForwardV)) + n; // TODO, this is not correct whe InputIt is not a pointer
-	else assert(0);
+	if(std::is_trivially_constructible<ForwardV, InputV>{}) {
+		memcpy(d, f, n*sizeof(ForwardV)); // TODO, this is not correct whe InputIt is not a pointer
+		return d + n;
+	} else {assert(0);}
 	return d;
 }
 
@@ -279,17 +310,19 @@ struct ref{
 	using reference = value_type&;
 	using pointer = ptr<T>;
 	using raw_reference = value_type&;
-private:
+
+ private:
 	pointer pimpl_;
-	constexpr ref(pointer const& p) /*HD*/ : pimpl_{p}{}
+	constexpr explicit ref(pointer const& p) : pimpl_{p}{}
 	template<class TT> friend struct ref;
-public:
-	constexpr ref(T& t) : pimpl_{&t}{}
+
+ public:
+	constexpr explicit ref(T& t) : pimpl_{&t}{}
 //	ref(T& t) HD : pimpl_{&t}{}
 	template<class Other, typename = decltype(implicit_cast<pointer>(std::declval<ref<Other>>().pimpl_))>
-	/*explicit(false)*/ ref(ref<Other>&& o) /*HD*/ : pimpl_{implicit_cast<pointer>(std::move(o).pimpl_)}{}
+	/*explicit(false)*/ constexpr ref(ref<Other>&& o) /*HD*/ : pimpl_{implicit_cast<pointer>(std::move(o).pimpl_)}{}
 	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>())>, pointer>{}>>
-	explicit/*(true)*/ ref(ref<Other> const& o, void** = 0) /*HD*/ : pimpl_{static_cast<pointer>(o)}{}
+	explicit/*(true) */ constexpr ref(ref<Other> const& o, void** = 0) /*HD*/ : pimpl_{static_cast<pointer>(o)}{}
 	template<class TT, class PP> friend struct ptr;
 //	typename pointer::raw_pointer operator&() & __device__{return pimpl_.rp_;}
 //	typename pointer::raw_pointer operator&() const& __device__{return pimpl_.rp_;}
@@ -302,7 +335,7 @@ public:
 	struct skeleton_t{
 		char buff[sizeof(T)]; T* p_;
 		SLOW
-		skeleton_t(T* p) /*HD*/ : p_{p}{
+		explicit skeleton_t(T* p) /*HD*/ : p_{p}{
 			#if __CUDA_ARCH__
 			#else
 //			[[maybe_unused]] 
@@ -565,8 +598,8 @@ private:
 	void swap(Ref&& b) &&{
 		T tmp = std::move(*this);
 	BEGIN_CUDA_SLOW
-		std::move(*this) = std::forward<Ref>(b);
-		std::forward<Ref>(b) = std::move(tmp);
+		*this = std::forward<Ref>(b);
+		b = std::move(tmp);
 	END_CUDA_SLOW
 	}
 public:
@@ -642,8 +675,8 @@ BOOST_AUTO_TEST_CASE(multi_memory_cuda_ptr){
 	multi::memory::cuda::ptr<std::complex<double>> xxx = nullptr;
 	std::complex<double>* ppp = raw_pointer_cast(xxx); (void)ppp;
 	{
-		auto ppp = static_cast<multi::memory::cuda::ptr<std::complex<double>>>(cuda::malloc(1*sizeof(std::complex<double>)));
-		std::complex<double> const dd{*ppp};
+		auto ppp2 = static_cast<multi::memory::cuda::ptr<std::complex<double>>>(cuda::malloc(1*sizeof(std::complex<double>)));
+		std::complex<double> const dd{*ppp2};
 		assert( dd == std::complex<double>{0} );
 	}
 	using T = double; 
@@ -662,7 +695,7 @@ CUDA_SLOW(
 		BOOST_REQUIRE( CUDA_SLOW( *p == 99. ) );
 		BOOST_REQUIRE( *p != 11. );
 		cuda::free(p);
-		
+
 		cuda::ptr<T> P = nullptr; 
 		BOOST_REQUIRE( P == nullptr );
 		ptr<void> pv = p; (void)pv;

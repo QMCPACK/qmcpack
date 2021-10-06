@@ -88,14 +88,14 @@ BOOST_AUTO_TEST_CASE(multi_memory_allocator){
 	auto p3 = stck.allocate(100*sizeof(double)); (void)p3;
 }
 {
-	alignas(double) char buffer[256*sizeof(double)];
-	multi::memory::stack<char*> sm(buffer);
-	{
-		std::vector<double, multi::memory::stack_allocator<double>> v(10, &sm);
-		std::vector<double, multi::memory::stack_allocator<double>> w(10, &sm);
-	}
-	std::vector<double, multi::memory::stack_allocator<double>> w(5, &sm);
-	BOOST_REQUIRE( sm.max_needed()/sizeof(double) == 20 );
+//  alignas(double) char buffer[256*sizeof(double)];
+//  multi::memory::stack<char*> sm(buffer);
+//  {
+//  	std::vector<double, multi::memory::stack_allocator<double>> v(10, &sm);
+//  	std::vector<double, multi::memory::stack_allocator<double>> w(10, &sm);
+//  }
+//  std::vector<double, multi::memory::stack_allocator<double>> w(5, &sm);
+//  BOOST_REQUIRE( sm.max_needed()/sizeof(double) == 20 );
 }
 }
 #endif

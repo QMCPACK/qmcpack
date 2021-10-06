@@ -1,7 +1,8 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
+
 #ifndef MULTI_ADAPTORS_BLAS_SWAP_HPP
 #define MULTI_ADAPTORS_BLAS_SWAP_HPP
 
@@ -12,7 +13,7 @@ namespace multi{
 namespace blas{
 
 template<class It1, class It2>
-It2 swap(It1 first, It2 last, It2 first2){
+auto swap(It1 first, It2 last, It2 first2) -> It2{
 	assert(stride(first) == stride(last));
 	using std::distance;
 	auto d = distance(first, last);
@@ -21,16 +22,18 @@ It2 swap(It1 first, It2 last, It2 first2){
 }
 
 template<class X1D, class Y1D>
-Y1D&& swap(X1D&& x, Y1D&& y){
+auto swap(X1D&& x, Y1D&& y) -> Y1D&&{
 	assert( size(x) == size(y) );
 	assert( offset(x) == 0 and offset(y) == 0 );
 	swap( begin(x), end(x), begin(y) );
 	return std::forward<Y1D>(y);
 }
 
-}}}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SWAP
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS swap"
 #define BOOST_TEST_DYN_LINK
