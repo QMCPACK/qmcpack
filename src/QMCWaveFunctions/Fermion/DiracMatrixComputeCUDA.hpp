@@ -87,8 +87,8 @@ class DiracMatrixComputeCUDA : public Resource
    */
   template<typename TMAT>
   inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
-                                     RefVector<DualMatrix<TMAT>>& a_mats,
-                                     RefVector<DualMatrix<TMAT>>& inv_a_mats,
+                                     const RefVector<DualMatrix<TMAT>>& a_mats,
+                                     const RefVector<DualMatrix<TMAT>>& inv_a_mats,
                                      const int n,
                                      const int lda,
                                      DualVector<LogValue>& log_values)
@@ -276,8 +276,8 @@ public:
   template<typename TMAT>
   inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       CUDALinearAlgebraHandles& cuda_handles,
-      RefVector<DualMatrix<TMAT>>& a_mats,
-      RefVector<DualMatrix<TMAT>>& inv_a_mats,
+      const RefVector<DualMatrix<TMAT>>& a_mats,
+      const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values,
       const std::vector<bool>& compute_mask)
   {
@@ -319,8 +319,8 @@ public:
   template<typename TMAT>
   inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       CUDALinearAlgebraHandles& cuda_handles,
-      RefVector<DualMatrix<TMAT>>& a_mats,
-      RefVector<DualMatrix<TMAT>>& inv_a_mats,
+      const RefVector<DualMatrix<TMAT>>& a_mats,
+      const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values,
       const std::vector<bool>& compute_mask)
   {
