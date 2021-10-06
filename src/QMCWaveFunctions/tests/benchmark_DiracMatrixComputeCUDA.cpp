@@ -90,7 +90,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   OffloadPinnedVector<std::complex<double>> log_values(params.batch_size);
   std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(params.batch_size, {params.n, params.n});
 
-  auto a_mats = makeRefVector<decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
+  auto a_mats = makeRefVector<const decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats =
       makeRefVector<decltype(pinned_inv_mats)::value_type>(pinned_inv_mats);
   
@@ -142,7 +142,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   OffloadPinnedVector<std::complex<double>> log_values(params.batch_size);
   std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(params.batch_size, {params.n, params.n});
 
-  auto a_mats = makeRefVector<decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
+  auto a_mats = makeRefVector<const decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats =
       makeRefVector<decltype(pinned_inv_mats)::value_type>(pinned_inv_mats);
 
