@@ -93,8 +93,8 @@ class DiracMatrixComputeCUDA : public Resource
    *  3. \todo Remove Transfer inv_a_mat to host and let the upper level code handle it.
    */
   inline void mw_computeInvertAndLog(CUDALinearAlgebraHandles& cuda_handles,
-                                     RefVector<DualMatrix<VALUE_FP>>& a_mats,
-                                     RefVector<DualMatrix<VALUE_FP>>& inv_a_mats,
+                                     const RefVector<DualMatrix<VALUE_FP>>& a_mats,
+                                     const RefVector<DualMatrix<VALUE_FP>>& inv_a_mats,
                                      const int n,
                                      DualVector<LogValue>& log_values)
   {
@@ -283,8 +283,8 @@ public:
   template<typename TMAT>
   inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       CUDALinearAlgebraHandles& cuda_handles,
-      RefVector<DualMatrix<TMAT>>& a_mats,
-      RefVector<DualMatrix<TMAT>>& inv_a_mats,
+      const RefVector<DualMatrix<TMAT>>& a_mats,
+      const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values)
   {
     assert(log_values.size() == a_mats.size());
@@ -324,8 +324,8 @@ public:
   template<typename TMAT>
   inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> mw_invertTranspose(
       CUDALinearAlgebraHandles& cuda_handles,
-      RefVector<DualMatrix<TMAT>>& a_mats,
-      RefVector<DualMatrix<TMAT>>& inv_a_mats,
+      const RefVector<DualMatrix<TMAT>>& a_mats,
+      const RefVector<DualMatrix<TMAT>>& inv_a_mats,
       DualVector<LogValue>& log_values)
   {
     assert(log_values.size() == a_mats.size());

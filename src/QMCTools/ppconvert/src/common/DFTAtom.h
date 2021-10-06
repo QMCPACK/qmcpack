@@ -48,7 +48,7 @@ public:
   double SolveIter();
   void Write(IOSectionClass& out) override;
   void Read(IOSectionClass& in) override;
-  void SetGrid(Grid* newGrid) override;
+  void SetGrid(std::shared_ptr<Grid>& newGrid) override;
   void SetBarePot(Potential* pot) override;
 
   inline double rho(double r) { return ChargeDensity(r); }

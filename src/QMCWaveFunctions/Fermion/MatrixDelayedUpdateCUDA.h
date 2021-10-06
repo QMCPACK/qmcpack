@@ -467,8 +467,8 @@ public:
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 RefVector<DualMatrix<Value>>& psiM_list,
-                                 RefVector<DualMatrix<Value>>& psiMinv_list,
+                                 const RefVector<const DualMatrix<Value>>& psiM_list,
+                                 const RefVector<DualMatrix<Value>>& psiMinv_list,
                                  DualVector<LogValue>& log_values)
   {
     auto& engine_leader = engines.getLeader();

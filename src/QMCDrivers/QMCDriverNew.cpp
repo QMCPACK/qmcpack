@@ -121,12 +121,13 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  * - initialize Estimators
  * - initialize Walkers
  */
-void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
+void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc)
 {
-  app_summary() << this->QMCType << " Driver running with target_walkers = " << awc.global_walkers << std::endl
-                << "                               walkers_per_rank = " << awc.walkers_per_rank << std::endl
-                << "                               num_crowds = " << awc.walkers_per_crowd.size() << std::endl
-                << "                    on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
+  app_summary() << QMCType << " Driver running with" << std::endl
+                << "             total_walkers     = " << awc.global_walkers << std::endl
+                << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
+                << "             num_crowds        = " << awc.walkers_per_crowd.size() << std::endl
+                << "  on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
                 << std::endl;
 
   // set num_global_walkers explicitly and then make local walkers.

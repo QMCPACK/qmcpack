@@ -72,6 +72,17 @@ if(ENABLE_CUDA AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
 endif(ENABLE_CUDA AND QMC_CUDA)
 
+# set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
+if(ENABLE_CUDA OR QMC_CUDA AND NOT QMC_CUDA2HIP)
+  if(DEFINED CUDA_ARCH)
+    unset(CUDA_ARCH CACHE)
+    message(FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
+  endif()
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 70)
+  endif()
+endif()
+
 #--------------------------------------------------------------------
 # Set compiler-time parameters
 # WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
@@ -662,38 +673,25 @@ if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
   else(QMC_CUDA2HIP)
-    # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
-    # It happened -ffast-math from host caused numerical issue in CUDA kernels.
-    option(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
-    find_package(CUDA REQUIRED)
-    set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
-    #set(CUDA_NVCC_FLAGS
-    #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
-    if(CUDA_NVCC_FLAGS MATCHES "arch")
-      # User defined NVCC flags
-      message(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-    else(CUDA_NVCC_FLAGS MATCHES "arch")
-      # Automatically set the default NVCC flags
-      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
-      if(QMC_COMPLEX)
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX=${QMC_COMPLEX}")
-      endif()
-      if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
-      else()
-        # Temporarily disable fast_math because it causes multiple test failures
-        # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
-      endif()
-      set(CUDA_ARCH
-          sm_70
-          CACHE STRING "CUDA architecture sm_XX")
-      set(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
-    endif(CUDA_NVCC_FLAGS MATCHES "arch")
-    include_directories(${CUDA_INCLUDE_DIRS})
+    if (CMAKE_VERSION VERSION_LESS 3.18.0)
+      message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
+    endif()
+    # a few production machines use CUDA 10 which only supports C++14.
+    if(NOT DEFINED CMAKE_CUDA_STANDARD)
+      set(CMAKE_CUDA_STANDARD 14)
+    endif()
+    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+    set(CMAKE_CUDA_EXTENSIONS OFF)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    # Automatically set the default NVCC flags
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
+    if(QMC_COMPLEX)
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DQMC_COMPLEX=${QMC_COMPLEX}")
+    endif()
     set(HAVE_CUDA 1)
-    message("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-  endif(QMC_CUDA2HIP)
+    message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+  endif()
 else(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(FATAL_ERROR "QMC_CUDA2HIP requires QMC_CUDA=ON or ENABLE_CUDA=ON.")

@@ -56,7 +56,7 @@ void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(const DualMatrix<Value>& ps
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                        RefVector<DualMatrix<Value>>& logdetT_list,
+                                                        RefVector<const DualMatrix<Value>>& logdetT_list,
                                                         RefVector<DualMatrix<Value>>& a_inv_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();

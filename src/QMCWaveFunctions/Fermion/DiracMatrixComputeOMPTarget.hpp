@@ -219,8 +219,8 @@ public:
    */
   template<typename TMAT>
   inline void mw_invertTranspose(HandleResource& resource,
-                                 RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-                                 RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
+                                 const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
+                                 const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values)
   {
     const int nw     = a_mats.size();

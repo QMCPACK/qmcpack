@@ -691,7 +691,7 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 
 - **DIRAC**
 
-  QMCPACK can use the output of DIRAC to run spin-orbit calculations using single-particle spinor wave functions. Currently, the converter will only generate a single-determinant wave function. Full multideterminant support will be added shortly. 
+  QMCPACK can use the output of DIRAC to run spin-orbit calculations using single-particle spinor wave functions for single-determinant calculations (DFT or closed-shell Dirac HF) or multideterminant complete open-shell configuration interaction (COSCI) wavefunctions. In the case of COSCI, the desired ground or excited state can be requested with ``-TargetState x``.
 
 .. _pw2qmcpack:
 
