@@ -931,14 +931,18 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   xmlNewProp(spoUP, (const xmlChar*)"size", (const xmlChar*)nstates_alpha.str().c_str());
 
   //create a spoDN
-  xmlNewProp(spoDN, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
-  xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
+  if (!isSpinor)
+  {
+    xmlNewProp(spoDN, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
+    xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
+  }
 
 
   if (DoCusp == true)
   {
     xmlNewProp(spoUP, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
-    xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
+    if (!isSpinor)
+      xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
   }
 
 
@@ -962,32 +966,68 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
       n++;
     }
 
-
   hout.write(Ctemp, "eigenset_0");
 
-
-  //add occupation DN
-  occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
-  xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
-  xmlAddChild(spoDN, occ_data);
-
-  coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
-  xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
-  if (SpinRestricted)
-    xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
-  else
+  if (isSpinor)
   {
-    xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"1");
     n = numMO * SizeOfBasisSet;
     for (int i = 0; i < numMO; i++)
+    {
       for (int j = 0; j < SizeOfBasisSet; j++)
       {
         Ctemp[i][j] = EigVec[n];
         n++;
       }
+    }
     hout.write(Ctemp, "eigenset_1");
+    n = 2 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_0_imag");
+    n = 3 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_1_imag");
+
+    hout.write(EigVal_alpha, "eigenval_0");
   }
-  xmlAddChild(spoDN, coeff_data);
+  else
+  {
+    //add occupation DN
+    occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
+    xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
+    xmlAddChild(spoDN, occ_data);
+
+    coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+    xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+    if (SpinRestricted)
+      xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
+    else
+    {
+      xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"1");
+      n = numMO * SizeOfBasisSet;
+      for (int i = 0; i < numMO; i++)
+        for (int j = 0; j < SizeOfBasisSet; j++)
+        {
+          Ctemp[i][j] = EigVec[n];
+          n++;
+        }
+      hout.write(Ctemp, "eigenset_1");
+    }
+    xmlAddChild(spoDN, coeff_data);
+  }
 
   hout.close();
 }
@@ -999,8 +1039,13 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
   else
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
+  if (isSpinor)
+    xmlNewProp(multislaterdet, (const xmlChar*)"spo_0", (const xmlChar*)"spo-up");
+  else
+  {
+    xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
+    xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
+  }
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
   std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
   cisize << ci_size;
@@ -1012,10 +1057,18 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   ci_thr << ci_threshold;
   xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
-  xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+  if (isSpinor)
+  {
+    xmlNewProp(detlist, (const xmlChar*)"nc0", (const xmlChar*)cinca.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"ne0", (const xmlChar*)cinea.str().c_str());
+  }
+  else
+  {
+    xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+  }
   xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
@@ -1024,7 +1077,12 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     std::cerr << " CI configuration list is empty. \n";
     exit(101);
   }
-  if (CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
+  if (CIcoeff.size() != CIalpha.size())
+  {
+    std::cerr << " Problem with CI configuration lists. \n";
+    exit(102);
+  }
+  if (!isSpinor && CIcoeff.size() != CIbeta.size())
   {
     std::cerr << " Problem with CI configuration lists. \n";
     exit(102);
@@ -1094,7 +1152,8 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     }
   }
   hout.write(tempAlpha, "CI_Alpha");
-  hout.write(tempBeta, "CI_Beta");
+  if (!isSpinor)
+    hout.write(tempBeta, "CI_Beta");
 
   hout.pop();
   xmlAddChild(multislaterdet, detlist);
@@ -1752,8 +1811,8 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
         if (multideterminant)
         {
           xmlNodePtr spoupPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
-          xmlNodePtr spodnPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
           xmlNewProp(spoupPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
+          xmlNodePtr spodnPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
           xmlNewProp(spodnPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
           if (multidetH5)
           {
@@ -1770,7 +1829,11 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
             {
               createSPOSetsH5(spoupPtr, spodnPtr);
               xmlAddChild(detPtr, spoupPtr);
-              xmlAddChild(detPtr, spodnPtr);
+              //for spinors, we don't need the spodn so just free it
+              if (isSpinor)
+                xmlFreeNode(spodnPtr);
+              else
+                xmlAddChild(detPtr, spodnPtr);
               xmlNodePtr multislaterdetPtr = NULL;
               if (usingCSF)
               {
