@@ -1,10 +1,6 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXXX $CXXFLAGS $0 -o $0x &&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2019-2020
-
-#ifndef MULTI_CONFIG_DEPRECATED_HPP
+#ifndef MULTI_CONFIG_DEPRECATED_HPP // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 #define MULTI_CONFIG_DEPRECATED_HPP
+// © Alfredo A. Correa 2019-2020
 
 #ifndef __has_cpp_attribute
 #define __has_cpp_attribute(name) 0
@@ -56,18 +52,5 @@ _Pragma("warning pop") \
 	ExpR \
 	END_NO_DEPRECATED
 
-#if not __INCLUDE_LEVEL__
-
-DEPRECATED("because...") int f(){return 5;}
-
-int main(){
-	int i;
-//	f(); // warning
-	NO_DEPRECATED( i = f(); ) // ok
-	++i;
-	(void)i;
-}
 #endif
-#endif
-
 

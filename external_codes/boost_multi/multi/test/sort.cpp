@@ -14,16 +14,15 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X; exit
 
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(multi_array_stable_sort){
-
-	std::vector<double> v = {1.,2.,3.};
+BOOST_AUTO_TEST_CASE(multi_array_stable_sort) {
+	std::vector<double> v = {1., 2., 3.};
 	BOOST_REQUIRE( std::is_sorted(begin(v), end(v)) );
 
 	multi::array<double, 2> d2D = {
 		{150, 16, 17, 18, 19},
-		{ 30,  1,  2,  3,  4}, 
-		{100, 11, 12, 13, 14}, 
-		{ 50,  6,  7,  8,  9} 
+		{ 30,  1,  2,  3,  4},
+		{100, 11, 12, 13, 14},
+		{ 50,  6,  7,  8,  9}
 	};
 	BOOST_REQUIRE( not std::is_sorted(begin(d2D), end(d2D) ) );
 
@@ -44,7 +43,7 @@ BOOST_AUTO_TEST_CASE(multi_array_stable_sort){
 	std::stable_sort( begin(d2D<<1), end(d2D<<1) );
 	BOOST_REQUIRE( std::is_sorted( begin(d2D<<1), end(d2D<<1) ) );
 	BOOST_REQUIRE( std::is_sorted( begin(d2D   ), end(d2D   ) ) );
-	
+
 	BOOST_REQUIRE((
 		d2D == decltype(d2D){
 			{1, 2, 3, 4, 30},
@@ -53,25 +52,22 @@ BOOST_AUTO_TEST_CASE(multi_array_stable_sort){
 			{16, 17, 18, 19, 150}
 		}
 	));
-
-
 }
 
-BOOST_AUTO_TEST_CASE(multi_array_ref_stable_sort){
-
-	std::vector<double> v = {1.,2.,3.};
+BOOST_AUTO_TEST_CASE(multi_array_ref_stable_sort) {
+	std::vector<double> v = {1., 2., 3.};
 	BOOST_REQUIRE( std::is_sorted(begin(v), end(v)) );
 
-	std::array<std::array<double, 5>, 4> d2D{
+	std::array<std::array<double, 5>, 4> d2D {
 		{
-			{150, 16, 17, 18, 19}, 
-			{ 30,  1,  2,  3,  4}, 
-			{100, 11, 12, 13, 14}, 
-			{ 50,  6,  7,  8,  9} 
+			{150, 16, 17, 18, 19},
+			{ 30,  1,  2,  3,  4},
+			{100, 11, 12, 13, 14},
+			{ 50,  6,  7,  8,  9}
 		}
 	};
 	auto&& d2D_ref = *multi::array_ptr<double, 2>(&d2D[0][0], {4, 5});
-	
+
 	BOOST_REQUIRE( not std::is_sorted(begin(d2D_ref), end(d2D_ref) ) );
 	std::stable_sort( begin(d2D_ref), end(d2D_ref) );
 	BOOST_REQUIRE( std::is_sorted( begin(d2D_ref), end(d2D_ref) ) );
@@ -79,6 +75,5 @@ BOOST_AUTO_TEST_CASE(multi_array_ref_stable_sort){
 	BOOST_REQUIRE( not std::is_sorted( begin(d2D_ref<<1), end(d2D_ref<<1) ) );
 	std::stable_sort( begin(d2D_ref<<1), end(d2D_ref<<1) );
 	BOOST_REQUIRE( std::is_sorted( begin(d2D_ref<<1), end(d2D_ref<<1) ) );
-
 }
 

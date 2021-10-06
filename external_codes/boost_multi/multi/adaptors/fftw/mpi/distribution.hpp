@@ -68,10 +68,10 @@ public:
 	using difference_type = std::ptrdiff_t;
 private:
 	difference_type local_count_;
-	difference_type local_n0_;
-	difference_type local_0_start_;
-	difference_type local_n1_;
-	difference_type local_1_start_;
+	difference_type local_n0_ = 0;
+	difference_type local_0_start_ = 0;
+	difference_type local_n1_ = 0;
+	difference_type local_1_start_ = 0;
 	static auto sizes(boost::multi::extensions_type_<2> const& ext){
 		using std::experimental::apply;
 		return apply([](auto... e){return std::array<difference_type, 2>{e.size()...};}, ext);
@@ -81,8 +81,7 @@ public:
 	many_transposed(
 		extensions_type_<2> const& ext, boost::mpi3::communicator const& comm, 
 		difference_type block0 = FFTW_MPI_DEFAULT_BLOCK, difference_type block1 = FFTW_MPI_DEFAULT_BLOCK
-	) :
-	local_count_{
+	) : local_count_{
 		std::max(
 			difference_type(
 				fftw_mpi_local_size_many_transposed(
@@ -94,7 +93,7 @@ public:
 			), 
 			difference_type(1)
 		)
-	}{
+	} {
 		static_assert( ElementSize%sizeof(double) == 0 , "!");
 		// FFTW_MPI_DEFAULT_BLOCK = (size + comm.size - 1)/comm.size
 		assert( local_count() >= local_extension0().size()*local_extension1().size() );

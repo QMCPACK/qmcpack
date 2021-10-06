@@ -1,0 +1,29 @@
+---
+Checks: '
+    *,
+    -readability-magic-numbers,
+    -modernize-use-nodiscard,
+    -altera-struct-pack-align,
+    -cert-err58-cpp,
+    -cppcoreguidelines-avoid-non-const-global-variables,
+    -cppcoreguidelines-macro-usage,
+    -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+    -cppcoreguidelines-pro-type-vararg,
+    -cppcoreguidelines-avoid-magic-numbers,
+    -fuchsia-default-arguments-calls,
+    -fuchsia-trailing-return,
+    -fuchsia-statically-constructed-objects,
+    -fuchsia-overloaded-operator,
+    -hicpp-vararg,
+    -hicpp-no-array-decay,
+    -llvm-header-guard,
+    -llvmlibc-restrict-system-libc-headers,
+    -llvmlibc-implementation-in-namespace,
+    -llvmlibc-callee-namespace
+'
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.'
+AnalyzeTemporaryDtors: false
+FormatStyle: file
+...
+

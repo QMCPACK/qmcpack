@@ -8,7 +8,7 @@ rm $0x; exit
 #define MULTI_ADAPTORS_CUDA_ALGORITHMS_COPY_HPP
 
 #include<cassert>
-#include<iostream>
+//#include<iostream>
 
 #include "../../../adaptors/cuda.hpp"
 //#include "../algorithms/for_each.hpp"
