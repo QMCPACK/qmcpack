@@ -412,8 +412,8 @@ public:
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 RefVector<const DualMatrix<Value>>& psiM_list,
-                                 RefVector<DualMatrix<Value>>& psiMinv_list,
+                                 const RefVector<const DualMatrix<Value>>& psiM_list,
+                                 const RefVector<DualMatrix<Value>>& psiMinv_list,
                                  DualVector<LogValue>& log_values,
                                  const std::vector<bool>& compute_mask)
   {
