@@ -178,7 +178,7 @@ public:
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 RefVector<const OffloadMatrix<Value>>& logdetT_list,
+                                 RefVector<const OffloadMatrix<Value>>& psiM_list,
                                  RefVector<OffloadMatrix<Value>>& a_inv_refs,
                                  OffloadVector<LogValue>& log_values,
                                  const std::vector<bool>& compute_mask)
@@ -186,16 +186,18 @@ public:
     auto& engine_leader = engines.getLeader();
     auto& det_inverter  = engine_leader.get_det_inverter();
 
-    a_inv_refs.reserve(engines.size());
-
     for (int iw = 0; iw < engines.size(); iw++)
     {
-      a_inv_refs.emplace_back(engines[iw].get_ref_psiMinv());
-      const Value* a_inv_ptr = a_inv_refs.back().get().data();
-      PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
+      auto& Ainv = a_inv_refs[iw].get();
+      engine_leader.detEng.invert_transpose(psiM_list[iw].get(), Ainv, log_values[iw]);
+      Value* Ainv_ptr = Ainv.data();
+      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }
-    typename DetInverter::HandleResource dummy;
-    det_inverter.mw_invertTranspose(dummy, logdetT_list, a_inv_refs, log_values, compute_mask);
+    PRAGMA_OFFLOAD("omp taskwait")
+
+    //FIXME DiracMatrixComputeOMPTarget is either broken or connected incorrectly
+    //typename DetInverter::HandleResource dummy;
+    //det_inverter.mw_invertTranspose(dummy, psiM_list, a_inv_refs, log_values, compute_mask);
   }
 
   template<typename GT>

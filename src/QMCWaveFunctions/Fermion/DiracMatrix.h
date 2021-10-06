@@ -180,9 +180,14 @@ public:
    * @tparam TMAT matrix value type
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& amat,
-                                                                            Matrix<TMAT>& invMat,
+  template<typename TMAT,
+           typename ALLOC1,
+           typename ALLOC2,
+           typename TREAL,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC1>::is_host_accessible>,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC2>::is_host_accessible>>
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT, ALLOC1>& amat,
+                                                                            Matrix<TMAT, ALLOC2>& invMat,
                                                                             std::complex<TREAL>& LogDet)
   {
     const int n   = invMat.rows();
@@ -196,9 +201,14 @@ public:
    * @tparam TMAT matrix value type
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& amat,
-                                                                             Matrix<TMAT>& invMat,
+  template<typename TMAT,
+           typename ALLOC1,
+           typename ALLOC2,
+           typename TREAL,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC1>::is_host_accessible>,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC2>::is_host_accessible>>
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT, ALLOC1>& amat,
+                                                                             Matrix<TMAT, ALLOC2>& invMat,
                                                                              std::complex<TREAL>& LogDet)
   {
     const int n   = invMat.rows();
