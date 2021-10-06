@@ -6,7 +6,7 @@
 #include "../../../../adaptors/blas/gemm.hpp"
 #include "../../../../adaptors/cuda/cublas.hpp"
 
-#include "../../../adaptors/cuda/thrust.hpp"
+#include "../../../../adaptors/cuda/thrust.hpp"
 //#include "../../../complex.hpp"
 
 #include<thrust/complex.h>

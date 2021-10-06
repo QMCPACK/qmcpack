@@ -18,20 +18,24 @@ namespace multi{
 namespace memory{
 namespace cuda{
 #if (__cpp_nontype_template_parameter_auto>=201606) or defined(__NVCC__)
-template<auto CudaFunction, class... Args>
+template<auto CudaFunction, class... Args> // requires c++17
 void call(Args&&... args){
 	auto s = static_cast<Cuda::error>(CudaFunction(args...));
 	if( s != Cuda::error::success ) throw std::system_error{make_error_code(s), "cannot call cuda function "};
 }
 #endif
+
 template<class T, T CudaFunction>
-auto call_static(std::string name = ""){
+auto call_static(std::string const& name){
 	return [=](auto... args)->decltype(CublasFunction(args...), void()){
 		std::cerr << "Calling function " << name << std::endl;
 		Cuda::error s = CublasFunction(args...);
 		if( s != Cuda::error::success ) throw std::system_error{make_error_code(s), "cannot call cuda function "};
 	};
 }
+
+//template<class T, T CudaFunction>
+//auto call_static(){return call_static(std::string{});}
 
 #define CUDA(FunctionPostfix) ::boost::multi::memory::cuda::call_static<decltype(&cuda##FunctionPostfix), cuda##FunctionPostfix>(#FunctionPostfix)
 

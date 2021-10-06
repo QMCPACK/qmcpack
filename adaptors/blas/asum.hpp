@@ -1,8 +1,8 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019-2020
-// TODO make it work with thrust complex
+// © Alfredo A. Correa 2019-2021
+// TODO(correaa) : make it work with thrust complex
 
 #ifndef MULTI_ADAPTORS_BLAS_ASUM_HPP
 #define MULTI_ADAPTORS_BLAS_ASUM_HPP
@@ -31,10 +31,11 @@ auto asum(X1D const& x)
 ->decltype(asum(begin(x), end(x))){assert( not offset(x) );
 	return asum(begin(x), end(x));}
 
-}}
-}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SCAL
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi.BLAS asum"
 #define BOOST_TEST_DYN_LINK
