@@ -10,8 +10,6 @@
 #include <thrust/device_allocator.h>
 #include <thrust/system/cuda/memory.h> // ::thrust::cuda::allocator
 
-
-
 namespace boost{
 namespace multi{
 namespace thrust{

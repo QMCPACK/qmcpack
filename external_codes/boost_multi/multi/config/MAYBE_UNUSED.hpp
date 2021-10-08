@@ -1,10 +1,6 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $0 -o $0x &&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2020
-
-#ifndef MULTI_CONFIG_MAYBE_UNUSED_HPP
+#ifndef MULTI_CONFIG_MAYBE_UNUSED_HPP // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 #define MULTI_CONFIG_MAYBE_UNUSED_HPP
+// © Alfredo A. Correa 2020-2021
 
 #ifndef __has_cpp_attribute
 #define __has_cpp_attribute(name) 0
@@ -24,13 +20,7 @@ $CXX $0 -o $0x &&$0x&&rm $0x;exit
 #define MAYBE_UNUSED MULTI_MAYBE_UNUSED
 #endif
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_CONFIG_NODISCARD
-
-int main(){
-	// cppcheck-suppress unusedVariable
-	MAYBE_UNUSED int i; 
-}
+// TODO(correaa): add MAYBE_UNUSED test
+// TODO(correaa): remove header when library is C++17 or greater only
 #endif
-#endif
-
 

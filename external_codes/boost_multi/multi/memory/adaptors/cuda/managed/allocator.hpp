@@ -42,6 +42,8 @@ namespace managed{
 			return ret;
 		}
 		pointer allocate(typename allocator::size_type n, const_void_pointer hint){
+			MULTI_MARK_SCOPE("cuda::managed::allocate");
+			
 			auto const ret = allocate(n);
 			if(not hint){
 				if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), /*device*/ 0) != cudaSuccess) throw std::runtime_error{"cannot prefetch"};
@@ -68,7 +70,10 @@ namespace managed{
 			}
 			return ret;
 		}
-		void deallocate(pointer p, size_type){cuda::managed::free(static_cast<managed::ptr<void>>(p));}
+		void deallocate(pointer p, size_type){
+			MULTI_MARK_SCOPE("cuda::managed::deallocate");
+			cuda::managed::free(static_cast<managed::ptr<void>>(p));
+		}
 		template<class P, class... Args>
 		void construct(P p, Args&&... args){
 			::new(p.rp_) T(std::forward<Args>(args)...);

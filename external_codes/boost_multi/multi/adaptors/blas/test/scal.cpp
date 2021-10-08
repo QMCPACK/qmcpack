@@ -9,12 +9,10 @@
 
 #include "../../../array.hpp"
 
-#include<complex>
-
 namespace multi = boost::multi;
 namespace blas = multi::blas;
 
-BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_n){
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_n) {
 	multi::array<double, 2> A = {
 		{1.,  2.,  3.,  4.},
 		{5.,  6.,  7.,  8.},
@@ -26,7 +24,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_n){
 	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11.*2. );
 }
 
-BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_it){
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_it) {
 	multi::array<double, 2> A = {
 		{1.,  2.,  3.,  4.},
 		{5.,  6.,  7.,  8.},
@@ -42,7 +40,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_it){
 
 template<class T> void what(T&&) = delete;
 
-BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_real){
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_real) {
 	multi::array<double, 2> A = {
 		{1.,  2.,  3.,  4.},
 		{5.,  6.,  7.,  8.},
@@ -59,7 +57,6 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_real){
 	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11.*2. );
 
 	BOOST_REQUIRE( &blas::scal(1., A[2]) == &A[2] );
-
 }
 
 //BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_complex_real_case){

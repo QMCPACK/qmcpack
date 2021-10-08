@@ -10,7 +10,7 @@
 
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(multi_rotate_3d){
+BOOST_AUTO_TEST_CASE(multi_rotate_3d) {
 	multi::array<double, 3> A({3, 4, 5});
 	BOOST_REQUIRE(( sizes(A) == decltype(sizes(A)){3, 4, 5} ));
 
@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(multi_rotate_3d){
 	BOOST_REQUIRE( &A[0][1][2] == &RRA[2][0][1] );
 }
 
-BOOST_AUTO_TEST_CASE(multi_rotate_4d){
+BOOST_AUTO_TEST_CASE(multi_rotate_4d) {
 	multi::array<double, 4> original({14, 14, 7, 4});
 
 	auto&& unrotd = original.unrotated();
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(multi_rotate_4d){
 	BOOST_REQUIRE( &original[0][1][2][3] == &unrotd2[2][3][0][1] );
 }
 
-BOOST_AUTO_TEST_CASE(multi_rotate_4d_op){
+BOOST_AUTO_TEST_CASE(multi_rotate_4d_op) {
 	multi::array<double, 4> original({14, 14, 7, 4});
 
 	auto&& unrotd = (original >> 1);
@@ -51,13 +51,12 @@ BOOST_AUTO_TEST_CASE(multi_rotate_4d_op){
 	BOOST_REQUIRE( &original[0][1][2][3] == &unrotd2[2][3][0][1] );
 }
 
-BOOST_AUTO_TEST_CASE(multi_rotate){
-{
+BOOST_AUTO_TEST_CASE(multi_rotate_part1) {
 	std::array<std::array<double, 5>, 4> a = {
 		{
-			{ 0,  1,  2,  3,  4}, 
-			{ 5,  6,  7,  8,  9}, 
-			{10, 11, 12, 13, 14}, 
+			{ 0,  1,  2,  3,  4},
+			{ 5,  6,  7,  8,  9},
+			{10, 11, 12, 13, 14},
 			{15, 16, 17, 18, 19}
 		}
 	};
@@ -73,6 +72,8 @@ BOOST_AUTO_TEST_CASE(multi_rotate){
 	BOOST_REQUIRE( (B <<1) == (A <<1) );
 	BOOST_REQUIRE( (B<<1)[2][1] == 7 );
 }
+
+BOOST_AUTO_TEST_CASE(multi_rotate) {
 {
 	multi::array<double, 2> A = {
 		{00, 01},
@@ -122,10 +123,9 @@ BOOST_AUTO_TEST_CASE(multi_rotate){
 {
 	multi::array<double, 3> const A({3, 5, 7});
 }
-
 }
 
-BOOST_AUTO_TEST_CASE(multi_transposed){
+BOOST_AUTO_TEST_CASE(multi_transposed) {
 	multi::array<double, 2> const M = {
 		{ 9., 24., 30., 9.},
 		{ 4., 10., 12., 7.},
@@ -134,5 +134,11 @@ BOOST_AUTO_TEST_CASE(multi_transposed){
 	multi::array<double, 2> const MT1 =  M.transposed();
 	multi::array<double, 2> const MT2 = ~M;
 	BOOST_REQUIRE( MT1 == MT2 );
+}
+
+BOOST_AUTO_TEST_CASE(miguel) {
+	multi::array<double, 2> G2D({41, 35});
+	auto const& G3D = G2D.rotated().partitioned(7).sliced(0, 3).unrotated();
+	BOOST_REQUIRE( &G3D[0][0][0] == &G2D[0][0] );
 }
 

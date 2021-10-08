@@ -3,28 +3,23 @@ $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework `pkg-config --libs blas` \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5` \
 -lboost_timer &&$0x&&rm $0x; exit
 #endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
 
 #ifndef MULTI_ADAPTORS_BLAS_HERK_HPP
 #define MULTI_ADAPTORS_BLAS_HERK_HPP
 
-#include "../blas/core.hpp"
 #include "../blas/copy.hpp" 
-//#include "../blas/scal.hpp" 
-#include "../blas/syrk.hpp" // fallback to real case
-
-#include "../blas/side.hpp"
+#include "../blas/core.hpp"
 #include "../blas/filling.hpp"
-
 #include "../blas/operations.hpp"
+#include "../blas/side.hpp"
+#include "../blas/syrk.hpp" // fallback to real case
 
 #include "../../config/NODISCARD.hpp"
 
-//#include<iostream> //debug
-//#include<type_traits> // void_t
-
 namespace boost{
-namespace multi{namespace blas{
+namespace multi{
+namespace blas{
 
 template<class A, std::enable_if_t<not is_conjugated<A>{}, int> =0> 
 auto base_aux(A&& a)
@@ -39,12 +34,12 @@ auto base_aux(A&& a)
 using core::herk;
 
 template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<is_complex_array<C2D>{}, int> =0>
-C2D&& herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
+auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c) -> C2D&& // NOLINT(readability-function-cognitive-complexity) : 74
 //->decltype(herk('\0', '\0', c.size(), a.size(), &alpha, base_aux(a), stride(a.rotated()), &beta, base_aux(c), stride(c)), std::forward<C2D>(c))
 {
-	assert( a.size() == c.size() );
-	assert( c.size() == rotated(c).size() );
-	if(c.size()==0) return std::forward<C2D>(c);
+	assert( a.size() == c.size() ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( c.size() == rotated(c).size() ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	if(c.is_empty()){return std::forward<C2D>(c);}
 	if constexpr(is_conjugated<C2D>{}){herk(flip(c_side), alpha, a, beta, hermitized(c)); return std::forward<C2D>(c);}
 	{
 		auto base_a = base_aux(a);
@@ -52,24 +47,24 @@ C2D&& herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
 		if constexpr(is_conjugated<A2D>{}){
 		//	auto& ctxt = *blas::default_context_of(underlying(a.base()));
 			// if you get an error here might be due to lack of inclusion of a header file with the backend appropriate for your type of iterator
-				 if(stride(a)==1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));
+			if     (stride(a)==1 and stride(c)!=1){herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));}
 			else if(stride(a)==1 and stride(c)==1){
-				if(size(a)==1)                     herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));
-				else assert(0);
+				if(size(a)==1)                    {herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));}
+				else                              {assert(0);} // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 			}
-			else if(stride(a)!=1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(rotated(c)));
-			else if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(        c ));
-			else assert(0);
+			else if(stride(a)!=1 and stride(c)==1){herk(c_side==filling::upper?'U':'L', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(rotated(c)));}
+			else if(stride(a)!=1 and stride(c)!=1){herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(        c ));}
+			else                                  {assert(0);} // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 		}else{
 		//	auto& ctxt = *blas::default_context_of(           a.base() );
-			;;;; if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(c));
+			if     (stride(a)!=1 and stride(c)!=1){herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(c));}
 			else if(stride(a)!=1 and stride(c)==1){
-				if(size(a)==1)                     herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));
-				else assert(0);
+				if(size(a)==1)                     {herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));}
+				else                               {assert(0);} // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 			}
-			else if(stride(a)==1 and stride(c)!=1) assert(0);//case not implemented, herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base(c), stride(c)); 
-			else if(stride(a)==1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));
-			else assert(0);
+			else if(stride(a)==1 and stride(c)!=1){assert(0);} // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+			else if(stride(a)==1 and stride(c)==1){herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));}
+			else                                  {assert(0);} // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 		}
 	}
 	return std::forward<C2D>(c);
@@ -117,7 +112,7 @@ auto herk(AA alpha, A2D const& a)//->std::decay_t<decltype(herk(alpha, a, Ret({s
 
 template<class T> struct numeric_limits : std::numeric_limits<T>{};
 template<class T> struct numeric_limits<std::complex<T>> : std::numeric_limits<std::complex<T>>{
-	static std::complex<T> quiet_NaN(){auto n=numeric_limits<T>::quiet_NaN(); return {n, n};}
+	static auto quiet_NaN() -> std::complex<T>{auto n=numeric_limits<T>::quiet_NaN(); return {n, n};}
 };
 
 template<class AA, class A2D, class Ret = typename A2D::decay_type>
@@ -141,11 +136,11 @@ template<class A2D> auto herk(A2D const& a)
 //->decltype(herk(1., a)){
 {	return herk(1., a);}
 
-}}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-}
-
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_HERK
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS herk"
 #define BOOST_TEST_DYN_LINK

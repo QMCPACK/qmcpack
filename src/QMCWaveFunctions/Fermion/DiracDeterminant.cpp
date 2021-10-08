@@ -265,22 +265,12 @@ void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   }
 
-  if (NumPtcls == 1)
+  for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
   {
-    ValueType y = psiM(0, 0);
-    GradType rv = y * dpsiM(0, 0);
-    G[FirstIndex] += rv;
-    L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
-  }
-  else
-  {
-    for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
-    {
-      mValueType dot_temp = simd::dot(psiM[i], d2psiM[i], NumOrbitals);
-      mGradType rv        = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
-      G[iat] += rv;
-      L[iat] += dot_temp - dot(rv, rv);
-    }
+    mValueType dot_temp = simd::dot(psiM[i], d2psiM[i], NumOrbitals);
+    mGradType rv        = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
+    G[iat] += rv;
+    L[iat] += dot_temp - dot(rv, rv);
   }
 }
 
@@ -627,22 +617,12 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
 {
   recompute(P);
 
-  if (NumPtcls == 1)
+  for (int i = 0, iat = FirstIndex; i < NumPtcls; i++, iat++)
   {
-    ValueType y = psiM(0, 0);
-    GradType rv = y * dpsiM(0, 0);
-    G[FirstIndex] += rv;
-    L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
-  }
-  else
-  {
-    for (int i = 0, iat = FirstIndex; i < NumPtcls; i++, iat++)
-    {
-      mGradType rv   = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
-      mValueType lap = simd::dot(psiM[i], d2psiM[i], NumOrbitals);
-      G[iat] += rv;
-      L[iat] += lap - dot(rv, rv);
-    }
+    mGradType rv   = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
+    mValueType lap = simd::dot(psiM[i], d2psiM[i], NumOrbitals);
+    G[iat] += rv;
+    L[iat] += lap - dot(rv, rv);
   }
   return log_value_;
 }
@@ -654,14 +634,8 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
     ScopedTimer local_timer(SPOVGLTimer);
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   }
-  if (NumPtcls == 1)
-  {
-    ValueType det = psiM_temp(0, 0);
-    psiM(0, 0)    = RealType(1) / det;
-    log_value_      = convertValueToLog(det);
-  }
-  else
-    invertPsiM(psiM_temp, psiM);
+
+  invertPsiM(psiM_temp, psiM);
 
   // invRow becomes invalid after updating the inverse matrix
   invRow_id = -1;
