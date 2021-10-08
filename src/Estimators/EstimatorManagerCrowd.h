@@ -66,13 +66,11 @@ public:
   /** Accumulate over all scalar estimators and operator estimators over all walkers in crowd.
    *  Not all estimators make use of all these arguments
    *  \param[in]     walkers         walkers in crowd
-   *  \param[in]     pset_target     crowd scope working target pset
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
    *  \param[inout]  rng             crowd scope RandomGenerator_t
    */ 
   void accumulate(const RefVector<MCPWalker>& walkers,
-                  ParticleSet& pset_target,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator_t& rng);

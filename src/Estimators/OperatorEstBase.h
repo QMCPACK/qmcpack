@@ -69,7 +69,6 @@ public:
    *  \param[inout]   rng           crowd scope RandomGenerator
    */
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
-                          ParticleSet& pset_target,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
                           RandomGenerator_t& rng) = 0;
@@ -99,6 +98,7 @@ public:
    * big data, e.g. density, should overwrite this function.
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
+
 
   virtual OperatorEstBase* clone() = 0;
 

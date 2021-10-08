@@ -439,7 +439,6 @@ void OneBodyDensityMatrices::density_drift(const Position& r, Real& dens, Positi
 }
 
 void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
-                                        ParticleSet& pset_target,
                                         const RefVector<ParticleSet>& psets,
                                         const RefVector<TrialWaveFunction>& wfns,
                                         RandomGenerator_t& rng)

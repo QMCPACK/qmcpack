@@ -44,9 +44,7 @@ public:
    */
   Crowd(EstimatorManagerNew& emb,
         const DriverWalkerResourceCollection& driverwalker_res,
-        const MultiWalkerDispatchers& dispatchers,
-        const ParticleSet& elecs);
-
+        const MultiWalkerDispatchers& dispatchers);
   ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
@@ -73,7 +71,7 @@ public:
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(mcp_walkers_, crowd_elecs_, walker_elecs_, walker_twfs_, rng);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, rng);
   }
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
@@ -118,10 +116,6 @@ private:
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
 
-  // Crowd scope elecs
-  // for cases when another elec mutable particleset is needed
-  // Seems to be always returned to "starting" state by the end of a function at crowd scope
-  ParticleSet crowd_elecs_;
   // provides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   /// per crowd estimator manager

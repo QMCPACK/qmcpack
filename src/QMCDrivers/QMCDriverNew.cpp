@@ -152,7 +152,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   for (int i = 0; i < crowds_.size(); ++i)
   {
     crowds_[i] =
-      std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_, *population_.get_golden_electrons());
+      std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
   }
 
   //now give walkers references to their walkers

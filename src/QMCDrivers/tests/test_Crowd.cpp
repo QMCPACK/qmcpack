@@ -45,7 +45,7 @@ public:
 public:
   CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
   {
-    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_, pset_target);
+    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -86,7 +86,7 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   ParticleSet pset_target;
 
-  Crowd crowd(em, driverwalker_resource_collection_, dispatchers, pset_target);
+  Crowd crowd(em, driverwalker_resource_collection_, dispatchers);
 }
 
 TEST_CASE("Crowd redistribute walkers")

@@ -16,10 +16,8 @@ namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,
              const DriverWalkerResourceCollection& driverwalker_res,
-             const MultiWalkerDispatchers& dispatchers,
-             const ParticleSet& elecs)
+             const MultiWalkerDispatchers& dispatchers)
     : dispatchers_(dispatchers),
-      crowd_elecs_(elecs),
       driverwalker_resource_collection_(driverwalker_res),
       estimator_manager_crowd_(emb)
 {}
