@@ -28,7 +28,7 @@ $CXXX $CXXFLAGS $0 -o $0x -include"boost/log/trivial.hpp" -D'MULTI_MARK_SCOPE(Ms
 //#define MULTI_MARK_PRETTY_FUNCTION MULTI_MARK_SCOPE(__PRETTY_FUNCTION__)
 //#endif
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 // #include <boost/log/trivial.hpp> or use command line `-include file.hpp`
 // for example add this to the end of compilation line to use markings for tracing

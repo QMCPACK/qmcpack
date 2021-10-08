@@ -90,6 +90,18 @@ case "$1" in
                       -DUSE_OBJECT_TARGET=ON -DQMC_MPI=0 \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"gpu-enable-cuda-afqmc"*)
+        echo 'Configure for building with ENABLE CUDA and AFQMC, need recent OpenBLAS'
+        cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
+                      -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+                      -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
+                      -DBUILD_AFQMC=ON \
+                      -DENABLE_CUDA=ON \
+                      -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \
+                      -DQMC_COMPLEX=$IS_COMPLEX \
+                      -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+                      ${GITHUB_WORKSPACE}
+      ;;
       *"gpu-cuda"*)
         echo 'Configure for building GPU CUDA legacy'
         cmake -GNinja -DQMC_CUDA=1 \
@@ -102,6 +114,13 @@ case "$1" in
         echo 'Configure for building with -Werror flag enabled'
         cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
                       -DCMAKE_CXX_FLAGS=-Werror \
+                      -DQMC_MPI=0 \
+                      -DQMC_COMPLEX=$IS_COMPLEX \
+                      ${GITHUB_WORKSPACE}
+      ;;
+      *"macOS-gcc11"*)
+        echo 'Configure for building on macOS using gcc-11'
+        cmake -GNinja -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
                       -DQMC_MPI=0 \
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
@@ -147,9 +166,15 @@ case "$1" in
        TEST_LABEL="-L unit"
     fi
     
-    if [[ "${GH_JOBNAME}" =~ (gpu-cuda) ]]
+    if [[ "${GH_JOBNAME}" =~ (cuda) ]]
     then
        export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH}
+    fi
+
+    if [[ "${GH_JOBNAME}" =~ (cuda-afqmc) ]]
+    then
+       # Avoid polluting the stderr output with libfabric error message
+       export OMPI_MCA_btl=self
     fi
     
     ctest --output-on-failure $TEST_LABEL

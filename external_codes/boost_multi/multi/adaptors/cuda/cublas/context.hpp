@@ -17,13 +17,13 @@
 
 #include<mutex>
 
-namespace boost{
-namespace multi::cuda::cublas{
+namespace boost {
+namespace multi::cuda::cublas {
 
 class operation{
 	cublasOperation_t impl_;
 public:
-	operation(char trans) : impl_{[=]{
+	explicit operation(char trans) : impl_{[=]{
 		switch(trans){
 		case 'N': return CUBLAS_OP_N;
 		case 'T': return CUBLAS_OP_T;
@@ -31,27 +31,27 @@ public:
 		default : assert(0);
 		}
 		return cublasOperation_t{};
-	}()}{}
+	}()} {}
 	operator cublasOperation_t() const{return impl_;}
 };
 
 class side{
 	cublasSideMode_t impl_;
 public:
-	side(char trans) : impl_{[=]{
+	explicit side(char trans) : impl_{[=]{
 		switch(trans){
 		case 'L': return CUBLAS_SIDE_LEFT;
 		case 'R': return CUBLAS_SIDE_RIGHT;
 		}
 		assert(0); return cublasSideMode_t{};
-	}()}{}
+	}()} {}
 	operator cublasSideMode_t() const{return impl_;}
 };
 
 class filling{
 	cublasFillMode_t impl_;
 public:
-	filling(char trans) : impl_{[=]{
+	explicit filling(char trans) : impl_{[=]{
 		switch(trans){
 		case 'L': return CUBLAS_FILL_MODE_LOWER;
 		case 'U': return CUBLAS_FILL_MODE_UPPER;
@@ -64,7 +64,7 @@ public:
 class diagonal{
 	cublasDiagType_t impl_;
 public:
-	diagonal(char trans) : impl_{[=]{
+	explicit diagonal(char trans) : impl_{[=]{
 		switch(trans){
 		case 'N': return CUBLAS_DIAG_NON_UNIT;
 		case 'U': return CUBLAS_DIAG_UNIT;
@@ -97,8 +97,8 @@ public:
 	using ssize_t = int;
 	static int version(){int ret; cublas::call<cublasGetVersion>(nullptr, &ret); return ret;}
 	void synchronize(){
-	//	cudaError_t	e = cudaDeviceSynchronize();
-		cudaError_t e = cudaStreamSynchronize(stream());
+		cudaError_t	e = cudaDeviceSynchronize();
+		//cudaError_t e = cudaStreamSynchronize(stream());
 		if(e != cudaSuccess) throw std::runtime_error{"cannot synchronize stream in cublas context"};
 	}
 	template<class ALPHA, class XP, class X = typename std::pointer_traits<XP>::element_type, class YP, class Y = typename std::pointer_traits<YP>::element_type, 

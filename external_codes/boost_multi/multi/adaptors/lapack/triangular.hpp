@@ -18,7 +18,7 @@ struct uhermitian : public multi::array<T, 2>{
 		class MultiArray, 
 		typename = decltype(multi::array<T, 2>{std::forward<MultiArray>(std::declval<MultiArray&>())})
 	>
-	uhermitian(MultiArray&& ma) : multi::array<T, 2>{std::forward<MultiArray>(ma)}{}
+	explicit uhermitian(MultiArray&& ma) : multi::array<T, 2>{std::forward<MultiArray>(ma)}{}
 	template<class Index> decltype(auto) operator[](Index i) const{
 		return multi::array<T, 2>::operator[](i);
 	}

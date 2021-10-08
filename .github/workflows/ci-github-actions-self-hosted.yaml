@@ -26,6 +26,10 @@ jobs:
           gcc-complex-gpu-cuda-mixed,
           gcc-real-gpu-cuda-full,   # full precision
           gcc-complex-gpu-cuda-full,
+          gcc-real-gpu-enable-cuda-afqmc-mixed,   # auxiliary field, requires MPI
+          gcc-complex-gpu-enable-cuda-afqmc-mixed,
+          gcc-real-gpu-enable-cuda-afqmc-full,
+          gcc-complex-gpu-enable-cuda-afqmc-full
         ]
 
     steps:

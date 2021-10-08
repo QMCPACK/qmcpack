@@ -1,8 +1,4 @@
-#ifdef COMPILATION_INSTRUCTIONS
-echo $CXXX $CXXFLAGS
-$CXXX $CXXFLAGS $0 -o $0.$X&&$0.$X&&rm $0.$X;exit
-#endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
 
 #ifndef MULTI_CONFIG_NO_UNIQUE_ADDRESS_HPP
 #define MULTI_CONFIG_NO_UNIQUE_ADDRESS_HPP
@@ -11,14 +7,14 @@ $CXXX $CXXFLAGS $0 -o $0.$X&&$0.$X&&rm $0.$X;exit
 #define __has_cpp_attribute(name) 0
 #endif
 
-#if __has_cpp_attribute(no_unique_address) >=201803 and not defined(__NVCC__)
+#if __has_cpp_attribute(no_unique_address) >=201803 and not defined(__NVCC__) and not defined(__PGI)
 	#define MULTI_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
 	#define MULTI_NO_UNIQUE_ADDRESS
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__ // _TEST_MULTI_CONFIG_NO_UNIQUE_ADDRESS
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 class A{};
 
