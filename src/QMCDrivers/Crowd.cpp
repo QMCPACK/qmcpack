@@ -10,7 +10,6 @@
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Estimators/EstimatorManagerCrowd.h"
 
 namespace qmcplusplus
 {

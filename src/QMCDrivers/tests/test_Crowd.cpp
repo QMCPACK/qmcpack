@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -41,7 +41,6 @@ public:
   std::vector<TinyVector<double, 3>> tpos;
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   const MultiWalkerDispatchers dispatchers_;
-  ParticleSet pset_target;
 public:
   CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
   {
@@ -83,8 +82,6 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   const MultiWalkerDispatchers dispatchers(true);
   DriverWalkerResourceCollection driverwalker_resource_collection_;
-
-  ParticleSet pset_target;
 
   Crowd crowd(em, driverwalker_resource_collection_, dispatchers);
 }
