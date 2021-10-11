@@ -36,7 +36,6 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
       n_max_(10),
       MaxCopy(2),
       target_sigma_(10),
-      dmcStream(0),
       NumWalkersCreated(0),
       SwapMode(0),
       write_release_nodes_(rn)
@@ -51,15 +50,7 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   accumData.resize(LE_MAX);
 }
 
-WalkerControlBase::~WalkerControlBase()
-{
-  if (dmcStream)
-  {
-    // without this its possible to end up without all data flushed to dmc.dat.
-    (*dmcStream) << std::endl;
-    delete dmcStream;
-  }
-}
+WalkerControlBase::~WalkerControlBase() = default;
 
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
@@ -84,13 +75,7 @@ void WalkerControlBase::start()
       hname.append(".dmc.dat");
     if (hname != dmcFname)
     {
-      if (dmcStream)
-      {
-        *dmcStream << std::endl;
-        delete dmcStream;
-      }
-      dmcStream = new std::ofstream(hname.c_str());
-      //oa = new boost::archive::binary_oarchive (*dmcStream);
+      dmcStream = std::make_unique<std::ofstream>(hname.c_str());
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)

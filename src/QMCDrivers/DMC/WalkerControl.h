@@ -159,7 +159,7 @@ private:
   ///filename for dmc.dat
   std::string dmcFname;
   ///file to save energy histogram
-  std::ofstream* dmcStream;
+  std::unique_ptr<std::ofstream> dmcStream;
   ///context id
   const IndexType rank_num_;
   ///number of contexts

@@ -637,7 +637,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
     wfc.log_value_ += wfc.Uat[iat] - mw_vgl[iw][0];
   }
 
-  /* this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates */
+  // this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates
   FT::mw_updateVGL(iat, isAccepted, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N,
                    grp_ids.data(), nw, mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_allUat.data(),
                    mw_cur_allu.data(), wfc_leader.mw_mem_->mw_update_buffer);
