@@ -30,10 +30,17 @@ set(SRCS
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
-    test_OneBodyDensityMatricesInput.cpp
-    test_OneBodyDensityMatrices.cpp
     )
 
+# OneBodyDensityMatrices are not tested with legacy CUDA
+# DiracDeterminantsCUDA cannot be copied
+if(NOT QMC_CUDA)
+  set(SRCS
+      ${SRCS}
+      test_OneBodyDensityMatricesInput.cpp
+      test_OneBodyDensityMatrices.cpp)
+endif()
+  
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
