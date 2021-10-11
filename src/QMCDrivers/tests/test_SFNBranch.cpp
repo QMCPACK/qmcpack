@@ -43,9 +43,9 @@ public:
     emb_  = std::make_unique<EstimatorManagerNew>(comm_);
   }
 
-  std::unique_ptr<SFNBranch> operator()(ParticleSet& p_set, TrialWaveFunction& twf, QMCHamiltonian& ham)
+  std::unique_ptr<SFNBranch> operator()(ParticleSet& pset, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
-    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs_, &p_set, &twf, &ham);
+    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs_, &pset, &twf, &ham);
     // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
     pop_->createWalkers(2);
 

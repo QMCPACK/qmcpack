@@ -155,7 +155,7 @@ void InputSection::check_valid()
             << " has not been assigned\n";
       throw UniformCommunicateError(error.str());
     }
-  this->checkParticularValidity();
+  checkParticularValidity();
 };
 
 
