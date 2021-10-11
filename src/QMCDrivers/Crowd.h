@@ -22,7 +22,7 @@ namespace qmcplusplus
 // forward declaration
 class ResourceCollection;
 class EstimatorManagerNew;
-class EstimatorManagerCrowd;
+
 /** Driver synchronized step context
  * 
  *  assumed to live inside the drivers scope

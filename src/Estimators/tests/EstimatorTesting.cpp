@@ -29,9 +29,9 @@ Lattice makeTestLattice()
 SpeciesSet makeSpeciesSet()
 {
   SpeciesSet species_set;
-  int ispecies = species_set.addSpecies("u");
-  ispecies     = species_set.addSpecies("d");
-  int iattribute             = species_set.addAttribute("membersize");
+  species_set.addSpecies("u");
+  species_set.addSpecies("d");
+  const int iattribute       = species_set.addAttribute("membersize");
   species_set(iattribute, 0) = 1;
   species_set(iattribute, 1) = 1;
   return species_set;

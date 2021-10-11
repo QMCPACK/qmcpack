@@ -9,16 +9,13 @@
 
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManagerBase.h"
 
 namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,
              const DriverWalkerResourceCollection& driverwalker_res,
              const MultiWalkerDispatchers& dispatchers)
-    : dispatchers_(dispatchers),
-      driverwalker_resource_collection_(driverwalker_res),
-      estimator_manager_crowd_(emb)
+    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
 {}
 
 Crowd::~Crowd() = default;

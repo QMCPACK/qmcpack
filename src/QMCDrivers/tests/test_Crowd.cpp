@@ -41,6 +41,7 @@ public:
   std::vector<TinyVector<double, 3>> tpos;
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   const MultiWalkerDispatchers dispatchers_;
+
 public:
   CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
   {

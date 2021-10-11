@@ -89,7 +89,7 @@ TEST_CASE("SFNBranch::branch(MCPopulation...)", "[drivers]")
   SetupPools pools;
   SetupSFNBranch setup_sfnb(pools.comm);
   std::unique_ptr<SFNBranch> sfnb =
-    setup_sfnb(*pools.particle_pool->getParticleSet("e"), *pools.wavefunction_pool->getPrimary(),
+      setup_sfnb(*pools.particle_pool->getParticleSet("e"), *pools.wavefunction_pool->getPrimary(),
                  *pools.hamiltonian_pool->getPrimary());
 }
 
