@@ -60,7 +60,6 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
       n_min_(1),
       n_max_(10),
       max_copy_(2),
-      dmcStream(0),
       rank_num_(c->rank()),
       num_ranks_(c->size()),
       SwapMode(0),
@@ -74,15 +73,7 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
   setup_timers(my_timers_, WalkerControlTimerNames, timer_level_medium);
 }
 
-WalkerControl::~WalkerControl()
-{
-  if (dmcStream)
-  {
-    // without this its possible to end up without all data flushed to dmc.dat.
-    (*dmcStream) << std::endl;
-    delete dmcStream;
-  }
-}
+WalkerControl::~WalkerControl() = default;
 
 void WalkerControl::start()
 {
@@ -92,13 +83,7 @@ void WalkerControl::start()
     hname.append(".dmc.dat");
     if (hname != dmcFname)
     {
-      if (dmcStream)
-      {
-        *dmcStream << std::endl;
-        delete dmcStream;
-      }
-      dmcStream = new std::ofstream(hname.c_str());
-      //oa = new boost::archive::binary_oarchive (*dmcStream);
+      dmcStream = std::make_unique<std::ofstream>(hname.c_str());
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)

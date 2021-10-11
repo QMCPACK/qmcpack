@@ -190,7 +190,7 @@ protected:
   ///filename for dmc.dat
   std::string dmcFname;
   ///file to save energy histogram
-  std::ofstream* dmcStream;
+  std::unique_ptr<std::ofstream> dmcStream;
   ///Number of walkers created by this rank
   IndexType NumWalkersCreated;
   ///context id
