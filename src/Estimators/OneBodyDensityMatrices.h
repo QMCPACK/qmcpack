@@ -144,6 +144,7 @@ public:
    */
   void registerOperatorEstimator(hid_t gid) override {}
 
+private:
   //local functions
   //  initialization/finalization
   void reset();
@@ -196,7 +197,6 @@ public:
                bool write     = false,
                bool diff_only = true);
 
-private:
   void normalize(ParticleSet& pset_target);
   
   struct OneBodyDensityMatrixTimers
