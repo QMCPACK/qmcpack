@@ -65,6 +65,7 @@ try:
     QmcpackInput    = qmcpack_input.QmcpackInput
     spindensity_xml = qmcpack_input.spindensity
     spindensity_new_xml = qmcpack_input.spindensity_new  # temporary
+    density_xml = qmcpack_input.density  # temporary
     del qmcpack_input
 except:
     from versions import nexus_version
@@ -78,6 +79,7 @@ except:
     from qmcpack_input import QmcpackInput
     from qmcpack_input import spindensity as spindensity_xml
     from qmcpack_input import spindensity_new as spindensity_new_xml # temporary
+    from qmcpack_input import density as density_xml
 #end try
 
 
@@ -938,9 +940,16 @@ class QMCDensityProcessor(QDBase):
                     # the if statement below is a nasty hack to temporarily support 
                     # the name mismatch between the input file and stat.h5 currently 
                     # enforced by the (new) batched spin denisity class in qmcpack
+                    print(name)
+                    print(xml)
+                    print(spindensity_new_xml)
                     if isinstance(xml,spindensity_new_xml):
                         name = 'SpinDensity' # override all user input, just like qmcpack
+                    elif isinstance(xml,density_xml):
+                        name = 'Density' # override all user input, just like qmcpack
                     #end if
+                    print('grids',grids)
+                    print(name not in grids)
                     if name not in grids and isinstance(xml,(spindensity_xml,spindensity_new_xml)):
                         sd = xml
                         if 'grid' in sd:
@@ -950,9 +959,20 @@ class QMCDensityProcessor(QDBase):
                         else:
                             self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
                         #end if
+                    elif name not in grids and isinstance(xml,density_xml):
+                        sd = xml
+                        if 'grid' in sd:
+                            grids[name] = sd.grid
+                        elif 'delta' in sd:
+                            grids[name] = get_grid(s,sd.delta)
+                        else:
+                            self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
+                        #end if
                     #end if
                 #end for
             #end for
+            print('grids')
+            print(grids)
             if len(grids)>0:
                 opt.grids = grids
             else:
