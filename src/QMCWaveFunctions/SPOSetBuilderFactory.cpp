@@ -105,21 +105,10 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   std::string sourceOpt("ion0");
   std::string type("");
   std::string name("");
-  std::string keyOpt("NMO");       //gaussian Molecular Orbital
-  std::string transformOpt("yes"); //numerical Molecular Orbital
-  std::string cuspC("no");         // cusp correction
-  std::string cuspInfo("");        // file with precalculated cusp correction info
-  std::string MOH5Ref("");         // Path to H5 file for MO calculations
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt, "source");
-  aAttrib.add(cuspC, "cuspCorrection");
   aAttrib.add(type, "type");
-  aAttrib.add(keyOpt, "keyword");
-  aAttrib.add(keyOpt, "key");
   aAttrib.add(name, "name");
-  aAttrib.add(transformOpt, "transform");
-  aAttrib.add(cuspInfo, "cuspInfo");
-  aAttrib.add(MOH5Ref, "href");
 
   if (rootNode != NULL)
     aAttrib.put(rootNode);
