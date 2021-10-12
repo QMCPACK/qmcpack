@@ -504,39 +504,75 @@ class StatFile(QDBase):
             self.error('attempted to read stat.h5 file that does not exist\nfile path: {0}'.format(filepath))
         #end if
         hdf = HDFreader(filepath)
+        print(hdf)
+        print('self')
+        print(self)
         if not hdf._success:
             self.error('read failed for stat.h5 file\nfile path: {0}'.format(filepath))
         #end if
         h5 = hdf.obj
         h5._remove_hidden()
         self.spin_density_data = obj()
+        self.density_data = obj()
+        print('h5.keys()')
+        print(h5.keys())
+        quit()
         for name in h5.keys():
             lname = name.lower()
             if 'spin' in lname and 'density' in lname:
                 self.spin_density_data[name] = h5[name]
+            elif 'density' in lname:
+                self.density_data[name] = h5[name]
             #end if
         #end for
-        if len(self.spin_density_data)==0:
+        self.use_dens = False
+        if len(self.spin_density_data)==0 and len(self.density_data)==0:
             self.error('spin density is not present in stat.h5 file\nfile path: {0}'.format(filepath))
+        elif len(self.density_data)>0:
+            self.use_dens=True
         #end if
         opt = self.options
-        if len(self.spin_density_data)==1 and opt.grids is None and opt.grid is not None:
-            opt.grids = obj()
-            opt.grids[list(self.spin_density_data.keys())[0]] = opt.grid
+        if not self.use_dens:
+            if len(self.spin_density_data)==1 and opt.grids is None and opt.grid is not None:
+                opt.grids = obj()
+                opt.grids[list(self.spin_density_data.keys())[0]] = opt.grid
+            #end if
+        else:
+            if len(self.density_data)==1 and opt.grids is None and opt.grid is not None:
+                opt.grids = obj()
+                opt.grids[list(self.density_data.keys())[0]] = opt.grid
+            #end if
         #end if
+        print('opt')
+        print(opt)
+        print('opt.grid')
+        print(opt.grid)
+        quit()
     #end def read
 
 
     def write(self,filepath):
+        print('H5 FILE:',filepath)
         h5 = h5py.File(filepath,'w')
-        for name,spin_density in self.spin_density_data.items():
-            h5_spin_density = h5.create_group(name)
-            for s,spin in spin_density.items():
-                h5_spin = h5_spin_density.create_group(s)
-                h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
-                #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
+        if not self.use_dens:
+            for name,spin_density in self.spin_density_data.items():
+                h5_spin_density = h5.create_group(name)
+                for s,spin in spin_density.items():
+                    h5_spin = h5_spin_density.create_group(s)
+                    h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
+                    #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
+                #end for
             #end for
-        #end for
+        else:
+            for name,density in self.density_data.items():
+                h5_density = h5.create_group(name)
+                for s,spin in density.items():
+                    h5_spin = h5_density.create_group(s)
+                    h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
+                    #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
+                #end for
+            #end for
+        #end if
         h5.close()
     #end def write
 
@@ -940,16 +976,11 @@ class QMCDensityProcessor(QDBase):
                     # the if statement below is a nasty hack to temporarily support 
                     # the name mismatch between the input file and stat.h5 currently 
                     # enforced by the (new) batched spin denisity class in qmcpack
-                    print(name)
-                    print(xml)
-                    print(spindensity_new_xml)
                     if isinstance(xml,spindensity_new_xml):
                         name = 'SpinDensity' # override all user input, just like qmcpack
                     elif isinstance(xml,density_xml):
                         name = 'Density' # override all user input, just like qmcpack
                     #end if
-                    print('grids',grids)
-                    print(name not in grids)
                     if name not in grids and isinstance(xml,(spindensity_xml,spindensity_new_xml)):
                         sd = xml
                         if 'grid' in sd:
