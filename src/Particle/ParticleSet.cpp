@@ -792,18 +792,18 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
   }
 }
 
-void ParticleSet::donePbyP()
+void ParticleSet::donePbyP(bool skipSK)
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
   coordinates_->donePbyP();
-  if (SK && !SK->DoUpdate)
+  if (!skipSK && SK && !SK->DoUpdate)
     SK->updateAllPart(*this);
   for (size_t i = 0; i < DistTables.size(); ++i)
     DistTables[i]->finalizePbyP(*this);
   activePtcl = -1;
 }
 
-void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
+void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK)
 {
   ParticleSet& p_leader = p_list.getLeader();
   ScopedTimer donePbyP_scope(p_leader.myTimers[PS_donePbyP]);
@@ -814,7 +814,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
     pset.activePtcl = -1;
   }
 
-  if (p_leader.SK && !p_leader.SK->DoUpdate)
+  if (!skipSK && p_leader.SK && !p_leader.SK->DoUpdate)
   {
     auto sk_list = extractSKRefList(p_list);
     StructFact::mw_updateAllPart(sk_list, p_list);

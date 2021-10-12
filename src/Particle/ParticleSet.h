@@ -445,15 +445,16 @@ public:
   static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
+   *@param skip SK update if skipSK is true
    *
    * The Coulomb interaction evaluation needs the structure factor.
    * For these reason, call donePbyP after the loop of single
    * electron moves before evaluating the Hamiltonian. Unmark
    * activePtcl is more of a safety measure probably not needed.
    */
-  void donePbyP();
+  void donePbyP(bool skipSK = false);
   /// batched version of donePbyP
-  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
+  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
