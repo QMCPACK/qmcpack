@@ -15,7 +15,6 @@
 namespace qmcplusplus
 {
 
-OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(){};
 OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 {
   // This results in checkParticularValidity being called on OneBodyDensityMatrixInputSection

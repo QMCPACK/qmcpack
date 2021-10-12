@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -24,13 +24,14 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
     operator_ests_.emplace_back(upeb->clone());
 }
 
-void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng)
+void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers,
+                                       const RefVector<ParticleSet>& psets,
+                                       const RefVector<TrialWaveFunction>& wfns,
+                                       RandomGenerator_t& rng)
 {
   block_num_samples_ += walkers.size();
   for (MCPWalker& awalker : walkers)
     block_weight_ += awalker.Weight;
-  //Don't normalize we only divide once after reduction.
-  //RealType norm             = 1.0 / global_walkers;
   int num_scalar_estimators = scalar_estimators_.size();
   for (int i = 0; i < num_scalar_estimators; ++i)
     scalar_estimators_[i]->accumulate(walkers);

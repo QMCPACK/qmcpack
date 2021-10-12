@@ -298,8 +298,8 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
         QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
-                                 MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
-                                              primaryH),
+                                 MCPopulation(comm->size(), comm->rank(), qmc_system, 
+                                              &qmc_system, primaryPsi, primaryH),
                                  qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver.reset(opt);

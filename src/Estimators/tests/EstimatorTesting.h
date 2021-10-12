@@ -16,14 +16,16 @@
 
 namespace qmcplusplus
 {
+
+class SpeciesSet;
+
 namespace testing
 {
-
 using POLT    = PtclOnLatticeTraits;
 using Lattice = POLT::ParticleLayout_t;
 
 Lattice makeTestLattice();
-
+SpeciesSet makeSpeciesSet();
 }
 }
 #endif
