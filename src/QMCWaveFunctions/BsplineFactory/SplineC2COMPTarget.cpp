@@ -271,15 +271,14 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
-        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        const int first_cplx = first / 2;
+        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = first / 2; index < last_index; index++)
+        for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, index);
 
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
         ComplexT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_cplx; i < last_cplx; i++)
@@ -392,14 +391,13 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
-        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        const int first_cplx = first / 2;
+        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = first / 2; index < last_index; index++)
+        for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_v(pos_scratch[iat * 6], pos_scratch[iat * 6 + 1], pos_scratch[iat * 6 + 2], psi_iat_ptr, orb_size,
                         offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local, index);
 
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
         ComplexT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_cplx; i < last_cplx; i++)
@@ -544,9 +542,10 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
         spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
                                              offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
                                              offload_scratch_ptr + padded_size * 4 + first, padded_size, first, index);
-      const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+      const int first_cplx = first / 2;
+      const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
       PRAGMA_OFFLOAD("omp parallel for")
-      for (int index = first / 2; index < last_index; index++)
+      for (int index = first_cplx; index < last_cplx; index++)
         C2C::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
                         myKcart_ptr, myKcart_padded_size, first_spo_local, index);
     }
@@ -623,9 +622,10 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                                                offload_scratch_iw_ptr + padded_size + first,
                                                offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
                                                index);
-        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        const int first_cplx = first / 2;
+        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = first / 2; index < last_index; index++)
+        for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
                           orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
                           first_spo_local, index);
@@ -790,9 +790,10 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                offload_scratch_iw_ptr + padded_size + first,
                                                offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
                                                index);
-        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        const int first_cplx = first / 2;
+        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = first / 2; index < last_index; index++)
+        for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
                           offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
                           first_spo_local, index);
@@ -807,7 +808,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (size_t j = first / 2; j < (last / 2 > orb_size ? orb_size : last / 2); j++)
+        for (size_t j = first_cplx; j < last_cplx; j++)
         {
           const size_t psiIndex = first_spo_local + j;
 
