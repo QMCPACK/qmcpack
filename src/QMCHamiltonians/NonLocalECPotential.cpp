@@ -567,7 +567,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   {
     Psi.completeUpdates();
     // this step also updates electron positions on the device.
-    P.donePbyP();
+    P.donePbyP(true);
   }
 
   return NonLocalMoveAccepted;
