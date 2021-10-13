@@ -85,7 +85,7 @@
 
    <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="total_walkers">    2   </parameter>
+     <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
      <parameter name="steps">  3 </parameter>
