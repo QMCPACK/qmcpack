@@ -21,7 +21,8 @@ OneDimGridFactory::GridObjectMapType OneDimGridFactory::GridObjects;
 
 OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
 {
-  GridType* agrid = 0;
+  GridType* agrid = nullptr;
+  std::unique_ptr<GridType> agrid_uptr;
   RealType ri     = 1e-5;
   RealType rf     = 100.0;
   RealType ascale = -1.0e0;
@@ -47,11 +48,11 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
   bool hasName = (gridID != "invalid");
   if (hasName)
   {
-    std::map<std::string, GridType*>::iterator it(GridObjects.find(gridID));
+    auto it = GridObjects.find(gridID);
     if (it != GridObjects.end())
     {
       app_log() << "  Reuse " << gridID << " grid" << std::endl;
-      return (*it).second;
+      return (*it).second.get();
     }
   }
   if (gridType == "log")
@@ -59,7 +60,8 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
     if (ascale > 0.0)
     {
       LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
-      agrid = new LogGridZero<RealType>;
+      agrid_uptr = std::make_unique<LogGridZero<RealType>>();
+      agrid      = agrid_uptr.get();
       agrid->set(astep, ascale, npts);
     }
     else
@@ -70,26 +72,28 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
         ri = std::numeric_limits<RealType>::epsilon();
         app_error() << "   LogGrid cannot accept r=0 for the initial point. Using ri=" << ri << std::endl;
       }
-      agrid = new LogGrid<RealType>;
+      agrid_uptr = std::make_unique<LogGrid<RealType>>();
+      agrid      = agrid_uptr.get();
       agrid->set(ri, rf, npts);
     }
   }
   else if (gridType == "linear")
   {
     LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
-    agrid = new LinearGrid<RealType>;
+    agrid_uptr = std::make_unique<LinearGrid<RealType>>();
+    agrid      = agrid_uptr.get();
     agrid->set(ri, rf, npts);
   }
   if (hasName)
   {
-    GridObjects[gridID] = agrid;
+    GridObjects[gridID] = std::move(agrid_uptr);
   }
   else
   {
     char gname[16];
     int s = GridObjects.size();
     sprintf(gname, "g1_%d", s);
-    GridObjects[gname] = agrid;
+    GridObjects[gname] = std::move(agrid_uptr);
   }
   return agrid;
 }

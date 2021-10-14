@@ -166,7 +166,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
     hin.pop();
   }
   else
-    input_grid.reset(OneDimGridFactory::createGrid(cur));
+    input_grid = OneDimGridFactory::createGrid(cur)->makeClone();
 
   //set zero to use std::max
   m_rcut_safe = 0;
