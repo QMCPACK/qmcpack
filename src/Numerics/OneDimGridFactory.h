@@ -25,18 +25,11 @@ struct OneDimGridFactory : public QMCTraits
 {
   ///typedef of the one-dimensional grid
   typedef OneDimGridBase<RealType> GridType;
-  ///typedef of map( std::string,GridType*>
-  typedef std::map<std::string, std::unique_ptr<GridType>> GridObjectMapType;
-
-  ///container of one-dimensional grids
-  static GridObjectMapType GridObjects;
 
   /** return a GridType*
    * @param cur xmlnode for the grid definition
    */
-  static GridType* createGrid(xmlNodePtr cur);
-
-  static RealType setSmoothCutoff(GridType* agrid, xmlNodePtr cur);
+  static std::unique_ptr<GridType> createGrid(xmlNodePtr cur);
 };
 } // namespace qmcplusplus
 #endif
