@@ -436,11 +436,6 @@ block (labeled “samples”). The average value is marked with a
 horizontal, solid red line. One standard deviation above and below the
 average are marked with horizontal, dashed red lines.
 
-The solid black line connects the values of the local energy at each MC
-block (labeled “samples”). The average value is marked with a
-horizontal, solid red line. One standard deviation above and below the
-average are marked with horizontal, dashed red lines.
-
 The trace of this run is largely centered on the average with no
 large-scale oscillations or major shifts, indicating a good-quality MC
 run.
