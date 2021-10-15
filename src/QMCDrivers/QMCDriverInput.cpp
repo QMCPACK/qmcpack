@@ -72,6 +72,13 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
+#if defined(NDEBUG)
+  aAttrib.add(debug_mode_, "debug_mode",
+              {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+#else
+  aAttrib.add(debug_mode_, "debug_mode",
+              {"all", "no", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+#endif
 
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor

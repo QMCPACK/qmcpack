@@ -240,6 +240,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   { // collect GL for KE.
     ScopedTimer buffer_local(timers.buffer_timer);
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
+    if (sft.qmcdrv_input.get_debug_mode() == "checkGL_after_moves" || sft.qmcdrv_input.get_debug_mode() == "all")
+      QMCDriverNew::checkLogAndGL(crowd, "checkGL_after_moves");
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
@@ -248,7 +250,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
         ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
-    assert(QMCDriverNew::checkLogAndGL(crowd));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
                                    auto rr_prop) {
@@ -307,7 +308,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     if (moved_nonlocal_walkers.size())
     {
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
-      assert(QMCDriverNew::checkLogAndGL(crowd));
+      if (sft.qmcdrv_input.get_debug_mode() == "checkGL_after_tmove" || sft.qmcdrv_input.get_debug_mode() == "all")
+        QMCDriverNew::checkLogAndGL(crowd, "checkGL_after_tmove");
       ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }
   }
@@ -440,7 +442,7 @@ bool DMCBatched::run()
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
       // \todo make task block
       // probably something smart can be done to include reduction over crowds below
-      for (int crowd_id=0; crowd_id<crowds_.size(); ++crowd_id)
+      for (int crowd_id = 0; crowd_id < crowds_.size(); ++crowd_id)
       {
         Crowd& crowd = *(crowds_[crowd_id]);
         if (crowd.size() > 0)

@@ -37,8 +37,9 @@ public:
   QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
 
 protected:
-
   bool scoped_profiling_ = false;
+  /// determine additional checks for debugging purpose
+  std::string debug_mode_;
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -63,12 +64,12 @@ protected:
   IndexType requested_samples_ = 0;
   IndexType sub_steps_         = 1;
   // max unnecessary in this context
-  IndexType max_blocks_               = 1;
-  IndexType max_steps_                = 1;
-  IndexType warmup_steps_             = 0;
-  IndexType steps_between_samples_    = 1;
-  IndexType samples_per_thread_       = 0;
-  RealType tau_                       = 0.1;
+  IndexType max_blocks_            = 1;
+  IndexType max_steps_             = 1;
+  IndexType warmup_steps_          = 0;
+  IndexType steps_between_samples_ = 1;
+  IndexType samples_per_thread_    = 0;
+  RealType tau_                    = 0.1;
   // call recompute at the end of each block in the full/mixed precision case.
   IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
@@ -121,6 +122,7 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
+  const std::string& get_debug_mode() const { return debug_mode_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
   bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
 
