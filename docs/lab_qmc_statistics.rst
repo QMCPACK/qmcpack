@@ -404,7 +404,7 @@ directory produces a single line of output:
 
   H  series 0  LocalEnergy = -0.454460 +/- 0.000568
 
-Type ``qmca –help`` to see the list of all quantities and their
+Type ``qmca --help`` to see the list of all quantities and their
 abbreviations.
 
 Evaluating MC simulation quality
@@ -430,11 +430,6 @@ trace of the local energy:
 .. image:: /figs/lab_qmc_statistics_tracing1.png
   :width: 500
   :align: center
-
-The solid black line connects the values of the local energy at each MC
-block (labeled “samples”). The average value is marked with a
-horizontal, solid red line. One standard deviation above and below the
-average are marked with horizontal, dashed red lines.
 
 The solid black line connects the values of the local energy at each MC
 block (labeled “samples”). The average value is marked with a
