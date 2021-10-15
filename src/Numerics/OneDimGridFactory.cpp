@@ -14,6 +14,7 @@
 
 #include "OneDimGridFactory.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/Communicate.h"
 namespace qmcplusplus
 {
 std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNodePtr cur)
@@ -40,8 +41,6 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   radAttrib.add(gridID, "ref");
   if (cur != NULL)
     radAttrib.put(cur);
-  //return for the same grid
-  bool hasName = (gridID != "invalid");
   if (gridType == "log")
   {
     if (ascale > 0.0)
@@ -67,6 +66,10 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
     LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
     agrid = std::make_unique<LinearGrid<RealType>>();
     agrid->set(ri, rf, npts);
+  }
+  else
+  {
+    APP_ABORT("Unknown gridtype \"" << gridType << "\". Valid settings are \"log\" and \"linear\"")
   }
   return agrid;
 }
