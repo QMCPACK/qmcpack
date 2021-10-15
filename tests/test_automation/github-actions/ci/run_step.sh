@@ -199,6 +199,10 @@ case "$1" in
        export LIBOMP_USE_HIDDEN_HELPER_TASK=0
     fi
 
+    if [[ "${GH_JOBNAME}" =~ (afqmc-offload) ]]
+    then
+       export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH}
+    fi
     
     ctest --output-on-failure $TEST_LABEL
     ;;
