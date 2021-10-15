@@ -14,7 +14,8 @@
 
 #include "OneDimGridFactory.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
+
 namespace qmcplusplus
 {
 std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNodePtr cur)
@@ -69,7 +70,7 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   }
   else
   {
-    APP_ABORT("Unknown gridtype \"" << gridType << "\". Valid settings are \"log\" and \"linear\"")
+    throw UniformCommunicateError("Unknown gridtype. Valid settings are \"log\" and \"linear\"\n");
   }
   return agrid;
 }
