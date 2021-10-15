@@ -404,7 +404,7 @@ directory produces a single line of output:
 
   H  series 0  LocalEnergy = -0.454460 +/- 0.000568
 
-Type ``qmca –help`` to see the list of all quantities and their
+Type ``qmca --help`` to see the list of all quantities and their
 abbreviations.
 
 Evaluating MC simulation quality
