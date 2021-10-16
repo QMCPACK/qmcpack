@@ -23,7 +23,7 @@ set(UTEST_EXE test_omptarget_blas)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 add_executable(${UTEST_EXE} test_ompBLAS.cpp)
-target_link_libraries(${UTEST_EXE} catch_main platform_LA utilities_for_test containers)
+target_link_libraries(${UTEST_EXE} catch_main platform_LA containers)
 
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
