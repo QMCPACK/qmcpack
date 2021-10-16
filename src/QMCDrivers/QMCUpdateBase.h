@@ -54,6 +54,8 @@ public:
   bool BadState;
   ///number of steps per measurement
   int nSubSteps;
+  /// determine additional checks for debugging purpose
+  std::string debug_mode_;
   ///MaxAge>0 indicates branch is done
   IndexType MaxAge;
   ///counter for number of moves accepted
@@ -299,7 +301,7 @@ protected:
   QMCUpdateBase(const QMCUpdateBase&) = delete;
 
   /// check logpsi and grad and lap against values computed from scratch
-  static bool checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf);
+  static void checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, const std::string_view location);
 
 private:
   ///set default parameters

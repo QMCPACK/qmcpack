@@ -66,19 +66,19 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(drift_modifier_, "drift_modifier");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
   parameter_set.add(max_disp_sq_, "maxDisplSq");
+#if defined(NDEBUG)
+  parameter_set.add(debug_mode_, "debug_mode",
+                    {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+#else
+  parameter_set.add(debug_mode_, "debug_mode",
+                    {"all", "no", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+#endif
 
   OhmmsAttributeSet aAttrib;
   // first stage in from QMCDriverFactory
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
-#if defined(NDEBUG)
-  aAttrib.add(debug_mode_, "debug_mode",
-              {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
-#else
-  aAttrib.add(debug_mode_, "debug_mode",
-              {"all", "no", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
-#endif
 
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor

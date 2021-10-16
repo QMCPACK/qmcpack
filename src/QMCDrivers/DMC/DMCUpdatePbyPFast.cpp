@@ -138,7 +138,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       ScopedTimer local_timer(myTimers[DMC_buffer]);
       thisWalker.Age = 0;
       logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
-      assert(checkLogAndGL(W, Psi));
+      if (debug_mode_ == "checkGL_after_moves" || debug_mode_ == "all")
+        checkLogAndGL(W, Psi, "checkGL_after_moves");
       W.saveWalker(thisWalker);
     }
     {
@@ -165,7 +166,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     H.rejectedMove(W, thisWalker);
     thisWalker.Weight = wtmp;
     ++nAllRejected;
-    enew   = eold; //copy back old energy
+    enew = eold; //copy back old energy
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)
