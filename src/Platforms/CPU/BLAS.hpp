@@ -114,6 +114,7 @@ namespace BLAS
 
   inline static void scal(int n, float alpha, std::complex<float>* x, int incx = 1) { csscal(n, alpha, x, incx); }
 
+  // amat is [n][m] in C
   inline static void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
   {
     dgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
@@ -142,6 +143,7 @@ namespace BLAS
     cgemv(NOTRANS, m, n, cone, amat, m, x, INCX, czero, y, INCY);
   }
 
+  // amat is [n][m] in C
   inline static void gemv_trans(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
   {
     dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
