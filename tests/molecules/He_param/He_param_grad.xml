@@ -78,8 +78,9 @@
   <!-- QMC method(s) to run -->
 
   <loop max="10">
-    <qmc method="opt_batch" move="pbyp" checkpoint="-1" gpu="no">
-      <optimize method="test" output_param_file="yes"/>
+    <qmc method="linear_batch" move="pbyp" checkpoint="-1" gpu="no">
+      <parameter name="MinMethod">gradient_test</parameter>
+      <parameter name="output_param_file">yes</parameter>
       <parameter name="blocks">     100  </parameter>
 
       <parameter name="warmupsteps"> 25 </parameter>

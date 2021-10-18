@@ -22,6 +22,7 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "QMCDrivers/WFOpt/GradientTest.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -306,6 +307,11 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
     output_matrices_initialized_ = true;
   }
 
+  if (doGradientTest)
+  {
+    app_log() << "Doing gradient test run" << std::endl;
+    return test_run();
+  }
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -326,6 +332,18 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
     return one_shift_run();
 
   return previous_linear_methods_run();
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::test_run()
+{
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  testEngineObj->run(*optTarget, get_root_name());
+
+  finish();
+
+  return true;
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
@@ -591,9 +609,18 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
     app_log() << std::endl;
   }
 
+  doGradientTest = false;
+  if (MinMethod == "gradient_test")
+  {
+    GradientTestInput test_grad_input;
+    test_grad_input.readXML(q);
+    if (!testEngineObj)
+      testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
+
+    doGradientTest = true;
+  }
 
   doHybrid = false;
-
 
   if (MinMethod == "hybrid")
   {

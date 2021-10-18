@@ -1,4 +1,6 @@
 if(NOT QMC_CUDA)
+  if(NOT QMC_MIXED_PRECISION)
+
 
   list(APPEND HE_BSPLINE_PARAM jud_0 -0.121914 0.0014) # scalar name, value, error
   list(APPEND HE_BSPLINE_PARAM jud_1 0.069689 0.0015)
@@ -22,6 +24,10 @@ if(NOT QMC_CUDA)
     0
     SCALAR_VALUES
     HE_BSPLINE_PARAM)
+  else()
+    message(VERBOSE "Skipping He_param tests because parameter output is not supported by mixed precison build (QMC_MIXED_PRECISION=1)")
+  endif()
+
 else()
   message(VERBOSE "Skipping He_param tests because parameter output is not supported by CUDA build (QMC_CUDA=1)")
 endif()

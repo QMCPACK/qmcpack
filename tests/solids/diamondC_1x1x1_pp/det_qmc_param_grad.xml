@@ -83,8 +83,9 @@
       </hamiltonian>
    </qmcsystem>
  <loop max="1">
-  <qmc gpu="yes" method="opt_batch" move="pbyp">
-    <optimize method="test" output_param_file="yes"/>
+  <qmc gpu="yes" method="linear_batch" move="pbyp">
+    <parameter name="MinMethod">gradient_test</parameter>
+    <parameter name="output_param_file">yes</parameter>
     <estimator hdf5="no" name="LocalEnergy" />
     <parameter name="walkers_per_rank">       1 </parameter>
     <parameter name="warmupSteps">            1 </parameter>
