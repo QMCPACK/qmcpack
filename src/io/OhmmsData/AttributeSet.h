@@ -23,32 +23,16 @@
  */
 struct OhmmsAttributeSet
 {
-  typedef std::map<std::string, OhmmsElementBase*> Container_t;
+  typedef std::map<std::string, std::unique_ptr<OhmmsElementBase>> Container_t;
   typedef Container_t::iterator iterator;
   typedef Container_t::const_iterator const_iterator;
 
   Container_t m_param;
 
-  ~OhmmsAttributeSet()
-  {
-    iterator it(m_param.begin());
-    iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      delete (*it).second;
-      ++it;
-    }
-  }
-
   bool get(std::ostream& os) const
   {
-    const_iterator it(m_param.begin());
-    const_iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      (*it).second->get(os);
-      ++it;
-    }
+    for (const auto& it : m_param)
+      it.second->get(os);
     return true;
   }
 
@@ -67,7 +51,7 @@ struct OhmmsAttributeSet
     iterator it(m_param.find(aname));
     if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname, std::move(candidate_values), status);
+      m_param[aname] = std::make_unique<OhmmsParameter<PDT>>(aparam, aname, std::move(candidate_values), status);
     }
   }
 

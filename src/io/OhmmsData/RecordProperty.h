@@ -98,11 +98,11 @@ protected:
 template<class T>
 struct RecordNamedProperty : public RecordProperty
 {
-  std::ostream* OutStream;
+  std::unique_ptr<std::ostream> OutStream;
   std::vector<T> Values;
   std::vector<std::string> Names;
 
-  RecordNamedProperty() : OutStream(0)
+  RecordNamedProperty()
   {
     Values.reserve(20);
     Names.reserve(20);
@@ -115,12 +115,6 @@ struct RecordNamedProperty : public RecordProperty
   }
 
   RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(0), Values(a.Values), Names(a.Names) {}
-
-  ~RecordNamedProperty() override
-  {
-    if (OutStream)
-      delete OutStream;
-  }
 
   void clear()
   {
@@ -195,15 +189,13 @@ struct RecordNamedProperty : public RecordProperty
   ///implement virtual functions
   inline void reset(const char* fileroot, bool append = false) override
   {
-    if (OutStream)
-      delete OutStream;
     if (append)
     {
-      OutStream = new std::ofstream(fileroot, std::ios_base::app);
+      OutStream = std::make_unique<std::ofstream>(fileroot, std::ios_base::app);
     }
     else
     {
-      OutStream = new std::ofstream(fileroot);
+      OutStream = std::make_unique<std::ofstream>(fileroot);
     }
     if (!append)
     {
