@@ -27,14 +27,15 @@ TEST_CASE("test_communicate_split_one", "[message]")
   if (c->rank() == 0)
   {
     REQUIRE(c2->isGroupLeader() == true);
-    REQUIRE(c2->GroupLeaderComm != nullptr);
-    REQUIRE(c2->GroupLeaderComm->size() == 1);
-    REQUIRE(c2->GroupLeaderComm->rank() == 0);
+    auto GroupLeaderComm = c2->getGroupLeaderComm();
+    REQUIRE(GroupLeaderComm != nullptr);
+    REQUIRE(GroupLeaderComm->size() == 1);
+    REQUIRE(GroupLeaderComm->rank() == 0);
   }
   else
   {
     REQUIRE(c2->isGroupLeader() == false);
-    REQUIRE(c2->GroupLeaderComm == nullptr);
+    REQUIRE(c2->getGroupLeaderComm() == nullptr);
   }
 }
 
@@ -67,21 +68,22 @@ TEST_CASE("test_communicate_split_two", "[message]")
     if (c->rank() == 0 || c->rank() == midpoint)
     {
       REQUIRE(c2->isGroupLeader() == true);
-      REQUIRE(c2->GroupLeaderComm != nullptr);
-      REQUIRE(c2->GroupLeaderComm->size() == 2);
+      auto GroupLeaderComm = c2->getGroupLeaderComm();
+      REQUIRE(GroupLeaderComm != nullptr);
+      REQUIRE(GroupLeaderComm->size() == 2);
       if (c->rank() == 0)
       {
-        REQUIRE(c2->GroupLeaderComm->rank() == 0);
+        REQUIRE(GroupLeaderComm->rank() == 0);
       }
       else
       {
-        REQUIRE(c2->GroupLeaderComm->rank() == 1);
+        REQUIRE(GroupLeaderComm->rank() == 1);
       }
     }
     else
     {
       REQUIRE(c2->isGroupLeader() == false);
-      REQUIRE(c2->GroupLeaderComm == nullptr);
+      REQUIRE(c2->getGroupLeaderComm() == nullptr);
     }
   }
 }
@@ -102,14 +104,15 @@ TEST_CASE("test_communicate_split_four", "[message]")
     if (new_rank == 0)
     {
       REQUIRE(c2->isGroupLeader() == true);
-      REQUIRE(c2->GroupLeaderComm != nullptr);
-      REQUIRE(c2->GroupLeaderComm->size() == 4);
-      REQUIRE(c2->GroupLeaderComm->rank() == c->rank() / group_size);
+      auto GroupLeaderComm = c2->getGroupLeaderComm();
+      REQUIRE(GroupLeaderComm != nullptr);
+      REQUIRE(GroupLeaderComm->size() == 4);
+      REQUIRE(GroupLeaderComm->rank() == c->rank() / group_size);
     }
     else
     {
       REQUIRE(c2->isGroupLeader() == false);
-      REQUIRE(c2->GroupLeaderComm == nullptr);
+      REQUIRE(c2->getGroupLeaderComm() == nullptr);
     }
   }
 }
