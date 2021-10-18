@@ -197,7 +197,7 @@ bool QMCOptimize::put(xmlNodePtr q)
       app_log() << " Annealing optimization using DampedDynamics" << std::endl;
       optSolver = new DampedDynamics<RealType>;
     }
-    else if ((optmethod == "flexOpt") | (optmethod == "flexopt") | (optmethod == "macopt"))
+    else if ((optmethod == "flexOpt") || (optmethod == "flexopt") || (optmethod == "macopt"))
     {
       app_log() << "Conjugate-gradient optimization using FlexOptimization" << std::endl;
       app_log() << " This method has been removed. " << std::endl;
