@@ -16,6 +16,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include <algorithm>
+#include <optional>
 #include <vector>
 #include <string>
 #include <fstream>
@@ -98,7 +99,7 @@ protected:
 template<class T>
 struct RecordNamedProperty : public RecordProperty
 {
-  std::unique_ptr<std::ostream> OutStream;
+  std::optional<std::ofstream> OutStream;
   std::vector<T> Values;
   std::vector<std::string> Names;
 
@@ -114,7 +115,7 @@ struct RecordNamedProperty : public RecordProperty
     Names.resize(n);
   }
 
-  RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(0), Values(a.Values), Names(a.Names) {}
+  RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(), Values(a.Values), Names(a.Names) {}
 
   void clear()
   {
@@ -191,11 +192,11 @@ struct RecordNamedProperty : public RecordProperty
   {
     if (append)
     {
-      OutStream = std::make_unique<std::ofstream>(fileroot, std::ios_base::app);
+      OutStream = std::ofstream(fileroot, std::ios_base::app);
     }
     else
     {
-      OutStream = std::make_unique<std::ofstream>(fileroot);
+      OutStream = std::ofstream(fileroot);
     }
     if (!append)
     {
