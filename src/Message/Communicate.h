@@ -49,7 +49,6 @@ struct CommunicatorTraits
 
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
 #include <utility>
 #include <unistd.h>
@@ -145,28 +144,6 @@ public:
 #endif
 #endif
 
-  inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES)
-  {
-    char hostname[HOST_NAME_MAX];
-    gethostname(hostname, HOST_NAME_MAX);
-    int myrank = rank(), nprocs = size();
-    std::vector<char> all_hostnames(nprocs * HOST_NAME_MAX);
-    MPI_Allgather(hostname, HOST_NAME_MAX, MPI_CHAR, all_hostnames.data(), HOST_NAME_MAX, MPI_CHAR, myMPI);
-    bool head_of_node = true;
-    std::string_view my_hostname(hostname);
-    for (int i = 0; i < myrank; i++)
-    {
-      std::string_view a_hostname(std::next(all_hostnames.data(), i * HOST_NAME_MAX));
-      if (my_hostname == a_hostname)
-      {
-        head_of_node = false;
-        break;
-      }
-    }
-    int key = head_of_node ? 0 : 10;
-    MPI_Comm_split(myMPI, key, myrank, &MPI_COMM_HEAD_OF_NODES);
-    return head_of_node;
-  }
 #endif
 
 #ifdef HAVE_MPI
