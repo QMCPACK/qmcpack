@@ -53,7 +53,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
 
-  if (sft.qmcdrv_input.get_debug_mode() == "checkGL_after_load" || sft.qmcdrv_input.get_debug_mode() == "all")
+  if (sft.qmcdrv_input.get_debug_checks() == "checkGL_after_load" || sft.qmcdrv_input.get_debug_checks() == "all")
     checkLogAndGL(crowd, "checkGL_after_load");
 
   timers.movepbyp_timer.start();
@@ -169,7 +169,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
-  if (sft.qmcdrv_input.get_debug_mode() == "checkGL_after_moves" || sft.qmcdrv_input.get_debug_mode() == "all")
+  if (sft.qmcdrv_input.get_debug_checks() == "checkGL_after_moves" || sft.qmcdrv_input.get_debug_checks() == "all")
     checkLogAndGL(crowd, "checkGL_after_moves");
   timers.buffer_timer.stop();
 

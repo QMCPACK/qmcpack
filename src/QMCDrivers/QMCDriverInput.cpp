@@ -67,10 +67,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
   parameter_set.add(max_disp_sq_, "maxDisplSq");
 #if defined(NDEBUG)
-  parameter_set.add(debug_mode_, "debug_mode",
+  parameter_set.add(debug_checks_, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
 #else
-  parameter_set.add(debug_mode_, "debug_mode",
+  parameter_set.add(debug_checks_, "debug_checks",
                     {"all", "no", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
 #endif
 

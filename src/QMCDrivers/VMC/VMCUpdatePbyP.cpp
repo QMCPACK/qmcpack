@@ -115,7 +115,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   movepbyp_timer_.stop();
   buffer_timer_.start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
-  if (debug_mode_ == "checkGL_after_moves" || debug_mode_ == "all")
+  if (debug_checks_ == "checkGL_after_moves" || debug_checks_ == "all")
     checkLogAndGL(W, Psi, "checkGL_after_moves");
   W.saveWalker(thisWalker);
   buffer_timer_.stop();

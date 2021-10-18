@@ -55,7 +55,7 @@ public:
   ///number of steps per measurement
   int nSubSteps;
   /// determine additional checks for debugging purpose
-  std::string debug_mode_;
+  std::string debug_checks_;
   ///MaxAge>0 indicates branch is done
   IndexType MaxAge;
   ///counter for number of moves accepted

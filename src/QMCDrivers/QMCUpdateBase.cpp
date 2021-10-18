@@ -78,9 +78,9 @@ void QMCUpdateBase::setDefaults()
   m_r2max    = -1;
   myParams.add(m_r2max, "maxDisplSq"); //maximum displacement
 #if defined(NDEBUG)
-  myParams.add(debug_mode_, "debug_mode", {"no", "all", "checkGL_after_moves"});
+  myParams.add(debug_checks_, "debug_checks", {"no", "all", "checkGL_after_moves"});
 #else
-  myParams.add(debug_mode_, "debug_mode", {"all", "no", "checkGL_after_moves"});
+  myParams.add(debug_checks_, "debug_checks", {"all", "no", "checkGL_after_moves"});
 #endif
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
