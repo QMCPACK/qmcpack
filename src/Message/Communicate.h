@@ -47,6 +47,7 @@ struct CommunicatorTraits
 };
 #endif
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <utility>
@@ -143,25 +144,6 @@ public:
 #endif
 #endif
 
-  inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES)
-  {
-    char hostname[HOST_NAME_MAX];
-    gethostname(hostname, HOST_NAME_MAX);
-    int myrank = rank(), nprocs = size();
-    char* dummy = new char[nprocs * HOST_NAME_MAX];
-    MPI_Allgather(hostname, HOST_NAME_MAX, MPI_CHAR, dummy, HOST_NAME_MAX, MPI_CHAR, myMPI);
-    bool head_of_node = true;
-    for (int i = 0; i < myrank; i++)
-      if (strcmp(hostname, dummy + i * HOST_NAME_MAX) == 0)
-      {
-        head_of_node = false;
-        break;
-      }
-    int key = head_of_node ? 0 : 10;
-    MPI_Comm_split(myMPI, key, myrank, &MPI_COMM_HEAD_OF_NODES);
-    delete[] dummy;
-    return head_of_node;
-  }
 #endif
 
 #ifdef HAVE_MPI
@@ -240,10 +222,12 @@ protected:
   int d_groupid;
   /// Total number of groups in the parent communicator
   int d_ngroups;
+  /// Group Leader Communicator
+  std::unique_ptr<Communicate> GroupLeaderComm;
 
 public:
-  /// Group Lead Communicator
-  Communicate* GroupLeaderComm;
+  // Avoid public access to unique_ptr.
+  Communicate* getGroupLeaderComm() { return GroupLeaderComm.get(); }
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper
