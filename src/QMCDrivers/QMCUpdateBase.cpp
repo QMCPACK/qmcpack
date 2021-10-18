@@ -78,9 +78,9 @@ void QMCUpdateBase::setDefaults()
   m_r2max    = -1;
   myParams.add(m_r2max, "maxDisplSq"); //maximum displacement
 #if defined(NDEBUG)
-  myParams.add(debug_checks_, "debug_checks", {"no", "all", "checkGL_after_moves"});
+  myParams.add(debug_checks_str_, "debug_checks", {"no", "all", "checkGL_after_moves"});
 #else
-  myParams.add(debug_checks_, "debug_checks", {"all", "no", "checkGL_after_moves"});
+  myParams.add(debug_checks_str_, "debug_checks", {"all", "no", "checkGL_after_moves"});
 #endif
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
@@ -101,6 +101,17 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 {
   H.setNonLocalMoves(cur);
   bool s = myParams.put(cur);
+  if (debug_checks_str_ == "no")
+    debug_checks_ = DriverDebugChecks::ALL_OFF;
+  else
+  {
+    if (debug_checks_str_ == "all" || debug_checks_str_ == "checkGL_after_load")
+      debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_LOAD;
+    if (debug_checks_str_ == "all" || debug_checks_str_ == "checkGL_after_moves")
+      debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_MOVES;
+    if (debug_checks_str_ == "all" || debug_checks_str_ == "checkGL_after_tmove")
+      debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
+  }
   return s;
 }
 

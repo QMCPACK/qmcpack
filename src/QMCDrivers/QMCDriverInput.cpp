@@ -35,6 +35,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   // so its better it not live long
 
   std::string serialize_walkers;
+  std::string debug_checks_str;
 
   ParameterSet parameter_set;
   parameter_set.add(store_config_period_, "storeconfigs");
@@ -67,10 +68,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
   parameter_set.add(max_disp_sq_, "maxDisplSq");
 #if defined(NDEBUG)
-  parameter_set.add(debug_checks_, "debug_checks",
+  parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
 #else
-  parameter_set.add(debug_checks_, "debug_checks",
+  parameter_set.add(debug_checks_str, "debug_checks",
                     {"all", "no", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
 #endif
 
@@ -130,6 +131,17 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   if (scoped_profiling_)
     app_summary() << "  Profiler data collection is enabled in this driver scope." << std::endl;
 
+  if (debug_checks_str == "no")
+    debug_checks_ = DriverDebugChecks::ALL_OFF;
+  else
+  {
+    if (debug_checks_str == "all" || debug_checks_str == "checkGL_after_load")
+      debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_LOAD;
+    if (debug_checks_str == "all" || debug_checks_str == "checkGL_after_moves")
+      debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_MOVES;
+    if (debug_checks_str == "all" || debug_checks_str == "checkGL_after_tmove")
+      debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
+  }
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;

@@ -146,7 +146,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       ScopedTimer local_timer(myTimers[SODMC_buffer]);
       thisWalker.Age = 0;
       logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
-      if (debug_checks_ == "checkGL_after_moves" || debug_checks_ == "all")
+      if (debug_checks_ & DriverDebugChecks::CHECKGL_AFTER_MOVES)
         checkLogAndGL(W, Psi, "checkGL_after_moves");
       W.saveWalker(thisWalker);
     }

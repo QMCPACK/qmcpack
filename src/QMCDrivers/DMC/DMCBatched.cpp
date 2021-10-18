@@ -240,7 +240,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   { // collect GL for KE.
     ScopedTimer buffer_local(timers.buffer_timer);
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
-    if (sft.qmcdrv_input.get_debug_checks() == "checkGL_after_moves" || sft.qmcdrv_input.get_debug_checks() == "all")
+    if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
       checkLogAndGL(crowd, "checkGL_after_moves");
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
@@ -308,7 +308,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     if (moved_nonlocal_walkers.size())
     {
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
-      if (sft.qmcdrv_input.get_debug_checks() == "checkGL_after_tmove" || sft.qmcdrv_input.get_debug_checks() == "all")
+      if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_TMOVE)
         checkLogAndGL(crowd, "checkGL_after_tmove");
       ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }

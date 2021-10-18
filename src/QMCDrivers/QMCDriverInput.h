@@ -14,7 +14,8 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCDrivers/InputTypes.hpp"
+#include "InputTypes.hpp"
+#include "DriverDebugChecks.h"
 
 namespace qmcplusplus
 {
@@ -39,7 +40,7 @@ public:
 protected:
   bool scoped_profiling_ = false;
   /// determine additional checks for debugging purpose
-  std::string debug_checks_;
+  DriverDebugChecks debug_checks_ = DriverDebugChecks::ALL_OFF;
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -122,7 +123,7 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
-  const std::string& get_debug_checks() const { return debug_checks_; }
+  DriverDebugChecks get_debug_checks() const { return debug_checks_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
   bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
 
