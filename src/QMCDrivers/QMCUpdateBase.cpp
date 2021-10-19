@@ -286,16 +286,23 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
   pset.update();
   twf.evaluateLog(pset);
 
+  RealType threshold;
+  // mixed precision can't make this test with cuda direct inversion
+  if constexpr (std::is_same<RealType, FullPrecRealType>::value)
+    threshold = 100 * std::numeric_limits<float>::epsilon();
+  else
+    threshold = 500 * std::numeric_limits<float>::epsilon();
+
   std::ostringstream msg;
-  const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
-  auto& ref_G              = twf.G;
-  auto& ref_L              = twf.L;
+  auto& ref_G = twf.G;
+  auto& ref_L = twf.L;
   TrialWaveFunction::LogValueType ref_log{twf.getLogPsi(), twf.getPhase()};
   if (std::abs(std::exp(log_value) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
   {
     success = false;
     msg << "Logpsi " << log_value << " ref " << ref_log << std::endl;
   }
+
   for (int iel = 0; iel < ref_G.size(); iel++)
   {
     auto grad_diff = ref_G[iel] - G_saved[iel];
@@ -305,11 +312,13 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
       msg << "Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << G_saved[iel] << " Delta " << grad_diff
           << std::endl;
     }
+
     auto lap_diff = ref_L[iel] - L_saved[iel];
     if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threshold)
     {
       // very hard to check mixed precision case, only print, no error out
-      success = !std::is_same<RealType, FullPrecRealType>::value;
+      if (std::is_same<RealType, FullPrecRealType>::value)
+        success = false;
       msg << "lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << L_saved[iel] << " Delta " << lap_diff
           << std::endl;
     }
@@ -317,7 +326,7 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
 
   std::cerr << msg.str();
   if (!success)
-    throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location));
+    throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
 
 void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)

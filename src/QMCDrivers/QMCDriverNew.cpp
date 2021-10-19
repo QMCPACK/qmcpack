@@ -531,8 +531,14 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
+  RealType threshold;
+  // mixed precision can't make this test with cuda direct inversion
+  if constexpr (std::is_same<RealType, FullPrecRealType>::value)
+    threshold = 100 * std::numeric_limits<float>::epsilon();
+  else
+    threshold = 500 * std::numeric_limits<float>::epsilon();
+
   std::ostringstream msg;
-  const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
   for (int iw = 0; iw < log_values.size(); iw++)
   {
     auto& ref_G = walker_twfs[iw].G;
@@ -543,6 +549,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
       success = false;
       msg << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
     }
+
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
       auto grad_diff = ref_G[iel] - Gs[iw][iel];
@@ -552,11 +559,13 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
         msg << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel]
             << " Delta " << grad_diff << std::endl;
       }
+
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
       if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threshold)
       {
         // very hard to check mixed precision case, only print, no error out
-        success = !std::is_same<RealType, FullPrecRealType>::value;
+        if (std::is_same<RealType, FullPrecRealType>::value)
+          success = false;
         msg << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << " Delta "
             << lap_diff << std::endl;
       }
@@ -565,7 +574,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
 
   std::cerr << msg.str();
   if (!success)
-    throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location));
+    throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
 
 } // namespace qmcplusplus
