@@ -29,6 +29,7 @@
 #include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -626,8 +627,9 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
       }
       else
       {
-        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << std::endl;
-        throw std::runtime_error("Unknown or missing method attribute in optimize tag");
+        std::stringstream error_msg;
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << "\n";
+        throw UniformCommunicateError(error_msg.str());
       }
     }
   });
