@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from sys import argv
 from gpaw import restart,setup_paths
 from gpaw import __version__ as gpaw_version
 from numpy import array,pi,dot,real,imag,concatenate,unique,zeros
@@ -10,11 +9,14 @@ i32le = '<i4' # default integer dtype
 h5str = 'S'   # default string dtype
 a0    = 0.529177210903
 
+
 # load gpaw restart file
 def load_gpaw_restart(filename):
     atoms,calc = restart(filename)
     # check wfs
-    if not 'wfs' in calc.keys():
+    try:
+        wfs = calc.wfs
+    except:
         print('ERROR: No wavefunctions found in the GPAW restart file {}'.format(filename))
         print("Make sure to write the GPAW file with mode='all'!")
         exit()
@@ -236,8 +238,11 @@ def parse_args(args):
 #end def
 
 
-if __name__=='__main__':
-    infile,outfile = parse_args(argv)
+def convert_gpaw4qmcpack(
+        infile,
+        outfile,
+        add_setup_path='./',
+        ):
     # for testing, add local directory by default
     add_setup_path('./')
     atoms,calc = load_gpaw_restart(infile)
@@ -249,5 +254,13 @@ if __name__=='__main__':
         write_supercell(f,calc)
         write_version(f)
     #end with
+#end def
+
+
+if __name__=='__main__':
+    from sys import argv
+    infile,outfile = parse_args(argv)
+    convert_gpaw4qmcpack(infile,outfile)
+    print('Converted GPAW orbitals for QMCPACK!')
 #end if
 
