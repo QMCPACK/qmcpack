@@ -16,7 +16,6 @@
 namespace qmcplusplus
 {
 
-#if 1
 void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_name)
 {
   int num_params = costFunc.getNumParams();
@@ -81,6 +80,5 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
 
   app_log() << std::endl;
 }
-#endif
 
 } // namespace qmcplusplus
