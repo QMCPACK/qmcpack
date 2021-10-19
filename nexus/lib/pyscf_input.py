@@ -390,7 +390,9 @@ $calculation
                     c += 'mf.chkfile=\'{}\'\n'.format(pyscf_chkfile)
                 #end if
             #end if
-            c += 'mf.xc          = \'{}\'\n'.format(pyscf_xc)
+            if 'KS' in pyscf_method:
+                c += 'mf.xc          = \'{}\'\n'.format(pyscf_xc)
+            #end if
             c += 'mf.tol         = \'{}\'\n'.format(pyscf_tol)
             if pyscf_df_fitting and not is_mole:
                 c += 'mf.with_df     = mydf\n'
