@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -91,11 +92,18 @@ void InputSection::set_defaults()
 
 void InputSection::set_from_stream(const std::string& name, std::istringstream& svalue)
 {
-  if (is_string(name))
+  if (is_string(name) || is_enum_string(name))
   {
     std::string value;
     svalue >> value;
     values[name] = value;
+  }
+  else if (is_multi_string(name))
+  {
+    std::vector<std::string> string_values;
+    for (std::string value; svalue >> value;)
+      string_values.push_back(value);
+    values[name] = string_values;
   }
   else if (is_bool(name))
   {
@@ -116,6 +124,12 @@ void InputSection::set_from_stream(const std::string& name, std::istringstream& 
     svalue >> value;
     values[name] = value;
   }
+  else if (is_position(name))
+  {
+    Position value;
+    svalue >> value;
+    values[name] = value;
+  }
   else
   {
     std::stringstream error;
@@ -127,14 +141,18 @@ void InputSection::set_from_stream(const std::string& name, std::istringstream& 
 template<typename T>
 void InputSection::set_from_value(const std::string& name, const T& value)
 {
-  if (is_string(name))
+  if (is_string(name) || is_enum_string(name))
     values[name] = std::any_cast<std::string>(value);
+  else if (is_multi_string(name))
+    values[name] = (std::any_cast<std::vector<std::string>>(value));
   else if (is_bool(name))
     values[name] = std::any_cast<bool>(value);
   else if (is_integer(name))
     values[name] = std::any_cast<int>(value);
   else if (is_real(name))
     values[name] = std::any_cast<Real>(value);
+  else if (is_position(name))
+    values[name] = std::any_cast<Position>(value);
   else
   {
     std::stringstream error;
@@ -142,7 +160,6 @@ void InputSection::set_from_value(const std::string& name, const T& value)
     throw UniformCommunicateError(error.str());
   }
 }
-
 
 void InputSection::check_valid()
 {
