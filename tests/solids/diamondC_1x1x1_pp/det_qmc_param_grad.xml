@@ -84,8 +84,9 @@
    </qmcsystem>
  <loop max="1">
   <qmc gpu="yes" method="linear_batch" move="pbyp">
-    <parameter name="MinMethod">gradient_test</parameter>
-    <parameter name="output_param_file">yes</parameter>
+    <optimize method="gradient_test">
+      <parameter name="output_param_file">yes</parameter>
+    </optimize>
     <estimator hdf5="no" name="LocalEnergy" />
     <parameter name="walkers_per_rank">       1 </parameter>
     <parameter name="warmupSteps">            1 </parameter>

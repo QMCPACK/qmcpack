@@ -6,9 +6,7 @@
 
   <particleset name="ion0" size="1">
     <group name="He">
-      <parameter name="charge">2</parameter>
-    </group>
-    <attrib name="position" datatype="posArray">
+      <parameter name="charge">2</parameter> </group> <attrib name="position" datatype="posArray">
       0.0 0.0 0.0
     </attrib>
   </particleset>
@@ -79,8 +77,9 @@
 
   <loop max="10">
     <qmc method="linear_batch" move="pbyp" checkpoint="-1" gpu="no">
-      <parameter name="MinMethod">gradient_test</parameter>
-      <parameter name="output_param_file">yes</parameter>
+      <optimize method="gradient_test">
+        <parameter name="output_param_file">yes</parameter>
+      </optimize>
       <parameter name="blocks">     100  </parameter>
 
       <parameter name="warmupsteps"> 25 </parameter>

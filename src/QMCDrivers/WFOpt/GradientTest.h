@@ -23,14 +23,14 @@
  * This optimization type will compare finite difference derivatives with the analytic derivatives.
  * It can also output a file that can be used with 'qmca' to get error bars.
  *
- * The input is a method of the batched linear optimizer (method="opt_batch").
- * The MinMethod is 'gradient_test'.
+ * The input is placed under the batched linear optimizer (method="opt_batch").
+ * It uses the 'optimize' tag with the 'method' attribute set to 'gradient_test'
  * For example:
  * \code
  *  <loop max="4">
  *   <qmc method="opt_batch" move="pbyp">
- *     <parameter name="MinMethod">gradient_test</parameter>
- *     <parameter name="output_param_file">yes</parameter>
+ *     <optimize method="gradient_test">
+ *       <parameter name="output_param_file">yes</parameter>
  *     </optimize>
  *     ...
  *   </qmc>

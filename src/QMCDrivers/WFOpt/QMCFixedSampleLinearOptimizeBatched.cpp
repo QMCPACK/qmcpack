@@ -609,16 +609,29 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
     app_log() << std::endl;
   }
 
-  doGradientTest = false;
-  if (MinMethod == "gradient_test")
-  {
-    GradientTestInput test_grad_input;
-    test_grad_input.readXML(q);
-    if (!testEngineObj)
-      testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
 
-    doGradientTest = true;
-  }
+  doGradientTest = false;
+  processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "optimize")
+    {
+      const XMLAttrString att(element, "method");
+      if (!att.empty() && att == "gradient_test")
+      {
+        GradientTestInput test_grad_input;
+        test_grad_input.readXML(element);
+        if (!testEngineObj)
+          testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
+        doGradientTest = true;
+        MinMethod = "gradient_test";
+      }
+      else
+      {
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << std::endl;
+        throw std::runtime_error("Unknown or missing method attribute in optimize tag");
+      }
+    }
+  });
+
 
   doHybrid = false;
 
