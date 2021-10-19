@@ -38,12 +38,9 @@ public:
   using Lattice       = PtclOnLatticeTraits::ParticleLayout_t;
   using Position      = QMCTraits::PosType;
 
-  using Evaluators = OneBodyDensityMatricesInput::Evaluators;
+  using Evaluators  = OneBodyDensityMatricesInput::Evaluators;
   using Integrators = OneBodyDensityMatricesInput::Integrators;
-  using Samplings = OneBodyDensityMatricesInput::Samplings;
-
-  typedef std::vector<Position> pts_t;
-  typedef std::vector<Real> dens_t;
+  using Samplings   = OneBodyDensityMatricesInput::Samplings;
 
 private:
   OneBodyDensityMatricesInput input_;
@@ -55,28 +52,13 @@ private:
   Vector<Value> basis_norms;
   Vector<Grad> basis_gradients;
   Vector<Value> basis_laplacians;
-  Vector<Value> integrated_values;
-  bool warmed_up;
   std::vector<Position> rsamples;
   Vector<Real> sample_weights;
   std::vector<Value> psi_ratios;
   Real dens;
   Position drift;
   int nindex;
-  int eindex;
-  // TraceSample<TraceReal>* w_trace;
-  // TraceSample<TraceComp>* T_trace;
-  // CombinedTraceSample<TraceReal>* Vq_trace;
-  // CombinedTraceSample<TraceReal>* Vc_trace;
-  // CombinedTraceSample<TraceReal>* Vqq_trace;
-  // CombinedTraceSample<TraceReal>* Vqc_trace;
 
-  // CombinedTraceSample<TraceReal>* Vcc_trace;
-  std::vector<Value> E_samp;
-  // CombinedTraceSample<TraceReal>* E_trace;
-
-  bool initialized;
-  bool normalized;
   bool volume_normed;
   int basis_size;
   int samples;
@@ -84,7 +66,6 @@ private:
   int nspecies;
   std::vector<int> species_size;
   std::vector<std::string> species_name;
-  std::vector<Vector<Value>*> E_N;
   std::vector<Matrix<Value>*> Phi_NB, Psi_NM, Phi_Psi_NB, N_BB, E_BB;
   Matrix<Value> Phi_MB;
   bool check_overlap;
@@ -114,7 +95,6 @@ private:
   Real rhocur;
 
   RandomGenerator_t* uniform_random;
-
 public:
   /** Standard Constructor
    *  If you are making a new OBDM this is what you should be calling
@@ -128,10 +108,13 @@ public:
 
   OneBodyDensityMatrices* clone() override;
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets, const RefVector<TrialWaveFunction>& wfns, RandomGenerator_t& rng) override;
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator_t& rng) override;
 
   void normalize(Real invToWgt) override;
-  
+
   void setRandomGenerator(RandomGenerator_t* rng);
 
   void startBlock(int steps) override;
@@ -150,13 +133,10 @@ private:
   void reset();
   void set_state(xmlNodePtr cur);
   void set_state(OneBodyDensityMatrices& master);
-  void initialize();
-  void finalize();
   void normalize();
   //  printing
   void report(const std::string& pad = "");
   //  sample generation
-  void warmup_sampling(ParticleSet& pset_target);
   void generate_samples(Real weight, ParticleSet& pset_target, int steps = 0);
   void generate_uniform_grid(RandomGenerator_t& rng);
   void generate_uniform_samples(RandomGenerator_t& rng);
@@ -167,38 +147,15 @@ private:
   //  basis & wavefunction ratio matrix construction
   void get_energies(std::vector<Vector<Value>*>& E_n);
   void generate_sample_basis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-  void generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm, ParticleSet& pset_target, TrialWaveFunction& psi_target);
+  void generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm,
+                              ParticleSet& pset_target,
+                              TrialWaveFunction& psi_target);
   void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>*>& Phi_nb, ParticleSet& pset_target);
   //  basis set updates
   void update_basis(const Position& r, ParticleSet& pset_target);
   void update_basis_d012(const Position& r, ParticleSet& pset_target);
-  //  testing
-  void test_overlap(ParticleSet& pset_target);
-  void test_derivatives(ParticleSet& pset_target);
-  //  original loop implementation
-  void integrate(ParticleSet& P, ParticleSet& pset_target, TrialWaveFunction& psi_target, int n);
-  FullPrecReal evaluateLoop(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-  //  matrix implementation
-  FullPrecReal evaluate_check(ParticleSet& P);
-  FullPrecReal evaluate_matrix(ParticleSet& P, MCPWalker& walker, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-
-
-  bool match(Value e1, Value e2, Real tol = 1e-12);
-  bool same(Vector<Value>& v1, Vector<Value>& v2, Real tol = 1e-6);
-  bool same(Matrix<Value>& m1, Matrix<Value>& m2, Real tol = 1e-6);
-  void compare(const std::string& name,
-               Vector<Value>& v1,
-               Vector<Value>& v2,
-               bool write     = false,
-               bool diff_only = true);
-  void compare(const std::string& name,
-               Matrix<Value>& m1,
-               Matrix<Value>& m2,
-               bool write     = false,
-               bool diff_only = true);
-
   void normalize(ParticleSet& pset_target);
-  
+
   struct OneBodyDensityMatrixTimers
   {
     NewTimer& eval_timer;
