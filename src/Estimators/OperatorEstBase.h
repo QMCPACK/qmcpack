@@ -99,8 +99,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-
-  virtual OperatorEstBase* clone() = 0;
+  std::unique_ptr<OperatorEstBase> clone() { return std::unique_ptr<OperatorEstBase>(this->makeClone()); }
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
@@ -134,6 +133,8 @@ protected:
   static Data createLocalData(size_t size, DataLocality data_locality);
 
   Data data_;
+
+  virtual OperatorEstBase* makeClone() = 0;
 };
 } // namespace qmcplusplus
 #endif

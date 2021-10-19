@@ -44,7 +44,12 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
 
 
-OneBodyDensityMatrices* OneBodyDensityMatrices::clone() { return new OneBodyDensityMatrices(*this); }
+std::unique_ptr<OneBodyDensityMatrices> OneBodyDensityMatrices::clone()
+{
+  return std::unique_ptr<OneBodyDensityMatrices>(this->makeClone());
+}
+
+OneBodyDensityMatrices* OneBodyDensityMatrices::makeClone() { return new OneBodyDensityMatrices(*this); }
 
 void OneBodyDensityMatrices::startBlock(int steps) {}
 

@@ -62,7 +62,7 @@ public:
 
   /** standard interface
    */
-  SpinDensityNew* clone() override;
+  std::unique_ptr<SpinDensityNew> clone();
 
   /** accumulate 1 or more walkers of SpinDensity samples
    */
@@ -93,6 +93,9 @@ public:
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hid_t gid) override;
+
+protected:
+  SpinDensityNew* makeClone() override;
 
 private:
   static std::vector<int> getSpeciesSize(const SpeciesSet& species);

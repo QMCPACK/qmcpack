@@ -176,8 +176,12 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   data_            = createLocalData(data_size, data_locality_);
 }
 
+std::unique_ptr<MomentumDistribution> MomentumDistribution::clone()
+{
+  return std::unique_ptr<MomentumDistribution>(this->makeClone());
+}
 
-MomentumDistribution* MomentumDistribution::clone()
+MomentumDistribution* MomentumDistribution::makeClone()
 {
   auto* md = new MomentumDistribution(*this);
   if (md->data_locality_ == DataLocality::crowd)

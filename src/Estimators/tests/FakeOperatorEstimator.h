@@ -39,9 +39,12 @@ public:
 
   void startBlock(int nsteps) override {}
 
-  FakeOperatorEstimator* clone() override { return new FakeOperatorEstimator(*this); }
+  std::unique_ptr<FakeOperatorEstimator> clone() { return std::unique_ptr<FakeOperatorEstimator>(this->makeClone()); }
 
   void set_walker_weights(QMCT::RealType weight) { walkers_weight_ = weight; }
+
+protected:
+  FakeOperatorEstimator* makeClone() override { return new FakeOperatorEstimator(*this); }
 };
 
 } // namespace qmcplusplus
