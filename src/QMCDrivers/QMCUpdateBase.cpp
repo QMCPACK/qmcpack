@@ -77,11 +77,7 @@ void QMCUpdateBase::setDefaults()
   MaxAge     = 10;
   m_r2max    = -1;
   myParams.add(m_r2max, "maxDisplSq"); //maximum displacement
-#if defined(NDEBUG)
   myParams.add(debug_checks_str_, "debug_checks", {"no", "all", "checkGL_after_moves"});
-#else
-  myParams.add(debug_checks_str_, "debug_checks", {"all", "no", "checkGL_after_moves"});
-#endif
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
   assert(tspecies.getTotalNum() == W.groups());
