@@ -27,13 +27,6 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
-UPtr<OneBodyDensityMatrices> createOneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
-                                                          const PtclOnLatticeTraits::ParticleLayout_t& lattice,
-                                                          const SpeciesSet& species)
-{
-  return std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), lattice, species);
-}
-
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
     : OperatorEstBase(obdm.data_locality_),
       input_(obdm.input_),
@@ -65,7 +58,7 @@ inline void OneBodyDensityMatrices::generate_samples(Real weight, ParticleSet& p
   if (steps == 0)
   {
     save  = true;
-    steps = samples;
+    steps = samples_;
   }
   if (input_.get_integrator() == Integrators::UNIFORM_GRID)
     generate_uniform_grid(rng);
@@ -122,17 +115,17 @@ inline void OneBodyDensityMatrices::generate_uniform_grid(RandomGenerator_t& rng
   Real du         = input_.get_scale() / input_.get_points();
   for (int d = 0; d < OHMMS_DIM; ++d)
     ushift[d] += rng() * du;
-  for (int s = 0; s < samples; ++s)
+  for (int s = 0; s < samples_; ++s)
   {
     int nrem = s;
     for (int d = 0; d < OHMMS_DIM - 1; ++d)
     {
-      int ind = nrem / ind_dims[d];
+      int ind = nrem / ind_dims_[d];
       rp[d]   = ind * du + ushift[d];
-      nrem -= ind * ind_dims[d];
+      nrem -= ind * ind_dims_[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + ushift[OHMMS_DIM - 1];
-    rsamples[s]       = lattice_.toCart(rp) + rcorner;
+    rsamples[s]       = lattice_.toCart(rp) + rcorner_;
   }
 }
 
@@ -140,11 +133,11 @@ inline void OneBodyDensityMatrices::generate_uniform_grid(RandomGenerator_t& rng
 inline void OneBodyDensityMatrices::generate_uniform_samples(RandomGenerator_t& rng)
 {
   Position rp;
-  for (int s = 0; s < samples; ++s)
+  for (int s = 0; s < samples_; ++s)
   {
     for (int d = 0; d < OHMMS_DIM; ++d)
       rp[d] = input_.get_scale() * rng();
-    rsamples[s] = lattice_.toCart(rp) + rcorner;
+    rsamples[s] = lattice_.toCart(rp) + rcorner_;
   }
 }
 
@@ -255,7 +248,7 @@ void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
 {
   ScopedTimer local_timer(timers_.gen_sample_basis_timer);
   int mb = 0;
-  for (int m = 0; m < samples; ++m)
+  for (int m = 0; m < samples_; ++m)
   {
     update_basis(rsamples[m], pset_target);
     for (int b = 0; b < basis_size; ++b, ++mb)
@@ -269,7 +262,7 @@ void OneBodyDensityMatrices::generate_sample_ratios(std::vector<Matrix<Value>*> 
                                                     TrialWaveFunction& psi_target)
 {
   ScopedTimer t(timers_.gen_sample_ratios_timer);
-  for (int m = 0; m < samples; ++m)
+  for (int m = 0; m < samples_; ++m)
   {
     // get N ratios for the current sample point
     pset_target.makeVirtualMoves(rsamples[m]);
