@@ -9,6 +9,8 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_GRADIENTTEST_H
+#define QMCPLUSPLUS_GRADIENTTEST_H
 
 #include "GradientTestInput.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
@@ -66,3 +68,5 @@ private:
 };
 
 } // namespace qmcplusplus
+
+#endif

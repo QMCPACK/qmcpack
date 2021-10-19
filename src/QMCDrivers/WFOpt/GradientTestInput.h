@@ -9,6 +9,9 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_GRADIENTTESTINPUT_H
+#define QMCPLUSPLUS_GRADIENTTESTINPUT_H
+
 #include "io/OhmmsData/libxmldefs.h"
 
 namespace qmcplusplus
@@ -28,3 +31,5 @@ public:
 };
 
 } // namespace qmcplusplus
+
+#endif
