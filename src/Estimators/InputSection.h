@@ -61,7 +61,7 @@ public:
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
   template<typename T>
-  const T get(const std::string& name) const
+  T get(const std::string& name) const
   {
     return std::any_cast<T>(values.at(name));
   }

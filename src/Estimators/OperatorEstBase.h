@@ -62,6 +62,11 @@ public:
    *  without causing a global sync.
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
+   *  \param[in]      walkers
+   *  \param[inout]   pset_target   crowd scope target pset (should be returned to starting state after call)
+   *  \param[in]      psets         per walker psets
+   *  \param[in]      wnfs          per walker TrialWaveFunction
+   *  \param[inout]   rng           crowd scope RandomGenerator
    */
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
@@ -93,6 +98,7 @@ public:
    * big data, e.g. density, should overwrite this function.
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
+
 
   virtual OperatorEstBase* clone() = 0;
 

@@ -178,7 +178,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                      0.3,  // max parameter change
                                                      shift_scales, app_log());
 #endif
-
 }
 
 /** Clean up the vector */
