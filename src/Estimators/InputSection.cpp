@@ -124,6 +124,12 @@ void InputSection::set_from_stream(const std::string& name, std::istringstream& 
     svalue >> value;
     values[name] = value;
   }
+  else if (is_position(name))
+  {
+    Position value;
+    svalue >> value;
+    values[name] = value;
+  }
   else
   {
     std::stringstream error;
@@ -145,6 +151,8 @@ void InputSection::set_from_value(const std::string& name, const T& value)
     values[name] = std::any_cast<int>(value);
   else if (is_real(name))
     values[name] = std::any_cast<Real>(value);
+  else if (is_position(name))
+    values[name] = std::any_cast<Position>(value);
   else
   {
     std::stringstream error;

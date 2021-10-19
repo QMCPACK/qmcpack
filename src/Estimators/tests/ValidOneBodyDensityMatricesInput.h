@@ -38,6 +38,7 @@ namespace onebodydensitymatrices
   <parameter name="integrator"   >  density       </parameter>
   <parameter name="samples"      >  64            </parameter>
   <parameter name="timestep"     >  0.5           </parameter>
+  <parameter name="center"       >  0.0 0.0 0.1   </parameter>
   <parameter name="use_drift"    >  no            </parameter>
 </estimator>
 )",

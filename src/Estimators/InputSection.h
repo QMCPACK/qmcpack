@@ -29,11 +29,11 @@ namespace qmcplusplus
 
 class InputSection
 {
-protected:
+public:
   using Real               = QMCTraits::RealType;
-  using PosType            = QMCTraits::PosType;
+  using Position           = QMCTraits::PosType;
   static constexpr int DIM = QMCTraits::DIM;
-
+protected:
   // Internal data below comprise the input specification.
   //   Most apply attributes to input variables.
   //   Enables minimal listing of variable classification and default values in derived classes.
@@ -44,11 +44,12 @@ protected:
   std::unordered_set<std::string> parameters; // list of parameter variables
   std::unordered_set<std::string> required;   // list of required variables
 
-  std::unordered_set<std::string> strings;  // list of string variables that can have one value
-  std::unordered_set<std::string> multi_strings;  // list of string variables that can one or more values
-  std::unordered_set<std::string> bools;    // list of boolean variables
-  std::unordered_set<std::string> integers; // list of integer variables
-  std::unordered_set<std::string> reals;    // list of real variables
+  std::unordered_set<std::string> strings;       // list of string variables that can have one value
+  std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
+  std::unordered_set<std::string> bools;         // list of boolean variables
+  std::unordered_set<std::string> integers;      // list of integer variables
+  std::unordered_set<std::string> reals;         // list of real variables
+  std::unordered_set<std::string> positions;     // list of position variables
   /** list of enum inputs which allow a finite set of strings to map to enum values
    *  The enum class types and values need only be known to IS subtypes
    */
@@ -70,8 +71,8 @@ public:
   {
     if constexpr (std::is_enum<T>::value)
     {
-        std::any any_enum = assignAnyEnum(name);
-        return std::any_cast<T>(any_enum);
+      std::any any_enum = assignAnyEnum(name);
+      return std::any_cast<T>(any_enum);
     }
     else
       return std::any_cast<T>(values.at(name));
@@ -97,7 +98,7 @@ public:
     else
       return false;
   }
-  
+
   // Read variable values (initialize) from XML input.
   //   Later, this should call a correctness checking function and enforce immutability.
   //   (required values are all provided, provided values fall in allowed ranges)
@@ -120,7 +121,11 @@ protected:
    *
    *  can't be bothered then just define your enum option as a string.
    */
-  virtual std::any assignAnyEnum(const std::string& tag) const { return std::any(); };
+  virtual std::any assignAnyEnum(const std::string& tag) const
+  {
+    throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
+    return std::any();
+  }
 
 private:
   // Query functions
@@ -134,7 +139,7 @@ private:
   bool is_bool(const std::string& name) const { return bools.find(name) != bools.end(); }
   bool is_integer(const std::string& name) const { return integers.find(name) != integers.end(); }
   bool is_real(const std::string& name) const { return reals.find(name) != reals.end(); }
-
+  bool is_position(const std::string& name) const { return positions.find(name) != positions.end(); }
   bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); }
 
   // Set default values for optional inputs.

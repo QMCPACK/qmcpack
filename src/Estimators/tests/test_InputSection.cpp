@@ -35,13 +35,10 @@ enum class TestEnum2
   VALUE2
 };
 
-std::unordered_map<std::string, std::any> lookup_input_enum_value
-{
-  {"testenum1-value1", TestEnum1::VALUE1},
-  {"testenum1-value2", TestEnum1::VALUE2},
-  {"testenum2-value1", TestEnum2::VALUE1},
-  {"testenum2-value2", TestEnum2::VALUE2}
-};
+std::unordered_map<std::string, std::any> lookup_input_enum_value{{"testenum1-value1", TestEnum1::VALUE1},
+                                                                  {"testenum1-value2", TestEnum1::VALUE2},
+                                                                  {"testenum2-value1", TestEnum2::VALUE1},
+                                                                  {"testenum2-value2", TestEnum2::VALUE2}};
 
 // clang-format: off
 class TestInput : public InputSection
@@ -49,15 +46,15 @@ class TestInput : public InputSection
 public:
   TestInput()
   {
-    section_name   = "Test";
-    attributes     = {"name", "samples", "kmax", "full"};
-    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets"};
-    required       = {"count", "full"};
-    strings        = {"name", "label"};
-    multi_strings  = {"sposets"};
-    integers       = {"samples", "count"};
-    reals          = {"kmax", "width"};
-
+    section_name  = "Test";
+    attributes    = {"name", "samples", "kmax", "full"};
+    parameters    = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center"};
+    required      = {"count", "full"};
+    strings       = {"name", "label"};
+    multi_strings = {"sposets"};
+    integers      = {"samples", "count"};
+    reals         = {"kmax", "width"};
+    positions      = {"center"};
     bools          = {"full", "rational"};
     enums          = {"testenum1", "testenum2"};
     default_values = {{"name", std::string("demo")},
@@ -65,6 +62,8 @@ public:
                       {"width", RealType(1.0)},
                       {"rational", bool(false)}};
   };
+  // clang-format: on
+
   std::any assignAnyEnum(const std::string& name) const override
   {
     std::string enum_value_str(name + "-" + get<std::string>(name));
@@ -73,8 +72,11 @@ public:
   }
 };
 
-
-// clang-format: on
+class TestAssignAnyEnum : public InputSection
+{
+public:
+  TestAssignAnyEnum() { enums = {"testenum"}; }
+};
 
 
 TEST_CASE("InputSection::InputSection", "[estimators]")
@@ -91,6 +93,18 @@ TEST_CASE("InputSection::InputSection", "[estimators]")
   CHECK(!ti.has("width"));
   CHECK(!ti.has("rational"));
   CHECK(!ti.has("sposets"));
+}
+
+TEST_CASE("InputSection::assignAnyEnum", "[estimators]")
+{
+  enum class SomeEnum
+  {
+    VALUE1,
+    VALUE2
+  };
+
+  TestAssignAnyEnum taae;
+  CHECK_THROWS_AS(taae.get<SomeEnum>("testenum"), std::runtime_error);
 }
 
 
@@ -128,6 +142,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(!ti.has("kmax"));
     CHECK(!ti.has("label"));
     CHECK(!ti.has("sposets"));
+    CHECK(!ti.has("center"));
     // check value correctness
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<int>("count") == 15);
@@ -150,6 +165,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   <parameter name="testenum1"> Value1 </parameter>
   <parameter name="testenum2"> Value2 </parameter>
   <parameter name="sposets"> spo1 spo2 </parameter>
+  <parameter name="center"> 0.0 0.0 0.1 </parameter>
 </test>
 )";
     // clang-format: on
@@ -266,17 +282,16 @@ TEST_CASE("InputSection::init", "[estimators]")
   {
     // initialize
     TestInput ti;
-    ti.init({
-        {"name", std::string("alice")},
-        {"samples", int(10)},
-        {"kmax", RealType(3.0)},
-        {"full", bool(false)},
-        {"label", std::string("relative")},
-        {"count", int(15)},
-        {"width", RealType(2.5)},
-        {"rational", bool(true)},
-        {"sposets", std::vector<std::string>{"spo1","spo2"}}
-    });
+    ti.init({{"name", std::string("alice")},
+             {"samples", int(10)},
+             {"kmax", RealType(3.0)},
+             {"full", bool(false)},
+             {"label", std::string("relative")},
+             {"count", int(15)},
+             {"width", RealType(2.5)},
+             {"rational", bool(true)},
+             {"sposets", std::vector<std::string>{"spo1", "spo2"}},
+             {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
     // assigned from initializer-list
     CHECK(ti.has("name"));
@@ -297,6 +312,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.get<RealType>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
+    CHECK(ti.get<InputSection::Position>("center") == InputSection::Position(0.0, 0.0, 0.1));
   }
 
 
@@ -311,17 +327,16 @@ TEST_CASE("InputSection::init", "[estimators]")
 TEST_CASE("InputSection::get", "[estimators]")
 {
   TestInput ti;
-  ti.init({
-      {"name", std::string("alice")},
-      {"samples", int(10)},
-      {"kmax", RealType(3.0)},
-      {"full", bool(false)},
-      {"label", std::string("relative")},
-      {"count", int(15)},
-      {"width", RealType(2.5)},
-      {"rational", bool(true)},
-      {"sposets", std::vector<std::string>{"spo1","spo2"}}
-  });
+  ti.init({{"name", std::string("alice")},
+           {"samples", int(10)},
+           {"kmax", RealType(3.0)},
+           {"full", bool(false)},
+           {"label", std::string("relative")},
+           {"count", int(15)},
+           {"width", RealType(2.5)},
+           {"rational", bool(true)},
+           {"sposets", std::vector<std::string>{"spo1", "spo2"}},
+           {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
   // invalid type access results in thrown exception
   CHECK_THROWS_AS(ti.get<int>("name"), std::bad_cast);
@@ -333,6 +348,7 @@ TEST_CASE("InputSection::get", "[estimators]")
   CHECK_THROWS_AS(ti.get<std::string>("width"), std::bad_cast);
   CHECK_THROWS_AS(ti.get<int>("rational"), std::bad_cast);
   CHECK_THROWS_AS(ti.get<std::string>("sposets"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<RealType>("center"), std::bad_cast);
 }
 
 

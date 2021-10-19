@@ -68,6 +68,7 @@ public:
       multi_strings = {"basis"};
       integers     = {"points", "samples"};
       reals        = {"scale", "timestep"};
+      positions    = {"center"};
       required     = {"name", "basis"};
       // I'd much rather see the default defined in simple native c++ as below
     }
