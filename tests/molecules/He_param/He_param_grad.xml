@@ -6,7 +6,9 @@
 
   <particleset name="ion0" size="1">
     <group name="He">
-      <parameter name="charge">2</parameter> </group> <attrib name="position" datatype="posArray">
+      <parameter name="charge">2</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
       0.0 0.0 0.0
     </attrib>
   </particleset>
