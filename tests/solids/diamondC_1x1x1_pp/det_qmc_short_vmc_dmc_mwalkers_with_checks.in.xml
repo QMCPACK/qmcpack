@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_short_param_grad" series="0">
+   <project id="det_qmc_short_vmc_dmc_mwalkers" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
-   <random seed="2"/>
+   <random seed="36"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -39,7 +39,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
             <slaterdeterminant>
                <determinant id="updet" size="4">
                   <occupation mode="ground" spindataset="0"/>
@@ -79,27 +79,53 @@
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <pairpot name="MPC" type="MPC" source="e" target="e" ecut="60.0" physical="false"/>
-         <estimator type="flux" name="Flux"/>
+         <!-- <estimator type="flux" name="Flux"/> -->
       </hamiltonian>
    </qmcsystem>
- <loop max="1">
-  <qmc gpu="yes" method="linear_batch" move="pbyp">
-    <optimize method="gradient_test">
-      <parameter name="output_param_file">yes</parameter>
-    </optimize>
-    <estimator hdf5="no" name="LocalEnergy" />
-    <parameter name="walkers_per_rank">       1 </parameter>
-    <parameter name="warmupSteps">            1 </parameter>
-    <parameter name="substeps">               1 </parameter>
-    <parameter name="steps">                  1 </parameter>
-    <parameter name="blocks">                 1 </parameter>
-    <parameter name="timestep">             1.0 </parameter>
-    <parameter name="usedrift">             yes </parameter>
-    <parameter name="nonlocalpp">           yes </parameter>
-    <parameter name="use_nonlocalpp_deriv"> yes </parameter>
-    <cost name="energy"> 1.0 </cost>
-    <cost name="reweightedvariance"> 0.0 </cost>
-  </qmc>
-</loop>
+
+   <qmc method="vmc" move="pbyp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers">    2   </parameter>
+     <parameter name="substeps">  2 </parameter>
+     <parameter name="warmupSteps">  3  </parameter>
+     <parameter name="steps">  3 </parameter>
+     <parameter name="blocks">  3 </parameter>
+     <parameter name="timestep">  1.0 </parameter>
+     <parameter name="usedrift">   no </parameter>
+     <parameter name="debug_checks"> all </parameter>
+   </qmc>
+   <qmc method="vmc" move="pbyp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers">    2   </parameter>
+     <parameter name="substeps">  2 </parameter>
+     <parameter name="warmupSteps">  3  </parameter>
+     <parameter name="steps">  3 </parameter>
+     <parameter name="blocks">  3 </parameter>
+     <parameter name="timestep">  0.3 </parameter>
+     <parameter name="usedrift">   no </parameter>
+     <parameter name="debug_checks"> all </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers"> 2  </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  3  </parameter>
+     <parameter name="timestep">  0.01 </parameter>
+     <parameter name="steps">   3   </parameter>
+     <parameter name="blocks">  3   </parameter>
+     <parameter name="nonlocalmoves">  no </parameter>
+     <parameter name="debug_checks"> all </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers"> 2  </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  3  </parameter>
+     <parameter name="timestep">  0.005 </parameter>
+     <parameter name="steps">   3   </parameter>
+     <parameter name="blocks">  3   </parameter>
+     <parameter name="nonlocalmoves">  no </parameter>
+     <parameter name="debug_checks"> all </parameter>
+   </qmc>
 
 </simulation>

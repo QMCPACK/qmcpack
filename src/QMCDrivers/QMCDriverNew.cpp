@@ -152,8 +152,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i] =
-      std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
+    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
   }
 
   //now give walkers references to their walkers
@@ -508,7 +507,7 @@ void QMCDriverNew::endBlock()
   estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
 }
 
-bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
+void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
 {
   bool success         = true;
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
@@ -532,7 +531,14 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
   ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
-  const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
+  RealType threshold;
+  // mixed precision can't make this test with cuda direct inversion
+  if constexpr (std::is_same<RealType, FullPrecRealType>::value)
+    threshold = 100 * std::numeric_limits<float>::epsilon();
+  else
+    threshold = 500 * std::numeric_limits<float>::epsilon();
+
+  std::ostringstream msg;
   for (int iw = 0; iw < log_values.size(); iw++)
   {
     auto& ref_G = walker_twfs[iw].G;
@@ -541,28 +547,34 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;
-      std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
+      msg << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
     }
+
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
       auto grad_diff = ref_G[iel] - Gs[iw][iel];
       if (std::sqrt(std::abs(dot(grad_diff, grad_diff))) > std::sqrt(std::abs(dot(ref_G[iel], ref_G[iel]))) * threshold)
       {
         success = false;
-        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel]
-                  << " Delta " << grad_diff << std::endl;
+        msg << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel]
+            << " Delta " << grad_diff << std::endl;
       }
+
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
       if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threshold)
       {
         // very hard to check mixed precision case, only print, no error out
-        success = !std::is_same<RealType, FullPrecRealType>::value;
-        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel]
-                  << " Delta " << lap_diff << std::endl;
+        if (std::is_same<RealType, FullPrecRealType>::value)
+          success = false;
+        msg << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << " Delta "
+            << lap_diff << std::endl;
       }
     }
   }
-  return success;
+
+  std::cerr << msg.str();
+  if (!success)
+    throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
 
 } // namespace qmcplusplus
