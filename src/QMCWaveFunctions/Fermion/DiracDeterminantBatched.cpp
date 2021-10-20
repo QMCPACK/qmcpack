@@ -60,13 +60,13 @@ void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(const DualMatrix<Value>& ps
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                         const RefVector<const DualMatrix<Value>>& logdetT_list,
-                                                        const RefVector<DualMatrix<Value>>& a_inv_list) const
+                                                        const RefVector<DualMatrix<Value>>& a_inv_list)
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
-  if (batched_inverter_kind_ == DetMatInvertor::ACCEL)
+  if (wfc_leader.batched_inverter_kind_ == DetMatInvertor::ACCEL)
   {
     RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(nw);

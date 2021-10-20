@@ -288,9 +288,9 @@ private:
    *  list of walker elements and the implementation should decide what to do re
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
-  void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+  static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVector<const DualMatrix<Value>>& logdetT_list,
-                     const RefVector<DualMatrix<Value>>& a_inv_lis) const;
+                     const RefVector<DualMatrix<Value>>& a_inv_lis);
 
   /** Does a Phi->mw_evaluate_notranspose then mw_invertPsiM over a set of
    *  elements filtered based on the recompute mask.
