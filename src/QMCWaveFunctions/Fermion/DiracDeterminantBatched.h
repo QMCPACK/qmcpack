@@ -280,8 +280,7 @@ private:
    */
   void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVector<const DualMatrix<Value>>& logdetT_list,
-                     const RefVector<DualMatrix<Value>>& a_inv_list,
-                     const std::vector<bool>& compute_mask) const;
+                     const RefVector<DualMatrix<Value>>& a_inv_lis) const;
 
   /** Does a Phi->mw_evaluate_notranspose then mw_invertPsiM over a set of
    *  elements filtered based on the recompute mask.

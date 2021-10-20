@@ -188,6 +188,8 @@ void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
                  "failed to calculate log determinant values in computeLogDet_batched_impl");
   cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
                    "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
+  //FIXME replace getri_batched with computeGetri_batched and computeGetri_batched should sync and check infos
+  cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 }
 
 
