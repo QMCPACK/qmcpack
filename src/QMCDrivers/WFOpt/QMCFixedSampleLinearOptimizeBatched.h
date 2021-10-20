@@ -45,6 +45,8 @@ namespace qmcplusplus
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
 
+class GradientTest;
+
 
 class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
 {
@@ -133,6 +135,11 @@ private:
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 #endif
+
+  // Perform test of gradients
+  bool test_run();
+
+  std::unique_ptr<GradientTest> testEngineObj;
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -245,6 +252,9 @@ private:
 
   //whether to use hybrid method
   bool doHybrid;
+
+  // Test parameter gradients
+  bool doGradientTest;
 
   // Output Hamiltonian and overlap matrices
   bool do_output_matrices_csv_;

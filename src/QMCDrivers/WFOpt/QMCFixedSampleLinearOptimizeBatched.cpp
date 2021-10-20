@@ -22,12 +22,14 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "QMCDrivers/WFOpt/GradientTest.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -306,6 +308,11 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
     output_matrices_initialized_ = true;
   }
 
+  if (doGradientTest)
+  {
+    app_log() << "Doing gradient test run" << std::endl;
+    return test_run();
+  }
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -326,6 +333,18 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
     return one_shift_run();
 
   return previous_linear_methods_run();
+}
+
+bool QMCFixedSampleLinearOptimizeBatched::test_run()
+{
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  testEngineObj->run(*optTarget, get_root_name());
+
+  finish();
+
+  return true;
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
@@ -592,8 +611,31 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   }
 
 
-  doHybrid = false;
+  doGradientTest = false;
+  processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "optimize")
+    {
+      const XMLAttrString att(element, "method");
+      if (!att.empty() && att == "gradient_test")
+      {
+        GradientTestInput test_grad_input;
+        test_grad_input.readXML(element);
+        if (!testEngineObj)
+          testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
+        doGradientTest = true;
+        MinMethod = "gradient_test";
+      }
+      else
+      {
+        std::stringstream error_msg;
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << "\n";
+        throw UniformCommunicateError(error_msg.str());
+      }
+    }
+  });
 
+
+  doHybrid = false;
 
   if (MinMethod == "hybrid")
   {
