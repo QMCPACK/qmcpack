@@ -181,13 +181,14 @@ def qmcpack_filepath(basepath,tokens,g=None):
 #end def qmcpack_filepath
 
 
-def get_grid(s,dr,x_min=None,x_max=None,y_min=None,y_max=None,z_min=None,z_max=None):
+def get_grid(s,dr=None,delta=None,x_min=None,x_max=None,y_min=None,y_max=None,z_min=None,z_max=None):
     s = s.copy()
     s.change_units('B')
     grid = []
-    if x_min is None:
+    if delta is None:
         cell = s.axes.copy()
     else:
+        dr = delta
         cell = np.array([[1,0,0],
                          [0,1,0],
                          [0,0,1]])
@@ -571,11 +572,16 @@ class StatFile(QDBase):
         else:
             for name,density in self.density_data.items():
                 h5_density = h5.create_group(name)
-                for s,spin in density.items():
-                    h5_spin = h5_density.create_group(s)
-                    h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
-                    #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
-                #end for
+                h5_v  = h5_density.create_dataset('value'        ,data=density.value        )
+                #print('density')
+                #print(density)
+                #quit()
+                #h5_v = h5_spin.create_dataset('value'        ,data=density.value        )
+                #for s,spin in density.items():
+                #    h5_spin = h5_density.create_group(s)
+                #    h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
+                #    #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
+                ##end for
             #end for
         #end if
         h5.close()
@@ -587,33 +593,53 @@ class StatFile(QDBase):
             self.total_weight = 0.0
         #end if
         self.total_weight += weight
-        if self.spin_density_data is None:
-            self.spin_density_data = stat.spin_density_data.copy()
-            for spin_density in self.spin_density_data:
-                for spin in spin_density:
-                    spin.value         *= weight
-                    #spin.value_squared *= weight
+        if not stat.use_dens:
+            if self.spin_density_data is None:
+                self.spin_density_data = stat.spin_density_data.copy()
+                for spin_density in self.spin_density_data:
+                    for spin in spin_density:
+                        spin.value         *= weight
+                        #spin.value_squared *= weight
+                    #end for
                 #end for
-            #end for
+            else:
+                for name,spin_density in self.spin_density_data.items():
+                    sd = stat.spin_density_data[name]
+                    for s,spin in spin_density.items():
+                        spin.value         += weight*sd[s].value
+                        #spin.value_squared += weight*sd[s].value_squared
+                    #end for
+                #end for
+            #end if
         else:
-            for name,spin_density in self.spin_density_data.items():
-                sd = stat.spin_density_data[name]
-                for s,spin in spin_density.items():
-                    spin.value         += weight*sd[s].value
-                    #spin.value_squared += weight*sd[s].value_squared
+            if self.density_data is None:
+                self.density_data = stat.density_data.copy()
+                for density in self.density_data:
+                    density.value *= weight
                 #end for
-            #end for
+            else:
+                for name,density in self.density_data.items():
+                    sd = stat.density_data[name]
+                    density.value += weight*sd.value
+                #end for
+            #end if
         #end if
     #end def accumulate
 
                 
     def normalize(self):
-        for spin_density in self.spin_density_data:
-            for spin in spin_density:
-                spin.value         /= self.total_weight
-                #spin.value_squared /= self.total_weight
+        if not self.use_dens:
+            for spin_density in self.spin_density_data:
+                for spin in spin_density:
+                    spin.value         /= self.total_weight
+                    #spin.value_squared /= self.total_weight
+                #end for
             #end for
-        #end for
+        else:
+            for density in self.density_data:
+                density.value /= self.total_weight
+            #end if
+        #end if
         del self.total_weight
     #end def normalize
 
@@ -1049,7 +1075,7 @@ class QMCDensityProcessor(QDBase):
                                     self.error('could not identify cell data for density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
                                 else:
                                     grids[name] = get_grid(s,
-                                                           sd.delta,
+                                                           delta=sd.delta,
                                                            x_min=sd.x_min,
                                                            x_max=sd.x_max,
                                                            y_min=sd.y_min,
@@ -1063,7 +1089,7 @@ class QMCDensityProcessor(QDBase):
                                                  [0.,0.,sd.z_max]])
                                 s.axes = cell
                             else:
-                                grids[name] = get_grid(s,sd.delta)
+                                grids[name] = get_grid(s,delta=sd.delta)
                             #end if
                         else:
                             self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
@@ -1249,15 +1275,20 @@ class QMCDensityProcessor(QDBase):
                         avg_filepath = qmcpack_filepath(basepath,sref_tokens,g='avg')
                         stat_avg = StatFile()
                         n=0
+                        use_dens=False
                         for group in sorted(sfiles.keys()):
                             self.vlog('      accumulating file with weight {0} {1}'.format(weights[n],sfiles[group]))
                             w = weights[n]
                             stat_tmp = StatFile(sfiles[group])
+                            if stat_tmp.use_dens:
+                                use_dens = True
+                            #end if
                             stat_avg.accumulate(stat_tmp,w)
                             del stat_tmp
                             gc.collect()
                             n+=1
                         #end for
+                        stat_avg.use_dens = use_dens
                         stat_avg.normalize()
                         self.vlog('    writing averaged file: {0}'.format(avg_filepath))
                         stat_avg.write(avg_filepath)
