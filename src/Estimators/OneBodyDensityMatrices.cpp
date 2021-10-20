@@ -60,16 +60,16 @@ inline void OneBodyDensityMatrices::generate_samples(Real weight, ParticleSet& p
     save  = true;
     steps = samples_;
   }
-  if (input_.get_integrator() == Integrators::UNIFORM_GRID)
+  if (input_.get_integrator() == Integrator::UNIFORM_GRID)
     generate_uniform_grid(rng);
-  else if (input_.get_integrator() == Integrators::UNIFORM)
+  else if (input_.get_integrator() == Integrator::UNIFORM)
     generate_uniform_samples(rng);
-  else if (input_.get_integrator() == Integrators::DENSITY)
+  else if (input_.get_integrator() == Integrator::DENSITY)
     generate_density_samples(save, steps, rng, pset_target);
 
   if (save)
   {
-    if (input_.get_sampling() == Samplings::METROPOLIS)
+    if (sampling_ == Sampling::METROPOLIS)
     {
       sample_weights *= weight;
     }
