@@ -2137,30 +2137,32 @@ else()
 endif()
 
 if(NOT QMC_CUDA)
-  list(APPEND DET_DIAMOND_PARAM uu_0 -1.010849732e-05 0.00001)
-  list(APPEND DET_DIAMOND_PARAM uu_1 1.221957505 0.00010)
-  list(APPEND DET_DIAMOND_PARAM ud_0 1.094114467e-07 0.00001)
-  list(APPEND DET_DIAMOND_PARAM ud_1 0.0001130922027 0.00001)
-  list(APPEND DET_DIAMOND_PARAM eC_2 0.0 0.00001)
-  list(APPEND DET_DIAMOND_PARAM eC_3 8.196343356 0.00001)
+  if(NOT QMC_MIXED_PRECISION)
+    list(APPEND DET_DIAMOND_PARAM uu_0 -1.010849732e-05 0.00001)
+    list(APPEND DET_DIAMOND_PARAM uu_1 1.221957505 0.00010)
+    list(APPEND DET_DIAMOND_PARAM ud_0 1.094114467e-07 0.00001)
+    list(APPEND DET_DIAMOND_PARAM ud_1 0.0001130922027 0.00001)
+    list(APPEND DET_DIAMOND_PARAM eC_2 0.0 0.00001)
+    list(APPEND DET_DIAMOND_PARAM eC_3 8.196343356 0.00001)
 
-  qmc_run_and_check_custom_scalar(
-    BASE_NAME
-    deterministic-diamondC_1x1x1_pp-param-grad
-    BASE_DIR
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    PREFIX
-    det_qmc_short_param_grad.param
-    INPUT_FILE
-    det_qmc_param_grad.xml
-    PROCS
-    1
-    THREADS
-    1
-    SERIES
-    0
-    EQUILIBRATION
-    0
-    SCALAR_VALUES
-    DET_DIAMOND_PARAM)
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      deterministic-diamondC_1x1x1_pp-param-grad
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      PREFIX
+      det_qmc_short_param_grad.param
+      INPUT_FILE
+      det_qmc_param_grad.xml
+      PROCS
+      1
+      THREADS
+      1
+      SERIES
+      0
+      EQUILIBRATION
+      0
+      SCALAR_VALUES
+      DET_DIAMOND_PARAM)
+  endif()
 endif()

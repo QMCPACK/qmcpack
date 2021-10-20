@@ -61,7 +61,7 @@ private:
 
   bool volume_normed;
   int basis_size;
-  int samples;
+  int samples_;
   int nparticles;
   int nspecies;
   std::vector<int> species_size;
@@ -78,16 +78,17 @@ private:
   Matrix_t Phi_MBtmp;
 #endif
 
-  Position center, rcorner;
-  Real volume;
-  bool periodic;
+  Position center_;
+  Position rcorner_;
+  Real volume_;
+  bool periodic_;
   int nmoves;
   int naccepted;
   Real acceptance_ratio;
   bool write_acceptance_ratio;
   bool write_rstats;
 
-  int ind_dims[OHMMS_DIM];
+  int ind_dims_[OHMMS_DIM];
   Real metric;
 
   Position rpcur;
@@ -95,6 +96,7 @@ private:
   Real rhocur;
 
   RandomGenerator_t* uniform_random;
+
 public:
   /** Standard Constructor
    *  If you are making a new OBDM this is what you should be calling
@@ -129,10 +131,6 @@ public:
 
 private:
   //local functions
-  //  initialization/finalization
-  void reset();
-  void set_state(xmlNodePtr cur);
-  void set_state(OneBodyDensityMatrices& master);
   void normalize();
   //  printing
   void report(const std::string& pad = "");
