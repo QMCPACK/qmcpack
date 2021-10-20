@@ -573,15 +573,6 @@ class StatFile(QDBase):
             for name,density in self.density_data.items():
                 h5_density = h5.create_group(name)
                 h5_v  = h5_density.create_dataset('value'        ,data=density.value        )
-                #print('density')
-                #print(density)
-                #quit()
-                #h5_v = h5_spin.create_dataset('value'        ,data=density.value        )
-                #for s,spin in density.items():
-                #    h5_spin = h5_density.create_group(s)
-                #    h5_v  = h5_spin.create_dataset('value'        ,data=spin.value        )
-                #    #h5_v2 = h5_spin.create_dataset('value_squared',data=spin.value_squared)
-                ##end for
             #end for
         #end if
         h5.close()
