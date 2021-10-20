@@ -261,6 +261,12 @@ private:
   /// Delayed update engine 1 per walker.
   DET_ENGINE det_engine_;
 
+  /// slow but doesn't consume device memory
+  DiracMatrix<FullPrecValue> host_inverter_;
+
+  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
+  std::unique_ptr<typename DET_ENGINE::DetInverter> accel_inverter_;
+
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 

@@ -45,7 +45,8 @@ template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(const DualMatrix<Value>& psiM, DualMatrix<Value>& psiMinv)
 {
   ScopedTimer inverse_timer(InverseTimer);
-  det_engine_.invert_transpose(psiM, psiMinv, log_value_);
+  host_inverter_.invert_transpose(psiM, psiMinv, log_value_);
+  psiMinv.updateTo();
 
 #ifndef NDEBUG
   // This is easily breakable in that it assumes this function gets psiMinv == det_engine_.psiMinv_
@@ -64,7 +65,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   const auto nw = wfc_list.size();
 
   RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
-  RefVector<LogValue> log_value_list;
   engine_list.reserve(nw);
 
   wfc_leader.mw_res_->log_values.resize(nw);
@@ -76,7 +76,9 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
     wfc_leader.mw_res_->log_values[iw] = {0.0, 0.0};
   }
 
-  DET_ENGINE::mw_invertTranspose(engine_list, logdetT_list, a_inv_list, wfc_leader.mw_res_->log_values);
+  wfc_leader.accel_inverter_->mw_invertTranspose(wfc_leader.det_engine_.getLAhandles(), logdetT_list, a_inv_list,
+                                                 wfc_leader.mw_res_->log_values);
+
   for (int iw = 0; iw < nw; ++iw)
   {
     auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
@@ -950,9 +952,10 @@ DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCo
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::createResource(ResourceCollection& collection) const
 {
-  auto resource_index = collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
+  collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   Phi->createResource(collection);
   det_engine_.createResource(collection);
+  collection.addResource(std::make_unique<typename DET_ENGINE::DetInverter>());
 }
 
 template<typename DET_ENGINE>
@@ -975,6 +978,12 @@ void DiracDeterminantBatched<DET_ENGINE>::acquireResource(
   wfc_leader.Phi->acquireResource(collection, phi_list);
 
   wfc_leader.det_engine_.acquireResource(collection);
+
+  auto det_eng_ptr = dynamic_cast<typename DET_ENGINE::DetInverter*>(collection.lendResource().release());
+  if (!det_eng_ptr)
+    throw std::runtime_error(
+        "DiracDeterminantBatched::acquireResource dynamic_cast to DET_ENGINE::DetInverter* failed");
+  wfc_leader.accel_inverter_.reset(det_eng_ptr);
 }
 
 template<typename DET_ENGINE>
@@ -992,6 +1001,7 @@ void DiracDeterminantBatched<DET_ENGINE>::releaseResource(
   }
   wfc_leader.Phi->releaseResource(collection, phi_list);
   wfc_leader.det_engine_.releaseResource(collection);
+  collection.takebackResource(std::move(wfc_leader.accel_inverter_));
 }
 
 template class DiracDeterminantBatched<>;

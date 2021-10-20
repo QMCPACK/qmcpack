@@ -156,6 +156,9 @@ private:
     }
   }
 
+  /// matrix inversion engine
+  DiracMatrix<VALUE_FP> detEng_;
+
 public:
   DiracMatrixComputeOMPTarget() : Resource("DiracMatrixComputeOMPTarget"), lwork_(0) {}
 
@@ -223,6 +226,14 @@ public:
                                  const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<LogValue>& log_values)
   {
+    for (int iw = 0; iw < a_mats.size(); iw++)
+    {
+      auto& Ainv = inv_a_mats[iw].get();
+      detEng_.invert_transpose(a_mats[iw].get(), Ainv, log_values[iw]);
+      Ainv.updateTo();
+    }
+
+    /* FIXME
     const int nw     = a_mats.size();
     const size_t n   = a_mats[0].get().rows();
     const size_t lda = a_mats[0].get().cols();
@@ -238,6 +249,7 @@ public:
     {
       simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
     }
+    */
   }
 };
 } // namespace qmcplusplus
