@@ -23,6 +23,13 @@
 
 namespace qmcplusplus
 {
+/// determinant matrix inverter select
+enum class DetMatInvertor
+{
+  HOST,
+  ACCEL,
+};
+
 class DiracDeterminantBase : public WaveFunctionComponent
 {
 public:

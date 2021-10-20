@@ -75,7 +75,11 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
+  DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
+                          int first,
+                          int last,
+                          int ndelay                           = 1,
+                          DetMatInvertor batched_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
   DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
@@ -314,6 +318,9 @@ private:
 
   /// maximal number of delayed updates
   const int ndelay_;
+
+  /// selected scheme for inversion with walker batching
+  DetMatInvertor batched_inverter_kind_;
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;

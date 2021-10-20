@@ -29,9 +29,11 @@ template<typename DET_ENGINE>
 DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
                                                              int first,
                                                              int last,
-                                                             int ndelay)
+                                                             int ndelay,
+                                                             DetMatInvertor batched_inverter_kind)
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
       ndelay_(ndelay),
+      batched_inverter_kind_(batched_inverter_kind),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
@@ -64,25 +66,38 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
-  RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
-  engine_list.reserve(nw);
-
-  wfc_leader.mw_res_->log_values.resize(nw);
-
-  for (int iw = 0; iw < nw; iw++)
+  if (batched_inverter_kind_ == DetMatInvertor::ACCEL)
   {
-    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-    engine_list.push_back(det.get_det_engine());
-    wfc_leader.mw_res_->log_values[iw] = {0.0, 0.0};
+    RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
+    engine_list.reserve(nw);
+
+    wfc_leader.mw_res_->log_values.resize(nw);
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+      engine_list.push_back(det.get_det_engine());
+      wfc_leader.mw_res_->log_values[iw] = {0.0, 0.0};
+    }
+
+    wfc_leader.accel_inverter_->mw_invertTranspose(wfc_leader.det_engine_.getLAhandles(), logdetT_list, a_inv_list,
+                                                   wfc_leader.mw_res_->log_values);
+
+    for (int iw = 0; iw < nw; ++iw)
+    {
+      auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+      det.log_value_ = wfc_leader.mw_res_->log_values[iw];
+    }
   }
-
-  wfc_leader.accel_inverter_->mw_invertTranspose(wfc_leader.det_engine_.getLAhandles(), logdetT_list, a_inv_list,
-                                                 wfc_leader.mw_res_->log_values);
-
-  for (int iw = 0; iw < nw; ++iw)
+  else
   {
-    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-    det.log_value_ = wfc_leader.mw_res_->log_values[iw];
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& det     = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+      auto& psiMinv = a_inv_list[iw].get();
+      det.host_inverter_.invert_transpose(logdetT_list[iw].get(), psiMinv, det.log_value_);
+      psiMinv.updateTo();
+    }
   }
 
 #ifndef NDEBUG
@@ -945,7 +960,7 @@ template<typename DET_ENGINE>
 DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
   DiracDeterminantBatched<DET_ENGINE>* dclone =
-      new DiracDeterminantBatched<DET_ENGINE>(std::move(spo), FirstIndex, LastIndex, ndelay_);
+      new DiracDeterminantBatched<DET_ENGINE>(std::move(spo), FirstIndex, LastIndex, ndelay_, batched_inverter_kind_);
   return dclone;
 }
 
