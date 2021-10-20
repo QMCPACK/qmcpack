@@ -19,7 +19,7 @@ namespace qmcplusplus
 namespace testing
 {
 // clang-format: off
-constexpr std::array<const char*, 2> invalid_one_body_density_matrices_input_sections{
+constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sections{
     R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -41,12 +41,38 @@ constexpr std::array<const char*, 2> invalid_one_body_density_matrices_input_sec
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="use_drift"    >  yes           </parameter>
 </estimator>
+)",
+    R"(
+<estimator type="dm1b" name="DensityMatrices">
+  <parameter name="basis"        >  dm_basis      </parameter>
+  <parameter name="evaluator"    >  loop          </parameter>
+  <parameter name="integrator"   >  uniform_grid  </parameter>
+  <parameter name="points"       >  22            </parameter>
+  <parameter name="scale"        >  0.8           </parameter>
+  <parameter name="timestep"     >  0.5           </parameter>
+  <parameter name="use_drift"    >  yes           </parameter>
+  <parameter name="acceptance_ratio"> yes         </parameter>
+</estimator>
+)",
+    R"(
+<estimator type="dm1b" name="DensityMatrices">
+  <parameter name="basis"        >  dm_basis      </parameter>
+  <parameter name="evaluator"    >  loop          </parameter>
+  <parameter name="integrator"   >  uniform_grid  </parameter>
+  <parameter name="samples"      >  128           </parameter>
+  <parameter name="scale"        >  0.8           </parameter>
+  <parameter name="timestep"     >  0.5           </parameter>
+  <parameter name="use_drift"    >  yes           </parameter>
+  <parameter name="acceptance_ratio"> yes         </parameter>
+</estimator>
 )"
     // clang-format: on
 };
 
-constexpr int invalid_obdm_input_bad_integrator = 0;
-constexpr int invalid_obdm_input_bad_scale      = 1;
+constexpr int invalid_obdm_input_bad_integrator       = 0;
+constexpr int invalid_obdm_input_bad_scale            = 1;
+constexpr int invalid_obdm_input_bad_acceptance_ratio = 2;
+constexpr int invalid_obdm_input_uniform_grid_samples = 3;
 } // namespace testing
 } // namespace qmcplusplus
 

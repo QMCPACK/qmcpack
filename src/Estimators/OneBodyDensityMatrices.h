@@ -38,14 +38,21 @@ public:
   using Lattice       = PtclOnLatticeTraits::ParticleLayout_t;
   using Position      = QMCTraits::PosType;
 
-  using Evaluators  = OneBodyDensityMatricesInput::Evaluators;
-  using Integrators = OneBodyDensityMatricesInput::Integrators;
-  using Samplings   = OneBodyDensityMatricesInput::Samplings;
+  using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
+  using Integrator = OneBodyDensityMatricesInput::Integrator;
+
+  enum class Sampling
+  {
+    VOLUME_BASED,
+    METROPOLIS,
+    NO_SAMPLING
+  };
 
 private:
   OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
+  Sampling sampling_;
   //data members
   CompositeSPOSet basis_functions;
   Vector<Value> basis_values;
