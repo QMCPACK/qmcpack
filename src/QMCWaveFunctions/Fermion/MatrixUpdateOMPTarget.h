@@ -180,8 +180,7 @@ public:
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
                                  const RefVector<const OffloadMatrix<Value>>& psiM_list,
                                  const RefVector<OffloadMatrix<Value>>& a_inv_refs,
-                                 OffloadVector<LogValue>& log_values,
-                                 const std::vector<bool>& compute_mask)
+                                 OffloadVector<LogValue>& log_values)
   {
     auto& engine_leader = engines.getLeader();
     auto& det_inverter  = engine_leader.get_det_inverter();
@@ -193,7 +192,6 @@ public:
       Value* Ainv_ptr = Ainv.data();
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }
-    PRAGMA_OFFLOAD("omp taskwait")
 
     //FIXME DiracMatrixComputeOMPTarget is either broken or connected incorrectly
     //typename DetInverter::HandleResource dummy;

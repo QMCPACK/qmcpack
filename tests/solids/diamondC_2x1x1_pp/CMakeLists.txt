@@ -914,6 +914,22 @@ if(NOT QMC_CUDA)
     DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
   )
 
+  qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers-checks_sdbatch_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers_with_checks.in.xml
+    1
+    4
+    TRUE
+    0
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
+    1
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
+    2
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
+  )
+
   if(QMC_MIXED_PRECISION)
     if(QMC_COMPLEX)
       # VMC without drift
