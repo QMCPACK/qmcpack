@@ -262,7 +262,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static bool checkLogAndGL(Crowd& crowd);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
   const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
 

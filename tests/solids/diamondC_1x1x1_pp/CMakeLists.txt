@@ -1456,6 +1456,24 @@ if(NOT QMC_CUDA)
     DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
   )
 
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_short_vmc_dmc_mwalkers
+    det_qmc_short_vmc_dmc_mwalkers_with_checks.in.xml
+    1
+    1
+    TRUE
+    0
+    DET_DIAMOND_VMC_MWALKERS1_SCALARS # VMC cycle 1
+    1
+    DET_DIAMOND_VMC_MWALKERS2_SCALARS # VMC cycle 2
+    2
+    DET_DIAMOND_DMC_MWALKERS1_SCALARS # DMC cycle 1
+    3
+    DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
+  )
+
   if((NOT QMC_MIXED_PRECISION)
      AND (NOT QMC_CUDA)
      AND (NOT QMC_COMPLEX))
