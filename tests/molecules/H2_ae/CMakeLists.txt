@@ -19,6 +19,18 @@ if(NOT QMC_CUDA)
         H2_OPT_SCALARS # Final VMC step
         TRUE)
 
+      qmc_run_and_check(
+        short-H2-orb-opt-spindepjas
+        "${qmcpack_SOURCE_DIR}/tests/molecules/H2_ae"
+        H2
+        h2_orb_opt_spindepjas.xml
+        16
+        1
+        ${SUCCESS_STATUS_MP}
+        10
+        H2_OPT_SCALARS # Final VMC step
+        TRUE)
+
     else()
       message(VERBOSE "Skipping H2 test because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
     endif(BUILD_LMYENGINE_INTERFACE)

@@ -18,10 +18,19 @@
 
 namespace qmcplusplus
 {
-SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF)
-    : SlaterDet(targetPtcl, "SlaterDetWithBackflow"), BFTrans(BF)
+SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
+                                             std::vector<std::unique_ptr<Determinant_t>> dets,
+                                             std::unique_ptr<BackflowTransformation> BF)
+    : WaveFunctionComponent("SlaterDetWithBackflow"), Dets(std::move(dets)), BFTrans(std::move(BF))
 {
-  Optimizable = false;
+  assert(BFTrans);
+  assert(Dets.size() == targetPtcl.groups());
+
+  is_fermionic = true;
+
+  Optimizable = BFTrans->isOptimizable();
+  for (const auto& det : Dets)
+    Optimizable = Optimizable || det->Optimizable;
 }
 
 ///destructor
@@ -58,9 +67,7 @@ SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(Particle
                                                                         WFBufferType& buf,
                                                                         bool fromscratch)
 {
-  //BFTrans->updateBuffer(P,buf,fromscratch);
   BFTrans->updateBuffer(P, buf, fromscratch);
-  //BFTrans->evaluate(P);
   log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
     log_value_ += Dets[i]->updateBuffer(P, buf, fromscratch);
@@ -70,22 +77,18 @@ SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(Particle
 void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->copyFromBuffer(P, buf);
-  //BFTrans->evaluate(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->copyFromBuffer(P, buf);
 }
 
 std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  BackflowTransformation* tr = BFTrans->makeClone(tqp);
-  auto myclone               = std::make_unique<SlaterDetWithBackflow>(tqp, tr);
-  myclone->Optimizable       = Optimizable;
-  for (int i = 0; i < Dets.size(); ++i)
-  {
-    DiracDeterminantBase* dclne = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));
-    myclone->add(dclne, i);
-  }
-  myclone->setBF(tr);
+  auto bf = BFTrans->makeClone(tqp);
+  std::vector<std::unique_ptr<Determinant_t>> dets;
+  for (const auto& det : Dets)
+    dets.emplace_back(det->makeCopy(det->getPhi()->makeClone(), *bf));
+  auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
+  assert(myclone->Optimizable == Optimizable);
   return myclone;
 }
 

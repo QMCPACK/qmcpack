@@ -16,7 +16,8 @@
 
 #include "Particle/DistanceTableData.h"
 #include "NonLocalECPComponent.h"
-#include "QMCHamiltonians/NLPPJob.h"
+#include "NLPPJob.h"
+#include "NonLocalData.h"
 
 namespace qmcplusplus
 {
@@ -279,7 +280,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
   //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
-    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) <
+           100 * std::numeric_limits<RealType>::epsilon());
 
 
   for (int j = 0; j < nknot; j++)
@@ -416,7 +418,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
   //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
-    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) <
+           100 * std::numeric_limits<RealType>::epsilon());
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;

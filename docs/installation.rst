@@ -289,7 +289,7 @@ the path to the source directory.
                           particularly for large electron counts.
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC. Pre-production quality for real-space.
-                          Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
     ENABLE_TIMERS         ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                           to avoid potential slowdown in tiny systems.
@@ -325,17 +325,15 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
-    QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
-    QMC_INCLUDE               Add extra include paths
-    QMC_EXTRA_LIBS            Add extra link libraries
-    QMC_BUILD_STATIC          ON/OFF(default). Add -static flags to build
-    QMC_SYMLINK_TEST_FILES    Set to zero to require test files to be copied. Avoids space
-                              saving default use of symbolic links for test files. Useful
-                              if the build is on a separate filesystem from the source, as
-                              required on some HPC systems.
-    QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                              including details of which tests are enabled.
+    QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+    QMC_INCLUDE            Add extra include paths
+    QMC_EXTRA_LIBS         Add extra link libraries
+    QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
+    QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                           saving default use of symbolic links for test files. Useful
+                           if the build is on a separate filesystem from the source, as
+                           required on some HPC systems.
 
 - BLAS/LAPACK related
 
@@ -418,13 +416,7 @@ to be reached. The following compilers have been verified:
   ::
 
     OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
-    OFFLOAD_ARCH for the target architecture if not using the compiler default.
-
-- IBM XL 16.1. Support NVIDIA GPUs.
-  
-  ::
-
-    -D ENABLE_OFFLOAD=ON
+    OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
 
 - AMD AOMP Clang 11.8. Support AMD GPUs.
   
@@ -450,7 +442,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CMAKE_CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
@@ -571,7 +563,6 @@ than usually needed for comprehensiveness:
 
   export CXX=mpic++
   export CC=mpicc
-  export ACML_HOME=/opt/acml-5.3.1/gfortran64
   export HDF5_ROOT=/opt/hdf5
   export BOOST_ROOT=/opt/boost
 
@@ -583,7 +574,6 @@ than usually needed for comprehensiveness:
     -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
     -D FFTW_INCLUDE_DIRS=/usr/include                 \
     -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-    -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
     -D QMC_DATA=/projects/QMCPACK/qmc-data            \
     ..
 
@@ -1850,7 +1840,7 @@ To build the fastest version of QMCPACK we recommend the following:
   system. Substantial gains have been made optimizing C++ in recent
   years.
 
-- Use a vendor-optimized BLAS library such as Intel MKL and AMD ACML. Although
+- Use a vendor-optimized BLAS library such as Intel MKL and AMD AOCL. Although
   QMC does not make extensive use of linear algebra, it is used in the
   VMC wavefunction optimizer to apply the orbital coefficients in local basis
   calculations and in the Slater determinant update.

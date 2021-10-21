@@ -924,14 +924,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if              
             #end for
             for ln, li in enumerate(labels):
-                if li is not '':
+                if li != '':
                     axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
-                    elif li is not '':
+                    elif li != '':
                         labels[ln] = '${0}$'.format(li)
                     #end if
-                    if labels[ln-1] is not '' and ln > 0:
+                    if labels[ln-1] != '' and ln > 0:
                         labels[ln] = labels[ln-1]+'|'+labels[ln]
                         labels[ln-1] = ''
                     #end if

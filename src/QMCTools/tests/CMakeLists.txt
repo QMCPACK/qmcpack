@@ -9,27 +9,25 @@
 #// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
+unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 set(SRC_DIR tools)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/${SRC_DIR})
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(SRCS test_qmcfstool.cpp)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple_Sk.dat" ${UTEST_DIR})
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple_input.xml" ${UTEST_DIR})
 
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main fstool)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
+  target_link_libraries(${UTEST_EXE} qmcparticle qmcutil)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.

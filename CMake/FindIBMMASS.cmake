@@ -2,37 +2,31 @@
 include(CheckCXXSourceCompiles)
 
 message(STATUS "Looking for IBM MASS libraries")
-# Finding and setting the MASS_INCLUDE_DIRECTORIES
-set(SUFFIXES include)
-find_path(
-  MASS_INCLUDE_DIRECTORIES name "mass.h"
-  HINTS ${MASS_ROOT}
-  PATH_SUFFIXES ${SUFFIXES})
-if(NOT MASS_INCLUDE_DIRECTORIES)
-  message(FATAL_ERROR "MASS_INCLUDE_DIRECTORIES not set. \"mass.h\" not found in MASS_ROOT/(${SUFFIXES})")
-endif(NOT MASS_INCLUDE_DIRECTORIES)
-message(STATUS "MASS_INCLUDE_DIRECTORIES: ${MASS_INCLUDE_DIRECTORIES}")
 
-# Finding and setting the MASS_LINK_DIRECTORIES
-# the directory organization varies with platform and targets
-# these suffixes are not exhaustive
-set(MASS_FIND_LIB "libmass${CMAKE_STATIC_LIBRARY_SUFFIX}")
+# Finding MASS_INCLUDE
+find_path(
+  MASS_INCLUDE mass.h
+  HINTS ${MASS_ROOT}
+  PATH_SUFFIXES include)
+message(STATUS "MASS_INCLUDE: ${MASS_INCLUDE}")
+
+# Finding and setting the MASS_LIBRARY
 set(SUFFIXES lib lib64)
-find_path(
-  MASS_LINK_DIRECTORIES name "${MASS_FIND_LIB}"
+find_library(
+  MASS_LIBRARY mass
   HINTS ${MASS_ROOT}
   PATH_SUFFIXES ${SUFFIXES})
-if(NOT MASS_LINK_DIRECTORIES)
-  message(FATAL_ERROR "MASS_LINK_DIRECTORIES not set. ${MASS_FIND_LIB} " "not found in MASS_ROOT/(${SUFFIXES})")
-endif(NOT MASS_LINK_DIRECTORIES)
-message(STATUS "MASS_LINK_DIRECTORIES: ${MASS_LINK_DIRECTORIES}")
+message(STATUS "MASS_LIBRARY: ${MASS_LIBRARY}")
 
-set(MASS_LINKER_FLAGS -L${MASS_LINK_DIRECTORIES} -Wl,-rpath,${MASS_LINK_DIRECTORIES})
-
-set(MASS_LIBRARY "-lmass")
-file(
-  WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx"
-  "#include <cmath>
+if(MASS_INCLUDE AND MASS_LIBRARY)
+  add_library(IBM::MASS INTERFACE IMPORTED)
+  target_compile_definitions(IBM::MASS INTERFACE "HAVE_MASS")
+  target_include_directories(IBM::MASS INTERFACE ${MASS_INCLUDE})
+  target_link_libraries(IBM::MASS INTERFACE ${MASS_LIBRARY})
+  # Check if MASS works with the compiler
+  file(
+    WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx"
+    "#include <cmath>
 #include <mass.h>
 #include <iostream>
 
@@ -43,19 +37,39 @@ sincos(input, &outsin, &outcos);
 }
 ")
 
-try_compile(
-  HAVE_MASS ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx
-  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${MASS_INCLUDE_DIRECTORIES} " "-DLINK_DIRECTORIES=${MASS_LINK_DIRECTORIES}"
-  LINK_LIBRARIES "${MASS_LIBRARY}"
-  OUTPUT_VARIABLE MASS_OUT)
-if(NOT HAVE_MASS)
-  message("${MASS_OUT}")
-endif(NOT HAVE_MASS)
+  try_compile(
+    HAVE_MASS ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx
+    LINK_LIBRARIES IBM::MASS
+    OUTPUT_VARIABLE MASS_OUT)
+  if(NOT HAVE_MASS)
+    message("${MASS_OUT}")
+  endif(NOT HAVE_MASS)
+endif()
 
-set(MASSV_LIBRARY "-lmassv")
-file(
-  WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_massv.cxx"
-  "#include <massv.h>
+# Finding MASSV_INCLUDE
+find_path(
+  MASSV_INCLUDE massv.h
+  HINTS ${MASS_ROOT}
+  PATH_SUFFIXES include)
+message(STATUS "MASSV_INCLUDE: ${MASSV_INCLUDE}")
+
+# Finding and setting the MASSV_LIBRARY
+set(SUFFIXES lib lib64)
+find_library(
+  MASSV_LIBRARY massv
+  HINTS ${MASS_ROOT}
+  PATH_SUFFIXES ${SUFFIXES})
+message(STATUS "MASSV_LIBRARY: ${MASSV_LIBRARY}")
+
+if(MASSV_INCLUDE AND MASSV_LIBRARY)
+  add_library(IBM::MASSV INTERFACE IMPORTED)
+  target_compile_definitions(IBM::MASSV INTERFACE "HAVE_MASSV")
+  target_include_directories(IBM::MASSV INTERFACE ${MASSV_INCLUDE})
+  target_link_libraries(IBM::MASSV INTERFACE ${MASSV_LIBRARY})
+  # Check if MASSV works with the compiler
+  file(
+    WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_massv.cxx"
+    "#include <massv.h>
 #include <iostream>
 
 int main(void) {
@@ -68,33 +82,25 @@ vlog10(resultv, inputv, &in_size);
 }
 ")
 
-try_compile(
-  HAVE_MASSV ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_massv.cxx
-  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${MASS_INCLUDE_DIRECTORIES} " "-DLINK_DIRECTORIES=${MASS_LINK_DIRECTORIES}"
-  LINK_LIBRARIES "${MASSV_LIBRARY}"
-  OUTPUT_VARIABLE MASSV_OUT)
-if(NOT HAVE_MASSV)
-  message("${MASSV_OUT}")
-endif(NOT HAVE_MASSV)
+  try_compile(
+    HAVE_MASSV ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_massv.cxx
+    LINK_LIBRARIES IBM::MASSV
+    OUTPUT_VARIABLE MASSV_OUT)
+  if(NOT HAVE_MASSV)
+    message("${MASSV_OUT}")
+  endif(NOT HAVE_MASSV)
+endif()
 
 if(HAVE_MASS OR HAVE_MASSV)
   set(MASS_FOUND TRUE)
   message(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASSV=${HAVE_MASSV}")
-
-  target_include_directories(Math::scalar_vector_functions INTERFACE "${MASS_INCLUDE_DIRECTORIES}")
-  target_link_options(Math::scalar_vector_functions INTERFACE "${MASS_LINKER_FLAGS}")
-
   if(HAVE_MASS)
-    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MASS")
-    target_link_libraries(Math::scalar_vector_functions INTERFACE "${MASS_LIBRARY}")
+    target_link_libraries(Math::scalar_vector_functions INTERFACE IBM::MASS)
     set(SINCOS_INCLUDE mass.h)
   endif()
-
   if(HAVE_MASSV)
-    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MASSV")
-    target_link_libraries(Math::scalar_vector_functions INTERFACE "${MASSV_LIBRARY}")
+    target_link_libraries(Math::scalar_vector_functions INTERFACE IBM::MASSV)
   endif()
-
 else()
   set(MASS_FOUND FALSE)
   message(STATUS "MASS not found")

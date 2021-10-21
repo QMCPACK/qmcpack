@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-nvcc -x cu -O3 $0 -o $0x -lboost_unit_test_framework -D_DISABLE_CUDA_SLOW &&$0x&&rm $0x; exit
+${CUDACXX:-nvcc} -std=c++17 -x cu -O3 $0 -o $0x --extended-lambda --expt-relaxed-constexpr --Werror=cross-execution-space-call -lboost_unit_test_framework -lboost_timer -Xcudafe=--display_error_number -D_DISABLE_CUDA_SLOW &&$0x&&rm $0x; exit
 #endif
 
 #define _DISABLE_CUDA_SLOW
@@ -124,6 +124,15 @@ BOOST_AUTO_TEST_CASE(cuda_copy_complex_timing){
 		return timer.elapsed();
 	}();
 	std::cout<<"mng "<< mng_times.wall/1e9 <<" sec"<< std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(cuda_managed_empty){
+	using complex = std::complex<double>;
+	multi::array<complex, 2, cuda::managed::allocator<complex>> A;
+	multi::array<complex, 2, cuda::managed::allocator<complex>> B = A;
+	BOOST_REQUIRE( A.is_empty() );
+	BOOST_REQUIRE( B.is_empty() );
+	BOOST_REQUIRE( A == B );
 }
 
 BOOST_AUTO_TEST_CASE(cuda_copy_complex_timing_4d){

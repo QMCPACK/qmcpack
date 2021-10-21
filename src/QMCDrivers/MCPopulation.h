@@ -60,13 +60,11 @@ private:
   IndexType target_population_  = 0;
   IndexType target_samples_     = 0;
   //Properties properties_;
-  ParticleSet ions_;
 
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
   std::vector<std::pair<int, int>> particle_group_indexes_;
-  SpeciesSet species_set_;
   std::vector<RealType> ptclgrp_mass_;
   ///1/Mass per species
   std::vector<RealType> ptclgrp_inv_mass_;
@@ -182,8 +180,6 @@ public:
   IndexType get_target_population() const { return target_population_; }
   IndexType get_target_samples() const { return target_samples_; }
   //const Properties& get_properties() const { return properties_; }
-  const SpeciesSet& get_species_set() const { return species_set_; }
-  const ParticleSet& get_ions() const { return ions_; }
 
   // accessor to the gold copy
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }

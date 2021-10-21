@@ -2130,7 +2130,7 @@ PseudoClass::CalcProjector(std::string refstate, int lchannel)
     atom.RadialWFs(i).Energy = -0.5;
   }
   // Define a grid for solving
-  OptimalGrid *grid = new OptimalGrid(PseudoCharge, PotentialGrid.End());
+  std::shared_ptr<Grid> grid = std::make_shared<OptimalGrid>(PseudoCharge, PotentialGrid.End());
   atom.SetGrid (grid);
   // Set the potential
   atom.SetBarePot (this);

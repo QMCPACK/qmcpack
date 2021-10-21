@@ -23,12 +23,12 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "MinimalContainers/ConstantSizeMatrix.hpp"
-#include "Utilities/PooledData.h"
-#include "Utilities/PooledMemory.h"
+#include "Pools/PooledData.h"
+#include "Pools/PooledMemory.h"
 #include "QMCDrivers/WalkerProperties.h"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
-#include "Utilities/PointerPool.h"
+#include "Pools/PointerPool.h"
 #include "CUDA_legacy/gpu_vector.h"
 #endif
 #include <assert.h>

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -16,9 +16,9 @@
 #include "ValidSpinDensityInput.h"
 #include "SpinDensityNew.h"
 #include "RandomForTest.h"
-#include "Utilities/SpeciesSet.h"
 #include "ParticleSet.h"
-#include "SpinDensityTesting.h"
+#include "TrialWaveFunction.h"
+#include "EstimatorTesting.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 
 using QMCT = QMCTraits;
-  
+
 void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
   for (int iops = 0; iops < ncrowds; ++iops)
@@ -53,10 +53,15 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
       pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
     }
 
+    std::vector<TrialWaveFunction> wfns;
+
     auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
+    auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets);
+    RandomGenerator_t rng;
+
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
 }
 
@@ -85,10 +90,15 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
       pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
     }
 
+    std::vector<TrialWaveFunction> wfns;
+
     auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
+    auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets);
+    RandomGenerator_t rng;
+
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
 }
 
@@ -162,10 +172,15 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
     pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   }
 
+  std::vector<TrialWaveFunction> wfns;
+
   auto ref_walkers = makeRefVector<MCPWalker>(walkers);
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
+  auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-  sdn.accumulate(ref_walkers, ref_psets);
+  RandomGenerator_t rng;
+
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
 
   std::vector<QMCT::RealType>& data_ref = sdn.get_data_ref();
   // There should be a check that the discretization of particle locations expressed in lattice coords

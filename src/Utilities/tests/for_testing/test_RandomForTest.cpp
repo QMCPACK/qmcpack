@@ -11,9 +11,6 @@
 
 #include "catch.hpp"
 #include "RandomForTest.cpp"
-#include "../StlPrettyPrint.hpp"
-#include <iostream>
-#include <string>
 
 /** \file
  */

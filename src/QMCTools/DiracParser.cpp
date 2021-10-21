@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
@@ -20,6 +20,7 @@ typedef std::vector<primExpCoeff> basisFunc;
 fermIrrep::fermIrrep(std::string label_in, int nSpinors, int numAO) : label(label_in)
 {
   energies.resize(nSpinors, 0);
+  orbtypes.resize(nSpinors, OrbType::VIRTUAL);
   spinor_mo_coeffs.resize(nSpinors);
   for (int mo = 0; mo < nSpinors; mo++)
   {
@@ -49,6 +50,19 @@ fermIrrep fermIrrep::generate_kramers_pair()
     }
   }
   return kp;
+}
+
+cosciRep::cosciRep(std::string in_label, int nstates) : label(in_label) { states.resize(nstates); }
+
+void cosciRep::printInfo(std::ostream& os, int& tot_state_count)
+{
+  os << "  Representation: " << label << " with " << states.size() << " states" << std::endl;
+  os << "state#     Energies and Ndets: " << std::endl;
+  for (int i = 0; i < states.size(); i++)
+  {
+    os << "      " << tot_state_count << " " << states[i].energy << " " << states[i].coeffs.size() << std::endl;
+    tot_state_count++;
+  }
 }
 
 DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
@@ -202,18 +216,10 @@ void DiracParser::parse(const std::string& fname)
   getGeometry(fin);
   getGaussianCenters(fin);
   getSpinors(fin);
-
-
-  std::cout << "***********************" << std::endl;
-  std::cout << "WARNING: The QMCPACK files that will be generated are for a single determinant built from the lowest "
-               "energy spinors"
-            << std::endl;
-  std::cout
-      << "In most circumstances, you have run a complete open-shell CI (COSCI) calculation in DIRAC using .RESOLVE."
-      << std::endl;
-  std::cout << "The COSCI wavefunction parsing has not yet been implemented, and must therefore be modified by hand."
-            << std::endl;
-  std::cout << "***********************" << std::endl;
+  getWF(fin);
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << std::endl;
 }
 
 void DiracParser::getGeometry(std::istream& is)
@@ -415,6 +421,9 @@ void DiracParser::getGaussianCenters(std::istream& is)
 
 void DiracParser::getSpinors(std::istream& is)
 {
+  std::cout << std::endl;
+  std::cout << "Reading spinor info" << std::endl;
+  std::cout << "========================================================================" << std::endl;
   is.clear();
   is.seekg(pivot_begin);
 
@@ -558,7 +567,39 @@ void DiracParser::getSpinors(std::istream& is)
   numMO = 0;
   for (int i = 0; i < irreps.size(); i++)
     numMO += 2 * irreps[i].get_num_spinors(); //irrep and kp
+}
 
+void DiracParser::getWF(std::istream& is)
+{
+  is.clear();
+  is.seekg(pivot_begin);
+  std::cout << std::endl;
+  std::cout << "Parsing wave function info" << std::endl;
+  std::cout << "========================================================================" << std::endl;
+
+  if (lookFor(is, "Resolution of open-shell states", aline))
+  {
+    bool closed = lookFor(is, "No open-shell electrons", aline);
+    if (closed)
+    {
+      std::cout << "Found single determinant wave function" << std::endl;
+      getSingleDet(is);
+    }
+    else
+    {
+      std::cout << "Found Complete Open-Shell CI (COSCI) wave function" << std::endl;
+      getCOSCI(is);
+    }
+  }
+  else
+  {
+    std::cout << "Found single determinant wave function" << std::endl;
+    getSingleDet(is);
+  }
+}
+
+void DiracParser::getSingleDet(std::istream& is)
+{
   //energy order spinors across fermion irreps
   std::cout << "Sorting spinors by energy" << std::endl;
   std::vector<std::pair<double, std::pair<int, int>>> idx;
@@ -598,25 +639,262 @@ void DiracParser::getSpinors(std::istream& is)
         EigVec.push_back(kp_irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component[d]]);
     }
   }
-  /*
-    for (int i = 0; i < irreps.size(); i++)
+}
+
+void DiracParser::parseCOSCIOrbInfo(std::istream& is, const int irrep_idx, OrbType type)
+{
+  std::string orbtype_str;
+  if (type == OrbType::CORE)
+    orbtype_str = "Core";
+  else if (type == OrbType::ACTIVE)
+    orbtype_str = "Active";
+  else
+  {
+    std::cerr << "Orb type must be CORE or ACTIVE" << std::endl;
+    abort();
+  }
+
+  is.seekg(pivot_begin);
+  search(is, "Resolution of open-shell states");
+  std::string tmp = "- " + orbtype_str + " orbitals";
+  search(is, tmp);
+  lookFor(is, irreps[irrep_idx].label, aline);
+  parsewords(aline.c_str(), currentWords);
+  assert(currentWords.back() == irreps[irrep_idx].label);
+  skiplines(is, 1);
+  getwords(currentWords, is);
+  if (currentWords[0] == "Index")
+  {
+    int norb  = std::stoi(currentWords[2]);
+    int count = 0;
+    while (count < norb)
     {
-      for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
+      getline(is, aline);
+      if (aline.size() == 0)
+        continue;
+      parsewords(aline.c_str(), currentWords);
+      for (int i = 0; i < currentWords.size(); i++, count++)
       {
-        for (int ao = 0; ao < irreps[i].get_num_ao(); ao++)
-          EigVec.push_back(irreps[i].spinor_mo_coeffs[mo][ao][idx[d]]);
-        for (int ao = 0; ao < kp_irreps[i].get_num_ao(); ao++)
-          EigVec.push_back(kp_irreps[i].spinor_mo_coeffs[mo][ao][idx[d]]);
+        int idx                            = std::stoi(currentWords[i]) - 1;
+        irreps[irrep_idx].orbtypes[idx]    = type;
+        kp_irreps[irrep_idx].orbtypes[idx] = type;
       }
+      if (count > norb)
+      {
+        std::cerr << "Error: Read in more indices than exist for irrep " << irreps[irrep_idx].label << std::endl;
+        abort();
+      }
+      else if (count == norb)
+        break;
+    }
+  }
+}
+
+int DiracParser::sortAndStoreCOSCIOrbs(OrbType type, const int spinor_component)
+{
+  int total = 0;
+  for (int ir = 0; ir < irreps.size(); ir++)
+  {
+    std::vector<std::pair<double, std::pair<int, int>>> idx;
+    for (int mo = 0; mo < irreps[ir].get_num_spinors(); mo++)
+    {
+      if (irreps[ir].orbtypes[mo] == type)
+      {
+        std::pair<int, int> irmo(ir, mo);
+        std::pair<double, std::pair<int, int>> enirmo(irreps[ir].energies[mo], irmo);
+        idx.push_back(enirmo);
+      }
+    }
+
+    for (int i = 0; i < idx.size(); i++)
+    {
+      if (spinor_component == 0)
+      {
+        EigVal_alpha.push_back(idx[i].first);
+        total++;
+      }
+      int ir = idx[i].second.first;
+      int mo = idx[i].second.second;
+      for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
+        EigVec.push_back(irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component]);
+    }
+    //now store KP for this irrep
+    for (int i = 0; i < idx.size(); i++)
+    {
+      if (spinor_component == 0)
+      {
+        EigVal_alpha.push_back(idx[i].first);
+        total++;
+      }
+      int ir = idx[i].second.first;
+      int mo = idx[i].second.second;
+      for (int ao = 0; ao < irreps[ir].get_num_ao(); ao++)
+        EigVec.push_back(kp_irreps[ir].spinor_mo_coeffs[mo][ao][spinor_component]);
     }
   }
 
+  return total;
+}
+
+void DiracParser::getCOSCI(std::istream& is)
+{
+  is.clear();
+  multideterminant = true;
+
+  //find closed info. Info is initialized as virtual.
+  //Just need to update core and active
   for (int i = 0; i < irreps.size(); i++)
   {
-    for (int mo = 0; mo < irreps[i].get_num_spinors(); mo++)
+    parseCOSCIOrbInfo(is, i, OrbType::CORE);
+    parseCOSCIOrbInfo(is, i, OrbType::ACTIVE);
+  }
+
+  std::cout << std::endl;
+  std::cout << "Orbital Info" << std::endl;
+  std::cout << "------------------------------------" << std::endl;
+  for (int i = 0; i < irreps.size(); i++)
+  {
+    std::cout << "irrep: " << irreps[i].label << std::endl;
+    int closed = 0;
+    int active = 0;
+    int virt   = 0;
+    for (int j = 0; j < irreps[i].orbtypes.size(); j++)
     {
-      EigVal_alpha.push_back(irreps[i].energies[mo]);
-      EigVal_alpha.push_back(kp_irreps[i].energies[mo]);
+      if (irreps[i].orbtypes[j] == OrbType::CORE)
+        closed += 1;
+      else if (irreps[i].orbtypes[j] == OrbType::ACTIVE)
+        active += 1;
+      else if (irreps[i].orbtypes[j] == OrbType::VIRTUAL)
+        virt += 1;
     }
-  }*/
+    std::cout << "  closed  : " << closed << std::endl;
+    std::cout << "  active  : " << active << std::endl;
+    std::cout << "  virtual : " << virt << std::endl;
+    std::cout << "  total   : " << closed + active + virt << std::endl;
+  }
+
+  std::cout << std::endl;
+  std::cout << "Sorting spinors into DIRAC COSCI order" << std::endl;
+
+  //store in QMCGaussian data format
+  //storing in EigVec by up_real, dn_real, up_imag, dn_imag
+  EigVec.clear();
+  EigVal_alpha.clear();
+  EigVal_beta.clear();
+  //save real part of up component of spinor in EigVec first
+  int total_core    = sortAndStoreCOSCIOrbs(OrbType::CORE, 0);
+  int total_active  = sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 0);
+  int total_virtual = sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 0);
+  //save real part of dn compeonent of spinor in Eigvec
+  sortAndStoreCOSCIOrbs(OrbType::CORE, 2);
+  sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 2);
+  sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 2);
+  //save imag part of up compeonent of spinor in Eigvec
+  sortAndStoreCOSCIOrbs(OrbType::CORE, 1);
+  sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 1);
+  sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 1);
+  //save imag part of dn compeonent of spinor in Eigvec
+  sortAndStoreCOSCIOrbs(OrbType::CORE, 3);
+  sortAndStoreCOSCIOrbs(OrbType::ACTIVE, 3);
+  sortAndStoreCOSCIOrbs(OrbType::VIRTUAL, 3);
+
+
+  //set occstrs for core and virtual
+  std::string core_occstr;
+  for (int i = 0; i < total_core; i++)
+    core_occstr += "1";
+  std::string virt_occstr;
+  for (int i = 0; i < total_virtual; i++)
+    virt_occstr += "0";
+  //active occstr found from COSCI states below
+
+  is.seekg(pivot_begin);
+  search(is, "Resolution of open-shell states");
+  search(is, "Orbital Representation");
+
+  std::vector<std::streampos> rep_pos;
+  while (lookFor(is, "Representation", aline))
+    rep_pos.push_back(is.tellg());
+  is.clear();
+
+  for (int i = 0; i < rep_pos.size(); i++)
+  {
+    is.seekg(rep_pos[i]);
+    lookFor(is, "Population analysis", aline);
+    parsewords(aline.c_str(), currentWords);
+    std::string label = currentWords.back();
+    getwords(currentWords, is);
+    int nstates = std::stoi(currentWords[2]);
+    cosciRep rep(label, nstates);
+    skiplines(is, 3);
+    for (int j = 0; j < nstates; j++)
+    {
+      std::vector<double> ci_coeffs;
+      std::vector<std::string> ci_occs;
+      double energy = 0.0;
+      while (getline(is, aline))
+      {
+        if (aline.size() == 0)
+          break;
+        parsewords(aline.c_str(), currentWords);
+        if (currentWords.size() == 1)
+          energy = std::stod(currentWords[0]);
+        if (currentWords[0] == "Sum")
+        {
+          getline(is, aline);
+          break;
+        }
+        if (currentWords.size() == 5 && currentWords[0] != "Sum")
+        {
+          ci_coeffs.push_back(std::stod(currentWords[3]));
+          std::string tmp = core_occstr + currentWords[1] + virt_occstr;
+          ci_occs.push_back(tmp);
+        }
+      }
+      //finished reading CI coeffs for state
+      ciState ci;
+      ci.energy     = energy;
+      ci.occstrings = ci_occs;
+      ci.coeffs     = ci_coeffs;
+      rep.states[j] = ci;
+    }
+    cosciReps.push_back(rep);
+  }
+
+  std::cout << std::endl;
+  std::cout << "COSCI State Info" << std::endl;
+  std::cout << "------------------------------------" << std::endl;
+  std::cout << "Found " << cosciReps.size() << " representations" << std::endl;
+  int state_count = 0;
+  for (int i = 0; i < cosciReps.size(); i++)
+    cosciReps[i].printInfo(std::cout, state_count);
+  std::cout << "Saving wave function for target state " << target_state << std::endl;
+  std::cout << "note: if you want another state run with --TargetState #_of_desired_state shown above" << std::endl;
+
+  //store info for desired state in QMCGausianParserBase structures
+  bool found  = false;
+  state_count = 0;
+  for (int i = 0; i < cosciReps.size(); i++)
+  {
+    for (int j = 0; j < cosciReps[i].states.size(); j++)
+    {
+      if (state_count == target_state)
+      {
+        CIcoeff    = cosciReps[i].states[j].coeffs;
+        CIalpha    = cosciReps[i].states[j].occstrings;
+        CIbeta     = CIalpha; //just store it. It isn't written to h5
+        found      = true;
+        ci_nstates = CIalpha[0].size();
+        ci_size    = CIcoeff.size();
+        ci_nca     = 0;
+        ci_nea     = NumberOfEls;
+      }
+      state_count++;
+    }
+  }
+  if (!found)
+  {
+    std::cerr << "Could not find requested state" << std::endl;
+    abort();
+  }
 }

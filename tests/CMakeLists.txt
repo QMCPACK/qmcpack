@@ -1,7 +1,5 @@
 message(STATUS "Adding integration tests for QMCPACK")
-if(NOT QMC_VERBOSE_CONFIGURATION)
-  message("Set QMC_VERBOSE_CONFIGURATION=1 for details of which tests will be enabled.")
-endif()
+message("Use --log-level=VERBOSE CMake option for details of which tests will be enabled.")
 
 add_subdirectory(converter)
 add_subdirectory(estimator)

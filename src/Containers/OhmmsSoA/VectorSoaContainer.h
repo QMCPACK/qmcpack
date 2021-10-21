@@ -62,7 +62,8 @@ struct VectorSoaContainer
   {
     if (myData != in.myData)
     {
-      resize(in.nLocal);
+      if (nLocal != in.nLocal)
+        resize(in.nLocal);
       std::copy_n(in.myData, nGhosts * D, myData);
     }
     return *this;

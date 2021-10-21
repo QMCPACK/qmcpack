@@ -44,7 +44,7 @@ public:
   int get_npoints() const { return npoints_; }
   bool get_write_report() const { return write_report_; }
   bool get_save_memory() const { return save_memory_; }
-  
+
   struct DerivedParameters
   {
     PosType corner;
@@ -60,8 +60,7 @@ public:
    *  passes it back or passes in the cell from the relevant ParticleSet.
    *
    */
-  DerivedParameters
-      calculateDerivedParameters(Lattice& lattice);
+  DerivedParameters calculateDerivedParameters(const Lattice& lattice) const;
 
 private:
   ///name of this Estimator

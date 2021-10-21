@@ -27,11 +27,9 @@ struct maptest
   T data[size];
 
   PRAGMA_OFFLOAD("omp declare target")
-  inline void set_value(const T* restrict array, size_t size, T* restrict data)
+  inline void set_value(int i, const T* restrict array, T* restrict data)
   {
-    PRAGMA_OFFLOAD("omp for")
-    for (int i = 0; i < size; i++)
-      data[i] = array[i];
+    data[i] = array[i];
   }
   PRAGMA_OFFLOAD("omp end declare target")
 
@@ -41,8 +39,9 @@ struct maptest
     T newdata[size] = {0, 1, 2, 3, 4, 5};
     PRAGMA_OFFLOAD("omp target map(to:newdata[0:6]) map(from:data[0:6])")
     {
-      PRAGMA_OFFLOAD("omp parallel")
-      set_value(newdata, size, data);
+      PRAGMA_OFFLOAD("omp parallel for")
+      for (int i = 0; i < size; i++)
+        set_value(i, newdata, data);
     }
     PRAGMA_OFFLOAD("omp target exit data map(delete:data[0:6])")
     std::cout << "data[5] = " << data[5] << std::endl;

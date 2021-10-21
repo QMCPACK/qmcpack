@@ -22,6 +22,7 @@ set(PARTICLE
     DynamicCoordinatesBuilder.cpp
     MCWalkerConfiguration.cpp
     WalkerConfigurations.cpp
+    SpeciesSet.cpp
     SampleStack.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
@@ -57,16 +58,16 @@ else(USE_OBJECT_TARGET)
 endif(USE_OBJECT_TARGET)
 
 target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcparticle PRIVATE Math::BLAS_LAPACK Math::scalar_vector_functions)
-target_link_libraries(qmcparticle PUBLIC qmcutil platform_device)
+target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
+target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
 
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)
-    cuda_add_library(qmcparticle_cuda accept_kernel.cu)
+    add_library(qmcparticle_cuda accept_kernel.cu)
   else()
     hip_add_library(qmcparticle_cuda accept_kernel.cu)
   endif(NOT QMC_CUDA2HIP)
-  target_link_libraries(qmcparticle_cuda PRIVATE platform_device)
+  target_link_libraries(qmcparticle_cuda PRIVATE platform_runtime)
   target_link_libraries(qmcparticle PRIVATE qmcparticle_cuda)
 endif(QMC_CUDA)
 

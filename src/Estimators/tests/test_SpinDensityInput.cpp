@@ -14,7 +14,7 @@
 
 #include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
-#include "SpinDensityTesting.h"
+#include "EstimatorTesting.h"
 #include "ParticleSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 

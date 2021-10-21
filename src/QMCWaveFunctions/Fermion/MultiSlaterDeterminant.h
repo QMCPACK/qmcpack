@@ -68,8 +68,7 @@ public:
 
   ///constructor
   MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                         std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                         std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
+                         std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
                          const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
@@ -79,9 +78,6 @@ public:
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
-
-  ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
 
   virtual ValueType evaluate(const ParticleSet& P,
                              ParticleSet::ParticleGradient_t& G,

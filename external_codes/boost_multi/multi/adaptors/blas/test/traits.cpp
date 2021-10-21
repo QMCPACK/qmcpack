@@ -15,17 +15,17 @@ $CXXX $CXXFLAGS $0 -o $0.$X `pkg-config --cflags --libs blas cuda-11.0` -lboost_
 namespace multi = boost::multi;
 namespace blas = multi::blas;
 
-BOOST_AUTO_TEST_CASE(multi_adaptors_blas_traits){
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_traits) {
 	static_assert( blas::is_d<double>{} );
 	static_assert( blas::is_s<float >{} );
-	
+
 	static_assert( blas::is_c<std::complex<float>>{} );
 	static_assert( blas::is_z<std::complex<double>>{} );
 }
 
 #if CUDA_FOUND
 #include<thrust/complex.h>
-BOOST_AUTO_TEST_CASE(multi_adaptors_blas_traits_thrust){
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_traits_thrust) {
 	static_assert( blas::is_c<thrust::complex<float>>{} );
 	static_assert( blas::is_z<thrust::complex<double>>{} );
 }

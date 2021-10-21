@@ -49,11 +49,11 @@ SkPot::Return_t SkPot::evaluate(ParticleSet& P)
   for (int i = 1; i < NumSpecies; ++i)
     accumulate_elements(P.SK->rhok[i], P.SK->rhok[i] + NumK, RhokTot.begin());
   Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
-  Value = 0.0;
+  value_ = 0.0;
   for (int i = 0; iit != iit_end; ++iit, ++i)
-    Value += Fk[i] * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
+    value_ += Fk[i] * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
 #endif
-  return Value;
+  return value_;
 }
 
 bool SkPot::put(xmlNodePtr cur)

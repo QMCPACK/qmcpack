@@ -355,8 +355,9 @@ void QMCCostFunctionBatched::checkConfigurations()
         TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
 
 
-        auto energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, p_list, optVars, dlogpsi_array,
-                                                                          dhpsioverpsi_array, compute_nlpp);
+        auto energy_list =
+            QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
+                                                           dhpsioverpsi_array, compute_nlpp);
 
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
@@ -385,14 +386,14 @@ void QMCCostFunctionBatched::checkConfigurations()
           if (includeNonlocalH != "no")
           {
             OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
-            RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
+            RecordsOnNode[is][ENERGY_FIXED] -= nlpp->getValue();
           }
         }
       }
       else
       {
         // Energy
-        auto energy_list = QMCHamiltonian::mw_evaluate(h_list, p_list);
+        auto energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
 
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
@@ -614,8 +615,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
 
         // Energy
-        auto energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, p_list, optVars, dlogpsi_array,
-                                                                          dhpsioverpsi_array, compute_nlpp);
+        auto energy_list =
+            QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, wf_list, p_list, optVars, dlogpsi_array,
+                                                           dhpsioverpsi_array, compute_nlpp);
 
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
@@ -635,7 +637,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       else
       {
         // Just energy needed if no gradients
-        auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, p_list);
+        auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, wf_list, p_list);
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
           int is                        = base_sample_index + ib;

@@ -1,7 +1,7 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
 #ifndef MULTI_ADAPTORS_BLAS_IAMAX_HPP
 #define MULTI_ADAPTORS_BLAS_IAMAX_HPP
 
@@ -31,9 +31,11 @@ auto iamax(X1D const& x)
 
 template<class X1D> auto amax(X1D const& x){return begin(x) + iamax(x);}
 
-}}}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_IAMAX
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS iamax"
 #define BOOST_TEST_DYN_LINK

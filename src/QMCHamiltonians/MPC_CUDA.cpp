@@ -130,8 +130,8 @@ void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalE
 
   for (int iw = 0; iw < nw; iw++)
   {
-    double e                                                    = esum[iw] + SumHost[iw] + Vconst;
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = e;
+    double e                                                      = esum[iw] + SumHost[iw] + Vconst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = e;
     LocalEnergy[iw] += e;
   }
 }

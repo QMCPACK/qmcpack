@@ -76,7 +76,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
   ClassName = "HamiltonianFactory";
   myName    = hName;
   targetPtcl.set_quantum();
-  targetH->addOperator(std::make_unique<BareKineticEnergy<OHMMS_PRECISION_FULL>>(targetPtcl), "Kinetic");
+  targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl), "Kinetic");
 }
 
 /** main hamiltonian build function

@@ -86,15 +86,15 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
   }
 
   if (write_report == "yes")
-      write_report_ = true;
+    write_report_ = true;
   else
-      write_report_ = false;
+    write_report_ = false;
 
   if (save_memory == "yes")
     save_memory_ = true;
   else
     save_memory_ = false;
-  
+
   // weird legacy stuff
   // if (write_report == "yes")
   //   report("  ");
@@ -102,7 +102,7 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
   //   test(test_moves, *Ptmp);
 }
 
-SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters(Lattice& lattice)
+SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters(const Lattice& lattice) const
 {
   PosType corner = 0.0;
   if (have_center_)
@@ -113,10 +113,10 @@ SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters
   TinyVector<int, DIM> grid;
   if (have_dr_)
     for (int d = 0; d < DIM; ++d)
-        grid[d] = (int)std::ceil(std::sqrt(dot(lattice.Rv[d], lattice.Rv[d])) / dr_[d]);
+      grid[d] = (int)std::ceil(std::sqrt(dot(lattice.Rv[d], lattice.Rv[d])) / dr_[d]);
   else if (have_grid_)
     grid = grid_;
-  
+
   size_t npoints = 1;
   for (int d = 0; d < DIM; ++d)
     npoints *= grid[d];
@@ -125,8 +125,8 @@ SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters
   gdims[0] = npoints / grid[0];
   for (int d = 1; d < DIM; ++d)
     gdims[d] = gdims[d - 1] / grid[d];
-  return {corner, grid, gdims, npoints};
 
+  return {corner, grid, gdims, npoints};
 }
 
 } // namespace qmcplusplus
