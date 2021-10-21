@@ -28,8 +28,6 @@ set(QMCDRIVERS
     QMCDriver.cpp
     QMCDriverInput.cpp
     QMCDriverNew.cpp
-    WFOpt/QMCOptimize.cpp
-    WFOpt/QMCOptimizeBatched.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
     WFOpt/QMCLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
