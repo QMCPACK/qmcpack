@@ -141,7 +141,8 @@ class PyscfInput(SimulationInputTemplateDev):
                  ):
         if filepath is None and template is not None:
             filepath = template
-        elif filepath is None and template is None and text is None and False:
+        #elif filepath is None and template is None and text is None:
+        elif calculation is not None:
             # would be nice to have following check, but doesn't work
             # due to line 384 of simulation.py
             #if calculation is None:
@@ -202,7 +203,7 @@ $calculation
                 self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
             #end if
             system = system.copy() # make a local copy
-            if system.has_folded():
+            if system.has_folded() and twist_num is not None:
                 stmp = system.structure.copy()
                 prim_sys_kpoints = stmp.folded_structure.kpoints.copy()
                 kmap = stmp.kmap() 
