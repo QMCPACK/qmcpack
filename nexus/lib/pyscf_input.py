@@ -143,11 +143,6 @@ class PyscfInput(SimulationInputTemplateDev):
             filepath = template
         #elif filepath is None and template is None and text is None:
         elif calculation is not None:
-            # would be nice to have following check, but doesn't work
-            # due to line 384 of simulation.py
-            #if calculation is None:
-            #    self.error('pyscf template not provided with \'template\', \'filepath\', or \'text\'.\nIn this case \'calculation\' must be specified.')
-            ##end if
             self.calculation = calculation
             text='''
 #! /usr/bin/env python3
