@@ -34,8 +34,6 @@
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactoryNew.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
-#include "QMCDrivers/WFOpt/QMCOptimize.h"
-#include "QMCDrivers/WFOpt/QMCOptimizeBatched.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
 #include "QMCDrivers/WaveFunctionTester.h"
@@ -107,11 +105,11 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   }
   else if (qmc_mode.find("opt_batch") < nchars)
   {
-    das.new_run_type = QMCRunType::OPTIMIZE_BATCH;
+    APP_ABORT("'opt_batch' driver no longer supported");
   }
   else if (qmc_mode.find("opt") < nchars)
   {
-    das.new_run_type = QMCRunType::OPTIMIZE;
+    APP_ABORT("'opt' driver no longer supported");
   }
   else
   {
@@ -261,22 +259,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     RMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
     new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm));
-  }
-  else if (das.new_run_type == QMCRunType::OPTIMIZE)
-  {
-    QMCOptimize* opt = new QMCOptimize(qmc_system, *primaryPsi, *primaryH, comm);
-    //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(qmc_system,*primaryPsi,*primaryH );
-    opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
-    new_driver.reset(opt);
-  }
-  else if (das.new_run_type == QMCRunType::OPTIMIZE_BATCH)
-  {
-    QMCOptimizeBatched* opt =
-        QMCWFOptFactoryNew(cur, project_data_, qmc_system,
-                           MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
-                           qmc_system.getSampleStack(), comm);
-    opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
-    new_driver.reset(opt);
   }
   else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE)
   {
