@@ -28,13 +28,13 @@
 namespace qmcplusplus
 {
 
+using namespace testing;
+using namespace onebodydensitymatrices;
 
 TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
 {
-  using namespace testing;
-
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(valid_one_body_density_matrices_input_sections[valid_obdm_input]);
+  bool okay       = doc.parseFromString(valid_one_body_density_matrices_input_sections[Inputs::valid_obdm_input]);
   if (!okay)
     throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
   xmlNodePtr node = doc.getRoot();
@@ -46,7 +46,6 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
 
 TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
 {
-  using namespace testing;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
   Communicate* comm;
@@ -54,7 +53,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   outputManager.pause();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[valid_obdm_input]);
+  bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[Inputs::valid_obdm_input]);
   if (!okay)
     throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
   xmlNodePtr node = doc.getRoot();
