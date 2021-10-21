@@ -141,7 +141,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  ):
         if filepath is None and template is not None:
             filepath = template
-        elif filepath is None and template is None: # and text is None:
+        elif filepath is None and template is None and text is None and False:
             # would be nice to have following check, but doesn't work
             # due to line 384 of simulation.py
             #if calculation is None:
@@ -167,7 +167,6 @@ $calculation
         self.save_qmc   = save_qmc
         self.checkpoint = checkpoint
         self.addendum   = None     # used for save2qmcpack
-        self.chkfile    = chkfile
 
         if custom is not None:
             self.assign(**custom)
