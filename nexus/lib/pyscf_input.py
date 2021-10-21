@@ -350,23 +350,14 @@ $calculation
             #end if
             # Begin to construct input string
 
-            # mf = dft.KRKSpU(cell,kpts,U_idx=["Mn 3d"],U_val=[2.0],C_ao_lo='minao').density_fit()
-
             c = '\n### generated calculation text ###\n'
             if sys_name is not None:
                 df_str = '.density_fit()' if pyscf_df_fitting else ''
                 if sys_name == 'mole':
-                    #c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var)
-                    #c += 'mydf.auxbasis = \'weigend\'\n'
-                    #c += 'dfpath = \'df_ints.h5\'\n'
-                    #c += 'mydf._cderi_to_save = dfpath\n'
-                    #c += 'mydf.build()\n\n'
                     if pyscf_u_idx is None:
                         c += 'mf = scf.{}({}){}\n'.format(pyscf_method,sys_var,df_str)
                     else:
                         c += 'mf = dft.{}({},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(pyscf_method,sys_var,render_array(pyscf_u_idx,1),render_array(pyscf_u_val,1),pyscf_c_ao_lo,df_str)    
-                        #for at in enumerate(pyscf_u_idx)
-                        #    c += 
                     #end if
                 elif sys_name == 'cell':
                     c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var,'kpts')
