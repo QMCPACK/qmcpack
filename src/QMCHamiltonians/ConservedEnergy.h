@@ -83,9 +83,9 @@ struct ConservedEnergy : public OperatorBase
     RealType lap    = Sum(P.L);
 #ifdef QMC_COMPLEX
     RealType gradsq_cc = Dot_CC(P.G, P.G);
-    Value              = lap + gradsq + gradsq_cc;
+    value_             = lap + gradsq + gradsq_cc;
 #else
-    Value = lap + 2 * gradsq;
+    value_ = lap + 2 * gradsq;
 #endif
     return 0.0;
   }
@@ -125,7 +125,7 @@ struct ConservedEnergy : public OperatorBase
 #else
       flux = lap + 2 * gradsq;
 #endif
-      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
+      w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = flux;
     }
   }
 #endif

@@ -9,14 +9,13 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR CUDA)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 if(NOT QMC_CUDA2HIP)
-  cuda_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+  add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
 else()
   hip_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
 endif()
@@ -25,4 +24,4 @@ target_link_libraries(cuda_device_value_test_kernels PUBLIC platform_runtime)
 add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
 target_link_libraries(${UTEST_EXE} platform_runtime containers catch_main)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

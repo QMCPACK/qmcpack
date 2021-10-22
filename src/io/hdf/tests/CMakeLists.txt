@@ -9,14 +9,13 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR io_hdf5)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 # Directory where input file is copied to, and working directory for unit test
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/hdf)
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(UTEST_SRC test_hdf_archive.cpp test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
 if(BUILD_AFQMC)
@@ -26,7 +25,5 @@ endif(BUILD_AFQMC)
 add_executable(${UTEST_EXE} ${UTEST_SRC})
 target_link_libraries(${UTEST_EXE} catch_main qmcio)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})

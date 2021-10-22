@@ -7,14 +7,20 @@
 #
 #
 
+# If you are behind a firewall:
+# git config --global url."https://".insteadOf git://
+# or in .gitconfig
+#[url "https://"]
+#	insteadOf = git://
+
 echo --- START setup script `date`
 
 # Bug avoidance 20200902
-if [ -e /usr/lib/aomp/bin/clang ]; then
-    echo AOMP Clang install detected. This will break llvm install.
-    echo Suggest temporarily: sudo chmod og-rx /usr/lib/aomp
-    exit 1
-fi
+#if [ -e /usr/lib/aomp/bin/clang ]; then
+#    echo AOMP Clang install detected. This will break llvm install.
+#    echo Suggest temporarily: sudo chmod og-rx /usr/lib/aomp
+#    exit 1
+#fi
 
 
 if [ -e `dirname "$0"`/ornl_versions.sh ]; then
@@ -85,10 +91,10 @@ EOF
 #packages:
 #EOF
 # Experiment to See if clang builds and other problems clear 20200827
-	cat >>$HOME/.spack/packages.yaml<<EOF
-    all:
-        target: [x86_64]
-EOF
+#	cat >>$HOME/.spack/packages.yaml<<EOF
+#    all:
+#        target: [x86_64]
+#EOF
 ;;
     sulfur )
 	cat >$HOME/.spack/config.yaml<<EOF
@@ -101,6 +107,7 @@ config:
   build_jobs: 96
 
 EOF
+#  concretizer: clingo
 # Use flash /scratch for builds
 	rm -r -f /scratch/$USER/spack_build_stage
 	mkdir /scratch/$USER/spack_build_stage
@@ -116,10 +123,10 @@ packages:
 EOF
 # Workaround cmake bootstrap error with old versions/old spack compilers. e.g.
 # spack install cmake@3.13.2%gcc@8.3.0 failure but spack install cmake@3.13.2%gcc@8.3.1 OK (RHEL compiler)	
-        cat >>$HOME/.spack/packages.yaml<<EOF
-    cmake:
-        compiler: [gcc@8.3.1]
-EOF
+#        cat >>$HOME/.spack/packages.yaml<<EOF
+#    cmake:
+#        compiler: [gcc@8.4.1]
+#EOF
 #    boost:
 #        compiler: [gcc@8.3.1]
 #    perl:
@@ -133,22 +140,22 @@ EOF
 
 # Workaround build error of perl%gcc@installed_by_spack	. perl-data-dumper & perl are e.g. an LLVM build dep
 # dnf install perl-data-dumper if missing
-	cat >>$HOME/.spack/packages.yaml<<EOF
-    perl:
-        externals:
-        - spec: perl@5.26.3
-          prefix: /
-          buildable: False
-    perl-data-dumper:
-        externals:
-        - spec: perl-data-dumper@2.167.399
-          prefix: /
-          buildable: False
-EOF
-	cat >>$HOME/.spack/packages.yaml<<EOF
-    all:
-        target: [x86_64]
-EOF
+#	cat >>$HOME/.spack/packages.yaml<<EOF
+#    perl:
+#        externals:
+#        - spec: perl@5.26.3
+#          prefix: /
+#          buildable: False
+#    perl-data-dumper:
+#        externals:
+#        - spec: perl-data-dumper@2.167.399
+#          prefix: /
+#          buildable: False
+#EOF
+#	cat >>$HOME/.spack/packages.yaml<<EOF
+#    all:
+#        target: [x86_64]
+#EOF
 	;;
     *)
 	echo "*** WARNING: Unknown host in initial ourhostname case statement. No custom onfiguration"
@@ -168,12 +175,19 @@ git clone https://github.com/spack/spack.git
 cd $HOME/apps/spack
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 08054ffce73dc9aeb1dabe7a3abfdb446653cc4f
-#commit 08054ffce73dc9aeb1dabe7a3abfdb446653cc4f (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Andrew W Elble <aweits@rit.edu>
-#Date:   Mon Feb 22 14:02:10 2021 -0500
+#commit 3c6050d3a20e1d4f76c553780fb93d897b2112b9 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Hadrien G <grasland@lal.in2p3.fr>
+#Date:   Tue Aug 31 16:44:01 2021 +0200
 #
-#    py-torch: ensure libtorch_global_deps is linked with the c++ library (#21860)
+#acts: add v12.0.0, v12.0.1 (#25697)
+#git checkout 3c6050d3a20e1d4f76c553780fb93d897b2112b9
+
+git checkout bb29c5d6744a227c6169aafa2a79d36a51de85b6
+#commit bb29c5d6744a227c6169aafa2a79d36a51de85b6 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Alec Scott <hi@alecbcs.com>
+#Date:   Thu Sep 16 11:08:15 2021 -0700
+#
+#    Add v7.0.2 to Admixtools (#25997)
 
 echo --- Git version and last log entry
 git log -1
@@ -182,6 +196,7 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 
 cd bin
 
+export DISPLAY="" 
 export SPACK_ROOT=$HOME/apps/spack
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
@@ -208,12 +223,12 @@ echo --- End listings
 
 
 echo --- START `date`
-echo --- SPACK HACK: diffutils iconv dependency workaround
-sed -i 's/.*depends_on.*iconv.*//g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py
-echo --- SPACK HACK: Add new util-linux-uuid
-sed -i "16 a \    version('2.36.1', sha256='37de03dbb98cdeffdf9e754122b0aca2a9bbdc19769f6570dfcb6f123643bf53')" ${SPACK_ROOT}/var/spack/repos/builtin/packages/util-linux-uuid/package.py
-echo --- SPACK HACK: https for gcc git
-sed -i 's/git:/https:/g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/gcc/package.py
+#echo --- SPACK HACK: diffutils iconv dependency workaround
+#sed -i 's/.*depends_on.*iconv.*//g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py
+#echo --- SPACK HACK: Add new util-linux-uuid
+#sed -i "16 a \    version('2.36.1', sha256='37de03dbb98cdeffdf9e754122b0aca2a9bbdc19769f6570dfcb6f123643bf53')" ${SPACK_ROOT}/var/spack/repos/builtin/packages/util-linux-uuid/package.py
+#echo --- SPACK HACK: https for gcc git
+#sed -i 's/git:/https:/g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/gcc/package.py
 echo --- gcc@${gcc_vnew}
 spack install gcc@${gcc_vnew}
 echo --- load gcc@${gcc_vnew}
@@ -235,6 +250,7 @@ spack install openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^libxml2@${libxml2_v}%gcc@${g
 spack install hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl -mpi #Avoid MPI otherwise nompi build can break
 spack install fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
 #spack install perl%gcc@${gcc_vnew} # Kludge for broken deps
+spack install ninja
 spack unload python@${python_version}%gcc@${gcc_vnew}
 spack unload gcc@${gcc_vnew}
 echo --- gcc@${gcc_vold}
@@ -288,11 +304,11 @@ spack unload llvm@${llvm_vnew}
 #spack load llvm@${llvm_vold}%gcc@$gcc_vold
 #spack compiler find
 #spack unload llvm@${llvm_vold}%gcc@$gcc_vold
-echo --- llvm@${llvm_vcuda}
-spack install llvm@${llvm_vcuda} ^python@${python_version}%gcc@${gcc_vnew}
-spack load llvm@${llvm_vcuda}
-spack compiler find
-spack unload llvm@${llvm_vcuda}
+#echo --- llvm@${llvm_vcuda}
+#spack install llvm@${llvm_vcuda} ^python@${python_version}%gcc@${gcc_vnew}
+#spack load llvm@${llvm_vcuda}
+#spack compiler find
+#spack unload llvm@${llvm_vcuda}
 echo --- BLAS+LAPACK
 # Additional development required here due to only partial AMD Rome coverage and
 # spack support for optimized BLAS and LAPACK, problems building libflame etc.
@@ -361,6 +377,9 @@ spack unload gcc@${gcc_vold}
 #DEBUG Disable cleanup based on guess there are hidden dependencies
 #DEBUGecho --- Remove build dependencies
 #DEBUGspack gc --yes-to-all
+echo --- Run update script to get development compilers and their dependencies
+source `dirname "$0"`/ornl_update.sh
+echo --- Update script completed
 echo --- PGI setup reminder
 echo "To configure the PGI compilers with one of the newly installed C++ libraries:"
 echo "spack load gcc@${gcc_vpgi} # For example"
@@ -369,8 +388,8 @@ echo "sudo ./makelocalrc -x /opt/nvidia/hpc_sdk/Linux_x86_64/20.9/compilers/ -gc
 echo "gcc_vpgi is set to" ${gcc_vpgi}
 
 # Bug avoidance 20200902
-if [ -e /usr/lib/aomp/bin/clang ]; then
-    echo --- AOMP Bug workaround
-    echo Change permissions back on AOMP Clang install. e.g. sudo chmod og+rx /usr/lib/aomp
-fi
+#if [ -e /usr/lib/aomp ]; then
+#    echo --- AOMP Bug workaround
+#    echo Change permissions back on AOMP Clang install. e.g. sudo chmod og+rx /usr/lib/aomp
+#fi
 echo --- FINISH setup script `date`

@@ -17,6 +17,7 @@
 
 project(qmctools)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${qmcpack_BINARY_DIR}/bin)
 add_executable(convert4qmc convert4qmc.cpp QMCGaussianParserBase.cpp GaussianFCHKParser.cpp GamesAsciiParser.cpp
     LCAOHDFParser.cpp DiracParser.cpp)
 

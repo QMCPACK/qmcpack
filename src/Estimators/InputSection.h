@@ -56,15 +56,15 @@ private:
 
 public:
   // Query if a variable has been set
-  bool has(const std::string& name) const { return values.find(name) != values.end(); };
+  bool has(const std::string& name) const { return values.find(name) != values.end(); }
 
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
   template<typename T>
-  T get(const std::string& name)
+  const T get(const std::string& name) const
   {
-    return std::any_cast<T>(values[name]);
-  };
+    return std::any_cast<T>(values.at(name));
+  }
 
   // Read variable values (initialize) from XML input.
   //   Later, this should call a correctness checking function and enforce immutability.
@@ -74,18 +74,25 @@ public:
   // Initialize from unordered_map/initializer list
   void init(const std::unordered_map<std::string, std::any>& init_values);
 
+protected:
+  /** Do validation for a particular subtype of InputSection
+   *  Called by check_valid.
+   *  Default implementation is noop
+   */
+  virtual void checkParticularValidity() {}
+  
 private:
   // Query functions
-  bool is_attribute(const std::string& name) const { return attributes.find(name) != attributes.end(); };
-  bool is_parameter(const std::string& name) const { return parameters.find(name) != parameters.end(); };
-  bool is_required(const std::string& name) const { return required.find(name) != required.end(); };
+  bool is_attribute(const std::string& name) const { return attributes.find(name) != attributes.end(); }
+  bool is_parameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
+  bool is_required(const std::string& name) const { return required.find(name) != required.end(); }
 
-  bool is_string(const std::string& name) const { return strings.find(name) != strings.end(); };
-  bool is_bool(const std::string& name) const { return bools.find(name) != bools.end(); };
-  bool is_integer(const std::string& name) const { return integers.find(name) != integers.end(); };
-  bool is_real(const std::string& name) const { return reals.find(name) != reals.end(); };
+  bool is_string(const std::string& name) const { return strings.find(name) != strings.end(); }
+  bool is_bool(const std::string& name) const { return bools.find(name) != bools.end(); }
+  bool is_integer(const std::string& name) const { return integers.find(name) != integers.end(); }
+  bool is_real(const std::string& name) const { return reals.find(name) != reals.end(); }
 
-  bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); };
+  bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); }
 
   // Set default values for optional inputs.
   void set_defaults();

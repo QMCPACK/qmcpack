@@ -468,6 +468,13 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
         maxOrbs++;
     }
   }
+
+  app_log() << SortBands.size() << " complex-valued orbitals supplied by h5 can be expanded up to " << maxOrbs
+            << " SPOs." << std::endl;
+  if (maxOrbs < numOrbs)
+    myComm->barrier_and_abort("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
+                              "more orbitals than what the h5 file supplies.");
+
   // Now sort the bands by energy
   if (sortBands == 2)
   {
@@ -644,7 +651,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     orbIndex++;
   }
   NumDistinctOrbitals = orbIndex;
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
+  app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
 }
 

@@ -27,20 +27,25 @@
 namespace qmcplusplus
 {
 /** class defining a compute and memory resource to compute matrix inversion and 
- *  the log value of determinant of a batch of DiracMatrixes.
- *  Multiplicty is one per crowd not one per MatrixUpdateEngine.
- *  Matching the multiplicity of the call and resource requirement.
- *  At least for CUDA this is useful since memory movement
- *  and computation can be handled on the same stream which is idea for maximum async.
+ *  the log determinants of a batch of DiracMatrixes.
+ *  Multiplicty is one per crowd not one per UpdateEngine
+ *  It matches the multiplicity of the accelerator call 
+ *  and batched resource requirement.
  *
  *  @tparam VALUE_FP the datatype used in the actual computation of matrix inversion
- *              currently we only support std::complex<double>
+ *
+ *  There are no per walker variables, resources specific to the per crowd
+ *  compute object are owned here. The compute object itself is the resource
+ *  to the per walker DiracDeterminantBatched.
+ *  Resources used by this object but owned by the 
+ *  surrounding scope are passed as arguments.
  */
 template<typename VALUE_FP>
 class DiracMatrixComputeCUDA : public Resource
 {
   using FullPrecReal = RealAlias<VALUE_FP>;
-
+  using LogValue = std::complex<FullPrecReal>;
+  
   template<typename T>
   using DualMatrix = Matrix<T, PinnedDualAllocator<T>>;
 
@@ -86,7 +91,7 @@ class DiracMatrixComputeCUDA : public Resource
                                      RefVector<DualMatrix<TMAT>>& inv_a_mats,
                                      const int n,
                                      const int lda,
-                                     DualVector<std::complex<FullPrecReal>>& log_values)
+                                     DualVector<LogValue>& log_values)
   {
     int nw = a_mats.size();
     assert(a_mats.size() == inv_a_mats.size());
@@ -137,7 +142,7 @@ class DiracMatrixComputeCUDA : public Resource
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::inv_psiM to host");
     }
     cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),
-                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyDeviceToHost,
+                                   log_values.size() * sizeof(LogValue), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
@@ -160,7 +165,7 @@ class DiracMatrixComputeCUDA : public Resource
                                      DualVector<VALUE_FP>& inv_Ms,
                                      const int n,
                                      const int lda,
-                                     DualVector<std::complex<FullPrecReal>>& log_values)
+                                     DualVector<LogValue>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
@@ -206,7 +211,7 @@ class DiracMatrixComputeCUDA : public Resource
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed copying back DiracMatrixBatch::invM_fp from device");
     cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),
-                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyDeviceToHost,
+                                   log_values.size() * sizeof(LogValue), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
@@ -235,16 +240,16 @@ public:
   void invert_transpose(CUDALinearAlgebraHandles& cuda_handles,
                         DualMatrix<TMAT>& a_mat,
                         DualMatrix<TMAT>& inv_a_mat,
-                        DualVector<std::complex<FullPrecReal>>& log_values)
+                        DualVector<LogValue>& log_values)
   {
     const int n        = a_mat.rows();
     const int lda      = a_mat.cols();
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
-    std::fill(log_values.begin(), log_values.end(), std::complex<FullPrecReal>{0.0, 0.0});
+    std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(),
-                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyHostToDevice,
+                                   log_values.size() * sizeof(LogValue), cudaMemcpyHostToDevice,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
@@ -273,7 +278,7 @@ public:
       CUDALinearAlgebraHandles& cuda_handles,
       RefVector<DualMatrix<TMAT>>& a_mats,
       RefVector<DualMatrix<TMAT>>& inv_a_mats,
-      DualVector<std::complex<FullPrecReal>>& log_values,
+      DualVector<LogValue>& log_values,
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());
@@ -283,10 +288,10 @@ public:
     size_t nsqr        = n * n;
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);
-    std::fill(log_values.begin(), log_values.end(), std::complex<FullPrecReal>{0.0, 0.0});
+    std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(),
-                                   log_values.size() * sizeof(std::complex<FullPrecReal>), cudaMemcpyHostToDevice,
+                                   log_values.size() * sizeof(LogValue), cudaMemcpyHostToDevice,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
@@ -316,7 +321,7 @@ public:
       CUDALinearAlgebraHandles& cuda_handles,
       RefVector<DualMatrix<TMAT>>& a_mats,
       RefVector<DualMatrix<TMAT>>& inv_a_mats,
-      DualVector<std::complex<FullPrecReal>>& log_values,
+      DualVector<LogValue>& log_values,
       const std::vector<bool>& compute_mask)
   {
     assert(log_values.size() == a_mats.size());

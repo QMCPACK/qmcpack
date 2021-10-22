@@ -41,7 +41,7 @@ namespace qmcplusplus
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks)
 {
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
-  //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
+  //  e.g. TileMatrix, use_real_splines_, DistinctTwists, MakeTwoCopies.
   // 2. this is also where metadata for the orbitals are read from the wavefunction hdf5 file
   //  and broadcast to MPI groups. Variables broadcasted are listed in
   //  EinsplineSetBuilderCommon.cpp EinsplineSetBuilder::BroadcastOrbitalInfo()
@@ -263,7 +263,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // set the internal parameters
   if (spinSet == 0)
     set_metadata(numOrbs, TwistNum_inp, skipChecks);
-  //if (use_complex_orb == "yes") UseRealOrbitals = false; // override given user input
+  //if (use_complex_orb == "yes") use_real_splines_ = false; // override given user input
 
   // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
   bool has_backflow = false;
@@ -289,8 +289,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     kid = kid->next;
   }
 
-  if (has_backflow && use_einspline_set_extended == "yes" && UseRealOrbitals)
-    APP_ABORT("backflow optimization is broken with UseRealOrbitals");
+  if (has_backflow && use_einspline_set_extended == "yes" && use_real_splines_)
+    APP_ABORT("backflow optimization is broken with use_real_splines_");
 
   //////////////////////////////////
   // Create the OrbitalSet object
@@ -308,7 +308,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
 #if !defined(QMC_COMPLEX)
-  if (UseRealOrbitals)
+  if (use_real_splines_)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if (MixedSplineReader == 0)
@@ -350,7 +350,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #endif
   {
     EinsplineSet* new_OrbitalSet;
-    if (UseRealOrbitals)
+    if (use_real_splines_)
     {
       EinsplineSetExtended<double>* temp_OrbitalSet;
 #if defined(QMC_CUDA)

@@ -22,6 +22,7 @@ set(HAMSRCS
     OperatorBase.cpp
     QMCHamiltonian.cpp
     Hdispatcher.cpp
+    BareKineticEnergy.cpp
     CoulombPBCAA.cpp
     CoulombPBCAB.cpp
     NonLocalTOperator.cpp
@@ -98,7 +99,7 @@ else()
 endif()
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)
-    cuda_add_library(qmcham_cuda ${HAMSRCS_CUDA})
+    add_library(qmcham_cuda ${HAMSRCS_CUDA})
   else()
     hip_add_library(qmcham_cuda ${HAMSRCS_CUDA})
   endif(NOT QMC_CUDA2HIP)

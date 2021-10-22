@@ -40,9 +40,9 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
-  void delete_particle_quantities() override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;

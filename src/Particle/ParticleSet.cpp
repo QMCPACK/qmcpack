@@ -92,7 +92,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       ParentName(p.parentName()),
       coordinates_(p.coordinates_->makeClone())
 {
-  set_quantum_domain(p.quantum_domain);
+  setQuantumDomain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
   Mass = p.Mass;
@@ -108,7 +108,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getModes());
+    addTable(p.DistTables[i]->get_origin(), p.DistTables[i]->getModes());
   if (p.SK)
   {
     LRBox = p.LRBox;                             //copy LRBox
@@ -155,12 +155,12 @@ void ParticleSet::create(const std::vector<int>& agroup)
   }
 }
 
-void ParticleSet::set_quantum_domain(quantum_domains qdomain)
+void ParticleSet::setQuantumDomain(quantum_domains qdomain)
 {
-  if (quantum_domain_valid(qdomain))
+  if (quantumDomainValid(qdomain))
     quantum_domain = qdomain;
   else
-    APP_ABORT("ParticleSet::set_quantum_domain\n  input quantum domain is not valid for particles");
+    APP_ABORT("ParticleSet::setQuantumDomain\n  input quantum domain is not valid for particles");
 }
 
 void ParticleSet::resetGroups()
