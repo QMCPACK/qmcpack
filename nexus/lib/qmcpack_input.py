@@ -136,6 +136,7 @@
 import os
 import inspect
 import keyword
+import numpy as np
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
     ceil,mod,dot,abs,identity,floor,linalg,where,isclose
@@ -3985,6 +3986,11 @@ class QmcpackInput(SimulationInput,Names):
                     pos = dot(pos,axes)
                 #end if
                 center = axes.sum(0)/2
+            #end if
+
+            pos = np.asarray(pos)
+            if len(pos.flatten())==3:
+                pos.shape = (1,3)
             #end if
 
             structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
