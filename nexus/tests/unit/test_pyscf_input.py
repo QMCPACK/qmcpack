@@ -284,8 +284,8 @@ def test_generate():
     system = generate_physical_system(
         structure = poscar_path,
         elem       = ['O','Mn'],
-        O          = 4,
-        Mn         = 4,
+        O          = 6,
+        Mn         = 15,
         tiling     = (1,1,1),
         kgrid      = (1,1,1),
         kshift     = (0,0,0),
