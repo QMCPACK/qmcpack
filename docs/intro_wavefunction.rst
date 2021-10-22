@@ -682,7 +682,7 @@ Attribute:
 +-----------------------+----------+----------+---------+-------------------------------------------+
 | ``batch``             | Text     | yes/no   | dep.    | Select the batched walker implementation. |
 +-----------------------+----------+----------+---------+-------------------------------------------+
-| ``batched_inverter``  | Text     | gpu/host | gpu     | Batched Slater matrix inversion scheme.   |
+| ``matrix_inverter``   | Text     | gpu/host | gpu     | Batched Slater matrix inversion scheme.   |
 +-----------------------+----------+----------+---------+-------------------------------------------+
 
 
@@ -724,7 +724,7 @@ Additional information:
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 
-- ``batched_inverter`` This option is only effective when ``batch=yes``. If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed. If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
+- ``matrix_inverter`` This option is only effective when ``batch=yes``. If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed. If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
 
 .. _multideterminants:
 

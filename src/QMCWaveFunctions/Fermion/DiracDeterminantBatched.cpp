@@ -30,10 +30,10 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPO
                                                              int first,
                                                              int last,
                                                              int ndelay,
-                                                             DetMatInvertor batched_inverter_kind)
+                                                             DetMatInvertor matrix_inverter_kind)
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
       ndelay_(ndelay),
-      batched_inverter_kind_(batched_inverter_kind),
+      matrix_inverter_kind_(matrix_inverter_kind),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
@@ -66,7 +66,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
-  if (wfc_leader.batched_inverter_kind_ == DetMatInvertor::ACCEL)
+  if (wfc_leader.matrix_inverter_kind_ == DetMatInvertor::ACCEL)
   {
     RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(nw);
@@ -960,7 +960,7 @@ template<typename DET_ENGINE>
 DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
   DiracDeterminantBatched<DET_ENGINE>* dclone =
-      new DiracDeterminantBatched<DET_ENGINE>(std::move(spo), FirstIndex, LastIndex, ndelay_, batched_inverter_kind_);
+      new DiracDeterminantBatched<DET_ENGINE>(std::move(spo), FirstIndex, LastIndex, ndelay_, matrix_inverter_kind_);
   return dclone;
 }
 

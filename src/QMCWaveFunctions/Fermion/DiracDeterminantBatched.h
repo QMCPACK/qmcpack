@@ -79,7 +79,7 @@ public:
                           int first,
                           int last,
                           int ndelay                           = 1,
-                          DetMatInvertor batched_inverter_kind = DetMatInvertor::ACCEL);
+                          DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
   DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
@@ -320,7 +320,7 @@ private:
   const int ndelay_;
 
   /// selected scheme for inversion with walker batching
-  DetMatInvertor batched_inverter_kind_;
+  DetMatInvertor matrix_inverter_kind_;
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;
