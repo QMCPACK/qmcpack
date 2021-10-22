@@ -5245,6 +5245,9 @@ def generate_jastrows_alt(
 
     openbc = system.structure.is_open()
 
+    natoms = system.particles.count_ions()
+    nelec  = system.particles.count_electrons()
+
     jastrows = []
     J2 |= J3
     J1 |= J2
@@ -5254,6 +5257,9 @@ def generate_jastrows_alt(
     #end if
     rwigner = None
     if J1:
+        if natoms<1:
+            QmcpackInput.class_error('One-body Jastrow (J1) requested, but no atoms are present','generate_jastrows_alt')
+        #end if
         if J1_rcut is None:
             if openbc:
                 J1_rcut = J1_rcut_open
@@ -5271,6 +5277,9 @@ def generate_jastrows_alt(
         jastrows.append(J)
     #end if
     if J2:
+        if nelec<2:
+            QmcpackInput.class_error('Two-body Jastrow (J2) requested, but not enough electrons are present.\nElectrons required: 2 or more\nElectrons present: {}'.format(nelec),'generate_jastrows_alt')
+        #end if
         if J2_rcut is None:
             if openbc:
                 J2_rcut = J2_rcut_open
@@ -5288,6 +5297,9 @@ def generate_jastrows_alt(
         jastrows.append(J)
     #end if
     if J3:
+        if natoms<1 or nelec<2:
+            QmcpackInput.class_error('Three-body Jastrow (J3) requested, but not enough particles are present.\nAtoms required: 1 or more\nElectrons required: 2 or more\nAtoms present: {}\nElectrons present: {}'.format(natoms,nelec),'generate_jastrows_alt')
+        #end if
         if not openbc:
             if rwigner is None:
                 rwigner = system.structure.rwigner(1)
