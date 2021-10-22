@@ -165,7 +165,7 @@ public:
 
 #endif
 
-  void setRng(UPtrVector<RandomGenerator_t>& r);
+  void setRng(RefVector<RandomGenerator_t> r);
 
   inline bool getneedGrads() const { return needGrads; }
 

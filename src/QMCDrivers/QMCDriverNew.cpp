@@ -90,8 +90,8 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 
 QMCDriverNew::~QMCDriverNew()
 {
+  RngCompatibility.clear();
   for (int i = 0; i < Rng.size(); ++i)
-    if (Rng[i] != nullptr)
       RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
@@ -282,6 +282,7 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
 
+  RngCompatibility.clear();
   Rng.resize(num_crowds);
 
 
@@ -297,6 +298,7 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
     Rng[i].reset(RandomNumberControl::Children[i].release());
     step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
+    RngCompatibility.push_back(*(Rng[i].get()));
   }
 }
 

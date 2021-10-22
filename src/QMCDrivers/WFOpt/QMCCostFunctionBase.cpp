@@ -88,7 +88,7 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(UPtrVector<RandomGenerator_t>& r)
+void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
 {
   if (MoverRng.size() < r.size())
   {
@@ -96,9 +96,9 @@ void QMCCostFunctionBase::setRng(UPtrVector<RandomGenerator_t>& r)
     RngSaved.resize(r.size());
   }
   for (int ip = 0; ip < r.size(); ++ip)
-    MoverRng[ip] = r[ip].get();
+    MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip){
-    RngSaved[ip] = std::make_unique<RandomGenerator_t>(*(r[ip]));
+    RngSaved[ip] = std::make_unique<RandomGenerator_t>(r[ip].get());
   }
 }
 
