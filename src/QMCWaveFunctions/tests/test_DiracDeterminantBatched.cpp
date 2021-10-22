@@ -39,18 +39,10 @@ using PosType      = QMCTraits::PosType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
-#if defined(ENABLE_OFFLOAD)
-#if defined(ENABLE_CUDA)
-typedef DiracDeterminantBatched<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
-#else
-typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>> DetType;
-#endif
-#else
-typedef DiracDeterminantBatched<> DetType;
-#endif
-
-TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
+template<class DET_ENGINE>
+void test_DiracDeterminantBatched_first()
 {
+  using DetType = DiracDeterminantBatched<DET_ENGINE>;
   auto spo_init = std::make_unique<FakeSPO>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
@@ -139,10 +131,20 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   CHECK(std::real(ddb.get_log_value()) == Approx(1.9891064655));
 }
 
+TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
+{
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+  test_DiracDeterminantBatched_first<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
+#endif
+  test_DiracDeterminantBatched_first<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+}
+
 //#define DUMP_INFO
 
-TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
+template<class DET_ENGINE>
+void test_DiracDeterminantBatched_second()
 {
+  using DetType = DiracDeterminantBatched<DET_ENGINE>;
   auto spo_init = std::make_unique<FakeSPO>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
@@ -266,13 +268,22 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), orig_a);
 }
 
-TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+  test_DiracDeterminantBatched_second<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
+#endif
+  test_DiracDeterminantBatched_second<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+}
+
+template<class DET_ENGINE>
+void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor matrix_inverter_kind)
+{
+  using DetType = DiracDeterminantBatched<DET_ENGINE>;
   auto spo_init = std::make_unique<FakeSPO>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
-  // maximum delay 2
-  DetType ddc(std::move(spo_init), 0, norb, 2);
+  DetType ddc(std::move(spo_init), 0, norb, delay_rank, matrix_inverter_kind);
   auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   // occurs in call to registerData
@@ -409,4 +420,14 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
 }
 
+TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
+{
+  // maximum delay 2
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+  test_DiracDeterminantBatched_delayed_update<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+#endif
+  test_DiracDeterminantBatched_delayed_update<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+}
 } // namespace qmcplusplus
