@@ -118,34 +118,33 @@ class PyscfInput(SimulationInputTemplateDev):
     
 
     def __init__(self,
-                 template    = None,   # path to template input file
-                 prefix      = None,   # $prefix var for file prefixes
-                 custom      = None,   # obj w/ $ prefixed vars in template
-                 system      = None,   # physical system object
-                 units       = None,   # input units desired
-                 use_folded  = True,   # use folded system/primitive cell
-                 mole        = None,   # obj w/ Mole variables
-                 cell        = None,   # obj w/ Cell variables
-                 sys_var     = None,   # local var name for Mole/Cell
-                 mole_var    = 'mol',  # local var name for Mole in written input
-                 cell_var    = 'cell', # local var name for Cell in written input
-                 save_qmc    = False,  # convert to QMCPACK format
-                 checkpoint  = False,  # set $chkfile variable
-                 mf_var      = 'mf',   # local var name for mf, used for convert
-                 kpts_var    = 'kpts', # local var name for kpts, used for convert
-                 filepath    = None,   # alias for template
-                 text        = None,   # full text of (and alternate to) template 
-                 calculation = None,   # obj w/ Calculation variables
-                 chkfile     = None,   # obj w/ Calculation variables
-                 twist_num   = None,   # Twist index
+                 template    = None,     # path to template input file
+                 prefix      = None,     # $prefix var for file prefixes
+                 custom      = None,     # obj w/ $ prefixed vars in template
+                 system      = None,     # physical system object
+                 units       = None,     # input units desired
+                 use_folded  = True,     # use folded system/primitive cell
+                 mole        = None,     # obj w/ Mole variables
+                 cell        = None,     # obj w/ Cell variables
+                 sys_var     = None,     # local var name for Mole/Cell
+                 mole_var    = 'mol',    # local var name for Mole in written input
+                 cell_var    = 'cell',   # local var name for Cell in written input
+                 save_qmc    = False,    # convert to QMCPACK format
+                 checkpoint  = False,    # set $chkfile variable
+                 mf_var      = 'mf',     # local var name for mf, used for convert
+                 kpts_var    = 'kpts',   # local var name for kpts, used for convert
+                 filepath    = None,     # alias for template
+                 text        = None,     # full text of (and alternate to) template 
+                 calculation = None,     # obj w/ Calculation variables
+                 chkfile     = None,     # obj w/ Calculation variables
+                 twist_num   = None,     # Twist index
+                 python_exe  = 'python', # Python executable
                  ):
         if filepath is None and template is not None:
             filepath = template
-        #elif filepath is None and template is None and text is None:
         elif calculation is not None:
             self.calculation = calculation
-            text='''
-#! /usr/bin/env python3
+            text='''#! /usr/bin/env $python_exe
 
 import numpy as np
 from numpy import array
@@ -241,25 +240,6 @@ $calculation
             #end if
         #end if
 
-#if show_kmap: 
-#    print 
-#    print 
-#    print (cell_type) 
-#    print ('===============================') 
-#    s = diamond.structure.copy() 
-#    kmap = s.kmap() 
-#    print ('supercell kpoints/twists') 
-#    for i,k in enumerate(s.kpoints): 
-#        print ('  ',i,k) 
-#    #end for 
-#    print ('primitive cell kpoints') 
-#    for i,k in enumerate(s.folded_structure.kpoints): 
-#        print ('  ',i,k) 
-#    #end for 
-#    print ('mapping from supercell to primitive cell k-points') 
-#    print (kmap) 
-##end if 
-
         if is_mole:
             sys_name    = 'mole'
             sys_var     = mole_var
@@ -281,106 +261,65 @@ $calculation
         #end if
 
         if calculation is not None and 'calculation' not in self.values:
-            #MCB
-            calculation = calculation.copy() # make a local copy
-            if 'method' in calculation.keys():
-                pyscf_method = calculation.method
-            else:
-                pyscf_method = 'RKS'
+
+            calc = calculation.copy() # make a local copy
+            calc.set_optional(
+                method       = 'RKS',
+                df_fitting   = True,
+                xc           = 'pbe',
+                tol          = '1e-10',
+                df_method    = 'GDF',
+                exxdiv       = 'ewald',
+                u_idx        = None,
+                max_cycle    = None,
+                level_shift  = None,
+                chkfile      = None,
+                u_val        = None,
+                C_ao_lo      = 'minao',
+                )
+            if calc.u_val is not None:
+                calc.u_val = array(calc.u_val)
             #end if
-            if 'df_fitting' in calculation.keys():
-                pyscf_df_fitting = calculation.df_fitting
-            else:
-                pyscf_df_fitting = True
+            if calc.u_idx is not None:
+                calc.u_idx = array(calc.u_idx)
             #end if
-            if 'xc' in calculation.keys():
-                pyscf_xc = calculation.xc
-            else:
-                pyscf_xc = 'pbe'
-            #end if
-            if 'tol' in calculation.keys():
-                pyscf_tol = calculation.tol
-            else:
-                pyscf_tol = '1e-10'
-            #end if
-            if 'df_method' in calculation.keys():
-                pyscf_df_method = calculation.df_method
-            else:
-                pyscf_df_method = 'GDF'
-            #end if
-            if 'exxdiv' in calculation.keys():
-                pyscf_exxdiv = calculation.exxdiv
-            else:
-                pyscf_exxdiv = 'ewald'
-            #end if
-            if 'u_idx' in calculation.keys():
-                pyscf_u_idx = array(calculation.u_idx)
-            else:
-                pyscf_u_idx = None
-            #end if
-            if 'max_cycle' in calculation.keys():
-                pyscf_max_cycle = int(calculation.max_cycle)
-            else:
-                pyscf_max_cycle = None
-            #end if
-            if 'level_shift' in calculation.keys():
-                pyscf_level_shift = float(calculation.level_shift)
-            else:
-                pyscf_level_shift = None
-            #end if
-            if 'chkfile' in calculation.keys():
-                pyscf_chkfile = calculation.chkfile
-            else:
-                pyscf_chkfile = None
-            #end if
-            if 'u_val' in calculation.keys():
-                pyscf_u_val = array(calculation.u_val)
-            else:
-                pyscf_u_val = 3.0 # default
-            #end if
-            if 'c_ao_lo' in calculation.keys():
-                pyscf_c_ao_lo = calculation.c_ao_lo
-            else:
-                pyscf_c_ao_lo = 'minao' # default
-            #end if
-            # Begin to construct input string
 
             c = '\n### generated calculation text ###\n'
             if sys_name is not None:
-                df_str = '.density_fit()' if pyscf_df_fitting else ''
+                df_str = '.density_fit()' if calc.df_fitting else ''
                 if sys_name == 'mole':
-                    if pyscf_u_idx is None:
-                        c += 'mf = scf.{}({}){}\n'.format(pyscf_method,sys_var,df_str)
+                    if calc.u_idx is None:
+                        c += 'mf = scf.{}({}){}\n'.format(cal.method,sys_var,df_str)
                     else:
-                        c += 'mf = dft.{}({},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(pyscf_method,sys_var,render_array(pyscf_u_idx,1),render_array(pyscf_u_val,1),pyscf_c_ao_lo,df_str)    
+                        c += 'mf = dft.{}({},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
                     #end if
                 elif sys_name == 'cell':
-                    c += 'mydf          = df.{}({})\n'.format(pyscf_df_method,sys_var,'kpts')
+                    c += 'mydf          = df.{}({})\n'.format(calc.df_method,sys_var,'kpts')
                     c += 'mydf.auxbasis = \'weigend\'\n'
                     c += 'dfpath = \'df_ints.h5\'\n'
                     c += 'mydf._cderi_to_save = dfpath\n'
                     c += 'mydf.build()\n\n'
-                    if pyscf_u_idx is None:
-                        c += 'mf = scf.{}({},{}){}\n'.format(pyscf_method,sys_var,'kpts',df_str)
+                    if calc.u_idx is None:
+                        c += 'mf = scf.{}({},{}){}\n'.format(calc.method,sys_var,'kpts',df_str)
                     else:
-                        c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(pyscf_method,sys_var,'kpts',render_array(pyscf_u_idx,1),render_array(pyscf_u_val,1),pyscf_c_ao_lo,df_str)    
-                    c += 'mf.exxdiv      = \'{}\'\n'.format(pyscf_exxdiv)
+                        c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,'kpts',render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
+                    c += 'mf.exxdiv      = \'{}\'\n'.format(calc.exxdiv)
                 #end if
-                if pyscf_max_cycle is not None: 
-                    c += 'mf.max_cycle={}\n'.format(pyscf_max_cycle)
+                if calc.max_cycle is not None: 
+                    c += 'mf.max_cycle={}\n'.format(calc.max_cycle)
                 #end if
-                if pyscf_level_shift is not None: 
-                    c += 'mf.level_shift={}\n'.format(pyscf_level_shift)
+                if calc.level_shift is not None: 
+                    c += 'mf.level_shift={}\n'.format(calc.level_shift)
                 #end if
-                if pyscf_chkfile is not None: 
-                    c += 'mf.chkfile=\'{}\'\n'.format(pyscf_chkfile)
+                if calc.chkfile is not None: 
+                    c += 'mf.chkfile=\'{}\'\n'.format(calc.chkfile)
                 #end if
             #end if
-            if 'KS' in pyscf_method:
-                c += 'mf.xc          = \'{}\'\n'.format(pyscf_xc)
+            if 'KS' in calc.method:
+                c += 'mf.xc          = \'{}\'\n'.format(calc.xc)
             #end if
-            c += 'mf.tol         = \'{}\'\n'.format(pyscf_tol)
-            if pyscf_df_fitting and not is_mole:
+            c += 'mf.tol         = \'{}\'\n'.format(calc.tol)
+            if calc.df_fitting and not is_mole:
                 c += 'mf.with_df     = mydf\n'
             #end if
             c += 'e_scf = mf.kernel()\n'
@@ -395,6 +334,7 @@ $calculation
             #endif
             cimp += '### end generated pyscfimport text ###\n\n'
             self.assign(pyscfimport=cimp)
+            self.assign(python_exe=python_exe)
         #end if
 
         if sys_name is not None:
@@ -489,9 +429,7 @@ $calculation
                 self.error('cannot set $chkpoint variable\nplease provide input variable "prefix"')
             #end if
             chkfile = '{}.chk'.format(prefix)
-            print(chkfile)
             self.chkfile = chkfile
-            print(self.chkfile)
             self.assign(chkfile="'"+chkfile+"'")
         #end if
 
