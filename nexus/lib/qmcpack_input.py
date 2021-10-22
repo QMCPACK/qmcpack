@@ -3988,6 +3988,8 @@ class QmcpackInput(SimulationInput,Names):
                 center = axes.sum(0)/2
             #end if
 
+            # pos must be a 2D array, shape (N,3)
+            # reshape single atom case, shape (3,) as shape (1,3)
             pos = np.asarray(pos)
             if len(pos.flatten())==3:
                 pos.shape = (1,3)
