@@ -289,7 +289,7 @@ $calculation
                 df_str = '.density_fit()' if calc.df_fitting else ''
                 if sys_name == 'mole':
                     if calc.u_idx is None:
-                        c += 'mf = scf.{}({}){}\n'.format(cal.method,sys_var,df_str)
+                        c += 'mf = scf.{}({}){}\n'.format(calc.method,sys_var,df_str)
                     else:
                         c += 'mf = dft.{}({},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
                     #end if
