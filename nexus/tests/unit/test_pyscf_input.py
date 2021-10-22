@@ -289,7 +289,6 @@ def test_generate():
         tiling     = (1,1,1),
         kgrid      = (1,1,1),
         kshift     = (0,0,0),
-        symm_kgrid = True,
         )
 
 
