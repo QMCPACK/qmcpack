@@ -229,7 +229,7 @@ public:
    *        And these are the arguments to the branch_engine and estimator_manager
    *        Constructors or these objects should be created elsewhere.
    */
-  void startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc);
+  void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
@@ -270,7 +270,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static bool checkLogAndGL(Crowd& crowd);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
   const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
 

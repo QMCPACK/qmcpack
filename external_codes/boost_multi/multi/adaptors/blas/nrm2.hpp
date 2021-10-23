@@ -1,15 +1,11 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXXX $CXXFLAGS $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2019-2020
+#ifndef MULTI_ADAPTORS_BLAS_NRM2_HPP // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+#define MULTI_ADAPTORS_BLAS_NRM2_HPP
+// © Alfredo A. Correa 2019-2021
 
 #ifdef __CUDA_ARCH__
 //#define BOOST_NO_RTTI 1
 //#define BOOST_TYPE_INDEX_CTTI_USER_DEFINED_PARSING (39, 1, true, "T = ")
 #endif
-
-#ifndef MULTI_ADAPTORS_BLAS_NRM2_HPP
-#define MULTI_ADAPTORS_BLAS_NRM2_HPP
 
 #include "../blas/core.hpp"
 
@@ -63,15 +59,17 @@ auto nrm2(A1D const& x, AllocR const& alloc)
 
 namespace operators{
 	using std::norm;
-	template<class A1D>//decltype(norm(std::declval<typename A1D::value_type>()))> 
+	template<class A1D, class Real = decltype(norm(std::declval<typename A1D::value_type>()))>//decltype(norm(std::declval<typename A1D::value_type>()))> 
 	NODISCARD("") auto operator^(A1D const& a, int n)
-	->decltype(std::pow(blas::nrm2(a), n)){
-		return std::pow(blas::nrm2(a), n);}
-}
+	->decltype(std::pow(Real{blas::nrm2(a)}, n)){
+		return std::pow(Real{blas::nrm2(a)}, n);}
+} // end namespace operators
 
-}}}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_NRM2
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS nrm2"
 #define BOOST_TEST_DYN_LINK
@@ -99,7 +97,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptor_multi_nrm2_real){
 	BOOST_REQUIRE( blas::nrm2(rotated(cA)[1], n) ==  std::sqrt( 2.*2. + 6.*6 + 10.*10.) );
 	BOOST_REQUIRE( n == std::sqrt( 2.*2. + 6.*6 + 10.*10.) );
 	BOOST_REQUIRE( blas::nrm2(rotated(cA)[1]) ==  std::sqrt( 2.*2. + 6.*6 + 10.*10.) );
-	
+
 	double n2 = blas::nrm2(rotated(cA)[1]);
 	BOOST_REQUIRE( n == n2 );
 
@@ -110,7 +108,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptor_multi_nrm2_real){
 	multi::array<double, 0> R0;
 	blas::nrm2( rotated(cA)[1], R0);
 	BOOST_REQUIRE( R0 ==  std::sqrt( 2.*2. + 6.*6 + 10.*10.) );
-	
+
 	BOOST_REQUIRE( blas::nrm2(rotated(cA)[1]) == std::sqrt( 2.*2. + 6.*6 + 10.*10.) );
 
 }

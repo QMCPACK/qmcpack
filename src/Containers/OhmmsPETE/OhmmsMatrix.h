@@ -149,17 +149,17 @@ public:
    *  Hacky but so is just making the matrix n x (n + padding) to handle row alignment.
    *  This is unoptimized.
    */
-  template<typename CONTAINER>
-  void assignUpperRight(const CONTAINER& other)
+  template<class T_FROM, typename ALLOC_FROM>
+  void assignUpperLeft(const Matrix<T_FROM, ALLOC_FROM>& from)
   {
-    auto& this_ref = *this;
-    size_t cols = std::max(this_ref.cols(), other.cols());
-    size_t rows = std::max(this_ref.rows(), other.rows());
-    for(int j = 0; j < cols; ++j)
-      for(int i = 0; i < rows; ++i)
-        this_ref(i,j) = other(i,j);
+    auto& this_ref    = *this;
+    const size_t cols = std::min(this_ref.cols(), from.cols());
+    const size_t rows = std::min(this_ref.rows(), from.rows());
+    for (int i = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j)
+        this_ref(i, j) = from(i, j);
   }
-  
+
   // Assignment Operators
   inline This_t& operator=(const This_t& rhs)
   {

@@ -1,18 +1,18 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
 
-#ifndef BOOST_MULTI_MEMORY_ALLOCATOR_HPP
-#define BOOST_MULTI_MEMORY_ALLOCATOR_HPP
+#ifndef MULTI_MEMORY_ALLOCATOR_HPP
+#define MULTI_MEMORY_ALLOCATOR_HPP
 
-#include "../detail/memory.hpp"
 #include "../config/NODISCARD.hpp"
+#include "../detail/memory.hpp"
 
 #include<cassert>
 
 #if defined(__cpp_lib_memory_resource) and __cpp_lib_memory_resource>=201603L
-#include<memory_resource>
+#include<memory_resource> // will be standard in C++17
 #endif
 
 namespace boost{
@@ -29,7 +29,7 @@ class allocator{
 	using memory_type = Memory;
 	memory_type* mp_ 
 #if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource>=201603L)
-		= std::pmr::get_default_resource()
+		= std::pmr::get_default_resource() // will be standard in C++17
 #endif
 	;
 	using constructor_type = typename Constructor::template rebind<T>::other;
@@ -39,19 +39,28 @@ public:
 	using pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<value_type>;
 	using difference_type = typename std::pointer_traits<pointer>::difference_type;
 	using size_type =  std::make_unsigned_t<difference_type>;
-//	static_assert( std::is_same<pointer, typename constructor_type::pointer>{}, 
-//		"incompatible pointer types");
+
+	allocator(allocator const& o) = default;
+	allocator(allocator&&) noexcept = default;
+	auto operator=(allocator const&) -> allocator& = default;
+	auto operator=(allocator&&) noexcept -> allocator& = default;
 	allocator() = default;
+	~allocator() = default;
+
+	allocator(memory_type* mp, constructor_type const& ctor) : mp_{mp}, ctor_{ctor}{}
 	// cppcheck-suppress noExplicitConstructor ; allocator *is* a pointer to a heap
-	allocator(memory_type* mp, constructor_type const& ctor = {}) : mp_{mp}, ctor_{ctor}{}
+	allocator(memory_type* mp) : allocator(mp, constructor_type{}){} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : to allow pointer syntax
+
 	explicit allocator(constructor_type const& ctor) : mp_{}, ctor_{ctor}{}
-	allocator(allocator const& o) = default;//: mp_{o.mp_}, ctor_{o.ctor_}{}
-	allocator& operator=(allocator const&) = default;
-	bool operator==(allocator const& o) const{return mp_ == o.mp_;}
-	bool operator!=(allocator const& o) const{return mp_ != o.mp_;}
+
+
+	auto operator==(allocator const& o) const -> bool{return mp_ == o.mp_;}
+	auto operator!=(allocator const& o) const -> bool{return mp_ != o.mp_;}
+
 	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
+
 	NODISCARD("because otherwise it will generate a memory leak")
-	pointer allocate(size_type n){
+	auto allocate(size_type n) -> pointer{
 		static_assert( alignof(std::max_align_t) >= 16 , "for cuda");
 		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(
 			n*sizeof(value_type),
@@ -65,14 +74,15 @@ public:
 	void construct(pointer p, Args&&... args){
 		allocator_traits<Constructor>::construct(ctor_, p, std::forward<Args>(args)...);
 	}
-	decltype(auto) destroy(pointer p){
-		allocator_traits<Constructor>::destroy(ctor_, p);
-	}
+	void destroy(pointer p){allocator_traits<Constructor>::destroy(ctor_, p);}
 };
 
-}}}
+} // end namespace memory
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__ // _TEST_BOOST_MULTI_MEMORY_ALLOCATOR
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
+
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi memory allocator"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>

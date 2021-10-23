@@ -2,9 +2,10 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -13,6 +14,9 @@
 set(SRC_DIR estimators)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
 set(SRCS
     test_accumulator.cpp
@@ -27,9 +31,17 @@ set(SRCS
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
-    test_OneBodyDensityMatricesInput.cpp
     )
 
+# OneBodyDensityMatrices are not tested with legacy CUDA
+# DiracDeterminantsCUDA cannot be copied
+if(NOT QMC_CUDA)
+  set(SRCS
+      ${SRCS}
+      test_OneBodyDensityMatricesInput.cpp
+      test_OneBodyDensityMatrices.cpp)
+endif()
+  
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
@@ -52,6 +64,7 @@ add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 if(HAVE_MPI)
   set(UTEST_EXE test_${SRC_DIR}_mpi)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+
   #this is dependent on the directory creation and sym linking of earlier driver tests
   set(SRCS FakeOperatorEstimator.cpp EstimatorManagerNewTest.cpp test_manager_mpi.cpp)
   add_executable(${UTEST_EXE} ${SRCS})

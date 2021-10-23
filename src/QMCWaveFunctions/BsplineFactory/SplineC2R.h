@@ -33,7 +33,10 @@ namespace qmcplusplus
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
- * Internal storage use double sized arrays of ST type, aligned and padded.
+ * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
+ * The first nComplexBands complex splines produce 2 real orbitals.
+ * The rest complex splines produce 1 real orbital.
+ * All the output orbitals are real.
  */
 template<typename ST>
 class SplineC2R : public BsplineSet

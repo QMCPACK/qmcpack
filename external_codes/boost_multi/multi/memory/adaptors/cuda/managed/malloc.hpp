@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&& `#nvcc -ccbin=cuda-`c++ -D_TEST_MULTI_MEMORY_ADAPTORS_CUDA_MANAGED_MALLOC $0.cpp -o $0x -lcudart &&$0x&&rm $0x; exit
+(echo '#include"'$0'" '>$0.cpp)&& `#nvcc -ccbin=cuda-`c++ -D_TEST_MULTI_MEMORY_ADAPTORS_CUDA_MANAGED_MALLOC $0.cpp -o $0x -lcudart &&$0x&&rm $0x; exit
 #endif
 
 #ifndef MULTI_MEMORY_ADAPTORS_CUDA_MANAGED_MALLOC_HPP
@@ -19,8 +19,14 @@ namespace managed{
 	[[nodiscard]]
 #endif
 #endif
-	managed::ptr<void> malloc(size_t bytes){return managed::ptr<void>{Cuda::Managed::malloc(bytes)};}
-	void free(managed::ptr<void> p){Cuda::Managed::free(static_cast<void*>(p));}
+	managed::ptr<void> malloc(size_t bytes){
+    MULTI_MARK_SCOPE("cuda::managed::malloc");
+    return managed::ptr<void>{Cuda::Managed::malloc(bytes)};
+  }
+	void free(managed::ptr<void> p){
+    MULTI_MARK_SCOPE("cuda::managed::free");
+    Cuda::Managed::free(static_cast<void*>(p));
+  }
 }
 
 }

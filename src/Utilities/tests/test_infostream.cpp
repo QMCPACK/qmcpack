@@ -57,10 +57,10 @@ TEST_CASE("InfoStream redirect to new stream", "[utilities]")
 TEST_CASE("InfoStream redirect to file", "[utilities]")
 {
   std::ostringstream out;
-  InfoStream* info = new InfoStream(&out);
-  info->redirectToFile("test_infostream.log");
-  info->getStream() << "test";
-  delete (info);
+  InfoStream info(&out);
+  info.redirectToFile("test_infostream.log");
+  info.getStream() << "test";
+  info.flush();
 
   std::ifstream in("test_infostream.log");
   std::string s;

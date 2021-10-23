@@ -16,7 +16,7 @@ namespace multi = boost::multi;
 auto what_is(multi::array<             double , 2> const& /*arr*/){return std::string{"real"}   ;}
 auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/){return std::string{"complex"};}
 
-BOOST_AUTO_TEST_CASE(multi_array_range_section){
+BOOST_AUTO_TEST_CASE(multi_array_range_section) {
 	multi::array<             double , 2> real_A({10, 20});
 	multi::array<std::complex<double>, 2> cplx_A({10, 20});
 

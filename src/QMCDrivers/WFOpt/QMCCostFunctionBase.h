@@ -132,22 +132,6 @@ public:
 
   void addCJParams(xmlXPathContextPtr acontext, const char* cname);
 
-  /** implement the virtual function
-   * @param x0 current parameters
-   * @param gr gradients or conjugate gradients
-   * @param dl return the displacelement to minimize the cost function
-   * @param val_proj projected cost
-   *
-   * If successful, any optimization object updates the parameters by x0 + dl*gr
-   * and proceeds with a new step.
-   */
-  bool lineoptimization(const std::vector<Return_rt>& x0,
-                        const std::vector<Return_rt>& gr,
-                        Return_rt val0,
-                        Return_rt& dl,
-                        Return_rt& val_proj,
-                        Return_rt& lambda_max) override;
-
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE

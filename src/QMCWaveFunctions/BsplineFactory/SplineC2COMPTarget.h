@@ -29,11 +29,12 @@
 
 namespace qmcplusplus
 {
-/** class to match std::complex<ST> spline with BsplineSet::ValueType (complex) SPOs
+/** class to match std::complex<ST> spline with BsplineSet::ValueType (complex) SPOs with OpenMP offload
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
- * Internal storage use double sized arrays of ST type, aligned and padded.
+ * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
+ * All the output orbitals are complex.
  */
 template<typename ST>
 class SplineC2COMPTarget : public BsplineSet
