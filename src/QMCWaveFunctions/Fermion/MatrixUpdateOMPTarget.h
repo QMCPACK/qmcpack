@@ -16,10 +16,10 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Fermion/DiracMatrixComputeOMPTarget.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
+#include "DiracMatrixComputeOMPTarget.hpp"
 #include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
@@ -38,6 +38,7 @@ public:
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixUpdateOMPTarget<VALUE, VALUE_FP>;
+  using DetInverter   = DiracMatrixComputeOMPTarget<VALUE_FP>;
 
   // There is no expectation that this OMP only code can possibly work with anything but OMPallocator based
   // Allocators.  So this file should never include DualAllocatorAliases.hpp this violation of YAGNI isn't.
@@ -77,15 +78,6 @@ public:
     Resource* makeClone() const override { return new MatrixUpdateOMPTargetMultiWalkerMem(*this); }
   };
 
-  /// matrix inversion engine
-  DiracMatrix<VALUE_FP> detEng;
-
-  /** matrix inversion engine this crowd scope resouce and only the leader engine gets it.
-   *  With some care this could be the DiracMatrixComputeCUDA 
-   *  as well as DiracMatrixComputeOMPTarget
-   */
-  using DetInverter = DiracMatrixComputeOMPTarget<VALUE_FP>;
-  UPtr<DetInverter> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
@@ -95,6 +87,8 @@ public:
 
   // multi walker memory buffers
   std::unique_ptr<MatrixUpdateOMPTargetMultiWalkerMem> mw_mem_;
+
+  typename DetInverter::HandleResource dummy;
 
   void resize_fill_constant_arrays(size_t nw)
   {
@@ -131,7 +125,6 @@ public:
   void createResource(ResourceCollection& collection) const
   {
     collection.addResource(std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem>());
-    collection.addResource(std::make_unique<DiracMatrixComputeOMPTarget<FullPrecValue>>());
   }
 
   void acquireResource(ResourceCollection& collection)
@@ -141,62 +134,14 @@ public:
       throw std::runtime_error(
           "MatrixUpdateOMPTarget::acquireResource dynamic_cast MatrixUpdateOMPTargetMultiWalkerMem failed");
     mw_mem_.reset(res_ptr);
-    auto det_eng_ptr = dynamic_cast<DiracMatrixComputeOMPTarget<FullPrecValue>*>(collection.lendResource().release());
-    if (!det_eng_ptr)
-      throw std::runtime_error(
-          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixComputeCUDA<T_FP>* failed");
-    det_inverter_.reset(det_eng_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection)
-  {
-    collection.takebackResource(std::move(mw_mem_));
-    collection.takebackResource(std::move(det_inverter_));
-  }
+  void releaseResource(ResourceCollection& collection) { collection.takebackResource(std::move(mw_mem_)); }
 
   const OffloadMatrix<Value>& get_psiMinv() const { return psiMinv_; }
   OffloadMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
 
   inline Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
-
-  /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
-   * \param[in] a_mat orbital value matrix (this has trustworth dimensions)
-   * \param[out] a_inv inverse orbital value matrix (may have padding columns for alignment)
-   * \param[out] log_value log(det(a_mat))
-   *
-   * This API prevents efficient device code except for OMP target
-   * to a device pointer.  IT SHOULD BE CHANGED.
-   *
-   */
-  inline void invert_transpose(const OffloadMatrix<Value>& a_mat, OffloadMatrix<Value>& a_inv, LogValue& log_value)
-  {
-    const Matrix<Value> a_mat_host(const_cast<OffloadMatrix<Value>&>(a_mat).data(), a_mat.rows(), a_mat.cols());
-    Matrix<Value> a_inv_host(a_inv.data(), a_inv.rows(), a_inv.cols());
-    detEng.invert_transpose(a_mat_host, a_inv_host, log_value);
-    Value* a_inv_ptr = a_inv.data();
-    PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv.size()])")
-  }
-
-  static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 const RefVector<const OffloadMatrix<Value>>& psiM_list,
-                                 const RefVector<OffloadMatrix<Value>>& a_inv_refs,
-                                 OffloadVector<LogValue>& log_values)
-  {
-    auto& engine_leader = engines.getLeader();
-    auto& det_inverter  = engine_leader.get_det_inverter();
-
-    for (int iw = 0; iw < engines.size(); iw++)
-    {
-      auto& Ainv = a_inv_refs[iw].get();
-      engine_leader.detEng.invert_transpose(psiM_list[iw].get(), Ainv, log_values[iw]);
-      Value* Ainv_ptr = Ainv.data();
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
-    }
-
-    //FIXME DiracMatrixComputeOMPTarget is either broken or connected incorrectly
-    //typename DetInverter::HandleResource dummy;
-    //det_inverter.mw_invertTranspose(dummy, psiM_list, a_inv_refs, log_values, compute_mask);
-  }
 
   template<typename GT>
   static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
@@ -442,12 +387,7 @@ public:
     }
   }
 
-  DiracMatrixComputeOMPTarget<FullPrecValue>& get_det_inverter()
-  {
-    if (det_inverter_)
-      return *det_inverter_;
-    throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
-  }
+  auto& getLAhandles() { return dummy; }
 };
 } // namespace qmcplusplus
 

@@ -15,16 +15,16 @@
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Fermion/DiracMatrixComputeCUDA.hpp"
 #include "DualAllocatorAliases.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
+#include "CUDA/CUDALinearAlgebraHandles.h"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "DualAllocatorAliases.hpp"
-#include "CUDA/CUDALinearAlgebraHandles.h"
+#include "DiracMatrixComputeCUDA.hpp"
 #include "ResourceCollection.h"
 #include "WaveFunctionTypes.hpp"
 
@@ -33,8 +33,7 @@ namespace qmcplusplus
 
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE in DiracDeterminantBatched.
- * This is a 1 per walker class unlike DiracMatrixComputeCUDA which is 1
- * per crowd.
+ * This is a 1 per walker class
  *
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
@@ -48,6 +47,7 @@ public:
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
+  using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
 
   template<typename DT>
   using PinnedDualAllocator = PinnedDualAllocator<DT>;
@@ -141,8 +141,6 @@ private:
    *  @{ */
   // CUDA stream, cublas handle object
   std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
-  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  UPtr<DiracMatrixComputeCUDA<FullPrecValue>> det_inverter_;
   /// crowd scope memory resource
   std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem> mw_mem_;
   /**}@ */
@@ -392,10 +390,7 @@ public:
   {
     //the semantics of the ResourceCollection are such that we don't want to add a Resource that we need
     //later in the chain of resource creation.
-    auto clah_ptr = std::make_unique<CUDALinearAlgebraHandles>();
-    auto dmcc_ptr = std::make_unique<DiracMatrixComputeCUDA<FullPrecValue>>(clah_ptr->hstream);
-    collection.addResource(std::move(clah_ptr));
-    collection.addResource(std::move(dmcc_ptr));
+    collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
     collection.addResource(std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>());
   }
 
@@ -405,11 +400,6 @@ public:
     if (!res_ptr)
       throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast CUDALinearAlgebraHandles failed");
     cuda_handles_.reset(res_ptr);
-    auto det_eng_ptr = dynamic_cast<DiracMatrixComputeCUDA<FullPrecValue>*>(collection.lendResource().release());
-    if (!det_eng_ptr)
-      throw std::runtime_error(
-          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixComputeCUDA<T_FP>* failed");
-    det_inverter_.reset(det_eng_ptr);
     auto res2_ptr = dynamic_cast<MatrixDelayedUpdateCUDAMultiWalkerMem*>(collection.lendResource().release());
     if (!res2_ptr)
       throw std::runtime_error(
@@ -420,7 +410,6 @@ public:
   void releaseResource(ResourceCollection& collection)
   {
     collection.takebackResource(std::move(cuda_handles_));
-    collection.takebackResource(std::move(det_inverter_));
     collection.takebackResource(std::move(mw_mem_));
   }
 
@@ -440,42 +429,9 @@ public:
       throw std::logic_error(
           "Null cuda_handles_, Even for testing proper resource creation and acquisition must be made.");
     }
-
-    if (!det_inverter_)
-    {
-      throw std::logic_error(
-          "Null det_inverter_, Even for testing proper resource creation and acquisition must be made.");
-    }
   }
 
   Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
-
-  /** compute the inverse of the transpose of matrix psiM, result is in psiMinv
-   * \param[in] psiM orbital value matrix
-   * \param[out] psiMinv inverted orbital value matrix
-   * \param[out] log_value log(det(logdetT))
-   */
-  void invert_transpose(const DualMatrix<Value>& psiM, DualMatrix<Value>& psiMinv, LogValue& log_value)
-  {
-    guard_no_delay();
-    // call to legacy DiracMatrix
-    const Matrix<Value> psiM_host(const_cast<DualMatrix<Value>&>(psiM).data(), psiM.rows(), psiM.cols());
-    Matrix<Value> psiMinv_host(psiMinv.data(), psiMinv.rows(), psiMinv.cols());
-    detEng.invert_transpose(psiM_host, psiMinv_host, log_value);
-    Value* psiMinv_ptr = psiMinv.data();
-    PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
-  }
-
-  static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 const RefVector<const DualMatrix<Value>>& psiM_list,
-                                 const RefVector<DualMatrix<Value>>& psiMinv_list,
-                                 DualVector<LogValue>& log_values)
-  {
-    auto& engine_leader = engines.getLeader();
-    engine_leader.guard_no_delay();
-    engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), psiM_list, psiMinv_list,
-                                                        log_values);
-  }
 
   // prepare invRow and compute the old gradients.
   template<typename GT>
@@ -499,9 +455,8 @@ public:
     {
       if (engine_leader.isSM1())
       {
-        auto& psiMinv = engines[iw].get_ref_psiMinv();
-        ptr_buffer[0][iw] =
-            psiMinv.device_data() + rowchanged * psiMinv.cols();
+        auto& psiMinv     = engines[iw].get_ref_psiMinv();
+        ptr_buffer[0][iw] = psiMinv.device_data() + rowchanged * psiMinv.cols();
       }
       else
         ptr_buffer[0][iw] = engines[iw].invRow.device_data();
@@ -877,11 +832,11 @@ public:
     engine_leader.waitStream();
   }
 
-  DiracMatrixComputeCUDA<FullPrecValue>& get_det_inverter()
+  auto& getLAhandles()
   {
-    if (det_inverter_)
-      return *det_inverter_;
-    throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
+    if (!cuda_handles_)
+      throw std::logic_error("attempted to get null cuda_handles_, this is developer logic error");
+    return *cuda_handles_;
   }
 };
 } // namespace qmcplusplus

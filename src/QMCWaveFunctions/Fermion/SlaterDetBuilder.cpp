@@ -348,19 +348,21 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   aAttrib.put(cur);
 
   // whether to use an optimizable slater determinant
-  std::string optimize("no");
-#if defined(ENABLE_OFFLOAD)
-  std::string use_batch("yes");
-#else
-  std::string use_batch("no");
-#endif
+  std::string optimize;
+  std::string matrix_inverter;
+  std::string use_batch;
   std::string useGPU;
   int delay_rank(0);
 
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
-  sdAttrib.add(optimize, "optimize");
-  sdAttrib.add(use_batch, "batch");
+  sdAttrib.add(optimize, "optimize", {"no", "yes"});
+  sdAttrib.add(matrix_inverter, "matrix_inverter", {"gpu", "host"});
+#if defined(ENABLE_OFFLOAD)
+  sdAttrib.add(use_batch, "batch", {"yes", "no"});
+#else
+  sdAttrib.add(use_batch, "batch", {"no", "yes"});
+#endif
 #if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
   sdAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
@@ -446,6 +448,10 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     if (use_batch == "yes")
     {
       app_summary() << "      Using walker batching." << std::endl;
+      const DetMatInvertor matrix_inverter_kind =
+          (matrix_inverter == "host") ? DetMatInvertor::HOST : DetMatInvertor::ACCEL;
+      if (matrix_inverter_kind == DetMatInvertor::HOST)
+        app_summary() << "      Batched matrix inversion running on host." << std::endl;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
@@ -453,7 +459,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
         adet = std::make_unique<DiracDeterminantBatched<
             MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
-                                                                                          delay_rank);
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
       }
       else
 #endif
@@ -461,7 +468,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
         app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
                          "delay_rank is ignored."
                       << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank);
+        adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
+                                                           matrix_inverter_kind);
       }
     }
     else

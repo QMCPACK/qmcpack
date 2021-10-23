@@ -52,8 +52,6 @@ class DiracMatrixComputeCUDA : public Resource
   template<typename T>
   using DualVector = Vector<T, PinnedDualAllocator<T>>;
 
-  cudaStream_t hstream_;
-
   // Contiguous memory for fp precision Matrices for each walker, n^2 * nw elements
   DualVector<VALUE_FP> psiM_fp_;
   DualVector<VALUE_FP> invM_fp_;
@@ -217,14 +215,11 @@ class DiracMatrixComputeCUDA : public Resource
   }
 
 public:
-  DiracMatrixComputeCUDA(cudaStream_t hstream) : Resource("DiracMatrixComputeCUDA"), hstream_(hstream) {}
+  DiracMatrixComputeCUDA() : Resource("DiracMatrixComputeCUDA") {}
 
-  DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other, cudaStream_t hstream)
-      : Resource(other.getName()), hstream_(hstream)
-  {}
+  DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other) : Resource(other.getName()) {}
 
-  Resource* makeClone(cudaStream_t hstream) const { return new DiracMatrixComputeCUDA(*this, hstream); }
-  Resource* makeClone() const override { return new DiracMatrixComputeCUDA(*this, this->hstream_); }
+  Resource* makeClone() const override { return new DiracMatrixComputeCUDA(*this); }
 
   /** Given a_mat returns inverted amit and log determinant of a_matches.
    *  \param [in] a_mat a matrix input
