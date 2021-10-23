@@ -187,14 +187,12 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
-  inline RefVector<RandomGenerator_t> getRng() { 
-    if(RngCompatibility.size() != Rng.size()) {
-      RngCompatibility.clear();
-      for(int i = 0; i < Rng.size(); ++i) {
-        RngCompatibility.push_back(*(Rng[i].get()));
-      }
-    }
-    return RngCompatibility; 
+  inline RefVector<RandomGenerator_t> getRngRefs() const
+  {
+    RefVector<RandomGenerator_t> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
   }
 
   ///return the i-th random generator
@@ -329,8 +327,6 @@ protected:
 
   ///Random number generators
   UPtrVector<RandomGenerator_t> Rng;
-
-  RefVector<RandomGenerator_t> RngCompatibility;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

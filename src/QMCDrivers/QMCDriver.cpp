@@ -160,7 +160,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
 QMCDriver::~QMCDriver()
 {
-  RngCompatibility.clear();
   if (DriftModifier)
     delete DriftModifier;
 }

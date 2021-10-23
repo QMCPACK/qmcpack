@@ -183,16 +183,12 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  RefVector<RandomGenerator_t> RngCompatibility;
-
-  inline RefVector<RandomGenerator_t> getRng() { 
-    if(RngCompatibility.size() != Rng.size()) {
-      RngCompatibility.clear();
-      for(int i = 0; i < Rng.size(); ++i) {
-        RngCompatibility.push_back(*(Rng[i].get()));
-      }
-    }
-    return RngCompatibility; 
+  inline RefVector<RandomGenerator_t> getRngRefs() const
+  {
+    RefVector<RandomGenerator_t> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
   }
 
   // ///return the random generators

@@ -90,9 +90,8 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 
 QMCDriverNew::~QMCDriverNew()
 {
-  RngCompatibility.clear();
   for (int i = 0; i < Rng.size(); ++i)
-      RandomNumberControl::Children[i].reset(Rng[i].release());
+    RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
@@ -282,10 +281,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
 void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
-
-  RngCompatibility.clear();
   Rng.resize(num_crowds);
-
 
   if (RandomNumberControl::Children.size() == 0)
   {
@@ -297,9 +293,8 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
+    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
-    RngCompatibility.push_back(*(Rng[i].get()));
   }
 }
 

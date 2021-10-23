@@ -229,7 +229,6 @@ void CSVMC::resetRun()
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
     Rng.resize(NumThreads);
-    RngCompatibility.clear();
 
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -242,7 +241,6 @@ void CSVMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
       Rng[ip] = std::make_unique<RandomGenerator_t>(*(RandomNumberControl::Children[ip]));
-      RngCompatibility.push_back(*(Rng[ip].get()));
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")
