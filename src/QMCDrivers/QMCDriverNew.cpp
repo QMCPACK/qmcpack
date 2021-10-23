@@ -87,11 +87,11 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 // the nullptr from the optimizer).  However, the order is fixed by the order the destructors
 // are called.
 // To work around the issue, check the local pointer for nullptr before restoring to global storage.
-
 QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
-    RandomNumberControl::Children[i].reset(Rng[i].release());
+    if (Rng[i])
+      RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
