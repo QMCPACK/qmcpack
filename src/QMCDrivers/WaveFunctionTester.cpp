@@ -1428,7 +1428,6 @@ void WaveFunctionTester::runGradSourceTest()
   int nat             = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties(0, 0, 1, WP::MAXPROPERTIES);
-  ;
   //pick the first walker
   const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
@@ -1685,7 +1684,6 @@ void WaveFunctionTester::runDerivTest()
   app_log() << " Testing derivatives" << std::endl;
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties(0, 0, 1, WP::MAXPROPERTIES);
-  ;
   //pick the first walker
   const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
@@ -1795,7 +1793,6 @@ void WaveFunctionTester::runDerivNLPPTest()
   app_log() << " Testing derivatives" << std::endl;
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties(0, 0, 1, WP::MAXPROPERTIES);
-  ;
   //pick the first walker
   const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker

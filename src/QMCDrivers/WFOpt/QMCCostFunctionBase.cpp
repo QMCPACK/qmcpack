@@ -96,9 +96,8 @@ void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
   }
   for (int ip = 0; ip < r.size(); ++ip)
     MoverRng[ip] = &r[ip].get();
-  for (int ip = 0; ip < r.size(); ++ip){
+  for (int ip = 0; ip < r.size(); ++ip)
     RngSaved[ip] = std::make_unique<RandomGenerator_t>(r[ip].get());
-  }
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)

@@ -291,7 +291,7 @@ bool DMC::run()
     {
 #ifndef USE_FAKE_RNG
       for (int ip = 0; ip < NumThreads; ip++)
-        *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+        *RandomNumberControl::Children[ip] = *Rng[ip];
 #endif
     }
     recordBlock(block);
@@ -315,7 +315,7 @@ bool DMC::run()
 
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ip++)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    *RandomNumberControl::Children[ip] = *Rng[ip];
 #endif
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)
