@@ -85,6 +85,13 @@ void SPOSetBuilderFactory::write_spo_builders(const std::string& pad) const
   }
 }
 
+SPOSetBuilder& SPOSetBuilderFactory::getLastBuilder()
+{
+  if (!last_builder)
+    myComm->barrier_and_abort("SPOSetBuilderFactory::getLastBuilder BUG last_builder is nullptr!");
+  return *last_builder;
+}
+
 
 /** constructor
  * \param els reference to the electrons
@@ -208,31 +215,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   return bb;
 }
 
-
-SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
-{
-  std::string sname("");
-  std::string type("");
-  OhmmsAttributeSet aAttrib;
-  aAttrib.add(sname, "name");
-  aAttrib.add(type, "type");
-  aAttrib.put(cur);
-
-  SPOSetBuilder* bb = nullptr;
-  if (type == "")
-    bb = last_builder;
-  else if (spo_builders.find(type) != spo_builders.end())
-    bb = spo_builders[type].get();
-
-  if (bb)
-  {
-    SPOSet* spo = bb->createSPOSet(cur);
-    spo->setName(sname);
-    return spo;
-  }
-  else
-    throw std::runtime_error("Cannot find any SPOSetBuilder to build SPOSet!");
-}
 
 void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
 {

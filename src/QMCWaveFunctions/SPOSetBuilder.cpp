@@ -39,7 +39,7 @@ void SPOSetBuilder::reserve_states(int nsets)
 
 std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
-  APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
+  myComm->barrier_and_abort("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
   return 0;
 }
 
@@ -50,6 +50,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   std::string optimize("no");
 
   OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "id");
   attrib.add(spo_object_name, "name");
   attrib.add(optimize, "optimize");
   attrib.put(cur);
@@ -62,7 +63,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   app_summary() << std::endl;
 
   if (spo_object_name.empty())
-    app_warning() << "SPOSet object name not given in the input!" << std::endl;
+    myComm->barrier_and_abort("SPOSet object \"name\" attribute not given in the input!");
 
   // read specialized sposet construction requests
   //   and translate them into a set of orbital indices
@@ -77,7 +78,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     sposet = createSPOSet(cur, input_info);
 
   if (!sposet)
-    APP_ABORT("SPOSetBuilder::createSPOSet sposet creation failed");
+    myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
