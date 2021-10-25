@@ -28,7 +28,7 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 {
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout_t;
-  using namespace  testing::onebodydensitymatrices;
+  using namespace testing::onebodydensitymatrices;
   for (auto input_xml : valid_one_body_density_matrices_input_sections)
   {
     Libxml2Document doc;
@@ -44,10 +44,9 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
     bool okay = doc.parseFromString(input_xml);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    
+
     CHECK_THROWS_AS(OneBodyDensityMatricesInput(node), UniformCommunicateError);
   }
-
 }
 
 } // namespace qmcplusplus

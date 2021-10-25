@@ -26,15 +26,27 @@ Lattice makeTestLattice()
   return lattice;
 }
 
-SpeciesSet makeSpeciesSet()
+SpeciesSet makeSpeciesSet(const SpeciesCases species_case)
 {
   SpeciesSet species_set;
-  species_set.addSpecies("u");
-  species_set.addSpecies("d");
-  const int iattribute       = species_set.addAttribute("membersize");
-  species_set(iattribute, 0) = 1;
-  species_set(iattribute, 1) = 1;
+  switch (species_case)
+  {
+  case SpeciesCases::GOOD: {
+    species_set.addSpecies("u");
+    species_set.addSpecies("d");
+    const int iattribute       = species_set.addAttribute("membersize");
+    species_set(iattribute, 0) = 1;
+    species_set(iattribute, 1) = 1;
+    break;
+  }
+  case SpeciesCases::NO_MEMBERSIZE: {
+    species_set.addSpecies("u");
+    species_set.addSpecies("d");
+    break;
+  }
+  }
   return species_set;
 }
+
 } // namespace testing
 } // namespace qmcplusplus

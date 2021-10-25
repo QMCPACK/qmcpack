@@ -36,8 +36,8 @@ class OneBodyDensityMatricesTests
 public:
   using Evaluators  = OneBodyDensityMatricesInput::Evaluator;
   using Integrators = OneBodyDensityMatricesInput::Integrator;
-  using Sampling   = OneBodyDensityMatrices::Sampling;
-  
+  using Sampling    = OneBodyDensityMatrices::Sampling;
+
   OneBodyDensityMatricesTests() = default;
   void testGenerateSamples(onebodydensitymatrices::Inputs input,
                            OneBodyDensityMatrices& obdm,
@@ -45,17 +45,17 @@ public:
                            StdRandom<T>& rng)
   {
     using namespace onebodydensitymatrices;
-    switch(input)
+    switch (input)
     {
-    case(valid_obdm_input) :
+    case (valid_obdm_input):
       obdm.generateSamples(1.0, pset_target, rng);
       CHECK(obdm.nmoves == 64);
       break;
-    case(valid_obdm_input_scale) :
+    case (valid_obdm_input_scale):
       obdm.generateSamples(1.0, pset_target, rng);
       CHECK(obdm.nmoves == 0);
       break;
-    case(valid_obdm_input_grid) :
+    case (valid_obdm_input_grid):
       obdm.generateSamples(1.0, pset_target, rng);
       CHECK(obdm.nmoves == 0);
       CHECK(obdm.samples_ == pow(22, OHMMS_DIM));
@@ -78,7 +78,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   auto lattice     = testing::makeTestLattice();
-  auto species_set = testing::makeSpeciesSet();
+  auto species_set = testing::makeSpeciesSet(SpeciesCases::GOOD);
 
   Communicate* comm;
   comm = OHMMS::Controller;
@@ -88,8 +88,19 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
-  auto& wf_factory = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
-  OneBodyDensityMatrices obDenMat(std::move(obdmi), lattice, species_set, wf_factory);
+  auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+
+  {
+    // Good constructor
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), lattice, species_set, wf_factory);
+    // Good copy constructor
+    OneBodyDensityMatrices obDenMat2(obDenMat);
+  }
+  {
+    species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
+    CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, wf_factory),
+                    UniformCommunicateError);
+  }
 
   outputManager.resume();
 }
@@ -112,7 +123,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset        = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset.getSpeciesSet();
-  auto& wf_factory = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& wf_factory  = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
 
   auto samplingCaseRunner = [&pset, &species_set, &wf_factory](Inputs test_case) {
     Libxml2Document doc;
@@ -148,6 +159,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   outputManager.resume();
 }
 
+
 TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
 {
   using namespace testing;
@@ -168,7 +180,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
-  auto& wf_factory = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset        = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset.getSpeciesSet();
