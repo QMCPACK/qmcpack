@@ -250,7 +250,7 @@ inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
       nrem -= ind * ind_dims_[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + ushift[OHMMS_DIM - 1];
-    rsamples_[s]      = lattice_.toCart(rp) + rcorner_;
+    rsamples_[s]       = lattice_.toCart(rp) + rcorner_;
   }
 }
 
@@ -278,13 +278,13 @@ inline void OneBodyDensityMatrices::generateDensitySamples(bool save, int steps,
   for (int s = 0; s < steps; ++s)
   {
     nmoves_++;
-    Position rp;                       // trial pos
-    Position dp;                       // trial drift
-    Position ds;                       // drift sum
-    Real rhop;                         // trial density
-    Real ratio;                        // dens ratio
-    Real Pacc;                         // acc prob
-    Position diff = diffuse(sqt, rng); // get diffusion
+    Position rp;                         // trial pos
+    Position dp;                         // trial drift
+    Position ds;                         // drift sum
+    Real rhop;                           // trial density
+    Real ratio;                          // dens ratio
+    Real Pacc;                           // acc prob
+    Position diff = diffuse(sqt, rng);   // get diffusion
     if (input_.get_use_drift())
     {
       rp = r + diff + d;                                                  //update trial position
