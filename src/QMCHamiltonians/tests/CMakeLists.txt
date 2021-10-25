@@ -35,7 +35,7 @@ else()
 endif()
 
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 foreach(fname Na2.structure.xml simple.txt)
   maybe_symlink(${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname})
