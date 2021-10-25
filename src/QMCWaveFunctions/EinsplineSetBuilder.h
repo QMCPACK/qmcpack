@@ -120,7 +120,7 @@ public:
   typedef CrystalLattice<ParticleSet::Scalar_t, DIM> UnitCellType;
 
   ///reference to the particleset pool
-  PtclPoolType& ParticleSets;
+  const PtclPoolType& ParticleSets;
   ///quantum particle set
   ParticleSet& TargetPtcl;
   ///ionic system
@@ -141,7 +141,7 @@ public:
   std::map<H5OrbSet, SPOSet*, H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
 
   ///destructor
   ~EinsplineSetBuilder() override;
@@ -154,7 +154,7 @@ public:
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
-  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks=false);
+  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks = false);
 
   /** initialize with the existing SPOSet */
   std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
@@ -175,8 +175,8 @@ public:
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
   bool HasCoreOrbs;
-  bool ReadOrbitalInfo(bool skipChecks=false);
-  bool ReadOrbitalInfo_ESHDF(bool skipChecks=false);
+  bool ReadOrbitalInfo(bool skipChecks = false);
+  bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 
@@ -192,8 +192,8 @@ public:
   template<typename SPE>
   inline void setTiling(SPE* oset, int numOrbs)
   {
-    oset->TileFactor   = TileFactor;
-    oset->Tiling       = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
+    oset->TileFactor = TileFactor;
+    oset->Tiling     = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
     oset->PrimLattice.set(Lattice);
     oset->SuperLattice.set(SuperLattice);
     oset->GGt = GGt;
@@ -247,7 +247,7 @@ public:
   //void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
-  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks=false);
+  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
   void CopyBands(int numOrbs);

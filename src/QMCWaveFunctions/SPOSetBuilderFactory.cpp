@@ -45,7 +45,7 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   int nfound  = 0;
   SPOSet* spo = nullptr;
-  for (const auto& sposet_builder : sposet_builders)
+  for (const auto& sposet_builder : sposet_builders_)
   {
     auto& sposets = sposet_builder->sposets;
     for (auto& sposet : sposets)
@@ -57,7 +57,7 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
   }
   if (nfound > 1)
   {
-    write_sposet_builders();
+    write_sposet_builders_();
     throw std::runtime_error("getSPOSet: requested sposet " + name + " is not unique!");
   }
   // keep this commented until legacy input styles are moved.
@@ -68,10 +68,10 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 }
 
 
-void SPOSetBuilderFactory::write_sposet_builders(const std::string& pad) const
+void SPOSetBuilderFactory::write_sposet_builders_(const std::string& pad) const
 {
   std::string pad2 = pad + "  ";
-  for (const auto& sposet_builder : sposet_builders)
+  for (const auto& sposet_builder : sposet_builders_)
   {
     auto& sposets = sposet_builder->sposets;
     app_log() << pad << "sposets for SPOSetBuilder of type " << sposet_builder->getTypeName() << std::endl;
@@ -82,9 +82,9 @@ void SPOSetBuilderFactory::write_sposet_builders(const std::string& pad) const
 
 SPOSetBuilder& SPOSetBuilderFactory::getLastBuilder()
 {
-  if (sposet_builders.empty())
+  if (sposet_builders_.empty())
     myComm->barrier_and_abort("SPOSetBuilderFactory::getLastBuilder BUG! No SPOSetBuilder has been created.");
-  return *sposet_builders.back();
+  return *sposet_builders_.back();
 }
 
 
@@ -165,7 +165,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   {
     ParticleSet* ions = 0;
     //initialize with the source tag
-    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+    auto pit(ptclPool.find(sourceOpt));
     if (pit == ptclPool.end())
       PRE.error("Missing basisset/@source.", true);
     else
@@ -186,7 +186,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
 
   app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
-  sposet_builders.emplace_back(bb);
+  sposet_builders_.emplace_back(bb);
 
   return *bb;
 }

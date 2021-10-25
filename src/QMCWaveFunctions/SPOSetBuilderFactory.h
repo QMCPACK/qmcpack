@@ -48,20 +48,20 @@ public:
 
   void buildSPOSetCollection(xmlNodePtr cur);
 
-  bool empty() const { return sposet_builders.size() == 0; }
+  bool empty() const { return sposet_builders_.size() == 0; }
 
 private:
   ///writes info about contained sposets to stdout
-  void write_sposet_builders(const std::string& pad = "") const;
+  void write_sposet_builders_(const std::string& pad = "") const;
 
   ///set of basis set builders resolved by type
-  UPtrVector<SPOSetBuilder> sposet_builders;
+  UPtrVector<SPOSetBuilder> sposet_builders_;
 
   ///reference to the target particle
   ParticleSet& targetPtcl;
 
   ///reference to the particle pool
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
 
   static std::string basisset_tag;
 };
