@@ -379,27 +379,6 @@ void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
   }
 }
 
-
-
-void OneBodyDensityMatrices::generate_particle_basis(ParticleSet& P,
-                                                     std::vector<Matrix<Value>>& Phi_nb,
-                                                     ParticleSet& pset_target)
-{
-  ScopedTimer t(timers_.gen_particle_basis_timer);
-  int p = 0;
-  for (int s = 0; s < species_.size(); ++s)
-  {
-    int nb              = 0;
-    Matrix<Value>& P_nb = Phi_nb[s];
-    for (int n = 0; n < species_size[s]; ++n, ++p)
-    {
-      update_basis(P.R[p], pset_target);
-      for (int b = 0; b < basis_size; ++b, ++nb)
-        P_nb(nb) = qmcplusplus::conj(basis_values[b]);
-    }
-  }
-}
-
 inline void OneBodyDensityMatrices::update_basis(const Position& r, ParticleSet& pset_target)
 {
   // This is ridiculous in the case of splines, still necessary for hybrid/LCAO
