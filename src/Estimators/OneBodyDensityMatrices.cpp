@@ -380,30 +380,6 @@ void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
 }
 
 
-void OneBodyDensityMatrices::generate_sample_ratios(std::vector<Matrix<Value>>& Psi_nm,
-                                                    ParticleSet& pset_target,
-                                                    TrialWaveFunction& psi_target)
-{
-  ScopedTimer t(timers_.gen_sample_ratios_timer);
-  for (int m = 0; m < samples_; ++m)
-  {
-    // get N ratios for the current sample point
-    pset_target.makeVirtualMoves(rsamples[m]);
-    psi_target.evaluateRatiosAlltoOne(pset_target, psi_ratios);
-
-    // collect ratios into per-species matrices
-    int p = 0;
-    for (int s = 0; s < species_.size(); ++s)
-    {
-      Matrix<Value>& P_nm = Psi_nm[s];
-      for (int n = 0; n < species_size[s]; ++n, ++p)
-      {
-        P_nm(n, m) = qmcplusplus::conj(psi_ratios[p]);
-      }
-    }
-  }
-}
-
 
 void OneBodyDensityMatrices::generate_particle_basis(ParticleSet& P,
                                                      std::vector<Matrix<Value>>& Phi_nb,
