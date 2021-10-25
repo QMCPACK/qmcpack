@@ -47,5 +47,10 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
     comp_sposet.add(sposet->makeClone());
   }
   CHECK(comp_sposet.size() == 8);
+
+  SPOSet::ValueMatrix_t psiM(pset.R.size(), comp_sposet.getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM(pset.R.size(), comp_sposet.getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM(pset.R.size(), comp_sposet.getOrbitalSetSize());
+  comp_sposet.evaluate_notranspose(pset, 0, pset.R.size(), psiM, dpsiM, d2psiM);
 }
 }
