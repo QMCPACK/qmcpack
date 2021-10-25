@@ -16,7 +16,7 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 set(SRCS
     test_accumulator.cpp
