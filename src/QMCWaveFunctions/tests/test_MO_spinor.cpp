@@ -84,13 +84,13 @@ void test_lcao_spinor()
 
   xmlNodePtr bnode = xmlFirstElementChild(root);
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
+  auto& bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
   SPOSet* spo = nullptr;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo = bb->createSPOSet(element);
+      spo = bb.createSPOSet(element);
   });
   REQUIRE(spo);
 
@@ -269,13 +269,13 @@ void test_lcao_spinor_excited()
 
   xmlNodePtr bnode = xmlFirstElementChild(root);
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
+  auto& bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
   SPOSet* spo = nullptr;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo = bb->createSPOSet(element);
+      spo = bb.createSPOSet(element);
   });
   REQUIRE(spo);
 

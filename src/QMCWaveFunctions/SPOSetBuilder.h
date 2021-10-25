@@ -60,7 +60,7 @@ public:
   /// list of all sposets created by this builder
   std::vector<std::unique_ptr<SPOSet>> sposets;
 
-  SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm);
+  SPOSetBuilder(const std::string& type_name, Communicate* comm);
   virtual ~SPOSetBuilder() {}
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
@@ -75,6 +75,8 @@ public:
   /// create an sposet from xml and save the resulting SPOSet
   SPOSet* createSPOSet(xmlNodePtr cur);
 
+  const std::string& getTypeName() const { return type_name_; }
+
 protected:
   /// create an sposet from xml (legacy)
   virtual std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) = 0;
@@ -83,7 +85,7 @@ protected:
   virtual std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /// type name of the SPO objects built by this builder.
-  const std::string SPO_type_name;
+  const std::string type_name_;
 };
 
 } // namespace qmcplusplus

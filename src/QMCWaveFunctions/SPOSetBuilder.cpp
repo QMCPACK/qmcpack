@@ -21,8 +21,8 @@
 
 namespace qmcplusplus
 {
-SPOSetBuilder::SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm)
-    : MPIObjectBase(comm), legacy(true), SPO_type_name(SPO_type_name_in)
+SPOSetBuilder::SPOSetBuilder(const std::string& type_name, Communicate* comm)
+    : MPIObjectBase(comm), legacy(true), type_name_(type_name)
 {
   reserve_states();
 }
@@ -58,7 +58,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   app_summary() << std::endl;
   app_summary() << "     Single particle orbitals (SPO)" << std::endl;
   app_summary() << "     ------------------------------" << std::endl;
-  app_summary() << "      Name: " << spo_object_name << "   Type: " << SPO_type_name
+  app_summary() << "      Name: " << spo_object_name << "   Type: " << type_name_
                 << "   Builder class name: " << ClassName << std::endl;
   app_summary() << std::endl;
 

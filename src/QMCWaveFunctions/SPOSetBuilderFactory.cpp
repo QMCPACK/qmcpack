@@ -45,21 +45,19 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   int nfound  = 0;
   SPOSet* spo = nullptr;
-  for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
+  for (const auto& sposet_builder : sposet_builders)
   {
-    auto& sposets = it->second->sposets;
+    auto& sposets = sposet_builder->sposets;
     for (auto& sposet : sposets)
-    {
       if (sposet->getName() == name)
       {
         spo = sposet.get();
         nfound++;
       }
-    }
   }
   if (nfound > 1)
   {
-    write_spo_builders();
+    write_sposet_builders();
     throw std::runtime_error("getSPOSet: requested sposet " + name + " is not unique!");
   }
   // keep this commented until legacy input styles are moved.
@@ -70,26 +68,23 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 }
 
 
-void SPOSetBuilderFactory::write_spo_builders(const std::string& pad) const
+void SPOSetBuilderFactory::write_sposet_builders(const std::string& pad) const
 {
   std::string pad2 = pad + "  ";
-  for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
+  for (const auto& sposet_builder : sposet_builders)
   {
-    const std::string& type       = it->first;
-    auto& sposets                 = it->second->sposets;
-    app_log() << pad << "sposets for SPOSetBuilder of type " << type << std::endl;
+    auto& sposets = sposet_builder->sposets;
+    app_log() << pad << "sposets for SPOSetBuilder of type " << sposet_builder->getTypeName() << std::endl;
     for (int i = 0; i < sposets.size(); ++i)
-    {
       app_log() << pad2 << "sposet " << sposets[i]->getName() << std::endl;
-    }
   }
 }
 
 SPOSetBuilder& SPOSetBuilderFactory::getLastBuilder()
 {
-  if (!last_builder)
-    myComm->barrier_and_abort("SPOSetBuilderFactory::getLastBuilder BUG last_builder is nullptr!");
-  return *last_builder;
+  if (sposet_builders.empty())
+    myComm->barrier_and_abort("SPOSetBuilderFactory::getLastBuilder BUG! No SPOSetBuilder has been created.");
+  return *sposet_builders.back();
 }
 
 
@@ -99,14 +94,14 @@ SPOSetBuilder& SPOSetBuilderFactory::getLastBuilder()
  * \param ions reference to the ions
  */
 SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
-    : MPIObjectBase(comm), last_builder(nullptr), targetPtcl(els), ptclPool(psets)
+    : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";
 }
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
 
-SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
+SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
   ReportEngine PRE(ClassName, "createSPOSetBuilder");
   std::string sourceOpt("ion0");
@@ -127,20 +122,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   if (name.empty())
     name = type_in;
 
-  SPOSetBuilder* bb = 0;
-
-  //check if builder can be reused
-  const auto bbit = spo_builders.find(name);
-  if (bbit != spo_builders.end())
-  {
-    app_log() << "Reuse SPOSetBuilder \"" << name << "\" type " << type_in << std::endl;
-    app_log().flush();
-    bb                  = (*bbit).second.get();
-    return last_builder = bb;
-  }
-
-  //assign last_builder
-  bb = last_builder;
+  SPOSetBuilder* bb = nullptr;
 
   if (type == "composite")
   {
@@ -201,18 +183,12 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   PRE.flush();
 
   if (bb == 0)
-    APP_ABORT_TRACE(__FILE__, __LINE__, "SPOSetBuilderFactory::createSPOSetBuilder\n  SPOSetBuilder creation failed.");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
 
-  if (bb == last_builder)
-    app_log() << " Missing both \"@name\" and \"@type\". Use the last SPOSetBuilder." << std::endl;
-  else
-  {
-    app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
-    spo_builders[name] = std::unique_ptr<SPOSetBuilder>(bb); //use name, if missing type is used
-  }
-  last_builder = bb;
+  app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
+  sposet_builders.emplace_back(bb);
 
-  return bb;
+  return *bb;
 }
 
 
@@ -236,14 +212,14 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
   app_summary() << std::endl;
 
   // create the SPOSet builder
-  SPOSetBuilder* bb = createSPOSetBuilder(cur);
+  auto& bb = createSPOSetBuilder(cur);
 
   // going through a list of sposet entries
   int nsposets = 0;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
     {
-      SPOSet* spo = bb->createSPOSet(element);
+      SPOSet* spo = bb.createSPOSet(element);
       nsposets++;
     }
   });
@@ -256,7 +232,7 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
     if (cname == "spo_scanner")
       if (myComm->rank() == 0)
       {
-        SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
+        SPOSetScanner ascanner(bb.sposets, targetPtcl, ptclPool);
         ascanner.put(element);
       }
   });

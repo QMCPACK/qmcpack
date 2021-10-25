@@ -113,11 +113,10 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
 
-  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
-  REQUIRE(bb != nullptr);
+  auto& bb = bf.createSPOSetBuilder(MO_base[0]);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
   LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
   REQUIRE(lcob != nullptr);
@@ -288,11 +287,10 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
 
-  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
-  REQUIRE(bb != nullptr);
+  auto& bb = bf.createSPOSetBuilder(MO_base[0]);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
@@ -464,12 +462,10 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
 
-  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
-  REQUIRE(bb != nullptr);
+  auto& bb = bf.createSPOSetBuilder(MO_base[0]);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
-
+  SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;

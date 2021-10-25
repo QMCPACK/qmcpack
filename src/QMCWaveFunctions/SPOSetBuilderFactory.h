@@ -18,6 +18,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -35,7 +36,7 @@ public:
 
   ~SPOSetBuilderFactory();
 
-  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
+  SPOSetBuilder& createSPOSetBuilder(xmlNodePtr rootNode);
 
   /** returns a named sposet from the pool
    *  only use in serial portion of execution
@@ -47,17 +48,14 @@ public:
 
   void buildSPOSetCollection(xmlNodePtr cur);
 
-  bool empty() const { return spo_builders.size() == 0; }
+  bool empty() const { return sposet_builders.size() == 0; }
 
 private:
-///writes info about contained sposets to stdout
-void write_spo_builders(const std::string& pad = "") const;
+  ///writes info about contained sposets to stdout
+  void write_sposet_builders(const std::string& pad = "") const;
 
   ///set of basis set builders resolved by type
-  std::map<std::string, std::unique_ptr<SPOSetBuilder>> spo_builders;
-
-  ///store the last builder, use if type not provided
-  SPOSetBuilder* last_builder;
+  UPtrVector<SPOSetBuilder> sposet_builders;
 
   ///reference to the target particle
   ParticleSet& targetPtcl;
