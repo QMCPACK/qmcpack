@@ -100,7 +100,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       spoAttrib.add(spo_name, "name");
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
-      SPOSetPtr spo = sposet_builder_factory_.createSPOSet(cur);
+      SPOSetPtr spo = sposet_builder_factory_.getLastBuilder().createSPOSet(cur);
       if (spomap.find(spo_name) != spomap.end())
       {
         app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
@@ -400,7 +400,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                      "will soon be removed. SPO sets should be built outside."
                   << std::endl;
     app_log() << "      Create a new SPO set " << sposet_name << std::endl;
-    psi = sposet_builder_factory_.createSPOSet(cur);
+    psi = sposet_builder_factory_.getLastBuilder().createSPOSet(cur);
   }
   psi->checkObject();
   std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
