@@ -15,14 +15,14 @@
 namespace qmcplusplus
 {
 template<typename T>
-struct implIsComplex : public std::false_type
+struct IsComplex_t : public std::false_type
 {};
 template<typename T>
-struct implIsComplex<std::complex<T>> : public std::true_type
+struct IsComplex_t<std::complex<T>> : public std::true_type
 {};
 
 template<typename T>
-using IsComplex = std::enable_if_t<implIsComplex<T>::value, bool>;
+using IsComplex = std::enable_if_t<IsComplex_t<T>::value, bool>;
 template<typename T>
 using IsReal = std::enable_if_t<std::is_floating_point<T>::value, bool>;
 

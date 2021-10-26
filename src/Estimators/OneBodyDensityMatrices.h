@@ -34,6 +34,7 @@ template<typename T>
 class OneBodyDensityMatricesTests;
 }
 
+//template<typename VALUE = QMCTraits::ValueType, typename VALUE_FP = QMCTraits::FullPrecValueType>
 class OneBodyDensityMatrices : public OperatorEstBase
 {
 public:
@@ -83,7 +84,7 @@ private:
   bool periodic_;
   /** @} */
 
-  //data members \todo remove unecessary state
+  //data members \todo analyze lifecycles allocation optimization or state?
   CompositeSPOSet basis_functions_;
   Vector<Value> basis_values_;
   Vector<Value> basis_norms_;
@@ -108,6 +109,7 @@ private:
   /// running acceptance ratio over all samples
   Real acceptance_ratio_ = 0.0;
   int ind_dims_[OHMMS_DIM];
+  bool warmed_up_ = false;
   /// }@
 
   Real metric_;
@@ -128,7 +130,8 @@ public:
                          const Lattice& lattice,
                          const SpeciesSet& species,
                          const WaveFunctionFactory& wf_factory,
-                         ParticleSet& pset_target);
+                         ParticleSet& pset_target,
+                         const DataLocality dl = DataLocality::crowd);
 
   /** copy constructor delegates to standard constructor
    *  This results in a copy construct and move of OneBodyDensityMatricesInput
@@ -157,10 +160,13 @@ public:
   void registerOperatorEstimator(hid_t gid) override {}
 
 private:
+  size_t calcFullDataSize(size_t basis_size, int num_species);
   //local functions
   void normalize(ParticleSet& pset_target);
   //  printing
   void report(const std::string& pad = "");
+  template<class RNG_GEN>
+  void evaluateMatrix(ParticleSet& pset_target, TrialWaveFunction& psi_target, const MCPWalker& walker, RNG_GEN& rng);
   //  sample generation
   template<class RNG_GEN>
   void generateSamples(Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
@@ -171,6 +177,9 @@ private:
   void generateUniformSamples(RNG_GEN& rng);
   template<class RNG_GEN>
   void generateDensitySamples(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
+  void generateSampleRatios(ParticleSet& pset_target,
+                            TrialWaveFunction& psi_target,
+                            std::vector<Matrix<Value>>& Psi_nm);
   /// produce a position difference vector from timestep
   template<class RNG_GEN>
   Position diffuse(const Real sqt, RNG_GEN& rng);
@@ -178,9 +187,13 @@ private:
   void calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
   void generateSampleBasis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
+  void generateParticleBasis(ParticleSet& pset_target, std::vector<Matrix<Value>>& phi_nb);
+
   //  basis set updates
   void updateBasis(const Position& r, ParticleSet& pset_target);
   void updateBasisD012(const Position& r, ParticleSet& pset_target);
+  template<typename RAN_GEN>
+  void warmupSampling(ParticleSet& pset_target, RAN_GEN& rng);
 
   struct OneBodyDensityMatrixTimers
   {
@@ -217,6 +230,15 @@ extern template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(
                                                                                 ParticleSet& pset_target,
                                                                                 StdRandom<double>& rng,
                                                                                 int steps);
+extern template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator_t>(ParticleSet& pset_target,
+                                                                               TrialWaveFunction& psi_target,
+                                                                               const MCPWalker& walker,
+                                                                               RandomGenerator_t& rng);
+extern template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
+                                                                               TrialWaveFunction& psi_target,
+                                                                               const MCPWalker& walker,
+                                                                               StdRandom<double>& rng);
+
 } // namespace qmcplusplus
 
 #endif

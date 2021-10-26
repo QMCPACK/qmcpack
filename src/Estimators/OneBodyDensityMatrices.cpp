@@ -19,7 +19,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -27,12 +27,15 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
+using OBDM = OneBodyDensityMatrices;
+
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
                                                const WaveFunctionFactory& wf_factory,
-                                               ParticleSet& pset_target)
-    : OperatorEstBase(DataLocality::crowd),
+                                               ParticleSet& pset_target,
+                                               const DataLocality dl)
+    : OperatorEstBase(dl),
       input_(obdmi),
       lattice_(lattice),
       species_(species),
@@ -147,6 +150,8 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   {
     normalize(pset_target);
   }
+
+  data_ = createLocalData(calcFullDataSize(basis_size_, species_.size()), data_locality_);
 }
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
@@ -162,6 +167,14 @@ OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
 std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::clone() const
 {
   return std::make_unique<OneBodyDensityMatrices>(*this);
+}
+
+size_t OneBodyDensityMatrices::calcFullDataSize(size_t basis_size, int nspecies)
+{
+  if constexpr (IsComplex_t<Value>::value)
+    return 2 * basis_size * basis_size * nspecies;
+  else
+    return basis_size * basis_size * nspecies;
 }
 
 void OneBodyDensityMatrices::startBlock(int steps) {}
@@ -250,7 +263,7 @@ inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
       nrem -= ind * ind_dims_[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + ushift[OHMMS_DIM - 1];
-    rsamples_[s]       = lattice_.toCart(rp) + rcorner_;
+    rsamples_[s]      = lattice_.toCart(rp) + rcorner_;
   }
 }
 
@@ -370,6 +383,77 @@ void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         RandomGenerator_t& rng)
 {}
 
+template<class RNG_GEN>
+void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
+                                            TrialWaveFunction& psi_target,
+                                            const MCPWalker& walker,
+                                            RNG_GEN& rng)
+{
+  //perform warmup sampling the first time
+  warmupSampling(pset_target, rng);
+  // get weight and single particle energy trace data
+  Real weight;
+  weight = walker.Weight * metric_;
+
+  // compute sample positions (monte carlo or deterministic)
+  generateSamples(weight, pset_target, rng);
+  // compute basis and wavefunction ratio values in matrix form
+  generateSampleBasis(Phi_MB_, pset_target, psi_target);  // basis           : samples   x basis_size
+  generateSampleRatios(pset_target, psi_target, Psi_NM_); // conj(Psi ratio) : particles x samples
+  generateParticleBasis(pset_target, Phi_NB_);            // conj(basis)     : particles x basis_size
+  // perform integration via matrix products
+  {
+    ScopedTimer local_timer(timers_.matrix_products_timer);
+    for (int s = 0; s < species_.size(); ++s)
+    {
+      Matrix<Value>& Psi_nm     = Psi_NM_[s];
+      Matrix<Value>& Phi_Psi_nb = Phi_Psi_NB_[s];
+      Matrix<Value>& Phi_nb     = Phi_NB_[s];
+      diag_product(Psi_nm, samples_weights_, Psi_nm);
+      product(Psi_nm, Phi_MB_, Phi_Psi_nb);      // ratio*basis : particles x basis_size
+      product_AtB(Phi_nb, Phi_Psi_nb, N_BB_[s]); // conj(basis)^T*ratio*basis : basis_size^2
+    }
+  }
+  // accumulate data for this walker
+  {
+    ScopedTimer local_timer(timers_.accumulate_timer);
+    const int basis_size_sq = basis_size_ * basis_size_;
+    int ij                  = 0;
+    for (int s = 0; s < species_.size(); ++s)
+    {
+      //int ij=nindex; // for testing
+      const Matrix<Value>& NDM = N_BB_[s];
+      for (int n = 0; n < basis_size_sq; ++n)
+      {
+        Value val = NDM(n);
+        (*data_)[ij] += real(val);
+        ij++;
+#if defined(QMC_COMPLEX)
+        (*data_)[ij] += imag(val);
+        ij++;
+#endif
+      }
+    }
+  }
+}
+
+void OneBodyDensityMatrices::generateParticleBasis(ParticleSet& pset_target, std::vector<Matrix<Value>>& phi_nb)
+{
+  ScopedTimer local_timer(timers_.gen_particle_basis_timer);
+  int p = 0;
+  for (int s = 0; s < species_.size(); ++s)
+  {
+    int nb              = 0;
+    Matrix<Value>& P_nb = phi_nb[s];
+    for (int n = 0; n < species_sizes_[s]; ++n, ++p)
+    {
+      updateBasis(pset_target.R[p], pset_target);
+      for (int b = 0; b < basis_size_; ++b, ++nb)
+        P_nb(nb) = qmcplusplus::conj(basis_values_[b]);
+    }
+  }
+}
+
 void OneBodyDensityMatrices::generateSampleBasis(Matrix<Value>& Phi_mb,
                                                  ParticleSet& pset_target,
                                                  TrialWaveFunction& psi_target)
@@ -381,6 +465,30 @@ void OneBodyDensityMatrices::generateSampleBasis(Matrix<Value>& Phi_mb,
     updateBasis(rsamples_[m], pset_target);
     for (int b = 0; b < basis_size_; ++b, ++mb)
       Phi_mb(mb) = basis_values_[b];
+  }
+}
+
+void OneBodyDensityMatrices::generateSampleRatios(ParticleSet& pset_target,
+                                                  TrialWaveFunction& psi_target,
+                                                  std::vector<Matrix<Value>>& psi_nm)
+{
+  ScopedTimer local_timer(timers_.gen_sample_ratios_timer);
+  for (int m = 0; m < samples_; ++m)
+  {
+    // get N ratios for the current sample point
+    pset_target.makeVirtualMoves(rsamples_[m]);
+    psi_target.evaluateRatiosAlltoOne(pset_target, psi_ratios_);
+
+    // collect ratios into per-species matrices
+    int p = 0;
+    for (int s = 0; s < species_.size(); ++s)
+    {
+      Matrix<Value>& P_nm = psi_nm[s];
+      for (int n = 0; n < species_sizes_[s]; ++n, ++p)
+      {
+        P_nm(n, m) = qmcplusplus::conj(psi_ratios_[p]);
+      }
+    }
   }
 }
 
@@ -406,6 +514,21 @@ inline void OneBodyDensityMatrices::updateBasisD012(const Position& r, ParticleS
     basis_gradients_[i] *= basis_norms_[i];
   for (int i = 0; i < basis_size_; ++i)
     basis_laplacians_[i] *= basis_norms_[i];
+}
+
+template<class RAN_GEN>
+void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& rng)
+{
+  if (sampling_ == Sampling::METROPOLIS)
+  {
+    if (!warmed_up_)
+    {
+      rpcur_ = diffuse(std::sqrt(input_.get_timestep()), rng);
+      rpcur_ += center_;
+    }
+    generateSamples(1.0, pset_target, rng, input_.get_warmup_samples());
+    warmed_up_ = true;
+  }
 }
 
 inline void OneBodyDensityMatrices::normalize(Real invToWgt) {}
@@ -454,4 +577,13 @@ template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real we
                                                                          ParticleSet& pset_target,
                                                                          StdRandom<double>& rng,
                                                                          int steps);
+template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator_t>(ParticleSet& pset_target,
+                                                                        TrialWaveFunction& psi_target,
+                                                                        const MCPWalker& walker,
+                                                                        RandomGenerator_t& rng);
+template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
+                                                                        TrialWaveFunction& psi_target,
+                                                                        const MCPWalker& walker,
+                                                                        StdRandom<double>& rng);
+
 } // namespace qmcplusplus
