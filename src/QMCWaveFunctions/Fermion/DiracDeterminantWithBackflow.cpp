@@ -995,8 +995,8 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared_ptr<SPOSet>&& spo,
-                                                                     BackflowTransformation& BF) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopyWithBF(std::shared_ptr<SPOSet>&& spo,
+                                                                           BackflowTransformation& BF) const
 {
   DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(std::move(spo), BF, FirstIndex, LastIndex);
   return dclone;

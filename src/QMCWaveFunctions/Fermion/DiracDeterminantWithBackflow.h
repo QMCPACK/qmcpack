@@ -123,7 +123,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo, BackflowTransformation& BF) const;
+  DiracDeterminantWithBackflow* makeCopyWithBF(std::shared_ptr<SPOSet>&& spo, BackflowTransformation& BF) const;
   DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("makeCopy spo should not be called.");

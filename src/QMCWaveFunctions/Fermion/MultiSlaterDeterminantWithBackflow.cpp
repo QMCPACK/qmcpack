@@ -55,13 +55,13 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeC
   {
     auto up_det = dynamic_cast<DiracDeterminantWithBackflow*>(dets_up[i].get());
     assert(up_det);
-    clone->dets_up.emplace_back(up_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up), bf_ref));
+    clone->dets_up.emplace_back(up_det->makeCopyWithBF(std::static_pointer_cast<SPOSet>(clone->spo_up), bf_ref));
   }
   for (int i = 0; i < dets_dn.size(); i++)
   {
     auto dn_det = dynamic_cast<DiracDeterminantWithBackflow*>(dets_dn[i].get());
     assert(dn_det);
-    clone->dets_dn.emplace_back(dn_det->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn), bf_ref));
+    clone->dets_dn.emplace_back(dn_det->makeCopyWithBF(std::static_pointer_cast<SPOSet>(clone->spo_dn), bf_ref));
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;
