@@ -124,7 +124,7 @@ public:
    * can overwrite to clone itself correctly.
    */
   DiracDeterminantWithBackflow* makeCopyWithBF(std::shared_ptr<SPOSet>&& spo, BackflowTransformation& BF) const;
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("makeCopy spo should not be called.");
     return nullptr;

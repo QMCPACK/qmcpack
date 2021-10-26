@@ -216,7 +216,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantBatched* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 

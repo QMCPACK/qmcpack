@@ -957,11 +957,10 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DET_ENGINE>
-DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
+std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminantBatched<DET_ENGINE>* dclone =
-      new DiracDeterminantBatched<DET_ENGINE>(std::move(spo), FirstIndex, LastIndex, ndelay_, matrix_inverter_kind_);
-  return dclone;
+  return std::make_unique<DiracDeterminantBatched<DET_ENGINE>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
+                                                               matrix_inverter_kind_);
 }
 
 template<typename DET_ENGINE>
