@@ -190,7 +190,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
 
   #Dataset Number Of Species 
   #Species contains (Atom_Name, Atom_Number,Atom_Charge,Atom_Core)
-  l_atoms = [ (loc_cell.atom_symbol(x),IonName[loc_cell.atom_symbol(x)],loc_cell.atom_charge(x),loc_cell.atom_nelec_core(x)) for x in  range(natom)  ] 
+  l_atoms = [ (loc_cell.atom_pure_symbol(x),IonName[loc_cell.atom_pure_symbol(x)],loc_cell.atom_charge(x),loc_cell.atom_nelec_core(x)) for x in  range(natom)  ] 
 
 
   d = defaultdict(list)
@@ -323,6 +323,10 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
          strList=['gaussian']
          asciiList = [n.encode("ascii", "ignore") for n in strList]
          atomicBasisSetGroup.create_dataset('name', (1,),'S8', asciiList)
+      elif isinstance(loc_cell.basis,dict):
+         strList=['custom']
+         asciiList = [n.encode("ascii", "ignore") for n in strList]
+         atomicBasisSetGroup.create_dataset('name', (1,),'S6', asciiList)
       else:
          strList=[loc_cell.basis]
          asciiList = [n.encode("ascii", "ignore") for n in strList]

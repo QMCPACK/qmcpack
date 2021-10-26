@@ -114,9 +114,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  SPOSetBuilder* builder = fac.createSPOSetBuilder(ein1);
+  auto& builder = fac.createSPOSetBuilder(ein1);
 
-  SPOSet* spo = builder->createSPOSet(ein1);
+  SPOSet* spo = builder.createSPOSet(ein1);
   CHECK(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());

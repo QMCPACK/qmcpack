@@ -87,11 +87,10 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 // the nullptr from the optimizer).  However, the order is fixed by the order the destructors
 // are called.
 // To work around the issue, check the local pointer for nullptr before restoring to global storage.
-
 QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
-    if (Rng[i] != nullptr)
+    if (Rng[i])
       RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
@@ -282,10 +281,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
 void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
-
   Rng.resize(num_crowds);
-
-  RngCompatibility.resize(num_crowds);
 
   if (RandomNumberControl::Children.size() == 0)
   {
@@ -297,9 +293,8 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
+    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
-    RngCompatibility[i] = Rng[i].get();
   }
 }
 

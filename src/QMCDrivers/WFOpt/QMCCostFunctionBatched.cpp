@@ -51,7 +51,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
 
 
 /** Clean up the vector */
-QMCCostFunctionBatched::~QMCCostFunctionBatched() { delete_iter(RngSaved.begin(), RngSaved.end()); }
+QMCCostFunctionBatched::~QMCCostFunctionBatched() = default;
 
 void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,

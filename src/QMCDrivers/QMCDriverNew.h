@@ -183,9 +183,13 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  std::vector<RandomGenerator_t*> RngCompatibility;
-
-  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
+  inline RefVector<RandomGenerator_t> getRngRefs() const
+  {
+    RefVector<RandomGenerator_t> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
+  }
 
   // ///return the random generators
   //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
@@ -375,7 +379,7 @@ protected:
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
 
   ///Random number generators
-  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
+  UPtrVector<RandomGenerator_t> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

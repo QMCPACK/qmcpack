@@ -220,7 +220,7 @@ void QMCFixedSampleLinearOptimizeBatched::start()
   Timer t1;
   initialize_timer_.start();
   optTarget->getConfigurations("");
-  optTarget->setRng(vmcEngine->getRng());
+  optTarget->setRng(vmcEngine->getRngRefs());
   optTarget->checkConfigurations();
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
@@ -256,7 +256,7 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   Timer t1;
   initialize_timer_.start();
   optTarget->getConfigurations("");
-  optTarget->setRng(vmcEngine->getRng());
+  optTarget->setRng(vmcEngine->getRngRefs());
   optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
                                         MinMethod); // computes derivative ratios and pass into engine
   initialize_timer_.stop();
@@ -623,7 +623,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
         if (!testEngineObj)
           testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
         doGradientTest = true;
-        MinMethod = "gradient_test";
+        MinMethod      = "gradient_test";
       }
       else
       {
