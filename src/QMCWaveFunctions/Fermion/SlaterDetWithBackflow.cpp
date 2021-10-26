@@ -86,7 +86,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(Particle
   auto bf = BFTrans->makeClone(tqp);
   std::vector<std::unique_ptr<Determinant_t>> dets;
   for (const auto& det : Dets)
-    dets.emplace_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
+    dets.push_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
   auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
   assert(myclone->Optimizable == Optimizable);
   return myclone;
