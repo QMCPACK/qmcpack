@@ -115,7 +115,7 @@ public:
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
   ~OneBodyDensityMatrices() override;
 
-  std::unique_ptr<OneBodyDensityMatrices> clone();
+  std::unique_ptr<OperatorEstBase> clone() const override;
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -135,9 +135,6 @@ public:
    * big data, e.g. density, should overwrite this function.
    */
   void registerOperatorEstimator(hid_t gid) override {}
-
-protected:
-  OneBodyDensityMatrices* makeClone() override;
 
 private:
   //local functions

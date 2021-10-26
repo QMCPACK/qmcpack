@@ -75,14 +75,7 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 
 size_t SpinDensityNew::getFullDataSize() { return species_.size() * derived_parameters_.npoints; }
 
-
-std::unique_ptr<SpinDensityNew> SpinDensityNew::clone() { return std::unique_ptr<SpinDensityNew>(this->makeClone()); }
-
-SpinDensityNew* SpinDensityNew::makeClone()
-{
-  std::cout << "SpinDensity clone called\n";
-  return new SpinDensityNew(*this);
-}
+std::unique_ptr<OperatorEstBase> SpinDensityNew::clone() const { return std::make_unique<SpinDensityNew>(*this); }
 
 SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
     : OperatorEstBase(sdn),

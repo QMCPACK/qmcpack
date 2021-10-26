@@ -83,7 +83,7 @@ public:
 
   /** standard interface
    */
-  std::unique_ptr<MomentumDistribution> clone();
+  std::unique_ptr<OperatorEstBase> clone() const override;
 
   /** accumulate 1 or more walkers of MomentumDistribution samples
    */
@@ -115,8 +115,6 @@ public:
    */
   void registerOperatorEstimator(hid_t gid) override;
 
-protected:
-  MomentumDistribution* makeClone() override;
 };
 
 } // namespace qmcplusplus

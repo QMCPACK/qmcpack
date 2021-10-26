@@ -176,14 +176,9 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   data_            = createLocalData(data_size, data_locality_);
 }
 
-std::unique_ptr<MomentumDistribution> MomentumDistribution::clone()
+std::unique_ptr<OperatorEstBase> MomentumDistribution::clone() const
 {
-  return std::unique_ptr<MomentumDistribution>(this->makeClone());
-}
-
-MomentumDistribution* MomentumDistribution::makeClone()
-{
-  auto* md = new MomentumDistribution(*this);
+  auto md = std::make_unique<MomentumDistribution>(*this);
   if (md->data_locality_ == DataLocality::crowd)
   {
     app_log() << "MD::clone dl crowd\n";
