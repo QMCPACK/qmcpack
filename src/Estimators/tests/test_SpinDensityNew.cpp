@@ -136,6 +136,26 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[esti
   SpinDensityNew(std::move(sdi), lattice, species_set);
 }
 
+TEST_CASE("SpinDensityNew::clone()", "[estimators]")
+{
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_no_cell]);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  SpinDensityInput sdi;
+  sdi.readXML(node);
+  SpeciesSet species_set;
+  int ispecies                      = species_set.addSpecies("C");
+  int iattribute                    = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 2;
+  auto lattice                      = testing::makeTestLattice();
+  SpinDensityNew original(std::move(sdi), lattice, species_set);
+  auto clone = original.clone();
+  REQUIRE(clone != nullptr);
+  REQUIRE(clone.get() != &original);
+  REQUIRE(dynamic_cast<decltype(&original)>(clone.get()) != nullptr);
+}
+
 TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
 {
   using MCPWalker = OperatorEstBase::MCPWalker;
