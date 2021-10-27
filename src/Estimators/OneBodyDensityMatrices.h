@@ -59,7 +59,9 @@ private:
   OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
-  /// actual WaveFunctionFactory instance must be owned by the same or enclosing scope
+  /** WaveFunctionFactory reference to allow delegation of the copy constructor
+   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
+   */
   const WaveFunctionFactory& wf_factory_;
 
   /** @ingroup Derived simulation parameters determined by computation based in input
@@ -140,7 +142,7 @@ public:
   /** copy constructor delegates to standard constructor
    *  This results in a copy construct and move of OneBodyDensityMatricesInput
    *  But for the OBDM itself its as if it went through the standard construction.
-   *  This could be optimized.
+   *  This will be replaced within a few PR's by an optimized copy constructor.
    */
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
   ~OneBodyDensityMatrices() override;
@@ -171,6 +173,7 @@ private:
   //  sample generation
   template<class RNG_GEN>
   void generateSamples(Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
+  // These functions deserve unit tests and likely should be pure functions.
   template<class RNG_GEN>
   void generate_uniform_grid(RNG_GEN& rng);
   template<class RNG_GEN>
