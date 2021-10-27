@@ -34,7 +34,14 @@ template<typename T>
 class OneBodyDensityMatricesTests;
 }
 
-//template<typename VALUE = QMCTraits::ValueType, typename VALUE_FP = QMCTraits::FullPrecValueType>
+/** Per crowd Estimator for OneBodyDensityMatrices aka 1RDM DensityMatrices1B
+ *
+ *  \todo most matrices are written to by incrementing a single vector index
+ *        into their memory. This isn't compatible with aligned rows and ignores
+ *        much less error prone accessing that Matrix supplys.  Fix it.
+ *  \todo functions favor output arguments or state updates over return values,
+ *        simplify.
+ */
 class OneBodyDensityMatrices : public OperatorEstBase
 {
 public:
@@ -97,11 +104,28 @@ private:
   std::vector<std::string> species_names_;
   /** @ingroup Working space, I'm assuming not longterm state.
    *  @{ */
+  /** per particle ratios
+   *  size: particles
+   */
   std::vector<Value> psi_ratios_;
   
-  /// blah at each samples r
-  std::vector<Matrix<Value>> Phi_NB_, Psi_NM_, Phi_Psi_NB_, N_BB_;
-  /// basis_values_ at each samples r
+  /// row major per sample workspaces  
+  /** conj(basis_values) for each particle 
+   *  size: samples * basis_size
+   *  vector is over species
+   *  each matrix row: particle column: basis_value
+   */
+  std::vector<Matrix<Value>> Phi_NB_;
+  /** ratio per particle per sample
+   *  size: particles * samples
+   *  vector is over species
+   *  each matrix row: particle col: sample
+   */
+  std::vector<Matrix<Value>> Psi_NM_;
+  std::vector<Matrix<Value>> Phi_Psi_NB_, N_BB_;
+  /** basis_values_ at each r of rsamples_ row: sample col: basis_value
+   *  size: samples * basis_size
+   */
   Matrix<Value> Phi_MB_;
   /** @} */
   
@@ -180,7 +204,7 @@ private:
    *  \param[in] pset_target  will be returned to its initial state but is mutated.
    *  \param[in] rng          random generator. templated for testing without dependency on app level rng.
    *  \param[in] steps        If integrator_ = Integrator::DENSITY steps is a key parameter otherwise ignored.
-   *                          when set to 0 it is reset to samples_
+   *                          when set to 0 it is reset to samples_ internally
    *  
    *  sideeffects:
    *   * samples_weights_ are set.
@@ -190,7 +214,7 @@ private:
    */
   // These functions deserve unit tests and likely should be pure functions.
   template<class RNG_GEN>
-  void generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, const int steps = 0);
+  void generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
   template<class RNG_GEN>
   void generateUniformGrid(RNG_GEN& rng);
   template<class RNG_GEN>
@@ -236,8 +260,15 @@ private:
   void calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
 
-  /** 
+  /** set Phi_mp to basis vaules per sample
+   *  sideeffects:
+   *    * updates basis_values_ to last rsample
+   */
   void generateSampleBasis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
+  /** set phi_nb to basis values per target particleset particle
+   *  sideeffects:
+   *    * updates basis_values_ to last rsample
+   */
   void generateParticleBasis(ParticleSet& pset_target, std::vector<Matrix<Value>>& phi_nb);
 
   //  basis set updates

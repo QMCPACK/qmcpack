@@ -404,6 +404,8 @@ void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
   generateSampleBasis(Phi_MB_, pset_target, psi_target);  // basis           : samples   x basis_size
   generateSampleRatios(pset_target, psi_target, Psi_NM_); // conj(Psi ratio) : particles x samples
   generateParticleBasis(pset_target, Phi_NB_);            // conj(basis)     : particles x basis_size
+
+  // \todo separate testable and optimizable block, should be function
   // perform integration via matrix products
   {
     ScopedTimer local_timer(timers_.matrix_products_timer);
