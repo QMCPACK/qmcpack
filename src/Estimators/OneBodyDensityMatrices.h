@@ -115,7 +115,7 @@ public:
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
   ~OneBodyDensityMatrices() override;
 
-  OneBodyDensityMatrices* clone() override;
+  std::unique_ptr<OperatorEstBase> clone() const override;
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,

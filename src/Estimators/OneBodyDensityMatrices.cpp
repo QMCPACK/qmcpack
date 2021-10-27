@@ -43,8 +43,10 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
 
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
 
-
-OneBodyDensityMatrices* OneBodyDensityMatrices::clone() { return new OneBodyDensityMatrices(*this); }
+std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::clone() const
+{
+  return std::make_unique<OneBodyDensityMatrices>(*this);
+}
 
 void OneBodyDensityMatrices::startBlock(int steps) {}
 
