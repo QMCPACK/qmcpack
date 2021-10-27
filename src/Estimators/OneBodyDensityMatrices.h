@@ -142,7 +142,7 @@ private:
   bool warmed_up_ = false;
   /// }@
 
-  Real metric_;
+  Real metric_ = 1.0;
 
   // \todo is this state necessay, would it be better passed down the call stack?
   /// current position -- As long Positions are TinyVectors they are intialized to zero vectors
@@ -150,7 +150,7 @@ private:
   /// current drift
   Position dpcur_;
   /// current density
-  Real rhocur_;
+  Real rhocur_ = 0.0;
 
 public:
   /** Standard Constructor

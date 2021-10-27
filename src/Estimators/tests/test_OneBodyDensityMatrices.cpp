@@ -76,7 +76,8 @@ public:
 
   void dumpData(OneBodyDensityMatrices& obdm)
   {
-    std::cout << *(obdm.data_);
+    std::cout << "Here is what is in your OneBodyDensityMatrices:\n"
+              << *(obdm.data_) << '\n';
   }
 };
 
@@ -275,9 +276,15 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
   auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
   StdRandom<double> rng;
   MCPWalker walker;
-  walker.Weight = 0.95;
-  OneBodyDensityMatricesTests<double> obdmt;
+  // Now we have to bring the pset, trial_wavefunction and walker to valid state.
+  //pset.loadWalker(walker, false);
+  pset.update(true);
+  pset.donePbyP();
   trial_wavefunction.evaluateLog(pset);
+  pset.saveWalker(walker);
+  
+  OneBodyDensityMatricesTests<double> obdmt;
+  
   obdmt.testEvaluateMatrix(obdm, pset, trial_wavefunction, walker, rng);
   obdmt.dumpData(obdm);
   // now the framework for testing accumulation is done

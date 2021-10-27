@@ -530,6 +530,7 @@ void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& r
     {
       rpcur_ = diffuse(std::sqrt(input_.get_timestep()), rng);
       rpcur_ += center_;
+      calcDensityDrift(rpcur_, rhocur_,dpcur_, pset_target);
     }
     generateSamples(1.0, pset_target, rng, input_.get_warmup_samples());
     warmed_up_ = true;
