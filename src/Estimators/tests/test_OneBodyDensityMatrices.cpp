@@ -23,6 +23,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Utilities/StdRandom.h"
+#include "Utilities/StlPrettyPrint.hpp"
 #include <iostream>
 
 namespace qmcplusplus
@@ -37,6 +38,7 @@ public:
   using Evaluators  = OneBodyDensityMatricesInput::Evaluator;
   using Integrators = OneBodyDensityMatricesInput::Integrator;
   using Sampling    = OneBodyDensityMatrices::Sampling;
+  using MCPWalker   = OneBodyDensityMatrices::MCPWalker;
 
   OneBodyDensityMatricesTests() = default;
   void testGenerateSamples(onebodydensitymatrices::Inputs input,
@@ -61,6 +63,20 @@ public:
       CHECK(obdm.samples_ == pow(22, OHMMS_DIM));
       break;
     }
+  }
+
+  void testEvaluateMatrix(OneBodyDensityMatrices& obdm,
+                          ParticleSet& pset,
+                          TrialWaveFunction& trial_wavefunction,
+                          MCPWalker& walker,
+                          StdRandom<T>& rng)
+  {
+    obdm.evaluateMatrix(pset, trial_wavefunction, walker, rng);
+  }
+
+  void dumpData(OneBodyDensityMatrices& obdm)
+  {
+    std::cout << *(obdm.data_);
   }
 };
 
@@ -129,8 +145,8 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   auto samplingCaseRunner = [&pset_target, &species_set, &wf_factory](Inputs test_case) {
     Libxml2Document doc;
 
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[test_case]);
-    if (!okay)
+  bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[test_case]);
+  if (!okay)
       throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
@@ -230,5 +246,42 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   outputManager.resume();
 }
 
+TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
+{
+  using namespace testing;
+  using namespace onebodydensitymatrices;
+  using MCPWalker = OperatorEstBase::MCPWalker;
+  using namespace onebodydensitymatrices;
+
+  Communicate* comm;
+  comm = OHMMS::Controller;
+  outputManager.pause();
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[valid_obdm_input]);
+  if (!okay)
+    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+  xmlNodePtr node = doc.getRoot();
+  OneBodyDensityMatricesInput obdmi(node);
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  auto& pset        = *(particle_pool.getParticleSet("e"));
+  auto& species_set = pset.getSpeciesSet();
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset.Lattice, species_set, wf_factory);
+  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+  StdRandom<double> rng;
+  MCPWalker walker;
+  walker.Weight = 0.95;
+  OneBodyDensityMatricesTests<double> obdmt;
+  trial_wavefunction.evaluateLog(pset);
+  obdmt.testEvaluateMatrix(obdm, pset, trial_wavefunction, walker, rng);
+  obdmt.dumpData(obdm);
+  // now the framework for testing accumulation is done
+  outputManager.resume();
+}
 
 } // namespace qmcplusplus
