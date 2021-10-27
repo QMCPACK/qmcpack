@@ -20,7 +20,6 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
 {
   int num_params = costFunc.getNumParams();
   std::vector<Return_t> numeric_grad(num_params);
-  std::vector<Return_t> a_xi(num_params);
   std::vector<Return_t> params(num_params);
   std::vector<Return_t> analytic_grad(num_params);
 
