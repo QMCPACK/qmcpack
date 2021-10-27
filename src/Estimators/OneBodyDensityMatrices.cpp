@@ -180,17 +180,11 @@ size_t OneBodyDensityMatrices::calcFullDataSize(size_t basis_size, int nspecies)
 void OneBodyDensityMatrices::startBlock(int steps) {}
 
 template<class RNG_GEN>
-void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps)
+void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps)
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
 
   // \todo make this an ifndef NDEBUG section which is much clearer.
-  bool save = false;
-  if (steps == 0)
-  {
-    save  = true;
-    steps = samples_;
-  }
 
   switch (input_.get_integrator())
   {
@@ -200,24 +194,33 @@ void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_targ
   case Integrator::UNIFORM:
     generateUniformSamples(rng);
     break;
-  case Integrator::DENSITY:
+  case Integrator::DENSITY: {
+    bool save = false;
+    if (steps == 0)
+    {
+      save  = true;
+      steps = samples_;
+    }
+
     generateDensitySamples(save, steps, rng, pset_target);
+    if (save)
+    {
+      if (sampling_ == Sampling::METROPOLIS)
+      {
+        samples_weights_ *= weight;
+      }
+      else
+      {
+        //I can't see how you would ever get here.
+        assert(false);
+        std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
+      }
+    }
     break;
   }
-
-  if (save)
-  {
-    if (sampling_ == Sampling::METROPOLIS)
-    {
-      samples_weights_ *= weight;
-    }
-    else
-    {
-      std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
-    }
   }
 
-  // temporary check
+  // optional check
   if (input_.get_rstats() && omp_get_thread_num() == 0)
   {
     Position rmin  = std::numeric_limits<Real>::max();

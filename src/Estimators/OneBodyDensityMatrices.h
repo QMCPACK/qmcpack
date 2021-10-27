@@ -92,13 +92,19 @@ private:
   Vector<Value> basis_laplacians_;
   std::vector<Position> rsamples_;
   Vector<Real> samples_weights_;
-  std::vector<Value> psi_ratios_;
   int basis_size_;
   std::vector<int> species_sizes_;
   std::vector<std::string> species_names_;
+  /** @ingroup Working space, I'm assuming not longterm state.
+   *  @{ */
+  std::vector<Value> psi_ratios_;
+  
+  /// blah at each samples r
   std::vector<Matrix<Value>> Phi_NB_, Psi_NM_, Phi_Psi_NB_, N_BB_;
+  /// basis_values_ at each samples r
   Matrix<Value> Phi_MB_;
-
+  /** @} */
+  
   /** @ingroup DensityIntegration only used for density integration
    *  @{
    */
@@ -115,7 +121,7 @@ private:
   Real metric_;
 
   // \todo is this state necessay, would it be better passed down the call stack?
-  /// current position
+  /// current position -- As long Positions are TinyVectors they are intialized to zero vectors
   Position rpcur_;
   /// current drift
   Position dpcur_;
@@ -168,13 +174,36 @@ private:
   template<class RNG_GEN>
   void evaluateMatrix(ParticleSet& pset_target, TrialWaveFunction& psi_target, const MCPWalker& walker, RNG_GEN& rng);
   //  sample generation
-  template<class RNG_GEN>
-  void generateSamples(Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
+  /** Dispatch method to difference methods of generating samples.
+   *  dispatch determined by Integrator.
+   *  \param[in] weight       of this walker's samples
+   *  \param[in] pset_target  will be returned to its initial state but is mutated.
+   *  \param[in] rng          random generator. templated for testing without dependency on app level rng.
+   *  \param[in] steps        If integrator_ = Integrator::DENSITY steps is a key parameter otherwise ignored.
+   *                          when set to 0 it is reset to samples_
+   *  
+   *  sideeffects:
+   *   * samples_weights_ are set.
+   *   * rsamples_ are set.
+   *     for Density
+   *      * update basis_values_, basis_gradients_, basis_laplacians_
+   */
   // These functions deserve unit tests and likely should be pure functions.
+  template<class RNG_GEN>
+  void generateSamples(const Real weight, ParticleSet& pset_target, RNG_GEN& rng, const int steps = 0);
   template<class RNG_GEN>
   void generateUniformGrid(RNG_GEN& rng);
   template<class RNG_GEN>
   void generateUniformSamples(RNG_GEN& rng);
+  /** generate samples for density integration
+   *  \param[in]   save          if false throw out the samples
+   *  \param[in]   steps         actually the number of samples which are basically steps.
+   *  \param[in]   rng           random generator
+   *  \param[in]   pset_target   will be returned to its initial state but is mutated.
+   *
+   *  sideeffects:
+   *   *
+   */
   template<class RNG_GEN>
   void generateDensitySamples(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
   void generateSampleRatios(ParticleSet& pset_target,
@@ -183,15 +212,47 @@ private:
   /// produce a position difference vector from timestep
   template<class RNG_GEN>
   Position diffuse(const Real sqt, RNG_GEN& rng);
+  /** calculate density based on r
+   *  \param[in]      r       position
+   *  \param[out]   dens      density
+   *
+   *  called by generateDensitySamples to get trial dens.
+   *  also called by test_derivatives.
+   *  sideeffects:
+   *    * updateBasis is called
+   */
   void calcDensity(const Position& r, Real& dens, ParticleSet& pset_target);
+  /** calculate density and drift bashed on r
+   *  \param[in]      r       position
+   *  \param[out]   dens      density
+   *  \param[out]   drift     drift
+   *
+   *  called by warmupSamples to get an initial drift and density.
+   *  called by generateDensitySamples to get trial drift and trial dens.
+   *  also called by test_derivatives.
+   *  sideeffects:
+   *    * updateBasisD012 is called
+   */
   void calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
+
+  /** 
   void generateSampleBasis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
   void generateParticleBasis(ParticleSet& pset_target, std::vector<Matrix<Value>>& phi_nb);
 
   //  basis set updates
   void updateBasis(const Position& r, ParticleSet& pset_target);
+  /** evaluates vgl on basis_functions_ for r
+   *  sideeffects:
+   *    * sets basis_values_, basis_gradients_, basis_laplacians_
+   *      all are normalized by basis norms_
+   */
   void updateBasisD012(const Position& r, ParticleSet& pset_target);
+  /** does some warmup sampling i.e. samples but throws away the results
+   *  Only when integrator_ = Integrator::DENSITY
+   *  sets rpcur_ intial rpcur + one diffusion step
+   *  Then calls generateSamples with number of input warmup samples.
+   */   
   template<typename RAN_GEN>
   void warmupSampling(ParticleSet& pset_target, RAN_GEN& rng);
 
