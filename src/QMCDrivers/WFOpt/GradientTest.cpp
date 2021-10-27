@@ -69,7 +69,8 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
       app_log() << vname << " " << params[k] << "  " << numeric_grad[k] << "  " << analytic_grad[k] << "  "
                 << 100 * (numeric_grad[k] - analytic_grad[k]) / numeric_grad[k] << std::endl;
     else
-      app_log() << vname << " " << params[k] << "  " << numeric_grad[k] << "  " << analytic_grad[k] << "   inf" << std::endl;
+      app_log() << vname << " " << params[k] << "  " << numeric_grad[k] << "  " << analytic_grad[k] << "   inf"
+                << std::endl;
     if (input_.do_param_output())
       param_deriv_file_ << std::setprecision(10) << analytic_grad[k] << " ";
   }
