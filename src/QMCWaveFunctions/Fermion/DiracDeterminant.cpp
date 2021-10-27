@@ -651,10 +651,9 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
+std::unique_ptr<DiracDeterminantBase> DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo), FirstIndex, LastIndex, ndelay_);
-  return dclone;
+  return std::make_unique<DiracDeterminant<DU_TYPE>>(std::move(spo), FirstIndex, LastIndex, ndelay_);
 }
 
 template<typename DU_TYPE>

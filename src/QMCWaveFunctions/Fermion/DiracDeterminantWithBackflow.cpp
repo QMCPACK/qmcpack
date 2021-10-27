@@ -995,11 +995,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared_ptr<SPOSet>&& spo,
-                                                                     BackflowTransformation& BF) const
+std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(std::shared_ptr<SPOSet>&& spo,
+                                                                           BackflowTransformation& BF) const
 {
-  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(std::move(spo), BF, FirstIndex, LastIndex);
-  return dclone;
+  return std::make_unique<DiracDeterminantWithBackflow>(std::move(spo), BF, FirstIndex, LastIndex);
 }
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
