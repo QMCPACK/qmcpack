@@ -155,7 +155,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
+  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
 
 #ifdef QMC_CUDA
   // expose GPU interfaces

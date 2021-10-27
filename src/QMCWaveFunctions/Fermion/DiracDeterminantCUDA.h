@@ -149,7 +149,7 @@ protected:
 
 public:
   // safe-guard all CPU interfaces
-  DiracDeterminantCUDA* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::makeCopy is illegal!");
     return nullptr;

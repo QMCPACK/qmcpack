@@ -83,7 +83,7 @@ public:
 
   /** standard interface
    */
-  MomentumDistribution* clone() override;
+  std::unique_ptr<OperatorEstBase> clone() const override;
 
   /** accumulate 1 or more walkers of MomentumDistribution samples
    */
@@ -114,6 +114,7 @@ public:
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hid_t gid) override;
+
 };
 
 } // namespace qmcplusplus
