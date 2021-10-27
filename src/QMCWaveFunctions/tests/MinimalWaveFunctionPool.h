@@ -26,8 +26,8 @@ class MinimalWaveFunctionPool
     <sposet name="spo_for_dets" size="4" spindataset="0"/>
   </sposet_collection>
   <sposet_collection type="bspline" source="ion" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="no" meshfactor="0.8" twist="0 0 0" precision="double">
-    <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
-    <sposet type="bspline" name="spo_dm" index_min="4" index_max="8" spindataset="0"/>
+    <sposet name="spo_ud" size="4" spindataset="0"/>
+    <sposet name="spo_dm" index_min="4" index_max="8" spindataset="0"/>
   </sposet_collection>
   <determinantset>
     <slaterdeterminant>

@@ -282,6 +282,7 @@ private:
   /** does some warmup sampling i.e. samples but throws away the results
    *  Only when integrator_ = Integrator::DENSITY
    *  sets rpcur_ intial rpcur + one diffusion step
+   *  sets initial rhocur_ and dpcur_
    *  Then calls generateSamples with number of input warmup samples.
    */   
   template<typename RAN_GEN>

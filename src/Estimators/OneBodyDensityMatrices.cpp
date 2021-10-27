@@ -27,8 +27,6 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
-using OBDM = OneBodyDensityMatrices;
-
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
