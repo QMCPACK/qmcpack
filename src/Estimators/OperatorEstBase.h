@@ -99,8 +99,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-
-  virtual OperatorEstBase* clone() = 0;
+  virtual std::unique_ptr<OperatorEstBase> clone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *

@@ -44,6 +44,23 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   OneBodyDensityMatrices(std::move(obdmi), lattice, species_set);
 }
 
+TEST_CASE("OneBodyDensityMatrices::clone()", "[estimators]")
+{
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[Inputs::valid_obdm_input]);
+  if (!okay)
+    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+  xmlNodePtr node = doc.getRoot();
+  OneBodyDensityMatricesInput obdmi(node);
+  auto lattice     = testing::makeTestLattice();
+  auto species_set = testing::makeSpeciesSet();
+  OneBodyDensityMatrices original(std::move(obdmi), lattice, species_set);
+  auto clone = original.clone();
+  REQUIRE(clone != nullptr);
+  REQUIRE(clone.get() != &original);
+  REQUIRE(dynamic_cast<decltype(&original)>(clone.get()) != nullptr);
+}
+
 TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
 {
   using MCPWalker = OperatorEstBase::MCPWalker;
