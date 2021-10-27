@@ -30,12 +30,14 @@ using MatrixOperators::product_AtB;
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
-                                               const WaveFunctionFactory& wf_factory)
+                                               const WaveFunctionFactory& wf_factory,
+                                               ParticleSet& pset_target)
     : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
       lattice_(lattice),
       species_(species),
       wf_factory_(wf_factory),
+      very_temp_pset_(pset_target),
       timers_("OneBodyDensityMatrix")
 {
   lattice_.reset();
@@ -143,13 +145,12 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   // with respect to what?
   if (!input_.get_normalized())
   {
-    auto& pset_target = wf_factory_.getTargetParticleSet();
     normalize(pset_target);
   }
 }
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
-    : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_), obdm.lattice_, obdm.species_, obdm.wf_factory_)
+  : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_), obdm.lattice_, obdm.species_, obdm.wf_factory_, obdm.very_temp_pset_)
 {}
 
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}

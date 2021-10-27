@@ -63,7 +63,11 @@ private:
    *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
    */
   const WaveFunctionFactory& wf_factory_;
-
+  /** target particleset  reference to allow delegation of the copy constructor
+   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
+   */
+  ParticleSet& very_temp_pset_;
+  
   /** @ingroup Derived simulation parameters determined by computation based in input
    *  @{
    */
@@ -137,7 +141,8 @@ public:
   OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                          const Lattice& lattice,
                          const SpeciesSet& species,
-                         const WaveFunctionFactory& wf_factory);
+                         const WaveFunctionFactory& wf_factory,
+                         ParticleSet& pset_target);
 
   /** copy constructor delegates to standard constructor
    *  This results in a copy construct and move of OneBodyDensityMatricesInput

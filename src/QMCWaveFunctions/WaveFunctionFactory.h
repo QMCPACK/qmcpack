@@ -52,8 +52,6 @@ public:
   TrialWaveFunction* getTWF() const { return targetPsi.get(); }
   ///get SPOSet
   SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
-  ///get target particle set
-  ParticleSet& getTargetParticleSet() const { return targetPtcl; }
 private:
   /** process xmlNode to populate targetPsi
    */
