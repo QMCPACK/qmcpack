@@ -890,20 +890,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 x = []
                 prev_label = ''
                 ref_kpt = self.kpoints_cart[0]
-                ref_kpt_norm = np.linalg.norm(self.kpoints_cart[0])
+                lincoord = 0.0
                 for kpt_idx,kpt in enumerate(self.kpoints_cart):
                     curr_label = labels[kpt_idx]
-                    if curr_label != '' and prev_label == '':
-                        ref_kpt_norm+=np.linalg.norm(kpt-ref_kpt)
+                    if (curr_label != '' and prev_label == '') or curr_label == '':
+                        lincoord+=np.linalg.norm(kpt-ref_kpt)
                         ref_kpt = kpt
-                    elif curr_label != '' and prev_label != '':
-                        ref_kpt = kpt
-                        ref_kpt_norm+=np.linalg.norm(kpt-ref_kpt)
                     else:
-                        pass
+                        ref_kpt = kpt
+                        lincoord+=np.linalg.norm(kpt-ref_kpt)
                     #end if
-                    x.append(ref_kpt_norm+np.linalg.norm(kpt-ref_kpt))
-                    #x.append(kpt_idx)
+                    x.append(lincoord)
                     prev_label = curr_label
                 #end for
             #end if
