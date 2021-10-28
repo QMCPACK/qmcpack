@@ -23,9 +23,16 @@
 #include "OneBodyDensityMatricesInput.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <SpeciesSet.h>
+#include <StdRandom.h>
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+template<typename T>
+class OneBodyDensityMatricesTests;
+}
 
 class OneBodyDensityMatrices : public OperatorEstBase
 {
@@ -52,8 +59,31 @@ private:
   OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
+  /** WaveFunctionFactory reference to allow delegation of the copy constructor
+   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
+   */
+  const WaveFunctionFactory& wf_factory_;
+  /** target particleset  reference to allow delegation of the copy constructor
+   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
+   */
+  ParticleSet& very_temp_pset_;
+  
+  /** @ingroup Derived simulation parameters determined by computation based in input
+   *  @{
+   */
+  /// samples_ are altered based on integrator_ so always have a simulation object copy.
+  size_t samples_;
+  /// Sampling method, this derived values in input_
   Sampling sampling_;
-  //data members
+  /// If not defined in OBDMI taken from lattice_
+  Position center_;
+  /// with respect to center_ using lattice_;
+  Position rcorner_;
+  Real volume_;
+  bool periodic_;
+  /** @} */
+
+  //data members \todo remove unecessary state
   CompositeSPOSet basis_functions;
   Vector<Value> basis_values;
   Vector<Value> basis_norms;
@@ -65,19 +95,16 @@ private:
   Real dens;
   Position drift;
   int nindex;
-
   bool volume_normed;
   int basis_size;
-  int samples_;
-  int nparticles;
-  int nspecies;
   std::vector<int> species_size;
   std::vector<std::string> species_name;
-  std::vector<Matrix<Value>*> Phi_NB, Psi_NM, Phi_Psi_NB, N_BB, E_BB;
+  std::vector<Matrix<Value>> Phi_NB, Psi_NM, Phi_Psi_NB, N_BB, E_BB;
   Matrix<Value> Phi_MB;
   bool check_overlap;
   bool check_derivatives;
 
+// \todo this seems like developement clutter remove?
 //#define DMCHECK
 #ifdef DMCHECK
   std::vector<Vector<Value>*> E_Ntmp;
@@ -85,32 +112,42 @@ private:
   Matrix_t Phi_MBtmp;
 #endif
 
-  Position center_;
-  Position rcorner_;
-  Real volume_;
-  bool periodic_;
-  int nmoves;
-  int naccepted;
-  Real acceptance_ratio;
+  /** @ingroup DensityIntegration only used for density integration
+   *  @{
+   */
+  /// number of moves
+  int nmoves = 0;
+  /// number of accepted samples
+  int naccepted = 0;
+  /// running acceptance ratio over all samples
+  Real acceptance_ratio = 0.0;
   bool write_acceptance_ratio;
-  bool write_rstats;
-
   int ind_dims_[OHMMS_DIM];
-  Real metric;
+  /// }@
 
+  Real metric_;
+
+  /// current position
   Position rpcur;
+  /// current drift
   Position dpcur;
+  /// current density
   Real rhocur;
-
-  RandomGenerator_t* uniform_random;
 
 public:
   /** Standard Constructor
    *  If you are making a new OBDM this is what you should be calling
    */
-  OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi, const Lattice& lattice, const SpeciesSet& species);
+  OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
+                         const Lattice& lattice,
+                         const SpeciesSet& species,
+                         const WaveFunctionFactory& wf_factory,
+                         ParticleSet& pset_target);
 
-  /** actual copy constructor
+  /** copy constructor delegates to standard constructor
+   *  This results in a copy construct and move of OneBodyDensityMatricesInput
+   *  But for the OBDM itself its as if it went through the standard construction.
+   *  This will be replaced within a few PR's by an optimized copy constructor.
    */
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
   ~OneBodyDensityMatrices() override;
@@ -123,9 +160,6 @@ public:
                   RandomGenerator_t& rng) override;
 
   void normalize(Real invToWgt) override;
-
-  void setRandomGenerator(RandomGenerator_t* rng);
-
   void startBlock(int steps) override;
 
   /** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
@@ -138,28 +172,34 @@ public:
 
 private:
   //local functions
-  void normalize();
+  void normalize(ParticleSet& pset_target);
   //  printing
   void report(const std::string& pad = "");
   //  sample generation
-  void generate_samples(Real weight, ParticleSet& pset_target, int steps = 0);
-  void generate_uniform_grid(RandomGenerator_t& rng);
-  void generate_uniform_samples(RandomGenerator_t& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng, ParticleSet& pset_target);
-  void diffusion(Real sqt, Position& diff);
+  template<class RNG_GEN>
+  void generateSamples(Real weight, ParticleSet& pset_target, RNG_GEN& rng, int steps = 0);
+  // These functions deserve unit tests and likely should be pure functions.
+  template<class RNG_GEN>
+  void generate_uniform_grid(RNG_GEN& rng);
+  template<class RNG_GEN>
+  void generate_uniform_samples(RNG_GEN& rng);
+  template<class RNG_GEN>
+  void generate_density_samples(bool save, int steps, RNG_GEN& rng, ParticleSet& pset_target);
+  /// produce a position difference vector from timestep
+  template<class RNG_GEN>
+  Position diffusion(const Real sqt, RNG_GEN& rng);
   void density_only(const Position& r, Real& dens, ParticleSet& pset_target);
   void density_drift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target);
   //  basis & wavefunction ratio matrix construction
   void get_energies(std::vector<Vector<Value>*>& E_n);
   void generate_sample_basis(Matrix<Value>& Phi_mb, ParticleSet& pset_target, TrialWaveFunction& psi_target);
-  void generate_sample_ratios(std::vector<Matrix<Value>*> Psi_nm,
+  void generate_sample_ratios(std::vector<Matrix<Value>>& Psi_nm,
                               ParticleSet& pset_target,
                               TrialWaveFunction& psi_target);
-  void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>*>& Phi_nb, ParticleSet& pset_target);
+  void generate_particle_basis(ParticleSet& P, std::vector<Matrix<Value>>& Phi_nb, ParticleSet& pset_target);
   //  basis set updates
   void update_basis(const Position& r, ParticleSet& pset_target);
   void update_basis_d012(const Position& r, ParticleSet& pset_target);
-  void normalize(ParticleSet& pset_target);
 
   struct OneBodyDensityMatrixTimers
   {
@@ -182,6 +222,10 @@ private:
   };
 
   OneBodyDensityMatrixTimers timers_;
+
+public:
+  template<typename T>
+  friend class testing::OneBodyDensityMatricesTests;
 };
 
 /** OneBodyDensityMatrices factory function
@@ -191,6 +235,14 @@ UPtr<OneBodyDensityMatrices> createOneBodyDensityMatrices(OneBodyDensityMatrices
                                                           const SpeciesSet& species);
 
 
+extern template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
+                                                                                ParticleSet& pset_target,
+                                                                                RandomGenerator_t& rng,
+                                                                                int steps);
+extern template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
+                                                                                ParticleSet& pset_target,
+                                                                                StdRandom<double>& rng,
+                                                                                int steps);
 } // namespace qmcplusplus
 
 #endif

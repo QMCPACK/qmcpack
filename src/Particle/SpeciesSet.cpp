@@ -14,7 +14,7 @@
 
 
 #include "SpeciesSet.h"
-
+#include <algorithm>
 namespace qmcplusplus
 {
 void SpeciesSet::create(unsigned m)
@@ -57,7 +57,7 @@ int SpeciesSet::addAttribute(const std::string& aname)
   return n;
 }
 
-int SpeciesSet::getAttribute(const std::string& aname)
+int SpeciesSet::getAttribute(const std::string& aname) const
 {
   for (int i = 0; i < attribName.size(); i++)
   {
@@ -65,6 +65,11 @@ int SpeciesSet::getAttribute(const std::string& aname)
       return i;
   }
   return attribName.size();
+}
+
+bool SpeciesSet::hasAttribute(const std::string& aname) const
+{
+  return std::find(attribName.begin(), attribName.end(), aname) != attribName.end();
 }
 
 } // namespace qmcplusplus

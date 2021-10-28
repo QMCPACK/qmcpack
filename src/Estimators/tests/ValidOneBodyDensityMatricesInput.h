@@ -39,7 +39,7 @@ namespace onebodydensitymatrices
   <parameter name="samples"      >  64            </parameter>
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="center"       >  0.0 0.0 0.1   </parameter>
-  <parameter name="use_drift"    >  no            </parameter>
+  <parameter name="use_drift"    >  yes           </parameter>
 </estimator>
 )",
       R"(
@@ -61,7 +61,7 @@ namespace onebodydensitymatrices
   <parameter name="points"       >  22            </parameter>
   <parameter name="scale"        >  0.8           </parameter>
   <parameter name="timestep"     >  0.5           </parameter>
-  <parameter name="use_drift"    >  yes           </parameter>
+  <parameter name="use_drift"    >  no            </parameter>
 </estimator>
 )"
 

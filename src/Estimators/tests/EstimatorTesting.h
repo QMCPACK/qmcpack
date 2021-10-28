@@ -24,8 +24,15 @@ namespace testing
 using POLT    = PtclOnLatticeTraits;
 using Lattice = POLT::ParticleLayout_t;
 
+enum class SpeciesCases
+{
+  GOOD,
+  NO_MEMBERSIZE
+};
+
+ 
 Lattice makeTestLattice();
-SpeciesSet makeSpeciesSet();
+SpeciesSet makeSpeciesSet(const SpeciesCases species_case);
 }
 }
 #endif
