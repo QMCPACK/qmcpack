@@ -27,7 +27,7 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
   setIfInInput(check_overlap_, "check_overlap");
   setIfInInput(check_derivatives_, "check_derivatives");
   setIfInInput(rstats_, "rstats");
-  setIfInInput(acceptance_ratio_, "acceptance_ratio");
+  setIfInInput(write_acceptance_ratio_, "acceptance_ratio");
   setIfInInput(integrator_, "integrator");
   setIfInInput(evaluator_, "evaluator");
   setIfInInput(scale_, "scale");
@@ -58,13 +58,13 @@ void OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::checkParticu
   if (get<std::string>("integrator") != "density")
   {
     if (has("acceptance_ratio") && get<bool>("acceptance_ratio") == true)
-      throw UniformCommunicateError(
-          error_tag + "acceptance_ratio can only be true for density integrator");
+      throw UniformCommunicateError(error_tag + "acceptance_ratio can only be true for density integrator");
   }
   if (get<std::string>("integrator") == "uniform_grid")
   {
-    if(has("samples"))
-      throw UniformCommunicateError(error_tag + "samples are set from points for uniform_grid integrator and are invalid input");
+    if (has("samples"))
+      throw UniformCommunicateError(error_tag +
+                                    "samples are set from points for uniform_grid integrator and are invalid input");
   }
 }
 
@@ -75,8 +75,10 @@ std::any OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::assignAn
   try
   {
     return lookup_input_enum_value.at(enum_value_str);
-  } catch (std::out_of_range& oor_exc) {
-    std::throw_with_nested( std::logic_error("bad_enum_tag_value: " + enum_value_str) );
+  }
+  catch (std::out_of_range& oor_exc)
+  {
+    std::throw_with_nested(std::logic_error("bad_enum_tag_value: " + enum_value_str));
   }
 }
 

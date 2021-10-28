@@ -62,22 +62,24 @@ public:
     /** parse time definition of input parameters */
     OneBodyDensityMatrixInputSection()
     {
-      section_name = "OneBodyDensityMatrix";
-      attributes   = {"name", "type"};
-      parameters   = {"basis",      "energy_matrix", "integrator",        "evaluator",        "scale",
-                    "center",     "points",        "samples",           "warmup",           "timestep",
-                    "use_drift",  "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
-                    "normalized", "volumed_normed"};
-      bools        = {"energy_matrix", "use_drift",         "normalized", "volume_normed",
-               "check_overlap", "check_derivatives", "rstats",     "acceptance_ratio"};
-      enums        = {"integrator", "evaluator"};
-      strings      = {"name", "type"};
+      // clang-format off
+      section_name  = "OneBodyDensityMatrix";
+      attributes    = {"name", "type"};
+      parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
+                       "center", "points", "samples", "warmup", "timestep",
+                       "use_drift", "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
+                       "normalized", "volumed_normed"};
+      bools         = {"energy_matrix", "use_drift", "normalized", "volume_normed",
+                       "check_overlap", "check_derivatives", "rstats", "acceptance_ratio"};
+      enums         = {"integrator", "evaluator"};
+      strings       = {"name", "type"};
       multi_strings = {"basis"};
-      integers     = {"points", "samples"};
-      reals        = {"scale", "timestep"};
-      positions    = {"center"};
-      required     = {"name", "basis"};
+      integers      = {"points", "samples"};
+      reals         = {"scale", "timestep"};
+      positions     = {"center"};
+      required      = {"name", "basis"};
       // I'd much rather see the default defined in simple native c++ as below
+      // clang-format on
     }
 
     /** do parse time checks of input */
@@ -95,14 +97,14 @@ private:
   OneBodyDensityMatrixInputSection input_section_;
 
   // Default parameters for OneBodyDensityMatrices
-  bool energy_matrix_     = false;
-  bool use_drift_         = false;
-  bool normalized_        = true;
-  bool volume_normalized_ = true;
-  bool check_overlap_     = false;
-  bool check_derivatives_ = false;
-  bool rstats_            = false;
-  bool acceptance_ratio_  = false;
+  bool energy_matrix_          = false;
+  bool use_drift_              = false;
+  bool normalized_             = true;
+  bool volume_normalized_      = true;
+  bool check_overlap_          = false;
+  bool check_derivatives_      = false;
+  bool rstats_                 = false;
+  bool write_acceptance_ratio_ = false;
   /// This flag is derived from input so if you construct an OBDMI directly with center it must be set.
   bool center_defined_   = false;
   Integrator integrator_ = Integrator::UNIFORM_GRID;
@@ -124,7 +126,7 @@ public:
   bool get_check_overlap() const { return check_overlap_; }
   bool get_check_derivatives() const { return check_derivatives_; }
   bool get_rstats() const { return rstats_; }
-  bool get_acceptance_ratio() const { return acceptance_ratio_; }
+  bool get_write_acceptance_ratio() const { return write_acceptance_ratio_; }
   Integrator get_integrator() const { return integrator_; }
   Evaluator get_evaluator() const { return evaluator_; }
   Real get_scale() const { return scale_; }
