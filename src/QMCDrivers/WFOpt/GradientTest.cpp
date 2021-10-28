@@ -19,11 +19,9 @@ namespace qmcplusplus
 void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_name)
 {
   int num_params = costFunc.getNumParams();
-  std::vector<Return_t> dummy(num_params);
-  std::vector<Return_t> a_xi(num_params);
+  std::vector<Return_t> numeric_grad(num_params);
   std::vector<Return_t> params(num_params);
-  std::vector<Return_t> FG(num_params);
-  std::vector<Return_t> RT(num_params);
+  std::vector<Return_t> analytic_grad(num_params);
 
   for (int i = 0; i < num_params; i++)
   {
@@ -50,10 +48,10 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
 
   // Numerical gradient
   double finite_diff_delta = 1e-5;
-  costFunc.GradCost(dummy, RT, finite_diff_delta);
+  costFunc.GradCost(numeric_grad, params, finite_diff_delta);
 
   // Analytic gradient
-  costFunc.GradCost(FG, RT);
+  costFunc.GradCost(analytic_grad, params);
 
 
   if (input_.do_param_output())
@@ -66,13 +64,14 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
   for (int k = 0; k < num_params; k++)
   {
     std::string vname = costFunc.getParamName(k);
-    if (dummy[k] != 0)
-      app_log() << vname << " " << RT[k] << "  " << dummy[k] << "  " << FG[k] << "  "
-                << 100 * (dummy[k] - FG[k]) / dummy[k] << std::endl;
+    if (numeric_grad[k] != 0)
+      app_log() << vname << " " << params[k] << "  " << numeric_grad[k] << "  " << analytic_grad[k] << "  "
+                << 100 * (numeric_grad[k] - analytic_grad[k]) / numeric_grad[k] << std::endl;
     else
-      app_log() << vname << " " << RT[k] << "  " << dummy[k] << "  " << FG[k] << "   inf" << std::endl;
+      app_log() << vname << " " << params[k] << "  " << numeric_grad[k] << "  " << analytic_grad[k] << "   inf"
+                << std::endl;
     if (input_.do_param_output())
-      param_deriv_file_ << std::setprecision(10) << FG[k] << " ";
+      param_deriv_file_ << std::setprecision(10) << analytic_grad[k] << " ";
   }
 
   if (input_.do_param_output())
