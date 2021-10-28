@@ -49,15 +49,15 @@ public:
     {
     case (valid_obdm_input):
       obdm.generateSamples(1.0, pset_target, rng);
-      CHECK(obdm.nmoves == 64);
+      CHECK(obdm.nmoves_ == 64);
       break;
     case (valid_obdm_input_scale):
       obdm.generateSamples(1.0, pset_target, rng);
-      CHECK(obdm.nmoves == 0);
+      CHECK(obdm.nmoves_ == 0);
       break;
     case (valid_obdm_input_grid):
       obdm.generateSamples(1.0, pset_target, rng);
-      CHECK(obdm.nmoves == 0);
+      CHECK(obdm.nmoves_ == 0);
       CHECK(obdm.samples_ == pow(22, OHMMS_DIM));
       break;
     }

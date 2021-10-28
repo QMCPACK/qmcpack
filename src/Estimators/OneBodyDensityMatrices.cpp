@@ -72,7 +72,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
     metric_   = 1.0 / samples_;
     break;
   }
-  rsamples.resize(samples_);
+  rsamples_.resize(samples_);
 
   // get the sposets that form the basis
   auto& sposets = input_.get_basis_sets();
@@ -83,11 +83,11 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
     if (sposet == 0)
       throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices sposet " + sposets[i] +
                                     " does not exist");
-    basis_functions.add(sposet->makeClone());
+    basis_functions_.add(sposet->makeClone());
   }
-  basis_size = basis_functions.size();
+  basis_size_ = basis_functions_.size();
 
-  if (basis_size < 1)
+  if (basis_size_ < 1)
     throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices basis_size must be greater than one");
 
   int nspecies = species.size();
@@ -101,44 +101,44 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   for (int s = 0; s < nspecies; ++s)
     nparticles += species(isize, s);
   for (int s = 0; s < nspecies; ++s)
-    species_size.push_back(species(isize, s));
+    species_sizes_.push_back(species(isize, s));
   for (int s = 0; s < nspecies; ++s)
-    species_name.push_back(species.speciesName[s]);
+    species_names_.push_back(species.speciesName[s]);
 
-  basis_values.resize(basis_size);
-  basis_norms.resize(basis_size);
+  basis_values_.resize(basis_size_);
+  basis_norms_.resize(basis_size_);
 
   Real bn_standard = 1.0;
   if (input_.get_volume_normalized())
     bn_standard = 1.0 / std::sqrt(volume_);
-  for (int i = 0; i < basis_size; ++i)
-    basis_norms[i] = bn_standard;
+  for (int i = 0; i < basis_size_; ++i)
+    basis_norms_[i] = bn_standard;
 
-  rsamples.resize(samples_);
-  sample_weights.resize(samples_);
-  psi_ratios.resize(nparticles);
+  rsamples_.resize(samples_);
+  samples_weights_.resize(samples_);
+  psi_ratios_.resize(nparticles);
 
   if (input_.get_evaluator() == Evaluator::MATRIX)
   {
-    Phi_MB.resize(samples_, basis_size);
-    Phi_NB.reserve(nspecies);
-    Psi_NM.reserve(nspecies);
-    Phi_Psi_NB.reserve(nspecies);
-    N_BB.reserve(nspecies);
+    Phi_MB_.resize(samples_, basis_size_);
+    Phi_NB_.reserve(nspecies);
+    Psi_NM_.reserve(nspecies);
+    Phi_Psi_NB_.reserve(nspecies);
+    N_BB_.reserve(nspecies);
     for (int s = 0; s < nspecies; ++s)
     {
-      int specs_size = species_size[s];
-      Phi_NB.emplace_back(specs_size, basis_size);
-      Psi_NM.emplace_back(specs_size, samples_);
-      Phi_Psi_NB.emplace_back(specs_size, basis_size);
-      N_BB.emplace_back(basis_size, basis_size);
+      int specs_size = species_sizes_[s];
+      Phi_NB_.emplace_back(specs_size, basis_size_);
+      Psi_NM_.emplace_back(specs_size, samples_);
+      Phi_Psi_NB_.emplace_back(specs_size, basis_size_);
+      N_BB_.emplace_back(basis_size_, basis_size_);
     }
   }
 
   if (sampling_ == Sampling::METROPOLIS)
   {
-    basis_gradients.resize(basis_size);
-    basis_laplacians.resize(basis_size);
+    basis_gradients_.resize(basis_size_);
+    basis_laplacians_.resize(basis_size_);
   }
 
   // so if the input is not normalized, normalize it.
@@ -150,7 +150,11 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
 }
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
-  : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_), obdm.lattice_, obdm.species_, obdm.wf_factory_, obdm.very_temp_pset_)
+    : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_),
+                             obdm.lattice_,
+                             obdm.species_,
+                             obdm.wf_factory_,
+                             obdm.very_temp_pset_)
 {}
 
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
@@ -178,13 +182,13 @@ void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_targ
   switch (input_.get_integrator())
   {
   case Integrator::UNIFORM_GRID:
-    generate_uniform_grid(rng);
+    generateUniformGrid(rng);
     break;
   case Integrator::UNIFORM:
-    generate_uniform_samples(rng);
+    generateUniformSamples(rng);
     break;
   case Integrator::DENSITY:
-    generate_density_samples(save, steps, rng, pset_target);
+    generateDensitySamples(save, steps, rng, pset_target);
     break;
   }
 
@@ -192,11 +196,11 @@ void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_targ
   {
     if (sampling_ == Sampling::METROPOLIS)
     {
-      sample_weights *= weight;
+      samples_weights_ *= weight;
     }
     else
     {
-      std::fill(sample_weights.begin(), sample_weights.end(), weight);
+      std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
     }
   }
 
@@ -207,17 +211,17 @@ void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_targ
     Position rmax  = -std::numeric_limits<Real>::max();
     Position rmean = 0.0;
     Position rstd  = 0.0;
-    for (int s = 0; s < rsamples.size(); ++s)
+    for (int s = 0; s < rsamples_.size(); ++s)
       for (int d = 0; d < OHMMS_DIM; ++d)
       {
-        Real rd = rsamples[s][d];
+        Real rd = rsamples_[s][d];
         rmin[d] = std::min(rmin[d], rd);
         rmax[d] = std::max(rmax[d], rd);
         rmean[d] += rd;
         rstd[d] += rd * rd;
       }
-    rmean /= rsamples.size();
-    rstd /= rsamples.size();
+    rmean /= rsamples_.size();
+    rstd /= rsamples_.size();
     for (int d = 0; d < OHMMS_DIM; ++d)
       rstd[d] = std::sqrt(rstd[d] - rmean[d] * rmean[d]);
     app_log() << "\nrsamples properties:" << std::endl;
@@ -229,7 +233,7 @@ void OneBodyDensityMatrices::generateSamples(Real weight, ParticleSet& pset_targ
 }
 
 template<typename RNG_GEN>
-inline void OneBodyDensityMatrices::generate_uniform_grid(RNG_GEN& rng)
+inline void OneBodyDensityMatrices::generateUniformGrid(RNG_GEN& rng)
 {
   Position rp;
   Position ushift = 0.0;
@@ -246,84 +250,81 @@ inline void OneBodyDensityMatrices::generate_uniform_grid(RNG_GEN& rng)
       nrem -= ind * ind_dims_[d];
     }
     rp[OHMMS_DIM - 1] = nrem * du + ushift[OHMMS_DIM - 1];
-    rsamples[s]       = lattice_.toCart(rp) + rcorner_;
+    rsamples_[s]      = lattice_.toCart(rp) + rcorner_;
   }
 }
 
 template<typename RAN_GEN>
-inline void OneBodyDensityMatrices::generate_uniform_samples(RAN_GEN& rng)
+inline void OneBodyDensityMatrices::generateUniformSamples(RAN_GEN& rng)
 {
   Position rp;
   for (int s = 0; s < samples_; ++s)
   {
     for (int d = 0; d < OHMMS_DIM; ++d)
       rp[d] = input_.get_scale() * rng();
-    rsamples[s] = lattice_.toCart(rp) + rcorner_;
+    rsamples_[s] = lattice_.toCart(rp) + rcorner_;
   }
 }
 
 template<typename RAN_GEN>
-inline void OneBodyDensityMatrices::generate_density_samples(bool save,
-                                                             int steps,
-                                                             RAN_GEN& rng,
-                                                             ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::generateDensitySamples(bool save, int steps, RAN_GEN& rng, ParticleSet& pset_target)
 {
   const auto timestep = input_.get_timestep();
   Real sqt            = std::sqrt(timestep);
   Real ot             = 1.0 / timestep;
-  Position r          = rpcur;  //current position
-  Position d          = dpcur;  //current drift
-  Real rho            = rhocur; //current density
+  Position r          = rpcur_;  //current position
+  Position d          = dpcur_;  //current drift
+  Real rho            = rhocur_; //current density
   for (int s = 0; s < steps; ++s)
   {
-    nmoves++;
-    Position rp;                         // trial pos
-    Position dp;                         // trial drift
-    Position ds;                         // drift sum
-    Real rhop;                           // trial density
-    Real ratio;                          // dens ratio
-    Real Pacc;                           // acc prob
-    Position diff = diffusion(sqt, rng); // get diffusion
+    nmoves_++;
+    Position rp;                       // trial pos
+    Position dp;                       // trial drift
+    Position ds;                       // drift sum
+    Real rhop;                         // trial density
+    Real ratio;                        // dens ratio
+    Real Pacc;                         // acc prob
+    Position diff = diffuse(sqt, rng); // get diffusion
     if (input_.get_use_drift())
     {
       rp = r + diff + d;                                                  //update trial position
-      density_drift(rp, rhop, dp, pset_target);                           //get trial drift and density
+      calcDensityDrift(rp, rhop, dp, pset_target);                        //get trial drift and density
       ratio = rhop / rho;                                                 //density ratio
       ds    = dp + d;                                                     //drift sum
       Pacc  = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))); //acceptance probability
     }
     else
     {
-      rp = r + diff;                       //update trial position
-      density_only(rp, rhop, pset_target); //get trial density
-      ratio = rhop / rho;                  //density ratio
-      Pacc  = ratio;                       //acceptance probability
+      rp = r + diff;                      //update trial position
+      calcDensity(rp, rhop, pset_target); //get trial density
+      ratio = rhop / rho;                 //density ratio
+      Pacc  = ratio;                      //acceptance probability
     }
     if (rng() < Pacc)
     { //accept move
       r   = rp;
       d   = dp;
       rho = rhop;
-      naccepted++;
+      naccepted_++;
     }
     if (save)
     {
-      rsamples[s]       = r;
-      sample_weights[s] = 1.0 / rho;
+      rsamples_[s]        = r;
+      samples_weights_[s] = 1.0 / rho;
     }
   }
-  acceptance_ratio = Real(naccepted) / nmoves;
+  acceptance_ratio_ = Real(naccepted_) / nmoves_;
 
-  if (write_acceptance_ratio && omp_get_thread_num() == 0)
-    app_log() << "dm1b  acceptance_ratio = " << acceptance_ratio << std::endl;
+  if (input_.get_write_acceptance_ratio() && omp_get_thread_num() == 0)
+    app_log() << "dm1b  acceptance_ratio = " << acceptance_ratio_ << std::endl;
 
-  rpcur  = r;
-  dpcur  = d;
-  rhocur = rho;
+  rpcur_  = r;
+  dpcur_  = d;
+  rhocur_ = rho;
 }
 
 template<typename RAN_GEN>
-OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffusion(const Real sqt, RAN_GEN& rng)
+OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffuse(const Real sqt, RAN_GEN& rng)
 {
   Position diff;
   assignGaussRand(&diff[0], OHMMS_DIM, rng);
@@ -332,35 +333,35 @@ OneBodyDensityMatrices::Position OneBodyDensityMatrices::diffusion(const Real sq
 }
 
 
-inline void OneBodyDensityMatrices::density_only(const Position& r, Real& dens, ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::calcDensity(const Position& r, Real& dens, ParticleSet& pset_target)
 {
-  update_basis(r, pset_target);
+  updateBasis(r, pset_target);
   dens = 0.0;
-  for (int i = 0; i < basis_size; ++i)
+  for (int i = 0; i < basis_size_; ++i)
   {
-    Value b = basis_values[i];
+    Value b = basis_values_[i];
     dens += std::abs(qmcplusplus::conj(b) * b);
   }
-  dens /= basis_size;
+  dens /= basis_size_;
 }
 
 
-void OneBodyDensityMatrices::density_drift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target)
+void OneBodyDensityMatrices::calcDensityDrift(const Position& r, Real& dens, Position& drift, ParticleSet& pset_target)
 {
-  update_basis_d012(r, pset_target);
+  updateBasisD012(r, pset_target);
   dens  = 0.0;
   drift = 0.0;
-  for (int i = 0; i < basis_size; ++i)
+  for (int i = 0; i < basis_size_; ++i)
   {
-    const Grad& bg = basis_gradients[i];
-    Value b        = basis_values[i];
+    const Grad& bg = basis_gradients_[i];
+    Value b        = basis_values_[i];
     Value bc       = qmcplusplus::conj(b);
     dens += std::abs(bc * b);
     for (int d = 0; d < OHMMS_DIM; ++d)
       drift[d] += std::real(bc * bg[d]);
   }
   drift *= input_.get_timestep() / dens;
-  dens /= basis_size;
+  dens /= basis_size_;
 }
 
 void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
@@ -369,42 +370,42 @@ void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         RandomGenerator_t& rng)
 {}
 
-void OneBodyDensityMatrices::generate_sample_basis(Matrix<Value>& Phi_mb,
-                                                   ParticleSet& pset_target,
-                                                   TrialWaveFunction& psi_target)
+void OneBodyDensityMatrices::generateSampleBasis(Matrix<Value>& Phi_mb,
+                                                 ParticleSet& pset_target,
+                                                 TrialWaveFunction& psi_target)
 {
   ScopedTimer local_timer(timers_.gen_sample_basis_timer);
   int mb = 0;
   for (int m = 0; m < samples_; ++m)
   {
-    update_basis(rsamples[m], pset_target);
-    for (int b = 0; b < basis_size; ++b, ++mb)
-      Phi_mb(mb) = basis_values[b];
+    updateBasis(rsamples_[m], pset_target);
+    for (int b = 0; b < basis_size_; ++b, ++mb)
+      Phi_mb(mb) = basis_values_[b];
   }
 }
 
-inline void OneBodyDensityMatrices::update_basis(const Position& r, ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::updateBasis(const Position& r, ParticleSet& pset_target)
 {
   // This is ridiculous in the case of splines, still necessary for hybrid/LCAO
   pset_target.makeMove(0, r - pset_target.R[0]);
-  basis_functions.evaluateValue(pset_target, 0, basis_values);
+  basis_functions_.evaluateValue(pset_target, 0, basis_values_);
   pset_target.rejectMove(0);
-  for (int i = 0; i < basis_size; ++i)
-    basis_values[i] *= basis_norms[i];
+  for (int i = 0; i < basis_size_; ++i)
+    basis_values_[i] *= basis_norms_[i];
 }
 
 
-inline void OneBodyDensityMatrices::update_basis_d012(const Position& r, ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::updateBasisD012(const Position& r, ParticleSet& pset_target)
 {
   pset_target.makeMove(0, r - pset_target.R[0]);
-  basis_functions.evaluateVGL(pset_target, 0, basis_values, basis_gradients, basis_laplacians);
+  basis_functions_.evaluateVGL(pset_target, 0, basis_values_, basis_gradients_, basis_laplacians_);
   pset_target.rejectMove(0);
-  for (int i = 0; i < basis_size; ++i)
-    basis_values[i] *= basis_norms[i];
-  for (int i = 0; i < basis_size; ++i)
-    basis_gradients[i] *= basis_norms[i];
-  for (int i = 0; i < basis_size; ++i)
-    basis_laplacians[i] *= basis_norms[i];
+  for (int i = 0; i < basis_size_; ++i)
+    basis_values_[i] *= basis_norms_[i];
+  for (int i = 0; i < basis_size_; ++i)
+    basis_gradients_[i] *= basis_norms_[i];
+  for (int i = 0; i < basis_size_; ++i)
+    basis_laplacians_[i] *= basis_norms_[i];
 }
 
 inline void OneBodyDensityMatrices::normalize(Real invToWgt) {}
@@ -421,10 +422,10 @@ inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
   gdims[0] = pow(ngrid, OHMMS_DIM - 1);
   for (int d = 1; d < OHMMS_DIM; ++d)
     gdims[d] = gdims[d - 1] / ngrid;
-  bnorms.resize(basis_size);
-  for (int i = 0; i < basis_size; ++i)
+  bnorms.resize(basis_size_);
+  for (int i = 0; i < basis_size_; ++i)
     bnorms[i] = 0.0;
-  std::fill(basis_norms.begin(), basis_norms.end(), 1.0);
+  std::fill(basis_norms_.begin(), basis_norms_.end(), 1.0);
   for (int p = 0; p < ngtot; ++p)
   {
     int nrem = p;
@@ -436,12 +437,12 @@ inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
     }
     rp[OHMMS_DIM - 1] = nrem * du + du / 2;
     rp                = lattice_.toCart(rp) + rcorner_;
-    update_basis(rp, pset_target);
-    for (int i = 0; i < basis_size; ++i)
-      bnorms[i] += qmcplusplus::conj(basis_values[i]) * basis_values[i] * dV;
+    updateBasis(rp, pset_target);
+    for (int i = 0; i < basis_size_; ++i)
+      bnorms[i] += qmcplusplus::conj(basis_values_[i]) * basis_values_[i] * dV;
   }
-  for (int i = 0; i < basis_size; ++i)
-    basis_norms[i] = 1.0 / std::sqrt(real(bnorms[i]));
+  for (int i = 0; i < basis_size_; ++i)
+    basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
 }
 
 
