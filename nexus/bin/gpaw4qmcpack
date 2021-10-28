@@ -3,191 +3,362 @@
 from gpaw import restart,setup_paths
 from gpaw import __version__ as gpaw_version
 from numpy import array,pi,dot,real,imag,concatenate,unique,zeros
-import h5py as h5
 
-i32le = '<i4' # default integer dtype
-h5str = 'S'   # default string dtype
-a0    = 0.529177210903
+int_dtype   = '<i4' # default integer dtype
+float_dtype = 'f'   # default float dtype
+str_dtype   = 'S'   # default string dtype
+a0          = 0.529177210903
 
-
-# load gpaw restart file
-def load_gpaw_restart(filename):
-    atoms,calc = restart(filename)
-    # check wfs
-    try:
-        wfs = calc.wfs
-    except:
-        print('ERROR: No wavefunctions found in the GPAW restart file {}'.format(filename))
-        print("Make sure to write the GPAW file with mode='all'!")
-        exit()
-    #end if
-    return atoms,calc
-#end def
-
-# write application
-def write_application(f,version='19.1.0'):
-    v_ar = array(list(map(int,version.split('.'))),dtype=i32le)
-    g = f.create_group('application')
-    g.create_dataset('code',shape=1,data=array('gpaw',dtype=h5str))
-    g.create_dataset('version',shape=3,data=v_ar)
-#end def
-
-# write atoms
-def write_atoms(f,atoms):
-    Na        = atoms.get_global_number_of_atoms()
-    syms      = atoms.get_chemical_symbols()
-    masses    = atoms.get_masses()
-    positions = atoms.get_positions()/a0 # convert from A to Bohr
-    Zs        = atoms.get_atomic_numbers()
-    sym_set   = set(syms)
-    Ns        = len(sym_set)
-
-    species_ids = []
-    g  = f.create_group('atoms')
-    g.create_dataset('number_of_atoms',shape=1,data=array(Na,dtype=i32le))
-    g.create_dataset('number_of_species',shape=1,data=array(Ns,dtype=i32le))
-    g.create_dataset('positions',shape=positions.shape,data=positions)
-    for s,name in enumerate(sym_set):
-        i       = syms.index(name)
-        mass    = masses[i]
-        Z       = Zs[i]
-        Zeff    = Z # fixme for PP calculations
-        for sym in syms:
-            if sym==name:
-                species_ids.append(s)
-            #end if
-        #end for
-        gs = g.create_group('species_'+str(s))
-        gs.create_dataset('atomic_number',shape=1,data=Z)
-        gs.create_dataset('mass',shape=1,data=mass)
-        gs.create_dataset('name',shape=1,data=name)
-        gs.create_dataset('valence_charge',shape=1,data=Zeff)
-    #end for
-    g.create_dataset('species_ids',shape=len(species_ids),data=species_ids)
-#end def
-
-
-# figure out number of up/dn electrons
-def get_num_electrons(calc,N_spin=1):
-    N_tot = calc.wfs.nvalence
-    if N_spin==1:
-        N_up = N_tot // 2
-        N_dn = N_tot - N_up
-    else: # spin-polarized # FIXME
-        N_up = N_tot // 2
-        N_dn = N_tot - N_up
-    #end if
-    return array([N_up,N_dn],dtype='i4')
-#end def
 
 def calculate_norm(v):
     return ((v**2).sum())**0.5
 #end def
 
-def add_setup_path(setup_path):
-    setup_paths.insert(0,setup_path)
+def match_gv(g,gset,dset):
+    g0 = gset[:,0]==g[0]
+    g1 = gset[:,1]==g[1]
+    g2 = gset[:,2]==g[2]
+    return dset[logical_and(logical_and(g0,g1),g2),:][0]
 #end def
 
-# write electrons
-def write_electrons(f,atoms,calc):
-    mesh     = calc.wfs.gd.N_c
-    N_spin   = calc.wfs.nspins
-    N_elec   = get_num_electrons(calc,N_spin)
-    periodic = any(atoms.pbc)
-    # kpoints
-    N_kpt   = calc.wfs.kd.get_count()
-    Ws      = calc.wfs.kd.weight_k
-    try:
-        kpts    = calc.wfs.kd.get_bz_q_points()
-    except:
-        kpts    = calc.wfs.kd.bzk_kc
-    #end try
 
-    g = f.create_group('electrons')
-    # density # FIXME
-    #Gv       = array(dot(calc.wfs.pd.get_reciprocal_vectors(),calc.wfs.gd.cell_cv/2/pi).round(0),dtype=int)
-    #N_g      = calc.wfs.pd.ng_q[0] # FIXME
-    #gd = g.create_group('density')
-    #gd.create_dataset('gvectors',shape=Gv.shape,data=Gv)
-    #gd.create_dataset('mesh',shape=3,data=mesh)
-    #gd.create_dataset('number_of_gvectors',shape=1,data=N_g)
-    #for s in range(N_spin):
-    #    density_g = calculate_density(calc,s)
-    #    gd0 = gd.create_group('spin_{}'.format(s))
-    #    gd0.create_dataset('density_g',shape=density_g.shape,data=density_g)
-    #end for
+def desymmetrize_z(gv,psi):
+    gv2  = -gv[1:].copy()
+    psi2 = psi[1:].copy()
+    psi2[:,1] *= -1
+    gv2  = concatenate((gv, gv2), axis=0)
+    psi2 = concatenate((psi,psi2),axis=0)
+    return gv2,psi2
+#end def
 
-    # calculate all wfs and gvs
-    gvall = array(dot(calc.wfs.pd.get_reciprocal_vectors(0,add_q=False),calc.wfs.gd.cell_cv/2/pi).round(0),dtype=int)
-    imin  = 0
-    imax  = len(gvall)
-    iis   = [[imin,imax]]
-    for k in range(1,N_kpt):
-        gv    = array(dot(calc.wfs.pd.get_reciprocal_vectors(k,add_q=False),calc.wfs.gd.cell_cv/2/pi).round(0),dtype=int)
-        gvall = concatenate((gvall,gv),axis=0)
-        imin  = imax
-        imax += len(gv)
-        iis.append([imin,imax])
-    #end for
-    Gv,indices = unique(gvall,axis=0,return_inverse=True)
+class ESHDF_file():
 
-    for k,kpt in enumerate(kpts):
-        numsym = 1   # FIXME
-        symgroup = 1 # FIXME
-        #Gv  = array(dot(calc.wfs.pd.get_reciprocal_vectors(k,add_q=False),calc.wfs.gd.cell_cv/2/pi).round(0),dtype=int)
-        kp0 = g.create_group('kpoint_{}'.format(k))
-        if k==0:
-            kp0.create_dataset('gvectors',shape=Gv.shape,data=Gv)
-            kp0.create_dataset('number_of_gvectors',data=Gv.shape[0])
+    load      = False
+    version     = [2,1,0]
+    fmt         = 'ES-HDF'    
+
+    def __init__(
+        self,
+        infile    = None,
+        outfile   = None,
+        **kwargs
+        ):
+        self.infile  = infile
+        self.outfile = outfile
+        if infile is not None:
+            self.load(infile=infile,**kwargs)
         #end if
-        kp0.create_dataset('numsym',data=array([numsym],dtype=i32le))
-        kp0.create_dataset('reduced_k',shape=len(kpt),data=kpt)
-        ii = iis[k]
-        # TODO: checks for spin polarized calculations?
-        for s in range(N_spin):
-            occ    = calc.wfs.kpt_u[k].f_n
-            #eps    = calc.wfs.kpt_u[k].eps_n[occ>1e-4] # FIXME
-            eps    = calc.wfs.kpt_u[k].eps_n
-            N_band = len(eps)
-            u      = k*N_spin+s
-            kp00 = kp0.create_group('spin_{}'.format(s))
-            kp00.create_dataset('eigenvalues',shape=eps.shape,data=eps)
-            kp00.create_dataset('number_of_states',data=array([N_band],dtype=i32le))
-            for n in range(N_band):
-                # get wavefunction in PW
-                #wf_c  = calc.wfs.get_wave_function_array(n,k,s,realspace=False,cut=False,periodic=periodic) # leads to wrong dimensions
-                wf_c  = calc.wfs.kpt_u[u].psit_nG[n]
-                wf    = array([real(wf_c),imag(wf_c)])
-                psi   = zeros((len(Gv),2))
-                psi[indices[ii[0]:ii[1]]] = wf.T/calculate_norm(wf) # normalize the crude way
-                kp00s = kp00.create_group('state_{}'.format(n))
-                kp00s.create_dataset('psi_g',shape=psi.shape,data=psi)
+    #end def
+
+    def load(
+        self,
+        infile  = None,
+        calc    = None,
+        atoms   = None,
+        density = False,
+        **kwargs,
+        ):
+        self.density = density
+        if infile is not None:
+            if '.gpw' in infile:
+                self.load_gpaw_restart(infile,**kwargs)
+            else:
+                print('Unsupported file {} not loaded.'.format(infile))
+            #end if
+        elif calc is not None and atoms is not None:
+            self.load_gpaw_calc(calc,atoms)
+        else:
+            print('Could not load data for ESHDF.')
+        #end if
+    #end def
+
+    # load data from GPAW restart file
+    def load_gpaw_restart(
+        self,
+        infile,
+        setups  = './', # add setup paths: for testing, defaults to './'
+        **kwargs,
+        ):
+        from gpaw import restart
+        # Add a custom setup path before loading GPAW restart file
+        if setups is not None:
+            from gpaw import setup_paths
+            setup_paths.insert(0,setups)
+        #end if
+        atoms,calc = restart(infile)
+        try: # check if the wavefunction exists
+            wfs = calc.wfs
+        except:
+            print('ERROR: No wavefunctions found in the GPAW restart file {}'.format(filename))
+            print("Make sure to write the GPAW file with mode='all'!")
+            return
+        #end try
+        # run SCF to re-populate density
+        if self.density: 
+            pos = atoms.get_positions()
+            pos[0] += 1e-10
+            atoms.set_positions(pos)
+            calc.set_positions(atoms)
+            E = calc.get_potential_energy()
+        #end def
+        self.load_gpaw_calc(calc,atoms)
+    #end def
+
+    def load_gpaw_calc(
+        self,
+        calc,
+        atoms,
+        ):
+        mode = calc.wfs.mode
+        if mode=='pw':
+            self._load_application()
+            self._load_atoms(calc,atoms)
+            self._load_electrons(calc,atoms)
+        else:
+            print('Could not load data from GPAW calculator in mode={}. Only pw mode is currently supported.'.format(mode))
+        #end if
+        self.loaded = True
+    #end def
+
+    # load application
+    def _load_application(self):
+        from gpaw import __version__ as gpaw_version
+        from re import sub
+        self.application = 'gpaw'
+        self.app_version = sub('\D',' ',gpaw_version).split()[:3]
+    #end def
+
+    # load atoms
+    def _load_atoms(self,calc,atoms):
+        num_atoms = atoms.get_global_number_of_atoms()
+        supercell = calc.wfs.gd.cell_cv
+        syms      = atoms.get_chemical_symbols()
+        masses    = atoms.get_masses()
+        positions = atoms.get_positions()/a0 # convert from A to Bohr
+        Zs        = atoms.get_atomic_numbers()
+        # figure out species data
+        sym_set         = set(syms)
+        num_species     = len(sym_set)
+        species_ids     = []
+        species_mass    = []
+        species_Z       = []
+        species_name    = []
+        species_valence = []
+        for s,name in enumerate(sym_set):
+            i = syms.index(name)
+            species_mass.append(masses[i])
+            species_Z.append(Zs[i])
+            species_valence.append(Zs[i]) # fixme for PP calculations
+            species_name.append(name)
+            for sym in syms:
+                if sym==name:
+                    species_ids.append(s)
+                #end if
             #end for
         #end for
-        kp0.create_dataset('symgroup',data=array([symgroup],dtype=i32le))
-        kp0.create_dataset('weight',data=array([Ws[k]],dtype=float)) 
-    #end for
-    g.create_dataset('number_of_electrons',shape=2,data=N_elec)
-    g.create_dataset('number_of_kpoints',data=array([N_kpt],dtype=i32le))
-    g.create_dataset('number_of_spins',data=array([N_spin],dtype=i32le))
-#end def
+        self.species         = sym_set
+        self.num_species     = num_species
+        self.num_atoms       = num_atoms
+        self.positions       = positions
+        self.species_ids     = species_ids
+        self.species_mass    = species_mass
+        self.species_valence = species_valence
+        self.species_Z       = species_Z
+        self.species_name    = species_name
+        self.supercell       = supercell
+    #end def
 
-# write format
-def write_format(f):
-    f.create_dataset('format',shape=1,data=array('ES-HDF5',dtype=h5str))
-#end def
+    def _get_pw_indices(self,pd,k):
+        return array(dot(pd.get_reciprocal_vectors(k,add_q=False),pd.gd.cell_cv/2/pi).round(0),dtype=int)
+    #end def
 
-# write supercell
-def write_supercell(f,calc):
-    cell = calc.wfs.gd.cell_cv
-    g = f.create_group('supercell')
-    g.create_dataset('primitive_vectors',shape=cell.shape,data=cell)
-#end def
 
-# write version
-def write_version(f,version=[2,1,0]):
-    f.create_dataset('version',shape=3,data=array(version,i32le))
-#end def
+    def _load_electrons(self,calc,atoms):
+        volume   = atoms.get_volume()/a0**3
+        mesh     = calc.wfs.gd.N_c
+        num_spin = calc.wfs.nspins
+        N_tot    = calc.wfs.nvalence
+        if num_spin==1:
+            N_up = N_tot // 2
+            N_dn = N_tot - N_up
+        else: # spin-polarized # FIXME
+            N_up = N_tot // 2
+            N_dn = N_tot - N_up
+        #end if
+        # kpoints
+        num_kpt  = calc.wfs.kd.get_count()
+        W_kpt    = calc.wfs.kd.weight_k
+        try:
+            kpts    = calc.wfs.kd.get_bz_q_points()
+        except:
+            kpts    = calc.wfs.kd.bzk_kc
+        #end try
+
+        gvall = self._get_pw_indices(calc.wfs.pd,0)
+        imin  = 0
+        imax  = len(gvall)
+        iis   = [[imin,imax]]
+        for k in range(1,num_kpt):
+            gv    = self._get_pw_indices(calc.wfs.pd,k)
+            gvall = concatenate((gvall,gv),axis=0)
+            imin  = imax
+            imax += len(gv)
+            iis.append([imin,imax])
+        #end for
+        Gv,indices = unique(gvall,axis=0,return_inverse=True)
+
+        data_numsym     = []
+        data_symgroup   = []
+        data_reduced_k  = []
+        data_occupation = []
+        data_num_bands  = []
+        data_eps        = []
+        data_psi_g      = []
+        for k,kpt in enumerate(kpts):
+            numsym = 1   # FIXME
+            symgroup = 1 # FIXME
+            data_numsym.append(numsym)
+            data_symgroup.append(symgroup)
+            ii = iis[k]
+            # TODO: checks for spin polarized calculations?
+            datas_eps       = []
+            datas_psi_g     = []
+            datas_num_bands = []
+            for s in range(num_spin):
+                occ       = calc.wfs.kpt_u[k].f_n
+                eps       = calc.wfs.kpt_u[k].eps_n
+                num_bands = len(eps)
+                u         = k*num_spin+s
+                datasn_psi_g = []
+                for n in range(num_bands):
+                    # get wavefunction in PW
+                    wf_c  = calc.wfs.kpt_u[u].psit_nG[n]
+                    wf    = array([real(wf_c),imag(wf_c)])
+                    psi   = zeros((len(Gv),2))
+                    psi[indices[ii[0]:ii[1]]] = wf.T/calculate_norm(wf) # normalize the crude way
+                    datasn_psi_g.append(psi)
+                #end for
+                datas_num_bands.append(num_bands)
+                datas_eps.append(eps)
+                datas_psi_g.append(datasn_psi_g)
+            #end for
+            data_eps.append(datas_eps)
+            data_num_bands.append(datas_num_bands)
+            data_psi_g.append(datas_psi_g)
+        #end for
+        self.gvectors   = Gv
+        self.num_elec   = [N_up,N_dn]
+        self.kpts       = kpts
+        self.numsym     = data_numsym
+        self.symgroup   = data_symgroup
+        self.reduced_k  = data_reduced_k
+        self.W_kpt      = W_kpt
+        self.num_bands  = data_num_bands
+        self.num_spin   = num_spin
+        self.eps        = data_eps
+        self.psi_g      = data_psi_g
+        if self.density:
+            # FIXME: spin polarized
+            # read data
+            rho_gv   = self._get_pw_indices(calc.density.pd2,0)
+            rho_psic = calc.density.nt_Q
+            # process
+            rho_psi  = array([real(rho_psic),imag(rho_psic)]).T
+            gv,rho   = desymmetrize_z(rho_gv,rho_psi)
+            n        = N_tot/rho[0,0]/calc.density.gd.volume # normalize
+            # save
+            self.rho_gv   = gv
+            self.rho_g    = rho*n
+        #end if
+    #end def
+
+    def write(self, outfile = None):
+        if not self.loaded:
+            print('Must load data from a file or GPAW calculator objects before writing!')
+            return
+        #end if
+        import h5py as h5
+        with h5.File(outfile,mode='w') as f:
+            self._write_application(f)
+            self._write_atoms(f)
+            self._write_electrons(f)
+            self._write_format(f)
+            self._write_supercell(f)
+            self._write_version(f)
+        #end with
+    #end def
+
+    def _write_application(self,f):
+        g = f.create_group('application')
+        g.create_dataset('code',shape=1,data=array(self.application,dtype=str_dtype))
+        g.create_dataset('version',shape=3,data=array(self.app_version,dtype=int_dtype))
+    #end def
+
+    def _write_atoms(self,f):
+        g  = f.create_group('atoms')
+        g.create_dataset('number_of_atoms',data=array([self.num_atoms],dtype=int_dtype))
+        g.create_dataset('number_of_species',data=array([self.num_spin],dtype=int_dtype))
+        g.create_dataset('positions',data=self.positions)
+        for s,sid in enumerate(self.species):
+            gs = g.create_group('species_'+str(s))
+            gs.create_dataset('atomic_number',data=array([self.species_Z[s]]),dtype=int_dtype)
+            gs.create_dataset('mass',data=array([self.species_mass[s]],dtype=float_dtype))
+            gs.create_dataset('name',data=array([self.species_name[s]],dtype=str_dtype))
+            gs.create_dataset('valence_charge',data=array([self.species_valence[s]],dtype=float_dtype))
+        #end for
+        g.create_dataset('species_ids',data=array(self.species_ids),dtype=int_dtype)
+    #end def
+
+    def _write_electrons(self,f):
+        g = f.create_group('electrons')
+        if self.density:
+            gd = g.create_group('density')
+            gd.create_dataset('gvectors',data=self.rho_gv)
+            gd.create_dataset('number_of_gvectors',data=array([self.rho_gv.shape[0]],dtype=int_dtype))
+            for s in range(self.num_spin):
+                gd0 = gd.create_group('spin_0')
+                gd0.create_dataset('density_g',data=self.rho_g)
+            #end for
+        #end if
+        for k,kpt in enumerate(self.kpts):
+            kp0 = g.create_group('kpoint_{}'.format(k))
+            if k==0:
+                kp0.create_dataset('gvectors',data=self.gvectors)
+                kp0.create_dataset('number_of_gvectors',data=self.gvectors.shape[0])
+            #end if
+            kp0.create_dataset('numsym',data=array([self.numsym[k]],dtype=int_dtype))
+            kp0.create_dataset('reduced_k',data=kpt)
+            for s in range(self.num_spin):
+                kp00 = kp0.create_group('spin_{}'.format(s))
+                kp00.create_dataset('eigenvalues',data=self.eps[k][s])
+                kp00.create_dataset('number_of_states',data=array([self.num_bands[k][s]],dtype=int_dtype))
+                for n in range(self.num_bands[k][s]):
+                    kp00s = kp00.create_group('state_{}'.format(n))
+                    kp00s.create_dataset('psi_g',data=self.psi_g[k][s][n])
+                #end for
+            #end for
+            kp0.create_dataset('symgroup',data=array([self.symgroup[k]],dtype=int_dtype))
+            kp0.create_dataset('weight',data=array([self.W_kpt[k]],dtype=float_dtype))
+        #end for
+        g.create_dataset('number_of_electrons',data=self.num_elec)
+        g.create_dataset('number_of_kpoints',data=array([len(self.kpts)],dtype=int_dtype))
+        g.create_dataset('number_of_spins',data=array([self.num_spin],dtype=int_dtype))
+    #end def
+
+    def _write_format(self,f):
+        f.create_dataset('format',data=array(self.fmt,dtype=str_dtype))
+    #end def
+
+    def _write_supercell(self,f):
+        g = f.create_group('supercell')
+        g.create_dataset('primitive_vectors',data=self.supercell)
+    #end def
+    
+    def _write_version(self,f):
+        f.create_dataset('version',data=array(self.version,dtype=int_dtype))
+    #end def
+
+#end class
 
 
 def print_help_and_exit():
@@ -201,6 +372,7 @@ Usage:  gpaw4qmcpack [options] INFILE [OUTFILE]
 
     -s <path>     GPAW Setup path for searching UPF files.
                   By default, './' is added.
+    -d            Convert charge density data. Default: no.
 
   TROUBLESHOOTING:
 
@@ -217,6 +389,7 @@ def parse_args(args):
     #end if
     # parse arguments
     infile_set = False
+    options    = {}
     outfile    = 'eshdf.h5'
     i = 1
     while i<len(args):
@@ -224,7 +397,9 @@ def parse_args(args):
         if arg=='-s': # setup path
             i += 1
             arg = args[i]
-            add_setup_path(arg)
+            options['setups'] = arg # test exists
+        elif arg=='-d': # density
+            options['density'] = True
         elif not infile_set:
             infile = arg
             # check if exists
@@ -234,33 +409,13 @@ def parse_args(args):
         #end if
         i += 1
     #end while
-    return infile,outfile
+    return infile,outfile,options
 #end def
-
-
-def convert_gpaw4qmcpack(
-        infile,
-        outfile,
-        add_setup_path='./',
-        ):
-    # for testing, add local directory by default
-    add_setup_path('./')
-    atoms,calc = load_gpaw_restart(infile)
-    with h5.File(outfile,mode='w') as f:
-        write_application(f,gpaw_version)
-        write_atoms(f,atoms)
-        write_electrons(f,atoms,calc)
-        write_format(f)
-        write_supercell(f,calc)
-        write_version(f)
-    #end with
-#end def
-
 
 if __name__=='__main__':
     from sys import argv
-    infile,outfile = parse_args(argv)
-    convert_gpaw4qmcpack(infile,outfile)
+    infile,outfile,options = parse_args(argv)
+    eshdf = ESHDF_file(infile=infile,outfile=outfile,**options)
+    eshdf.write(outfile)
     print('Converted GPAW orbitals for QMCPACK!')
 #end if
-
