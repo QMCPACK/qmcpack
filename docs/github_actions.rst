@@ -16,44 +16,48 @@ Summary of Test Jobs
 
 The following is a summary of the jobs run in the CI process required for a PR:
 
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| Job Name with                           | Runner | Compiler | Tests         | Time | Trigger  |
-| Build Info                              | Host   |          | ctest -L      | min  | event    |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-openmpi-real-coverage*              | GitHub | gcc-9    | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-openmpi-complex-coverage*           | GitHub | gcc-9    | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc11-real-werror                       | GitHub | gcc-11   | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc11-complex-werror                    | GitHub | gcc-11   | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| clang-real-asan                         | GitHub | clang-10 | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| clang-complex-asan                      | GitHub | clang-10 | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| clang-openmpi-real-ubsan                | GitHub | clang-10 | deterministic | 60   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| clang-latest-openmp-offload             | GitHub | clang-12 | unit          | 35   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| macOS-gcc11-real                        | GitHub | gcc-11   | deterministic | 27   | PR/merge |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-real-gpu-cuda-mixed                 | sulfur | clang-11 | deterministic | 2    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-complex-gpu-cuda-mixed              | sulfur | clang-11 | deterministic | 2    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-real-gpu-cuda-full                  | sulfur | clang-11 | deterministic | 2    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-complex-gpu-cuda-full               | sulfur | clang-11 | deterministic | 2    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-real-gpu-enable-cuda-afqmc-mixed    | sulfur | gcc-8    | deterministic | 5    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-complex-gpu-enable-cuda-afqmc-mixed | sulfur | gcc-8    | deterministic | 5    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-real-gpu-enable-cuda-afqmc-full     | sulfur | gcc-8    | deterministic | 5    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
-| gcc-complex-gpu-enable-cuda-afqmc-mixed | sulfur | gcc-8    | deterministic | 5    | manual   |
-+-----------------------------------------+--------+----------+---------------+------+----------+
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| Job Name with                                        | Runner | Compiler | Tests         | Time | Trigger  |
+| Build Info                                           | Host   |          | ctest -L      | min  | event    |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-openmpi-real-coverage*                           | GitHub | gcc-9    | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-openmpi-complex-coverage*                        | GitHub | gcc-9    | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc11-real-werror                                    | GitHub | gcc-11   | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc11-complex-werror                                 | GitHub | gcc-11   | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| clang-real-asan                                      | GitHub | clang-10 | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| clang-complex-asan                                   | GitHub | clang-10 | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| clang-openmpi-real-ubsan                             | GitHub | clang-10 | deterministic | 60   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| clang-latest-openmp-offload                          | GitHub | clang-12 | unit          | 35   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| macOS-gcc11-real                                     | GitHub | gcc-11   | deterministic | 27   | PR/merge |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-real-gpu-cuda-mixed                              | sulfur | clang-11 | deterministic | 2    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-complex-gpu-cuda-mixed                           | sulfur | clang-11 | deterministic | 2    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-real-gpu-cuda-full                               | sulfur | clang-11 | deterministic | 2    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-complex-gpu-cuda-full                            | sulfur | clang-11 | deterministic | 2    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-real-gpu-enable-cuda-afqmc-mixed                 | sulfur | gcc-8    | deterministic | 6    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-complex-gpu-enable-cuda-afqmc-mixed              | sulfur | gcc-8    | deterministic | 6    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-real-gpu-enable-cuda-afqmc-full                  | sulfur | gcc-8    | deterministic | 6    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| gcc-complex-gpu-enable-cuda-afqmc-full               | sulfur | gcc-8    | deterministic | 6    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| clang14_dev-real-gpu-enable-cuda-afqmc-offload-mixed | sulfur | clang-14 | deterministic | 6    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
+| clang14_dev-real-gpu-enable-cuda-afqmc-offload-full  | sulfur | clang-14 | deterministic | 6    | manual   |
++------------------------------------------------------+--------+----------+---------------+------+----------+
 
 Jobs running on GitHub hosted runners are triggered automatically. Permission from an admin is required to run jobs on self-hosted runners (e.g. sulfur) for security reasons. In addition, jobs running on GitHub hosted runners run automatically in parallel and the time each job takes may vary depending on system utilization. For information on the underlying hardware see the GitHub Actions `docs on the topic <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>`_.  
 
@@ -256,11 +260,175 @@ gpu-cuda (gcc-complex-gpu-cuda-full)
 | Duration      | ~2 Minutes                                                                                                                            |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+gpu-cuda (gcc-real-gpu-enable-cuda-afqmc-mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""
++---------------+------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                         |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                     |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                     |
+|               | -DBUILD_AFQMC=ON \                                                                       |
+|               | -DENABLE_CUDA=ON \                                                                       |
+|               | -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \                                             |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo \                                                      |
+|               | -DQMC_COMPLEX=0 \                                                                        |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                |
+|               | ..`                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \ |
+|               | && export OMPI_MCA_btl=self && ctest --output-on-failure -L deterministic`               |
++---------------+------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with mixed single/double floating point precision                |
++---------------+------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                               |
++---------------+------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (gcc-complex-gpu-enable-cuda-afqmc-mixed)
+""""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                         |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                     |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                     |
+|               | -DBUILD_AFQMC=ON \                                                                       |
+|               | -DENABLE_CUDA=ON \                                                                       |
+|               | -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \                                             |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo \                                                      |
+|               | -DQMC_COMPLEX=1 \                                                                        |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                |
+|               | ..`                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \ |
+|               | && export OMPI_MCA_btl=self && ctest --output-on-failure -L deterministic`               |
++---------------+------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with mixed single/double floating point precision                |
++---------------+------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                               |
++---------------+------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (gcc-real-gpu-enable-cuda-afqmc-full)
+""""""""""""""""""""""""""""""""""""""""""""""
++---------------+------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                         |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                     |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                     |
+|               | -DBUILD_AFQMC=ON \                                                                       |
+|               | -DENABLE_CUDA=ON \                                                                       |
+|               | -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \                                             |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo \                                                      |
+|               | -DQMC_COMPLEX=0 \                                                                        |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                |
+|               | ..`                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \ |
+|               | && export OMPI_MCA_btl=self && ctest --output-on-failure -L deterministic`               |
++---------------+------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with mixed single/double floating point precision                |
++---------------+------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                               |
++---------------+------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (gcc-complex-gpu-enable-cuda-afqmc-full)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                         |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                     |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                     |
+|               | -DBUILD_AFQMC=ON \                                                                       |
+|               | -DENABLE_CUDA=ON \                                                                       |
+|               | -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \                                             |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo \                                                      |
+|               | -DQMC_COMPLEX=1 \                                                                        |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                |
+|               | ..`                                                                                      |
++---------------+------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \ |
+|               | && export OMPI_MCA_btl=self && ctest --output-on-failure -L deterministic`               |
++---------------+------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with mixed single/double floating point precision                |
++---------------+------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                               |
++---------------+------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (clang14_dev-real-gpu-enable-cuda-afqmc-offload-mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang 14                                                                                          |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=clang-14 \                                                      |
+|               | -DCMAKE_CXX_COMPILER=clang++-14 \                                                                 |
+|               | -DMPI_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                   |
+|               | -DMPI_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                              |
+|               | -DBUILD_AFQMC=ON \                                                                                |
+|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DENABLE_OFFLOAD=ON \                                                                             |
+|               | -DUSE_OBJECT_TARGET=ON \                                                                          |
+|               | -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \                                                      |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo \                                                               |
+|               | -DQMC_COMPLEX=0 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                         |
+|               | ..`                                                                                               |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic`                                                    |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with mixed single/double floating point precision                         |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                        |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (clang14_dev-real-gpu-enable-cuda-afqmc-offload-full)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang 14                                                                                          |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=clang-14 \                                                      |
+|               | -DCMAKE_CXX_COMPILER=clang++-14 \                                                                 |
+|               | -DMPI_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                   |
+|               | -DMPI_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                              |
+|               | -DBUILD_AFQMC=ON \                                                                                |
+|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DENABLE_OFFLOAD=ON \                                                                             |
+|               | -DUSE_OBJECT_TARGET=ON \                                                                          |
+|               | -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \                                                      |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo \                                                               |
+|               | -DQMC_COMPLEX=0 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                         |
+|               | ..`                                                                                               |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic`                                                    |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Complex) with full double floating point precision                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                        |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
 
 Workflow Steps
 ==============
 
-We define these jobs in the yaml files located in the .github/workflows directory.  Each of the jobs currently runs through the yaml files utilizing steps defined in a `test/test_automation/github-actions/ci/run_step.sh <https://github.com/QMCPACK/qmcpack/tree/develop/tests/test_automation/github-actions/ci/run_steps.sh>`_ file.
+We define these jobs in the yaml files located in the .github/workflows directory.  Each of the jobs currently runs through the yaml files utilizing steps defined in a `test/test_automation/github-actions/ci/run_step.sh <https://github.com/QMCPACK/qmcpack/tree/develop/tests/test_automation/github-actions/ci/run_step.sh>`_ file.
 
 This script applies workflow branching (if-else) based on the job name(for instance the job needs to contain the keyword 'coverage' in order to trigger the Coverage step) and other boolean checks.
 
