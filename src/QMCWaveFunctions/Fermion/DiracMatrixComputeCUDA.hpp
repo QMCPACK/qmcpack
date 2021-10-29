@@ -63,7 +63,12 @@ class DiracMatrixComputeCUDA : public Resource
 
   //DualMatrix<T_FP> temp_mat_;
 
-  // For device pointers to matrices
+  /** Transfer buffer for device pointers to matrices.
+   *  The element count is usually low and the transfer launch cost are more than the transfer themselves.
+   *  For this reason, it is beneficial to fusing multiple lists of pointers.
+   *  Right now this buffer packs nw psiM pointers and then packs nw invM pointers.
+   *  Use only within a function scope and do not rely on previous value.
+   */
   DualVector<VALUE_FP*> psiM_invM_ptrs_;
 
   // cuBLAS geam wants these.
