@@ -69,7 +69,6 @@ private:
   OffloadPinnedVector<int> pivots_;
   OffloadPinnedVector<int> infos_;
 
-  Vector<char, OffloadPinnedAllocator<char>> psiM_ptrs_;
   /** reset internal work space.
    *  My understanding might be off.
    *
