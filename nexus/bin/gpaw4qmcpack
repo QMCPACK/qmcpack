@@ -2,18 +2,21 @@
 
 from gpaw import restart,setup_paths
 from gpaw import __version__ as gpaw_version
+from ase.units import Bohr
 from numpy import array,pi,dot,real,imag,concatenate,unique,zeros
 
+# define dtypes for the HDF5
 int_dtype   = '<i4' # default integer dtype
-float_dtype = 'f'   # default float dtype
 str_dtype   = 'S'   # default string dtype
-a0          = 0.529177210903
+float_dtype = 'f'   # default float dtype
 
-
+# Calculate vector norm of 2-float representation of a complex vector
 def calculate_norm(v):
     return ((v**2).sum())**0.5
 #end def
 
+# Helper function (obsolete) to match gvector g in an array of gvectors gset
+# and return the value of the associated density coefficients from dset
 def match_gv(g,gset,dset):
     g0 = gset[:,0]==g[0]
     g1 = gset[:,1]==g[1]
@@ -21,7 +24,7 @@ def match_gv(g,gset,dset):
     return dset[logical_and(logical_and(g0,g1),g2),:][0]
 #end def
 
-
+# Add the negative half of gvectors removed by symmetry (full array expected by QMCPACK)
 def desymmetrize_z(gv,psi):
     gv2  = -gv[1:].copy()
     psi2 = psi[1:].copy()
@@ -31,12 +34,16 @@ def desymmetrize_z(gv,psi):
     return gv2,psi2
 #end def
 
+# WIP: class for an ESHDF file
+#   Currently only supports PW mode and reading data from GPAW structures
 class ESHDF_file():
 
-    load      = False
+    loaded      = False
     version     = [2,1,0]
-    fmt         = 'ES-HDF'    
+    fmt         = 'ES-HDF'
+    outfile     = 'eshdf.h5'
 
+    # if infile and outfile provided, load automatically
     def __init__(
         self,
         infile    = None,
@@ -50,6 +57,8 @@ class ESHDF_file():
         #end if
     #end def
 
+    # initiate loading of data from the provided objects
+    #   Compute and add charge density, if density=True
     def load(
         self,
         infile  = None,
@@ -93,17 +102,18 @@ class ESHDF_file():
             print("Make sure to write the GPAW file with mode='all'!")
             return
         #end try
-        # run SCF to re-populate density
         if self.density: 
-            pos = atoms.get_positions()
-            pos[0] += 1e-10
-            atoms.set_positions(pos)
-            calc.set_positions(atoms)
+            # run SCF to re-populate density
+            print('Running SCF to re-populate density')
+            calc.scf.converged = False
+            calc.results.pop('energy')
             E = calc.get_potential_energy()
         #end def
         self.load_gpaw_calc(calc,atoms)
     #end def
 
+    # GPAW: load data from calc and atoms objects
+    #   Currently only supports PW mode
     def load_gpaw_calc(
         self,
         calc,
@@ -115,12 +125,12 @@ class ESHDF_file():
             self._load_atoms(calc,atoms)
             self._load_electrons(calc,atoms)
         else:
-            print('Could not load data from GPAW calculator in mode={}. Only pw mode is currently supported.'.format(mode))
+            print('Could not load data from GPAW Calculator in mode={}. Only pw mode is currently supported.'.format(mode))
         #end if
         self.loaded = True
     #end def
 
-    # load application
+    # GPAW: load "application" data
     def _load_application(self):
         from gpaw import __version__ as gpaw_version
         from re import sub
@@ -128,13 +138,13 @@ class ESHDF_file():
         self.app_version = sub('\D',' ',gpaw_version).split()[:3]
     #end def
 
-    # load atoms
+    # GPAW: load "atoms" data
     def _load_atoms(self,calc,atoms):
         num_atoms = atoms.get_global_number_of_atoms()
         supercell = calc.wfs.gd.cell_cv
         syms      = atoms.get_chemical_symbols()
         masses    = atoms.get_masses()
-        positions = atoms.get_positions()/a0 # convert from A to Bohr
+        positions = atoms.get_positions()/Bohr # convert from A to Bohr
         Zs        = atoms.get_atomic_numbers()
         # figure out species data
         sym_set         = set(syms)
@@ -168,13 +178,13 @@ class ESHDF_file():
         self.supercell       = supercell
     #end def
 
+    # GPAW: transform reciprocal vectors to Miller indices
     def _get_pw_indices(self,pd,k):
         return array(dot(pd.get_reciprocal_vectors(k,add_q=False),pd.gd.cell_cv/2/pi).round(0),dtype=int)
     #end def
 
-
+    # GPAW: load "electrons" data
     def _load_electrons(self,calc,atoms):
-        volume   = atoms.get_volume()/a0**3
         mesh     = calc.wfs.gd.N_c
         num_spin = calc.wfs.nspins
         N_tot    = calc.wfs.nvalence
@@ -194,10 +204,11 @@ class ESHDF_file():
             kpts    = calc.wfs.kd.bzk_kc
         #end try
 
+        # Combine the GPAW plane wave data for each separate kpoint into one big array, gvall
         gvall = self._get_pw_indices(calc.wfs.pd,0)
         imin  = 0
         imax  = len(gvall)
-        iis   = [[imin,imax]]
+        iis   = [[imin,imax]] # indices to mark the beginning and end of each kpoint
         for k in range(1,num_kpt):
             gv    = self._get_pw_indices(calc.wfs.pd,k)
             gvall = concatenate((gvall,gv),axis=0)
@@ -205,6 +216,8 @@ class ESHDF_file():
             imax += len(gv)
             iis.append([imin,imax])
         #end for
+        # Gv is a new gvector basis with only unique vectors
+        # indices help to associate the pw correct coefficients later on
         Gv,indices = unique(gvall,axis=0,return_inverse=True)
 
         data_numsym     = []
@@ -265,17 +278,21 @@ class ESHDF_file():
             # process
             rho_psi  = array([real(rho_psic),imag(rho_psic)]).T
             gv,rho   = desymmetrize_z(rho_gv,rho_psi)
-            n        = N_tot/rho[0,0]/calc.density.gd.volume # normalize
+            n        = N_tot/rho[0,0]/calc.density.gd.volume # normalize at the gamma point
             # save
             self.rho_gv   = gv
             self.rho_g    = rho*n
         #end if
     #end def
 
+    # write the data to an HDF5 file
     def write(self, outfile = None):
         if not self.loaded:
             print('Must load data from a file or GPAW calculator objects before writing!')
             return
+        #end if
+        if outfile is None:
+            outfile = self.outfile
         #end if
         import h5py as h5
         with h5.File(outfile,mode='w') as f:
@@ -324,7 +341,7 @@ class ESHDF_file():
             kp0 = g.create_group('kpoint_{}'.format(k))
             if k==0:
                 kp0.create_dataset('gvectors',data=self.gvectors)
-                kp0.create_dataset('number_of_gvectors',data=self.gvectors.shape[0])
+                kp0.create_dataset('number_of_gvectors',data=array([self.gvectors.shape[0]],dtype=int_dtype))
             #end if
             kp0.create_dataset('numsym',data=array([self.numsym[k]],dtype=int_dtype))
             kp0.create_dataset('reduced_k',data=kpt)
@@ -360,7 +377,6 @@ class ESHDF_file():
 
 #end class
 
-
 def print_help_and_exit():
     print('''
 Usage:  gpaw4qmcpack [options] INFILE [OUTFILE]
@@ -382,7 +398,7 @@ Usage:  gpaw4qmcpack [options] INFILE [OUTFILE]
     exit()
 #end def
 
-# parse argument
+# parse command lines arguments
 def parse_args(args):
     if len(args)==1:
         print_help_and_exit()
