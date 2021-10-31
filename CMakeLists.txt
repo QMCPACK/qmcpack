@@ -62,6 +62,10 @@ endif()
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+# Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
+# A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+                       OFF "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
