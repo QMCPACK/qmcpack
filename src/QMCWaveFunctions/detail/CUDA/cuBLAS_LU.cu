@@ -64,6 +64,7 @@ __global__ void computeLogDet_kernel(const int n,
                                      const int* const pivots,
                                      cuDoubleComplex* logdets)
 {
+  static_assert(COLBS != 0 && (COLBS & (COLBS - 1)) == 0, "COLBS is not a power of 2");
   const int iw         = blockIdx.x;
   const T* lu_iw       = mat_lus[iw];
   const int* pivots_iw = pivots + iw * n;
