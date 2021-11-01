@@ -13,7 +13,6 @@
 #include "Platforms/CUDA/CUDAruntime.hpp"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/CUDATypeMapping.hpp"
-#include "Platforms/CUDA/CUDAfill.hpp"
 
 /** \file
  *
