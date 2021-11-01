@@ -3,7 +3,7 @@
 #SBATCH -J nightly_spock
 #SBATCH -o nightly_spock.%j
 #SBATCH -e nightly_spock.%j
-#SBATCH -t 00:15:00
+#SBATCH -t 00:20:00
 #SBATCH -p ecp
 #SBATCH -N 1
 
@@ -57,7 +57,7 @@ CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
 
 ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
-      --stop-time $(date --date=now+15mins +%H:%M:%S) \
+      --stop-time $(date --date=now+20mins +%H:%M:%S) \
       -VV -L 'deterministic' --timeout 600 &> \
       ${log_dir}/${QMCPACK_TEST_SUBMIT_NAME}.log
 
@@ -79,7 +79,7 @@ CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
 
 ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
-      --stop-time $(date --date=now+15mins +%H:%M:%S) \
+      --stop-time $(date --date=now+20mins +%H:%M:%S) \
       -VV -L 'deterministic' --timeout 600 &> \
       ${log_dir}/${QMCPACK_TEST_SUBMIT_NAME}.log
 
