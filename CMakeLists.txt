@@ -742,9 +742,13 @@ if(ENABLE_ROCM)
 
   list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
   list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
-  find_package(HIP REQUIRED)
-  find_package(hipblas REQUIRED)
-  find_package(rocsolver REQUIRED)
+  # need FindHIP for hip_add_library similar to deprecated FindCUDA style
+  find_package(HIP MODULE REQUIRED)
+  # need hip in config mode for hip::host target.
+  find_package(hip CONFIG REQUIRED)
+  find_package(hipblas CONFIG REQUIRED)
+  find_package(rocsolver CONFIG REQUIRED)
+  find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
   set(HIP_ARCH
       "gfx906,gfx908"
@@ -758,12 +762,11 @@ if(ENABLE_ROCM)
   list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
 
   if(BUILD_AFQMC)
-    find_package(rocrand REQUIRED)
+    find_package(rocrand CONFIG REQUIRED)
     # connect ROCm shipped libraries
     add_library(ROCM::libraries INTERFACE IMPORTED)
     # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
-    target_link_libraries(ROCM::libraries INTERFACE "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
-    target_include_directories(ROCM::libraries INTERFACE "${ROCM_ROOT}/include")
+    target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
 endif(ENABLE_ROCM)
 
@@ -775,11 +778,10 @@ if(ENABLE_HIP)
     message(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
   endif()
 
-  find_package(hipsparse REQUIRED)
+  find_package(hipsparse CONFIG REQUIRED)
   add_library(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
-  target_link_libraries(HIP::HIP INTERFACE "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
-  target_include_directories(HIP::HIP INTERFACE "${ROCM_ROOT}/include")
+  target_link_libraries(HIP::HIP INTERFACE roc::hipsparse roc::hipblas)
   target_compile_definitions(HIP::HIP INTERFACE "ENABLE_HIP")
 
   # FindHIP sets HIP_PLATFORM to amd or nvcc
