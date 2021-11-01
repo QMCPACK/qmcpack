@@ -249,6 +249,15 @@ private:
   PsiValueType psi_ratio_to_ref_det_;
   /// new psi over new ref single det when one particle is moved
   PsiValueType new_psi_ratio_to_new_ref_det_;
+
+  void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi);
+
+  void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& optvars,
+                                                  std::vector<ValueType>& dlogpsi);
 };
 
 } // namespace qmcplusplus
