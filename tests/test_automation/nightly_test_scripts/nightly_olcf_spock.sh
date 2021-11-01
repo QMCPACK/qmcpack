@@ -3,7 +3,7 @@
 #SBATCH -J nightly_spock
 #SBATCH -o nightly_spock.%j
 #SBATCH -e nightly_spock.%j
-#SBATCH -t 00:20:00
+#SBATCH -t 00:25:00
 #SBATCH -p ecp
 #SBATCH -N 1
 
