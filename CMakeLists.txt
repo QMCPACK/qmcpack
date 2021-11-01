@@ -76,6 +76,10 @@ if(ENABLE_CUDA AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
 endif(ENABLE_CUDA AND QMC_CUDA)
 
+if(ENABLE_OFFLOAD AND QMC_CUDA)
+  message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
+endif()
+
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
 if(ENABLE_CUDA OR QMC_CUDA AND NOT QMC_CUDA2HIP)
   if(DEFINED CUDA_ARCH)
@@ -267,6 +271,12 @@ endif(CMAKE_TOOLCHAIN_FILE)
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
   message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
+endif()
+
+if(${COMPILER} MATCHES "Clang" AND ENABLE_OFFLOAD AND QMC_CUDA2HIP AND NOT QMC_OFFLOAD_MEM_ASSOCIATED)
+  message(WARNING "Ignore this if Cray compilers are used! "
+          "Detected ENABLE_OFFLOAD=ON and QMC_CUDA2HIP=ON but QMC_OFFLOAD_MEM_ASSOCIATED=OFF. "
+          "As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers.")
 endif()
 
 #-----------------------------------------------------------------------
