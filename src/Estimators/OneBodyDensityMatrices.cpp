@@ -167,7 +167,7 @@ std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::clone() const
   return std::make_unique<OneBodyDensityMatrices>(*this);
 }
 
-size_t OneBodyDensityMatrices::calcFullDataSize(size_t basis_size, int nspecies)
+size_t OneBodyDensityMatrices::calcFullDataSize(const size_t basis_size, const int nspecies)
 {
   if constexpr (IsComplex_t<Value>::value)
     return 2 * basis_size * basis_size * nspecies;
@@ -202,9 +202,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
     if (save)
     {
       if (sampling_ == Sampling::METROPOLIS)
-      {
         samples_weights_ *= weight;
-      }
       else
       {
         //I can't see how you would ever get here.
