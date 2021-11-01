@@ -327,7 +327,7 @@ void PairCorrEstimator::resize(int nbins)
   NumBins = nbins;
   norm_factor.resize((num_species * num_species - num_species) / 2 + num_species + 1, NumBins);
   RealType r  = Delta * 0.5;
-  RealType pf = Volume * DeltaInv / (4 * 3.14159265);
+  RealType pf = Volume * DeltaInv / (4 * M_PI);
   for (int i = 0; i < NumBins; ++i, r += Delta)
   {
     RealType rm2      = pf / r / r;
