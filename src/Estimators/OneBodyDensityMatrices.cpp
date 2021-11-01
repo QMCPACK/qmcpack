@@ -182,8 +182,6 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
 
-  // \todo make this an ifndef NDEBUG section which is much clearer.
-
   switch (input_.get_integrator())
   {
   case Integrator::UNIFORM_GRID:
@@ -393,8 +391,7 @@ void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
   //perform warmup sampling the first time
   warmupSampling(pset_target, rng);
   // get weight and single particle energy trace data
-  Real weight;
-  weight = walker.Weight * metric_;
+  Real weight = walker.Weight * metric_;
 
   // compute sample positions (monte carlo or deterministic)
   generateSamples(weight, pset_target, rng);
