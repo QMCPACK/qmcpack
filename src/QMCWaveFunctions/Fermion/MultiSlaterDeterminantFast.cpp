@@ -965,24 +965,21 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   //Currently, the MultiDiracDeterminant::evaluateDerivatives works with a legacy design, essentially requiring only up and down determinants.
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
   //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+  for (auto const& det : Dets)
+    if (!det->Optimizable)
+      return;
 
-  if (all_Optimizable)
+  if (Dets.size() != 2)
   {
-    if (Dets.size() != 2)
-    {
-      throw std::runtime_error(
-          "MultiSlaterDeterminantFast::evaluateDerivatives only compatible with two quantum particle types.");
-    }
-    else
-    {
-      Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1],
-                                   static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[0], (*C2node)[1]);
-      Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0],
-                                   static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[1], (*C2node)[0]);
-    }
+    throw std::runtime_error(
+        "MultiSlaterDeterminantFast::evaluateDerivatives only compatible with two quantum particle types.");
+  }
+  else
+  {
+    Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1],
+                                 static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[0], (*C2node)[1]);
+    Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0],
+                                 static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[1], (*C2node)[0]);
   }
   //for (size_t id = 0; id < Dets.size(); id++)
   //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psi_ratio_to_ref_det_), *C, *C2node, id);
@@ -1059,27 +1056,24 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
   //Currently, the MultiDiracDeterminant::evaluateDerivativesWF works with a legacy design, essentially requiring only up and down determinants.
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
   //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+  for (auto const& det : Dets)
+    if (!det->Optimizable)
+      return;
 
-  if (all_Optimizable)
+  if (Dets.size() != 2)
   {
-    if (Dets.size() != 2)
-    {
-      throw std::runtime_error(
-          "MultiSlaterDeterminantFast::evaluateDerivativesWF only compatible with two quantum particle types.");
-    }
-    else
-    {
-      // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for orbital rotation matrix
-      Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psi_ratio_to_ref_det_, *C, (*C2node)[0],
-                                     (*C2node)[1]);
-      Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psi_ratio_to_ref_det_, *C, (*C2node)[1],
-                                     (*C2node)[0]);
-      // for (size_t id = 0; id < Dets.size(); id++)
-      //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psi_ratio_to_ref_det_, *C, *C2node, id);
-    }
+    throw std::runtime_error(
+        "MultiSlaterDeterminantFast::evaluateDerivativesWF only compatible with two quantum particle types.");
+  }
+  else
+  {
+    // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for orbital rotation matrix
+    Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psi_ratio_to_ref_det_, *C, (*C2node)[0],
+                                   (*C2node)[1]);
+    Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psi_ratio_to_ref_det_, *C, (*C2node)[1],
+                                   (*C2node)[0]);
+    // for (size_t id = 0; id < Dets.size(); id++)
+    //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psi_ratio_to_ref_det_, *C, *C2node, id);
   }
 }
 
