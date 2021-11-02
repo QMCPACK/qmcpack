@@ -29,7 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
 #include "QMCDrivers/MCPopulation.h"
@@ -37,7 +37,7 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
 
@@ -183,9 +183,13 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  std::vector<RandomGenerator_t*> RngCompatibility;
-
-  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
+  inline RefVector<RandomGenerator_t> getRngRefs() const
+  {
+    RefVector<RandomGenerator_t> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
+  }
 
   // ///return the random generators
   //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
@@ -221,7 +225,7 @@ public:
    *        And these are the arguments to the branch_engine and estimator_manager
    *        Constructors or these objects should be created elsewhere.
    */
-  void startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc);
+  void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
@@ -262,7 +266,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static bool checkLogAndGL(Crowd& crowd);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
   const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
 
@@ -375,7 +379,7 @@ protected:
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
 
   ///Random number generators
-  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
+  UPtrVector<RandomGenerator_t> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

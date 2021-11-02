@@ -17,7 +17,7 @@
 #include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -42,7 +42,6 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, comm, "DMCcuda", enable_profiling),
       myWarmupSteps(0),
       Mover(0),
-      NLop(w.getTotalNum()),
       ResizeTimer(*timer_manager.createTimer("DMCcuda::resize")),
       DriftDiffuseTimer(*timer_manager.createTimer("DMCcuda::Drift_Diffuse")),
       BranchTimer(*timer_manager.createTimer("DMCcuda::Branch")),

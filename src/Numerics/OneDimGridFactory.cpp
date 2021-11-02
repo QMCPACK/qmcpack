@@ -14,14 +14,13 @@
 
 #include "OneDimGridFactory.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/UniformCommunicateError.h"
+
 namespace qmcplusplus
 {
-//initialize the static data
-OneDimGridFactory::GridObjectMapType OneDimGridFactory::GridObjects;
-
-OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
+std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNodePtr cur)
 {
-  GridType* agrid = 0;
+  std::unique_ptr<GridType> agrid;
   RealType ri     = 1e-5;
   RealType rf     = 100.0;
   RealType ascale = -1.0e0;
@@ -43,23 +42,12 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
   radAttrib.add(gridID, "ref");
   if (cur != NULL)
     radAttrib.put(cur);
-  //return for the same grid
-  bool hasName = (gridID != "invalid");
-  if (hasName)
-  {
-    std::map<std::string, GridType*>::iterator it(GridObjects.find(gridID));
-    if (it != GridObjects.end())
-    {
-      app_log() << "  Reuse " << gridID << " grid" << std::endl;
-      return (*it).second;
-    }
-  }
   if (gridType == "log")
   {
     if (ascale > 0.0)
     {
       LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
-      agrid = new LogGridZero<RealType>;
+      agrid = std::make_unique<LogGridZero<RealType>>();
       agrid->set(astep, ascale, npts);
     }
     else
@@ -70,50 +58,20 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
         ri = std::numeric_limits<RealType>::epsilon();
         app_error() << "   LogGrid cannot accept r=0 for the initial point. Using ri=" << ri << std::endl;
       }
-      agrid = new LogGrid<RealType>;
+      agrid = std::make_unique<LogGrid<RealType>>();
       agrid->set(ri, rf, npts);
     }
   }
   else if (gridType == "linear")
   {
     LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
-    agrid = new LinearGrid<RealType>;
+    agrid = std::make_unique<LinearGrid<RealType>>();
     agrid->set(ri, rf, npts);
-  }
-  if (hasName)
-  {
-    GridObjects[gridID] = agrid;
   }
   else
   {
-    char gname[16];
-    int s = GridObjects.size();
-    sprintf(gname, "g1_%d", s);
-    GridObjects[gname] = agrid;
+    throw UniformCommunicateError("Unknown gridtype. Valid settings are \"log\" and \"linear\"\n");
   }
   return agrid;
-}
-
-OneDimGridFactory::RealType OneDimGridFactory::setSmoothCutoff(GridType* agrid, xmlNodePtr cur)
-{
-  //first create one if none
-  if (agrid == 0)
-    agrid = createGrid(cur);
-  RealType rmax = agrid->rmax();
-  RealType rmin = agrid->rmin();
-  //This should check the targetPtcl::Lattice
-  RealType rcut = rmax + 1.0; //rcut is set to larget than
-  if (cur != NULL)
-  {
-    const XMLAttrString rc(cur, "rc");
-    if (!rc.empty())
-      rcut = std::stod(rc);
-  }
-  if (rcut > rmax)
-  //set it to 0.99
-  {
-    rcut = (rmax - rmin) * 0.99 + rmin;
-  }
-  return rcut;
 }
 } // namespace qmcplusplus

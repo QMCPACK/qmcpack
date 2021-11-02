@@ -80,9 +80,9 @@ public:
 
   ~MixedRDMEstimator() {}
 
-  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) {}
+  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) override {}
 
-  void accumulate_block(WalkerSet& wset)
+  void accumulate_block(WalkerSet& wset) override
   {
     // check to see whether we should be accumulating estimates.
     CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first, dm_dims.second});
@@ -108,9 +108,9 @@ public:
     iblock++;
   }
 
-  void tags(std::ofstream& out) {}
+  void tags(std::ofstream& out) override {}
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     // I doubt we will ever collect a billion blocks of data.
     int n_zero = 9;

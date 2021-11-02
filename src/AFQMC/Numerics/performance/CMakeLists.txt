@@ -11,7 +11,6 @@
 
 message("Building AFQMC performance executable ")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${qmcpack_BINARY_DIR}/bin)
 
 add_executable(qmc-afqmc-performance performance.cpp)
-target_link_libraries(qmc-afqmc-performance afqmc Math::BLAS_LAPACK)
+target_link_libraries(qmc-afqmc-performance afqmc platform_LA)

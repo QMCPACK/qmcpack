@@ -272,7 +272,8 @@ def test_incorporate_result():
 
     result = c4q_orb.get_result('orbitals',None)
 
-    wfn_file = os.path.join(tpath,'c4q_orbitals.wfj.xml')
+    wfn_file  = os.path.join(tpath,'c4q_orbitals.wfj.xml')
+    wfn_file2 = os.path.join(tpath,'c4q_orbitals.orbs.h5')
     input = sim.input.copy()
     dset = input.get('determinantset')
     dset.href = 'orbs.h5'
@@ -281,6 +282,8 @@ def test_incorporate_result():
     input.qmcsystem = qs
     input.write(wfn_file)
     assert(os.path.exists(wfn_file))
+    open(wfn_file2,'w').write('fake')
+    assert(os.path.exists(wfn_file2))
 
     from qmcpack_input import QmcpackInput
     inp = QmcpackInput(wfn_file)
@@ -291,7 +294,7 @@ def test_incorporate_result():
     sim.incorporate_result('orbitals',result,c4q_orb)
 
     dset = sim.input.get('determinantset')
-    assert(dset.href=='orbs.h5')
+    assert(dset.href=='c4q_orbitals.orbs.h5')
 
 
     # incorporate qmcpack jastrow

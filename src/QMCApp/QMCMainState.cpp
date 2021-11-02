@@ -28,7 +28,6 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
-#include "QMCDrivers/WFOpt/QMCOptimize.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include <queue>

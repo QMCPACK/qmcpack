@@ -19,7 +19,7 @@
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
@@ -191,7 +191,7 @@ bool CSVMC::run()
 #endif
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    *RandomNumberControl::Children[ip] = *Rng[ip];
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
@@ -228,8 +228,7 @@ void CSVMC::resetRun()
     CSMovers.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
-
+    Rng.resize(NumThreads);
 
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -241,7 +240,7 @@ void CSVMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")

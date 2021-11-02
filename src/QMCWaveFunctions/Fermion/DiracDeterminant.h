@@ -34,7 +34,10 @@ template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFul
 class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
-  int ndelay;
+  const int ndelay_;
+
+  ///reset the size: with the number of particles and number of orbtials
+  void resize(int nel, int morb);
 
 public:
   using ValueVector_t = SPOSet::ValueVector_t;
@@ -51,26 +54,19 @@ public:
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
+   *@param last index of last particle
+   *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first = 0);
+  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
 
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   */
-  void set(int first, int nel, int delay = 1) final;
-
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi) override;
-
-  ///reset the size: with the number of particles and number of orbtials
-  void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -182,7 +178,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminant* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 

@@ -18,10 +18,19 @@
 
 namespace qmcplusplus
 {
-SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, std::shared_ptr<BackflowTransformation> BF)
-    : SlaterDet(targetPtcl, "SlaterDetWithBackflow"), BFTrans(std::move(BF))
+SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
+                                             std::vector<std::unique_ptr<Determinant_t>> dets,
+                                             std::unique_ptr<BackflowTransformation> BF)
+    : WaveFunctionComponent("SlaterDetWithBackflow"), Dets(std::move(dets)), BFTrans(std::move(BF))
 {
-  Optimizable = false;
+  assert(BFTrans);
+  assert(Dets.size() == targetPtcl.groups());
+
+  is_fermionic = true;
+
+  Optimizable = BFTrans->isOptimizable();
+  for (const auto& det : Dets)
+    Optimizable = Optimizable || det->Optimizable;
 }
 
 ///destructor
@@ -74,15 +83,12 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  std::shared_ptr<BackflowTransformation> bf = BFTrans->makeClone(tqp);
-  auto myclone                               = std::make_unique<SlaterDetWithBackflow>(tqp, bf);
-  myclone->Optimizable                       = Optimizable;
-  for (int i = 0; i < Dets.size(); ++i)
-  {
-    DiracDeterminantBase* dclne = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
-    myclone->add(std::unique_ptr<DiracDeterminantBase>(dclne), i);
-  }
-  myclone->setBF(std::move(bf));
+  auto bf = BFTrans->makeClone(tqp);
+  std::vector<std::unique_ptr<Determinant_t>> dets;
+  for (const auto& det : Dets)
+    dets.push_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
+  auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
+  assert(myclone->Optimizable == Optimizable);
   return myclone;
 }
 

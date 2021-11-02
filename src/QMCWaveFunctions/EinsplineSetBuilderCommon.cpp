@@ -34,7 +34,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder("spline", comm),
       ParticleSets(psets),
       TargetPtcl(p),
@@ -621,7 +621,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     }
   }
   // Find out if we can make real orbitals
-  UseRealOrbitals = true;
+  use_real_splines_ = true;
   for (int i = 0; i < DistinctTwists.size(); i++)
   {
     int ti        = DistinctTwists[i];
@@ -629,18 +629,18 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     for (int j = 0; j < OHMMS_DIM; j++)
       if (std::abs(twist[j] - 0.0) > MatchingTol && std::abs(twist[j] - 0.5) > MatchingTol &&
           std::abs(twist[j] + 0.5) > MatchingTol)
-        UseRealOrbitals = false;
+        use_real_splines_ = false;
   }
-  if (UseRealOrbitals && (DistinctTwists.size() > 1))
+  if (use_real_splines_ && (DistinctTwists.size() > 1))
   {
     app_log() << "***** Use of real orbitals is possible, but not currently implemented\n"
               << "      with more than one twist angle.\n";
-    UseRealOrbitals = false;
+    use_real_splines_ = false;
   }
-  if (UseRealOrbitals)
-    app_log() << "Using real orbitals.\n";
+  if (use_real_splines_)
+    app_log() << "Using real splines.\n";
   else
-    app_log() << "Using complex orbitals.\n";
+    app_log() << "Using complex splines.\n";
 #else
   DistinctTwists.resize(IncludeTwists.size());
   MakeTwoCopies.resize(IncludeTwists.size());
@@ -649,7 +649,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     DistinctTwists[i] = IncludeTwists[i];
     MakeTwoCopies[i]  = false;
   }
-  UseRealOrbitals = false;
+  use_real_splines_ = false;
 #endif
 }
 

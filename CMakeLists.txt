@@ -26,17 +26,6 @@ set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_CMAKE})
 include(macros)
 
-#--------------------------------------------------------------------
-# Paths for library and executable for out-of-soruce compilation
-#--------------------------------------------------------------------
-set(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-    ${qmcpack_BINARY_DIR}/lib
-    CACHE PATH "Single output directory for building all libraries.")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
-    ${qmcpack_BINARY_DIR}/bin
-    CACHE PATH "Single output directory for building all executables.")
-
 ######################################################################
 # Build and install options
 ######################################################################
@@ -73,6 +62,10 @@ endif()
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+# Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
+# A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+                       OFF "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -82,6 +75,21 @@ cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "
 if(ENABLE_CUDA AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
 endif(ENABLE_CUDA AND QMC_CUDA)
+
+if(ENABLE_OFFLOAD AND QMC_CUDA)
+  message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
+endif()
+
+# set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
+if(ENABLE_CUDA OR QMC_CUDA AND NOT QMC_CUDA2HIP)
+  if(DEFINED CUDA_ARCH)
+    unset(CUDA_ARCH CACHE)
+    message(FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
+  endif()
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 70)
+  endif()
+endif()
 
 #--------------------------------------------------------------------
 # Set compiler-time parameters
@@ -263,6 +271,12 @@ endif(CMAKE_TOOLCHAIN_FILE)
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
   message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
+endif()
+
+if(${COMPILER} MATCHES "Clang" AND ENABLE_OFFLOAD AND QMC_CUDA2HIP AND NOT QMC_OFFLOAD_MEM_ASSOCIATED)
+  message(WARNING "Ignore this if Cray compilers are used! "
+          "Detected ENABLE_OFFLOAD=ON and QMC_CUDA2HIP=ON but QMC_OFFLOAD_MEM_ASSOCIATED=OFF. "
+          "As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers.")
 endif()
 
 #-----------------------------------------------------------------------
@@ -673,38 +687,25 @@ if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
   else(QMC_CUDA2HIP)
-    # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
-    # It happened -ffast-math from host caused numerical issue in CUDA kernels.
-    option(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
-    find_package(CUDA REQUIRED)
-    set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
-    #set(CUDA_NVCC_FLAGS
-    #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
-    if(CUDA_NVCC_FLAGS MATCHES "arch")
-      # User defined NVCC flags
-      message(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-    else(CUDA_NVCC_FLAGS MATCHES "arch")
-      # Automatically set the default NVCC flags
-      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
-      if(QMC_COMPLEX)
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX=${QMC_COMPLEX}")
-      endif()
-      if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
-      else()
-        # Temporarily disable fast_math because it causes multiple test failures
-        # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
-      endif()
-      set(CUDA_ARCH
-          sm_70
-          CACHE STRING "CUDA architecture sm_XX")
-      set(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
-    endif(CUDA_NVCC_FLAGS MATCHES "arch")
-    include_directories(${CUDA_INCLUDE_DIRS})
+    if (CMAKE_VERSION VERSION_LESS 3.18.0)
+      message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
+    endif()
+    # a few production machines use CUDA 10 which only supports C++14.
+    if(NOT DEFINED CMAKE_CUDA_STANDARD)
+      set(CMAKE_CUDA_STANDARD 14)
+    endif()
+    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+    set(CMAKE_CUDA_EXTENSIONS OFF)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    # Automatically set the default NVCC flags
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
+    if(QMC_COMPLEX)
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DQMC_COMPLEX=${QMC_COMPLEX}")
+    endif()
     set(HAVE_CUDA 1)
-    message("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-  endif(QMC_CUDA2HIP)
+    message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+  endif()
 else(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(FATAL_ERROR "QMC_CUDA2HIP requires QMC_CUDA=ON or ENABLE_CUDA=ON.")
@@ -755,9 +756,13 @@ if(ENABLE_ROCM)
 
   list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
   list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
-  find_package(HIP REQUIRED)
-  find_package(hipblas REQUIRED)
-  find_package(rocsolver REQUIRED)
+  # need FindHIP for hip_add_library similar to deprecated FindCUDA style
+  find_package(HIP MODULE REQUIRED)
+  # need hip in config mode for hip::host target.
+  find_package(hip CONFIG REQUIRED)
+  find_package(hipblas CONFIG REQUIRED)
+  find_package(rocsolver CONFIG REQUIRED)
+  find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
   set(HIP_ARCH
       "gfx906,gfx908"
@@ -771,12 +776,11 @@ if(ENABLE_ROCM)
   list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
 
   if(BUILD_AFQMC)
-    find_package(rocrand REQUIRED)
+    find_package(rocrand CONFIG REQUIRED)
     # connect ROCm shipped libraries
     add_library(ROCM::libraries INTERFACE IMPORTED)
     # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
-    target_link_libraries(ROCM::libraries INTERFACE "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
-    target_include_directories(ROCM::libraries INTERFACE "${ROCM_ROOT}/include")
+    target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
 endif(ENABLE_ROCM)
 
@@ -788,11 +792,10 @@ if(ENABLE_HIP)
     message(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
   endif()
 
-  find_package(hipsparse REQUIRED)
+  find_package(hipsparse CONFIG REQUIRED)
   add_library(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
-  target_link_libraries(HIP::HIP INTERFACE "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
-  target_include_directories(HIP::HIP INTERFACE "${ROCM_ROOT}/include")
+  target_link_libraries(HIP::HIP INTERFACE roc::hipsparse roc::hipblas)
   target_compile_definitions(HIP::HIP INTERFACE "ENABLE_HIP")
 
   # FindHIP sets HIP_PLATFORM to amd or nvcc

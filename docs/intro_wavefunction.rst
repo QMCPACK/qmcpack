@@ -650,8 +650,8 @@ proper pair interaction in the Hamiltonian section.
 
 .. _singledeterminant:
 
-Single determinant wavefunctons
--------------------------------
+Single determinant wavefunctions
+--------------------------------
 
 Placing a single determinant for each spin is the most used ansatz for the antisymmetric part of a trial wavefunction.
 The input xml block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listing 1>`. A list of options is given in
@@ -671,13 +671,19 @@ The input xml block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listi
 
 Attribute:
 
-+-----------------+----------+--------+---------+------------------------------+
-| Name            | Datatype | Values | Default | Description                  |
-+=================+==========+========+=========+==============================+
-| ``delay_rank``  | Integer  | >=0    | 1       | Number of delayed updates.   |
-+-----------------+----------+--------+---------+------------------------------+
-| ``optimize``    | Text     | yes/no | yes     | Enable orbital optimization. |
-+-----------------+----------+--------+---------+------------------------------+
++-----------------------+----------+----------+---------+-------------------------------------------+
+| Name                  | Datatype | Values   | Default | Description                               |
++=======================+==========+==========+=========+===========================================+
+| ``delay_rank``        | Integer  | >=0      | 1       | Number of delayed updates.                |
++-----------------------+----------+----------+---------+-------------------------------------------+
+| ``optimize``          | Text     | yes/no   | yes     | Enable orbital optimization.              |
++-----------------------+----------+----------+---------+-------------------------------------------+
+| ``gpu``               | Text     | yes/no   | yes     | Use the GPU acceleration implementation.  |
++-----------------------+----------+----------+---------+-------------------------------------------+
+| ``batch``             | Text     | yes/no   | dep.    | Select the batched walker implementation. |
++-----------------------+----------+----------+---------+-------------------------------------------+
+| ``matrix_inverter``   | Text     | gpu/host | gpu     | Batched Slater matrix inversion scheme.   |
++-----------------------+----------+----------+---------+-------------------------------------------+
 
 
 .. centered:: Table 2 Options for the ``slaterdeterminant`` xml-block.
@@ -713,6 +719,12 @@ Additional information:
   On CPUs, ``delay_rank`` must be chosen as a multiple of SIMD vector length for good performance of BLAS libraries.
   The best ``delay_rank`` depends on the processor microarchitecture.
   GPU support is under development.
+
+- ``gpu`` This option is only effective when GPU features are built. Use the implementation with GPU acceleration if ``yes``.
+
+- ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
+
+- ``matrix_inverter`` This option is only effective when ``batch=yes``. If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed. If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
 
 .. _multideterminants:
 

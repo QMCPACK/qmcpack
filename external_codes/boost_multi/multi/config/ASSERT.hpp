@@ -12,7 +12,7 @@
 #define MULTI_ACCESS_ASSERT(Expr) assert(Expr)
 #endif
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 int main(){
 	MULTI_ACCESS_ASSERT(false && "hola");

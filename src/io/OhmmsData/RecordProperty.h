@@ -16,6 +16,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include <algorithm>
+#include <optional>
 #include <vector>
 #include <string>
 #include <fstream>
@@ -98,11 +99,11 @@ protected:
 template<class T>
 struct RecordNamedProperty : public RecordProperty
 {
-  std::ostream* OutStream;
+  std::optional<std::ofstream> OutStream;
   std::vector<T> Values;
   std::vector<std::string> Names;
 
-  RecordNamedProperty() : OutStream(0)
+  RecordNamedProperty()
   {
     Values.reserve(20);
     Names.reserve(20);
@@ -114,13 +115,7 @@ struct RecordNamedProperty : public RecordProperty
     Names.resize(n);
   }
 
-  RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(0), Values(a.Values), Names(a.Names) {}
-
-  ~RecordNamedProperty() override
-  {
-    if (OutStream)
-      delete OutStream;
-  }
+  RecordNamedProperty(const RecordNamedProperty<T>& a) : OutStream(), Values(a.Values), Names(a.Names) {}
 
   void clear()
   {
@@ -195,15 +190,13 @@ struct RecordNamedProperty : public RecordProperty
   ///implement virtual functions
   inline void reset(const char* fileroot, bool append = false) override
   {
-    if (OutStream)
-      delete OutStream;
     if (append)
     {
-      OutStream = new std::ofstream(fileroot, std::ios_base::app);
+      OutStream = std::ofstream(fileroot, std::ios_base::app);
     }
     else
     {
-      OutStream = new std::ofstream(fileroot);
+      OutStream = std::ofstream(fileroot);
     }
     if (!append)
     {

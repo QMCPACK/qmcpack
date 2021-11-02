@@ -92,7 +92,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       ParentName(p.parentName()),
       coordinates_(p.coordinates_->makeClone())
 {
-  set_quantum_domain(p.quantum_domain);
+  setQuantumDomain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
   Mass = p.Mass;
@@ -108,7 +108,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getModes());
+    addTable(p.DistTables[i]->get_origin(), p.DistTables[i]->getModes());
   if (p.SK)
   {
     LRBox = p.LRBox;                             //copy LRBox
@@ -155,12 +155,12 @@ void ParticleSet::create(const std::vector<int>& agroup)
   }
 }
 
-void ParticleSet::set_quantum_domain(quantum_domains qdomain)
+void ParticleSet::setQuantumDomain(quantum_domains qdomain)
 {
-  if (quantum_domain_valid(qdomain))
+  if (quantumDomainValid(qdomain))
     quantum_domain = qdomain;
   else
-    APP_ABORT("ParticleSet::set_quantum_domain\n  input quantum domain is not valid for particles");
+    APP_ABORT("ParticleSet::setQuantumDomain\n  input quantum domain is not valid for particles");
 }
 
 void ParticleSet::resetGroups()
@@ -792,18 +792,18 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
   }
 }
 
-void ParticleSet::donePbyP()
+void ParticleSet::donePbyP(bool skipSK)
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
   coordinates_->donePbyP();
-  if (SK && !SK->DoUpdate)
+  if (!skipSK && SK && !SK->DoUpdate)
     SK->updateAllPart(*this);
   for (size_t i = 0; i < DistTables.size(); ++i)
     DistTables[i]->finalizePbyP(*this);
   activePtcl = -1;
 }
 
-void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
+void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK)
 {
   ParticleSet& p_leader = p_list.getLeader();
   ScopedTimer donePbyP_scope(p_leader.myTimers[PS_donePbyP]);
@@ -814,7 +814,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
     pset.activePtcl = -1;
   }
 
-  if (p_leader.SK && !p_leader.SK->DoUpdate)
+  if (!skipSK && p_leader.SK && !p_leader.SK->DoUpdate)
   {
     auto sk_list = extractSKRefList(p_list);
     StructFact::mw_updateAllPart(sk_list, p_list);

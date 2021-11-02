@@ -16,7 +16,7 @@
 #====================================================================#
 
 
-from numpy import ndarray
+from numpy import ndarray,array
 from generic import obj
 from developer import error
 from simulation import SimulationInputTemplateDev
@@ -118,26 +118,43 @@ class PyscfInput(SimulationInputTemplateDev):
     
 
     def __init__(self,
-                 template   = None,   # path to template input file
-                 prefix     = None,   # $prefix var for file prefixes
-                 custom     = None,   # obj w/ $ prefixed vars in template
-                 system     = None,   # physical system object
-                 units      = None,   # input units desired
-                 use_folded = True,   # use folded system/primitive cell
-                 mole       = None,   # obj w/ Mole variables
-                 cell       = None,   # obj w/ Cell variables
-                 sys_var    = None,   # local var name for Mole/Cell
-                 mole_var   = 'mol',  # local var name for Mole in written input
-                 cell_var   = 'cell', # local var name for Cell in written input
-                 save_qmc   = False,  # convert to QMCPACK format
-                 checkpoint = False,  # set $chkfile variable
-                 mf_var     = 'mf',   # local var name for mf, used for convert
-                 kpts_var   = 'kpts', # local var name for kpts, used for convert
-                 filepath   = None,   # alias for template
-                 text       = None,   # full text of (and alternate to) template 
+                 template    = None,     # path to template input file
+                 prefix      = None,     # $prefix var for file prefixes
+                 custom      = None,     # obj w/ $ prefixed vars in template
+                 system      = None,     # physical system object
+                 units       = None,     # input units desired
+                 use_folded  = True,     # use folded system/primitive cell
+                 mole        = None,     # obj w/ Mole variables
+                 cell        = None,     # obj w/ Cell variables
+                 sys_var     = None,     # local var name for Mole/Cell
+                 mole_var    = 'mol',    # local var name for Mole in written input
+                 cell_var    = 'cell',   # local var name for Cell in written input
+                 save_qmc    = False,    # convert to QMCPACK format
+                 checkpoint  = False,    # set $chkfile variable
+                 mf_var      = 'mf',     # local var name for mf, used for convert
+                 kpts_var    = 'kpts',   # local var name for kpts, used for convert
+                 filepath    = None,     # alias for template
+                 text        = None,     # full text of (and alternate to) template 
+                 calculation = None,     # obj w/ Calculation variables
+                 chkfile     = None,     # obj w/ Calculation variables
+                 twist_num   = None,     # Twist index
+                 python_exe  = 'python', # Python executable
                  ):
         if filepath is None and template is not None:
             filepath = template
+        elif calculation is not None:
+            self.calculation = calculation
+            text='''#! /usr/bin/env $python_exe
+
+import numpy as np
+from numpy import array
+$pyscfimport
+
+
+$system
+
+$calculation
+'''
         #end if
         SimulationInputTemplateDev.__init__(self,filepath,text)
 
@@ -180,6 +197,18 @@ class PyscfInput(SimulationInputTemplateDev):
                 self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
             #end if
             system = system.copy() # make a local copy
+            if system.has_folded() and twist_num is not None:
+                stmp = system.structure.copy()
+                prim_sys_kpoints = stmp.folded_structure.kpoints.copy()
+                kmap = stmp.kmap() 
+                allkpts = list(map(lambda xs: list(map(lambda x: prim_sys_kpoints[x], xs)), kmap))
+                sp_kpoints = stmp.kpoints.copy()
+                sp_twist = sp_kpoints[twist_num]
+                p_kpts     = allkpts[twist_num]
+                sp_kmesh = system.generation_info.kgrid
+            else:
+                sp_twist=None
+            #end if
             if use_folded and system.has_folded():
                 system = system.folded_system
             #end if
@@ -210,6 +239,7 @@ class PyscfInput(SimulationInputTemplateDev):
                 #end if
             #end if
         #end if
+
         if is_mole:
             sys_name    = 'mole'
             sys_var     = mole_var
@@ -228,6 +258,83 @@ class PyscfInput(SimulationInputTemplateDev):
             #end if
         else:
             None # no action needed if not molecule or periodic solid
+        #end if
+
+        if calculation is not None and 'calculation' not in self.values:
+
+            calc = calculation.copy() # make a local copy
+            calc.set_optional(
+                method       = 'RKS',
+                df_fitting   = True,
+                xc           = 'pbe',
+                tol          = '1e-10',
+                df_method    = 'GDF',
+                exxdiv       = 'ewald',
+                u_idx        = None,
+                max_cycle    = None,
+                level_shift  = None,
+                chkfile      = None,
+                u_val        = None,
+                C_ao_lo      = 'minao',
+                )
+            if calc.u_val is not None:
+                calc.u_val = array(calc.u_val)
+            #end if
+            if calc.u_idx is not None:
+                calc.u_idx = array(calc.u_idx)
+            #end if
+
+            c = '\n### generated calculation text ###\n'
+            if sys_name is not None:
+                df_str = '.density_fit()' if calc.df_fitting else ''
+                if sys_name == 'mole':
+                    if calc.u_idx is None:
+                        c += 'mf = scf.{}({}){}\n'.format(calc.method,sys_var,df_str)
+                    else:
+                        c += 'mf = dft.{}({},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
+                    #end if
+                elif sys_name == 'cell':
+                    c += 'mydf          = df.{}({})\n'.format(calc.df_method,sys_var,'kpts')
+                    c += 'mydf.auxbasis = \'weigend\'\n'
+                    c += 'dfpath = \'df_ints.h5\'\n'
+                    c += 'mydf._cderi_to_save = dfpath\n'
+                    c += 'mydf.build()\n\n'
+                    if calc.u_idx is None:
+                        c += 'mf = scf.{}({},{}){}\n'.format(calc.method,sys_var,'kpts',df_str)
+                    else:
+                        c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,'kpts',render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
+                    c += 'mf.exxdiv      = \'{}\'\n'.format(calc.exxdiv)
+                #end if
+                if calc.max_cycle is not None: 
+                    c += 'mf.max_cycle={}\n'.format(calc.max_cycle)
+                #end if
+                if calc.level_shift is not None: 
+                    c += 'mf.level_shift={}\n'.format(calc.level_shift)
+                #end if
+                if calc.chkfile is not None: 
+                    c += 'mf.chkfile=\'{}\'\n'.format(calc.chkfile)
+                #end if
+            #end if
+            if 'KS' in calc.method:
+                c += 'mf.xc          = \'{}\'\n'.format(calc.xc)
+            #end if
+            c += 'mf.tol         = \'{}\'\n'.format(calc.tol)
+            if calc.df_fitting and not is_mole:
+                c += 'mf.with_df     = mydf\n'
+            #end if
+            c += 'e_scf = mf.kernel()\n'
+
+            c += '### end generated calculation text ###\n\n'
+            self.assign(calculation=c)
+            cimp = '\n### generated pyscfimport text ###\n'
+            if is_mole:
+                cimp += 'from pyscf import df, scf, dft\n'
+            elif is_cell:
+                cimp += 'from pyscf.pbc import df, scf\n'
+            #endif
+            cimp += '### end generated pyscfimport text ###\n\n'
+            self.assign(pyscfimport=cimp)
+            self.assign(python_exe=python_exe)
         #end if
 
         if sys_name is not None:
@@ -304,14 +411,20 @@ class PyscfInput(SimulationInputTemplateDev):
             s += 'from PyscfToQmcpack import savetoqmcpack\n'
             if sys_kpoints is None:
                 s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
-            else:
+            elif sp_twist is None:
                 s += "savetoqmcpack({0},{1},'{2}',{3})\n".format(sys_var,mf_var,prefix,kpts_var)
+            else:
+                s += "kmesh = [{},{},{}]\n".format(sp_kmesh[0],sp_kmesh[1],sp_kmesh[2])
+                s += "sp_kpoints = {}\n".format(render_array(sp_kpoints,4))
+                s += "for spki,spk in enumerate(sp_kpoints):\n"
+                s += "    savetoqmcpack({0},{1},'{2}_Tw-{{}}'.format(spki),kmesh=kmesh,kpts={3},sp_twist=spk)\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += "#end for\n"
             #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
         #end if
 
-        if checkpoint:
+        if checkpoint and 'chkfile' not in self.values:
             if prefix is None:
                 self.error('cannot set $chkpoint variable\nplease provide input variable "prefix"')
             #end if

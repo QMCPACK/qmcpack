@@ -56,14 +56,14 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   REQUIRE(ei_table_id2 == 0);
   REQUIRE(ee_table_id2 == 1);
 
-  REQUIRE(&(ions.getDistTable(ii_table_id2).origin()) == &ions);
-  REQUIRE(&(ions.getDistTable(ie_table_id2).origin()) == &elecs);
-  REQUIRE(&(elecs.getDistTable(ei_table_id2).origin()) == &ions);
-  REQUIRE(&(elecs.getDistTable(ee_table_id2).origin()) == &elecs);
+  REQUIRE(&(ions.getDistTable(ii_table_id2).get_origin()) == &ions);
+  REQUIRE(&(ions.getDistTable(ie_table_id2).get_origin()) == &elecs);
+  REQUIRE(&(elecs.getDistTable(ei_table_id2).get_origin()) == &ions);
+  REQUIRE(&(elecs.getDistTable(ee_table_id2).get_origin()) == &elecs);
 
   ParticleSet elecs_copy(elecs);
-  REQUIRE(elecs_copy.getDistTable(ei_table_id2).origin().getName() == "ions");
-  REQUIRE(elecs_copy.getDistTable(ee_table_id2).origin().getName() == "electrons");
+  REQUIRE(elecs_copy.getDistTable(ei_table_id2).get_origin().getName() == "ions");
+  REQUIRE(elecs_copy.getDistTable(ee_table_id2).get_origin().getName() == "electrons");
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")

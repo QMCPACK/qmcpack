@@ -26,7 +26,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Utilities/RandomGenerator.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"

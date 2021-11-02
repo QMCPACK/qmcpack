@@ -19,7 +19,7 @@
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Particle/Reptile.h"
@@ -127,7 +127,7 @@ bool RMC::run()
   Estimators->stop(estimatorClones);
   //copy back the random states
   for (int ip = 0; ip < NumThreads; ++ip)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    *RandomNumberControl::Children[ip] = *Rng[ip];
   //return nbeads and stuff to its original unset state;
   resetVars();
   return finalize(nBlocks);
@@ -203,7 +203,7 @@ void RMC::resetRun()
     Movers.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
     branchEngine->initReptile(W);
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -212,11 +212,11 @@ void RMC::resetRun()
       estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      hClones[ip]->setRandomGenerator(Rng[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         os << "  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast" << std::endl;
@@ -250,7 +250,7 @@ void RMC::resetRun()
     Movers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
 
-    wClones[ip]->reptile = W.ReptileList[ip].get();
+    wClones[ip]->reptile    = W.ReptileList[ip].get();
     wClones[ip]->activeBead = 0;
     wClones[ip]->direction  = +1;
 
@@ -310,7 +310,8 @@ void RMC::resetReptiles(int nReptiles_in, int nbeads_in, RealType tau)
 
   for (int i = 0; i < nReptiles_in; i++)
   {
-    W.ReptileList.push_back(std::make_unique<Reptile>(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
+    W.ReptileList.push_back(
+        std::make_unique<Reptile>(W, W.begin() + repWalkerSlice[i], W.begin() + repWalkerSlice[i + 1]));
     W.ReptileList[i]->setTau(tau);
   }
 }

@@ -53,7 +53,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
 
-  assert(QMCDriverNew::checkLogAndGL(crowd));
+  if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_LOAD)
+    checkLogAndGL(crowd, "checkGL_after_load");
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -168,8 +169,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
-
-  assert(QMCDriverNew::checkLogAndGL(crowd));
+  if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+    checkLogAndGL(crowd, "checkGL_after_moves");
   timers.buffer_timer.stop();
 
   timers.hamiltonian_timer.start();
@@ -177,7 +178,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                                                 crowd.get_walker_hamiltonians());
   ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
-      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_elecs));
+      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_twfs, walker_elecs));
   timers.hamiltonian_timer.stop();
 
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto& local_energy) {
@@ -215,8 +216,9 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+  auto& rng    = context_for_steps[crowd_id]->get_random_gen();
 
-  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  crowd.setRNGForHamiltonian(rng);
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
   // \todo delete
@@ -225,7 +227,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
-  crowd.accumulate();
+  crowd.accumulate(rng);
 }
 
 void VMCBatched::process(xmlNodePtr node)

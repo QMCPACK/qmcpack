@@ -33,9 +33,8 @@ class MultiSlaterDeterminantWithBackflow : public MultiSlaterDeterminant
 public:
   ///constructor
   MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
-                                     std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                                     std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                     std::shared_ptr<BackflowTransformation> tr);
+                                     std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
+                                     std::unique_ptr<BackflowTransformation> tr);
 
   ///destructor
   ~MultiSlaterDeterminantWithBackflow() override;
@@ -44,16 +43,6 @@ public:
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
-
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf) override
-  {
-    BFTrans = bf;
-    for (int i = 0; i < dets_up.size(); i++)
-      dets_up[i]->setBF(bf);
-    for (int i = 0; i < dets_dn.size(); i++)
-      dets_dn[i]->setBF(bf);
-  }
 
   ValueType evaluate(const ParticleSet& P,
                      ParticleSet::ParticleGradient_t& G,
@@ -79,10 +68,11 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi) override;
 
+private:
   void resize(int, int) override;
 
   // transformation
-  std::shared_ptr<BackflowTransformation> BFTrans;
+  const std::unique_ptr<BackflowTransformation> BFTrans;
 
   // temporary storage for evaluateDerivatives
   Matrix<RealType> dpsia_up, dLa_up;

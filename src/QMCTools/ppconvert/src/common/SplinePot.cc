@@ -60,7 +60,7 @@ double SplinePot::d2Vdr2(double r)
 void SplinePot::Read(IOSectionClass &in)
 {
   assert(in.OpenSection("Grid"));
-  Grid *grid = ReadGrid(in);
+  auto grid = ReadGrid(in);
   in.CloseSection(); // "Grid" 
   Array<double,1> data;
   assert(in.ReadVar("SplineData", data));

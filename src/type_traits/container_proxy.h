@@ -20,7 +20,7 @@
 #include "type_traits/scalar_traits.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsArray.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 
 namespace qmcplusplus
 {

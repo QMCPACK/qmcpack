@@ -1,16 +1,14 @@
-
 name: GitHub Actions CI
 
-on: 
+on:
   push:
-    branches: 
-    - develop
+    branches:
+      - develop
   pull_request:
-    branches: 
-    - develop
+    branches:
+      - develop
 
 jobs:
-
   linux:
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -20,79 +18,112 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [
-          gcc-openmpi-real-coverage,
-          gcc-openmpi-complex-coverage,
-          gcc11-real-werror,
-          gcc11-complex-werror,
-          clang-real-asan,
-          clang-complex-asan,
-          clang-openmpi-real-ubsan,
-          clang-latest-openmp-offload
-        ]
+        jobname:
+          [
+            gcc-openmpi-real-coverage,
+            gcc-openmpi-complex-coverage,
+            gcc11-real-werror,
+            gcc11-complex-werror,
+            clang-real-asan,
+            clang-complex-asan,
+            clang-openmpi-real-ubsan,
+            clang-latest-openmp-offload,
+          ]
         include:
-        - jobname: gcc-openmpi-real-coverage
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
-        
-        - jobname: gcc-openmpi-complex-coverage
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
-        
-        - jobname: gcc11-real-werror
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu2110-serial
-            options: -u 1001
-        
-        - jobname: gcc11-complex-werror
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu2110-serial
-            options: -u 1001
-            
-        - jobname: clang-real-asan
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
-            
-        - jobname: clang-complex-asan
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
-        
-        - jobname: clang-openmpi-real-ubsan
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
-        
-        - jobname: clang-latest-openmp-offload
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-clang-latest
-            options: -u 1001
+          - jobname: gcc-openmpi-real-coverage
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              options: -u 1001
+
+          - jobname: gcc-openmpi-complex-coverage
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              options: -u 1001
+
+          - jobname: gcc11-real-werror
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              options: -u 1001
+
+          - jobname: gcc11-complex-werror
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              options: -u 1001
+
+          - jobname: clang-real-asan
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              options: -u 1001
+
+          - jobname: clang-complex-asan
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              options: -u 1001
+
+          - jobname: clang-openmpi-real-ubsan
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              options: -u 1001
+
+          - jobname: clang-latest-openmp-offload
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-clang-latest
+              options: -u 1001
 
     steps:
-    - name: Checkout Action
-      uses: actions/checkout@v1
+      - name: Checkout Action
+        uses: actions/checkout@v1
 
-    - name: Configure
-      run: tests/test_automation/github-actions/ci/run_step.sh configure
+      - name: Configure
+        run: tests/test_automation/github-actions/ci/run_step.sh configure
 
-    - name: Build
-      run: tests/test_automation/github-actions/ci/run_step.sh build
+      - name: Build
+        run: tests/test_automation/github-actions/ci/run_step.sh build
 
-    - name: Test
-      run: tests/test_automation/github-actions/ci/run_step.sh test
-    
-    - name: Coverage
-      if: contains(matrix.jobname, 'coverage')
-      run: tests/test_automation/github-actions/ci/run_step.sh coverage
-    
-    - name: Upload Coverage
-      if: contains(matrix.jobname, 'coverage') && github.repository_owner == 'QMCPACK'
-      uses: codecov/codecov-action@v1
-      with:
-        file:  ../qmcpack-build/coverage.xml
-        flags: tests-deterministic # optional
-        name: codecov-QMCPACK # optional
-        fail_ci_if_error: true # optional (default = false)
+      - name: Test
+        run: tests/test_automation/github-actions/ci/run_step.sh test
+
+      - name: Coverage
+        if: contains(matrix.jobname, 'coverage')
+        run: tests/test_automation/github-actions/ci/run_step.sh coverage
+
+      - name: Upload Coverage
+        if: contains(matrix.jobname, 'coverage') && github.repository_owner == 'QMCPACK'
+        uses: codecov/codecov-action@v1
+        with:
+          file: ../qmcpack-build/coverage.xml
+          flags: tests-deterministic # optional
+          name: codecov-QMCPACK # optional
+          fail_ci_if_error: true # optional (default = false)
+
+  macos:
+    runs-on: macos-latest
+    env:
+      GH_JOBNAME: ${{ matrix.jobname }}
+      GH_OS: macOS
+
+    strategy:
+      fail-fast: false
+      matrix:
+        jobname: [macOS-gcc11-real]
+
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout@v2
+
+      - name: Setup Dependencies
+        run: |
+             brew install ninja hdf5 fftw boost
+             pip3 install numpy h5py pandas
+
+      - name: Configure
+        run: tests/test_automation/github-actions/ci/run_step.sh configure
+
+      - name: Build
+        run: tests/test_automation/github-actions/ci/run_step.sh build
+
+      - name: Test
+        run: tests/test_automation/github-actions/ci/run_step.sh test
+
+      - name: Install
+        run: tests/test_automation/github-actions/ci/run_step.sh install

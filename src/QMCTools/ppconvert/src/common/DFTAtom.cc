@@ -102,7 +102,7 @@ void DFTAtom::UpdateExCorr()
 }
 
 
-void DFTAtom::SetGrid(Grid *newgrid)
+void DFTAtom::SetGrid(std::shared_ptr<Grid>& newgrid)
 {
   grid = newgrid;
   int N = grid->NumPoints;

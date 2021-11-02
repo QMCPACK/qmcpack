@@ -47,13 +47,21 @@ class fallback : public MemoryResource1{
 public:
 	long fallbacks() const{return fallbacks_;}
 	fallback() = default;
-	fallback(MemoryResource1 const& mr, MemoryResource2* back
+
+	fallback(MemoryResource1 const& mr, MemoryResource2* back) : MemoryResource1{mr}, back_{back} {}
+
+	// cppcheck-suppress noExplicitConstructor ; allocators are pointers to memory resources
+	fallback(MemoryResource1 const& mr)
+	: fallback{
+		mr,
 #if(__cpp_lib_memory_resource>=201603L)
-		= std::pmr::get_default_resource()
+		std::pmr::get_default_resource()
 #else
-		= nullptr//memory::get_default_resource<>()
+		nullptr//memory::get_default_resource<>()
 #endif
-	) : MemoryResource1{mr}, back_{back}{}
+	} {}
+
+
 	typename fallback::void_pointer 
 	allocate(size_type required_bytes, typename fallback::size_type align = alignof(std::max_align_t)) try{
 		return MemoryResource1::allocate(required_bytes, align);

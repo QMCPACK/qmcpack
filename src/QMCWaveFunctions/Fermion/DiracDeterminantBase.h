@@ -23,6 +23,13 @@
 
 namespace qmcplusplus
 {
+/// determinant matrix inverter select
+enum class DetMatInvertor
+{
+  HOST,
+  ACCEL,
+};
+
 class DiracDeterminantBase : public WaveFunctionComponent
 {
 public:
@@ -31,8 +38,9 @@ public:
    *  shared_ptr is intended neither for sharing between spin up and down electrons nor for sharing between clones.
    *  The sharing aspect is for the determinants used by the the multi-determinant slow implementation.
    *@param first index of the first particle
+   *@param last index of last particle
    */
-  DiracDeterminantBase(const std::string& class_name, std::shared_ptr<SPOSet>&& spos, int first = 0)
+  DiracDeterminantBase(const std::string& class_name, std::shared_ptr<SPOSet>&& spos, int first, int last)
       : WaveFunctionComponent(class_name),
         UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
@@ -42,9 +50,9 @@ public:
         SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
         Phi(std::move(spos)),
         FirstIndex(first),
-        LastIndex(first + Phi->size()),
-        NumOrbitals(Phi->size()),
-        NumPtcls(Phi->size())
+        LastIndex(last),
+        NumOrbitals(last - first),
+        NumPtcls(last - first)
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
@@ -68,15 +76,6 @@ public:
 #ifndef NDEBUG
   virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
 #endif
-
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   */
-  virtual void set(int first, int nel, int delay = 1){};
-
-  ///set BF pointers
-  virtual void setBF(std::shared_ptr<BackflowTransformation> BFTrans) {}
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
@@ -156,7 +155,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
+  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
 
 #ifdef QMC_CUDA
   // expose GPU interfaces
@@ -183,15 +182,18 @@ protected:
    */
   const std::shared_ptr<SPOSet> Phi;
   ///index of the first particle with respect to the particle set
-  int FirstIndex;
+  const int FirstIndex;
   ///index of the last particle with respect to the particle set
-  int LastIndex;
+  const int LastIndex;
   ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
+  const int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
+  const int NumPtcls;
 
 #ifndef NDEBUG
+  // This is for debugging and testing in debug mode
+  // psiMinv is not a base class data member or public in most implementations
+  // it is frequently Dual and its consistency not guaranteed.
   ValueMatrix_t dummy_vmt;
 #endif
 

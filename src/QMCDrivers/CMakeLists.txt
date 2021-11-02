@@ -28,15 +28,14 @@ set(QMCDRIVERS
     QMCDriver.cpp
     QMCDriverInput.cpp
     QMCDriverNew.cpp
-    WFOpt/QMCOptimize.cpp
-    WFOpt/QMCOptimizeBatched.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
     WFOpt/QMCLinearOptimize.cpp
-    WFOpt/QMCLinearOptimizeBatched.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp
     WFOpt/WFOptDriverInput.cpp
+    WFOpt/GradientTestInput.cpp
+    WFOpt/GradientTest.cpp
     Optimizers/DescentEngine.cpp
     Optimizers/HybridEngine.cpp
     WFOpt/QMCCostFunctionBase.cpp
@@ -112,9 +111,13 @@ target_include_directories(qmcdriver_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcdriver PUBLIC qmcham qmcestimators)
 target_link_libraries(qmcdriver_unit PUBLIC qmcham_unit qmcestimators_unit)
 
-target_link_libraries(qmcdriver PRIVATE Math::BLAS_LAPACK)
-target_link_libraries(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
+target_link_libraries(qmcdriver PRIVATE platform_LA)
+target_link_libraries(qmcdriver_unit PRIVATE platform_LA)
 if(BUILD_LMYENGINE_INTERFACE)
   target_link_libraries(qmcdriver PRIVATE formic_utils)
   target_link_libraries(qmcdriver_unit PRIVATE formic_utils)
+endif()
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
 endif()

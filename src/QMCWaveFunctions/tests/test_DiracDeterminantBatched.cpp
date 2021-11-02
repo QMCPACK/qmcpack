@@ -18,58 +18,27 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
-
-#ifdef QMC_COMPLEX //This is for the spinor test.
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-#endif
-
-#include "QMCWaveFunctions/SpinorSet.h"
-
-#include <stdio.h>
-#include <string>
-
-using std::string;
-
+#include "checkMatrix.hpp"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
 using PosType      = QMCTraits::PosType;
+using GradType     = QMCTraits::GradType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
-#if defined(ENABLE_OFFLOAD)
-#if defined(ENABLE_CUDA)
-typedef DiracDeterminantBatched<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
-#else
-typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>> DetType;
-#endif
-#else
-typedef DiracDeterminantBatched<> DetType;
-#endif
-
-template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
-void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
+template<class DET_ENGINE>
+void test_DiracDeterminantBatched_first()
 {
-  REQUIRE(a.rows() >= b.rows());
-  REQUIRE(a.cols() >= b.cols());
-  for (int i = 0; i < b.rows(); i++)
-    for (int j = 0; j < b.cols(); j++)
-    {
-      REQUIRE(a(i, j) == ValueApprox(b(i, j)));
-    }
-}
-
-TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
-{
-  auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(3);
-  DetType ddb(std::move(spo_init));
+  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  auto spo_init  = std::make_unique<FakeSPO>();
+  const int norb = 3;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 3;
-  ddb.set(0, norb);
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -94,8 +63,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  check_matrix(ddb.psiMinv, b);
-
+  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
 
   ParticleSet::GradType grad;
   PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
@@ -114,7 +82,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  check_matrix(ddb.psiMinv, b);
+  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), b);
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);
@@ -154,17 +122,25 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   CHECK(std::real(ddb.get_log_value()) == Approx(1.9891064655));
 }
 
+TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
+{
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+  test_DiracDeterminantBatched_first<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
+#endif
+  test_DiracDeterminantBatched_first<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+}
+
 //#define DUMP_INFO
 
-TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
+template<class DET_ENGINE>
+void test_DiracDeterminantBatched_second()
 {
-  auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddb(std::move(spo_init));
+  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  auto spo_init  = std::make_unique<FakeSPO>();
+  const int norb = 4;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddb(std::move(spo_init), 0, norb);
   auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
-
-  int norb = 4;
-  ddb.set(0, norb);
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -188,7 +164,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddb.psiMinv, b);
+  //check_matrix(ddb.getPsiMinv(), b);
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a_update1, scratchT;
@@ -277,22 +253,29 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   std::cout << "original " << std::endl;
   std::cout << orig_a << std::endl;
   std::cout << "block update " << std::endl;
-  std::cout << ddb.psiMinv << std::endl;
+  std::cout << ddb.getPsiMinv() << std::endl;
 #endif
 
-  check_matrix(ddb.psiMinv, orig_a);
+  checkMatrix(ddb.get_det_engine().get_ref_psiMinv(), orig_a);
 }
 
-TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
-  auto spo_init = std::make_unique<FakeSPO>();
-  spo_init->setOrbitalSetSize(4);
-  DetType ddc(std::move(spo_init));
-  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+  test_DiracDeterminantBatched_second<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>();
+#endif
+  test_DiracDeterminantBatched_second<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>();
+}
 
-  int norb = 4;
-  // maximum delay 2
-  ddc.set(0, norb, 2);
+template<class DET_ENGINE>
+void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor matrix_inverter_kind)
+{
+  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  auto spo_init  = std::make_unique<FakeSPO>();
+  const int norb = 4;
+  spo_init->setOrbitalSetSize(norb);
+  DetType ddc(std::move(spo_init), 0, norb, delay_rank, matrix_inverter_kind);
+  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
@@ -316,7 +299,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddc.psiMinv, b);
+  //check_matrix(ddc.getPsiMinv(), b);
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a_update1, scratchT;
@@ -370,7 +353,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  check_matrix(ddc.psiMinv, a_update1);
+  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
 
   grad = ddc.evalGrad(elec, 1);
 
@@ -421,11 +404,80 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   std::cout << "original " << std::endl;
   std::cout << orig_a << std::endl;
   std::cout << "delayed update " << std::endl;
-  std::cout << ddc.psiMinv << std::endl;
+  std::cout << ddc.getPsiMinv() << std::endl;
 #endif
 
-  // compare all the elements of psiMinv in ddc and orig_a
-  check_matrix(ddc.psiMinv, orig_a);
+  // compare all the elements of get_ref_psiMinv() in ddc and orig_a
+  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
+
+  // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection wfc_res("test_wfc_res");
+
+  elec.createResource(pset_res);
+  ddc.createResource(wfc_res);
+
+  // make a clones
+  ParticleSet elec_clone(elec);
+  std::unique_ptr<WaveFunctionComponent> ddc_clone(ddc.makeCopy(ddc.getPhi()->makeClone()));
+  auto& ddc_clone_ref = dynamic_cast<DetType&>(*ddc_clone);
+
+  // testing batched interfaces
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec, {elec, elec_clone});
+  RefVectorWithLeader<WaveFunctionComponent> ddc_ref_list(ddc, {ddc, *ddc_clone});
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<WaveFunctionComponent> mw_wfc_lock(wfc_res, ddc_ref_list);
+
+  std::vector<bool> isAccepted(2, true);
+  ParticleSet::mw_update(p_ref_list);
+  ddc.mw_recompute(ddc_ref_list, p_ref_list, isAccepted);
+
+  std::vector<PsiValueType> ratios(2);
+  std::vector<GradType> grad_new(2);
+  ddc.mw_ratioGrad(ddc_ref_list, p_ref_list, 0, ratios, grad_new);
+
+  CHECK(det_ratio1 == ValueApprox(ratios[0]));
+  CHECK(det_ratio1 == ValueApprox(ratios[1]));
+
+  ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 0, isAccepted, true);
+  ddc.mw_completeUpdates(ddc_ref_list);
+
+  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), a_update1);
+  checkMatrix(ddc_clone_ref.get_det_engine().get_ref_psiMinv(), a_update1);
+
+  ddc.mw_evalGrad(ddc_ref_list, p_ref_list, 1, grad_new);
+  ddc.mw_ratioGrad(ddc_ref_list, p_ref_list, 1, ratios, grad_new);
+
+  CHECK(det_ratio2 == ValueApprox(ratios[0]));
+  CHECK(det_ratio2 == ValueApprox(ratios[1]));
+
+  ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 1, isAccepted, true);
+  ddc.mw_evalGrad(ddc_ref_list, p_ref_list, 2, grad_new);
+  ddc.mw_ratioGrad(ddc_ref_list, p_ref_list, 2, ratios, grad_new);
+
+  CHECK(det_ratio3 == ValueApprox(ratios[0]));
+  CHECK(det_ratio3 == ValueApprox(ratios[1]));
+
+  ddc.mw_accept_rejectMove(ddc_ref_list, p_ref_list, 2, isAccepted, true);
+  ddc.mw_completeUpdates(ddc_ref_list);
+
+  checkMatrix(ddc.get_det_engine().get_ref_psiMinv(), orig_a);
+  checkMatrix(ddc_clone_ref.get_det_engine().get_ref_psiMinv(), orig_a);
 }
 
+TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
+{
+  // maximum delay 2
+#if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
+  test_DiracDeterminantBatched_delayed_update<
+      MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<
+      MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+#endif
+  test_DiracDeterminantBatched_delayed_update<
+      MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::ACCEL);
+  test_DiracDeterminantBatched_delayed_update<
+      MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(2, DetMatInvertor::HOST);
+}
 } // namespace qmcplusplus

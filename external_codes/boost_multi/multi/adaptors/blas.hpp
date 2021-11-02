@@ -1,27 +1,27 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXXX $CXXFLAGS $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2018-2020
+// © Alfredo A. Correa 2018-2021
 
 #ifndef MULTI_ADAPTORS_BLAS_HPP
 #define MULTI_ADAPTORS_BLAS_HPP
 
-#include "../adaptors/blas/iamax.hpp"
 #include "../adaptors/blas/asum.hpp"
 #include "../adaptors/blas/axpy.hpp"
 #include "../adaptors/blas/copy.hpp"
 #include "../adaptors/blas/dot.hpp"
 #include "../adaptors/blas/gemm.hpp"
-#include "../adaptors/blas/syrk.hpp"
-#include "../adaptors/blas/herk.hpp"
 #include "../adaptors/blas/gemv.hpp"
-#include "../adaptors/blas/ger.hpp"
+//#include "../adaptors/blas/ger.hpp"
+#include "../adaptors/blas/herk.hpp"
+#include "../adaptors/blas/iamax.hpp"
 #include "../adaptors/blas/nrm2.hpp"
-#include "../adaptors/blas/trsm.hpp"
 #include "../adaptors/blas/scal.hpp"
 #include "../adaptors/blas/swap.hpp"
+#include "../adaptors/blas/syrk.hpp"
+#include "../adaptors/blas/trsm.hpp"
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS"
 #define BOOST_TEST_DYN_LINK

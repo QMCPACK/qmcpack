@@ -333,7 +333,7 @@ struct SplineSetReader : public BsplineReaderBase
     if (band_group_comm.isGroupLeader())
     {
       now.restart();
-      bspline->gather_tables(band_group_comm.GroupLeaderComm);
+      bspline->gather_tables(band_group_comm.getGroupLeaderComm());
       app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
     }
     now.restart();

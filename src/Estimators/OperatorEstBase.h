@@ -38,11 +38,12 @@ public:
   using QMCT      = QMCTraits;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  /** the type in this variant changes based on data locality
+  /** Everything gets packed into RealType for now
+   *  \todo template and use whatever makes sense for the derived estimator this is just asking for bugs
    */
   using Data = UPtr<std::vector<QMCT::RealType>>;
 
-  /// locality for accumulation data
+  /// locality for accumulation data. FIXME full documentation of this state machine.
   DataLocality data_locality_;
 
   ///name of this object
@@ -62,8 +63,16 @@ public:
    *  without causing a global sync.
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
+   *  \param[in]      walkers
+   *  \param[inout]   pset_target   crowd scope target pset (should be returned to starting state after call)
+   *  \param[in]      psets         per walker psets
+   *  \param[in]      wnfs          per walker TrialWaveFunction
+   *  \param[inout]   rng           crowd scope RandomGenerator
    */
-  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>& walkers,
+                          const RefVector<ParticleSet>& psets,
+                          const RefVector<TrialWaveFunction>& wfns,
+                          RandomGenerator_t& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -78,7 +87,7 @@ public:
   virtual void normalize(QMCT::RealType invToWgt);
 
   virtual void startBlock(int steps) = 0;
-  
+
   std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
 
   Data& get_data() { return data_; };
@@ -91,7 +100,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-  virtual OperatorEstBase* clone() = 0;
+  virtual std::unique_ptr<OperatorEstBase> clone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
@@ -107,10 +116,11 @@ public:
   /** Return the total walker weight for this block
    */
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+
 protected:
   QMCT::FullPrecRealType walkers_weight_;
 
-  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator  
+  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
   /** create the typed data block for the Operator.

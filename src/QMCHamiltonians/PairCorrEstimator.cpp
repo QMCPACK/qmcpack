@@ -25,7 +25,7 @@ namespace qmcplusplus
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
     : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   num_species = elns.groups();
   n_vec.resize(num_species, 0);
   for (int i = 0; i < num_species; i++)
@@ -62,8 +62,8 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   std::vector<std::string> slist, dlist;
   const int ntables = elns.getNumDistTables();
   for (int k = 0; k < ntables; ++k)
-    if (elns.getName() != elns.getDistTable(k).origin().getName())
-      dlist.push_back(elns.getDistTable(k).origin().getName());
+    if (elns.getName() != elns.getDistTable(k).get_origin().getName())
+      dlist.push_back(elns.getDistTable(k).get_origin().getName());
   parsewords(sources.c_str(), slist);
   std::set<int> others_sorted;
   for (int i = 0; i < slist.size(); ++i)
@@ -88,7 +88,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
     const DistanceTableData& t(elns.getDistTable(other_ids[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets[k] = toff;
-    const SpeciesSet& species(t.origin().getSpeciesSet());
+    const SpeciesSet& species(t.get_origin().getSpeciesSet());
     int ng = species.size();
     for (int i = 0; i < ng; ++i)
     {
@@ -118,14 +118,14 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         const int loc     = static_cast<int>(DeltaInv * r);
         const int jg      = P.GroupID[j];
         const int pair_id = ig * (ig + 1) / 2 + jg;
-        collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
+        collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
       }
     }
   }
   for (int k = 0; k < other_ids.size(); ++k)
   {
     const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+    const ParticleSet::ParticleIndex_t& gid(d1.get_origin().GroupID);
     int koff        = other_offsets[k];
     RealType overNI = 1.0 / d1.centers();
     for (int iat = 0; iat < d1.targets(); ++iat)
@@ -138,7 +138,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         {
           int toff = (gid[j] + koff) * NumBins;
           int loc  = static_cast<int>(DeltaInv * r);
-          collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
+          collectables[toff + loc + my_index_] += norm_factor(0, loc) * overNI;
         }
       }
     }
@@ -149,7 +149,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   std::vector<int> onedim(1, NumBins);
-  int offset = myIndex;
+  int offset = my_index_;
   for (int i = 0; i < gof_r_prefix.size(); ++i)
   {
     h5list.emplace_back(gof_r_prefix[i]);
@@ -168,7 +168,7 @@ void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5li
 
 void PairCorrEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.size();
+  my_index_ = collectables.size();
   std::vector<RealType> g(gof_r_prefix.size() * NumBins, 0);
   collectables.add(g.begin(), g.end());
   ////only while debugging
@@ -312,7 +312,7 @@ void PairCorrEstimator::report()
 
 bool PairCorrEstimator::get(std::ostream& os) const
 {
-  os << myName << " dmax=" << Dmax << std::endl;
+  os << name_ << " dmax=" << Dmax << std::endl;
   return true;
 }
 
@@ -327,7 +327,7 @@ void PairCorrEstimator::resize(int nbins)
   NumBins = nbins;
   norm_factor.resize((num_species * num_species - num_species) / 2 + num_species + 1, NumBins);
   RealType r  = Delta * 0.5;
-  RealType pf = Volume * DeltaInv / (4 * 3.14159265);
+  RealType pf = Volume * DeltaInv / (4 * M_PI);
   for (int i = 0; i < NumBins; ++i, r += Delta)
   {
     RealType rm2      = pf / r / r;

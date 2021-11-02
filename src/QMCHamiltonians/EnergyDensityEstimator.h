@@ -100,12 +100,12 @@ private:
   CombinedTraceSample<TraceReal>* Vd_trace;
   CombinedTraceSample<TraceReal>* Vs_trace;
 
-  void get_required_traces(TraceManager& tm) override;
+  void getRequiredTraces(TraceManager& tm) override;
 
-  void contribute_scalar_quantities() override {}
-  void checkout_scalar_quantities(TraceManager& tm) override {}
-  void collect_scalar_quantities() override {}
-  void delete_scalar_quantities() override {}
+  void contributeScalarQuantities() override {}
+  void checkoutScalarQuantities(TraceManager& tm) override {}
+  void collectScalarQuantities() override {}
+  void deleteScalarQuantities() override {}
 };
 
 

@@ -153,6 +153,8 @@ Variational Monte Carlo
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additonal recompute and checks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 Additional information:
 
@@ -229,6 +231,8 @@ Additional information:
 - ``spinMass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
+
 An example VMC section for a simple VMC run:
 
 ::
@@ -296,6 +300,8 @@ The following is an example of VMC section storing configurations (walker sample
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additonal recompute and checks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 Additional information:
 
@@ -348,6 +354,8 @@ Additional information:
   from scratch: =1 by default when using mixed precision. =0 (no
   recompute) by default when not using mixed precision. Recomputing
   introduces a performance penalty dependent on system size.
+
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
 An example VMC section for a simple ``vmc_batch`` run:
 
@@ -1205,6 +1213,8 @@ parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additonal recompute and checks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 .. centered:: Table 9 Main DMC input parameters.
 
@@ -1296,6 +1306,7 @@ Additional information:
    of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}` where 
    :math:`\tau` is the normal spatial timestep and :math:`\mu_s` is the value of the spin mass. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
 -  ``energyUpdateInterval``: The default is to update the trial energy
    at every step. Otherwise the trial energy is updated every
@@ -1537,6 +1548,8 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additonal recompute and checks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
 
@@ -1550,6 +1563,8 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
   and ``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
   ``walkers_per_rank`` times the number MPI ranks.
+
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver

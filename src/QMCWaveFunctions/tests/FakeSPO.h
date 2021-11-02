@@ -27,10 +27,11 @@ public:
   Matrix<ValueType> v2;
 
   SPOSet::GradVector_t gv;
-  
+
   FakeSPO();
   ~FakeSPO() override {}
 
+  std::unique_ptr<SPOSet> makeClone() const override;
   virtual void report() {}
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override;

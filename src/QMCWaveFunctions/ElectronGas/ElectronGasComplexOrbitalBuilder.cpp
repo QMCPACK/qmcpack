@@ -17,7 +17,6 @@
 #include "ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -69,18 +68,13 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildCo
     nc = egGrid.getShellIndex(nup);
   egGrid.createGrid(nc, nup, twist);
   targetPtcl.setTwist(twist);
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
   //create up determinant
-  auto updet = std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
-  updet->set(0, nup);
+  dets.push_back(std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2), 0, nup));
   //create down determinant
-  auto downdet = std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
-  downdet->set(nup, nup);
+  dets.push_back(std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2), nup, nup + nup));
   //create a Slater determinant
-  //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
-  auto sdet = std::make_unique<SlaterDet>(targetPtcl);
-  sdet->add(std::move(updet), 0);
-  sdet->add(std::move(downdet), 1);
-  return sdet;
+  return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)

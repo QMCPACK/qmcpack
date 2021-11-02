@@ -43,8 +43,12 @@ namespace qmcplusplus
 template<typename VALUE_FP>
 class DiracMatrixComputeOMPTarget : public Resource
 {
+public:
   using FullPrecReal = RealAlias<VALUE_FP>;
+  using LogValue     = std::complex<FullPrecReal>;
 
+  // This class only works with OMPallocator so explicitly call OffloadAllocator what it
+  // is and not DUAL
   template<typename T>
   using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
   template<typename T>
@@ -52,21 +56,19 @@ class DiracMatrixComputeOMPTarget : public Resource
   template<typename T>
   using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
+  // maybe you'll want a resource someday, then change here.
+  using HandleResource = DummyResource;
+
+private:
   aligned_vector<VALUE_FP> m_work_;
   int lwork_;
 
   /// Matrices held in memory matrices n^2 * nw  elements
   OffloadPinnedVector<VALUE_FP> psiM_fp_;
-
   OffloadPinnedVector<VALUE_FP> LU_diags_fp_;
-
   OffloadPinnedVector<int> pivots_;
   OffloadPinnedVector<int> infos_;
 
-  // maybe you'll want a resource someday, then change here.
-  using HandleResource = DummyResource;
-
-  Vector<char, OffloadPinnedAllocator<char>> psiM_ptrs_;
   /** reset internal work space.
    *  My understanding might be off.
    *
@@ -74,7 +76,7 @@ class DiracMatrixComputeOMPTarget : public Resource
    */
   inline void reset(OffloadPinnedVector<VALUE_FP>& psi_Ms, const int n, const int lda, const int batch_size)
   {
-    int nw = batch_size;
+    const int nw = batch_size;
     pivots_.resize(lda * nw);
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -94,8 +96,7 @@ class DiracMatrixComputeOMPTarget : public Resource
    *
    *  it smells that this is so complex.
    */
-  template<typename TREAL>
-  inline void reset(OffloadPinnedMatrix<TREAL>& psi_M, const int n, const int lda)
+  inline void reset(OffloadPinnedMatrix<VALUE_FP>& psi_M, const int n, const int lda)
   {
     pivots_.resize(lda);
     LU_diags_fp_.resize(lda);
@@ -109,17 +110,14 @@ class DiracMatrixComputeOMPTarget : public Resource
   }
 
   /** compute the inverse of invMat (in place) and the log value of determinant
-   * @tparam TREAL real type
+   * \tparam TMAT value type of matrix
    * \param[inout] a_mat      the matrix
    * \param[in]    n          actual dimension of square matrix (no guarantee it really has full column rank)
    * \param[in]    lda        leading dimension of Matrix container
    * \param[out]   log_value  log a_mat before inversion
    */
-  template<typename TREAL>
-  inline void computeInvertAndLog(OffloadPinnedMatrix<TREAL>& a_mat,
-                                  const int n,
-                                  const int lda,
-                                  std::complex<VALUE_FP>& log_value)
+  template<typename TMAT>
+  inline void computeInvertAndLog(OffloadPinnedMatrix<TMAT>& a_mat, const int n, const int lda, LogValue& log_value)
   {
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
@@ -132,13 +130,13 @@ class DiracMatrixComputeOMPTarget : public Resource
     Xgetri(n, a_mat.data(), lda, pivots_.data(), m_work_.data(), lwork_);
   }
 
-  template<typename TREAL>
-  inline void computeInvertAndLog(OffloadPinnedVector<TREAL>& psi_Ms,
+  template<typename TMAT>
+  inline void computeInvertAndLog(OffloadPinnedVector<TMAT>& psi_Ms,
                                   const int n,
                                   const int lda,
-                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                                  OffloadPinnedVector<LogValue>& log_values)
   {
-    int nw = log_values.size();
+    const int nw = log_values.size();
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
       reset(psi_Ms, n, lda, nw);
@@ -150,12 +148,15 @@ class DiracMatrixComputeOMPTarget : public Resource
       Xgetrf(n, n, LU_M, lda, pivots_.data() + iw * n);
       for (int i = 0; i < n; i++)
         *(LU_diags_fp_.data() + iw * n + i) = LU_M[i * lda + i];
-      std::complex<TREAL> log_value{0.0, 0.0};
+      LogValue log_value{0.0, 0.0};
       computeLogDet(LU_diags_fp_.data() + iw * n, n, pivots_.data() + iw * n, log_value);
       log_values[iw] = log_value;
       Xgetri(n, LU_M, lda, pivots_.data() + iw * n, m_work_.data(), lwork_);
     }
   }
+
+  /// matrix inversion engine
+  DiracMatrix<VALUE_FP> detEng_;
 
 public:
   DiracMatrixComputeOMPTarget() : Resource("DiracMatrixComputeOMPTarget"), lwork_(0) {}
@@ -173,11 +174,10 @@ public:
    *                                  DiracMatrixComputeCUDA but is fine for OMPTarget        
    */
   template<typename TMAT>
-  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(
-      HandleResource& resource,
-      const OffloadPinnedMatrix<TMAT>& a_mat,
-      OffloadPinnedMatrix<TMAT>& inv_a_mat,
-      std::complex<FullPrecReal>& log_value)
+  inline std::enable_if_t<std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
+                                                                                const OffloadPinnedMatrix<TMAT>& a_mat,
+                                                                                OffloadPinnedMatrix<TMAT>& inv_a_mat,
+                                                                                LogValue& log_value)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
@@ -194,11 +194,10 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT>
-  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(
-      HandleResource& resource,
-      const OffloadPinnedMatrix<TMAT>& a_mat,
-      OffloadPinnedMatrix<TMAT>& inv_a_mat,
-      std::complex<FullPrecReal>& log_value)
+  inline std::enable_if_t<!std::is_same<VALUE_FP, TMAT>::value> invert_transpose(HandleResource& resource,
+                                                                                 const OffloadPinnedMatrix<TMAT>& a_mat,
+                                                                                 OffloadPinnedMatrix<TMAT>& inv_a_mat,
+                                                                                 LogValue& log_value)
   {
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
@@ -220,14 +219,21 @@ public:
    *  
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
-  template<typename TMAT, typename TREAL>
+  template<typename TMAT>
   inline void mw_invertTranspose(HandleResource& resource,
-                                 RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-                                 RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-                                 OffloadPinnedVector<std::complex<TREAL>>& log_values,
-                                 const std::vector<bool>& recompute)
+                                 const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
+                                 const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
+                                 OffloadPinnedVector<LogValue>& log_values)
   {
-    int nw           = a_mats.size();
+    for (int iw = 0; iw < a_mats.size(); iw++)
+    {
+      auto& Ainv = inv_a_mats[iw].get();
+      detEng_.invert_transpose(a_mats[iw].get(), Ainv, log_values[iw]);
+      Ainv.updateTo();
+    }
+
+    /* FIXME
+    const int nw     = a_mats.size();
     const size_t n   = a_mats[0].get().rows();
     const size_t lda = a_mats[0].get().cols();
     const size_t ldb = inv_a_mats[0].get().cols();
@@ -242,6 +248,7 @@ public:
     {
       simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
     }
+    */
   }
 };
 } // namespace qmcplusplus

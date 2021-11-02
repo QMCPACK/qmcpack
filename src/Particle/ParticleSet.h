@@ -23,8 +23,8 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include "Utilities/SpeciesSet.h"
-#include "Utilities/PooledData.h"
+#include "SpeciesSet.h"
+#include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
@@ -210,7 +210,7 @@ public:
   bool put(xmlNodePtr cur) override;
 
   ///specify quantum_domain of particles
-  void set_quantum_domain(quantum_domains qdomain);
+  void setQuantumDomain(quantum_domains qdomain);
 
   void set_quantum() { quantum_domain = quantum; }
 
@@ -219,10 +219,10 @@ public:
   inline bool is_quantum() const { return quantum_domain == quantum; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
+  inline bool quantumDomainValid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
 
   ///check whether quantum domain is valid for particles
-  inline bool quantum_domain_valid() const { return quantum_domain_valid(quantum_domain); }
+  inline bool quantumDomainValid() const { return quantumDomainValid(quantum_domain); }
 
   /** add a distance table
    * @param psrc source particle set
@@ -445,15 +445,16 @@ public:
   static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
+   *@param skip SK update if skipSK is true
    *
    * The Coulomb interaction evaluation needs the structure factor.
    * For these reason, call donePbyP after the loop of single
    * electron moves before evaluating the Hamiltonian. Unmark
    * activePtcl is more of a safety measure probably not needed.
    */
-  void donePbyP();
+  void donePbyP(bool skipSK = false);
   /// batched version of donePbyP
-  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
+  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
