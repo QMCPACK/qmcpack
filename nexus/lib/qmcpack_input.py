@@ -4948,7 +4948,7 @@ def generate_determinantset_old(type           = 'bspline',
                 QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
             #end if
             
-            vb = int(sdet.size / abs(linalg.sdet(tilematrix))) -1  # Separate for each spin channel
+            vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
