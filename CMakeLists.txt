@@ -359,6 +359,7 @@ message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 # Set up OpenMP offload compile options
 #---------------------------------------------------------
 set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
+set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT OFF)
 if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
   message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
@@ -369,11 +370,25 @@ if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     # when using OpenMP offload to AMD GPU together with HIP.
     set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
   endif()
+  if(${COMPILER} MATCHES "Clang" AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "amdgcn")
+    # As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for
+    # ROCM/AOMP compilers when using OpenMP offload to AMD GPU.
+    set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT ON)
+  endif()
 endif()
 # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime" OFF
-                       "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+                       ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+cmake_dependent_option(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL "ROCM compiler offload bug workaround"
+                       ${QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT} "ENABLE_OFFLOAD" OFF)
+
+if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
+  message(WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
+                  "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
+                  "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
+                  "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
+endif()
 
 #---------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
