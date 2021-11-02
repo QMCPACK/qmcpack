@@ -62,6 +62,10 @@ endif()
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+# Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
+# A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+                       OFF "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -71,6 +75,10 @@ cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "
 if(ENABLE_CUDA AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
 endif(ENABLE_CUDA AND QMC_CUDA)
+
+if(ENABLE_OFFLOAD AND QMC_CUDA)
+  message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
+endif()
 
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
 if(ENABLE_CUDA OR QMC_CUDA AND NOT QMC_CUDA2HIP)
@@ -263,6 +271,12 @@ endif(CMAKE_TOOLCHAIN_FILE)
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
   message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
+endif()
+
+if(${COMPILER} MATCHES "Clang" AND ENABLE_OFFLOAD AND QMC_CUDA2HIP AND NOT QMC_OFFLOAD_MEM_ASSOCIATED)
+  message(WARNING "Ignore this if Cray compilers are used! "
+          "Detected ENABLE_OFFLOAD=ON and QMC_CUDA2HIP=ON but QMC_OFFLOAD_MEM_ASSOCIATED=OFF. "
+          "As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers.")
 endif()
 
 #-----------------------------------------------------------------------
