@@ -4241,7 +4241,6 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
-            print(inp)
             print(qhost)
             if qhost!=None:
                 qhost[quantity] = value

@@ -241,8 +241,8 @@ class Qmcpack(Simulation):
                 newwfn = res.qmcsystem.wavefunction
                 if hasattr(oldwfn.determinantset,'multideterminant'):
                     del newwfn.determinantset.slaterdeterminant
-                    newwfn.determinantset['multideterminant'] = oldwfn.determinantset['multideterminant'] 
-                    newwfn.determinantset['sposets'] = oldwfn.determinantset['sposets'] 
+                    newwfn.determinantset.multideterminant = oldwfn.determinantset.multideterminant
+                    newwfn.determinantset.sposets = oldwfn.determinantset.sposets
                 dset = newwfn.determinantset
 
                 if 'jastrows' in newwfn:
