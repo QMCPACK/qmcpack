@@ -19,6 +19,14 @@
 
 namespace qmcplusplus
 {
+/** fill device memory with a given value.
+ * @param ptr pointer to device memory
+ * @param n size of type T elemements
+ * @value desired value. Due to cudaMemset limitation. Only filling 0 is supported.
+ *
+ * this function is only intended to prevent NaN in containers when device memory segments are allocated.
+ * do not use outside allocators.
+ */
 template<typename T>
 void CUDAfill_n(T* ptr, size_t n, const T& value);
 

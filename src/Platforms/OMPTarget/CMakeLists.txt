@@ -20,6 +20,10 @@ else()
 endif()
 target_link_libraries(platform_omptarget_LA PUBLIC platform_omptarget_runtime)
 
+if(ENABLE_CUDA AND QMC_OFFLOAD_MEM_ASSOCIATED)
+  target_link_libraries(platform_omptarget_runtime PUBLIC platform_cuda_runtime)
+endif()
+
 if(NOT QMC_COMPLEX)
   target_compile_definitions(platform_omptarget_LA PUBLIC OPENMP_NO_COMPLEX)
 else()
