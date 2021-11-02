@@ -1975,7 +1975,7 @@ class ci(QIxml):
 #end class ci
 
 class csf(QIxml):
-    attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
+    attributes = ['id','exctlvl','coeff','coeff_real','coeff_imag','qchem_coeff','occ']
     elements   = ['det']
     attr_types = obj(occ=str)
 #end class csf
@@ -4241,6 +4241,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
+            print(qhost)
             if qhost!=None:
                 qhost[quantity] = value
             else:
@@ -4476,7 +4477,7 @@ def generate_sposets(type           = None,
         QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
     #end if
     if sposets!=None:
-        for spo in spo:
+        for spo in sposets:
             spo.type = type
         #end for
     elif occupation=='slater_ground':
@@ -4796,7 +4797,7 @@ def generate_determinantset_old(type           = 'bspline',
         format_failed = False
         if not isinstance(excitation,(tuple,list)):
             QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
-        elif excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
+        elif excitation[0] not in ('up','down','singlet','triplet') or not isinstance(excitation[1],str):
             format_failed = True
         else:
             #There are three types of input:
@@ -4819,15 +4820,121 @@ def generate_determinantset_old(type           = 'bspline',
             #Should be modified
             QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
-        
+
         spin_channel,excitation = excitation
-        
         if spin_channel=='up':
-            det = dset.get('updet')
+            sdet = dset.get('updet')
         elif spin_channel=='down':
-            det = dset.get('downdet')
+            sdet = dset.get('downdet')
+        elif spin_channel=='singlet' or spin_channel=='triplet':
+
+            # Is multi-det WF appropriate?
+            if elns.down_electron.count != elns.up_electron.count:
+                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(elns.up_electron.count,elns.down_electron.count))
+            #end if
+
+            coeff_sign = ''
+            if spin_channel=='triplet':
+                coeff_sign = '-'
+            #end if
+
+            if down_spin:
+                sposet_list = [sposet(name            = 'spo_u',
+                                      spindataset     = 0,
+                                      size            = elns.up_electron.count+1,
+                                      occupation      = section(mode='ground'),
+                                      coefficient     = section(size=90,spindataset=0),
+                                      spos            = ''
+                                     ),
+                               sposet(name            = 'spo_d',
+                                      spindataset     = 0,
+                                      size            = elns.up_electron.count+1,
+                                      occupation      = section(mode='ground'),
+                                      coefficient     = section(spindataset=1),
+                                      spos            = ''
+                                     )]
+            else:
+                sposet_list = [sposet(name            = 'spo_ud',
+                                      spindataset     = 0,
+                                      size            = elns.up_electron.count+1,
+                                      occupation      = section(mode='ground'),
+                                      coefficient     = section(spindataset=0),
+                                      spos            = ''
+                                     )]
+            #end if
+
+            dset = determinantset(
+                type       = type,
+                meshfactor = meshfactor,
+                precision  = precision,
+                tilematrix = tilematrix,
+                twistnum   = twistnum,
+                href       = href,
+                source     = source,
+                sposets    = sposet_list,
+                multideterminant = multideterminant(
+                    optimize = 'no',
+                    spo_up='spu_u' if down_spin else 'spo_ud',
+                    spo_dn='spo_d' if down_spin else 'spo_ud',
+                    detlist = detlist(
+                        size = '1',
+                        type = 'CSF',
+                        nca  = '0',
+                        ncb  = '0',
+                        nea = elns.up_electron.count,
+                        neb = elns.down_electron.count,
+                        cutoff = '0.001',
+                        csf = csf(
+                            id          = 'CSF_0',
+                            exctLvl     = '1',
+                            coeff       = '1.0',
+                            coeff_real  = '1.0',
+                            qchem_coeff = '1.0',
+                            dets = collection(
+                                det(
+                                    id='csf_00',
+                                    coeff='0.70710678118654752440',
+                                    ),
+                                det(
+                                    id='csf_01',
+                                    coeff=coeff_sign+'0.70710678118654752440',
+                                    ),
+                                )
+                            )
+                        ),
+                    )
+                )
+            
+            if '-' in excitation or '+' in excitation: #Type 2
+                # assume excitation of form '-216 +217'
+                exc_orbs = array(excitation.split(),dtype=int)
+                exc_orbs[0] *= -1
+                nel = elns.up_electron.count 
+
+                for sp in dset.sposets:
+                    sp.size=exc_orbs[1]
+                #end for
+
+                dset.multideterminant.detlist.nstates = exc_orbs[1]
+
+                dset.multideterminant.detlist.csf.occ = '2'*nel+'0'*(exc_orbs[1]-nel-1)+'1'
+                dset.multideterminant.detlist.csf.occ = dset.multideterminant.detlist.csf.occ[:exc_orbs[0]-1]+'1'+dset.multideterminant.detlist.csf.occ[exc_orbs[0]:]
+
+                dset.multideterminant.detlist.csf.dets[0].alpha = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
+                dset.multideterminant.detlist.csf.dets[0].beta = '1'*nel+'0'*(exc_orbs[1]-nel)
+
+                dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nel+'0'*(exc_orbs[1]-nel)
+                dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
+
+            elif 'cb' not in excitation and 'vb' not in excitation: #Type 1 
+                QmcpackInput.class_error('{} excitation is not yet available for band type'.format(spin_channel))
+            else:
+                QmcpackInput.class_error('{} excitation is not yet available for type 3'.format(spin_channel))
+            #end if
+            return dset
         #end if
-        occ = det.occupation
+
+        occ = sdet.occupation
         occ.pairs    = 1
         occ.mode     = 'excited'
         occ.contents = '\n'+excitation+'\n'
@@ -4841,7 +4948,7 @@ def generate_determinantset_old(type           = 'bspline',
                 QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
             #end if
             
-            vb = int(det.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
+            vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
