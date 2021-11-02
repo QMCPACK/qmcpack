@@ -962,6 +962,21 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     }
   }
 
+  evaluateMultiDiracDeterminantDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+}
+
+void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
+                                                                          const opt_variables_type& optvars,
+                                                                          std::vector<ValueType>& dlogpsi,
+                                                                          std::vector<ValueType>& dhpsioverpsi)
+{
+  //Currently, the MultiDiracDeterminant::evaluateDerivatives works with a legacy design, essentially requiring only up and down determinants.
+  //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
+  //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
+  for (auto const& det : Dets)
+    if (!det->Optimizable)
+      return;
+
   if (Dets.size() != 2)
   {
     throw std::runtime_error(
@@ -974,6 +989,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0],
                                  static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[1], (*C2node)[0]);
   }
+
+  //note: the future redesign of MultiDiracDeterminant::evaluateDerivatives should look something like this
   //for (size_t id = 0; id < Dets.size(); id++)
   //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psi_ratio_to_ref_det_), *C, *C2node, id);
 }
@@ -1046,6 +1063,20 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
     }
   }
 
+  evaluateMultiDiracDeterminantDerivativesWF(P, optvars, dlogpsi);
+}
+
+void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
+                                                                            const opt_variables_type& optvars,
+                                                                            std::vector<ValueType>& dlogpsi)
+{
+  //Currently, the MultiDiracDeterminant::evaluateDerivativesWF works with a legacy design, essentially requiring only up and down determinants.
+  //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
+  //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
+  for (auto const& det : Dets)
+    if (!det->Optimizable)
+      return;
+
   if (Dets.size() != 2)
   {
     throw std::runtime_error(
@@ -1058,9 +1089,10 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
                                    (*C2node)[1]);
     Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psi_ratio_to_ref_det_, *C, (*C2node)[1],
                                    (*C2node)[0]);
-    // for (size_t id = 0; id < Dets.size(); id++)
-    //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psi_ratio_to_ref_det_, *C, *C2node, id);
   }
+  //note: the future redesign of MultiDiracDeterminant::evaluateDerivativesWF should look something like this
+  // for (size_t id = 0; id < Dets.size(); id++)
+  //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psi_ratio_to_ref_det_, *C, *C2node, id);
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()
