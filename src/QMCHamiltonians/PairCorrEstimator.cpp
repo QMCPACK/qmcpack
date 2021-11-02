@@ -115,9 +115,10 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
       const RealType r = dist[j];
       if (r < Dmax)
       {
-        const int loc     = static_cast<int>(DeltaInv * r);
-        const int jg      = P.GroupID[j];
-        const int pair_id = ig * (ig + 1) / 2 + jg;
+        const int loc = static_cast<int>(DeltaInv * r);
+        const int jg  = P.GroupID[j];
+        const int pair_id =
+            ((num_species * (num_species - 1)) / 2) - (((num_species - jg) * (num_species - jg - 1)) / 2) + ig;
         collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
       }
     }
@@ -225,7 +226,7 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
 // Sets the normalization, or norm_factor, for each channel and bin
 void PairCorrEstimator::set_norm_factor()
 {
-  /* 
+  /*
      Number of species-pair-specific gofr's to compute
      E.g. "uu", "dd", "ud", & etc.
      Note the addition +1 bin, which is for the total gofr of the system
@@ -234,7 +235,7 @@ void PairCorrEstimator::set_norm_factor()
   const RealType n_channels = num_species * (num_species - 1) / 2 + num_species + 1;
   norm_factor.resize(n_channels, NumBins);
 
-  /* 
+  /*
      Compute the normalization V/Npairs/Nid, with
      V the volume of the system
      Npairs the number of (unique) pairs of particles of given types
@@ -286,7 +287,7 @@ void PairCorrEstimator::set_norm_factor()
     {
 	std::cout << std::setw(4) << j;
 	std::cout << std::setw(8) << std::setprecision(4) << j*Delta;
-	for( int i=0; i<norm_factor.size1(); i++ ) 
+	for( int i=0; i<norm_factor.size1(); i++ )
 	  {
 	    std::cout << "  " << std::setw(10) << std::setprecision(4) << norm_factor(i,j);
 	  }
