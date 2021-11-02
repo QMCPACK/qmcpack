@@ -650,8 +650,8 @@ proper pair interaction in the Hamiltonian section.
 
 .. _singledeterminant:
 
-Single determinant wavefunctons
--------------------------------
+Single determinant wavefunctions
+--------------------------------
 
 Placing a single determinant for each spin is the most used ansatz for the antisymmetric part of a trial wavefunction.
 The input xml block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listing 1>`. A list of options is given in
