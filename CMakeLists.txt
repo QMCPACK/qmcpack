@@ -64,8 +64,8 @@ option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
-                       OFF "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime" OFF
+                       "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -81,10 +81,13 @@ if(ENABLE_OFFLOAD AND QMC_CUDA)
 endif()
 
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
-if(ENABLE_CUDA OR QMC_CUDA AND NOT QMC_CUDA2HIP)
+if(ENABLE_CUDA
+   OR QMC_CUDA
+   AND NOT QMC_CUDA2HIP)
   if(DEFINED CUDA_ARCH)
     unset(CUDA_ARCH CACHE)
-    message(FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
+    message(
+      FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
   endif()
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES 70)
@@ -273,12 +276,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
 endif()
 
-if(${COMPILER} MATCHES "Clang" AND ENABLE_OFFLOAD AND QMC_CUDA2HIP AND NOT QMC_OFFLOAD_MEM_ASSOCIATED)
-  message(WARNING "Ignore this if Cray compilers are used! "
-          "Detected ENABLE_OFFLOAD=ON and QMC_CUDA2HIP=ON but QMC_OFFLOAD_MEM_ASSOCIATED=OFF. "
-          "As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers.")
-endif()
-
 #-----------------------------------------------------------------------
 # Set C++ minimum standard and run basic checks
 #-----------------------------------------------------------------------
@@ -366,7 +363,16 @@ message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 # Set up OpenMP offload compile options
 #---------------------------------------------------------
 if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
+  message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+  if(${COMPILER} MATCHES "Clang"
+     AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "amdgcn"
+     AND QMC_CUDA2HIP
+     AND NOT QMC_OFFLOAD_MEM_ASSOCIATED)
+    message(WARNING "Detected ENABLE_OFFLOAD=ON and QMC_CUDA2HIP=ON but QMC_OFFLOAD_MEM_ASSOCIATED=OFF. "
+                    "As of 11/2021, QMC_OFFLOAD_MEM_ASSOCIATED=ON is needed for AMD and mainline LLVM compilers "
+                    "when using OpenMP offload to AMD GPU together with HIP.")
+  endif()
 endif()
 
 #---------------------------------------------------------
@@ -687,7 +693,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
   else(QMC_CUDA2HIP)
-    if (CMAKE_VERSION VERSION_LESS 3.18.0)
+    if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
     # a few production machines use CUDA 10 which only supports C++14.
