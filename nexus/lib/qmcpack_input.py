@@ -4830,7 +4830,7 @@ def generate_determinantset_old(type           = 'bspline',
 
             # Is multi-det WF appropriate?
             if elns.down_electron.count != elns.up_electron.count:
-                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types assume number of up and down electrons is the same. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}'.format(elns.up_electron.count,elns.down_electron.count))
+                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(elns.up_electron.count,elns.down_electron.count))
             #end if
 
             coeff_sign = ''
