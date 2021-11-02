@@ -215,7 +215,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
       T* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
+#if !defined(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
       PRAGMA_OFFLOAD("omp parallel for reduction(+: val_sum, grad_x, grad_y, grad_z, lapl)")
+#endif
       for (int j = 0; j < n_src; j++)
       {
         if (j == iat) continue;
@@ -321,7 +323,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
       T** mw_coefs        = reinterpret_cast<T**>(transfer_buffer_ptr);
       T* mw_DeltaRInv     = reinterpret_cast<T*>(transfer_buffer_ptr + sizeof(T*) * num_groups);
       T* mw_cutoff_radius = mw_DeltaRInv + num_groups;
+#if !defined(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
       PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
+#endif
       for (int j = 0; j < n_src; j++)
       {
         const int ig    = grp_ids[j];
@@ -562,7 +566,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
       T* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
+#if !defined(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
       PRAGMA_OFFLOAD("omp parallel for")
+#endif
       for (int j = 0; j < n_src; j++)
       {
         if (j == iat) continue;
