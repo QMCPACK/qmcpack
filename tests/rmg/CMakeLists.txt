@@ -2,7 +2,7 @@
 # Add tests to ctest
 #############################################################
 
-message("Adding tests for rmg -> convert4qmc -> QMCPACK workflow")
+message("Adding RMG tests")
 
 if(NOT TEST_MAX_PROCS)
   set(TEST_MAX_PROCS 16)

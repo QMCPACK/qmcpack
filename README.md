@@ -177,6 +177,7 @@ make -j 8
 
 ```
      QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
+     RMG_BIN             Location of RMG binary
      QMC_DATA            Specify data directory for QMCPACK performance and integration tests
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
