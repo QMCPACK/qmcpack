@@ -47,8 +47,13 @@ def read_command_line():
                       action='store_true',default=False,
                       help='Print detailed information (default=%default).'
                       )
-    print(parser.parse_args())
-    print('\n'+parser.format_help().strip()+'\n')
+
+    options,files_in = parser.parse_args()
+
+    if options.help:
+        print('\n'+parser.format_help().strip()+'\n')
+    #end if
+
 #end def
 
 if __name__=='__main__':
