@@ -4,4 +4,58 @@
 from observables import ChargeDensity
 
 # External imports
-import numpy as np
+from optparse import OptionParser
+try:
+    import numpy as np
+except:
+    np = unavailable('numpy')
+#end try
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+# Load Nexus modules
+try:
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+except:
+    from versions import nexus_version
+#end try
+
+def import_nexus_module(module_name):
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+def read_command_line():
+    usage = '''usage: %prog [options] [file(s)]'''
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-v','--verbose',dest='verbose',
+                      action='store_true',default=False,
+                      help='Print detailed information (default=%default).'
+                      )
+    print(parser.parse_args())
+    print('\n'+parser.format_help().strip()+'\n')
+#end def
+
+if __name__=='__main__':
+    read_command_line()
+
+
+#end if
+
+
+
