@@ -42,11 +42,13 @@ try:
 
     observables = import_nexus_module('observables')
     ChargeDensity = observables.ChargeDensity
+    vlog = observables.vlog
 except:
     from versions import nexus_version
     from generic import obj
     from developer import DevBase,error,ci,unavailable
     import memory
+    from observables import ChargeDensity, vlog
 #end try
 
 
@@ -56,6 +58,23 @@ try:
 except:
     np = unavailable('numpy')
 #end try
+
+
+def comma_list(s):
+    if ',' in s:
+        s = s.replace(',',' ')
+    #end if
+    s = s.strip()
+    if ' ' in s:
+        tokens = s.split()
+        s = ''
+        for t in tokens:
+            s+=t+','
+        #end for
+        s=s[:-1]
+    #end if
+    return s
+#end def comma_list
 
 
 class QDRBase(DevBase):
@@ -112,7 +131,7 @@ class QMCDensityRadialProcessor(QDRBase):
     #end def __init__
 
     def read_command_line(self):
-        usage = '''usage: %prog [options] [file(s)]'''
+        usage = '''usage: %prog [options] xsf_file'''
         parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
         parser.add_option('-h','--help',dest='help',
                           action='store_true',default=False,
@@ -122,8 +141,28 @@ class QMCDensityRadialProcessor(QDRBase):
                           action='store_true',default=False,
                           help='Print detailed information (default=%default).'
                           )
+        parser.add_option('-R','--radii',dest='radii',
+                          default='None',
+                          help='List of cutoff radii (default=%default).'
+                          )
+        parser.add_option('-S','--species',dest='species',
+                          default='None',
+                          help='List of species (default=%default).'
+                          )
+        parser.add_option('-s','--source',dest='source',
+                          default='qmcpack',
+                          help='Source that generated the .xsf file. Options: "pwscf", "qmcpack" (default=%default).'
+                          )
+        parser.add_option('-c','--cumulative',dest='cumulative',
+                          action='store_true',default=True,
+                          help='Evaluate cumulative radial density at cutoff radii (default=%default).'
+                          )
+        parser.add_option('-p','--plot',dest='plot',
+                          action='store_true',default=False,
+                          help='Show plots interactively (default=%default).'
+                          )
 
-        options,files_in = parser.parse_args()
+        options,file_in = parser.parse_args()
 
         QDRBase.parser = parser
         QDRBase.options.transfer_from(options.__dict__)
@@ -133,7 +172,7 @@ class QMCDensityRadialProcessor(QDRBase):
 
         QDRBase.verbose = opt.verbose
 
-        if opt.help or len(files_in)==0:
+        if opt.help or len(file_in)!=1:
             self.help()
             self.exit()
         #end if
@@ -141,10 +180,87 @@ class QMCDensityRadialProcessor(QDRBase):
         self.vlog('\n{0} initializing'.format(self.name))
         self.vlog('\noptions provided:')
         self.vlog(str(self.options))
+
+        # handle options
+        #   options initialized to "None"
+        for k,v in opt.items():
+            if isinstance(v,str) and v=='None':
+                opt[k] = None
+            #end if
+        #end for
+
+        self.file_in = file_in[0]
+
+        #   --species option
+        if opt.species is not None:
+            opt_failed = False
+            spc = opt.species
+            try:
+                opt.species = np.array(comma_list(opt.species).split(','))
+                opt_failed = len(opt.species.shape)!=1
+            except:
+                opt_failed = True
+            #end try
+            if opt_failed:
+                self.error('species must be a list of species labels\nyou provided: {0}'.format(spc))
+            #end if
+        #end if
+
+        #   --radii option
+        if opt.radii is not None:
+            opt_failed = False
+            rad = opt.radii
+            try:
+                #opt.radii = np.array(eval(comma_list(opt.radii)),dtype=float)
+                opt.radii = eval(comma_list(opt.radii))
+                if np.isscalar(opt.radii):
+                    opt.radii = np.array([opt.radii],dtype=float)
+                else:
+                    opt.radii = np.array(opt.radii,dtype=float)
+                #end if
+                opt_failed = len(opt.radii.shape)!=1
+                if opt.species is not None:
+                    opt_failed = opt_failed or len(opt.radii)!=len(opt.species) 
+                #end if
+                # Note: since species list not provided. the length of radii list must be the same as 
+                # number of species in .xsf file, but this will need to be checked after .xsf is read
+            except:
+                opt_failed = True
+            #end try
+            if opt_failed:
+                self.error('radii must be a list of values and must be the same length as species list\nyou provided: {0}'.format(rad))
+            #end if
+        #end if
+        print(opt)
+
     #end def read_command_line(self)
 
     def process(self):
         opt = self.options
+        file = self.file_in
+
+        # Cutdown on the printing, unless user provides -v option
+        if not opt.verbose:
+            vlog.set_verbosity('none')
+        #end if
+
+        # Instantiate ChargeDensity object
+        cd = ChargeDensity()
+        cd.read_xsf(file)
+        if opt.source=='pwscf':
+            cd.change_distance_units('B')
+        else:
+            cd.volume_normalize()
+        #end if
+        self.log('\nNorm:',cd.norm())
+
+        if opt.plot:
+            print(opt.radii)
+            cd.plot_radial_density(rmax=2.,species=['Mn','Bi'])
+        #end if
+
+        # TODO: Instantiate another if VMC results are given -- then extrapolate
+
     #end def process(self)
 
 #end class QMCDensityRadialProcessor

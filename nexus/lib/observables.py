@@ -98,7 +98,7 @@ class VLog(DevBase):
         self.verbosity = self.verbosity_levels.high
     #end def set_high
 
-    def set_verbosity(level):
+    def set_verbosity(self,level):
         if level not in self.verbosity_levels:
             vlinv = self.verbosity_levels.inverse()
             error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
