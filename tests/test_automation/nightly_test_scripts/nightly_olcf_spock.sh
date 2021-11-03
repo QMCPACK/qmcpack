@@ -45,8 +45,8 @@ git clone --branch develop --depth 1 https://github.com/QMCPACK/qmcpack.git
 cd qmcpack/build
 
 # Start real build test
-echo "Start gcc10-nompi-cuda2hip-release-real test"
-export QMCPACK_TEST_SUBMIT_NAME=gcc10-nompi-cuda2hip-release-real
+echo "Start GCC10-NoMPI-CUDA2HIP-Release-Real test"
+export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Release-Real
 
 CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
       -DCMAKE_CXX_COMPILER=g++ \
@@ -64,8 +64,8 @@ ctest ${CTEST_FLAGS} \
 unset QMCPACK_TEST_SUBMIT_NAME
 
 # Start complex build test
-echo "Start gcc10-nompi-cuda2hip-release-complex test"
-export QMCPACK_TEST_SUBMIT_NAME=gcc10-nompi-cuda2hip-release-complex
+echo "Start GCC10-NoMPI-CUDA2HIP-Release-Complex test"
+export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Release-Complex
 
 cd ${base_dir}/qmcpack/build
 rm -fr *
@@ -93,6 +93,6 @@ mkdir -p ${log_dir}
 # go there to capture the job output file
 cd ${log_dir}
 
-echo "Submit sbatch job for 22:00"
+echo "Submit sbatch job for 22:00 nightly"
 sbatch -b 22:00 ${base_dir}/qmcpack/tests/test_automation/nightly_test_scripts/nightly_olcf_spock.sh 
 
