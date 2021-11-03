@@ -117,7 +117,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
       {
         const int loc     = static_cast<int>(DeltaInv * r);
         const int jg      = P.GroupID[j];
-        const int pair_id = (jg < i)
+        const int pair_id = (jg < ig)
             ? ((num_species * (num_species - 1)) / 2) - (((num_species - jg) * (num_species - jg - 1)) / 2) + ig
             : ((num_species * (num_species - 1)) / 2) - (((num_species - ig) * (num_species - ig - 1)) / 2) + jg;
         collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
