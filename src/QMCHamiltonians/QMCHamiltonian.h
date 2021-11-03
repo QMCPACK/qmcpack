@@ -96,9 +96,6 @@ public:
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
 
-  // ///collect scalar trace data
-  //void collect_scalar_traces();
-
   ///collect walker trace data
   void collect_walker_traces(Walker_t& walker, int step);
 
@@ -178,7 +175,7 @@ public:
     copy(first + myIndex, first + myIndex + Observables.size(), Observables.begin());
   }
 
-  void update_source(ParticleSet& s);
+  void updateSource(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
   inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
@@ -201,7 +198,7 @@ public:
   inline void setPrimary(bool primary)
   {
     for (int i = 0; i < H.size(); i++)
-      H[i]->UpdateMode.set(OperatorBase::PRIMARY, primary);
+      H[i]->getUpdateMode().set(OperatorBase::PRIMARY, primary);
   }
 
   /////Set Tau inside each of the Hamiltonian elements
@@ -244,8 +241,10 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                                   const RefVectorWithLeader<ParticleSet>& p_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -257,6 +256,7 @@ public:
    */
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateWithToperator(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list);
 
 
@@ -275,6 +275,7 @@ public:
 
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivatives(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
@@ -283,6 +284,7 @@ public:
 
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivativesInner(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
@@ -327,11 +329,11 @@ public:
   * @return Local Energy.
   */
   FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                                  ParticleSet& ions,
+                                                  TrialWaveFunction& psi,
+                                                  ParticleSet::ParticlePos_t& hf_terms,
+                                                  ParticleSet::ParticlePos_t& pulay_terms,
+                                                  ParticleSet::ParticlePos_t& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */
@@ -374,6 +376,7 @@ public:
   }
 
   static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                const RefVectorWithLeader<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
@@ -429,7 +432,7 @@ private:
   /////////////////////
   // Vectorized data //
   /////////////////////
-  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
+  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, AuxEnergyVector;
 #endif
 
 private:

@@ -61,9 +61,6 @@ void Crowd::startBlock(int num_steps)
   estimator_manager_crowd_.startBlock(num_steps);
 }
 
-void Crowd::stopBlock()
-{
-  estimator_manager_crowd_.stopBlock();
-}
+void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
 
 } // namespace qmcplusplus

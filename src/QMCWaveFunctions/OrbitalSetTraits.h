@@ -21,7 +21,7 @@
 
 #include "Configuration.h"
 #include "type_traits/scalar_traits.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 
 namespace qmcplusplus
 {

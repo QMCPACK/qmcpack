@@ -14,7 +14,7 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/CountingGaussian.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus

@@ -166,7 +166,7 @@ make -j 8
                          and use float and double for CUDA base and full precision.
      ENABLE_CUDA         ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                          Production quality for AFQMC. Pre-production quality for real-space.
-                         Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                         Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
      ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
      ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                          to avoid potential slowdown in tiny systems.

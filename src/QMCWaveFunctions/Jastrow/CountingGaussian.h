@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_GAUSSIAN_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <array>
 
 namespace qmcplusplus

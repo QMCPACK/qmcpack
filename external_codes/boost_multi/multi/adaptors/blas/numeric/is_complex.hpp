@@ -1,7 +1,7 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2020
+// © Alfredo A. Correa 2020-2021
 
 #ifndef MULTI_ADAPTORS_BLAS_NUMERIC_IS_COMPLEX_HPP
 #define MULTI_ADAPTORS_BLAS_NUMERIC_IS_COMPLEX_HPP
@@ -51,9 +51,12 @@ template<class T, class V> struct imag_is : decltype(imag_is_aux<V>(std::declval
 
 template<class T, class V> struct is_complex_of : std::integral_constant<bool, real_is<T, V>::value and imag_is<T, V>::value>{};
 
-}}}}
+} // end namespace numeric
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS numeric is_complex"
 #define BOOST_TEST_DYN_LINK

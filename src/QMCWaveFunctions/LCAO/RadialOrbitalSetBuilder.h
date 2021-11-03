@@ -23,7 +23,7 @@
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
 #include "MultiQuinticSpline1D.h"
@@ -166,7 +166,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
     hin.pop();
   }
   else
-    input_grid.reset(OneDimGridFactory::createGrid(cur));
+    input_grid = OneDimGridFactory::createGrid(cur);
 
   //set zero to use std::max
   m_rcut_safe = 0;

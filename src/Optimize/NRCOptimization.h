@@ -69,6 +69,7 @@ struct NRCOptimization
   Return_t quadstep;
   Return_t quadoffset;
   Return_t largeQuarticStep;
+  Return_t stepsize;
   bool validFuncVal;
   //if tol is absolute, not a percent
   bool AbsFuncTol;
@@ -89,6 +90,7 @@ struct NRCOptimization
     quadstep         = 0.01;
     quadoffset       = 0.0;
     largeQuarticStep = 2.0;
+    stepsize         = 0.25;
     validFuncVal     = true;
     AbsFuncTol       = false;
   }

@@ -46,14 +46,18 @@ public:
   using DisplRow  = VectorSoaContainer<RealType, DIM>;
 
 protected:
-  const ParticleSet* Origin;
+  // FIXME. once DT takes only DynamicCoordinates, change this type as well.
+  const ParticleSet& origin_;
 
-  const int N_sources;
-  const int N_targets;
+  const size_t num_sources_;
+  const size_t num_targets_;
+
+  ///name of the table
+  const std::string name_;
 
   /**defgroup SoA data */
   /*@{*/
-  /** distances_[i][j] , [N_targets][N_sources]
+  /** distances_[i][j] , [num_targets_][num_sources_]
    *  Note: Derived classes decide if it is a memory view or the actual storage
    *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
    *            There is no bound check to protect j>=i terms as the nature of operator[].
@@ -64,7 +68,7 @@ protected:
    */
   std::vector<DistRow> distances_;
 
-  /** displacements_[N_targets]x[3][N_sources]
+  /** displacements_[num_targets_]x[3][num_sources_]
    *  Note: Derived classes decide if it is a memory view or the actual storage
    *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
    *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
@@ -82,24 +86,18 @@ protected:
   ///operation modes defined by DTModes
   DTModes modes_;
 
-  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
-   * It is intended only for safety checks, not for codepath selection.
-   */
-  int old_prepared_elec_id;
-
-  ///name of the table
-  const std::string name_;
-
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target, DTModes modes)
-      : Origin(&source),
-        N_sources(source.getTotalNum()),
-        N_targets(target.getTotalNum()),
-        modes_(modes),
-        old_prepared_elec_id(-1),
-        name_(source.getName() + "_" + target.getName())
+      : origin_(source),
+        num_sources_(source.getTotalNum()),
+        num_targets_(target.getTotalNum()),
+        name_(source.getName() + "_" + target.getName()),
+        modes_(modes)
   {}
+
+  /// copy constructor. deleted
+  DistanceTableData(const DistanceTableData&) = delete;
 
   ///virutal destructor
   virtual ~DistanceTableData() = default;
@@ -114,16 +112,16 @@ public:
   inline const std::string& getName() const { return name_; }
 
   ///returns the reference the origin particleset
-  const ParticleSet& origin() const { return *Origin; }
+  const ParticleSet& get_origin() const { return origin_; }
 
   ///returns the number of centers
-  inline IndexType centers() const { return Origin->getTotalNum(); }
+  inline size_t centers() const { return origin_.getTotalNum(); }
 
   ///returns the number of centers
-  inline IndexType targets() const { return N_targets; }
+  inline size_t targets() const { return num_targets_; }
 
   ///returns the number of source particles
-  inline IndexType sources() const { return N_sources; }
+  inline size_t sources() const { return num_sources_; }
 
   /// return multi walker temporary pair distance table data pointer
   virtual const RealType* getMultiWalkerTempDataPtr() const
@@ -222,7 +220,7 @@ public:
    * Note: some distance table consumers (WaveFunctionComponent) have optimized code paths which require prepare_old = true for accepting a move.
    * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
-  virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
+  virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old = true) = 0;
 
   /** walker batched version of move. this function may be implemented asynchronously.
    * Additional synchroniziation for collecting results should be handled by the caller.
@@ -312,20 +310,9 @@ public:
    *        if false, use the data in distance_[iat] and displacements_[iat]
    * @return the id of the nearest particle, -1 not found
    */
-  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
-  {
-    throw std::runtime_error("DistanceTableData::get_first_neighbor is not implemented in calling base class");
-    return 0;
-  }
+  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const = 0;
 
-  inline void print(std::ostream& os)
-  {
-    throw std::runtime_error("DistanceTableData::print is not supported");
-    //os << "Table " << Origin->getName() << std::endl;
-    //for (int i = 0; i < r_m.size(); i++)
-    //  os << r_m[i] << " ";
-    //os << std::endl;
-  }
+  inline void print(std::ostream& os) { throw std::runtime_error("DistanceTableData::print is not supported"); }
 
   /// initialize a shared resource and hand it to a collection
   virtual void createResource(ResourceCollection& collection) const {}

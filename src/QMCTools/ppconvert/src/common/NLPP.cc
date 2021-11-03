@@ -23,7 +23,7 @@ NLPPClass::IsNonlocal()
 }
 
 void 
-ChannelPotential::Read(IOSectionClass &in, Grid *grid)
+ChannelPotential::Read(IOSectionClass &in, std::shared_ptr<Grid>& grid)
 {
   assert (in.ReadVar("l", l));
   assert (in.ReadVar("n_principal", n_principal));
@@ -232,7 +232,7 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   zeta(0) = ProjectorNorm * DeltaV(0)*u(1.0e-8)*1.0e8;
   for (int i=1; i<grid.NumPoints; i++) 
     zeta(i) = ProjectorNorm * DeltaV(i)*u(i)/grid(i);
-  zeta_r.Init (&grid, zeta);
+  zeta_r.Init (u.grid, zeta);
 
   // Compute zeta(q)
   Job = ZETA_Q;
@@ -242,7 +242,8 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
     qCurrent = qGrid(i);
     zeta(i) = integrator.Integrate(0.0, grid.End, 1.0e-12);
   }
-  zeta_q.Init (&qGrid, zeta);
+  std::shared_ptr<Grid> qGridSharedPtr(&qGrid);
+  zeta_q.Init (qGridSharedPtr, zeta);
 
 
   double gamma = G_FFT - G_max;
@@ -250,7 +251,7 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   Array<double,1> chi_q_data(qGrid.NumPoints);
   for (int i=0; i<qGrid.NumPoints; i++) 
     chi_q_data(i) = (qGrid(i) >= gamma) ? 0.0 : zeta_q(i);
-  chi_q.Init  (&qGrid, chi_q_data);  
+  chi_q.Init  (qGridSharedPtr, chi_q_data);
 
   // Now for the magic:  We adjust chi_q between G_max and gamma so
   // that the real-space oscillations outside R0 are damped out
@@ -316,7 +317,7 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
     rCurrent = grid(i);
     chi_r_data(i) = integrator.Integrate(0.0, gamma, 1.0e-10);
   }
-  chi_r.Init (&grid, chi_r_data);
+  chi_r.Init (u.grid, chi_r_data);
 
   // Finally, check to see if chi_r is small outside R0
   Job = CHECK_CHI_R;

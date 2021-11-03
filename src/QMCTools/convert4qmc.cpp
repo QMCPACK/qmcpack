@@ -226,6 +226,7 @@ int main(int argc, char** argv)
         {
           WARNMSG("Creating LCAOHDFParser")
           parser = std::make_unique<LCAOHDFParser>(argc, argv);
+          h5      = true;
         }
         else if (ext == "out")
         {
@@ -309,21 +310,7 @@ int main(int argc, char** argv)
       }
       else
       {
-        parser->addJastrow = false;
-        jastrow            = "noj";
-        parser->WFS_name   = jastrow;
-        if (parser->PBC)
-        {
-          std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
-                    << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-          parser->dumpPBC(psi_tag, ion_tag);
-        }
-        else
-          parser->dump(psi_tag, ion_tag);
-        parser->dumpStdInput(psi_tag, ion_tag);
-
-        parser->addJastrow = true;
-        jastrow            = "j";
+        parser->addJastrow = addJastrow;
         parser->WFS_name   = jastrow;
         if (parser->PBC)
         {

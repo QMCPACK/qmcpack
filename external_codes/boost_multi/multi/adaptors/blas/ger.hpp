@@ -1,7 +1,7 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXXX $CXXFLAGS -DADD_ $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
 
 #ifndef MULTI_ADAPTORS_BLAS_GER_HPP
 #define MULTI_ADAPTORS_BLAS_GER_HPP
@@ -15,7 +15,7 @@ namespace blas{
 using core::ger;
 
 template<class T, class It1, class Size1, class It2, class Size2, class Out>
-Out ger_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first){
+auto ger_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first) -> Out{
 	assert( A_first->size() == x_n );
 	assert( A_first->stride() == 1 );
 	ger(x_n, y_n, alpha, base(x_first), stride(x_first), base(y_first), stride(y_first), base(A_first), stride(A_first));
@@ -23,14 +23,14 @@ Out ger_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first){
 }
 
 template<class T, class It1, class It2, class Out>
-Out ger(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first){
+auto ger(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first) -> Out{
 	assert( stride(x_first) == stride(x_last) );
 	assert( stride(y_first) == stride(y_last) );
 	return ger_n(alpha, x_first, std::distance(x_first, x_last), y_first, std::distance(y_first, y_last), A_first);
 }
 
 template<class T, class X1D, class Y1D, class A2D>
-A2D&& ger(T alpha, X1D const& x, Y1D const& y, A2D&& A){
+auto ger(T alpha, X1D const& x, Y1D const& y, A2D&& A) -> A2D&&{
 	if(stride(A) == 1){
 		auto e = ger(alpha, begin(y), end(y), begin(x), end(x), begin(rotated(A)));
 		assert( end(rotated(A)) == e );
@@ -43,7 +43,7 @@ A2D&& ger(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 }
 
 template<class T, class It1, class Size1, class It2, class Size2, class Out>
-Out gerc_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first){
+auto gerc_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first) -> Out{
 	assert( A_first->size() == x_n );
 	assert( A_first->stride() == 1 );
 	gerc(x_n, y_n, alpha, base(x_first), stride(x_first), base(y_first), stride(y_first), base(A_first), stride(A_first));
@@ -51,14 +51,14 @@ Out gerc_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first)
 }
 
 template<class T, class It1, class It2, class Out>
-Out gerc(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first){
+auto gerc(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first) -> Out{
 	assert( stride(x_first) == stride(x_last) );
 	assert( stride(y_first) == stride(y_last) );
 	return gerc_n(alpha, x_first, std::distance(x_first, x_last), y_first, std::distance(y_first, y_last), A_first);
 }
 
 template<class T, class X1D, class Y1D, class A2D>
-A2D gerc(T alpha, X1D const& x, Y1D const& y, A2D&& A){
+auto gerc(T alpha, X1D const& x, Y1D const& y, A2D&& A) -> A2D{
 	if(stride(A) == 1){
 		auto e = gerc(alpha, begin(y), end(y), begin(x), end(x), begin(rotated(A)));
 		assert( end(rotated(A)) == e );
@@ -71,7 +71,7 @@ A2D gerc(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 }
 
 template<class T, class It1, class Size1, class It2, class Size2, class Out>
-Out geru_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first){
+auto geru_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first) -> Out{
 	assert( A_first->size() == x_n );
 	assert( A_first->stride() == 1 );
 	geru(x_n, y_n, alpha, base(x_first), stride(x_first), base(y_first), stride(y_first), base(A_first), stride(A_first));
@@ -79,14 +79,14 @@ Out geru_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first)
 }
 
 template<class T, class It1, class It2, class Out>
-Out geru(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first){
+auto geru(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first) -> Out{
 	assert( stride(x_first) == stride(x_last) );
 	assert( stride(y_first) == stride(y_last) );
 	return geru_n(alpha, x_first, std::distance(x_first, x_last), y_first, std::distance(y_first, y_last), A_first);
 }
 
 template<class T, class X1D, class Y1D, class A2D>
-A2D geru(T alpha, X1D const& x, Y1D const& y, A2D&& A){
+auto geru(T alpha, X1D const& x, Y1D const& y, A2D&& A) -> A2D{
 	if(stride(A) == 1){
 		auto e = geru(alpha, begin(y), end(y), begin(x), end(x), begin(rotated(A)));
 		assert( end(rotated(A)) == e );
@@ -98,9 +98,11 @@ A2D geru(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 	return A;
 }
 
-}}}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_GER
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi blas ger"
 #define BOOST_TEST_DYN_LINK

@@ -32,16 +32,40 @@ struct atBasisSet
   std::vector<basisGroup> basisGroups;
 };
 
+enum class OrbType
+{
+  CORE,
+  ACTIVE,
+  VIRTUAL
+};
+
 struct fermIrrep
 {
   std::string label;
   std::vector<double> energies;
+  std::vector<OrbType> orbtypes;
   std::vector<std::vector<std::vector<double>>> spinor_mo_coeffs; //mo,ao,up_r,up_i,dn_r,dn_i
   fermIrrep(std::string label_in, int nSpinors, int numAO);
   fermIrrep generate_kramers_pair();
   int get_num_spinors() { return energies.size(); }
   int get_num_ao() { return spinor_mo_coeffs[0].size(); }
   std::string get_label() { return label; }
+};
+
+struct ciState
+{
+  double energy;
+  std::vector<std::string> occstrings;
+  std::vector<double> coeffs;
+};
+
+class cosciRep
+{
+public:
+  cosciRep(std::string in_label, int nstates);
+  std::string label;
+  std::vector<ciState> states;
+  void printInfo(std::ostream& os, int& tot_state_count);
 };
 
 class DiracParser : public QMCGaussianParserBase, public OhmmsAsciiParser
@@ -57,6 +81,9 @@ private:
   void getGeometry(std::istream& is);
   void getGaussianCenters(std::istream& is);
   void getSpinors(std::istream& is);
+  void getWF(std::istream& is);
+  void getCOSCI(std::istream& is);
+  void getSingleDet(std::istream& is);
   std::streampos pivot_begin;
   int NumberOfSpecies;
   int version;
@@ -66,6 +93,10 @@ private:
 
   std::vector<fermIrrep> irreps;
   std::vector<fermIrrep> kp_irreps;
+  std::vector<cosciRep> cosciReps;
+
+  void parseCOSCIOrbInfo(std::istream& is, const int irrep_idx, OrbType type);
+  int sortAndStoreCOSCIOrbs(OrbType type, const int spinor_component);
 };
 
 

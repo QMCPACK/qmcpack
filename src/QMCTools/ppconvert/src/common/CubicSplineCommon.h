@@ -39,7 +39,7 @@ private:
 
 public:
   int NumParams;
-  Grid* grid;
+  std::shared_ptr<Grid> grid;
   /// The values of the derivative of the represented function on the
   /// boundary.  If each value is greater that 1e30, we compute
   /// boundary conditions assuming that the second derivative is zero at
@@ -61,7 +61,7 @@ public:
 
   /// Initialize the cubic spline.  See notes about start and end
   /// deriv above.
-  inline void Init(Grid* NewGrid, Array<double, 1> NewYs, double startderiv, double endderiv)
+  inline void Init(std::shared_ptr<Grid>& NewGrid, Array<double, 1> NewYs, double startderiv, double endderiv)
   {
     StartDeriv = startderiv;
     EndDeriv   = endderiv;
@@ -82,17 +82,17 @@ public:
 
   /// Simplified form which assumes that the second derivative at both
   /// boundaries are zero.
-  inline void Init(Grid* NewGrid, Array<double, 1> NewYs) { Init(NewGrid, NewYs, 5.0e30, 5.0e30); }
+  inline void Init(std::shared_ptr<Grid>& NewGrid, Array<double, 1> NewYs) { Init(NewGrid, NewYs, 5.0e30, 5.0e30); }
 
   /// Simplified constructor.
-  inline CubicSplineCommon(Grid* NewGrid, Array<double, 1> NewYs)
+  inline CubicSplineCommon(std::shared_ptr<Grid>& NewGrid, Array<double, 1> NewYs)
   {
     StartDeriv = EndDeriv = 5.0e30;
     Init(NewGrid, NewYs, 5.0e30, 5.0e30);
   }
 
   /// Full constructor.
-  inline CubicSplineCommon(Grid* NewGrid, Array<double, 1> NewYs, double startderiv, double endderiv)
+  inline CubicSplineCommon(std::shared_ptr<Grid>& NewGrid, Array<double, 1> NewYs, double startderiv, double endderiv)
   {
     Init(NewGrid, NewYs, startderiv, endderiv);
     Update();

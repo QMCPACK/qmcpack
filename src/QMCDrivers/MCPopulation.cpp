@@ -98,9 +98,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     walkers_[iw]->DataSet.allocate();
 
     if (iw < walker_configs_ref_.WalkerList.size())
-      *walkers_[iw]       = *walker_configs_ref_[iw];
+      *walkers_[iw] = *walker_configs_ref_[iw];
 
-    walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
+    walker_elec_particle_sets_[iw]  = std::make_unique<ParticleSet>(*elec_particle_set_);
     walker_trial_wavefunctions_[iw] = trial_wf_->makeClone(*walker_elec_particle_sets_[iw]);
     walker_hamiltonians_[iw] =
         hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
@@ -260,7 +260,9 @@ void MCPopulation::syncWalkersPerRank(Communicate* comm)
   num_global_walkers_ = std::accumulate(num_local_walkers_per_rank.begin(), num_local_walkers_per_rank.end(), 0);
 }
 
-void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const
+void MCPopulation::measureGlobalEnergyVariance(Communicate& comm,
+                                               FullPrecRealType& ener,
+                                               FullPrecRealType& variance) const
 {
   std::vector<FullPrecRealType> weight_energy_variance(3, 0.0);
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
@@ -273,7 +275,7 @@ void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealTy
   }
 
   comm.allreduce(weight_energy_variance);
-  ener = weight_energy_variance[1] / weight_energy_variance[0];
+  ener     = weight_energy_variance[1] / weight_energy_variance[0];
   variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;
 }
 

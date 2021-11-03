@@ -78,7 +78,7 @@ public:
   ///const_iterator of Walker container
   typedef WalkerList_t::const_iterator const_iterator;
 
-  typedef std::vector<Reptile*> ReptileList_t;
+  typedef UPtrVector<Reptile> ReptileList_t;
 
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
@@ -122,7 +122,7 @@ public:
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
-
+  ~MCWalkerConfiguration();
   /** create numWalkers Walkers
    *
    * Append Walkers to WalkerList.

@@ -11,7 +11,6 @@
 
 #include <catch.hpp>
 #include <algorithm>
-#include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -47,19 +46,19 @@ TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 
   double host_one(1.0);
   double host_zero(0.0);
-  
+
   std::vector<double> A{2, 5, 8, 7, 5, 2, 2, 8, 7, 5, 6, 6, 5, 4, 4, 8};
   std::copy_n(A.begin(), 16, mat_a.data());
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
-  int lda= n;
-  cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()),
-                            mat_a.size() * sizeof(double), cudaMemcpyHostToDevice, cuda_handles->hstream));
-  cublasErrorCheck(cuBLAS::geam(cuda_handles->h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
-                                    temp_mat.device_data(), lda, &host_zero,
-                                mat_c.device_data(), lda, mat_a.device_data(), lda),
+  CUDALinearAlgebraHandles cuda_handles;
+  int lda = n;
+  cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()), mat_a.size() * sizeof(double),
+                            cudaMemcpyHostToDevice, cuda_handles.hstream));
+  cublasErrorCheck(cuBLAS::geam(cuda_handles.h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
+                                temp_mat.device_data(), lda, &host_zero, mat_c.device_data(), lda, mat_a.device_data(),
+                                lda),
                    "cuBLAS::geam failed.");
 }
-  
+
 TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermion]")
 {
   OffloadPinnedMatrix<double> mat_a;
@@ -70,10 +69,10 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
   log_values.resize(1);
   OffloadPinnedMatrix<double> inv_mat_a;
   inv_mat_a.resize(4, 4);
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
-  DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);
+  CUDALinearAlgebraHandles cuda_handles;
+  DiracMatrixComputeCUDA<double> dmcc;
 
-  dmcc.invert_transpose(*cuda_handles, mat_a, inv_mat_a, log_values);
+  dmcc.invert_transpose(cuda_handles, mat_a, inv_mat_a, log_values);
 
 
   OffloadPinnedMatrix<double> mat_b;
@@ -91,11 +90,11 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
   OffloadPinnedMatrix<double> inv_mat_a2;
   inv_mat_a2.resize(4, 4);
 
-  RefVector<OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
+  RefVector<const OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
   log_values.resize(2);
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, {true, true});
+  dmcc.mw_invertTranspose(cuda_handles, a_mats, inv_a_mats, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -113,11 +112,11 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
 
   a_mats[1] = mat_a3;
 
-  RefVector<OffloadPinnedMatrix<double>> a_mats3{mat_a, mat_a2, mat_a3};
+  RefVector<const OffloadPinnedMatrix<double>> a_mats3{mat_a, mat_a2, mat_a3};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats3{inv_mat_a, inv_mat_a2, inv_mat_a3};
 
   log_values.resize(3);
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats3, inv_a_mats3, log_values, {true, true});
+  dmcc.mw_invertTranspose(cuda_handles, a_mats3, inv_a_mats3, log_values);
 
   check_matrix_result = checkMatrix(inv_mat_a, mat_b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -134,9 +133,9 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
 TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefunction][fermion]")
 {
   int n = 64;
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
+  CUDALinearAlgebraHandles cuda_handles;
 
-  DiracMatrixComputeCUDA<std::complex<double>> dmcc(cuda_handles->hstream);;
+  DiracMatrixComputeCUDA<std::complex<double>> dmcc;
 
   Matrix<std::complex<double>> mat_spd;
   mat_spd.resize(n, n);
@@ -160,7 +159,7 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
       mat_a2(i, j) = mat_spd2(i, j);
-  
+
   OffloadPinnedVector<std::complex<double>> log_values;
   log_values.resize(2);
   OffloadPinnedMatrix<std::complex<double>> inv_mat_a;
@@ -168,16 +167,16 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
   OffloadPinnedMatrix<std::complex<double>> inv_mat_a2;
   inv_mat_a2.resize(n, n);
 
-  RefVector<OffloadPinnedMatrix<std::complex<double>>> a_mats{mat_a, mat_a2};
+  RefVector<const OffloadPinnedMatrix<std::complex<double>>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<std::complex<double>>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, {true, true});
+  dmcc.mw_invertTranspose(cuda_handles, a_mats, inv_a_mats, log_values);
 
   DiracMatrix<std::complex<double>> dmat;
   Matrix<std::complex<double>> inv_mat_test(n, n);
   std::complex<double> det_log_value;
   dmat.invert_transpose(mat_spd, inv_mat_test, det_log_value);
-  
+
   auto check_matrix_result = checkMatrix(inv_mat_a, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
@@ -189,9 +188,8 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunction][fermion]")
 {
   int n = 64;
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
-
-  DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);;
+  CUDALinearAlgebraHandles cuda_handles;
+  DiracMatrixComputeCUDA<double> dmcc;
 
   Matrix<double> mat_spd;
   mat_spd.resize(n, n);
@@ -215,7 +213,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
       mat_a2(i, j) = mat_spd2(i, j);
-  
+
   OffloadPinnedVector<std::complex<double>> log_values;
   log_values.resize(2);
   OffloadPinnedMatrix<double> inv_mat_a;
@@ -223,16 +221,16 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
   OffloadPinnedMatrix<double> inv_mat_a2;
   inv_mat_a2.resize(n, n);
 
-  RefVector<OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
+  RefVector<const OffloadPinnedMatrix<double>> a_mats{mat_a, mat_a2};
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats{inv_mat_a, inv_mat_a2};
 
-  dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, {true, true});
+  dmcc.mw_invertTranspose(cuda_handles, a_mats, inv_a_mats, log_values);
 
   DiracMatrix<double> dmat;
   Matrix<double> inv_mat_test(n, n);
   std::complex<double> det_log_value;
   dmat.invert_transpose(mat_spd, inv_mat_test, det_log_value);
-  
+
   auto check_matrix_result = checkMatrix(inv_mat_a, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
@@ -240,6 +238,5 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunc
   check_matrix_result = checkMatrix(inv_mat_a2, inv_mat_test);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
-
 
 } // namespace qmcplusplus

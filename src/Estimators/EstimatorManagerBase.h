@@ -23,7 +23,7 @@
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Particle/Walker.h"

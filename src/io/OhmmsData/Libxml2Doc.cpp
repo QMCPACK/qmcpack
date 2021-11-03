@@ -137,7 +137,7 @@ bool Libxml2Document::parse(const std::string& xmlfile)
     xmlFreeDoc(m_doc);
   qmcplusplus::Timer aClock;
   int length   = 0;
-  char* buffer = 0;
+  std::string buffer;
   aClock.restart();
   if (OHMMS::Controller->master())
   {
@@ -147,20 +147,20 @@ bool Libxml2Document::parse(const std::string& xmlfile)
     length = is.tellg();
     is.seekg(0, std::ios::beg);
     // allocate memory:
-    buffer = new char[length + 1];
+    buffer.resize(length);
     // read data as a block:
-    is.read(buffer, length);
+    is.read(buffer.data(), length);
     is.close();
   }
   MPI_Bcast(&length, 1, MPI_INT, 0, OHMMS::Controller->getID());
   OHMMS::Controller->barrier();
   if (!(OHMMS::Controller->master()))
   {
-    buffer = new char[length + 1];
+    buffer.resize(length);
   }
-  MPI_Bcast(buffer, length, MPI_CHAR, 0, OHMMS::Controller->getID());
-  m_doc = xmlParseMemory(buffer, length);
-  delete[] buffer;
+  MPI_Bcast(buffer.data(), length, MPI_CHAR, 0, OHMMS::Controller->getID());
+  m_doc = xmlParseMemory(buffer.data(), length);
+  buffer.clear();
   qmcplusplus::app_log() << " Parsing " << xmlfile << " : " << aClock.elapsed() << " seconds " << std::endl;
   if (m_doc == NULL)
   {

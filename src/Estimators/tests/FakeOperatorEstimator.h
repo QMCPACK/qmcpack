@@ -27,15 +27,19 @@ public:
 
   FakeOperatorEstimator(const FakeOperatorEstimator& foe);
 
-  ~FakeOperatorEstimator() override {};
+  ~FakeOperatorEstimator() override{};
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override {}
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator_t& rng) override
+  {}
 
   void registerOperatorEstimator(hid_t gid) override {}
 
   void startBlock(int nsteps) override {}
 
-  FakeOperatorEstimator* clone() override { return new FakeOperatorEstimator(*this); }
+  std::unique_ptr<OperatorEstBase> clone() const override { return std::make_unique<FakeOperatorEstimator>(*this); }
 
   void set_walker_weights(QMCT::RealType weight) { walkers_weight_ = weight; }
 };

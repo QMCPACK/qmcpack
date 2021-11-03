@@ -129,7 +129,8 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   movepbyp_timer_.stop();
   buffer_timer_.start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
-  assert(checkLogAndGL(W, Psi));
+  if (debug_checks_ & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+    checkLogAndGL(W, Psi, "checkGL_after_moves");
   W.saveWalker(thisWalker);
   buffer_timer_.stop();
   // end PbyP moves

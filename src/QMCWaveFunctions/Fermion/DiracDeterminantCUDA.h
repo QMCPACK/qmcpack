@@ -38,7 +38,7 @@ public:
   typedef SPOSet::GradMatrix_t GradMatrix_t;
   typedef ParticleSet::Walker_t Walker_t;
 
-  DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first = 0);
+  DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
@@ -149,7 +149,7 @@ protected:
 
 public:
   // safe-guard all CPU interfaces
-  DiracDeterminantCUDA* makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::makeCopy is illegal!");
     return nullptr;

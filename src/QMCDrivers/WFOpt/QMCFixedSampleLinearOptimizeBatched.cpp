@@ -22,12 +22,14 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "QMCDrivers/WFOpt/GradientTest.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -51,26 +53,22 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                                          MCPopulation&& population,
                                                                          SampleStack& samples,
                                                                          Communicate* comm)
-    : QMCLinearOptimizeBatched(project_data,
-                               w,
-                               std::move(qmcdriver_input),
-                               std::move(vmcdriver_input),
-                               std::move(population),
-                               samples,
-                               comm,
-                               "QMCFixedSampleLinearOptimizeBatched"),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   std::move(population),
+                   "QMCLinearOptimizeBatched::",
+                   comm,
+                   "QMCLinearOptimizeBatched"),
+      objFuncWrapper_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
       Max_iterations(1),
+      param_tol(1e-4),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(50),
       exp0(-16),
-      stepsize(0.25),
-      GEVtype("mixed"),
-      StabilizerMethod("best"),
-      GEVSplit("no"),
       bestShift_i(-1.0),
       bestShift_s(-1.0),
       shift_i_input(0.01),
@@ -102,7 +100,18 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       do_output_matrices_csv_(false),
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
-      freeze_parameters_(false)
+      freeze_parameters_(false),
+      generate_samples_timer_(
+          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
+      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
+      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
+      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
+      wfNode(NULL),
+      optNode(NULL),
+      vmcdriver_input_(vmcdriver_input),
+      samples_(samples),
+      W(w)
 
 {
   //set the optimization flag
@@ -130,6 +139,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
   m_param.add(target_shift_i, "target_shift_i");
   m_param.add(crowd_size_, "opt_crowd_size");
   m_param.add(opt_num_crowds_, "opt_num_crowds");
+  m_param.add(param_tol, "alloweddifference");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -170,21 +180,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                      0.3,  // max parameter change
                                                      shift_scales, app_log());
 #endif
-
-
-  //   stale parameters
-  //   m_param.add(eigCG,"eigcg");
-  //   m_param.add(TotalCGSteps,"cgsteps");
-  //   m_param.add(w_beta,"beta");
-  //   quadstep=-1.0;
-  //   m_param.add(quadstep,"quadstep");
-  //   m_param.add(stepsize,"stepsize");
-  //   m_param.add(exp1,"exp1");
-  //   m_param.add(GEVtype,"GEVMethod");
-  //   m_param.add(GEVSplit,"GEVSplit");
-  //   m_param.add(StabilizerMethod,"StabilizerMethod");
-  //   m_param.add(LambdaMax,"LambdaMax");
-  //Set parameters for line minimization:
 }
 
 /** Clean up the vector */
@@ -195,28 +190,129 @@ QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
 #endif
 }
 
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::Func(RealType dl)
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::costFunc(RealType dl)
 {
   for (int i = 0; i < optparm.size(); i++)
     optTarget->Params(i) = optparm[i] + dl * optdir[i];
-  QMCLinearOptimizeBatched::RealType c = optTarget->Cost(false);
+  QMCFixedSampleLinearOptimizeBatched::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
+  objFuncWrapper_.validFuncVal = optTarget->IsValid;
   return c;
+}
+
+void QMCFixedSampleLinearOptimizeBatched::start()
+{
+  //close files automatically generated by QMCDriver
+  //     branchEngine->finalize();
+  //generate samples
+  generate_samples_timer_.start();
+  generateSamples();
+  generate_samples_timer_.stop();
+  //store active number of walkers
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  //reset the rootname
+  optTarget->setRootName(get_root_name());
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "   Reading configurations from h5FileRoot " << std::endl;
+  //get configuration from the previous run
+  Timer t1;
+  initialize_timer_.start();
+  optTarget->getConfigurations("");
+  optTarget->setRng(vmcEngine->getRngRefs());
+  optTarget->checkConfigurations();
+  initialize_timer_.stop();
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "  </log>" << std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+
+#ifdef HAVE_LMY_ENGINE
+void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                                                       DescentEngine& descentEngineObj,
+                                                       std::string MinMethod)
+{
+  app_log() << "entering engine_start function" << std::endl;
+
+  // generate samples
+  generate_samples_timer_.start();
+  generateSamples();
+  generate_samples_timer_.stop();
+
+  // store active number of walkers
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+
+  // reset the root name
+  optTarget->setRootName(get_root_name());
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "     Reading configurations from h5FileRoot " << std::endl;
+
+  // get configuration from the previous run
+  Timer t1;
+  initialize_timer_.start();
+  optTarget->getConfigurations("");
+  optTarget->setRng(vmcEngine->getRngRefs());
+  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+                                        MinMethod); // computes derivative ratios and pass into engine
+  initialize_timer_.stop();
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "  </log>" << std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+#endif
+
+
+void QMCFixedSampleLinearOptimizeBatched::finish()
+{
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "  </log>" << std::endl;
+
+  if (optTarget->reportH5)
+    optTarget->reportParametersH5();
+  optTarget->reportParameters();
+
+  app_log() << "</opt>" << std::endl;
+  app_log() << "</optimization-report>" << std::endl;
+}
+
+void QMCFixedSampleLinearOptimizeBatched::generateSamples()
+{
+  app_log() << "<optimization-report>" << std::endl;
+  t1.restart();
+  //     W.reset();
+  samples_.resetSampleCount();
+  population_.set_variational_parameters(optTarget->getOptVariables());
+
+  vmcEngine->run();
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "</vmc>" << std::endl;
+  h5_file_root_ = get_root_name();
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::run()
 {
   if (do_output_matrices_csv_ && !output_matrices_initialized_)
   {
-    numParams = optTarget->getNumParams();
-    int N     = numParams + 1;
+    const int numParams = optTarget->getNumParams();
+    const int N         = numParams + 1;
     output_overlap_.init_file(get_root_name(), "ovl", N);
     output_hamiltonian_.init_file(get_root_name(), "ham", N);
     output_matrices_initialized_ = true;
   }
 
+  if (doGradientTest)
+  {
+    app_log() << "Doing gradient test run" << std::endl;
+    return test_run();
+  }
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -239,14 +335,26 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   return previous_linear_methods_run();
 }
 
+bool QMCFixedSampleLinearOptimizeBatched::test_run()
+{
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  testEngineObj->run(*optTarget, get_root_name());
+
+  finish();
+
+  return true;
+}
+
 bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
 {
   start();
   bool Valid(true);
   int Total_iterations(0);
   //size of matrix
-  numParams = optTarget->getNumParams();
-  N         = numParams + 1;
+  const int numParams = optTarget->getNumParams();
+  const int N         = numParams + 1;
   //   where we are and where we are pointing
   std::vector<RealType> currentParameterDirections(N, 0);
   std::vector<RealType> currentParameters(numParams, 0);
@@ -325,7 +433,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      Lambda = getNonLinearRescale(currentParameterDirections, S);
+      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -335,11 +443,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       RealType evaluated_cost(startCost);
       if (MinMethod == "rescale")
       {
-        if (std::abs(Lambda * bigVec) > bigChange)
+        if (std::abs(objFuncWrapper_.Lambda * bigVec) > bigChange)
         {
           goodStep = false;
-          app_log() << "  Failed Step. Magnitude of largest parameter change: " << std::abs(Lambda * bigVec)
-                    << std::endl;
+          app_log() << "  Failed Step. Magnitude of largest parameter change: "
+                    << std::abs(objFuncWrapper_.Lambda * bigVec) << std::endl;
           if (stability == 0)
           {
             failedTries++;
@@ -349,7 +457,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
             stability = nstabilizers;
         }
         for (int i = 0; i < numParams; i++)
-          optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
+          optTarget->Params(i) = currentParameters[i] + objFuncWrapper_.Lambda * currentParameterDirections[i + 1];
         optTarget->IsValid = true;
       }
       else
@@ -358,22 +466,22 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
           optparm[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
-        TOL              = param_tol / bigVec;
-        AbsFuncTol       = true;
-        largeQuarticStep = bigChange / bigVec;
-        LambdaMax        = 0.5 * Lambda;
+        objFuncWrapper_.TOL              = param_tol / bigVec;
+        objFuncWrapper_.AbsFuncTol       = true;
+        objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
+        objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
         line_min_timer_.start();
         if (MinMethod == "quartic")
         {
           int npts(7);
-          quadstep         = stepsize * Lambda;
-          largeQuarticStep = bigChange / bigVec;
-          Valid            = lineoptimization3(npts, evaluated_cost);
+          objFuncWrapper_.quadstep         = objFuncWrapper_.stepsize * objFuncWrapper_.Lambda;
+          objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
+          Valid                            = objFuncWrapper_.lineoptimization3(npts, evaluated_cost);
         }
         else
-          Valid = lineoptimization2();
+          Valid = objFuncWrapper_.lineoptimization2();
         line_min_timer_.stop();
-        RealType biggestParameterChange = bigVec * std::abs(Lambda);
+        RealType biggestParameterChange = bigVec * std::abs(objFuncWrapper_.Lambda);
         if (biggestParameterChange > bigChange)
         {
           goodStep = false;
@@ -387,7 +495,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+            optTarget->Params(i) = optparm[i] + objFuncWrapper_.Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -503,8 +611,31 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   }
 
 
-  doHybrid = false;
+  doGradientTest = false;
+  processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "optimize")
+    {
+      const XMLAttrString att(element, "method");
+      if (!att.empty() && att == "gradient_test")
+      {
+        GradientTestInput test_grad_input;
+        test_grad_input.readXML(element);
+        if (!testEngineObj)
+          testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
+        doGradientTest = true;
+        MinMethod      = "gradient_test";
+      }
+      else
+      {
+        std::stringstream error_msg;
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << "\n";
+        throw UniformCommunicateError(error_msg.str());
+      }
+    }
+  });
 
+
+  doHybrid = false;
 
   if (MinMethod == "hybrid")
   {
@@ -834,10 +965,10 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  const int numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  const int N = numParams + 1;
 
   // prepare vectors to hold the parameter updates
   parameterDirections.resize(nshifts);
@@ -910,11 +1041,11 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
     getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= objFuncWrapper_.Lambda;
   }
 }
 
@@ -943,7 +1074,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  const int numParams = optTarget->getNumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -996,7 +1127,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  const int N = numParams + 1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -1241,10 +1372,10 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   start();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  const int numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  const int N = numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
   std::vector<RealType> currentParameters(numParams, 0.0);
@@ -1331,19 +1462,19 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat);
 
   if (do_output_matrices_hdf_)
   {
     hout.write(lowestEV, "lowest_eigenvalue");
     hout.write(parameterDirections, "scaled_eigenvector");
-    hout.write(Lambda, "non_linear_rescale");
+    hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
     hout.close();
   }
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= Lambda;
+    parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
@@ -1491,5 +1622,155 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
   return (optTarget->getReportCounter() > 0);
 }
 #endif
+
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
+    Matrix<RealType>& A,
+    Matrix<RealType>& B,
+    std::vector<RealType>& ev)
+{
+  int Nl(ev.size());
+  //   Getting the optimal worksize
+  char jl('N');
+  char jr('V');
+  std::vector<RealType> alphar(Nl), alphai(Nl), beta(Nl);
+  Matrix<RealType> eigenT(Nl, Nl);
+  int info;
+  int lwork(-1);
+  std::vector<RealType> work(1);
+  RealType tt(0);
+  int t(1);
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
+               &Nl, &work[0], &lwork, &info);
+  lwork = int(work[0]);
+  work.resize(lwork);
+
+  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
+               &Nl, &work[0], &lwork, &info);
+  if (info != 0)
+  {
+    APP_ABORT("Invalid Matrix Diagonalization Function!");
+  }
+  std::vector<std::pair<RealType, int>> mappedEigenvalues(Nl);
+  for (int i = 0; i < Nl; i++)
+  {
+    RealType evi(alphar[i] / beta[i]);
+    if (std::abs(evi) < 1e10)
+    {
+      mappedEigenvalues[i].first  = evi;
+      mappedEigenvalues[i].second = i;
+    }
+    else
+    {
+      mappedEigenvalues[i].first  = std::numeric_limits<RealType>::max();
+      mappedEigenvalues[i].second = i;
+    }
+  }
+  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
+  for (int i = 0; i < Nl; i++)
+    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
+  return mappedEigenvalues[0].first;
+}
+
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
+    Matrix<RealType>& A,
+    std::vector<RealType>& ev)
+{
+  int Nl(ev.size());
+  //   Getting the optimal worksize
+  RealType zerozero = A(0, 0);
+  char jl('N');
+  char jr('V');
+  std::vector<RealType> alphar(Nl), alphai(Nl), beta(Nl);
+  Matrix<RealType> eigenT(Nl, Nl);
+  Matrix<RealType> eigenD(Nl, Nl);
+  int info;
+  int lwork(-1);
+  std::vector<RealType> work(1);
+  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
+               &lwork, &info);
+  lwork = int(work[0]);
+  work.resize(lwork);
+
+  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
+               &lwork, &info);
+  if (info != 0)
+  {
+    APP_ABORT("Invalid Matrix Diagonalization Function!");
+  }
+  std::vector<std::pair<RealType, int>> mappedEigenvalues(Nl);
+  for (int i = 0; i < Nl; i++)
+  {
+    RealType evi(alphar[i]);
+    if ((evi < zerozero) && (evi > (zerozero - 1e2)))
+    {
+      mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
+      mappedEigenvalues[i].second = i;
+    }
+    else
+    {
+      mappedEigenvalues[i].first  = std::numeric_limits<RealType>::max();
+      mappedEigenvalues[i].second = i;
+    }
+  }
+  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
+  //         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<< std::endl;
+  for (int i = 0; i < Nl; i++)
+    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
+  return alphar[mappedEigenvalues[0].second];
+  //     }
+}
+
+void QMCFixedSampleLinearOptimizeBatched::getNonLinearRange(int& first, int& last)
+{
+  std::vector<int> types;
+  optTarget->getParameterTypes(types);
+  first = 0;
+  last  = types.size();
+  //assume all non-linear coeffs are together.
+  if (types[0] == optimize::LINEAR_P)
+  {
+    int i(0);
+    while (i < types.size())
+    {
+      if (types[i] == optimize::LINEAR_P)
+        first = i;
+      i++;
+    }
+    first++;
+  }
+  else
+  {
+    int i(types.size() - 1);
+    while (i >= 0)
+    {
+      if (types[i] == optimize::LINEAR_P)
+        last = i;
+      i--;
+    }
+  }
+  //     returns the number of non-linear parameters.
+  //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
+}
+
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getNonLinearRescale(
+    std::vector<RealType>& dP,
+    Matrix<RealType>& S)
+{
+  int first(0), last(0);
+  getNonLinearRange(first, last);
+  if (first == last)
+    return 1.0;
+  RealType rescale(1.0);
+  RealType xi(0.5);
+  RealType D(0.0);
+  for (int i = first; i < last; i++)
+    for (int j = first; j < last; j++)
+      D += S(i + 1, j + 1) * dP[i + 1] * dP[j + 1];
+  rescale = (1 - xi) * D / ((1 - xi) + xi * std::sqrt(1 + D));
+  rescale = 1.0 / (1.0 - rescale);
+  //     app_log()<<"rescale: "<<rescale<< std::endl;
+  return rescale;
+}
+
 
 } // namespace qmcplusplus

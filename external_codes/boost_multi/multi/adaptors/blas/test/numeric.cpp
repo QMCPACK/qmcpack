@@ -15,7 +15,7 @@
 
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_numeric_imag){
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_numeric_imag) {
 	using complex = std::complex<double>; constexpr complex I{0, 1};
 
 	namespace blas = multi::blas;
@@ -24,8 +24,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_numeric_imag){
 	BOOST_REQUIRE( blas::real(a)[2] == 9. );
 }
 
-BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated){
-
+BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated) {
 	using complex = std::complex<double>; complex const I{0, 1};
 
 	multi::array<complex, 2> B = {
@@ -71,14 +70,14 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated){
 	BOOST_REQUIRE( blas::conj(B)[1][0] == std::conj(B[1][0]) );
 }
 
-BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay){
-
+BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay) {
 	using complex = std::complex<double>; complex const I{0, 1};
 
 	multi::array<complex, 2> B = {
-		{ 1. - 3.*I, 6. + 2.*I},
-		{ 8. + 2.*I, 2. + 4.*I},
-		{ 2. - 1.*I, 1. + 1.*I}
+		{ 1. - 3.*I, 6. + 2.*I, 9. + 3.*I},
+		{ 8. + 2.*I, 2. + 4.*I, 9. + 3.*I},
+		{ 2. - 1.*I, 1. + 1.*I, 9. + 3.*I},
+		{ 9. + 3.*I, 9. + 3.*I, 9. + 3.*I}
 	};
 
 	namespace blas = multi::blas;
@@ -97,19 +96,19 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay){
 	BOOST_REQUIRE( blas::imag(B)[2][1] == std::imag(B[2][1]) );
 
 	multi::array<double, 2> B_real_doubled = {
-		{ 1., -3., 6., 2.},
-		{ 8.,  2., 2., 4.},
-		{ 2., -1., 1., 1.}
+		{ 1., -3., 6., 2., 9., 3.},
+		{ 8.,  2., 2., 4., 9., 3.},
+		{ 2., -1., 1., 1., 9., 3.},
+		{ 9.,  3., 9., 3., 9., 3.}
 	};
-	BOOST_REQUIRE( blas::real_doubled(B) == B_real_doubled );
-
+	BOOST_REQUIRE( sizes(blas::real_doubled(B)) == sizes(B_real_doubled) );
+	BOOST_REQUIRE(       blas::real_doubled(B)  ==       B_real_doubled  );
 }
 
 #if defined(CUDA_FOUND) and CUDA_FOUND
 #include<thrust/complex.h>
 
-BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay_thrust){
-
+BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay_thrust) {
 	using complex = thrust::complex<double>; complex const I{0, 1};
 
 	multi::array<complex, 2> B = {
@@ -152,12 +151,11 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay_thrust){
 //}
 //#endif
 
-BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_imag_part){
-
+BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_imag_part) {
 	using complex = std::complex<double>; complex const I{0., 1.};
 
 	multi::array<double, 2> A = {
-		{1., 3., 4.}, 
+		{1., 3., 4.},
 		{9., 7., 1.}
 	};
 	multi::array<complex, 2> Acplx = A;
@@ -189,65 +187,12 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_imag_part){
 
 	BOOST_REQUIRE( B[1][0] == 8. + 2.*I );
 	BOOST_REQUIRE( B[1][0].imag() == 2. );
-	
+
 	namespace blas = multi::blas;
-	
+
 	BOOST_REQUIRE( blas::hermitized(B)[1][2] == std::conj( B[2][1] ) );
-	
+
 	blas::hermitized(B)[1][2] = 20. + 30.*I;
 	BOOST_REQUIRE( B[2][1] == 20. - 30.*I );
-// 	using multi::blas::hermitized;
-//	BOOST_REQUIRE( hermitized(B)[0][1] == 8. - 2.*I );
-//	BOOST_REQUIRE( imag(hermitized(B)[0][1]) == -2. );
 }
-
-#if 0
-
-	namespace cuda = multi::cuda;
-	{
-		cuda::array<complex, 2> Bgpu = B;
-		using multi::blas::imag;
-		BOOST_REQUIRE( imag(Bgpu)[1][1] == imag(B)[1][1] );
-		BOOST_REQUIRE( real(Bgpu)[1][1] == real(B)[1][1] );
-	}
-	{
-		cuda::managed::array<complex, 2> Bgpu = B;
-		using multi::blas::imag;
-		BOOST_REQUIRE( imag(Bgpu)[1][1] == imag(B)[1][1] );
-		BOOST_REQUIRE( real(Bgpu)[1][1] == real(B)[1][1] );
-	}
-
-	multi::array_ref<double, 2> rB(reinterpret_cast<double*>(data_elements(B)), {size(B), 2*size(*begin(B))});
-
-	auto&& Bconj = multi::static_array_cast<complex, multi::blas::detail::conjugater<complex*>>(B);
-	assert( size(Bconj) == size(B) );
-	assert( conj(B[1][2]) == Bconj[1][2] );
-
-//	auto&& BH = multi::blas::hermitized(B);
-//	assert( BH[1][2] == conj(B[2][1]) );
-//	std::cout << BH[1][2] << " " << B[2][1] << std::endl;
-
-//	auto&& BH1 = multi::static_array_cast<complex, multi::blas::detail::conjugater<complex*>>(rotated(B));
-//	auto&& BH2 = rotated(multi::static_array_cast<complex, multi::blas::detail::conjugater<complex*>>(B));
-
-//	what( BH1, BH2 );
-//	using multi::blas::imag;
-
-//	assert( real(A)[1][2] == 1. );
-//	assert( imag(A)[1][2] == -3. );
-
-//	print(A) <<"--\n";
-//	print(real(A)) <<"--\n";
-//	print(imag(A)) <<"--\n";
-
-	multi::array<complex, 2> C({2, 2});
-	multi::array_ref<double, 2> rC(reinterpret_cast<double*>(data_elements(C)), {size(C), 2*size(*begin(C))});
-
-//	gemm('T', 'T', 1., A, B, 0., C);
-//	gemm('T', 'T', 1., A, B, 0., C);
-//	gemm('T', 'T', 1., real(A), B, 0., C);
-}
-#endif
-
-
 

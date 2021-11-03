@@ -38,7 +38,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
   rng_ptr_list_.resize(crowd_size);
 
   // build a temporary H_KE for later calling makeClone
-  // need makeClone to setup internal myIndex of a new copy.
+  // need makeClone to setup internal my_index_ of a new copy.
   QMCHamiltonian H_KE;
   for (const std::string& node_name : H_KE_node_names)
     H_KE.addOperator(H.getHamiltonian(node_name)->makeClone(P, Psi), node_name);

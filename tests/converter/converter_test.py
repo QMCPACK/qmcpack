@@ -53,7 +53,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
     if code=='gamess':
         cmd.extend(['-nojastrow', '-prefix', 'test', '-gamess', conv_inp])
     if code=='dirac':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-dirac', conv_inp])
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-TargetState','14','-dirac', conv_inp])
     if code=='rmg':
         cmd.extend(['-nojastrow', '-prefix', 'test', '-rmg', conv_inp])
 

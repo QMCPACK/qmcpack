@@ -36,7 +36,6 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
 /** Clean up the vector */
 QMCCostFunction::~QMCCostFunction()
 {
-  delete_iter(RngSaved.begin(), RngSaved.end());
   delete_iter(RecordsOnNode.begin(), RecordsOnNode.end());
   delete_iter(DerivRecords.begin(), DerivRecords.end());
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
@@ -166,7 +165,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
       WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                          << MinNumWalkers * NumSamples)
+                                                                         << MinNumWalkers * NumSamples)
       IsValid = false;
     }
   }
@@ -314,7 +313,7 @@ void QMCCostFunction::checkConfigurations()
       e2 += etmp * etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->Value;
+        saved[ENERGY_FIXED] -= nlpp->getValue();
     }
     //add them all using reduction
     et_tot += e0;
@@ -460,7 +459,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       e2 += etmp * etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->Value;
+        saved[ENERGY_FIXED] -= nlpp->getValue();
     }
 
     //add them all using reduction

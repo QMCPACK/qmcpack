@@ -142,13 +142,13 @@ array_iterator<T2, 1, ptr<Q2>> copy_n(
 	array_iterator<T2, 1, ptr<Q2>> result_
 ){
 	MULTI_MARK_SCOPE("cuda copy_n 1D");
-	array_iterator<T1, 1, thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
-	array_iterator<T2, 1, thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
+	array_iterator<T1, 1, ::thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
+	array_iterator<T2, 1, ::thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
 	static_assert( sizeof(first ) == sizeof(first_ ) );
 	static_assert( sizeof(result) == sizeof(result_) );
-	thrust::for_each(
-		thrust::make_counting_iterator(0l), 
-		thrust::make_counting_iterator(count), 
+	::thrust::for_each(
+		::thrust::make_counting_iterator(0L),
+		::thrust::make_counting_iterator(count),
 		[first, result, x = multi::extensions_t<1>(count)] __device__ (auto n){ // requires --extended-lambda nvcc flag
 			std::tuple<index> i = x.from_linear(n);
 			result[std::get<0>(i)] = T2(first[std::get<0>(i)]);
@@ -164,14 +164,14 @@ copy_n(
 	array_iterator<T2, 2, ptr<Q2>> result_
 ){
 	MULTI_MARK_SCOPE("cuda copy_n 2D");
-	array_iterator<T1, 2, thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
-	array_iterator<T2, 2, thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
+	array_iterator<T1, 2, ::thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
+	array_iterator<T2, 2, ::thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
 	static_assert( sizeof(first ) == sizeof(first_ ) );
 	static_assert( sizeof(result) == sizeof(result_) );
 	assert(first->extensions() == result->extensions());
-	thrust::for_each(
-		thrust::make_counting_iterator(0l), 
-		thrust::make_counting_iterator(count*first->num_elements()), 
+	::thrust::for_each(
+		::thrust::make_counting_iterator(0L),
+		::thrust::make_counting_iterator(count*first->num_elements()),
 		[first, count, result, x = first->extensions()] __device__ (auto n){
 			std::tuple<index, index> ij = (count*x).from_linear(n);
 			result[std::get<0>(ij)][std::get<1>(ij)] = T2(first[std::get<0>(ij)][std::get<1>(ij)]);
@@ -181,20 +181,20 @@ copy_n(
 }
 
 template<class T1, class Q1, class Size, class T2, class Q2>
-array_iterator<T2, 3, ptr<Q2>> 
+array_iterator<T2, 3, ptr<Q2>>
 copy_n(
 	array_iterator<T1, 3, ptr<Q1>> first_ , Size count, 
 	array_iterator<T2, 3, ptr<Q2>> result_
 ){
 	MULTI_MARK_SCOPE("cuda copy_n 3D");
-	array_iterator<T1, 3, thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
-	array_iterator<T2, 3, thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
+	array_iterator<T1, 3, ::thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
+	array_iterator<T2, 3, ::thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
 	static_assert( sizeof(first ) == sizeof(first_ ) );
 	static_assert( sizeof(result) == sizeof(result_) );
 	assert(first->extensions() == result->extensions());
-	thrust::for_each(
-		thrust::make_counting_iterator(0l), 
-		thrust::make_counting_iterator(count*first->num_elements()), 
+	::thrust::for_each(
+		::thrust::make_counting_iterator(0L),
+		::thrust::make_counting_iterator(count*first->num_elements()),
 		[first, count, result, x = first->extensions()] __device__ (auto n){
 			auto const ijk = (count*x).from_linear(n);
 			result.apply(ijk) = T2(first.apply(ijk));
@@ -204,20 +204,20 @@ copy_n(
 }
 
 template<class T1, class Q1, class Size, class T2, class Q2>
-array_iterator<T2, 4, ptr<Q2>> 
+array_iterator<T2, 4, ptr<Q2>>
 copy_n(
 	array_iterator<T1, 4, ptr<Q1>> first_ , Size count, 
 	array_iterator<T2, 4, ptr<Q2>> result_
 ){
 	MULTI_MARK_SCOPE("cuda copy_n 4D");
-	array_iterator<T1, 4, thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
-	array_iterator<T2, 4, thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
+	array_iterator<T1, 4, ::thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
+	array_iterator<T2, 4, ::thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
 	static_assert( sizeof(first ) == sizeof(first_ ) );
 	static_assert( sizeof(result) == sizeof(result_) );
 	assert(first->extensions() == result->extensions());
-	thrust::for_each(
-		thrust::make_counting_iterator(0l), 
-		thrust::make_counting_iterator(count*first->num_elements()), 
+	::thrust::for_each(
+		::thrust::make_counting_iterator(0L),
+		::thrust::make_counting_iterator(count*first->num_elements()),
 		[first, count, result, x = first->extensions()] __device__ (auto n){
 			auto const ijk = (count*x).from_linear(n);
 			result.apply(ijk) = T2(first.apply(ijk));
@@ -233,14 +233,14 @@ copy_n(
 	array_iterator<T2, 5, ptr<Q2>> result_
 ){
 	MULTI_MARK_SCOPE("cuda copy_n 5D");
-	array_iterator<T1, 5, thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
-	array_iterator<T2, 5, thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
+	array_iterator<T1, 5, ::thrust::device_ptr<Q1>> first ; std::memcpy((void*)&first , (void const*)&first_ , sizeof(first_));
+	array_iterator<T2, 5, ::thrust::device_ptr<Q2>> result; std::memcpy((void*)&result, (void const*)&result_, sizeof(first_));
 	static_assert( sizeof(first ) == sizeof(first_ ) );
 	static_assert( sizeof(result) == sizeof(result_) );
 	assert(first->extensions() == result->extensions());
-	thrust::for_each(
-		thrust::make_counting_iterator(0l), 
-		thrust::make_counting_iterator(count*first->num_elements()), 
+	::thrust::for_each(
+		::thrust::make_counting_iterator(0L),
+		::thrust::make_counting_iterator(count*first->num_elements()),
 		[first, count, result, x = first->extensions()] __device__ (auto n){
 			auto const ijk = (count*x).from_linear(n);
 			result.apply(ijk) = T2(first.apply(ijk));
