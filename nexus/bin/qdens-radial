@@ -43,12 +43,18 @@ try:
     observables = import_nexus_module('observables')
     ChargeDensity = observables.ChargeDensity
     vlog = observables.vlog
+    del observables
+
+    fileio = import_nexus_module('fileio')
+    XsfFile = fileio.XsfFile
+    del fileio
 except:
     from versions import nexus_version
     from generic import obj
     from developer import DevBase,error,ci,unavailable
     import memory
     from observables import ChargeDensity, vlog
+    from fileio import XsfFile
 #end try
 
 
@@ -154,8 +160,20 @@ class QMCDensityRadialProcessor(QDRBase):
                           help='Source that generated the .xsf file. Options: "pwscf", "qmcpack" (default=%default).'
                           )
         parser.add_option('-c','--cumulative',dest='cumulative',
-                          action='store_true',default=True,
+                          action='store_true',default=False,
                           help='Evaluate cumulative radial density at cutoff radii (default=%default).'
+                          )
+        parser.add_option('-V','--vmc_file',dest='vmc_file',
+                          default='None',
+                          help='Location of VMC to be used for extrapolating mixed-estimator bias (default=%default).'
+                          )
+        parser.add_option('--vmc_err_file',dest='vmc_err_file',
+                          default='None',
+                          help='Location of VMC+err to be used for extrapolating mixed-estimator bias and resampling (default=%default).'
+                          )
+        parser.add_option('--dmc_err_file',dest='dmc_err_file',
+                          default='None',
+                          help='Location of DMC+err to be used for resampling (default=%default).'
                           )
         parser.add_option('-p','--plot',dest='plot',
                           action='store_true',default=False,
@@ -211,7 +229,6 @@ class QMCDensityRadialProcessor(QDRBase):
             opt_failed = False
             rad = opt.radii
             try:
-                #opt.radii = np.array(eval(comma_list(opt.radii)),dtype=float)
                 opt.radii = eval(comma_list(opt.radii))
                 if np.isscalar(opt.radii):
                     opt.radii = np.array([opt.radii],dtype=float)
@@ -220,9 +237,10 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
                 opt_failed = len(opt.radii.shape)!=1
                 if opt.species is not None:
-                    opt_failed = opt_failed or len(opt.radii)!=len(opt.species) 
+                    opt_failed = opt_failed or \
+                            (len(opt.radii)!=len(opt.species) and len(opt.radii)>1) # If only 1 radius was given, we apply it globally to all species 
                 #end if
-                # Note: since species list not provided. the length of radii list must be the same as 
+                # Note: if species list not provided. the length of radii list must be one or the same as 
                 # number of species in .xsf file, but this will need to be checked after .xsf is read
             except:
                 opt_failed = True
@@ -231,7 +249,6 @@ class QMCDensityRadialProcessor(QDRBase):
                 self.error('radii must be a list of values and must be the same length as species list\nyou provided: {0}'.format(rad))
             #end if
         #end if
-        print(opt)
 
     #end def read_command_line(self)
 
@@ -244,22 +261,232 @@ class QMCDensityRadialProcessor(QDRBase):
             vlog.set_verbosity('none')
         #end if
 
+        if (opt.vmc_err_file is not None or opt.dmc_err_file is not None) and opt.source!='qmcpack':
+            self.error('Error files (and subsequent resampling) are not compatable with {} source files.'.format(opt.source))
+        #end if
+
+        if opt.vmc_err_file is not None and opt.vmc_file is None:
+            self.error('A VMC file (-V,--vmc_file) must be provided along with the VMC+err file (--vmc_err_file)')
+        #end if
+
+        # if VMC file is given, perform extrapolation before 
+        # instantiating ChargeDensity object
+        if opt.vmc_file is not None:
+            self.log('Extrapolating from VMC and DMC densities...')
+            vmc_xsf_data = XsfFile(filepath=opt.vmc_file)
+            dmc_xsf_data = XsfFile(filepath=file)
+            # Initialize extrapolated XsfFile object
+            extrap_xsf_data = dmc_xsf_data.copy()
+            extrap_xsf_data.data[3]['density']['density'].values = 2.*dmc_xsf_data.data[3]['density']['density'].values-vmc_xsf_data.data[3]['density']['density'].values
+            file = extrap_xsf_data.copy()
+        else:
+            dmc_xsf_data = XsfFile(filepath=file)
+            file = dmc_xsf_data.copy()
+        #end if
+
+        show_error=False
+        # If error files are given, then user wants resampled error bars
+        if opt.dmc_err_file is not None:
+            self.log('Resampling to obtain error bar (NOTE: This can be slow)...')
+            if opt.vmc_file is not None and opt.vmc_err_file is not None:
+                # Data without errors
+                vmc_xsf_data = XsfFile(filepath=opt.vmc_file)
+                dmc_xsf_data = XsfFile(filepath=self.file_in)
+                # Data with errors
+                vmc_plus_err_xsf_data = XsfFile(filepath=opt.vmc_err_file)
+                dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
+                # Errors only
+                vmc_err_xsf_data = vmc_plus_err_xsf_data.copy() 
+                vmc_err_xsf_data = vmc_plus_err_xsf_data.data[3]['density']['density'].values \
+                                   - vmc_xsf_data.data[3]['density']['density'].values
+                dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
+                dmc_err_xsf_data = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
+                                   - dmc_xsf_data.data[3]['density']['density'].values
+
+                # Get standard deviation corresponding to the extrapolation formula: 
+                #   
+                # std_dev = sqrt(4*sigma_dmc**2+sigma_vmc**2)
+                extrap_err_xsf_data = dmc_err_xsf_data.copy()
+                extrap_err_xsf_data.data[3]['density']['density'].values = np.sqrt(4.0*dmc_err_xsf_data.data[3]['density']['density'].values**2.0+vmc_err_xsf_data.data[3]['density']['density'].values**2.0)
+                err_data = extrap_err_xsf_data.copy()
+            elif opt.vmc_file is None:
+                # Data without errors
+                dmc_xsf_data = XsfFile(filepath=self.file_in)
+                # Data with errors
+                dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
+                # Errors only
+                dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
+                dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
+                                   - dmc_xsf_data.data[3]['density']['density'].values
+                err_data = dmc_err_xsf_data.copy()
+
+            else:
+                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmc_err_file and --dmc_err_file arguments.')
+            #end if
+            show_error=True
+
+            # We now have the means and the errors (either extrapolated or not). So let's now resample for the errorbars
+            
+            sum_dict = {}
+            sum_sq_dict = {}
+            std_dict = {}
+
+            nsamples = 3
+            for i in range(nsamples):
+                self.log('sample: {}'.format(i))
+                resample_xsf_data = file.copy()
+                for d1_idx, d1 in enumerate(file.data[3]['density']['density'].values):
+                    for d2_idx, d2 in enumerate(d1):
+                        for d3_idx, d3 in enumerate(d2):
+                            mu = file.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx]
+                            sgma = err_data.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx]
+                            sample = np.random.normal(mu,sgma)
+                            resample_xsf_data.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx] = sample
+                        #end for
+                    #end for
+                #end for
+
+                # We've resampled each grid point, so now calculate desired quantity
+                cds = ChargeDensity()
+                cds.read_xsf(resample_xsf_data)
+                equiv_atoms = list(cds.info.structure.equivalent_atoms().keys())
+                if opt.source=='pwscf':
+                    cds.change_distance_units('B')
+                else:
+                    cds.volume_normalize()
+                #end if
+
+                if i==0:
+                    if opt.species is not None:
+                        for at in opt.species:
+                            sum_dict[at] = 0.0
+                            sum_sq_dict[at] = 0.0
+                        #end for
+                    else:
+                        for at in equiv_atoms:
+                            sum_dict[at] = 0.0
+                            sum_sq_dict[at] = 0.0
+                        #end for
+                    #end if
+                #end if
+
+                if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
+                    self.error('Input species (-S,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+                #end if
+                if opt.cumulative:
+                    if opt.species is None:
+                        rdens_samp = cds.cumulative_radial_density(rmax=opt.radii.tolist())
+                    else:
+                        rdens_samp = cds.cumulative_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                    #end if
+                else:
+                    if opt.species is None:
+                        rdens_samp = cds.radial_density(rmax=opt.radii.tolist())
+                    else:
+                        rdens_samp = cds.radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                    #end if
+                #end if
+
+                if opt.species is not None:
+                    for ati,at in enumerate(opt.species):
+                        sum_dict[at] += rdens_samp.tot[at].density[-1]
+                        sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2.0
+                    #end for
+                else:
+                    for ati,at in enumerate(equiv_atoms):
+                        sum_dict[at] += rdens_samp.tot[at].density[-1]
+                        sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2.0
+                    #end for
+                #end if
+
+            #end for
+            if opt.species is not None:
+                for ati,at in enumerate(opt.species):
+                    std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2.0)
+                #end for
+            else:
+                for ati,at in enumerate(equiv_atoms):
+                    std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2.0)
+                #end for
+            #end if
+
+        else:
+            if opt.vmc_err_file is not None:
+                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmc_err_file and --dmc_err_file arguments.')
+            #end if
+        #end if
+
         # Instantiate ChargeDensity object
         cd = ChargeDensity()
         cd.read_xsf(file)
+        equiv_atoms = list(cd.info.structure.equivalent_atoms().keys())
+
+        if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
+            self.error('Input species (-S,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+        #end if
+
         if opt.source=='pwscf':
             cd.change_distance_units('B')
         else:
             cd.volume_normalize()
         #end if
+
         self.log('\nNorm:',cd.norm())
 
         if opt.plot:
-            print(opt.radii)
-            cd.plot_radial_density(rmax=2.,species=['Mn','Bi'])
+            if opt.species is None:
+                cd.plot_radial_density(rmax=opt.radii.tolist())
+            else: 
+                cd.plot_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+            #end if
         #end if
 
-        # TODO: Instantiate another if VMC results are given -- then extrapolate
+        if opt.cumulative:
+            cstr = 'Cumulative'
+            if opt.species is None:
+                rdens = cd.cumulative_radial_density(rmax=opt.radii.tolist())
+            else:
+                rdens = cd.cumulative_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+        else:
+            cstr = 'Non-Cumulative'
+            if opt.species is None:
+                rdens = cd.radial_density(rmax=opt.radii.tolist())
+            else:
+                rdens = cd.radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+        #end if
+
+        if opt.species is not None:
+            for ati,at in enumerate(opt.species):
+                if len(opt.radii)>1:
+                    # Distinct radii for all species
+                    r = opt.radii[ati]
+                else:
+                    # Global radius
+                    r = opt.radii[0]
+                #end if
+                if not show_error:
+                    self.log('{} Value of {} Species at Cutoff {} is: {}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
+                else:
+                    self.log('{} Value of {} Species at Cutoff {} is: {}+/-{}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
+                #end if
+            #end for
+        else:
+            for ati,at in enumerate(equiv_atoms):
+                if len(opt.radii)>1:
+                    # Distinct radii for all species
+                    r = opt.radii[ati]
+                else:
+                    # Global radius
+                    r = opt.radii[0]
+                #end if
+                if not show_error:
+                    self.log('{} Value of {} Species at Cutoff {} is: {}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
+                else:
+                    self.log('{} Value of {} Species at Cutoff {} is: {}+/-{}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
+                #end if
+            #end for
+        #end if
+
 
     #end def process(self)
 

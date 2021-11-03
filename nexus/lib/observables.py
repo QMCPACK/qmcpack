@@ -1232,6 +1232,17 @@ class Density(ObservableWithComponents):
             for s in species:
                 species_rmax[s] = rmax
             #end for
+        elif isinstance(rmax,list):
+            if species is None:
+                species = list(equiv_atoms.keys())
+            #end if
+            for si,s in enumerate(species):
+                if len(rmax)>1:
+                    species_rmax[s] = rmax[si]
+                else:
+                    species_rmax[s] = rmax[0]
+                #end if
+            #end for
         else:
             species = list(rmax.keys())
             species_rmax.transfer_from(rmax)
