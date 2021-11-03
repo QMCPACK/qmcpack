@@ -1032,6 +1032,19 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   endif(QE_FOUND)
 endif()
 
+#-------------------------------------------------------------------
+# Check if RMG executable available at RMG_BIN or on the PATH
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  include("CMake/FindRMG.cmake")
+  if(RMG_FOUND)
+    message(STATUS "Found and using RMG (rmg-cpu) at ${RMG_CPU_EXE}")
+  else(RMG_FOUND)
+    message(
+      STATUS "Did not find RMG (rmg-cpu). RMG tests will not be run.")
+  endif(RMG_FOUND)
+endif()
+
 ######################################################################
 message(STATUS "Ready to parse QMCPACK source tree")
 ######################################################################
