@@ -390,11 +390,11 @@ if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
                   "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
 endif()
 
-#---------------------------------------------------------
+#-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
 # We should test out abstractions consistently and c++17 stdlib's all have support for
 # std::thread and std::atomic
-#---------------------------------------------------------
+#-------------------------------------------------------------------------------------
 if(QMC_EXP_THREADING)
   include(CheckAtomic)
   if(HAVE_LIBATOMIC)
@@ -481,6 +481,17 @@ else(QMC_MPI)
   set(HAVE_MPI 0)
   message(STATUS "MPI is disabled")
 endif(QMC_MPI)
+
+#--------------------------------------------------------------
+# final test for compile options before searching for libraries
+#--------------------------------------------------------------
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
+if (NOT TEST_CXX_COMPILE_MAIN)
+  unset(TEST_CXX_COMPILE_MAIN CACHE)
+  message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
+                      "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
+endif()
 
 ######################################################################
 # Check external libraries.
