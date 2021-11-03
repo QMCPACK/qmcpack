@@ -175,6 +175,10 @@ class QMCDensityRadialProcessor(QDRBase):
                           default='None',
                           help='Location of DMC+err to be used for resampling (default=%default).'
                           )
+        parser.add_option('-n','--nsamples',dest='nsamples',
+                          default='10',
+                          help='Number of samples for resampling (default=%default).'
+                          )
         parser.add_option('-p','--plot',dest='plot',
                           action='store_true',default=False,
                           help='Show plots interactively (default=%default).'
@@ -187,6 +191,8 @@ class QMCDensityRadialProcessor(QDRBase):
 
         # Command line options as Nexus obj() data structure
         opt = self.options
+
+        opt.nsamples = int(opt.nsamples)
 
         QDRBase.verbose = opt.verbose
 
@@ -331,7 +337,8 @@ class QMCDensityRadialProcessor(QDRBase):
             sum_sq_dict = {}
             std_dict = {}
 
-            nsamples = 3
+            nsamples = opt.nsamples
+            self.log('Will compute {} samples...'.format(nsamples))
             for i in range(nsamples):
                 self.log('sample: {}'.format(i))
                 resample_xsf_data = file.copy()
