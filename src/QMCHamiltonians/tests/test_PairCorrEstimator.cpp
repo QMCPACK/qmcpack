@@ -55,6 +55,22 @@ const char* pset_xml = "<particleset name=\"e\" random=\"yes\"> \
                           </group> \
                         </particleset>";
 
+// Particleset block
+const char* multi_pset_xml = "<particleset name=\"e\" random=\"yes\"> \
+                          <group name=\"u\" size=\"4\" mass=\"1.0\"> \
+                            <parameter name=\"charge\" >   -1  </parameter> \
+                            <parameter name=\"mass\"   >  1.0  </parameter> \
+                          </group> \
+                          <group name=\"d\" size=\"4\" mass=\"1.0\"> \
+                            <parameter name=\"charge\" >   -1  </parameter> \
+                            <parameter name=\"mass\"   >  1.0  </parameter> \
+                          </group> \
+                          <group name=\"p\" size=\"1\" mass=\"1.0\"> \
+                            <parameter name=\"charge\" >    1  </parameter> \
+                            <parameter name=\"mass\"   >  1.0  </parameter> \
+                          </group> \
+                        </particleset>";
+
 // PairCorrEstimator block
 const char* gofr_xml = "<estimator type=\"gofr\" name=\"gofr\" rmax=\"2.0\" num_bin=\"99\" />";
 
@@ -147,6 +163,13 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   paircorr.put(gofr_xml_root);
   paircorr.addObservables(elec->PropertyList, elec->Collectables);
 
+  // Check generation of pair id for 2 species groups
+  REQUIRE(elec->groups() == 2);
+  REQUIRE(paircorr.gen_pair_id(0, 0) == 0);
+  REQUIRE(paircorr.gen_pair_id(0, 1) == 1);
+  REQUIRE(paircorr.gen_pair_id(1, 0) == 1);
+  REQUIRE(paircorr.gen_pair_id(1, 1) == 2);
+
   // Compute g(r) then print it to stdout
   // NB: Hardcoded to match hardcoded xml above. ***Fragile!!!***
   paircorr.evaluate(*elec);
@@ -202,5 +225,111 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
   std::cout << "test_paircorr:: STOP\n";
+}
+
+TEST_CASE("Pair Correlation Multispecies", "[hamiltonian]")
+{
+  std::cout << std::fixed;
+  std::cout << std::setprecision(8);
+  typedef QMCTraits::RealType RealType;
+
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(2.0);
+  lattice.reset();
+
+  // XML parser
+  Libxml2Document doc;
+
+  std::cout << "\n\n\ntest_multipaircorr:: START\n";
+
+  // TEST new idea: ParticlesetPool to make a ParticleSet
+  bool lat_okay = doc.parseFromString(lat_xml);
+  REQUIRE(lat_okay);
+  xmlNodePtr lat_xml_root = doc.getRoot();
+
+  ParticleSetPool pset_builder(c, "multi_pset_builder");
+  pset_builder.putLattice(lat_xml_root); // Builds lattice
+
+  bool pset_okay = doc.parseFromString(multi_pset_xml);
+  REQUIRE(pset_okay);
+  xmlNodePtr pset_xml_root = doc.getRoot();
+  pset_builder.put(pset_xml_root); // Builds ParticleSet
+
+  // Get the (now assembled) ParticleSet, do simple sanity checks, then print info
+  ParticleSet* elec = pset_builder.getParticleSet("e");
+  elec->Lattice     = lattice; // copy in the new Lattice
+
+  REQUIRE(elec->SameMass);
+  REQUIRE(elec->getName() == "e");
+
+  // Move the particles manually onto B1 lattice
+  // NB: Spins are grouped contiguously
+  // Up spins
+  elec->R[0][0] = 0.0;
+  elec->R[0][1] = 0.0;
+  elec->R[0][2] = 0.0;
+  elec->R[1][0] = 1.0;
+  elec->R[1][1] = 1.0;
+  elec->R[1][2] = 0.0;
+  elec->R[2][0] = 1.0;
+  elec->R[2][1] = 0.0;
+  elec->R[2][2] = 1.0;
+  elec->R[3][0] = 0.0;
+  elec->R[3][1] = 1.0;
+  elec->R[3][2] = 1.0;
+
+  // Down spins
+  elec->R[4][0] = 1.0;
+  elec->R[4][1] = 0.0;
+  elec->R[4][2] = 0.0;
+  elec->R[5][0] = 0.0;
+  elec->R[5][1] = 1.0;
+  elec->R[5][2] = 0.0;
+  elec->R[6][0] = 0.0;
+  elec->R[6][1] = 0.0;
+  elec->R[6][2] = 1.0;
+  elec->R[7][0] = 1.0;
+  elec->R[7][1] = 1.0;
+  elec->R[7][2] = 1.0;
+
+  // p spins
+  elec->R[8][0] = 2.0000;
+  elec->R[8][1] = 0.0000;
+  elec->R[8][2] = 0.0000;
+
+  elec->get(std::cout); // print particleset info to stdout
+
+  // Set up the distance table, match expected layout
+  const int ee_table_id = elec->addTable(*elec);
+
+  const auto& dii(elec->getDistTable(ee_table_id));
+  elec->update(); // distance table evaluation here
+
+  // Make a PairCorrEstimator, call put() to set up internals
+  std::string name = elec->getName();
+  PairCorrEstimator paircorr(*elec, name);
+  bool gofr_okay = doc.parseFromString(gofr_xml);
+  REQUIRE(gofr_okay);
+  xmlNodePtr gofr_xml_root = doc.getRoot();
+  paircorr.put(gofr_xml_root);
+  paircorr.addObservables(elec->PropertyList, elec->Collectables);
+
+  // Check generation of pair id for 3 species groups
+  REQUIRE(elec->groups() == 3);
+  REQUIRE(paircorr.gen_pair_id(0, 0) == 0);
+  REQUIRE(paircorr.gen_pair_id(0, 1) == 1);
+  REQUIRE(paircorr.gen_pair_id(0, 2) == 2);
+  REQUIRE(paircorr.gen_pair_id(1, 0) == 1);
+  REQUIRE(paircorr.gen_pair_id(1, 1) == 3);
+  REQUIRE(paircorr.gen_pair_id(1, 2) == 4);
+  REQUIRE(paircorr.gen_pair_id(2, 0) == 2);
+  REQUIRE(paircorr.gen_pair_id(2, 1) == 4);
+  REQUIRE(paircorr.gen_pair_id(2, 2) == 5);
+
+  std::cout << "test_multipaircorr:: STOP\n";
 }
 } // namespace qmcplusplus
