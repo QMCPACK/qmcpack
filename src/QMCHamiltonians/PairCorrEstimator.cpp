@@ -102,6 +102,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
 
 void PairCorrEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
+// The value should match the index to norm_factor in set_norm_factor
 const int PairCorrEstimator::gen_pair_id(const int& ig, const int& jg)
 {
   if (jg < ig)
