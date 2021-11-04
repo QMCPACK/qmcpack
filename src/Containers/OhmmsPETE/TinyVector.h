@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -68,6 +69,9 @@ struct TinyVector
 
   // Copy Constructor
   inline TinyVector(const TinyVector& rhs) = default;
+
+  // Move Constructor
+  inline TinyVector(TinyVector&& rhs) = default;
 
   // Templated TinyVector constructor.
   template<class T1>
@@ -151,6 +155,7 @@ struct TinyVector
   inline int byteSize() const { return D * sizeof(T); }
 
   inline TinyVector& operator=(const TinyVector& rhs) = default;
+  inline TinyVector& operator=(TinyVector&& rhs) = default;
 
   template<class T1>
   inline TinyVector<T, D>& operator=(const TinyVector<T1, D>& rhs)
