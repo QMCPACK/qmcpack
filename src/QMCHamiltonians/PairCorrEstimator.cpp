@@ -103,16 +103,12 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
 void PairCorrEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 // The value should match the index to norm_factor in set_norm_factor
-const int PairCorrEstimator::gen_pair_id(const int& ig, const int& jg)
+int PairCorrEstimator::gen_pair_id(const int ig, const int jg, const int ns)
 {
   if (jg < ig)
-  {
-    return ((num_species * (num_species - 1)) / 2) - (((num_species - jg) * (num_species - jg - 1)) / 2) + ig;
-  }
+    return ns * (ns - 1) / 2 - (ns - jg) * (ns - jg - 1) / 2 + ig;
   else
-  {
-    return ((num_species * (num_species - 1)) / 2) - (((num_species - ig) * (num_species - ig - 1)) / 2) + jg;
-  }
+    return ns * (ns - 1) / 2 - (ns - ig) * (ns - ig - 1) / 2 + jg;
 }
 
 PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
@@ -130,7 +126,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
       {
         const int loc     = static_cast<int>(DeltaInv * r);
         const int jg      = P.GroupID[j];
-        const int pair_id = gen_pair_id(ig, jg);
+        const int pair_id = gen_pair_id(ig, jg, num_species);
         collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
       }
     }
