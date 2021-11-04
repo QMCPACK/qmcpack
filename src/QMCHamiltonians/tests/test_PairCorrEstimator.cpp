@@ -55,22 +55,6 @@ const char* pset_xml = "<particleset name=\"e\" random=\"yes\"> \
                           </group> \
                         </particleset>";
 
-// Particleset block
-const char* multi_pset_xml = "<particleset name=\"e\" random=\"yes\"> \
-                          <group name=\"u\" size=\"4\" mass=\"1.0\"> \
-                            <parameter name=\"charge\" >   -1  </parameter> \
-                            <parameter name=\"mass\"   >  1.0  </parameter> \
-                          </group> \
-                          <group name=\"d\" size=\"4\" mass=\"1.0\"> \
-                            <parameter name=\"charge\" >   -1  </parameter> \
-                            <parameter name=\"mass\"   >  1.0  </parameter> \
-                          </group> \
-                          <group name=\"p\" size=\"1\" mass=\"1.0\"> \
-                            <parameter name=\"charge\" >    1  </parameter> \
-                            <parameter name=\"mass\"   >  1.0  </parameter> \
-                          </group> \
-                        </particleset>";
-
 // PairCorrEstimator block
 const char* gofr_xml = "<estimator type=\"gofr\" name=\"gofr\" rmax=\"2.0\" num_bin=\"99\" />";
 
