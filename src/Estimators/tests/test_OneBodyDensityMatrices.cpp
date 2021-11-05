@@ -24,10 +24,14 @@
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Utilities/StdRandom.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/for_testing/NativeInitializerPrint.hpp"
 #include <iostream>
 
 namespace qmcplusplus
 {
+
+// set to true to regenrate static testing data
+constexpr bool generate_test_data = true;
 
 namespace testing
 {
@@ -309,7 +313,7 @@ public:
 
   void dumpData(OneBodyDensityMatrices& obdm)
   {
-    std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << *(obdm.data_) << '\n';
+    std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(*(obdm.data_)) << '\n';
   }
 };
 
@@ -503,9 +507,28 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
+  if constexpr(generate_test_data)
+  {
+    std::cout << "Initialize pset_target.R with the following:\n{";
+    for(auto r : pset_target.R)
+      std::cout << NativePrint(r) << ",";
+    std::cout << "}\n";
+  }
   auto& species_set = pset_target.getSpeciesSet();
   OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.Lattice, species_set, wf_factory, pset_target);
   auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+
+  // We can't reason about the state of the global Random in tests. A User can run only some tests,
+  // new tests will get added, other tests modified so global Random is called more times or fewer.
+  // Also due to use of FakeRandom in unit tests in other tests of this executable its difficult
+  // to know which global Random this test will have have access to. So trying to initialize it to
+  // a known state is not maintainable.
+  // So we must initialize particle positions to known values.
+  pset_target.R = ParticleSet::ParticlePos_t{{1.751870349, 4.381521229, 2.865202269}, {3.244515371, 4.382273176, 4.21105285},
+                   {3.000459944, 3.329603408, 4.265030556}, {3.748660329, 3.63420622, 5.393637791},
+                   {3.033228526, 3.391869137, 4.654413566}, {3.114198787, 2.654334594, 5.231075822},
+                   {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
+
   StdRandom<double> rng;
   rng.init(0, 1, 101);
   MCPWalker walker;
@@ -519,7 +542,8 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
 
   obdmt.testEvaluateMatrix(obdm, pset_target, trial_wavefunction, walker, rng);
   // You can use this to regenerate the test data
-  obdmt.dumpData(obdm);
+  if constexpr(generate_test_data)
+    obdmt.dumpData(obdm);
   outputManager.resume();
 }
 
