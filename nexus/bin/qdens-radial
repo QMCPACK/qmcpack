@@ -378,7 +378,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
 
                 if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-                    self.error('Input species (-S,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+                    self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
                 #end if
                 if opt.cumulative:
                     if opt.species is None:
