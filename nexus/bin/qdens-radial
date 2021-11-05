@@ -117,23 +117,12 @@ class QDRBase(DevBase):
         #self.exit()
     #end def error
 
-    # options accessor functions
-    # PERHAPS A FUNCTION TO DO SOMETHING ELSE??
-    #def get_cell(self):
-    #    if opt.structure is not None:
-    #        cell = opt.structure.axes
-    #    else:
-    #        cell = opt.cell
-    #    #end if
-    #    return cell
-    ##end def get_cell
 #end class QDBase
 
 
 class QMCDensityRadialProcessor(QDRBase):
     def __init__(self):
-        self.file_list = []
-        self.stat_files = obj()
+        pass
     #end def __init__
 
     def read_command_line(self):
@@ -147,15 +136,15 @@ class QMCDensityRadialProcessor(QDRBase):
                           action='store_true',default=False,
                           help='Print detailed information (default=%default).'
                           )
-        parser.add_option('-R','--radii',dest='radii',
+        parser.add_option('-r','--radii',dest='radii',
                           default='None',
                           help='List of cutoff radii (default=%default).'
                           )
-        parser.add_option('-S','--species',dest='species',
+        parser.add_option('-s','--species',dest='species',
                           default='None',
                           help='List of species (default=%default).'
                           )
-        parser.add_option('-s','--source',dest='source',
+        parser.add_option('-a','--app',dest='app',
                           default='qmcpack',
                           help='Source that generated the .xsf file. Options: "pwscf", "qmcpack" (default=%default).'
                           )
@@ -163,20 +152,20 @@ class QMCDensityRadialProcessor(QDRBase):
                           action='store_true',default=False,
                           help='Evaluate cumulative radial density at cutoff radii (default=%default).'
                           )
-        parser.add_option('-V','--vmc_file',dest='vmc_file',
+        parser.add_option('--vmc',dest='vmc_file',
                           default='None',
                           help='Location of VMC to be used for extrapolating mixed-estimator bias (default=%default).'
                           )
-        parser.add_option('--vmc_err_file',dest='vmc_err_file',
+        parser.add_option('--vmcerr',dest='vmc_err_file',
                           default='None',
                           help='Location of VMC+err to be used for extrapolating mixed-estimator bias and resampling (default=%default).'
                           )
-        parser.add_option('--dmc_err_file',dest='dmc_err_file',
+        parser.add_option('--dmcerr',dest='dmc_err_file',
                           default='None',
                           help='Location of DMC+err to be used for resampling (default=%default).'
                           )
         parser.add_option('-n','--nsamples',dest='nsamples',
-                          default='10',
+                          default='50',
                           help='Number of samples for resampling (default=%default).'
                           )
         parser.add_option('-p','--plot',dest='plot',
@@ -267,8 +256,8 @@ class QMCDensityRadialProcessor(QDRBase):
             vlog.set_verbosity('none')
         #end if
 
-        if (opt.vmc_err_file is not None or opt.dmc_err_file is not None) and opt.source!='qmcpack':
-            self.error('Error files (and subsequent resampling) are not compatable with {} source files.'.format(opt.source))
+        if (opt.vmc_err_file is not None or opt.dmc_err_file is not None) and opt.app!='qmcpack':
+            self.error('Error files (and subsequent resampling) are not compatable with {} app files.'.format(opt.app))
         #end if
 
         if opt.vmc_err_file is not None and opt.vmc_file is None:
@@ -313,7 +302,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 #   
                 # std_dev = sqrt(4*sigma_dmc**2+sigma_vmc**2)
                 extrap_err_xsf_data = dmc_err_xsf_data.copy()
-                extrap_err_xsf_data.data[3]['density']['density'].values = np.sqrt(4.0*dmc_err_xsf_data.data[3]['density']['density'].values**2.0+vmc_err_xsf_data.data[3]['density']['density'].values**2.0)
+                extrap_err_xsf_data.data[3]['density']['density'].values = np.sqrt(4.0*dmc_err_xsf_data.data[3]['density']['density'].values**2+vmc_err_xsf_data.data[3]['density']['density'].values**2)
                 err_data = extrap_err_xsf_data.copy()
             elif opt.vmc_file is None:
                 # Data without errors
@@ -357,7 +346,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 cds = ChargeDensity()
                 cds.read_xsf(resample_xsf_data)
                 equiv_atoms = list(cds.info.structure.equivalent_atoms().keys())
-                if opt.source=='pwscf':
+                if opt.app=='pwscf':
                     cds.change_distance_units('B')
                 else:
                     cds.volume_normalize()
@@ -397,23 +386,23 @@ class QMCDensityRadialProcessor(QDRBase):
                 if opt.species is not None:
                     for ati,at in enumerate(opt.species):
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
-                        sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2.0
+                        sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
                 else:
                     for ati,at in enumerate(equiv_atoms):
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
-                        sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2.0
+                        sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
                 #end if
 
             #end for
             if opt.species is not None:
                 for ati,at in enumerate(opt.species):
-                    std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2.0)
+                    std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             else:
                 for ati,at in enumerate(equiv_atoms):
-                    std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2.0)
+                    std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             #end if
 
@@ -432,7 +421,7 @@ class QMCDensityRadialProcessor(QDRBase):
             self.error('Input species (-S,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
         #end if
 
-        if opt.source=='pwscf':
+        if opt.app=='pwscf':
             cd.change_distance_units('B')
         else:
             cd.volume_normalize()
@@ -442,9 +431,9 @@ class QMCDensityRadialProcessor(QDRBase):
 
         if opt.plot:
             if opt.species is None:
-                cd.plot_radial_density(rmax=opt.radii.tolist())
+                cd.plot_radial_density(rmax=opt.radii.tolist(),cumulative=opt.cumulative)
             else: 
-                cd.plot_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                cd.plot_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist(),cumulative=opt.cumulative)
             #end if
         #end if
 
