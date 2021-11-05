@@ -14,10 +14,25 @@ endif()
 if(QMC_OMP)
   set(ENABLE_OPENMP 1)
   if(ENABLE_OFFLOAD AND NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
+    if (QMC_CUDA2HIP)
+      set(OFFLOAD_TARGET_DEFAULT "amdgcn-amd-amdhsa")
+    else()
+      set(OFFLOAD_TARGET_DEFAULT "nvptx64-nvidia-cuda")
+    endif()
     set(OFFLOAD_TARGET
-        "nvptx64-nvidia-cuda"
+        ${OFFLOAD_TARGET_DEFAULT}
         CACHE STRING "Offload target architecture")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-Wno-linker-warnings" LINKER_WARNING_SUPPORTED)
+    if(LINKER_WARNING_SUPPORTED)
+      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-linker-warnings")
+    endif()
+
+    if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "amdgcn")
+      set(OFFLOAD_ARCH gfx906)
+    endif()
 
     if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "nvptx64" AND DEFINED CMAKE_CUDA_ARCHITECTURES)
       list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)

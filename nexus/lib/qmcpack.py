@@ -239,7 +239,12 @@ class Qmcpack(Simulation):
                 qs  = input.simulation.qmcsystem
                 oldwfn = qs.wavefunction
                 newwfn = res.qmcsystem.wavefunction
+                if hasattr(oldwfn.determinantset,'multideterminant'):
+                    del newwfn.determinantset.slaterdeterminant
+                    newwfn.determinantset.multideterminant = oldwfn.determinantset.multideterminant
+                    newwfn.determinantset.sposets = oldwfn.determinantset.sposets
                 dset = newwfn.determinantset
+
                 if 'jastrows' in newwfn:
                     del newwfn.jastrows
                 #end if

@@ -2361,8 +2361,11 @@ def test_execute():
 
     tpath = testing.setup_unit_test_output_directory('simulation','test_execute',divert=True)
 
+    import shutil
+    serial = shutil.which('mpirun') is None
+
     s = get_test_sim(
-        job = job(machine='ws1',app_command='echo run'),
+        job = job(machine='ws1',app_command='echo run',serial=serial),
         )
 
     s.create_directories()

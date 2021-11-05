@@ -29,8 +29,8 @@ are given in the referenced sections.
 
 #. Run the cmake configure step and build with make
    (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
-   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
-   run.
+   tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
+   available when cmake is run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -326,6 +326,7 @@ the path to the source directory.
   ::
 
     QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    RMG_BIN                Location of RMG binary (rmg-cpu)
     QMC_DATA               Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE            Add extra include paths
     QMC_EXTRA_LIBS         Add extra link libraries
