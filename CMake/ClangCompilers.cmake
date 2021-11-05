@@ -24,6 +24,12 @@ if(QMC_OMP)
         CACHE STRING "Offload target architecture")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
 
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-Wno-linker-warnings" LINKER_WARNING_SUPPORTED)
+    if(LINKER_WARNING_SUPPORTED)
+      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-linker-warnings")
+    endif()
+
     if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "amdgcn")
       set(OFFLOAD_ARCH gfx906)
     endif()

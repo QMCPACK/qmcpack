@@ -37,12 +37,16 @@ template<typename T>
 using UPtrVector = std::vector<std::unique_ptr<T>>;
 /** }@ */
 
-
-/** temporary helper function you have a vector of derived class but what to pass
- *  a vector of base class references to an API.
+/** helper function to take vector of class A to refvector of any valid reference type for A
+ *
+ *  intended usage looks like this
+ *  std::vector<DerivedType> vdt
+ *  auto refvecbase = makeRefVector<BaseType>(vdt)
+ *  or if you just want a refvector of type vdt
+ *  auto refvec = makeRefVector<decltype(vdt)::value_type>(vdt)
  *
  *  godbolt.org indicates at least with clang 11&12 we get RVO here.
- *  auto ref_whatevers = makeRefVector(whatevers);
+ *  auto ref_whatevers = makeRefVector<ValidTypeForReference>(whatevers);
  *  makes no extra copy.
  */
 template<class TR, class T>
