@@ -265,7 +265,7 @@ class QMCDensityRadialProcessor(QDRBase):
         #end if
 
         if opt.vmc_err_file is not None and opt.vmc_file is None:
-            self.error('A VMC file (-V,--vmc_file) must be provided along with the VMC+err file (--vmc_err_file)')
+            self.error('A VMC file (--vmc) must be provided along with the VMC+err file (--vmcerr)')
         #end if
 
         # if VMC file is given, perform extrapolation before 
@@ -327,7 +327,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 err_data = dmc_err_xsf_data.copy()
 
             else:
-                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmc_err_file and --dmc_err_file arguments.')
+                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.')
             #end if
             show_error=True
 
@@ -419,7 +419,7 @@ class QMCDensityRadialProcessor(QDRBase):
 
         else:
             if opt.vmc_err_file is not None:
-                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmc_err_file and --dmc_err_file arguments.')
+                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.')
             #end if
         #end if
 
@@ -429,7 +429,7 @@ class QMCDensityRadialProcessor(QDRBase):
         equiv_atoms = list(cd.info.structure.equivalent_atoms().keys())
 
         if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-            self.error('Input species (-S,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+            self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
         #end if
 
         if opt.app=='pwscf':
