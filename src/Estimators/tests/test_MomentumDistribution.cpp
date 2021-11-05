@@ -120,6 +120,12 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   auto& pset                         = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   DataLocality dl = DataLocality::crowd;
+
+  // Setup particleset
+  pset.R = ParticleSet::ParticlePos_t{{1.751870349, 4.381521229, 2.865202269}, {3.244515371, 4.382273176, 4.21105285},
+                                      {3.000459944, 3.329603408, 4.265030556}, {3.748660329, 3.63420622, 5.393637791},
+                                      {3.033228526, 3.391869137, 4.654413566}, {3.114198787, 2.654334594, 5.231075822},
+                                      {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
   
   // Build from input
   MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), 
@@ -171,15 +177,19 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   using Data = MomentumDistribution::Data::element_type;
   Data ref_data;
 
-  ref_data = {46.29362653, 3.159647865, -7.619226601, 27.60997229, -0.2988776457, -37.49398908, -8.803560748, -37.01514494, 16.00502823, 18.17654053, 1.090546098, 12.9452013, -28.36356552, 1.734146548, -28.36356552, 12.9452013, 1.090546098, 18.17654053, 16.00502823, -37.01514494, -8.803560748, -37.49398908, -0.2988776457, 27.60997229, -7.619226601, 3.159647865, 46.29362653 };
-
-  for (size_t id = 0; id < ref_data.size(); ++id)
-    CHECK(data[id] == Approx(ref_data[id]));
+  ref_data = {3.92261216, -5.752141485, 4.78276286, 8.307662762, -5.130834919, 0.08942598353, 
+              0.9716326509, 21.82310933, -9.177741101, -0.2024849597, -2.520417488, -9.470020717, 
+              -9.4969045, 3.866360129, -9.4969045, -9.470020717, -2.520417488, -0.2024849597, 
+              -9.177741101, 21.82310933, 0.9716326509, 0.08942598353, -5.130834919, 8.307662762, 
+              4.78276286, -5.752141485, 3.92261216 };
 
   //std::cout<<"\n\n\nn(k) data:\n{";
   //for(int i=0;i<data.size();++i)
   //  std::cout<<data[i]<<", ";
   //std::cout<<"}\n\n\n";
+
+  for (size_t id = 0; id < ref_data.size(); ++id)
+    CHECK(data[id] == Approx(ref_data[id]));
 
   outputManager.resume();
 
