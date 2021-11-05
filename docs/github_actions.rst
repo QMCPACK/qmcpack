@@ -76,7 +76,7 @@ linux (gcc-openmpi-real-coverage)
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | GCC                                                                                                                                                                                               |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Build Command | `export OMPI_CC=clang && export OMPI_CXX=clang++ && cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \-DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=0 ..` |
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \-DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=0 ..` |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Test Command  | `export OMPI_MCA_rmaps_base_oversubscribe=1 && export OMPI_MCA_hwloc_base_binding_policy=none && ctest --output-on-failure -L deterministic`                                                      |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -90,7 +90,7 @@ linux (gcc-openmpi-complex-coverage)
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | GCC                                                                                                                                                                                               |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Build Command | `export OMPI_CC=clang && export OMPI_CXX=clang++ && cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \-DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=1 ..` |
+| Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \-DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=1 ..` |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Test Command  | `export OMPI_MCA_rmaps_base_oversubscribe=1 && export OMPI_MCA_hwloc_base_binding_policy=none && ctest --output-on-failure -L deterministic`                                                      |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
