@@ -156,6 +156,10 @@ class QMCDensityRadialProcessor(QDRBase):
                           default='None',
                           help='Location of VMC to be used for extrapolating mixed-estimator bias (default=%default).'
                           )
+        parser.add_option('--write',dest='write_extrap',
+                          action='store_true',default=False,
+                          help='Write extrapolated values to qmc-extrap.xsf (default=%default).'
+                          )
         parser.add_option('--vmcerr',dest='vmc_err_file',
                           default='None',
                           help='Location of VMC+err to be used for extrapolating mixed-estimator bias and resampling (default=%default).'
@@ -274,9 +278,15 @@ class QMCDensityRadialProcessor(QDRBase):
             extrap_xsf_data = dmc_xsf_data.copy()
             extrap_xsf_data.data[3]['density']['density'].values = 2.*dmc_xsf_data.data[3]['density']['density'].values-vmc_xsf_data.data[3]['density']['density'].values
             file = extrap_xsf_data.copy()
+            if opt.write_extrap:
+                file.write('qmc-extrap.xsf')
+            #end if
         else:
             dmc_xsf_data = XsfFile(filepath=file)
             file = dmc_xsf_data.copy()
+            if opt.write_extrap:
+                self.log('\nWARNING: You provided --write, however, extrapolated density will not be written since a VMC file was not provided (via --vmc=VMC_FILE).\n')
+            #end if
         #end if
 
         show_error=False
@@ -292,15 +302,16 @@ class QMCDensityRadialProcessor(QDRBase):
                 dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
                 # Errors only
                 vmc_err_xsf_data = vmc_plus_err_xsf_data.copy() 
-                vmc_err_xsf_data = vmc_plus_err_xsf_data.data[3]['density']['density'].values \
+                vmc_err_xsf_data.data[3]['density']['density'].values = vmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - vmc_xsf_data.data[3]['density']['density'].values
                 dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
-                dmc_err_xsf_data = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
+                dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - dmc_xsf_data.data[3]['density']['density'].values
 
                 # Get standard deviation corresponding to the extrapolation formula: 
                 #   
                 # std_dev = sqrt(4*sigma_dmc**2+sigma_vmc**2)
+                #
                 extrap_err_xsf_data = dmc_err_xsf_data.copy()
                 extrap_err_xsf_data.data[3]['density']['density'].values = np.sqrt(4.0*dmc_err_xsf_data.data[3]['density']['density'].values**2+vmc_err_xsf_data.data[3]['density']['density'].values**2)
                 err_data = extrap_err_xsf_data.copy()
