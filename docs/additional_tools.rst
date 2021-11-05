@@ -56,7 +56,7 @@ It is a small C++ executable that is built alongside the QMCPACK
 executable and can be found in ``build/bin``.
 
 To date, ``convert4qmc`` supports the following codes:
-GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO`, DIRAC :cite:`DIRAC`, and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
+GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO`, DIRAC :cite:`DIRAC`, RMG :cite:`RMG`, and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
 
 
 
@@ -71,7 +71,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
 
   Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
 
-   convert [-gaussian|gamess|-orbitals|-dirac]
+   convert [-gaussian|gamess|-orbitals|-dirac|-rmg]
    filename
   [-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]
   [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
@@ -288,6 +288,8 @@ prefix ``Mysim`` and output files will be
   | ``-gaussian``   | Gaussian code                                                              |
   +-----------------+----------------------------------------------------------------------------+
   | ``-dirac``      | get spinors from DIRAC code                                                |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-rmg``        | RMG code                                                                   |
   +-----------------+----------------------------------------------------------------------------+
 
 Command line options
@@ -692,6 +694,14 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 - **DIRAC**
 
   QMCPACK can use the output of DIRAC to run spin-orbit calculations using single-particle spinor wave functions for single-determinant calculations (DFT or closed-shell Dirac HF) or multideterminant complete open-shell configuration interaction (COSCI) wavefunctions. In the case of COSCI, the desired ground or excited state can be requested with ``-TargetState x``.
+
+- **RMG**
+
+  QMCPACK can use the HDF5 output of RMG DFT calculations. To generate this HDF5 output, set ``write_qmcpack_restart = "true"`` in the RMG input (file will be written to ``Waves/wave.out.h5``). ``convert4qmc`` will read the data from this HDF5 file and generate ``*.structure.xml``, ``*.wf{j,noj}.xml``, and ``*.qmc.in-wf{j,noj}.xml``. Pseudopotential files must be generated/moved manually by the user to ``X.qmcpp.xml``, where ``X`` is the appropriate element symbol (PP filename/path can be changed in the Hamiltonian section of ``*.qmc.in-wf{j,noj}.xml``).
+
+  ::
+
+    convert4qmc -rmg wave.out.h5
 
 .. _pw2qmcpack:
 
