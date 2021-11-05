@@ -75,7 +75,7 @@ linux (gcc-openmpi-real-coverage)
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | GCC                                                                                                                                          |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
-| Build Command | `cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \-DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=0 ..`   |
+| Build Command | `cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=0 ..`                                                     |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
 | Test Command  | `export OMPI_MCA_rmaps_base_oversubscribe=1 && export OMPI_MCA_hwloc_base_binding_policy=none && ctest --output-on-failure -L deterministic` |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
@@ -89,7 +89,7 @@ linux (gcc-openmpi-complex-coverage)
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | GCC                                                                                                                                          |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
-| Build Command | `cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \-DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=1 ..`   |
+| Build Command | `cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \-DQMC_COMPLEX=1 ..`                                                     |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
 | Test Command  | `export OMPI_MCA_rmaps_base_oversubscribe=1 && export OMPI_MCA_hwloc_base_binding_policy=none && ctest --output-on-failure -L deterministic` |
 +---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
@@ -158,17 +158,17 @@ linux (clang-complex-asan)
 
 linux (clang-openmpi-real-ubsan)
 """"""""""""""""""""""""""""""""
-+---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Compiler      | Clang                                                                                                                                                               |
-+---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Build Command | `CC=clang CXX=clang++ cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=ubsan -DQMC_COMPLEX=0 ..` |
-+---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Test Command  | `export OMPI_MCA_rmaps_base_oversubscribe=1 && export OMPI_MCA_hwloc_base_binding_policy=none && ctest --output-on-failure -L deterministic`                        |
-+---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Objective     | Undefined Behavior Sanitizer (Real)                                                                                                                                 |
-+---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Duration      | ~55 Minutes                                                                                                                                                         |
-+---------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | Clang                                                                                                                                        |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `CC=clang CXX=clang++ cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=ubsan -DQMC_COMPLEX=0 ..`                           |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export OMPI_MCA_rmaps_base_oversubscribe=1 && export OMPI_MCA_hwloc_base_binding_policy=none && ctest --output-on-failure -L deterministic` |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Undefined Behavior Sanitizer (Real)                                                                                                          |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~55 Minutes                                                                                                                                  |
++---------------+----------------------------------------------------------------------------------------------------------------------------------------------+
 
 linux (clang-latest-openmp-offload)
 """""""""""""""""""""""""""""""""""
@@ -367,8 +367,6 @@ gpu-cuda (clang14_dev-real-gpu-enable-cuda-afqmc-offload-mixed)
 +---------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=clang-14 \                                                                                             |
 |               | -DCMAKE_CXX_COMPILER=clang++-14 \                                                                                                        |
-|               | -DMPI_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                                                          |
-|               | -DMPI_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                                                       |
 |               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                                                     |
 |               | -DBUILD_AFQMC=ON \                                                                                                                       |
 |               | -DENABLE_CUDA=ON \                                                                                                                       |
@@ -399,8 +397,6 @@ gpu-cuda (clang14_dev-real-gpu-enable-cuda-afqmc-offload-full)
 +---------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | Build Command | `cmake -GNinja -DCMAKE_C_COMPILER=clang-14 \                                                                                        |
 |               | -DCMAKE_CXX_COMPILER=clang++-14 \                                                                                                   |
-|               | -DMPI_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                                                     |
-|               | -DMPI_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                                                  |
 |               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                                                |
 |               | -DBUILD_AFQMC=ON \                                                                                                                  |
 |               | -DENABLE_CUDA=ON \                                                                                                                  |
