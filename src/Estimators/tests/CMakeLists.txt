@@ -38,8 +38,10 @@ set(SRCS
 if(NOT QMC_CUDA)
   set(SRCS
       ${SRCS}
+      test_MomentumDistribution.cpp
       test_OneBodyDensityMatricesInput.cpp
-      test_OneBodyDensityMatrices.cpp)
+      test_OneBodyDensityMatrices.cpp
+      )
 endif()
   
 add_executable(${UTEST_EXE} ${SRCS})

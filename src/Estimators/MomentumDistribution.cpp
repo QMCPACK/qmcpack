@@ -301,6 +301,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
     // accumulate data
     for (int ik = 0; ik < nofK.size(); ++ik)
       (*data_)[ik] += weight * nofK[ik] * norm_nofK;
+
   }
 }
 

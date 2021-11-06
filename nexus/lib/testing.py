@@ -225,8 +225,9 @@ def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,b
 
 # check for value equality and if different, print the difference
 def check_value_eq(v1,v2,**kwargs):
+    verbose = kwargs.pop('verbose',False)
     same = value_eq(v1,v2,**kwargs)
-    if not same and global_data['verbose']:
+    if not same and (verbose or global_data['verbose']):
         print('\nValues differ, please see below for details')
         hline = '========== {} =========='
         print()
@@ -243,8 +244,9 @@ def check_value_eq(v1,v2,**kwargs):
 
 # check for object equality and if different, print the difference
 def check_object_eq(o1,o2,**kwargs):
+    verbose = kwargs.pop('verbose',False)
     same = object_eq(o1,o2,**kwargs)
-    if not same and global_data['verbose']:
+    if not same and (verbose or global_data['verbose']):
         print('\nObjects differ, please see below for details')
         print_diff(o1,o2)
     #end if

@@ -65,7 +65,7 @@ if versions.h5py_available:
             dmc.s001.SpinDensity_u.xsf
             '''.split()
 
-        assert(check_value_eq(set(os.listdir(dmc_path)),set(files_aft)))
+        assert(check_value_eq(set(os.listdir(dmc_path)),set(files_aft),verbose=True))
 
         tot_file = os.path.join(dmc_path,'dmc.s003.SpinDensity_u+d.xsf')
         pol_file = os.path.join(dmc_path,'dmc.s003.SpinDensity_u-d.xsf')
