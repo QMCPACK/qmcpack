@@ -44,6 +44,8 @@ public:
   using Sampling    = OneBodyDensityMatrices::Sampling;
   using MCPWalker   = OneBodyDensityMatrices::MCPWalker;
   using Data        = OneBodyDensityMatrices::Data::element_type;
+  using Real        = Data::value_type;
+
 
   OneBodyDensityMatricesTests() = default;
   void testGenerateSamples(onebodydensitymatrices::Inputs input,
@@ -70,6 +72,30 @@ public:
     }
   }
 
+  /** Checking approximate equality for complex valued data as
+   *  two reals is not consistent with testing practices elsewhere in the code.
+   *  Values that are slightly off may now fall in approximation limit properly.
+   *
+   *  The smell from OperatorEstBase continuing the tradition of
+   *  packing everything into a Real buffer is not lost on me.
+   */
+  void checkData(Real* ref_in, Real* test_in, size_t size)
+  {
+    if constexpr (IsComplex_t<OneBodyDensityMatrices::Value>::value)
+    {
+      size /= 2;
+      auto* ref_data  = reinterpret_cast<std::complex<Real>*>(ref_in);
+      auto* test_data = reinterpret_cast<std::complex<Real>*>(test_in);
+      for (size_t id = 0; id < size; id += 2)
+        CHECK(ref_data[id] == ComplexApprox(test_data[id]));
+    }
+    else
+    {
+      for (size_t id = 0; id < size; ++id)
+        CHECK(ref_in[id] == Approx(test_in[id]));
+    }
+  }
+
   /** no change test for accumulate
    */
   void testAccumulate(OneBodyDensityMatrices& obdm,
@@ -81,8 +107,7 @@ public:
     obdm.implAccumulate(walkers, psets, twfcs, rng);
     Data data(getAccumulateData());
     auto& returned_data = *(obdm.data_);
-    for (size_t id = 0; id < data.size(); ++id)
-      CHECK(returned_data[id] == Approx(data[id]));
+    checkData(data.data(), returned_data.data(), data.size());
   }
 
   /** no change test for evaluateMatrix.
@@ -96,8 +121,7 @@ public:
     obdm.evaluateMatrix(pset, trial_wavefunction, walker, rng);
     Data data(getEvaluateMatrixData());
     auto& returned_data = *(obdm.data_);
-    for (size_t id = 0; id < data.size(); ++id)
-      CHECK(returned_data[id] == Approx(data[id]));
+    checkData(returned_data.data(), data.data(), data.size());
   }
 
   void dumpData(OneBodyDensityMatrices& obdm)
