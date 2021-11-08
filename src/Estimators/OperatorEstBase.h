@@ -100,7 +100,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-  virtual std::unique_ptr<OperatorEstBase> clone() const = 0;
+  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
@@ -131,7 +131,7 @@ protected:
    *  And it make's datalocality fairly easy but
    *  more descriptive and safe data structures would be better
    */
-  static Data createLocalData(size_t size, DataLocality data_locality);
+  static Data createLocalData(size_t size);
 
   Data data_;
 };

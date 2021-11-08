@@ -23,6 +23,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/FairDivide.h"
@@ -76,6 +77,7 @@ private:
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
+  WaveFunctionFactory* wf_factory_;
   // At the moment these are "clones" but I think this design pattern smells.
   UPtrVector<ParticleSet> walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
@@ -104,6 +106,7 @@ public:
                WalkerConfigurations& mcwc,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
+               WaveFunctionFactory* wf_factory,
                QMCHamiltonian* hamiltonian_);
 
   ~MCPopulation();

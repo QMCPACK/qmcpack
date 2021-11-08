@@ -67,14 +67,6 @@ private:
   OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
-  /** WaveFunctionFactory reference to allow delegation of the copy constructor
-   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
-   */
-  const WaveFunctionFactory& wf_factory_;
-  /** target particleset  reference to allow delegation of the copy constructor
-   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
-   */
-  ParticleSet& very_temp_pset_;
 
   /** @ingroup Derived simulation parameters determined by computation based in input
    *  @{
@@ -160,18 +152,18 @@ public:
                          const Lattice& lattice,
                          const SpeciesSet& species,
                          const WaveFunctionFactory& wf_factory,
-                         ParticleSet& pset_target,
-                         const DataLocality dl = DataLocality::crowd);
+                         ParticleSet& pset_target);
 
-  /** copy constructor delegates to standard constructor
-   *  This results in a copy construct and move of OneBodyDensityMatricesInput
-   *  But for the OBDM itself its as if it went through the standard construction.
-   *  This will be replaced within a few PR's by an optimized copy constructor.
+  /** Default copy constructor.
+   *  Instances of this estimator is assume to be thread scope, i.e. never
+   *  called by more than one thread at a time. note the OperatorEstBase copy constructor does
+   *  not copy or even allocate data_
    */
-  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
+  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm) = default;
+
   ~OneBodyDensityMatrices() override;
 
-  std::unique_ptr<OperatorEstBase> clone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,

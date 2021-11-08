@@ -24,7 +24,7 @@ OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : data_locality_(ot
 // I suspect this can be a pure function outside of the class.
 // In this case at least we don't care to copy the data_ as we are going to reduce these later and don't want
 // to end up with a multiplicative factor if we already have data.
-OperatorEstBase::Data OperatorEstBase::createLocalData(size_t size, DataLocality data_locality)
+OperatorEstBase::Data OperatorEstBase::createLocalData(size_t size)
 {
   Data new_data;
   new_data = std::make_unique<std::vector<QMCT::RealType>>(size, 0);

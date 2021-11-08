@@ -135,7 +135,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
-  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(), cur);
+  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(), population_.get_golden_twf(), cur);
 
   if (dispatchers_.are_walkers_batched())
   {

@@ -31,14 +31,11 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
                                                const WaveFunctionFactory& wf_factory,
-                                               ParticleSet& pset_target,
-                                               const DataLocality dl)
-    : OperatorEstBase(dl),
+                                               ParticleSet& pset_target)
+    : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
       lattice_(lattice),
       species_(species),
-      wf_factory_(wf_factory),
-      very_temp_pset_(pset_target),
       timers_("OneBodyDensityMatrix")
 {
   lattice_.reset();
@@ -152,14 +149,12 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   data_ = createLocalData(calcFullDataSize(basis_size_, species_.size()), data_locality_);
 }
 
-OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
-    : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_),
-                             obdm.lattice_,
-                             obdm.species_,
-                             obdm.wf_factory_,
-                             obdm.very_temp_pset_)
-{}
-
+OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl) : OneBodyDensityMatrices(obdm)
+{
+  data_locality_ = dl;
+  data_ = createLocalData(calcFullDataSize(basis_size_, species_.size()), data_locality_);
+}
+  
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
 
 std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::clone() const

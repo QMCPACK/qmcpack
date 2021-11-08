@@ -75,31 +75,23 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 
 size_t SpinDensityNew::getFullDataSize() { return species_.size() * derived_parameters_.npoints; }
 
-std::unique_ptr<OperatorEstBase> SpinDensityNew::clone() const { return std::make_unique<SpinDensityNew>(*this); }
-
-SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
-    : OperatorEstBase(sdn),
-      input_(sdn.input_),
-      species_(sdn.species_),
-      species_size_(sdn.species_size_),
-      lattice_(sdn.lattice_),
-      derived_parameters_(sdn.derived_parameters_)
-{
+std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const {
+  UPtr<SpinDensityNew> spawn(std::make_unique<SpinDensityNew>(*this));
   if (data_locality_ == DataLocality::crowd)
   {
-    size_t data_size = sdn.data_->size();
-    data_            = createLocalData(data_size, data_locality_);
+    size_t data_size = data_->size();
+    spawn->createLocalData(data_size, data_locality_);
   }
   else if (data_locality_ == DataLocality::rank)
   {
-    assert(sdn.data_locality_ == DataLocality::rank);
-    data_locality_ = DataLocality::queue;
+    auto spawn_locality = DataLocality::queue;
     // at construction we don't know what the data requirement is going to be
     // since its steps per block  dependent. so start with 10 steps worth.
     int num_particles = std::accumulate(species_size_.begin(), species_size_.end(), 0);
     size_t data_size  = num_particles * 20;
-    data_             = createLocalData(data_size, data_locality_);
+    spawn->createLocalData(data_size, spawn_locality);
   }
+  return std::make_unique<SpinDensityNew>(*this);
 }
 
 void SpinDensityNew::startBlock(int steps)
