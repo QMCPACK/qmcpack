@@ -13,6 +13,7 @@
 
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 
@@ -56,31 +57,29 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   ptcl.addParticleSet(std::move(elec_uptr));
   ptcl.addParticleSet(std::move(ions_uptr));
 
-
   ions_.update();
   elec_.addTable(elec_);
   elec_.addTable(ions_);
   elec_.update();
 
   const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\" spin=\"yes\"> \
-    <correlation speciesA=\"H\" speciesB=\"u\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-      <coefficients id=\"J1uH\" type=\"Array\"> 0.5 0.1 </coefficients> \
-    </correlation> \
-    <correlation speciesA=\"H\" speciesB=\"d\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-      <coefficients id=\"J1dH\" type=\"Array\"> 0.5 0.1 </coefficients> \
-    </correlation> \
-  </jastrow> \
+<jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\" spin=\"yes\"> \
+  <correlation speciesA=\"H\" speciesB=\"u\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
+    <coefficients id=\"J1uH\" type=\"Array\"> 0.5 0.1 </coefficients> \
+  </correlation> \
+  <correlation speciesA=\"H\" speciesB=\"d\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
+    <coefficients id=\"J1dH\" type=\"Array\"> 0.5 0.1 </coefficients> \
+  </correlation> \
+</jastrow> \
 </wavefunction> \
 ";
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
-
-  xmlNodePtr jas1 = doc.getRoot();
 
   // update all distance tables
   elec_.update();
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(jasxml);
+  REQUIRE(okay);
+  xmlNodePtr jas1 = doc.getRoot();
   WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
   wf_factory.put(jas1);
   auto& twf(*wf_factory.getTWF());
@@ -105,6 +104,102 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   // Numbers not validated
   std::vector<ValueType> expected_dlogpsi      = {-0.46681472435, -0.5098025897, -0.46681472435, -0.5098025897};
   std::vector<ValueType> expected_dhpsioverpsi = {-0.5798216548, 0.37977462695, -0.5798216548, 0.37977462695};
+  for (int i = 0; i < nparam; i++)
+  {
+    CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
+    CHECK(dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
+  }
+}
+
+TEST_CASE("J1 spin evaluate derivatives Jastrow (clone)", "[wavefunction]")
+{
+  Communicate* c = OHMMS::Controller;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
+
+  ions_.setName("ion0");
+  ions_.create(1);
+  ions_.R[0]                 = {0.0, 0.0, 0.0};
+  SpeciesSet& ispecies       = ions_.getSpeciesSet();
+  int HIdx                   = ispecies.addSpecies("H");
+  int ichargeIdx             = ispecies.addAttribute("charge");
+  ispecies(ichargeIdx, HIdx) = 1.0;
+
+  elec_.setName("e");
+  elec_.create({1, 1});
+  elec_.R[0] = {0.5, 0.5, 0.5};
+  elec_.R[1] = {-0.5, -0.5, -0.5};
+
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int downIdx                = tspecies.addSpecies("d");
+  int massIdx                = tspecies.addAttribute("mass");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(massIdx, upIdx)   = 1.0;
+  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(chargeIdx, upIdx) = -1.0;
+  tspecies(massIdx, downIdx) = -1.0;
+  // Necessary to set mass
+  elec_.resetGroups();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
+
+  ions_.update();
+  elec_.addTable(elec_);
+  elec_.addTable(ions_);
+  elec_.update();
+
+  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
+<jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\" spin=\"yes\"> \
+  <correlation speciesA=\"H\" speciesB=\"u\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
+    <coefficients id=\"J1uH\" type=\"Array\"> 0.5 0.1 </coefficients> \
+  </correlation> \
+  <correlation speciesA=\"H\" speciesB=\"d\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
+    <coefficients id=\"J1dH\" type=\"Array\"> 0.5 0.1 </coefficients> \
+  </correlation> \
+</jastrow> \
+</wavefunction> \
+";
+
+  // update all distance tables
+  elec_.update();
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(jasxml);
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+  xmlNodePtr jas1 = xmlFirstElementChild(root);
+
+
+  // update all distance tables
+  elec_.update();
+  RadialJastrowBuilder jastrow(c, elec_, ions_);
+  typedef J1Spin<BsplineFunctor<RealType>> J1Type;
+  auto j1_uptr = jastrow.buildComponent(jas1);
+  J1Type* j1   = dynamic_cast<J1Type*>(j1_uptr.get());
+  REQUIRE(j1);
+
+  opt_variables_type active;
+  j1->checkInVariables(active);
+  active.removeInactive();
+  j1->checkOutVariables(active);
+  active.print(std::cout);
+  int nparam = active.size_of_active();
+  REQUIRE(nparam == 4);
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> expected_dlogpsi(nparam);
+  std::vector<ValueType> expected_dhpsioverpsi(nparam);
+  j1->evaluateDerivatives(elec_, active, expected_dlogpsi, expected_dhpsioverpsi);
+
+  // Check clone constructor
+  J1Spin<BsplineFunctor<RealType>> cloned_j1spin = J1Spin<BsplineFunctor<RealType>>(*j1, elec_);
+  std::vector<ValueType> dlogpsi(nparam);
+  std::vector<ValueType> dhpsioverpsi(nparam);
+  cloned_j1spin.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   for (int i = 0; i < nparam; i++)
   {
     CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
