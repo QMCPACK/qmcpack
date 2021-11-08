@@ -19,6 +19,7 @@
 
 namespace qmcplusplus
 {
+using RealType = WaveFunctionComponent::RealType;
 #if !defined(QMC_CUDA)
 TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
