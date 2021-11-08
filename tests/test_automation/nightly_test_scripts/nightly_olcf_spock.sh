@@ -46,7 +46,7 @@ cd qmcpack/build
 
 # Start real build test
 echo "Start GCC10-NoMPI-CUDA2HIP-Release-Real test"
-export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Release-Real
+export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Real-Release
 
 CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
       -DCMAKE_CXX_COMPILER=g++ \
@@ -65,7 +65,7 @@ unset QMCPACK_TEST_SUBMIT_NAME
 
 # Start complex build test
 echo "Start GCC10-NoMPI-CUDA2HIP-Release-Complex test"
-export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Release-Complex
+export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Complex-Release
 
 cd ${base_dir}/qmcpack/build
 rm -fr *
