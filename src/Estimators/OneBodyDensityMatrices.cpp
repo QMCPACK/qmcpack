@@ -143,23 +143,35 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   // with respect to what?
   if (!input_.get_normalized())
   {
-    normalize(pset_target);
+    normalizeBasis(pset_target);
   }
 
-  data_ = createLocalData(calcFullDataSize(basis_size_, species_.size()), data_locality_);
+  data_.resize(calcFullDataSize(basis_size_, species_.size()), 0.0);
 }
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl) : OneBodyDensityMatrices(obdm)
 {
   data_locality_ = dl;
-  data_ = createLocalData(calcFullDataSize(basis_size_, species_.size()), data_locality_);
 }
   
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
 
-std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::clone() const
+std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::spawnCrowdClone() const
 {
-  return std::make_unique<OneBodyDensityMatrices>(*this);
+    std::size_t data_size = data_.size();
+  auto spawn_data_locality = data_locality_;
+
+  if (data_locality_ == DataLocality::rank)
+  {
+    // This is just a stub until a memory saving optimization is deemed necessary
+    spawn_data_locality = DataLocality::queue;
+    data_size = 0;
+    throw std::runtime_error("There is no memory savings implementation for OneBodyDensityMatrices");
+  }
+
+  auto spawn = std::make_unique<OneBodyDensityMatrices>(*this, spawn_data_locality);
+  spawn->get_data().resize(data_size);
+  return spawn;  
 }
 
 size_t OneBodyDensityMatrices::calcFullDataSize(const size_t basis_size, const int nspecies)
@@ -433,10 +445,10 @@ void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
       for (int n = 0; n < basis_size_sq; ++n)
       {
         Value val = NDM(n);
-        (*data_)[ij] += real(val);
+        data_[ij] += real(val);
         ij++;
 #if defined(QMC_COMPLEX)
-        (*data_)[ij] += imag(val);
+        data_[ij] += imag(val);
         ij++;
 #endif
       }
@@ -539,7 +551,7 @@ void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& r
   }
 }
 
-inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
 {
   int ngrid = std::max(200, input_.get_points());
   int ngtot = pow(ngrid, OHMMS_DIM);

@@ -173,7 +173,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   std::queue<QMCHamiltonian*> targetH;      //FIFO
   xmlNodePtr tcur = cur->children;
   std::unique_ptr<QMCDriverInterface> new_driver;
-  auto wf_factory = = wavefunction_pool.getWaveFunctionFactory("wavefunction");
+  auto wf_factory = wavefunction_pool.getWaveFunctionFactory("wavefunction");
   while (tcur != NULL)
   {
     if (xmlStrEqual(tcur->name, (const xmlChar*)"qmcsystem"))

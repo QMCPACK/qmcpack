@@ -191,7 +191,8 @@ public:
   TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
   // TODO: the fact this is needed is sad remove need for its existence.
   QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
-
+  WaveFunctionFactory& get_wf_factory() { return *wf_factory_; }
+  
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 

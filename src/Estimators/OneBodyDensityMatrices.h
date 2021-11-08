@@ -160,6 +160,7 @@ public:
    *  not copy or even allocate data_
    */
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm) = default;
+  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl);
 
   ~OneBodyDensityMatrices() override;
 
@@ -192,7 +193,7 @@ private:
 
   size_t calcFullDataSize(size_t basis_size, int num_species);
   //local functions
-  void normalize(ParticleSet& pset_target);
+  void normalizeBasis(ParticleSet& pset_target);
   //  printing
   void report(const std::string& pad = "");
   template<class RNG_GEN>

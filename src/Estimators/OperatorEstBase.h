@@ -38,16 +38,23 @@ public:
   using QMCT      = QMCTraits;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  /** Everything gets packed into RealType for now
-   *  \todo template and use whatever makes sense for the derived estimator this is just asking for bugs
+  using Data = std::vector<QMCT::RealType>;
+    
+  /** locality for accumulation of estimator data.
+   *  This designates the memory scheme used for the estimator
+   *  The default is:
+   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
+   *  Memory Savings Schemes:
+   *  One:
+   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
+   *  One per crowd:
+   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
+   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
    */
-  using Data = UPtr<std::vector<QMCT::RealType>>;
-
-  /// locality for accumulation data. FIXME full documentation of this state machine.
   DataLocality data_locality_;
 
-  ///name of this object
-  std::string myName;
+  ///name of this object -- only used for debugging and h5 output
+  std::string my_name_;
 
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
@@ -88,9 +95,7 @@ public:
 
   virtual void startBlock(int steps) = 0;
 
-  std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
-
-  Data& get_data() { return data_; };
+  std::vector<QMCT::RealType>& get_data() { return data_; }
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
@@ -131,7 +136,7 @@ protected:
    *  And it make's datalocality fairly easy but
    *  more descriptive and safe data structures would be better
    */
-  static Data createLocalData(size_t size);
+  Data createLocalData(size_t size);
 
   Data data_;
 };

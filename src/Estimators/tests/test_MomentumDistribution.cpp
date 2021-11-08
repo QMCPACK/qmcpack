@@ -172,9 +172,9 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   md.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
 
   //   Check data
-  std::vector<RealType>& data = md.get_data_ref();
+  std::vector<RealType>& data = md.get_data();
 
-  using Data = MomentumDistribution::Data::element_type;
+  using Data = MomentumDistribution::Data;
   Data ref_data;
 
   ref_data = {3.92261216, -5.752141485, 4.78276286, 8.307662762, -5.130834919, 0.08942598353, 

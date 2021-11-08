@@ -56,7 +56,9 @@ public:
                  const DataLocality dl = DataLocality::crowd);
 
   SpinDensityNew(const SpinDensityNew& sdn) = default;
-
+  SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl);
+                                                               
+  
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
   void startBlock(int steps) override;

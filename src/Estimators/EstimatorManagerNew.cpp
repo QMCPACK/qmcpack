@@ -256,7 +256,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
     for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      operator_data_sizes[iop] = operator_ests_[iop]->get_data()->size();
+      operator_data_sizes[iop] = operator_ests_[iop]->get_data().size();
     }
     // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
@@ -267,7 +267,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
     {
       auto& estimator      = *operator_ests_[iop];
-      auto& data           = estimator.get_data_ref();
+      auto& data           = estimator.get_data();
       size_t adjusted_size = data.size() + 1;
       operator_send_buffer.resize(adjusted_size, 0.0);
       operator_recv_buffer.resize(adjusted_size, 0.0);

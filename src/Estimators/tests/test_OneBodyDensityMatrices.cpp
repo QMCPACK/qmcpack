@@ -43,7 +43,7 @@ public:
   using Integrators = OneBodyDensityMatricesInput::Integrator;
   using Sampling    = OneBodyDensityMatrices::Sampling;
   using MCPWalker   = OneBodyDensityMatrices::MCPWalker;
-  using Data        = OneBodyDensityMatrices::Data::element_type;
+  using Data        = OneBodyDensityMatrices::Data;
   using Real        = Data::value_type;
 
 
@@ -106,7 +106,7 @@ public:
   {
     obdm.implAccumulate(walkers, psets, twfcs, rng);
     Data data(getAccumulateData());
-    auto& returned_data = *(obdm.data_);
+    auto& returned_data = obdm.data_;
     checkData(data.data(), returned_data.data(), data.size());
   }
 
@@ -120,13 +120,13 @@ public:
   {
     obdm.evaluateMatrix(pset, trial_wavefunction, walker, rng);
     Data data(getEvaluateMatrixData());
-    auto& returned_data = *(obdm.data_);
+    auto& returned_data = obdm.data_;
     checkData(returned_data.data(), data.data(), data.size());
   }
 
   void dumpData(OneBodyDensityMatrices& obdm)
   {
-    std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(*(obdm.data_)) << '\n';
+    std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n';
   }
 
 private:
@@ -249,7 +249,7 @@ TEST_CASE("OneBodyDensityMatrices::clone()", "[estimators]")
   OneBodyDensityMatricesInput obdmi(node);
 
   OneBodyDensityMatrices original(std::move(obdmi), pset_target.Lattice, species_set, wf_factory, pset_target);
-  auto clone = original.clone();
+  auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
   REQUIRE(dynamic_cast<decltype(&original)>(clone.get()) != nullptr);

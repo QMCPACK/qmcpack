@@ -51,7 +51,9 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
                                     MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                 wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                                 wavefunction_pool.getPrimary(),
+                                                 wavefunction_pool.getWaveFunctionFactory("wavefunction"),
+                                                 hamiltonian_pool.getPrimary()),
                                     samples, comm);
 
   // setStatus must be called before process
@@ -106,7 +108,9 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
                                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                   wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                                   wavefunction_pool.getPrimary(),
+                                                   wavefunction_pool.getWaveFunctionFactory("wavefunction"),
+                                                   hamiltonian_pool.getPrimary()),
                                       samples, comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
   testNumCrowds(9);
@@ -149,7 +153,9 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
                                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                   wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                                   wavefunction_pool.getPrimary(),
+                                                   wavefunction_pool.getWaveFunctionFactory("wavefunction"),
+                                                   hamiltonian_pool.getPrimary()),
                                       samples, comm);
 
   qmc_batched.testAdjustGlobalWalkerCount();

@@ -77,13 +77,15 @@ public:
 
   //MomentumDistribution(const MomentumDistribution& md);
 
+  MomentumDistribution(const MomentumDistribution& md, DataLocality dl);
+  
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
   void startBlock(int steps) override;
 
   /** standard interface
    */
-  std::unique_ptr<OperatorEstBase> clone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
   /** accumulate 1 or more walkers of MomentumDistribution samples
    */
