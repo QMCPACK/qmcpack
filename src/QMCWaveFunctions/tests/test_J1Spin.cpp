@@ -19,11 +19,14 @@
 
 namespace qmcplusplus
 {
-using RealType = WaveFunctionComponent::RealType;
+using RealType     = WaveFunctionComponent::RealType;
+using LogValueType = WaveFunctionComponent::LogValueType;
+using ValueType    = QMCTraits::ValueType;
 #if !defined(QMC_CUDA)
 TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
+
   auto ions_uptr = std::make_unique<ParticleSet>();
   auto elec_uptr = std::make_unique<ParticleSet>();
   ParticleSet& ions_(*ions_uptr);
@@ -74,8 +77,6 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 </jastrow> \
 </wavefunction> \
 ";
-
-  // update all distance tables
   elec_.update();
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
@@ -85,10 +86,9 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   wf_factory.put(jas1);
   auto& twf(*wf_factory.getTWF());
   twf.setMassTerm(elec_);
-  twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
-
   auto& twf_component_list = twf.getOrbitals();
+  auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
 
   opt_variables_type active;
   twf.checkInVariables(active);
@@ -96,30 +96,38 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   int nparam = active.size_of_active();
   REQUIRE(nparam == 4);
 
-  using ValueType = QMCTraits::ValueType;
+  // check logs
+  LogValueType log = twf_component_list[0]->evaluateLog(elec_, elec_.G, elec_.L);
+  //evaluateLog += into G + L so reset
+  elec_.G                 = 0.0;
+  elec_.L                 = 0.0;
+  LogValueType cloned_log = cloned_j1spin->evaluateLog(elec_, elec_.G, elec_.L);
+  //evaluateLog += into G + L so reset
+  elec_.G = 0.0;
+  elec_.L = 0.0;
+  LogValueType expected_log{-0.568775, 0.0};
+  CHECK(log == LogComplexApprox(expected_log));
+  CHECK(cloned_log == LogComplexApprox(expected_log));
+
+
+  // check derivatives
+  twf.evaluateLog(elec_);
   std::vector<ValueType> dlogpsi(nparam);
   std::vector<ValueType> dhpsioverpsi(nparam);
-  //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
-  twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
+  std::vector<ValueType> cloned_dlogpsi(nparam);
+  std::vector<ValueType> cloned_dhpsioverpsi(nparam);
 
+  twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
+  cloned_j1spin->evaluateDerivatives(elec_, active, cloned_dlogpsi, cloned_dhpsioverpsi);
   // Numbers not validated
   std::vector<ValueType> expected_dlogpsi      = {-0.46681472435, -0.5098025897, -0.46681472435, -0.5098025897};
   std::vector<ValueType> expected_dhpsioverpsi = {-0.5798216548, 0.37977462695, -0.5798216548, 0.37977462695};
   for (int i = 0; i < nparam; i++)
   {
     CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
+    CHECK(cloned_dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
     CHECK(dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
-  }
-
-  // Check clone constructor
-  auto cloned_j1spin = twf_component_list[0]->makeClone(elec_);
-  dlogpsi.resize(nparam, 0);
-  dhpsioverpsi.resize(nparam, 0);
-  cloned_j1spin->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
-  for (int i = 0; i < nparam; i++)
-  {
-    CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
-    CHECK(dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
+    CHECK(cloned_dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
   }
 }
 #endif
