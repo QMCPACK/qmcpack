@@ -107,6 +107,10 @@ case "$1" in
               # TODO: upgrade to llvm14 clang14 when available
         export OMPI_CC=/opt/llvm/01d59c0de822/bin/clang
         export OMPI_CXX=/opt/llvm/01d59c0de822/bin/clang++
+        
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=/opt/llvm/01d59c0de822/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/01d59c0de822/bin/clang++" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
