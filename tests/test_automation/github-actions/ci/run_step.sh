@@ -126,6 +126,20 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
+      *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
+        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+              -DQMC_MPI=0 \
+              -DENABLE_CUDA=ON \
+              -DQMC_CUDA2HIP=ON \
+              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"GCC8-MPI-CUDA-AFQMC"*)
         echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja \
