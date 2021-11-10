@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_CUDADEVICEMANAGER_H
 
 #include <stdexcept>
+#include <iostream>
 #include "CUDAruntime.hpp"
 #include "Host/OutputManager.h"
 #include "determineDefaultDeviceNum.h"
@@ -34,6 +35,7 @@ public:
       : cuda_default_device_num(-1), cuda_device_count(0)
   {
     cudaErrorCheck(cudaGetDeviceCount(&cuda_device_count), "cudaGetDeviceCount failed!");
+    std::cout << "cuda_device_count:" << cuda_device_count << '\n';
     if (num_devices == 0)
       num_devices = cuda_device_count;
     else if (num_devices != cuda_device_count)

@@ -124,6 +124,55 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   L = p.L;
 }
 
+// \todo refactor most of this "copy" constructor out to common method
+ParticleSet::ParticleSet(const ParticleSet& other, MinimalDefault tag)
+    : IsGrouped(other.IsGrouped),
+      SameMass(true),
+      ThreadID(0),
+      mySpecies(other.getSpeciesSet()), // This we need
+      Properties(0, 0, 0, 0),           // This we don't make it empty
+      myTwist(0.0),                     // maybe?
+      ParentName(other.parentName()),   // ?
+      coordinates_(other.coordinates_->makeClone())
+{
+  coordinates_->setAllParticlePos(other.R); // Yes
+  setQuantumDomain(other.quantum_domain);   // Probably not.
+  assign(other);                            //copies some things and not others, a mystery to me
+  //need explicit copy:
+  Mass   = other.Mass;      // Maybe
+  Z      = other.Z;         // Maybe
+  myName = other.getName(); // Yes
+  for (int i = 0; i < other.DistTables.size(); ++i)
+    addTable(other.DistTables[i]->get_origin(), other.DistTables[i]->getModes());
+  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
+  myTwist = other.myTwist;
+}
+
+// Make a minimal Copy of Mr.ParticleSet without his enormous luggage
+// and with an implementation a CPU SPOSet can use.
+ParticleSet::ParticleSet(const ParticleSet& other, MinimalCPU tag)
+    : IsGrouped(other.IsGrouped),
+      SameMass(true),
+      ThreadID(0),
+      mySpecies(other.getSpeciesSet()),                                     // This we need
+      Properties(0, 0, 1, 1),                                               // This we don't make it empty
+      myTwist(0.0),                                                         // maybe?
+      ParentName(other.parentName()),                                       // ?
+      coordinates_(createDynamicCoordinates(DynamicCoordinateKind::DC_POS)) // Yes just vanilla
+{
+  coordinates_->setAllParticlePos(other.R); // Yes
+  setQuantumDomain(other.quantum_domain);   // Probably not.
+  assign(other);                            //copies some things and not others, a mystery to me
+  //need explicit copy:
+  Mass   = other.Mass;      // Maybe
+  Z      = other.Z;         // Maybe
+  myName = other.getName(); // Yes
+  for (int i = 0; i < other.DistTables.size(); ++i)
+    addTable(other.DistTables[i]->get_origin(), DTModes::NEED_FULL_TABLE_ANYTIME); // Why this is needed.
+  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
+  myTwist = other.myTwist;
+}
+
 ParticleSet::~ParticleSet()
 {
   DEBUG_MEMORY("ParticleSet::~ParticleSet");
@@ -360,7 +409,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
 {
   if (myName == "none" || psrc.getName() == "none")
     APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
-
   int tid;
   std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())

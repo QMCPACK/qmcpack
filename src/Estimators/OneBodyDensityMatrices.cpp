@@ -36,8 +36,10 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
       input_(obdmi),
       lattice_(lattice),
       species_(species),
+      pset_local_cpu_(pset_target, ParticleSet::minimal_trait<decltype(basis_functions_)>::tag{}),
       timers_("OneBodyDensityMatrix")
 {
+  my_name_ = "OneBodyDensityMatrices";
   lattice_.reset();
   if (input_.get_center_defined())
     center_ = input_.get_center();
@@ -149,29 +151,30 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   data_.resize(calcFullDataSize(basis_size_, species_.size()), 0.0);
 }
 
-OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl) : OneBodyDensityMatrices(obdm)
+OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl)
+    : OneBodyDensityMatrices(obdm)
 {
   data_locality_ = dl;
 }
-  
+
 OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
 
 std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::spawnCrowdClone() const
 {
-    std::size_t data_size = data_.size();
+  std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
 
   if (data_locality_ == DataLocality::rank)
   {
     // This is just a stub until a memory saving optimization is deemed necessary
     spawn_data_locality = DataLocality::queue;
-    data_size = 0;
+    data_size           = 0;
     throw std::runtime_error("There is no memory savings implementation for OneBodyDensityMatrices");
   }
 
   auto spawn = std::make_unique<OneBodyDensityMatrices>(*this, spawn_data_locality);
-  spawn->get_data().resize(data_size);
-  return spawn;  
+  spawn->get_data().resize(data_size, 0.0);
+  return spawn;
 }
 
 size_t OneBodyDensityMatrices::calcFullDataSize(const size_t basis_size, const int nspecies)
@@ -397,7 +400,9 @@ void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
-    evaluateMatrix(psets[iw], wfns[iw], walkers[iw], rng);
+    walkers_weight_ += walkers[iw].get().Weight;
+    pset_local_cpu_.R = psets[iw].get().R;
+    evaluateMatrix(pset_local_cpu_, wfns[iw], walkers[iw], rng);
   }
 }
 
@@ -586,6 +591,26 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
     basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
 }
 
+void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
+{
+  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
+  std::vector<int> my_indexes(2, basis_size_);
+  if constexpr (IsComplex_t<Value>::value)
+  {
+    my_indexes.push_back(2);
+  }
+  int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
+
+  std::string nname = "number_matrix";
+  hid_t ngid        = H5Gcreate(sgid, nname.c_str(), 0);
+  for (int s = 0; s < species_.size(); ++s)
+  {
+    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
+    auto& oh = h5desc_.back();
+    oh->set_dimensions(my_indexes, 0);
+    oh->open(ngid);
+  }
+}
 
 template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
                                                                          ParticleSet& pset_target,

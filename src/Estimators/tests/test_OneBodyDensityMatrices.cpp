@@ -221,7 +221,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   outputManager.resume();
 }
 
-TEST_CASE("OneBodyDensityMatrices::clone()", "[estimators]")
+TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
 {
   using namespace testing;
   using namespace onebodydensitymatrices;

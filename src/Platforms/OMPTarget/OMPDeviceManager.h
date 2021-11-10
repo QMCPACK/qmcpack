@@ -33,10 +33,16 @@ public:
   OMPDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size)
       : omp_default_device_num(-1), omp_device_count(omp_get_num_devices())
   {
+    std::cout << "omp_device_count: " << omp_device_count << '\n';
     if (num_devices == 0)
       num_devices = omp_device_count;
     else if (num_devices != omp_device_count)
-      throw std::runtime_error("Inconsistent number of OpenMP devices with the previous record!");
+    {
+      std::ostringstream msg;
+      msg << "Number of devices found by OpenMP: " << omp_device_count << "  does not match the expected: "
+         << num_devices;
+      throw std::runtime_error(msg.str());
+    }
     if (omp_device_count > local_size)
       app_warning() << "More OpenMP devices than the number of MPI ranks. "
                     << "Some devices will be left idle.\n"

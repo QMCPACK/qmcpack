@@ -54,7 +54,7 @@ void OperatorEstBase::write()
       h5d->write(expanded_data.data(), nullptr);
 #else
     for (auto& h5d : h5desc_)
-      h5d->write(data_->data(), nullptr);
+      h5d->write(data_.data(), nullptr);
 #endif
 }
 

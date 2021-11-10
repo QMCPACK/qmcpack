@@ -143,6 +143,14 @@ private:
   Position dpcur_;
   /// current density
   Real rhocur_ = 0.0;
+  /** OneBodyDensityMatrices CompositeSPOSet save Particle set to use to do its evaluates.
+   *  CompositeSPOSet does not add a table to particle set but it does use one (SPOSets in general do this)
+   *  They depend on their sort of owning WFC to have put the necessary table in the golden ParticleSet (I think).
+   *  Particle sets operate on all their distance tables when they "make moves." The golden particle set in the
+   *  case of EnableOffload is unusable for CompositeSPOSet and causes access violations. So this particle set
+   *  is one the CompositeSPOSet can use.  How is this determined?,  the ParticleSet::minimal_trait.
+   */
+  ParticleSet pset_local_cpu_;
 
 public:
   /** Standard Constructor
@@ -179,7 +187,7 @@ public:
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  void registerOperatorEstimator(hid_t gid) override {}
+  void registerOperatorEstimator(hid_t gid) override;
 
 private:
   /** Unfortunate design RandomGenerator_t type aliasing and

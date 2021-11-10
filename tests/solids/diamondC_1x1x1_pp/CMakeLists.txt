@@ -463,6 +463,27 @@ if(add_estimator_tests)
   #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
   #   )
 
+  # # Unlikey check_states.py will be able to digest this
+  # simple_run_and_check(
+  #   short-diamondC_1x1x1_pp-vmcbatch-estimator-onebodydensitymatrices
+  #   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  #   qmc_onebodydensitymatrices_vmcbatch_short${IFEXT}.in.xml
+  #   ${NMPI}
+  #   ${NOMP}
+  #     check_stats.py
+  #     -s
+  #     0
+  #     -q
+  #     momentum
+  #     -e
+  #     0
+  #     -c
+  #     5
+  #     -p
+  #     det_qmc_momentum_short
+  #     -r
+  #     qmc-ref/det_qmc_momentum_short.s000.stat_ref_momentum_1_1.dat)
+
   simple_run_and_check(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
