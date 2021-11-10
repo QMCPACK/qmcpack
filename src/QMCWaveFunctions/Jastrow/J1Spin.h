@@ -111,6 +111,7 @@ struct J1Spin : public WaveFunctionComponent
         NumVars(0)
   {
     Optimizable = rhs.Optimizable;
+    initialize(tqp);
     for (int i = 0; i < NumGroups; i++)
       for (int j = 0; j < NumTargetGroups; j++)
         if (rhs.J1UniqueFunctors[i * NumTargetGroups + j])
