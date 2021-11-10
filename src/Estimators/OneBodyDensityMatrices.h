@@ -108,8 +108,8 @@ private:
    *  size: particles
    */
   std::vector<Value> psi_ratios_;
-  
-  /// row major per sample workspaces  
+
+  /// row major per sample workspaces
   /** conj(basis_values) for each particle 
    *  size: samples * basis_size
    *  vector is over species
@@ -128,7 +128,7 @@ private:
    */
   Matrix<Value> Phi_MB_;
   /** @} */
-  
+
   /** @ingroup DensityIntegration only used for density integration
    *  @{
    */
@@ -178,7 +178,6 @@ public:
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator_t& rng) override;
 
-  void normalize(Real invToWgt) override;
   void startBlock(int steps) override;
 
   /** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
@@ -190,6 +189,15 @@ public:
   void registerOperatorEstimator(hid_t gid) override {}
 
 private:
+  /** Unfortunate design RandomGenerator_t type aliasing and
+   *  virtual inheritance requires this for testing.
+   */
+  template<class RNG_GEN>
+  void implAccumulate(const RefVector<MCPWalker>& walkers,
+                      const RefVector<ParticleSet>& psets,
+                      const RefVector<TrialWaveFunction>& wfns,
+                      RNG_GEN& rng);
+
   size_t calcFullDataSize(size_t basis_size, int num_species);
   //local functions
   void normalize(ParticleSet& pset_target);
@@ -284,7 +292,7 @@ private:
    *  sets rpcur_ intial rpcur + one diffusion step
    *  sets initial rhocur_ and dpcur_
    *  Then calls generateSamples with number of input warmup samples.
-   */   
+   */
   template<typename RAN_GEN>
   void warmupSampling(ParticleSet& pset_target, RAN_GEN& rng);
 
@@ -330,6 +338,14 @@ extern template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator_t>(P
 extern template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
                                                                                TrialWaveFunction& psi_target,
                                                                                const MCPWalker& walker,
+                                                                               StdRandom<double>& rng);
+extern template void OneBodyDensityMatrices::implAccumulate<RandomGenerator_t>(const RefVector<MCPWalker>& walkers,
+                                                                               const RefVector<ParticleSet>& psets,
+                                                                               const RefVector<TrialWaveFunction>& wfns,
+                                                                               RandomGenerator_t& rng);
+extern template void OneBodyDensityMatrices::implAccumulate<StdRandom<double>>(const RefVector<MCPWalker>& walkers,
+                                                                               const RefVector<ParticleSet>& psets,
+                                                                               const RefVector<TrialWaveFunction>& wfns,
                                                                                StdRandom<double>& rng);
 
 } // namespace qmcplusplus
