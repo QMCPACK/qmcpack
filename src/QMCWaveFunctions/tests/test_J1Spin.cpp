@@ -77,7 +77,6 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 </jastrow> \
 </wavefunction> \
 ";
-  elec_.update();
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
@@ -86,7 +85,6 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   wf_factory.put(jas1);
   auto& twf(*wf_factory.getTWF());
   twf.setMassTerm(elec_);
-  twf.prepareGroup(elec_, 0);
   auto& twf_component_list = twf.getOrbitals();
   auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
 
@@ -97,18 +95,17 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   REQUIRE(nparam == 4);
 
   // check logs
+  //evaluateLog += into G + L so reset
+  elec_.G          = 0.0;
+  elec_.L          = 0.0;
   LogValueType log = twf_component_list[0]->evaluateLog(elec_, elec_.G, elec_.L);
+  LogValueType expected_log{-0.568775, 0.0};
+  CHECK(log == LogComplexApprox(expected_log));
   //evaluateLog += into G + L so reset
   elec_.G                 = 0.0;
   elec_.L                 = 0.0;
   LogValueType cloned_log = cloned_j1spin->evaluateLog(elec_, elec_.G, elec_.L);
-  //evaluateLog += into G + L so reset
-  elec_.G = 0.0;
-  elec_.L = 0.0;
-  LogValueType expected_log{-0.568775, 0.0};
-  CHECK(log == LogComplexApprox(expected_log));
   CHECK(cloned_log == LogComplexApprox(expected_log));
-
 
   // check derivatives
   twf.evaluateLog(elec_);
