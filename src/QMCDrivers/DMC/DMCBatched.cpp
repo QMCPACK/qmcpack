@@ -447,17 +447,6 @@ bool DMCBatched::run()
       crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                  std::ref(crowds_));
 
-      // Accumulate on the whole population
-      // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
-      // \todo make task block
-      // probably something smart can be done to include reduction over crowds below
-      // for (int crowd_id = 0; crowd_id < crowds_.size(); ++crowd_id)
-      // {
-      //   Crowd& crowd = *(crowds_[crowd_id]);
-      //   if (crowd.size() > 0)
-      //     crowd.accumulate(step_contexts_[crowd_id]->get_random_gen());
-      // }
-
       {
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
         const int population_now = walker_controller_->branch(iter, population_, iter == 0);
