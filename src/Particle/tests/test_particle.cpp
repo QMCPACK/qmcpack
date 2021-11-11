@@ -27,6 +27,15 @@ using std::string;
 
 namespace qmcplusplus
 {
+
+class TestMinimalTraitCPU {};
+
+template<>
+struct ParticleSet_minimal_trait<TestMinimalTraitCPU>
+{
+  using tag = ParticleSet::MinimalCPU;
+};
+
 TEST_CASE("ParticleSet minimal copy constructors", "[particle]")
 {
   Communicate* comm;
@@ -48,6 +57,12 @@ TEST_CASE("ParticleSet minimal copy constructors", "[particle]")
   // Just check for the NEED_FULL_TABLE_ANYTIME bit since that should make the distance table coherent for a CPU
   // side client
   CHECK(pset_minimal_cpu.getDistTable(table_id).getModes() & DTModes::NEED_FULL_TABLE_ANYTIME);
+  // Now the case we're actually likely to use where the client class defines it minimal need
+  // I.e. imagine your SPOSet type is TestMinimalTraitCPU
+  // You don't have to know that in your code.
+  TestMinimalTraitCPU tmtc;
+  ParticleSet pset_minimal_cpu_trait (pset_target, ParticleSet_minimal_trait<decltype(tmtc)>::tag{});
+  CHECK(pset_minimal_cpu_trait.getDistTable(table_id).getModes() & DTModes::NEED_FULL_TABLE_ANYTIME);
 }
 
 TEST_CASE("ParticleSet distance table management", "[particle]")

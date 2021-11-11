@@ -37,7 +37,6 @@ namespace qmcplusplus
 class DistanceTableData;
 class ResourceCollection;
 class StructFact;
-class CompositeSPOSet;
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -76,21 +75,6 @@ public:
   /// ParticleSet that will work with a CPU only SPOSet like CompositeSPOSet and who knows what else as we port Estimators.
   struct MinimalCPU
   {};
-
-  /** Compilers not compliant with c++17 17.8.3.2 (Explicit Specialization section)  may claim these can 
-   *  not be specialized in class scope.  They are wrong.
-   */
-  template<class T>
-  struct minimal_trait
-  {
-    using tag = MinimalDefault;
-  };
-  template<>
-  struct minimal_trait<CompositeSPOSet>
-  {
-    using tag = MinimalCPU;
-  };
-
 
   ///quantum_domain of the particles, default = classical
   quantum_domains quantum_domain;
@@ -765,6 +749,12 @@ protected:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMoveForwardMode(Index_t iat);
+};
+
+template<class T>
+struct ParticleSet_minimal_trait
+{
+  using tag = ParticleSet::MinimalDefault;
 };
 
 } // namespace qmcplusplus
