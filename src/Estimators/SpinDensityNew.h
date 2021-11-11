@@ -54,15 +54,18 @@ public:
                  const Lattice&,
                  const SpeciesSet& species,
                  const DataLocality dl = DataLocality::crowd);
-  SpinDensityNew(const SpinDensityNew& sdn);
 
+  SpinDensityNew(const SpinDensityNew& sdn) = default;
+  SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl);
+                                                               
+  
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
   void startBlock(int steps) override;
 
   /** standard interface
    */
-  std::unique_ptr<OperatorEstBase> clone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
   /** accumulate 1 or more walkers of SpinDensity samples
    */

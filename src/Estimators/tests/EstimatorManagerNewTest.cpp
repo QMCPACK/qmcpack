@@ -69,7 +69,7 @@ void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
 {
   em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
   FakeOperatorEstimator& foe        = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
-  std::vector<QMCT::RealType>& data = foe.get_data_ref();
+  std::vector<QMCT::RealType>& data = foe.get_data();
   for (int id = 0; id < data.size(); ++id)
   {
     if (id > rank)

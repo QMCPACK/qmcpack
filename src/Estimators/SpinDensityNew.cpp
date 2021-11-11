@@ -21,7 +21,7 @@ namespace qmcplusplus
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species, DataLocality dl)
     : OperatorEstBase(dl), input_(std::move(input)), species_(species), species_size_(getSpeciesSize(species))
 {
-  myName = "SpinDensity";
+  my_name_ = "SpinDensity";
 
   if (input_.get_cell().explicitly_defined == true)
     lattice_ = input_.get_cell();
@@ -31,7 +31,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
 
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
 
-  data_ = createLocalData(getFullDataSize(), data_locality_);
+  data_.resize(getFullDataSize(), 0.0);
 
   if (input_.get_write_report())
     report("  ");
@@ -47,7 +47,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       species_size_(getSpeciesSize(species)),
       lattice_(lattice)
 {
-  myName = "SpinDensity";
+  my_name_ = "SpinDensity";
   std::cout << "SpinDensity constructor called\n";
   data_locality_ = dl;
   if (input_.get_cell().explicitly_defined == true)
@@ -57,9 +57,14 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
     throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
 
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-  data_               = createLocalData(getFullDataSize(), data_locality_);
+  data_.resize(getFullDataSize());
   if (input_.get_write_report())
     report("  ");
+}
+
+SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl) : SpinDensityNew(sdn)
+{
+  data_locality_ = dl;
 }
 
 std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
@@ -75,31 +80,20 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 
 size_t SpinDensityNew::getFullDataSize() { return species_.size() * derived_parameters_.npoints; }
 
-std::unique_ptr<OperatorEstBase> SpinDensityNew::clone() const { return std::make_unique<SpinDensityNew>(*this); }
-
-SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
-    : OperatorEstBase(sdn),
-      input_(sdn.input_),
-      species_(sdn.species_),
-      species_size_(sdn.species_size_),
-      lattice_(sdn.lattice_),
-      derived_parameters_(sdn.derived_parameters_)
-{
-  if (data_locality_ == DataLocality::crowd)
+std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const {
+  std::size_t data_size = data_.size();
+  auto spawn_data_locality = data_locality_;
+  if (data_locality_ == DataLocality::rank)
   {
-    size_t data_size = sdn.data_->size();
-    data_            = createLocalData(data_size, data_locality_);
-  }
-  else if (data_locality_ == DataLocality::rank)
-  {
-    assert(sdn.data_locality_ == DataLocality::rank);
-    data_locality_ = DataLocality::queue;
+    spawn_data_locality = DataLocality::queue;
     // at construction we don't know what the data requirement is going to be
     // since its steps per block  dependent. so start with 10 steps worth.
     int num_particles = std::accumulate(species_size_.begin(), species_size_.end(), 0);
-    size_t data_size  = num_particles * 20;
-    data_             = createLocalData(data_size, data_locality_);
+    data_size  = num_particles * 20;
   }
+  UPtr<SpinDensityNew> spawn(std::make_unique<SpinDensityNew>(*this, spawn_data_locality));
+  spawn->get_data().resize(data_size);
+  return spawn;
 }
 
 void SpinDensityNew::startBlock(int steps)
@@ -108,8 +102,8 @@ void SpinDensityNew::startBlock(int steps)
   {
     int num_particles = std::accumulate(species_size_.begin(), species_size_.end(), 0);
     size_t data_size  = num_particles * steps * 2;
-    data_->reserve(data_size);
-    data_->resize(0);
+    data_.reserve(data_size);
+    data_.resize(0);
   }
 }
 
@@ -133,7 +127,6 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
     // for testing
     walkers_weight_ += weight;
     int p                             = 0;
-    std::vector<QMCT::RealType>& data = *data_;
     size_t offset                     = 0;
     for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
@@ -151,12 +144,12 @@ void SpinDensityNew::accumulateToData(size_t point, QMCT::RealType weight)
 {
   if (data_locality_ == DataLocality::crowd)
   {
-    (*data_)[point] += weight;
+    data_[point] += weight;
   }
   else if (data_locality_ == DataLocality::queue)
   {
-    (*data_).push_back(point);
-    (*data_).push_back(weight);
+    data_.push_back(point);
+    data_.push_back(weight);
   }
   else
   {
@@ -178,13 +171,13 @@ void SpinDensityNew::collect(const RefVector<OperatorEstBase>& type_erased_opera
 #else
       auto& oeb = static_cast<SpinDensityNew&>(crowd_oeb);
 #endif
-      auto& data = oeb.get_data_ref();
+      auto& data = oeb.get_data();
       for (int id = 0; id < data.size(); id += 2)
       {
         // This is a smell
         size_t point{static_cast<size_t>(data[id])};
         const QMCT::RealType weight{data[id + 1]};
-        (*data_)[point] += weight;
+        data_[point] += weight;
         walkers_weight_ += weight;
       }
       oeb.zero();
@@ -224,7 +217,7 @@ void SpinDensityNew::report(const std::string& pad)
 void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 {
   std::vector<size_t> my_indexes;
-  hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)
