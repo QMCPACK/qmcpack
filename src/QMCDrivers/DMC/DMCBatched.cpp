@@ -278,6 +278,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     // save properties into walker
     for (int iw = 0; iw < walkers.size(); ++iw)
       walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
+
+    crowd.accumulate(step_context.get_random_gen());
   }
 
   { // T-moves
@@ -335,14 +337,6 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
-  //This is really a waste the resources can be aquired once.
-  {
-    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
-    timers.resource_timer.start();
-    ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
-    timers.resource_timer.stop();
-    crowd.accumulate(rng);
-  }
 }
 
 void DMCBatched::process(xmlNodePtr node)
@@ -399,9 +393,6 @@ bool DMCBatched::run()
 
   estimator_manager_->startDriverRun();
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
-
-
-  int sample = 0;
 
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
