@@ -49,10 +49,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walkers        = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-
+  // This is really a waste the resources can be aquired outside of the run steps loop in VMCD!
+  // I don't see an  easy way to measure the release without putting the weight of tons of timer_manager calls in
+  // ResourceCollectionTeamLock's constructor.
+  timers.resource_timer.start();
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
-
+  timers.resource_timer.stop();
   if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_LOAD)
     checkLogAndGL(crowd, "checkGL_after_load");
 
@@ -221,13 +224,20 @@ void VMCBatched::runVMCStep(int crowd_id,
   crowd.setRNGForHamiltonian(rng);
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
-  // \todo delete
-  RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
-  crowd.accumulate(rng);
+
+  //This is really a waste the resources can be aquired outside of the run steps loop in VMC!
+  {
+    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+    timers.resource_timer.start();
+    ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+    timers.resource_timer.stop();
+    crowd.accumulate(rng);
+  }
+
 }
 
 void VMCBatched::process(xmlNodePtr node)

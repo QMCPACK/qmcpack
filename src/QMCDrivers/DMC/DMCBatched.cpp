@@ -327,13 +327,22 @@ void DMCBatched::runDMCStep(int crowd_id,
   if (crowd.size() == 0)
     return;
 
-  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  auto& rng = context_for_steps[crowd_id]->get_random_gen();
+  crowd.setRNGForHamiltonian(rng);
 
   int max_steps  = sft.qmcdrv_input.get_max_steps();
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
+  //This is really a waste the resources can be aquired once.
+  {
+    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+    timers.resource_timer.start();
+    ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+    timers.resource_timer.stop();
+    crowd.accumulate(rng);
+  }
 }
 
 void DMCBatched::process(xmlNodePtr node)
@@ -442,12 +451,12 @@ bool DMCBatched::run()
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
       // \todo make task block
       // probably something smart can be done to include reduction over crowds below
-      for (int crowd_id = 0; crowd_id < crowds_.size(); ++crowd_id)
-      {
-        Crowd& crowd = *(crowds_[crowd_id]);
-        if (crowd.size() > 0)
-          crowd.accumulate(step_contexts_[crowd_id]->get_random_gen());
-      }
+      // for (int crowd_id = 0; crowd_id < crowds_.size(); ++crowd_id)
+      // {
+      //   Crowd& crowd = *(crowds_[crowd_id]);
+      //   if (crowd.size() > 0)
+      //     crowd.accumulate(step_contexts_[crowd_id]->get_random_gen());
+      // }
 
       {
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
