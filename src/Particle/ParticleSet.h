@@ -37,6 +37,7 @@ namespace qmcplusplus
 class DistanceTableData;
 class ResourceCollection;
 class StructFact;
+class CompositeSPOSet;
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -61,6 +62,35 @@ public:
     classical,
     quantum
   };
+
+  /** @ingroup MininmalParticleSetTags
+   *  @{
+   *  tags to mark special copy constructors that make the "minimal" particle set an SPOSet fallback implementation 
+   *  needs to operate. This helps for all the dumb code that twiddles the pset state machine to actually pass a set of coordinates
+   *  plus the DistanceTables that you've paid to update in some way. When SPOSet implementation and the DistanceTable implementation
+   *  don't match its a mess.  But SPOSet sets don't add DT's WFC's do and SPOSet's just hope they are usable and their.
+   */
+  /// Unused as of now default, for matching implementations and a pset for giving evals R's
+  struct MinimalDefault
+  {};
+  /// ParticleSet that will work with a CPU only SPOSet like CompositeSPOSet and who knows what else as we port Estimators.
+  struct MinimalCPU
+  {};
+
+  /** Compilers not compliant with c++17 17.8.3.2 (Explicit Specialization section)  may claim these can 
+   *  not be specialized in class scope.  They are wrong.
+   */
+  template<class T>
+  struct minimal_trait
+  {
+    using tag = MinimalDefault;
+  };
+  template<>
+  struct minimal_trait<CompositeSPOSet>
+  {
+    using tag = MinimalCPU;
+  };
+
 
   ///quantum_domain of the particles, default = classical
   quantum_domains quantum_domain;
@@ -185,6 +215,15 @@ public:
   ///copy constructor
   ParticleSet(const ParticleSet& p);
 
+  ParticleSet(const ParticleSet& p, MinimalDefault tag);
+  /** A minimal "copy" constructor for use by a user of Pset with particular implementation limits.
+   *  Needed because the ParticleSet is entangled with the offload target implimentations
+   *  via distance tables and is a huge sloppy state machine.  We just want a copy to give coordinate input
+   *  to an SPOSet with a fallback implementation.
+   */
+  ParticleSet(const ParticleSet& p, MinimalCPU tag);
+  // Other "tagged" copy constructors could go here.
+
   ///default destructor
   ~ParticleSet() override;
 
@@ -227,6 +266,7 @@ public:
   /** add a distance table
    * @param psrc source particle set
    * @param modes bitmask DistanceTableData::DTModes
+   *              note different DistanceTable implentations may add bits to your DTModes!      
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */

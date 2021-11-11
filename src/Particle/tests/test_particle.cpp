@@ -18,7 +18,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-
+#include "Particle/tests/MinimalParticlePool.h"
 
 #include <stdio.h>
 #include <string>
@@ -27,6 +27,29 @@ using std::string;
 
 namespace qmcplusplus
 {
+TEST_CASE("ParticleSet minimal copy constructors", "[particle]")
+{
+  Communicate* comm;
+  comm = OHMMS::Controller;
+  outputManager.pause();
+
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& pset_source = *(particle_pool.getParticleSet("ion"));
+  int table_id = pset_target.addTable(pset_source, DTModes::ALL_OFF);
+  ParticleSet pset_minimal_default(pset_target, ParticleSet::MinimalDefault{});
+  // In the cass of ENABLE_OFFLOAD the whole DistanceTable creation ignores DTModes::ALL_OFF which
+  // isn't really a flag.
+  // DTModes::NEED_TEMP_DATA_ON_HOST
+  // So just check that the DTModes match since we can't really know what they will be.
+  CHECK(pset_minimal_default.getDistTable(table_id).getModes() == pset_target.getDistTable(table_id).getModes());
+  ParticleSet pset_minimal_cpu(pset_target, ParticleSet::MinimalCPU{});
+  // Just check for the NEED_FULL_TABLE_ANYTIME bit since that should make the distance table coherent for a CPU
+  // side client
+  CHECK(pset_minimal_cpu.getDistTable(table_id).getModes() & DTModes::NEED_FULL_TABLE_ANYTIME);
+}
+
 TEST_CASE("ParticleSet distance table management", "[particle]")
 {
   ParticleSet ions;
