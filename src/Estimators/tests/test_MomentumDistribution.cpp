@@ -189,7 +189,15 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   //std::cout<<"}\n\n\n";
 
   for (size_t id = 0; id < ref_data.size(); ++id)
-    CHECK(data[id] == Approx(ref_data[id]));
+  {
+     #ifdef MIXED_PRECISION
+     CHECK(data[id] == Approx(ref_data[id]).epsilon(2.e-05));
+     #else
+     // default Catch2 epsilon std::numeric_limits<float>::epsilon()*100
+     // set value for x86_64
+     CHECK(data[id] == Approx(ref_data[id]).epsilon(1.192092896e-05));
+     #endif
+  }
 
   outputManager.resume();
 
