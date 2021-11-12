@@ -39,7 +39,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
                                 ContextForSteps& step_context,
-                                bool recompute)
+                                bool recompute,
+                                bool accumulate_this_step)
 {
   if (crowd.size() == 0)
     return;
@@ -203,6 +204,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
+
+  if(accumulate_this_step)
+    crowd.accumulate(step_context.get_random_gen());
+
   timers.collectables_timer.stop();
   // TODO:
   //  check if all moves failed
@@ -219,25 +224,15 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-  auto& rng    = context_for_steps[crowd_id]->get_random_gen();
-
-  crowd.setRNGForHamiltonian(rng);
-
+  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
   int max_steps = sft.qmcdrv_input.get_max_steps();
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
-
-  //This is really a waste the resources can be aquired outside of the run steps loop in VMC!
-  {
-    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
-    timers.resource_timer.start();
-    ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
-    timers.resource_timer.stop();
-    crowd.accumulate(rng);
-  }
-
+  // For VMC we don't call this method for armup steps. So unlike DMC there is nothing to do here
+  // but this is here for symmetry with DMC driver and future accumulation features.
+  bool accumulate_this_step = true;
+  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -306,7 +301,9 @@ bool VMCBatched::run()
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                             UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
       Crowd& crowd = *(crowds[crowd_id]);
-      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
+      bool recompute = false;
+      bool accumulate_this_step = false;
+      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
     };
 
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)

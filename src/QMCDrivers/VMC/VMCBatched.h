@@ -84,7 +84,8 @@ public:
                              Crowd& crowd,
                              DriverTimers& timers,
                              ContextForSteps& move_context,
-                             bool recompute);
+                             bool recompute,
+                             bool accumulate_this_step);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
