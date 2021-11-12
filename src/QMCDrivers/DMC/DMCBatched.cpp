@@ -336,11 +336,11 @@ void DMCBatched::runDMCStep(int crowd_id,
   auto& rng = context_for_steps[crowd_id]->get_random_gen();
   crowd.setRNGForHamiltonian(rng);
 
-  int max_steps  = sft.qmcdrv_input.get_max_steps();
-  IndexType step = sft.step;
+  const int max_steps  = sft.qmcdrv_input.get_max_steps();
+  const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  bool accumulate_this_step = (sft.branch_engine.getWarmupToDoSteps() == 0);
+  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
+  const bool accumulate_this_step = true;
   advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
 }
 

@@ -225,13 +225,13 @@ void VMCBatched::runVMCStep(int crowd_id,
 {
   Crowd& crowd = *(crowds[crowd_id]);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
-  int max_steps = sft.qmcdrv_input.get_max_steps();
-  IndexType step = sft.step;
+  const int max_steps = sft.qmcdrv_input.get_max_steps();
+  const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  // For VMC we don't call this method for armup steps. So unlike DMC there is nothing to do here
+  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
+  // For VMC we don't call this method for const warmup steps. So unlike DMC there is nothing to do here
   // but this is here for symmetry with DMC driver and future accumulation features.
-  bool accumulate_this_step = true;
+  const bool accumulate_this_step = true;
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
 }
 
@@ -301,8 +301,8 @@ bool VMCBatched::run()
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                             UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
       Crowd& crowd = *(crowds[crowd_id]);
-      bool recompute = false;
-      bool accumulate_this_step = false;
+      const bool recompute = false;
+      const bool accumulate_this_step = false;
       advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
     };
 
