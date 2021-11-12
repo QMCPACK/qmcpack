@@ -66,9 +66,13 @@ is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetri
 Single-particle orbitals
 ------------------------
 
-Single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
-A typical Slater determinant is calculated from a N-by-N matrix constructed by N orbitals at the positions of N electrons.
-QMCPACK supports a range of SPOSet types including :ref:`spo-spline`, :ref:`spo-lcao`, :ref:`spo-hybrid` and :ref:`pwbasis`.
+A single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
+A typical Slater determinant is calculated from a N-by-N matrix constructed from N orbitals at the positions of N electrons.
+QMCPACK supports a range of SPOSet types:
+ * :ref:`spo-spline`
+ * :ref:`spo-lcao`
+ * :ref:`spo-hybrid`
+ * :ref:`pwbasis`
 
 
 sposet_collection input style
@@ -84,11 +88,12 @@ sposet_collection input style
     ...
   </sposet_collection>
 
-The ``name`` of each ``sposet`` must be unique. It is used for look-up by :ref:`singledeterminant` and :ref:`multideterminants`.
-There can be more contents in ``sposet_collection`` node and ``sposet`` node depending on the actual ``type`` being used.
+The ``sposet_collection`` element forms the container for ``sposet`` and a few other tags.
+The contents and attributes in a ``sposet_collection`` node and ``sposet`` node depend on the ``type`` being used.
+
 
 If QMCPACK printout contains `!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside.`,
-users need to update the input XML by moving all the SPOSet construction related details out of `determinantset`.
+users need to update the input XML by moving all the SPOSet construction related details out of ``determinantset``.
 
 .. code-block::
   :caption: Deprecated input style.
@@ -128,9 +133,11 @@ After updating the input style.
   </determinantset>
 
 
-In the case of multi-determinants, all the attributes of determinantset need to be moved to ``sposet_collection``
+In the case of multi-determinants, all the attributes of ``determinantset`` need to be moved to ``sposet_collection``
 and existing ``sposet`` xml nodes need to be moved under ``sposet_collection``. If there is a ``basisset`` node,
 it needs to be moved under ``sposet_collection`` as well.
+
+The ``name`` of each ``sposet`` must be unique. It is used for look-up by :ref:`singledeterminant` and :ref:`multideterminants`.
 
 .. _spo-spline:
 
