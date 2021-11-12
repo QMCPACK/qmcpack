@@ -65,7 +65,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
                                 ContextForSteps& step_context,
-                                bool recompute)
+                                bool recompute,
+                                bool accumulate_this_step)
 {
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
@@ -279,7 +280,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     for (int iw = 0; iw < walkers.size(); ++iw)
       walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
 
-    crowd.accumulate(step_context.get_random_gen());
+    if(accumulate_this_step)
+      crowd.accumulate(step_context.get_random_gen());
   }
 
   { // T-moves
@@ -336,7 +338,8 @@ void DMCBatched::runDMCStep(int crowd_id,
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
+  bool accumulate_this_step = (sft.branch_engine.getWarmupToDoSteps() == 0);
+  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
 }
 
 void DMCBatched::process(xmlNodePtr node)
