@@ -78,7 +78,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   if (sposet_builder_factory_.empty())
   { //always create one, using singleton and just to access the member functions
     app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
-                     "will soon be removed. SPO sets should be built outside."
+                     "will soon be removed. SPO sets should be built outside using sposet_collection."
                   << std::endl;
     sposet_builder_factory_.createSPOSetBuilder(curRoot);
   }
@@ -92,7 +92,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     if (cname == sposet_tag)
     {
       app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
-                       "will soon be removed. SPO sets should be built outside."
+                       "will soon be removed. SPO sets should be built outside using sposet_collection."
                     << std::endl;
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
       std::string spo_name;
@@ -397,7 +397,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   if (psi == 0)
   {
     app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
-                     "will soon be removed. SPO sets should be built outside."
+                     "will soon be removed. SPO sets should be built outside using sposet_collection."
                   << std::endl;
     app_log() << "      Create a new SPO set " << sposet_name << std::endl;
     psi = sposet_builder_factory_.getLastBuilder().createSPOSet(cur);
