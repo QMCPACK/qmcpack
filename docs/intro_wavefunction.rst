@@ -66,10 +66,76 @@ is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetri
 Single-particle orbitals
 ------------------------
 
+Single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
+A typical Slater determinant is calculated from a N-by-N matrix constructed by N orbitals at the positions of N electrons.
+QMCPACK supports a range of SPOSet types including :ref:`spo-spline`, :ref:`spo-lcao`, :ref:`spo-hybrid` and :ref:`pwbasis`.
+
+
+sposet_collection input style
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block::
+  :caption: SPO XML element framework.
+  :name: spo.skeleton.xml
+
+  <!-- build a sposet collection of type bspline. /-->
+  <sposet_collection type="bspline" ...>
+    <sposet name="spo-up" ... /sposet>
+    ...
+  </sposet_collection>
+
+The ``name`` of each ``sposet`` must be unique. It is used for look-up by :ref:`singledeterminant` and :ref:`multideterminants`.
+There can be more contents in ``sposet_collection`` node and ``sposet`` node depending on the actual ``type`` being used.
+
+If QMCPACK printout contains `!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside.`,
+users need to update the input XML by moving all the SPOSet construction related details out of `determinantset`.
+
+.. code-block::
+  :caption: Deprecated input style.
+  :name: spo.singledet.old.xml
+
+  <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+     <slaterdeterminant>
+        <determinant id="updet" size="8">
+           <occupation mode="ground" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="8">
+           <occupation mode="ground" spindataset="0"/>
+        </determinant>
+     </slaterdeterminant>
+  </determinantset>
+
+After updating the input style.
+
+.. code-block::
+  :caption: Updated input style.
+  :name: spo.singledet.xml
+
+  <!-- all the attributes are moved from determinantset.-->
+  <sposet_collection type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+    <!-- all the attributes and contents are moved from determinant.  Change 'id' tag to 'name' tag.
+         Need only one sposet for unpolarized calculation.-->
+    <sposet name="spo-ud" size="8">
+       <occupation mode="ground" spindataset="0"/>
+    </sposet>
+  </sposet_collection>
+  <determinantset>
+     <slaterdeterminant>
+        <!-- build two determinants from the same sposet named 'spo-ud'. One for each spin.-->
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
+     </slaterdeterminant>
+  </determinantset>
+
+
+In the case of multi-determinants, all the attributes of determinantset need to be moved to ``sposet_collection``
+and existing ``sposet`` xml nodes need to be moved under ``sposet_collection``. If there is a ``basisset`` node,
+it needs to be moved under ``sposet_collection`` as well.
+
 .. _spo-spline:
 
-Spline basis sets
-~~~~~~~~~~~~~~~~~
+3D B-splines orbitals
+~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of spline basis sets to expand the ``sposet``.
 Spline basis sets are designed to work seamlessly with plane wave DFT code (e.g.,\ Quantum ESPRESSO as a trial wavefunction generator).
@@ -233,10 +299,10 @@ Additional information:
   of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
   that the ionic information in the eshdf.h5 file match the input xml. 
 
-.. _gaussianbasis:
+.. _spo-lcao:
 
-Gaussian basis tests
-~~~~~~~~~~~~~~~~~~~~
+Linear combination of atomic orbitals (LCAO) with Gassian and/or Slater-type basis sets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of localized basis sets to expand the ``sposet``. The general form of a single particle orbital in this case is given by:
 
@@ -278,7 +344,7 @@ A list of options for ``determinantset`` associated with this ``sposet`` is give
    </sposet_collection>
 
 
-The definition of the set of atom-centered basis functions is given by the ``basisset`` block, and the ``sposet`` is defined within ``slaterdeterminant``. The ``basisset`` input block is composed from a collection of ``atomicBasisSet`` input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for ``basisset`` and ``atomicBasisSet`` are given in :ref:`Listing 4 <Listing 4>`, and the corresponding lists of options are given in
+The definition of the set of atom-centered basis functions is given by the ``basisset`` block, and the ``sposet`` is defined within ``sposet_collection``. The ``basisset`` input block is composed from a collection of ``atomicBasisSet`` input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for ``basisset`` and ``atomicBasisSet`` are given in :ref:`Listing 4 <Listing 4>`, and the corresponding lists of options are given in
 :numref:`table5` and :numref:`table6`.
 
 ``sposet_collection`` element:
@@ -412,26 +478,27 @@ Attribute:
   :caption: Basic input block for ``slaterdeterminant`` with an atom-centered ``sposet``.
   :name: Listing 5
 
-    <slaterdeterminant>
-    </slaterdeterminant>
-
-element:
-
-+-----------------+-------+
-| Parent elements:|       |
-+-----------------+-------+
-| Child elements: |       |
-+-----------------+-------+
-
-Attribute:
-
-+-------------+--------------+------------+-------------+-------------------------+
-| **Name**    | **Datatype** | **Values** | **Default** | **Description**         |
-+=============+==============+============+=============+=========================+
-| ``name/id`` | Text         | *Any*      | '' ''       | Name of determinant set |
-+-------------+--------------+------------+-------------+-------------------------+
-|             | Text         | *Any*      | '' ''       |                         |
-+-------------+--------------+------------+-------------+-------------------------+
+  <sposet_collection type="MolecularOrbital" source="ion0" cuspCorrection="no">
+    <basisset name="LCAOBSet">
+      <atomicBasisSet name="Gaussian-G2" angular="cartesian" elementType="H" normalized="no">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+        <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+          <radfunc exponent="5.134400000000e-02" contraction="1.399098787100e-02"/>
+        </basisGroup>
+      </atomicBasisSet>
+    </basisset>
+    <sposet name="spo" basisset="LCAOBSet" size="1">
+      <occupation mode="ground"/>
+      <coefficient size="1" id="updetC">
+        1.00000000000000e+00
+      </coefficient>
+    </sposet>
+  </sposet_collection>
+  <determinantset>
+     <slaterdeterminant>
+        <determinant sposet="spo" />
+     </slaterdeterminant>
+  </determinantset>
 
 Detailed description of attributes:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
