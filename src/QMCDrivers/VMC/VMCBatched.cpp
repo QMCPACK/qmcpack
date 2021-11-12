@@ -229,8 +229,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  // For VMC we don't call this method for const warmup steps. So unlike DMC there is nothing to do here
-  // but this is here for symmetry with DMC driver and future accumulation features.
+  // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
 }
