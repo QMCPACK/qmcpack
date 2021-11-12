@@ -78,9 +78,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
+  timers.resource_timer.start();
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
   ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
+  timers.resource_timer.stop();
 
   {
     ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
