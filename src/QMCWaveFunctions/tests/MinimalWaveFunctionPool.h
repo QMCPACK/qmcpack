@@ -46,15 +46,14 @@ public:
     comm_ = comm;
     WaveFunctionPool wp(particle_pool, comm_);
 
-    Libxml2Document* doc = new Libxml2Document;
-    bool okay            = doc->parseFromString(wf_input);
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(wf_input);
     REQUIRE(okay);
 
-    xmlNodePtr root = doc->getRoot();
+    xmlNodePtr root = doc.getRoot();
 
     wp.put(root);
 
-    delete doc;
     return wp;
   }
 
