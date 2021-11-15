@@ -27,7 +27,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
     const auto& dist  = myTable.getDistRow(jel);

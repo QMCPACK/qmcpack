@@ -27,7 +27,7 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for AB using a transposed form
  */
 template<typename T, unsigned D, int SC>
-class SoaDistanceTableABOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
+class SoaDistanceTableABOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
 private:
   template<typename DT>
@@ -119,7 +119,7 @@ private:
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
-        DistanceTableData(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + name_,

@@ -35,6 +35,8 @@ namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
 class DistanceTableData;
+class DistanceTableAA;
+class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
 
@@ -234,7 +236,9 @@ public:
 
   /** get a distance table by table_ID
    */
-  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  const DistanceTableAA& getDistTableAA(int table_ID) const;
+  const DistanceTableAB& getDistTableAB(int table_ID) const;
 
   /** reset all the collectable quantities during a MC iteration
    */

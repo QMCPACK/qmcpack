@@ -218,7 +218,7 @@ private:
    * @param iel reference electron
    * Note this function should be called before acceptMove for a Tmove
    */
-  void markAffectedElecs(const DistanceTableData& myTable, int iel);
+  void markAffectedElecs(const DistanceTableAB& myTable, int iel);
 };
 } // namespace qmcplusplus
 #endif

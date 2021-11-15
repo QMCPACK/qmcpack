@@ -541,7 +541,7 @@ public:
   template<typename VV>
   inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
-    const auto& ei_dist  = P.getDistTable(myTableID);
+    const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
@@ -569,7 +569,7 @@ public:
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
+    return VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases
@@ -577,11 +577,11 @@ public:
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
+    dist_r               = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
-      myCenter.evaluateValues(VP.getDistTable(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(VP.getDistTableAB(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
@@ -596,11 +596,11 @@ public:
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
+    dist_r               = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
-      const auto& displ = VP.getDistTable(myTableID).getDisplacements();
+      const auto& displ = VP.getDistTableAB(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
         r_image       = myCenter.getCenterPos() - displ[ivp][center_idx];
@@ -617,7 +617,7 @@ public:
   template<typename VV, typename GV>
   inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
-    const auto& ei_dist  = P.getDistTable(myTableID);
+    const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
@@ -636,7 +636,7 @@ public:
   template<typename VV, typename GV, typename HT>
   inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
-    const auto& ei_dist  = P.getDistTable(myTableID);
+    const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();

@@ -326,7 +326,7 @@ std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction&
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
+  const auto& d_aa = P.getDistTableAA(d_aa_ID);
   RealType SR                   = 0.0;
   const RealType cone(1);
   for (size_t ipart = 0; ipart < NParticles; ipart++)

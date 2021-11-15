@@ -55,34 +55,6 @@ protected:
   ///name of the table
   const std::string name_;
 
-  /**defgroup SoA data */
-  /*@{*/
-  /** distances_[i][j] , [num_targets_][num_sources_]
-   *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
-   *            There is no bound check to protect j>=i terms as the nature of operator[].
-   *            When the storage of the table is allocated as a single memory segment,
-   *            out-of-bound access is still within the segment and
-   *            thus doesn't trigger an alarm by the address sanitizer.
-   *        For derived AB, the full table is up-to-date after pbyp move
-   */
-  std::vector<DistRow> distances_;
-
-  /** displacements_[num_targets_]x[3][num_sources_]
-   *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
-   *        For derived AB, A1=A, A2=B, the full table is allocated.
-   */
-  std::vector<DisplRow> displacements_;
-
-  /** temp_r */
-  DistRow temp_r_;
-
-  /** temp_dr */
-  DisplRow temp_dr_;
-  /*@}*/
-
   ///operation modes defined by DTModes
   DTModes modes_;
 
@@ -122,67 +94,6 @@ public:
 
   ///returns the number of source particles
   inline size_t sources() const { return num_sources_; }
-
-  /// return multi walker temporary pair distance table data pointer
-  virtual const RealType* getMultiWalkerTempDataPtr() const
-  {
-    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
-    return nullptr;
-  }
-
-  /// return multi-walker full (all pairs) distance table data pointer
-  virtual const RealType* getMultiWalkerDataPtr() const
-  {
-    throw std::runtime_error(name_ + " multi walker data pointer not supported");
-    return nullptr;
-  }
-
-  /// return stride of per target pctl data. full table data = stride * num of target particles
-  virtual size_t getPerTargetPctlStrideSize() const
-  {
-    throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
-    return 0;
-  }
-
-  /** return full table distances
-   */
-  const std::vector<DistRow>& getDistances() const { return distances_; }
-
-  /** return full table displacements
-   */
-  const std::vector<DisplRow>& getDisplacements() const { return displacements_; }
-
-  /** return a row of distances for a given target particle
-   */
-  const DistRow& getDistRow(int iel) const { return distances_[iel]; }
-
-  /** return a row of displacements for a given target particle
-   */
-  const DisplRow& getDisplRow(int iel) const { return displacements_[iel]; }
-
-  /** return old distances set up by move() for optimized distance table consumers
-   */
-  virtual const DistRow& getOldDists() const
-  {
-    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
-    return temp_r_; // dummy return to avoid compiler warning.
-  }
-
-  /** return old displacements set up by move() for optimized distance table consumers
-   */
-  virtual const DisplRow& getOldDispls() const
-  {
-    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
-    return temp_dr_; // dummy return to avoid compiler warning.
-  }
-
-  /** return the temporary distances when a move is proposed
-   */
-  const DistRow& getTempDists() const { return temp_r_; }
-
-  /** return the temporary displacements when a move is proposed
-   */
-  const DisplRow& getTempDispls() const { return temp_dr_; }
 
   /** evaluate the full Distance Table
    * @param P the target particle set
@@ -326,6 +237,201 @@ public:
   virtual void releaseResource(ResourceCollection& collection,
                                const RefVectorWithLeader<DistanceTableData>& dt_list) const
   {}
+};
+
+class DistanceTableAA : public DistanceTableData
+{
+protected:
+  /**defgroup SoA data */
+  /*@{*/
+  /** distances_[i][j] , [num_targets_][num_sources_]
+   *  Note: Derived classes decide if it is a memory view or the actual storage
+   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
+   *            There is no bound check to protect j>=i terms as the nature of operator[].
+   *            When the storage of the table is allocated as a single memory segment,
+   *            out-of-bound access is still within the segment and
+   *            thus doesn't trigger an alarm by the address sanitizer.
+   *        For derived AB, the full table is up-to-date after pbyp move
+   */
+  std::vector<DistRow> distances_;
+
+  /** displacements_[num_targets_]x[3][num_sources_]
+   *  Note: Derived classes decide if it is a memory view or the actual storage
+   *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
+   *        For derived AB, A1=A, A2=B, the full table is allocated.
+   */
+  std::vector<DisplRow> displacements_;
+
+  /** temp_r */
+  DistRow temp_r_;
+
+  /** temp_dr */
+  DisplRow temp_dr_;
+  /*@}*/
+
+public:
+  ///constructor using source and target ParticleSet
+  DistanceTableAA(const ParticleSet& source, const ParticleSet& target, DTModes modes)
+      : DistanceTableData(source, target, modes)
+  {}
+  /** return full table distances
+   */
+  const std::vector<DistRow>& getDistances() const { return distances_; }
+
+  /** return full table displacements
+   */
+  const std::vector<DisplRow>& getDisplacements() const { return displacements_; }
+
+  /** return a row of distances for a given target particle
+   */
+  const DistRow& getDistRow(int iel) const { return distances_[iel]; }
+
+  /** return a row of displacements for a given target particle
+   */
+  const DisplRow& getDisplRow(int iel) const { return displacements_[iel]; }
+  /** return the temporary distances when a move is proposed
+   */
+  const DistRow& getTempDists() const { return temp_r_; }
+
+  /** return the temporary displacements when a move is proposed
+   */
+  const DisplRow& getTempDispls() const { return temp_dr_; }
+
+  /// return multi walker temporary pair distance table data pointer
+  virtual const RealType* getMultiWalkerTempDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  /// return multi-walker full (all pairs) distance table data pointer
+  virtual const RealType* getMultiWalkerDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer not supported");
+    return nullptr;
+  }
+
+  /// return stride of per target pctl data. full table data = stride * num of target particles
+  virtual size_t getPerTargetPctlStrideSize() const
+  {
+    throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
+    return 0;
+  }
+
+  /** return old distances set up by move() for optimized distance table consumers
+   */
+  virtual const DistRow& getOldDists() const
+  {
+    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
+    return temp_r_; // dummy return to avoid compiler warning.
+  }
+
+  /** return old displacements set up by move() for optimized distance table consumers
+   */
+  virtual const DisplRow& getOldDispls() const
+  {
+    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
+    return temp_dr_; // dummy return to avoid compiler warning.
+  }
+};
+
+class DistanceTableAB : public DistanceTableData
+{
+protected:
+  /**defgroup SoA data */
+  /*@{*/
+  /** distances_[i][j] , [num_targets_][num_sources_]
+   *  Note: Derived classes decide if it is a memory view or the actual storage
+   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
+   *            There is no bound check to protect j>=i terms as the nature of operator[].
+   *            When the storage of the table is allocated as a single memory segment,
+   *            out-of-bound access is still within the segment and
+   *            thus doesn't trigger an alarm by the address sanitizer.
+   *        For derived AB, the full table is up-to-date after pbyp move
+   */
+  std::vector<DistRow> distances_;
+
+  /** displacements_[num_targets_]x[3][num_sources_]
+   *  Note: Derived classes decide if it is a memory view or the actual storage
+   *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
+   *        For derived AB, A1=A, A2=B, the full table is allocated.
+   */
+  std::vector<DisplRow> displacements_;
+
+  /** temp_r */
+  DistRow temp_r_;
+
+  /** temp_dr */
+  DisplRow temp_dr_;
+  /*@}*/
+
+public:
+  ///constructor using source and target ParticleSet
+  DistanceTableAB(const ParticleSet& source, const ParticleSet& target, DTModes modes)
+      : DistanceTableData(source, target, modes)
+  {}
+  /** return full table distances
+   */
+  const std::vector<DistRow>& getDistances() const { return distances_; }
+
+  /** return full table displacements
+   */
+  const std::vector<DisplRow>& getDisplacements() const { return displacements_; }
+
+  /** return a row of distances for a given target particle
+   */
+  const DistRow& getDistRow(int iel) const { return distances_[iel]; }
+
+  /** return a row of displacements for a given target particle
+   */
+  const DisplRow& getDisplRow(int iel) const { return displacements_[iel]; }
+  /** return the temporary distances when a move is proposed
+   */
+  const DistRow& getTempDists() const { return temp_r_; }
+
+  /** return the temporary displacements when a move is proposed
+   */
+  const DisplRow& getTempDispls() const { return temp_dr_; }
+
+  /// return multi walker temporary pair distance table data pointer
+  virtual const RealType* getMultiWalkerTempDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  /// return multi-walker full (all pairs) distance table data pointer
+  virtual const RealType* getMultiWalkerDataPtr() const
+  {
+    throw std::runtime_error(name_ + " multi walker data pointer not supported");
+    return nullptr;
+  }
+
+  /// return stride of per target pctl data. full table data = stride * num of target particles
+  virtual size_t getPerTargetPctlStrideSize() const
+  {
+    throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
+    return 0;
+  }
+
+  /** return old distances set up by move() for optimized distance table consumers
+   */
+  virtual const DistRow& getOldDists() const
+  {
+    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
+    return temp_r_; // dummy return to avoid compiler warning.
+  }
+
+  /** return old displacements set up by move() for optimized distance table consumers
+   */
+  virtual const DisplRow& getOldDispls() const
+  {
+    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
+    return temp_dr_; // dummy return to avoid compiler warning.
+  }
+
 };
 } // namespace qmcplusplus
 #endif

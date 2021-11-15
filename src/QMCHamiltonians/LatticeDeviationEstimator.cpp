@@ -99,7 +99,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   std::fill(xyz2.begin(), xyz2.end(), 0.0);
 
   RealType wgt        = t_walker_->Weight;
-  const auto& d_table = P.getDistTable(myTableID_);
+  const auto& d_table = P.getDistTableAB(myTableID_);
 
   // temp variables
   RealType r, r2;

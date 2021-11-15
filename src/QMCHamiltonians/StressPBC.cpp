@@ -120,7 +120,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& P)
 {
-  const auto& d_ab                   = P.getDistTable(ei_table_index);
+  const auto& d_ab                   = P.getDistTableAB(ei_table_index);
   SymTensor<RealType, OHMMS_DIM> res = 0.0;
   //Loop over distinct eln-ion pairs
   for (int jpart = 0; jpart < NptclB; jpart++)
@@ -138,7 +138,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& P, int itabSelf)
 {
-  const auto& d_aa = P.getDistTable(itabSelf);
+  const auto& d_aa = P.getDistTableAA(itabSelf);
 
   SymTensor<RealType, OHMMS_DIM> stress_aa;
   for (int ipart = 0; ipart < NptclB; ipart++)

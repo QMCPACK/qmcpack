@@ -28,7 +28,7 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for dense case
  */
 template<typename T, unsigned D, int SC>
-struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
+struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
   ///actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
@@ -63,7 +63,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableData(target, target, DTModes::ALL_OFF),
+        DistanceTableAA(target, target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),

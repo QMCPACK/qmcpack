@@ -388,6 +388,9 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
   return tid;
 }
 
+const DistanceTableAA& ParticleSet::getDistTableAA(int table_ID) const { return dynamic_cast<DistanceTableAA&>(*DistTables[table_ID]); }
+const DistanceTableAB& ParticleSet::getDistTableAB(int table_ID) const { return dynamic_cast<DistanceTableAB&>(*DistTables[table_ID]); }
+
 void ParticleSet::update(bool skipSK)
 {
   ScopedTimer update_scope(myTimers[PS_update]);

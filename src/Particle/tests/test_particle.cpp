@@ -87,7 +87,7 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
   const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTableAA(TableID);
   const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
@@ -118,7 +118,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTableAA(TableID);
   const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 

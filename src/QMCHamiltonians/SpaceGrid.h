@@ -54,7 +54,7 @@ public:
                 const Matrix<RealType>& values,
                 BufferType& buf,
                 std::vector<bool>& particles_outside,
-                const DistanceTableData& dtab);
+                const DistanceTableAB& dtab);
 
   bool check_grid(void);
   inline int nDomains(void) { return ndomains; }
