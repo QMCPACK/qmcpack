@@ -297,4 +297,33 @@ TEST_CASE("SPO input spline from xml LiH_msd arbitrary species", "[wavefunction]
 ";
   test_LiH_msd_xml_input_with_positron(spo_xml_string1, "spo-ps", 5, 105);
 }
+TEST_CASE("SPO input spline from h5 LiH_msd arbitrary species", "[wavefunction]")
+{
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  app_log() << "LiH_msd with positron h5 input style" << std::endl;
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" transform=\"yes\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"5\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"5\" spindataset=\"0\"/> \
+      </sposet> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"5\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"5\" spindataset=\"0\"/> \
+      </sposet> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-ps\" size=\"5\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"5\" spindataset=\"0\"/> \
+      </sposet> \
+    </sposet_collection> \
+    <determinantset> \
+      <multideterminant optimize=\"yes\" spo_0=\"spo-up\" spo_1=\"spo-dn\" spo_2=\"spo-ps\"> \
+        <detlist size=\"2\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.Multidet.h5\"/> \
+      </multideterminant> \
+    </determinantset> \
+</wavefunction> \
+";
+  test_LiH_msd_xml_input_with_positron(spo_xml_string1, "spo-ps", 5, 105);
+}
 } // namespace qmcplusplus

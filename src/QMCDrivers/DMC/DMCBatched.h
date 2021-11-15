@@ -137,7 +137,8 @@ private:
                              DriverTimers& timers,
                              DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
-                             bool recompute);
+                             bool recompute,
+                             bool accumulate_this_step);
 
   friend class qmcplusplus::testing::DMCBatchedTest;
 };
