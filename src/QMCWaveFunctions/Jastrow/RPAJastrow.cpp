@@ -112,25 +112,15 @@ void RPAJastrow::buildOrbital(const std::string& name,
   }
   app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs << "  Kc= " << Kc << std::endl;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
-  {
     myHandler = std::make_unique<LRHandlerTemp<YukawaBreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
-  }
   else if (rpafunc == "rpa")
-  {
     myHandler = std::make_unique<LRRPAHandlerTemp<RPABreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
-  }
   else if (rpafunc == "dyukawa")
-  {
     myHandler = std::make_unique<LRHandlerTemp<DerivYukawaBreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
-  }
   else if (rpafunc == "drpa")
-  {
     myHandler = std::make_unique<LRRPAHandlerTemp<DerivRPABreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
-  }
   else
-  {
-    APP_ABORT("RPAJastrowBuilder::buildOrbital:  Unrecognized rpa function type.\n");
-  }
+    throw std::invalid_argument("RPAJastrowBuilder::buildOrbital:  Unrecognized rpa function type.\n");
   myHandler->Breakup(targetPtcl, Rs);
   app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
