@@ -113,8 +113,12 @@ attribute:
 
 ``type`` Type of ``sposet``. Accepted values are 'spline' ('bspline' or 'einspline'), 'MolecularOrbital', 'pw', 'heg', 'composite'.
 
-If QMCPACK printout contains `!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside.`,
-users need to update the input XML by moving all the SPOSet construction related details out of ``determinantset``.
+If QMCPACK printout contains `!!!!!!! Deprecated input style: creating SPO set
+inside determinantset. Support for this usage will soon be removed. SPO sets
+should be built outside.`, users need to update the input XML by moving all the
+SPOSet construction related details out of ``determinantset``. This revised
+specification keeps the basis set details separate from information about the
+determinants. 
 
 .. code-block::
   :caption: Deprecated input style.
@@ -163,8 +167,11 @@ it needs to be moved under ``sposet_collection`` as well.
 3D B-splines orbitals
 ~~~~~~~~~~~~~~~~~~~~~
 
-In this section we describe the use of spline basis sets to expand the ``sposet``.
-Spline basis sets are designed to work seamlessly with plane wave DFT code (e.g.,\ Quantum ESPRESSO as a trial wavefunction generator).
+In this section we describe the use of spline basis sets to expand the
+``sposet``. Spline basis sets are designed to work seamlessly with plane wave
+DFT codes (e.g.,\ Quantum ESPRESSO as a trial wavefunction generator). Codes
+that utilize regular real space grids as a basis can also be seamlessly
+interfaced.
 
 In QMC algorithms, all the SPOs :math:`\{\phi(\vec{r})\}` need to be updated
 every time a single electron moves. Evaluating SPOs takes a very large portion of computation time.
@@ -195,16 +202,16 @@ Cartesian direction, we can represent a 3D orbital as
      \!\!\!\!\sum_{j'=j-1}^{j+2} \!\! b_y^{j'\!,3}(y)
      \!\!\!\!\sum_{k'=k-1}^{k+2} \!\! b_z^{k'\!,3}(z) \,\, p_{i', j', k',n}.
 
-This allows the rapid evaluation of each orbital in constant time.
+This allows the rapid evaluation of each orbital in constant time unlike with a plane wave basis set where the cost increases with system size.
 Furthermore, this basis is systematically improvable with a single spacing
 parameter so that accuracy is not compromised compared with the plane wave basis.
 
-The use of 3D tricubic B-splines greatly improves computational efficiency.
-The gain in computation time from a plane wave basis set to an equivalent B-spline basis set
-becomes increasingly large as the system size grows.
-On the downside, this computational efficiency comes at
-the expense of increased memory use, which is easily overcome, however, by the large
-aggregate memory available per node through OpenMP/MPI hybrid QMC.
+The use of 3D tricubic B-splines greatly improves computational efficiency. The
+gain in computation time compared to an equivalent plane wave basis set becomes
+increasingly large as the system size grows. On the downside, this computational
+efficiency comes at the expense of increased memory use, which is easily
+overcome, however, by the large aggregate memory available per node through
+OpenMP/MPI hybrid QMC.
 
 The input xml block for the spline SPOs is given in :ref:`spline.spo.xml`. A list of options is given in
 :numref:`table3`.
@@ -312,11 +319,11 @@ Additional information:
     this feature, the following needs to be done:
 
       -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
-         Summit/SummitDev use "-alloc_flags gpumps" for bsub). If MPS is not
+         Summit use "-alloc_flags gpumps" for bsub). If MPS is not
          detected, sharing will be disabled.
 
       -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-         visible CUDA devices (e.g., on OLCF Summit/SummitDev one needs to
+         visible CUDA devices (e.g., on OLCF Summit one needs to
          create a resource set containing all GPUs with the respective number
          of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
 
@@ -334,7 +341,7 @@ Additional information:
 
 .. _spo-lcao:
 
-Linear combination of atomic orbitals (LCAO) with Gassian and/or Slater-type basis sets
+Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of localized basis sets to expand the ``sposet``. The general form of a single particle orbital in this case is given by:
