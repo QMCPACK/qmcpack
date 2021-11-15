@@ -55,9 +55,7 @@ struct HEGGrid<T, 3>
   ///maxmim ksq
   T MaxKsq;
   PL_t& Lattice;
-  std::map<int, std::vector<PosType>*> rs;
-
-
+  std::map<int, std::vector<PosType>> rs;
   std::vector<PosType> kpt;
   std::vector<T> mk2;
   std::vector<int> deg;
@@ -110,12 +108,6 @@ struct HEGGrid<T, 3>
 
   ~HEGGrid()
   {
-    typename std::map<int, std::vector<PosType>*>::iterator it(rs.begin()), it_end(rs.end());
-    while (it != it_end)
-    {
-      delete (*it).second;
-      ++it;
-    }
     clear_kpoints();
   }
 
@@ -179,18 +171,11 @@ struct HEGGrid<T, 3>
           first_ix3 = -nc;
         for (int ix3 = first_ix3; ix3 <= nc; ix3++)
         {
-          int ih                                                     = ix1 * ix1 + ix2 * ix2 + ix3 * ix3;
-          typename std::map<int, std::vector<PosType>*>::iterator it = rs.find(ih);
-          if (it == rs.end())
-          {
-            std::vector<PosType>* ns = new std::vector<PosType>;
-            ns->push_back(PosType(ix1, ix2, ix3));
-            rs[ih] = ns;
-          }
+          int ih = ix1 * ix1 + ix2 * ix2 + ix3 * ix3;
+          if (auto it = rs.find(ih); it == rs.end())
+            rs[ih] = {PosType(ix1, ix2, ix3)};
           else
-          {
-            (*it).second->push_back(PosType(ix1, ix2, ix3));
-          }
+            it->second.push_back(PosType(ix1, ix2, ix3));
         }
       }
     }
@@ -208,10 +193,12 @@ struct HEGGrid<T, 3>
     //int ke=0;
     MaxKsq    = 0.0;
     int rsbin = 0;
-    typename std::map<int, std::vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
+    auto rs_it  = rs.begin();
+    auto rs_end = rs.end();
     while (ikpt < nkpts && rs_it != rs_end)
     {
-      typename std::vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
+      auto ns_it  = rs_it->second.begin();
+      auto ns_end = rs_it->second.end();
       T minus_ksq = -Lattice.ksq(*ns_it);
       while (ikpt < nkpts && ns_it != ns_end)
       {
@@ -223,7 +210,7 @@ struct HEGGrid<T, 3>
       ++rsbin;
       ++rs_it;
     }
-    MaxKsq = Lattice.ksq(*((*rs_it).second->begin()));
+    MaxKsq = Lattice.ksq(rs_it->second.front());
     app_log() << "List of kpoints (half-sphere) " << std::endl;
     for (int ik = 0; ik < kpt.size(); ik++)
     {
@@ -372,7 +359,7 @@ struct HEGGrid<T, 2>
   ///maxmim ksq
   T MaxKsq;
   PL_t& Lattice;
-  std::map<int, std::vector<PosType>*> rs;
+  std::map<int, std::vector<PosType>> rs;
   std::vector<PosType> kpt;
   std::vector<T> mk2;
   std::vector<int> deg;
@@ -610,15 +597,7 @@ struct HEGGrid<T, 2>
     n_within_shell[219] = 2001;
   }
 
-  ~HEGGrid()
-  {
-    typename std::map<int, std::vector<PosType>*>::iterator it(rs.begin()), it_end(rs.end());
-    while (it != it_end)
-    {
-      delete (*it).second;
-      ++it;
-    }
-  }
+  ~HEGGrid() = default;
 
   /** return the estimated number of grid in each direction */
   inline int getNC(int nup) const { return static_cast<int>(std::pow(static_cast<T>(nup), 1.0 / 2)) / 2 + 1; }
@@ -663,18 +642,11 @@ struct HEGGrid<T, 2>
         first_ix2 = -nc;
       for (int ix2 = first_ix2; ix2 <= nc; ix2++)
       {
-        int ih                                                     = ix1 * ix1 + ix2 * ix2;
-        typename std::map<int, std::vector<PosType>*>::iterator it = rs.find(ih);
-        if (it == rs.end())
-        {
-          std::vector<PosType>* ns = new std::vector<PosType>;
-          ns->push_back(PosType(ix1, ix2));
-          rs[ih] = ns;
-        }
+        int ih = ix1 * ix1 + ix2 * ix2;
+        if (auto it = rs.find(ih); it == rs.end())
+          rs[ih] = {PosType(ix1, ix2)};
         else
-        {
-          (*it).second->push_back(PosType(ix1, ix2));
-        }
+          it->second.push_back(PosType(ix1, ix2));
       }
     }
   }
@@ -691,10 +663,12 @@ struct HEGGrid<T, 2>
     //int ke=0;
     MaxKsq    = 0.0;
     int rsbin = 0;
-    typename std::map<int, std::vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
+    auto rs_it  = rs.begin();
+    auto rs_end = rs.end();
     while (ikpt < nkpts && rs_it != rs_end)
     {
-      typename std::vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
+      auto ns_it  = rs_it->second.begin();
+      auto ns_end = rs_it->second.end();
       T minus_ksq = -Lattice.ksq(*ns_it);
       while (ikpt < nkpts && ns_it != ns_end)
       {
@@ -729,10 +703,12 @@ struct HEGGrid<T, 2>
     kpt[ikpt] = Lattice.k_cart(twistAngle);
     mk2[ikpt] = -Lattice.ksq(twistAngle);
     ++ikpt;
-    typename std::map<int, std::vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
+    auto rs_it  = rs.begin();
+    auto rs_end = rs.end();
     while (ikpt < nkpts && rs_it != rs_end)
     {
-      typename std::vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
+      auto ns_it  = rs_it->second.begin();
+      auto ns_end = rs_it->second.end();
       while (ikpt < nkpts && ns_it != ns_end)
       {
         //add twist+k
