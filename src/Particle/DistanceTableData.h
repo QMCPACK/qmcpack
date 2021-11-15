@@ -305,35 +305,13 @@ public:
     return nullptr;
   }
 
-  /// return multi-walker full (all pairs) distance table data pointer
-  virtual const RealType* getMultiWalkerDataPtr() const
-  {
-    throw std::runtime_error(name_ + " multi walker data pointer not supported");
-    return nullptr;
-  }
-
-  /// return stride of per target pctl data. full table data = stride * num of target particles
-  virtual size_t getPerTargetPctlStrideSize() const
-  {
-    throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
-    return 0;
-  }
-
   /** return old distances set up by move() for optimized distance table consumers
    */
-  virtual const DistRow& getOldDists() const
-  {
-    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
-    return temp_r_; // dummy return to avoid compiler warning.
-  }
+  virtual const DistRow& getOldDists() const = 0;
 
   /** return old displacements set up by move() for optimized distance table consumers
    */
-  virtual const DisplRow& getOldDispls() const
-  {
-    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
-    return temp_dr_; // dummy return to avoid compiler warning.
-  }
+  virtual const DisplRow& getOldDispls() const = 0;
 };
 
 class DistanceTableAB : public DistanceTableData
@@ -395,13 +373,6 @@ public:
    */
   const DisplRow& getTempDispls() const { return temp_dr_; }
 
-  /// return multi walker temporary pair distance table data pointer
-  virtual const RealType* getMultiWalkerTempDataPtr() const
-  {
-    throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
-    return nullptr;
-  }
-
   /// return multi-walker full (all pairs) distance table data pointer
   virtual const RealType* getMultiWalkerDataPtr() const
   {
@@ -415,23 +386,6 @@ public:
     throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
     return 0;
   }
-
-  /** return old distances set up by move() for optimized distance table consumers
-   */
-  virtual const DistRow& getOldDists() const
-  {
-    throw std::runtime_error("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
-    return temp_r_; // dummy return to avoid compiler warning.
-  }
-
-  /** return old displacements set up by move() for optimized distance table consumers
-   */
-  virtual const DisplRow& getOldDispls() const
-  {
-    throw std::runtime_error("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
-    return temp_dr_; // dummy return to avoid compiler warning.
-  }
-
 };
 } // namespace qmcplusplus
 #endif
