@@ -66,13 +66,112 @@ is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetri
 Single-particle orbitals
 ------------------------
 
+A single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
+A typical Slater determinant is calculated from a N-by-N matrix constructed from N orbitals at the positions of N electrons.
+QMCPACK supports a range of SPOSet types:
+ * :ref:`spo-spline`
+ * :ref:`spo-lcao`
+ * :ref:`spo-hybrid`
+ * :ref:`pwbasis`
+
+
+sposet_collection input style
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block::
+  :caption: SPO XML element framework.
+  :name: spo.collection.xml
+
+  <!-- build a sposet collection of type bspline. /-->
+  <sposet_collection type="bspline" ...>
+    <sposet name="spo-up" ... /sposet>
+    ...
+  </sposet_collection>
+
+The ``sposet_collection`` element forms the container for ``sposet`` and a few other tags.
+The contents and attributes in a ``sposet_collection`` node and ``sposet`` node depend on the ``type`` being used.
+The ``name`` of each ``sposet`` must be unique. It is used for look-up by :ref:`singledeterminant` and :ref:`multideterminants`.
+
+``sposet_collection`` element:
+
+.. _table1:
+.. table::
+
+  +-----------------+------------------+
+  | Parent elements | ``wavefunction`` |
+  +-----------------+------------------+
+  | Child elements  | ``sposet``       |
+  +-----------------+------------------+
+
+attribute:
+
++--------------------+--------------+---------------+-------------+------------------------------------------------+
+| **Name**           | **Datatype** | **Values**    | **Default** | **Description**                                |
++====================+==============+===============+=============+================================================+
+| ``type``           | Text         | See below     | '' ''       | Type of ``sposet``                             |
++--------------------+--------------+---------------+-------------+------------------------------------------------+
+
+``type`` Type of ``sposet``. Accepted values are 'spline' ('bspline' or 'einspline'), 'MolecularOrbital', 'pw', 'heg', 'composite'.
+
+If QMCPACK printout contains `!!!!!!! Deprecated input style: creating SPO set
+inside determinantset. Support for this usage will soon be removed. SPO sets
+should be built outside.`, users need to update the input XML by moving all the
+SPOSet construction related details out of ``determinantset``. This revised
+specification keeps the basis set details separate from information about the
+determinants. 
+
+.. code-block::
+  :caption: Deprecated input style.
+  :name: spo.singledet.old.xml
+
+  <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+     <slaterdeterminant>
+        <determinant id="updet" size="8">
+           <occupation mode="ground" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="8">
+           <occupation mode="ground" spindataset="0"/>
+        </determinant>
+     </slaterdeterminant>
+  </determinantset>
+
+After updating the input style.
+
+.. code-block::
+  :caption: Updated input style.
+  :name: spo.singledet.xml
+
+  <!-- all the attributes are moved from determinantset.-->
+  <sposet_collection type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+    <!-- all the attributes and contents are moved from determinant.  Change 'id' tag to 'name' tag.
+         Need only one sposet for unpolarized calculation.-->
+    <sposet name="spo-ud" size="8">
+       <occupation mode="ground" spindataset="0"/>
+    </sposet>
+  </sposet_collection>
+  <determinantset>
+     <slaterdeterminant>
+        <!-- build two determinants from the same sposet named 'spo-ud'. One for each spin.-->
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
+     </slaterdeterminant>
+  </determinantset>
+
+
+In the case of multi-determinants, all the attributes of ``determinantset`` need to be moved to ``sposet_collection``
+and existing ``sposet`` xml nodes need to be moved under ``sposet_collection``. If there is a ``basisset`` node,
+it needs to be moved under ``sposet_collection`` as well.
+
 .. _spo-spline:
 
-Spline basis sets
-~~~~~~~~~~~~~~~~~
+3D B-splines orbitals
+~~~~~~~~~~~~~~~~~~~~~
 
-In this section we describe the use of spline basis sets to expand the ``sposet``.
-Spline basis sets are designed to work seamlessly with plane wave DFT code (e.g.,\ Quantum ESPRESSO as a trial wavefunction generator).
+In this section we describe the use of spline basis sets to expand the
+``sposet``. Spline basis sets are designed to work seamlessly with plane wave
+DFT codes (e.g.,\ Quantum ESPRESSO as a trial wavefunction generator). Codes
+that utilize regular real space grids as a basis can also be seamlessly
+interfaced.
 
 In QMC algorithms, all the SPOs :math:`\{\phi(\vec{r})\}` need to be updated
 every time a single electron moves. Evaluating SPOs takes a very large portion of computation time.
@@ -103,23 +202,23 @@ Cartesian direction, we can represent a 3D orbital as
      \!\!\!\!\sum_{j'=j-1}^{j+2} \!\! b_y^{j'\!,3}(y)
      \!\!\!\!\sum_{k'=k-1}^{k+2} \!\! b_z^{k'\!,3}(z) \,\, p_{i', j', k',n}.
 
-This allows the rapid evaluation of each orbital in constant time.
+This allows the rapid evaluation of each orbital in constant time unlike with a plane wave basis set where the cost increases with system size.
 Furthermore, this basis is systematically improvable with a single spacing
 parameter so that accuracy is not compromised compared with the plane wave basis.
 
-The use of 3D tricubic B-splines greatly improves computational efficiency.
-The gain in computation time from a plane wave basis set to an equivalent B-spline basis set
-becomes increasingly large as the system size grows.
-On the downside, this computational efficiency comes at
-the expense of increased memory use, which is easily overcome, however, by the large
-aggregate memory available per node through OpenMP/MPI hybrid QMC.
+The use of 3D tricubic B-splines greatly improves computational efficiency. The
+gain in computation time compared to an equivalent plane wave basis set becomes
+increasingly large as the system size grows. On the downside, this computational
+efficiency comes at the expense of increased memory use, which is easily
+overcome, however, by the large aggregate memory available per node through
+OpenMP/MPI hybrid QMC.
 
-The input xml block for the spline SPOs is given in :ref:`Listing 2 <Listing 2>`. A list of options is given in
+The input xml block for the spline SPOs is given in :ref:`spline.spo.xml`. A list of options is given in
 :numref:`table3`.
 
 .. code-block::
-  :caption: Spline SPO XML element.
-  :name: Listing 2
+  :caption: Spline SPO XML element
+  :name: spline.spo.xml
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
                   tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
@@ -179,64 +278,71 @@ attribute:
 | ``skip_checks``             | Text       | Yes/no                   | No      | skips checks for ion information in h5    |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 
-.. centered:: Table 3 Options for the ``determinantset`` xml-block associated with B-spline single particle orbital sets.
+.. centered:: Table 3 Options for the ``sposet_collection`` xml-block associated with B-spline single particle orbital sets.
 
 Additional information:
 
--  ``precision``. Only effective on CPU versions without mixed
-   precision, “single" is always imposed with mixed precision. Using
-   single precision not only saves memory use but also speeds up the
-   B-spline evaluation. We recommend using single precision since we saw
-   little chance of really compromising the accuracy of calculation.
+- precision
+    Only effective on CPU versions without mixed
+    precision, “single" is always imposed with mixed precision. Using
+    single precision not only saves memory use but also speeds up the
+    B-spline evaluation. We recommend using single precision since we saw
+    little chance of really compromising the accuracy of calculation.
 
--  ``meshfactor``. The ratio of actual grid spacing of B-splines used in
-   QMC calculation with respect to the original one calculated from h5.
-   A smaller meshfactor saves memory use but reduces accuracy. The
-   effects are similar to reducing plane wave cutoff in DFT
-   calculations. Use with caution!
+- meshfactor
+    The ratio of actual grid spacing of B-splines used in
+    QMC calculation with respect to the original one calculated from h5.
+    A smaller meshfactor saves memory use but reduces accuracy. The
+    effects are similar to reducing plane wave cutoff in DFT
+    calculations. Use with caution!
 
--  ``twistnum``. If positive, it is the index. We recommend not taking
-   this way since the indexing might show some uncertainty. If negative,
-   the super twist is referred by ``twist``.
+- twistnum
+    If positive, it is the index. We recommend not taking
+    this way since the indexing might show some uncertainty. If negative,
+    the super twist is referred by ``twist``.
 
--  ``save_coefs``. If yes, dump the real-space B-spline coefficient
-   table into an h5 file on the disk. When the orbital transformation
-   from k space to B-spline requires more than the available amount of
-   scratch memory on the compute nodes, users can perform this step on
-   fat nodes and transfer back the h5 file for QMC calculations.
+- save_coefs
+    If yes, dump the real-space B-spline coefficient
+    table into an h5 file on the disk. When the orbital transformation
+    from k space to B-spline requires more than the available amount of
+    scratch memory on the compute nodes, users can perform this step on
+    fat nodes and transfer back the h5 file for QMC calculations.
 
--  ``gpusharing``. If enabled, spline data is shared across multiple
-   GPUs on a given computational node. For example, on a
-   two-GPU-per-node system, each GPU would have half of the orbitals.
-   This enables larger overall spline tables than would normally fit in
-   the memory of individual GPUs to be used, potentially up to the total
-   GPU memory on a node. To obtain high performance, large electron
-   counts or a high-performing CPU-GPU interconnect is required. To use
-   this feature, the following needs to be done:
+- gpusharing
+    If enabled, spline data is shared across multiple
+    GPUs on a given computational node. For example, on a
+    two-GPU-per-node system, each GPU would have half of the orbitals.
+    This enables larger overall spline tables than would normally fit in
+    the memory of individual GPUs to be used, potentially up to the total
+    GPU memory on a node. To obtain high performance, large electron
+    counts or a high-performing CPU-GPU interconnect is required. To use
+    this feature, the following needs to be done:
 
-     -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
-        Summit/SummitDev use "-alloc_flags gpumps" for bsub). If MPS is not
-        detected, sharing will be disabled.
+      -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
+         Summit use "-alloc_flags gpumps" for bsub). If MPS is not
+         detected, sharing will be disabled.
 
-     -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-        visible CUDA devices (e.g., on OLCF Summit/SummitDev one needs to
-        create a resource set containing all GPUs with the respective number
-        of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
+      -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
+         visible CUDA devices (e.g., on OLCF Summit one needs to
+         create a resource set containing all GPUs with the respective number
+         of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
 
-- ``Spline_Size_Limit_MB``. Allows distribution of the B-spline
-  coefficient table between the host and GPU memory. The compute kernels
-  access host memory via zero-copy. Although the performance penalty
-  introduced by it is significant, it allows large calculations to go
-  through.
+- Spline_Size_Limit_MB
+    Allows distribution of the B-spline
+    coefficient table between the host and GPU memory. The compute kernels
+    access host memory via zero-copy. Although the performance penalty
+    introduced by it is significant, it allows large calculations to go
+    through.
  
-- ``skip_checks``. When converting the wave function from convertpw4qmc instead
-  of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
-  that the ionic information in the eshdf.h5 file match the input xml. 
+- skip_checks
+    When converting the wave function from convertpw4qmc instead
+    of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
+    that the ionic information in the eshdf.h5 file match the input xml. 
 
-.. _gaussianbasis:
+.. _spo-lcao:
 
-Gaussian basis tests
-~~~~~~~~~~~~~~~~~~~~
+Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of localized basis sets to expand the ``sposet``. The general form of a single particle orbital in this case is given by:
 
@@ -258,15 +364,45 @@ harmonic angular functions or Cartesian angular expansions. The radial
 functions in the basis set can be expanded in either Gaussian functions,
 Slater-type functions, or numerical radial functions.
 
-In this section we describe the input sections for the atom-centered basis set and the ``sposet`` for a single Slater determinant trial wavefunction. The input sections for multideterminant trial wavefunctions are described in :ref:`multideterminants`. The basic structure for the input block of a single Slater determinant is given in :ref:`Listing 3 <Listing 3>`.
-A list of options for ``determinantset`` associated with this ``sposet`` is given in :numref:`table4`.
+In this section we describe the input sections of ``sposet_collection`` for the atom-centered basis set.
+Here is an :ref:`example <spo.singledet.lcao.xml>` of single determinant with LCAO.
+The input sections for multideterminant trial wavefunctions are described in :ref:`multideterminants`.
 
 .. code-block::
-   :caption: Basic input block for a single determinant trial wavefunction using a ``sposet`` expanded on an atom-centered basis set.
-   :name: Listing 3
+  :caption: ``slaterdeterminant`` with an LCAO ``sposet_collection`` example
+  :name: spo.singledet.lcao.xml
 
-   <sposet_collection type="MolecularOrbital" source="ion0" cuspCorrection="no">
-     <basisset name="LCAOBSet" transform="yes">
+  <sposet_collection type="MolecularOrbital" source="ion0" cuspCorrection="no">
+    <basisset name="LCAOBSet">
+      <atomicBasisSet name="Gaussian-G2" angular="cartesian" elementType="H" normalized="no">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+        <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+          <radfunc exponent="5.134400000000e-02" contraction="1.399098787100e-02"/>
+        </basisGroup>
+      </atomicBasisSet>
+    </basisset>
+    <sposet name="spo" basisset="LCAOBSet" size="1">
+      <occupation mode="ground"/>
+      <coefficient size="1" id="updetC">
+        1.00000000000000e+00
+      </coefficient>
+    </sposet>
+  </sposet_collection>
+  <determinantset>
+     <slaterdeterminant>
+        <determinant sposet="spo" />
+     </slaterdeterminant>
+  </determinantset>
+
+Here is the :ref:`basic structure <spo.lcao.xml>` for LCAO ``sposet_collection`` input block.
+A list of options for ``sposet_collection`` is given in :numref:`table4`.
+
+.. code-block::
+   :caption: Basic input block for ``sposet_collection`` for LCAO.
+   :name: spo.lcao.xml
+
+   <sposet_collection type="MolecularOrbital" ...>
+     <basisset name="LCAOBSet" ...>
        ...
      </basisset>
      <sposet name="spo" basisset="LCAOBSet" size="1">
@@ -278,7 +414,9 @@ A list of options for ``determinantset`` associated with this ``sposet`` is give
    </sposet_collection>
 
 
-The definition of the set of atom-centered basis functions is given by the ``basisset`` block, and the ``sposet`` is defined within ``slaterdeterminant``. The ``basisset`` input block is composed from a collection of ``atomicBasisSet`` input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for ``basisset`` and ``atomicBasisSet`` are given in :ref:`Listing 4 <Listing 4>`, and the corresponding lists of options are given in
+The definition of the set of atom-centered basis functions is given by the ``basisset`` block and the ``sposet`` defined within ``sposet_collection``.
+The ``basisset`` input block is composed from a collection of ``atomicBasisSet`` input blocks, one for each atomic species in the simulation where basis functions are centered.
+The general structure for ``basisset`` and ``atomicBasisSet`` are given in :ref:`Listing 4 <Listing 4>`, and the corresponding lists of options are given in
 :numref:`table5` and :numref:`table6`.
 
 ``sposet_collection`` element:
@@ -310,7 +448,20 @@ Attribute:
 | ``cuspCorrection`` | Text         | Yes/no        | No          | Apply cusp correction scheme to ``sposet``?    |
 +--------------------+--------------+---------------+-------------+------------------------------------------------+
 
-.. centered:: Table 4 Options for the ``determinantset`` xml-block associated with atom-centered single particle orbital sets.
+.. centered:: Table 4 Options for the ``sposet_collection`` xml-block associated with atom-centered single particle orbital sets.
+
+
+- type
+    Type of ``sposet``. For atom-centered based ``sposets``, use type="MolecularOrbital" or type="MO".
+
+- keyword/key
+    Type of basis set generated, which does not necessarily match the type of basis set on the input block. The three possible options are: NMO (numerical molecular orbitals), GTO (Gaussian-type orbitals), and STO (Slater-type orbitals). The default option is NMO. By default, QMCPACK will generate numerical orbitals from both GTO and STO types and use cubic or quintic spline interpolation to evaluate the radial functions. This is typically more efficient than evaluating the radial functions in the native basis (Gaussians or exponents) and allows for arbitrarily large contractions without any additional cost. To force use of the native expansion (not recommended), use GTO or STO for each type of input basis set.
+
+- transform
+    Request (or avoid) a transformation of the radial functions to NMO type. The default and recommended behavior is to transform to numerical radial functions. If ``transform`` is set to *yes*, the option ``keyword`` is ignored.
+
+- cuspCorrection
+    Enable (disable) use of the cusp correction algorithm (CASINO REFERENCE) for a ``basisset`` built with GTO functions. The algorithm is implemented as described in (CASINO REFERENCE) and works only with transform="yes" and an input GTO basis set. No further input is needed.
 
 .. code-block::
   :caption: Basic input block for ``basisset``.
@@ -336,11 +487,11 @@ Attribute:
 .. _table5:
 .. table::
 
-  +-----------------+-------------------+
-  | Parent elements | ``determinantset``|
-  +-----------------+-------------------+
-  | Child elements  | ``atomicBasisSet``|
-  +-----------------+-------------------+
+  +-----------------+----------------------+
+  | Parent elements | ``sposet_collection``|
+  +-----------------+----------------------+
+  | Child elements  | ``atomicBasisSet``   |
+  +-----------------+----------------------+
 
 Attribute:
 
@@ -383,6 +534,29 @@ Attribute:
 
 .. centered:: Table 6 Options for the ``atomicBasisSet`` xml-block.
 
+- name/id
+    Name of the basis set. Names should be unique.
+
+- angular
+    Type of angular functions used in the expansion. In general, two angular basis functions are allowed: "spherical" (for spherical Ylm functions) and "Cartesian" (for functions of the type :math:`x^{n}y^{m}z^{l}`).
+
+- expandYlm
+    Determines whether each basis group is expanded across the corresponding shell of m values (for spherical type) or consistent powers (for Cartesian functions). Options:
+
+      - "No": Do not expand angular functions across corresponding angular shell.
+
+      - "Gaussian": Expand according to Gaussian03 format. This function is compatible only with angular="spherical." For a given input (l,m), the resulting order of the angular functions becomes (1,-1,0) for l=1 and (0,1,-1,2,-2,...,l,-l) for general l.
+
+      - "Natural": Expand angular functions according to (-l,-l+1,...,l-1,l).
+
+      - "Gamess": Expand according to Gamess' format for Cartesian functions. Notice that this option is compatible only with angular="Cartesian." If angular="Cartesian" is used, this option is not necessary.
+
+- expM
+    Determines whether the sign of the spherical Ylm function associated with m (:math:`-1^{m}`) is included in the coefficient matrix or not.
+
+- elementType/species
+    Name of the species where basis functions are centered. Only one ``atomicBasisSet`` block is allowed per species. Additional blocks are ignored. The corresponding species must exist in the ``particleset`` given as the ``source`` option to ``determinantset``. Basis functions for all the atoms of the corresponding species are included in the basis set, based on the order of atoms in the ``particleset``.
+
 ``basicGroup`` element:
 
 .. _table7:
@@ -408,83 +582,10 @@ Attribute:
 
 .. centered:: :numref:`table7` Options for the ``basisGroup`` xml-block.
 
-.. code-block::
-  :caption: Basic input block for ``slaterdeterminant`` with an atom-centered ``sposet``.
-  :name: Listing 5
-
-    <slaterdeterminant>
-    </slaterdeterminant>
-
-element:
-
-+-----------------+-------+
-| Parent elements:|       |
-+-----------------+-------+
-| Child elements: |       |
-+-----------------+-------+
-
-Attribute:
-
-+-------------+--------------+------------+-------------+-------------------------+
-| **Name**    | **Datatype** | **Values** | **Default** | **Description**         |
-+=============+==============+============+=============+=========================+
-| ``name/id`` | Text         | *Any*      | '' ''       | Name of determinant set |
-+-------------+--------------+------------+-------------+-------------------------+
-|             | Text         | *Any*      | '' ''       |                         |
-+-------------+--------------+------------+-------------+-------------------------+
-
-Detailed description of attributes:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In the following, we give a more detailed description of all the options presented in the various xml-blocks described in this section. Only nontrivial attributes are described. Those with simple yes/no options and whose previous description is enough to explain the intended behavior are not included.
-
-``determinantset`` attributes:
-
-- ``type``
-    Type of ``sposet``. For atom-centered based ``sposets``, use type="MolecularOrbital" or type=“MO."
-    Other options described elsewhere in this manual are “spline,"
-    “composite," “pw," “heg," “linearopt," etc.
-
-- ``keyword/key``
-    Type of basis set generated, which does not necessarily match the type of basis set on the input block. The three possible options are: NMO (numerical molecular orbitals), GTO (Gaussian-type orbitals), and STO (Slater-type orbitals). The default option is NMO. By default, QMCPACK will generate numerical orbitals from both GTO and STO types and use cubic or quintic spline interpolation to evaluate the radial functions. This is typically more efficient than evaluating the radial functions in the native basis (Gaussians or exponents) and allows for arbitrarily large contractions without any additional cost. To force use of the native expansion (not recommended), use GTO or STO for each type of input basis set.
-
-- ``transform``
-    Request (or avoid) a transformation of the radial functions to NMO type. The default and recommended behavior is to transform to numerical radial functions. If ``transform`` is set to *yes*, the option ``keyword`` is ignored.
-
-- ``cuspCorrection``
-    Enable (disable) use of the cusp correction algorithm (CASINO REFERENCE) for a ``basisset`` built with GTO functions. The algorithm is implemented as described in (CASINO REFERENCE) and works only with transform="yes" and an input GTO basis set. No further input is needed.
-
-``atomicBasisSet`` attributes:
-
-- ``name/id``
-    Name of the basis set. Names should be unique.
-
-- ``angular``
-    Type of angular functions used in the expansion. In general, two angular basis functions are allowed: "spherical" (for spherical Ylm functions) and "Cartesian" (for functions of the type :math:`x^{n}y^{m}z^{l}`).
-
-- ``expandYlm``
-    Determines whether each basis group is expanded across the corresponding shell of m values (for spherical type) or consistent powers (for Cartesian functions). Options:
-
-      - "No": Do not expand angular functions across corresponding angular shell.
-
-      - "Gaussian": Expand according to Gaussian03 format. This function is compatible only with angular="spherical." For a given input (l,m), the resulting order of the angular functions becomes (1,-1,0) for l=1 and (0,1,-1,2,-2,...,l,-l) for general l.
-
-      - "Natural": Expand angular functions according to (-l,-l+1,...,l-1,l).
-
-      - "Gamess": Expand according to Gamess' format for Cartesian functions. Notice that this option is compatible only with angular="Cartesian." If angular="Cartesian" is used, this option is not necessary.
-
-- ``expM``
-    Determines whether the sign of the spherical Ylm function associated with m (:math:`-1^{m}`) is included in the coefficient matrix or not.
-
-- ``elementType/species``
-    Name of the species where basis functions are centered. Only one ``atomicBasisSet`` block is allowed per species. Additional blocks are ignored. The corresponding species must exist in the ``particleset`` given as the ``source`` option to ``determinantset``. Basis functions for all the atoms of the corresponding species are included in the basis set, based on the order of atoms in the ``particleset``.
-
-``basisGroup`` attributes:
-
-- ``type``
+- type
     Type of input basis radial function. Note that this refers to the type of radial function in the input xml-block, which might not match the radial function generated internally and used in the calculation (if ``transform`` is set to "yes"). Also note that different ``basisGroup`` blocks within a given ``atomicBasisSet`` can have different ``types``.
 
-- ``n/l/m/s``
+- n/l/m/s
     Quantum numbers of the basis function. Note that if
     ``expandYlm`` is set to *"yes"* in ``atomicBasisSet``, a
     full shell of basis functions with the appropriate values of
@@ -492,13 +593,10 @@ In the following, we give a more detailed description of all the options present
     *"l."* Otherwise a single basis function will be given for the
     specific combination of *"(l,m)."*
 
-``radfunc`` attributes for ``type`` = *"Gaussian"*:
 
-- ``TBDoc``
-
-``slaterdeterminant`` attributes:
-
-- ``TBDoc``
+``radfunc`` element:
+  attributes for ``type`` = *"Gaussian"*:
+``TBDoc``
 
 .. _spo-hybrid:
 
