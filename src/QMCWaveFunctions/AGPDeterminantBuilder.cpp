@@ -16,7 +16,6 @@
 /**@file
  *@brief definition of three-body jastrow of Geminal functions
  */
-#include "QMCWaveFunctions/AGPDeterminant.h"
 #include "AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
@@ -24,7 +23,7 @@
 namespace qmcplusplus
 {
 AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
-    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(nullptr)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset)
 {}
 
 template<class BasisBuilderT>
@@ -132,9 +131,9 @@ std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xml
     APP_ABORT(err_msg.str());
     return nullptr;
   }
-  if (mySPOSetBuilderFactory == 0)
+  if (!mySPOSetBuilderFactory)
   {
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
+    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
   // mmorales: this needs to be fixed after changes to BasisSetfactory

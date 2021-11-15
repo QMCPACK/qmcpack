@@ -36,11 +36,7 @@ RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow"
   Optimizable = true;
 }
 
-RPAJastrow::~RPAJastrow()
-{
-  delete_iter(Psi.begin(), Psi.end());
-  delete myHandler;
-}
+RPAJastrow::~RPAJastrow() = default;
 
 bool RPAJastrow::put(xmlNodePtr cur)
 {
@@ -117,19 +113,19 @@ void RPAJastrow::buildOrbital(const std::string& name,
   app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs << "  Kc= " << Kc << std::endl;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
   {
-    myHandler = new LRHandlerTemp<YukawaBreakup<RealType>, LPQHIBasis>(targetPtcl, Kc);
+    myHandler = std::make_unique<LRHandlerTemp<YukawaBreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
   }
   else if (rpafunc == "rpa")
   {
-    myHandler = new LRRPAHandlerTemp<RPABreakup<RealType>, LPQHIBasis>(targetPtcl, Kc);
+    myHandler = std::make_unique<LRRPAHandlerTemp<RPABreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
   }
   else if (rpafunc == "dyukawa")
   {
-    myHandler = new LRHandlerTemp<DerivYukawaBreakup<RealType>, LPQHIBasis>(targetPtcl, Kc);
+    myHandler = std::make_unique<LRHandlerTemp<DerivYukawaBreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
   }
   else if (rpafunc == "drpa")
   {
-    myHandler = new LRRPAHandlerTemp<DerivRPABreakup<RealType>, LPQHIBasis>(targetPtcl, Kc);
+    myHandler = std::make_unique<LRRPAHandlerTemp<DerivRPABreakup<RealType>, LPQHIBasis>>(targetPtcl, Kc);
   }
   else
   {
@@ -159,8 +155,10 @@ void RPAJastrow::makeLongRange()
   twoBodySymm  = kSpaceJastrow::ISOTROPIC;
   oneBodySpin  = false;
   twoBodySpin  = false;
-  LongRangeRPA = new kSpaceJastrow(targetPtcl, targetPtcl, oneBodySymm, -1, "cG1", oneBodySpin, // no one-body part
-                                   twoBodySymm, Kc, "cG2", twoBodySpin);
+  auto LongRangeRPA_uptr =
+      std::make_unique<kSpaceJastrow>(targetPtcl, targetPtcl, oneBodySymm, -1, "cG1", oneBodySpin, // no one-body part
+                                      twoBodySymm, Kc, "cG2", twoBodySpin);
+  LongRangeRPA = LongRangeRPA_uptr.get();
   // fill in CG2 coefficients
   std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
   twoBodyCoefs.resize(myHandler->MaxKshell);
@@ -171,7 +169,7 @@ void RPAJastrow::makeLongRange()
     twoBodyCoefs[is] = prefactorInv * myHandler->Fk_symm[is];
   }
   LongRangeRPA->setCoefficients(oneBodyCoefs, twoBodyCoefs);
-  Psi.push_back(LongRangeRPA);
+  Psi.push_back(std::move(LongRangeRPA_uptr));
 }
 
 void RPAJastrow::makeShortRange()
@@ -187,9 +185,9 @@ void RPAJastrow::makeShortRange()
   //create numerical functor of type BsplineFunctor<RealType>.
   auto nfunc_uptr = std::make_unique<FuncType>();
   nfunc           = nfunc_uptr.get();
-  ShortRangePartAdapter<RealType> SRA(myHandler);
+  ShortRangePartAdapter<RealType> SRA(myHandler.get());
   SRA.setRmax(Rcut);
-  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl);
+  auto j2 = std::make_unique<J2OrbitalSoA<BsplineFunctor<RealType>>>("RPA", targetPtcl);
   size_t nparam                              = 12;  // number of Bspline parameters
   size_t npts                                = 100; // number of 1D grid points for basis functions
   RealType cusp                              = SRA.df(0);
@@ -211,8 +209,8 @@ void RPAJastrow::makeShortRange()
     Y[i] = SRA.evaluate(X[i]);
   }
   j2->addFunc(0, 0, std::move(nfunc_uptr));
-  ShortRangeRPA = j2;
-  Psi.push_back(ShortRangeRPA);
+  ShortRangeRPA = j2.get();
+  Psi.push_back(std::move(j2));
 }
 
 void RPAJastrow::resetParameters(const opt_variables_type& active)
@@ -304,43 +302,40 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
  */
 std::unique_ptr<WaveFunctionComponent> RPAJastrow::makeClone(ParticleSet& tpq) const
 {
-  HandlerType* tempHandler = nullptr;
+  std::unique_ptr<HandlerType> tempHandler;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
   {
-    tempHandler = new LRHandlerTemp<YukawaBreakup<RealType>,
-                                    LPQHIBasis>(dynamic_cast<const LRHandlerTemp<YukawaBreakup<RealType>, LPQHIBasis>&>(
-                                                    *myHandler),
-                                                tpq);
+    tempHandler =
+        std::make_unique<LRHandlerTemp<YukawaBreakup<RealType>, LPQHIBasis>>(dynamic_cast<const LRHandlerTemp<
+                                                                                 YukawaBreakup<RealType>, LPQHIBasis>&>(
+                                                                                 *myHandler),
+                                                                             tpq);
   }
   else if (rpafunc == "rpa")
   {
     tempHandler =
-        new LRRPAHandlerTemp<RPABreakup<RealType>,
-                             LPQHIBasis>(dynamic_cast<const LRRPAHandlerTemp<RPABreakup<RealType>, LPQHIBasis>&>(
-                                             *myHandler),
-                                         tpq);
+        std::make_unique<LRRPAHandlerTemp<RPABreakup<RealType>, LPQHIBasis>>(dynamic_cast<const LRRPAHandlerTemp<
+                                                                                 RPABreakup<RealType>, LPQHIBasis>&>(
+                                                                                 *myHandler),
+                                                                             tpq);
   }
   else if (rpafunc == "dyukawa")
   {
-    tempHandler =
-        new LRHandlerTemp<DerivYukawaBreakup<RealType>,
-                          LPQHIBasis>(dynamic_cast<const LRHandlerTemp<DerivYukawaBreakup<RealType>, LPQHIBasis>&>(
-                                          *myHandler),
-                                      tpq);
+    tempHandler = std::make_unique<LRHandlerTemp<
+        DerivYukawaBreakup<RealType>,
+        LPQHIBasis>>(dynamic_cast<const LRHandlerTemp<DerivYukawaBreakup<RealType>, LPQHIBasis>&>(*myHandler), tpq);
   }
   else if (rpafunc == "drpa")
   {
-    tempHandler =
-        new LRRPAHandlerTemp<DerivRPABreakup<RealType>,
-                             LPQHIBasis>(dynamic_cast<const LRRPAHandlerTemp<DerivRPABreakup<RealType>, LPQHIBasis>&>(
-                                             *myHandler),
-                                         tpq);
+    tempHandler = std::make_unique<LRRPAHandlerTemp<
+        DerivRPABreakup<RealType>,
+        LPQHIBasis>>(dynamic_cast<const LRRPAHandlerTemp<DerivRPABreakup<RealType>, LPQHIBasis>&>(*myHandler), tpq);
   }
 
   auto myClone  = std::make_unique<RPAJastrow>(tpq);
   myClone->Rcut = Rcut;
   myClone->Kc   = Kc;
-  myClone->setHandler(tempHandler);
+  myClone->setHandler(std::move(tempHandler));
   if (!DropLongRange)
     myClone->makeLongRange();
   if (!DropShortRange)

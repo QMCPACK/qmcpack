@@ -278,11 +278,9 @@ string XmlStream::getStreamSection(const std::streampos& start, const std::strea
   // save current place in the stream
   std::streampos curLoc = stream_->tellg();
 
-  char* buffer = new char[end - start];
+  std::string result(end - start, '\0');
   stream_->seekg(start);
-  stream_->read(buffer, end - start);
-  string result(buffer, end - start);
-  delete[] buffer;
+  stream_->read(result.data(), end - start);
 
   // go back to current place in the stream
   stream_->seekg(curLoc);
@@ -401,12 +399,9 @@ void XmlNode::readToString(std::string& s) const
   {
     std::streampos curLoc = stream_->tellg();
 
-    char* buffer = new char[podEnd_ - podStart_];
+    s.resize(podEnd_ - podStart_);
     stream_->seekg(podStart_);
-    stream_->read(buffer, podEnd_ - podStart_);
-
-    s.assign(buffer, podEnd_ - podStart_);
-    delete[] buffer;
+    stream_->read(s.data(), podEnd_ - podStart_);
 
     // go back to current place in the stream
     stream_->seekg(curLoc);
