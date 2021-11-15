@@ -242,39 +242,40 @@ public:
 class DistanceTableAA : public DistanceTableData
 {
 protected:
-  /**defgroup SoA data */
-  /*@{*/
-  /** distances_[i][j] , [num_targets_][num_sources_]
+  /** distances_[num_targets_][num_sources_], [i][3][j] = |r_A2[j] - r_A1[i]|
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
+   *        For only the lower triangle (j<i) data can be accessed safely.
    *            There is no bound check to protect j>=i terms as the nature of operator[].
    *            When the storage of the table is allocated as a single memory segment,
    *            out-of-bound access is still within the segment and
    *            thus doesn't trigger an alarm by the address sanitizer.
-   *        For derived AB, the full table is up-to-date after pbyp move
    */
   std::vector<DistRow> distances_;
 
-  /** displacements_[num_targets_]x[3][num_sources_]
+  /** displacements_[num_targets_][3][num_sources_], [i][3][j] = r_A2[j] - r_A1[i]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
-   *        For derived AB, A1=A, A2=B, the full table is allocated.
+   *        only the lower triangle (j<i) is defined. See the note of distances_.
    */
   std::vector<DisplRow> displacements_;
 
-  /** temp_r */
+  /// temp_r
   DistRow temp_r_;
 
-  /** temp_dr */
+  /// temp_dr
   DisplRow temp_dr_;
-  /*@}*/
+
+  /// old distances
+  DistRow old_r_;
+
+  /// old displacements
+  DisplRow old_dr_;
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableAA(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : DistanceTableData(source, target, modes)
   {}
+
   /** return full table distances
    */
   const std::vector<DistRow>& getDistances() const { return distances_; }
@@ -298,58 +299,47 @@ public:
    */
   const DisplRow& getTempDispls() const { return temp_dr_; }
 
+  /** return old distances set up by move() for optimized distance table consumers
+   */
+  const DistRow& getOldDists() const { return old_r_; }
+
+  /** return old displacements set up by move() for optimized distance table consumers
+   */
+  const DisplRow& getOldDispls() const { return old_dr_; }
+
   /// return multi walker temporary pair distance table data pointer
   virtual const RealType* getMultiWalkerTempDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
     return nullptr;
   }
-
-  /** return old distances set up by move() for optimized distance table consumers
-   */
-  virtual const DistRow& getOldDists() const = 0;
-
-  /** return old displacements set up by move() for optimized distance table consumers
-   */
-  virtual const DisplRow& getOldDispls() const = 0;
 };
 
 class DistanceTableAB : public DistanceTableData
 {
 protected:
-  /**defgroup SoA data */
-  /*@{*/
-  /** distances_[i][j] , [num_targets_][num_sources_]
+  /** distances_[num_targets_][num_sources_], [i][3][j] = |r_A2[j] - r_A1[i]|
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) data can be accessed safely.
-   *            There is no bound check to protect j>=i terms as the nature of operator[].
-   *            When the storage of the table is allocated as a single memory segment,
-   *            out-of-bound access is still within the segment and
-   *            thus doesn't trigger an alarm by the address sanitizer.
-   *        For derived AB, the full table is up-to-date after pbyp move
    */
   std::vector<DistRow> distances_;
 
-  /** displacements_[num_targets_]x[3][num_sources_]
+  /** displacements_[num_targets_][3][num_sources_], [i][3][j] = r_A2[j] - r_A1[i]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined. See the note of distances_
-   *        For derived AB, A1=A, A2=B, the full table is allocated.
    */
   std::vector<DisplRow> displacements_;
 
-  /** temp_r */
+  /// temp_r
   DistRow temp_r_;
 
-  /** temp_dr */
+  /// temp_dr
   DisplRow temp_dr_;
-  /*@}*/
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableAB(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : DistanceTableData(source, target, modes)
   {}
+
   /** return full table distances
    */
   const std::vector<DistRow>& getDistances() const { return distances_; }
@@ -365,6 +355,7 @@ public:
   /** return a row of displacements for a given target particle
    */
   const DisplRow& getDisplRow(int iel) const { return displacements_[iel]; }
+
   /** return the temporary distances when a move is proposed
    */
   const DistRow& getTempDists() const { return temp_r_; }

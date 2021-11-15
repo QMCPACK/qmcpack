@@ -25,14 +25,8 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
-  ///actual memory for dist and displacements_
+  /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
-
-  /// old distances
-  DistRow old_r_;
-
-  /// old displacements
-  DisplRow old_dr_;
 
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
@@ -83,9 +77,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
     temp_r_.resize(num_targets_);
     temp_dr_.resize(num_targets_);
   }
-
-  const DistRow& getOldDists() const override { return old_r_; }
-  const DisplRow& getOldDispls() const override { return old_dr_; }
 
   inline void evaluate(ParticleSet& P) override
   {

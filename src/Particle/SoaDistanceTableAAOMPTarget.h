@@ -30,19 +30,17 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
-  ///actual memory for dist and displacements_
+  /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
 
-  /// old distances
-  DistRow old_r_mem_;
-  DistRow old_r_;
-
-  /// old displacements
-  DisplRow old_dr_mem_;
-  DisplRow old_dr_;
-
+  /// actual memory for temp_r_
   DistRow temp_r_mem_;
+  /// actual memory for temp_dr_
   DisplRow temp_dr_mem_;
+  /// actual memory for old_r_
+  DistRow old_r_mem_;
+  /// actual memory for old_dr_
+  DisplRow old_dr_mem_;
 
   ///multi walker shared memory buffer
   struct DTAAMultiWalkerMem : public Resource
@@ -114,9 +112,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     temp_r_mem_.resize(num_targets_);
     temp_dr_mem_.resize(num_targets_);
   }
-
-  const DistRow& getOldDists() const override { return old_r_; }
-  const DisplRow& getOldDispls() const override { return old_dr_; }
 
   const RealType* getMultiWalkerTempDataPtr() const override
   {
