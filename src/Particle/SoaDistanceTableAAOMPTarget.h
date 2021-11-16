@@ -61,7 +61,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableAA(target, target, DTModes::ALL_OFF),
+        DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),

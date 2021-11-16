@@ -272,8 +272,8 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAA(const ParticleSet& source, const ParticleSet& target, DTModes modes)
-      : DistanceTableData(source, target, modes)
+  DistanceTableAA(const ParticleSet& target, DTModes modes)
+      : DistanceTableData(target, target, modes)
   {}
 
   /** return full table distances
@@ -291,6 +291,7 @@ public:
   /** return a row of displacements for a given target particle
    */
   const DisplRow& getDisplRow(int iel) const { return displacements_[iel]; }
+
   /** return the temporary distances when a move is proposed
    */
   const DistRow& getTempDists() const { return temp_r_; }
