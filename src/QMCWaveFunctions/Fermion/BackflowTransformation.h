@@ -22,20 +22,12 @@
 #include "Particle/ParticleSet.h"
 #include "DistanceTable.h"
 #include "Particle/ParticleBase/ParticleAttribOps.h"
-#include "Particle/MCWalkerConfiguration.h"
-#include "Utilities/ProgressReportEngine.h"
-#include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "QMCWaveFunctions/Fermion/Backflow_ee.h"
-#include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
 {
-class BackflowTransformation //: public OrbitalSetTraits<QMCTraits::ValueType>
+class BackflowTransformation
 {
 public:
   typedef BackflowFunctionBase::WFBufferType WFBufferType;
@@ -58,7 +50,6 @@ public:
 
   typedef Array<HessType, 3> HessArray_t;
 
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
@@ -698,7 +689,7 @@ public:
     Amat_0.resize(NumTargets, NumTargets);
     Amat_1.resize(NumTargets, NumTargets);
     P.update();
-    Walker_t::WFBuffer_t tbuffer;
+    WFBufferType tbuffer;
     size_t BufferCursor = tbuffer.current();
     registerData(P, tbuffer);
     tbuffer.rewind(BufferCursor);

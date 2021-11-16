@@ -27,8 +27,11 @@
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
+
 namespace qmcplusplus
 {
+class TrialWaveFunction;
+
 /** derived class from WaveFunctionComponentBuilder
  *
  * Builder SlaterDeterminant with LCOrbitalSet
