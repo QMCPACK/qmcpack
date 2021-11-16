@@ -22,6 +22,7 @@
 #include "Configuration.h"
 #include "type_traits/scalar_traits.h"
 #include "VariableSet.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
 {
