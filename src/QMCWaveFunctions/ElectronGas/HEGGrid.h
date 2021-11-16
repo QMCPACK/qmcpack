@@ -187,10 +187,7 @@ struct HEGGrid<T, 3>
     kpt.resize(nkpts);
     mk2.resize(nkpts);
     int ikpt = 0;
-    //int checkNum=0;
-    //int ke=0;
     MaxKsq    = 0.0;
-    int rsbin = 0;
     auto rs_it  = rs.begin();
     auto rs_end = rs.end();
     while (ikpt < nkpts && rs_it != rs_end)
@@ -205,7 +202,6 @@ struct HEGGrid<T, 3>
         ++ikpt;
         ++ns_it;
       }
-      ++rsbin;
       ++rs_it;
     }
     MaxKsq = Lattice.ksq(rs_it->second.front());
@@ -653,10 +649,7 @@ struct HEGGrid<T, 2>
     kpt.resize(nkpts);
     mk2.resize(nkpts);
     int ikpt = 0;
-    //int checkNum=0;
-    //int ke=0;
     MaxKsq    = 0.0;
-    int rsbin = 0;
     auto rs_it  = rs.begin();
     auto rs_end = rs.end();
     while (ikpt < nkpts && rs_it != rs_end)
@@ -671,10 +664,9 @@ struct HEGGrid<T, 2>
         ++ikpt;
         ++ns_it;
       }
-      ++rsbin;
       ++rs_it;
     }
-    MaxKsq = Lattice.ksq(*((*rs_it).second->begin()));
+    MaxKsq = Lattice.ksq(rs_it->second.front());
     app_log() << "List of kpoints (half-sphere) " << std::endl;
     for (int ik = 0; ik < kpt.size(); ik++)
     {
