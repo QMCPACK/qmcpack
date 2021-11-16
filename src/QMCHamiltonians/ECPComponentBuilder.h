@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H
 #define QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/SOECPComponent.h"

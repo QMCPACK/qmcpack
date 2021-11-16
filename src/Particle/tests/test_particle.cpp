@@ -17,7 +17,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 
 #include <stdio.h>

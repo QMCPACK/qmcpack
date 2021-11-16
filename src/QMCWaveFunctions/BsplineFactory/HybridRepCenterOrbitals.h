@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 #define QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 #include "spline2/MultiBspline1D.hpp"
@@ -406,8 +406,8 @@ class HybridRepCenterOrbitals
 public:
   static const int D = 3;
   using PointType    = typename AtomicOrbitals<ST>::PointType;
-  using RealType     = typename DistanceTableData::RealType;
-  using PosType      = typename DistanceTableData::PosType;
+  using RealType     = typename DistanceTable::RealType;
+  using PosType      = typename DistanceTable::PosType;
 
 private:
   ///atomic centers

@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_DTDIMPL_AA_H
 
 #include "Lattice/ParticleBConds3DSoa.h"
-#include "DistanceTableData.h"
+#include "DistanceTable.h"
 #include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus

@@ -15,7 +15,7 @@
 
 
 #include "NonLocalECPotential.h"
-#include <DistanceTableData.h>
+#include <DistanceTable.h>
 #include <IteratorUtility.h>
 #include <ResourceCollection.h>
 #include "NonLocalECPComponent.h"

@@ -15,7 +15,7 @@
  */
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "random.hpp"
 #include "mpi/collectives.h"

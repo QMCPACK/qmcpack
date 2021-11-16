@@ -15,7 +15,7 @@
 
 
 #include "Particle/createDistanceTable.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/SoaDistanceTableAB.h"
 #include "CPU/SIMD/algorithm.hpp"
 
@@ -25,14 +25,14 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description)
+DistanceTable* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description)
 {
   using RealType = ParticleSet::RealType;
   enum
   {
     DIM = OHMMS_DIM
   };
-  DistanceTableData* dt = 0;
+  DistanceTable* dt = 0;
   //int sc=s.Lattice.SuperCellEnum;
   int sc = t.Lattice.SuperCellEnum;
   std::ostringstream o;

@@ -22,7 +22,7 @@
 #include "InitMolecularSystem.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-class DistanceTableData;
+class DistanceTable;
 
 /** Thread local context for moving walkers
  *

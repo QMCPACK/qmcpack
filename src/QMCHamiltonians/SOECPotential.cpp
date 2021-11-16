@@ -9,7 +9,7 @@
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "SOECPotential.h"
 #include "Utilities/IteratorUtility.h"
 

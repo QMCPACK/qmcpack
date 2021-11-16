@@ -31,10 +31,10 @@ class ResourceCollection;
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
- * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
+ * Each DistanceTable object is fined by Source and Target of ParticleSet types.
  *
  */
-class DistanceTableData
+class DistanceTable
 {
 public:
   static constexpr unsigned DIM = OHMMS_DIM;
@@ -60,7 +60,7 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableData(const ParticleSet& source, const ParticleSet& target, DTModes modes)
+  DistanceTable(const ParticleSet& source, const ParticleSet& target, DTModes modes)
       : origin_(source),
         num_sources_(source.getTotalNum()),
         num_targets_(target.getTotalNum()),
@@ -69,10 +69,10 @@ public:
   {}
 
   /// copy constructor. deleted
-  DistanceTableData(const DistanceTableData&) = delete;
+  DistanceTable(const DistanceTable&) = delete;
 
   ///virutal destructor
-  virtual ~DistanceTableData() = default;
+  virtual ~DistanceTable() = default;
 
   ///get modes
   inline DTModes getModes() const { return modes_; }
@@ -99,7 +99,7 @@ public:
    * @param P the target particle set
    */
   virtual void evaluate(ParticleSet& P) = 0;
-  virtual void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                            const RefVectorWithLeader<ParticleSet>& p_list) const
   {
 #pragma omp parallel for
@@ -112,7 +112,7 @@ public:
    * @param p_list the target particle set batch
    * @param recompute if true, must recompute. Otherwise, implementation dependent.
    */
-  virtual void mw_recompute(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  virtual void mw_recompute(const RefVectorWithLeader<DistanceTable>& dt_list,
                             const RefVectorWithLeader<ParticleSet>& p_list,
                             const std::vector<bool>& recompute) const
   {
@@ -138,7 +138,7 @@ public:
    * If DTModes::NEED_TEMP_DATA_ON_HOST, host data will be updated.
    * If no consumer requests data on the host, the transfer is skipped.
    */
-  virtual void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  virtual void mw_move(const RefVectorWithLeader<DistanceTable>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
                        const std::vector<PosType>& rnew_list,
                        const IndexType iat = 0,
@@ -169,7 +169,7 @@ public:
   /** walker batched version of updatePartial.
    * If not DTModes::NEED_TEMP_DATA_ON_HOST, host data is not up-to-date and host distance table will not be updated.
    */
-  virtual void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  virtual void mw_updatePartial(const RefVectorWithLeader<DistanceTable>& dt_list,
                                 IndexType jat,
                                 const std::vector<bool>& from_temp)
   {
@@ -188,7 +188,7 @@ public:
    * If not DTModes::NEED_TEMP_DATA_ON_HOST, host distance table data is not updated at all during p-by-p
    * Thus, a recompute is necessary to update the whole host distance table for consumers like the Coulomb potential.
    */
-  virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTable>& dt_list,
                                const RefVectorWithLeader<ParticleSet>& p_list) const
   {
 #pragma omp parallel for
@@ -223,23 +223,23 @@ public:
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const = 0;
 
-  inline void print(std::ostream& os) { throw std::runtime_error("DistanceTableData::print is not supported"); }
+  inline void print(std::ostream& os) { throw std::runtime_error("DistanceTable::print is not supported"); }
 
   /// initialize a shared resource and hand it to a collection
   virtual void createResource(ResourceCollection& collection) const {}
 
   /// acquire a shared resource from a collection
   virtual void acquireResource(ResourceCollection& collection,
-                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+                               const RefVectorWithLeader<DistanceTable>& dt_list) const
   {}
 
   /// return a shared resource to a collection
   virtual void releaseResource(ResourceCollection& collection,
-                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+                               const RefVectorWithLeader<DistanceTable>& dt_list) const
   {}
 };
 
-class DistanceTableAA : public DistanceTableData
+class DistanceTableAA : public DistanceTable
 {
 protected:
   /** distances_[num_targets_][num_sources_], [i][3][j] = |r_A2[j] - r_A1[i]|
@@ -273,7 +273,7 @@ protected:
 public:
   ///constructor using source and target ParticleSet
   DistanceTableAA(const ParticleSet& target, DTModes modes)
-      : DistanceTableData(target, target, modes)
+      : DistanceTable(target, target, modes)
   {}
 
   /** return full table distances
@@ -316,7 +316,7 @@ public:
   }
 };
 
-class DistanceTableAB : public DistanceTableData
+class DistanceTableAB : public DistanceTable
 {
 protected:
   /** distances_[num_targets_][num_sources_], [i][3][j] = |r_A2[j] - r_A1[i]|
@@ -338,7 +338,7 @@ protected:
 public:
   ///constructor using source and target ParticleSet
   DistanceTableAB(const ParticleSet& source, const ParticleSet& target, DTModes modes)
-      : DistanceTableData(source, target, modes)
+      : DistanceTable(source, target, modes)
   {}
 
   /** return full table distances

@@ -14,7 +14,7 @@
 
 
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"

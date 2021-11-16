@@ -23,7 +23,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"

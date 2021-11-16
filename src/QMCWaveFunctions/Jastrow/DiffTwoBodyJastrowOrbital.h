@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_DIFFERENTIAL_TWOBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Utilities/IteratorUtility.h"
 

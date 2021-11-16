@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "Utilities/ProgressReportEngine.h"

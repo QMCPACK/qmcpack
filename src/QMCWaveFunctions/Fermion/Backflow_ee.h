@@ -495,7 +495,7 @@ public:
     //    const auto& myTable                                     = P.getDistTableAA(myTableIndex_);
     //    int maxI                                                = index.size();
     //    int iat                                                 = index[0];
-    //    const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
+    //    const std::vector<DistanceTable::TempDistType>& TMP = myTable.Temp;
     //    for (int i = 1; i < maxI; i++)
     //    {
     //      int j        = index[i];
@@ -540,7 +540,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     //    RealType du, d2u;
     //    const auto& myTable                                     = P.getDistTableAA(myTableIndex_);
-    //    const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
+    //    const std::vector<DistanceTable::TempDistType>& TMP = myTable.Temp;
     //    for (int j = 0; j < iat; j++)
     //    {
     //      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);

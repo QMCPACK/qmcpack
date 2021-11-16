@@ -15,7 +15,7 @@
 
 
 #include "PairCorrEstimator.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
 #include <set>
@@ -85,7 +85,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   int toff = gof_r_prefix.size();
   for (int k = 0; k < other_ids.size(); ++k)
   {
-    const DistanceTableData& t(elns.getDistTable(other_ids[k]));
+    const DistanceTable& t(elns.getDistTable(other_ids[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets[k] = toff;
     const SpeciesSet& species(t.get_origin().getSpeciesSet());

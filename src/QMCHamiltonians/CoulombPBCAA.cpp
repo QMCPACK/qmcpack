@@ -16,7 +16,7 @@
 
 #include "EwaldRef.h"
 #include "CoulombPBCAA.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <numeric>
 

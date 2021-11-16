@@ -28,7 +28,7 @@ enum class DTModes : uint_fast8_t
   /** whether temporary data set on the host is updated or not when a move is proposed.
    * Considering transferring data from accelerator to host is relatively expensive,
    * only request this when data on host is needed for unoptimized code path.
-   * This flag affects three subroutines mw_move, mw_updatePartial, mw_finalizePbyP in DistanceTableData.
+   * This flag affects three subroutines mw_move, mw_updatePartial, mw_finalizePbyP in DistanceTable.
    */
   NEED_TEMP_DATA_ON_HOST = 0x2,
   /** skip data transfer back to host after mw_evalaute full distance table.

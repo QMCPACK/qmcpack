@@ -16,7 +16,7 @@
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "CPU/SIMD/algorithm.hpp"
 #include <map>
@@ -40,8 +40,8 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRow  = DistanceTableData::DistRow;
-  using DisplRow = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTable::DistRow;
+  using DisplRow = DistanceTable::DisplRow;
   ///table index for el-el
   const int ee_Table_ID_;
   ///table index for i-el

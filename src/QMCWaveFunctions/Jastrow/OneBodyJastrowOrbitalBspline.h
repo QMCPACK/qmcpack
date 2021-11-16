@@ -16,7 +16,7 @@
 #ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 #define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"

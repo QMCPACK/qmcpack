@@ -1,5 +1,5 @@
 #include "QMCHamiltonians/SpaceWarpTransformation.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "type_traits/scalar_traits.h"
 namespace qmcplusplus
 {

@@ -16,7 +16,7 @@
 
 
 #include "ForceBase.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/MatrixOperators.h"

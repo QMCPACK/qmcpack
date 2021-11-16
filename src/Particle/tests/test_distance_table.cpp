@@ -18,7 +18,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
 
 #include <stdio.h>

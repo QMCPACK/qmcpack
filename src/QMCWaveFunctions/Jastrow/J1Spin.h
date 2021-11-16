@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_ONEBODYSPINJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_ONEBODYSPINJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Utilities/qmc_common.h"
@@ -40,8 +40,8 @@ struct J1Spin : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRow  = DistanceTableData::DistRow;
-  using DisplRow = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTable::DistRow;
+  using DisplRow = DistanceTable::DisplRow;
   ///table index
   const int myTableID;
   ///number of ions
