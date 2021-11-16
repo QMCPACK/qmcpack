@@ -65,7 +65,7 @@ private:
    * @oaram cur xmlNode for b
    * @return true if successful
    */
-  bool addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur);
+  bool addNode(std::unique_ptr<WaveFunctionComponentBuilder> b, xmlNodePtr cur);
 
   ///many-body wavefunction object
   std::unique_ptr<TrialWaveFunction> targetPsi;

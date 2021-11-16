@@ -122,22 +122,22 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   if (name.empty())
     name = type_in;
 
-  SPOSetBuilder* bb = nullptr;
+  std::unique_ptr<SPOSetBuilder> bb;
 
   if (type == "composite")
   {
     app_log() << "Composite SPO set with existing SPOSets." << std::endl;
-    bb = new CompositeSPOSetBuilder(myComm, *this);
+    bb = std::make_unique<CompositeSPOSetBuilder>(myComm, *this);
   }
   else if (type == "jellium" || type == "heg")
   {
     app_log() << "Electron gas SPO set" << std::endl;
-    bb = new ElectronGasSPOBuilder(targetPtcl, myComm, rootNode);
+    bb = std::make_unique<ElectronGasSPOBuilder>(targetPtcl, myComm, rootNode);
   }
   else if (type == "sho")
   {
     app_log() << "Harmonic Oscillator SPO set" << std::endl;
-    bb = new SHOSetBuilder(targetPtcl, myComm);
+    bb = std::make_unique<SHOSetBuilder>(targetPtcl, myComm);
   }
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())
@@ -146,7 +146,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     {
 #ifdef QMC_COMPLEX
       app_log() << "Einspline Spinor Set\n";
-      bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+      bb = std::make_unique<EinsplineSpinorSetBuilder>(targetPtcl, ptclPool, myComm, rootNode);
 #else
       PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
@@ -155,7 +155,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     {
 #if defined(HAVE_EINSPLINE)
       PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-      bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+      bb = std::make_unique<EinsplineSetBuilder>(targetPtcl, ptclPool, myComm, rootNode);
 #else
       PRE.error("Einspline is missing for B-spline orbitals", true);
 #endif
@@ -163,7 +163,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   }
   else if (type == "molecularorbital" || type == "mo")
   {
-    ParticleSet* ions = 0;
+    ParticleSet* ions = nullptr;
     //initialize with the source tag
     auto pit(ptclPool.find(sourceOpt));
     if (pit == ptclPool.end())
@@ -172,12 +172,12 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       ions = (*pit).second;
     if (targetPtcl.is_spinor_)
 #ifdef QMC_COMPLEX
-      bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
+      bb = std::make_unique<LCAOSpinorBuilder>(targetPtcl, *ions, myComm, rootNode);
 #else
       PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
     else
-      bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
+      bb = std::make_unique<LCAOrbitalBuilder>(targetPtcl, *ions, myComm, rootNode);
   }
 #endif //OHMMS_DIM==3
   PRE.flush();
@@ -186,9 +186,9 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
 
   app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
-  sposet_builders_.emplace_back(bb);
+  sposet_builders_.push_back(std::move(bb));
 
-  return *bb;
+  return *sposet_builders_.back();
 }
 
 

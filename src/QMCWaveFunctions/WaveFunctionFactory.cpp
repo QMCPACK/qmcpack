@@ -122,10 +122,10 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
     {
-      WaveFunctionComponentBuilder* jbuilder = new JastrowBuilder(myComm, targetPtcl, ptclPool);
+      auto jbuilder = std::make_unique<JastrowBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(jbuilder->buildComponent(cur));
       success = true;
-      addNode(jbuilder, cur);
+      addNode(std::move(jbuilder), cur);
     }
     else if (cname == "fdlrwfn")
     {
@@ -133,10 +133,10 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == WaveFunctionComponentBuilder::ionorb_tag)
     {
-      LatticeGaussianProductBuilder* builder = new LatticeGaussianProductBuilder(myComm, targetPtcl, ptclPool);
+      auto builder = std::make_unique<LatticeGaussianProductBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(builder->buildComponent(cur));
       success = true;
-      addNode(builder, cur);
+      addNode(std::move(builder), cur);
     }
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
@@ -145,18 +145,18 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == "example_he")
     {
-      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(myComm, targetPtcl, ptclPool);
+      auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
       success = true;
-      addNode(exampleHe_builder, cur);
+      addNode(std::move(exampleHe_builder), cur);
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
     {
-      AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(myComm, targetPtcl, ptclPool);
+      auto agpbuilder = std::make_unique<AGPDeterminantBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(agpbuilder->buildComponent(cur));
       success = true;
-      addNode(agpbuilder, cur);
+      addNode(std::move(agpbuilder), cur);
     }
 #endif
     if (attach2Node)
@@ -186,30 +186,30 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   oAttrib.add(orbtype, "type");
   oAttrib.add(nuclei, "source");
   oAttrib.put(cur);
-  WaveFunctionComponentBuilder* detbuilder = 0;
+  std::unique_ptr<WaveFunctionComponentBuilder> detbuilder;
   if (orbtype == "electron-gas")
   {
 #if defined(QMC_COMPLEX)
-    detbuilder = new ElectronGasComplexOrbitalBuilder(myComm, targetPtcl);
+    detbuilder = std::make_unique<ElectronGasComplexOrbitalBuilder>(myComm, targetPtcl);
 #else
-    detbuilder = new ElectronGasOrbitalBuilder(myComm, targetPtcl);
+    detbuilder = std::make_unique<ElectronGasOrbitalBuilder>(myComm, targetPtcl);
 #endif
   }
   else if (orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
   {
-    detbuilder = new PWOrbitalBuilder(myComm, targetPtcl, ptclPool);
+    detbuilder = std::make_unique<PWOrbitalBuilder>(myComm, targetPtcl, ptclPool);
   }
   else
-    detbuilder = new SlaterDetBuilder(myComm, sposet_builder_factory_, targetPtcl, *targetPsi, ptclPool);
+    detbuilder = std::make_unique<SlaterDetBuilder>(myComm, sposet_builder_factory_, targetPtcl, *targetPsi, ptclPool);
   targetPsi->addComponent(detbuilder->buildComponent(cur));
-  addNode(detbuilder, cur);
+  addNode(std::move(detbuilder), cur);
   return true;
 }
 
 
-bool WaveFunctionFactory::addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur)
+bool WaveFunctionFactory::addNode(std::unique_ptr<WaveFunctionComponentBuilder> b, xmlNodePtr cur)
 {
-  psiBuilder.emplace_back(b);
+  psiBuilder.push_back(std::move(b));
   ///if(myNode != NULL) {
   ///  std::cout << ">>>> Adding " << (const char*)cur->name << std::endl;
   ///  xmlAddChild(myNode,xmlCopyNode(cur,1));

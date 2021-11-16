@@ -52,7 +52,7 @@ public:
   void makeShortRange();
   void makeLongRange();
 
-  void setHandler(HandlerType* Handler) { myHandler = Handler; };
+  void setHandler(std::unique_ptr<HandlerType> Handler) { myHandler = std::move(Handler); };
 
   /** check out optimizable variables
     */
@@ -104,7 +104,7 @@ private:
   ///@}
   /** main handler
    */
-  HandlerType* myHandler;
+  std::unique_ptr<HandlerType> myHandler;
   ///object to handle the long-range part
   kSpaceJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
@@ -115,7 +115,7 @@ private:
   GridType* myGrid;
   ParticleSet& targetPtcl;
   ///A list of WaveFunctionComponent*
-  std::vector<WaveFunctionComponent*> Psi;
+  UPtrVector<WaveFunctionComponent> Psi;
 };
 } // namespace qmcplusplus
 #endif

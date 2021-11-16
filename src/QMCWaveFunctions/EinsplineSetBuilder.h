@@ -131,7 +131,7 @@ public:
   std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
   /// reader to use BsplineReaderBase
-  BsplineReaderBase* MixedSplineReader;
+  std::unique_ptr<BsplineReaderBase> MixedSplineReader;
 
   ///This is true if we have the orbital derivatives w.r.t. the ion positions
   bool HaveOrbDerivs;
