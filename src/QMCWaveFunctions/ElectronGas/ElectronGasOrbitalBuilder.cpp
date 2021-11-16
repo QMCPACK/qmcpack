@@ -73,7 +73,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     }
     cur = cur->next;
   }
-  HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
+  HEGGrid<RealType> egGrid(targetPtcl.Lattice);
   int nat = targetPtcl.getTotalNum();
   if (nc == 0)
     nc = nc2 = egGrid.getShellIndex(nat / 2);
@@ -106,7 +106,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     if (nup != ndn)
     {
       int nkpts2 = (ndn - 1) / 2;
-      HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
+      HEGGrid<RealType> egGrid2(targetPtcl.Lattice);
       egGrid2.createGrid(nc2, nkpts2);
     }
     psid = std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);

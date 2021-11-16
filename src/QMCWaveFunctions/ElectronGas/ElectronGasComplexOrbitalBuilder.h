@@ -122,7 +122,7 @@ class ElectronGasSPOBuilder : public SPOSetBuilder
 protected:
   bool has_twist;
   PosType unique_twist;
-  HEGGrid<RealType, OHMMS_DIM> egGrid;
+  HEGGrid<RealType> egGrid;
   xmlNodePtr spo_node;
 
 public:

@@ -22,30 +22,24 @@
 
 namespace qmcplusplus
 {
-template<typename T, unsigned D>
+template<typename T>
 struct kpdata
 {
-  TinyVector<T, D> k;
+  TinyVector<T, 3> k;
   T k2;
   int g;
 };
 
 
-template<typename T, unsigned D>
-bool kpdata_comp(const kpdata<T, D>& left, const kpdata<T, D>& right)
+template<typename T>
+bool kpdata_comp(const kpdata<T>& left, const kpdata<T>& right)
 {
   return left.k2 < right.k2;
 }
 
-
-template<class T, unsigned D>
-struct HEGGrid
-{};
-
-
 //three-d specialization
 template<class T>
-struct HEGGrid<T, 3>
+struct HEGGrid
 {
   typedef CrystalLattice<T, 3> PL_t;
   typedef typename PL_t::SingleParticlePos_t PosType;
@@ -64,7 +58,7 @@ struct HEGGrid<T, 3>
   PosType twist;
 
 
-  typedef kpdata<T, 3> kpdata_t;
+  typedef kpdata<T> kpdata_t;
   typedef std::vector<kpdata_t> kpoints_t;
 
   std::optional<kpoints_t> kpoints_grid;
@@ -245,7 +239,7 @@ struct HEGGrid<T, 3>
           ++kp;
         }
     // sort kpoints by magnitude
-    sort(kpoints.begin(), kpoints.end(), kpdata_comp<T, 3>);
+    sort(kpoints.begin(), kpoints.end(), kpdata_comp<T>);
     // eliminate kpoints outside of inscribing sphere
     int nkp = 0;
     kp      = kpoints.begin();
