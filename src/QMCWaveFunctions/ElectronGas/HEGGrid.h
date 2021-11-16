@@ -18,6 +18,7 @@
 
 #include "Lattice/CrystalLattice.h"
 #include <map>
+#include <optional>
 
 namespace qmcplusplus
 {
@@ -66,11 +67,11 @@ struct HEGGrid<T, 3>
   typedef kpdata<T, 3> kpdata_t;
   typedef std::vector<kpdata_t> kpoints_t;
 
-  kpoints_t* kpoints_grid;
+  std::optional<kpoints_t> kpoints_grid;
   int nctmp;
 
 
-  HEGGrid(PL_t& lat) : Lattice(lat), twist(0.0), kpoints_grid(0), nctmp(-1)
+  HEGGrid(PL_t& lat) : Lattice(lat), twist(0.0), nctmp(-1)
   {
     n_within_shell.resize(31);
     n_within_shell[0]  = 1;
@@ -106,10 +107,7 @@ struct HEGGrid<T, 3>
     n_within_shell[30] = 895;
   }
 
-  ~HEGGrid()
-  {
-    clear_kpoints();
-  }
+  ~HEGGrid() = default;
 
   /** return the estimated number of grid in each direction */
   inline int getNC(int nup) const { return static_cast<int>(std::pow(static_cast<T>(nup), 1.0 / 3.0)) / 2 + 1; }
@@ -219,17 +217,13 @@ struct HEGGrid<T, 3>
   }
 
 
-  void clear_kpoints()
-  {
-    if (kpoints_grid != 0)
-      delete kpoints_grid;
-  }
+  void clear_kpoints() { kpoints_grid.reset(); }
 
 
   void create_kpoints(int nc, const PosType& tw, T tol = 1e-6)
   {
-    if (kpoints_grid == 0)
-      kpoints_grid = new kpoints_t;
+    if (!kpoints_grid.has_value())
+      kpoints_grid = kpoints_t();
     else if (nc <= nctmp)
       return;
     nctmp              = nc;
@@ -369,9 +363,9 @@ struct HEGGrid<T, 2>
   typedef kpdata<T, 2> kpdata_t;
   typedef std::vector<kpdata_t> kpoints_t;
 
-  kpoints_t* kpoints_grid;
+  std::optional<kpoints_t> kpoints_grid;
 
-  HEGGrid(PL_t& lat) : Lattice(lat), kpoints_grid(0)
+  HEGGrid(PL_t& lat) : Lattice(lat)
   {
     n_within_shell.resize(220);
     //fill this in
