@@ -18,7 +18,9 @@ export https_proxy=http://proxy.ccs.ornl.gov:3128/
 log_dir=${base_dir}/log/$(date +%y_%m_%d)
 mkdir -p ${log_dir}
 
-# module load llvm # has a conflict with serial cray-hdf5/1.12.0.6
+# required to load openblas
+module load PrgEnv-gnu
+# module load llvm # has a conflict with serial cray-hdf5
 module load gcc
 module load cmake
 module load git
@@ -26,9 +28,9 @@ module load git
 # QMCPACK dependencies
 module load libxml2/2.9.12
 module load fftw
-module load cray-hdf5/1.12.0.6 # require serial hdf5
+module load cray-hdf5 # require serial hdf5
 module load boost
-module load openblas
+module load openblas/0.3.17-omp
 module load rocm
 
 module list
