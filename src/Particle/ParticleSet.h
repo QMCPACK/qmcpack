@@ -234,10 +234,11 @@ public:
    */
   int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
 
-  /** get a distance table by table_ID
-   */
+  ///get a distance table by table_ID
   inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  ///get a distance table by table_ID and dyanmic_cast to DistanceTableAA
   const DistanceTableAA& getDistTableAA(int table_ID) const;
+  ///get a distance table by table_ID and dyanmic_cast to DistanceTableAB
   const DistanceTableAB& getDistTableAB(int table_ID) const;
 
   /** reset all the collectable quantities during a MC iteration

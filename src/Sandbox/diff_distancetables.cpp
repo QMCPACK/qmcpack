@@ -119,8 +119,8 @@ int main(int argc, char** argv)
   //copy of ParticleSet for validations
   ParticleSet::ParticlePos_t Rcopy(els.R);
 
-  const auto& d_ee = els.getDistTable(els.addTable(els));
-  const auto& d_ie = els.getDistTable(els.addTable(ions));
+  const auto& d_ee = els.getDistTableAA(els.addTable(els));
+  const auto& d_ie = els.getDistTableAB(els.addTable(ions));
 
   RealType Rsim = els.Lattice.WignerSeitzRadius;
 
