@@ -281,9 +281,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     // save properties into walker
     for (int iw = 0; iw < walkers.size(); ++iw)
       walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
+  }
 
-    if(accumulate_this_step)
-      crowd.accumulate(step_context.get_random_gen());
+  if (accumulate_this_step)
+  {
+    ScopedTimer est_timer(timers.estimators_timer);
+    crowd.accumulate(step_context.get_random_gen());
   }
 
   { // T-moves
@@ -339,9 +342,10 @@ void DMCBatched::runDMCStep(int crowd_id,
   const int max_steps  = sft.qmcdrv_input.get_max_steps();
   const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
+  const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == max_steps);
   const bool accumulate_this_step = true;
-  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
+  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
+                 accumulate_this_step);
 }
 
 void DMCBatched::process(xmlNodePtr node)
