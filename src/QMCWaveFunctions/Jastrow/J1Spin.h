@@ -236,7 +236,8 @@ struct J1Spin : public WaveFunctionComponent
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
     for (int k = 0; k < ratios.size(); ++k)
-      ratios[k] = std::exp(Vat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(myTableID).getDistRow(k)));
+      ratios[k] =
+          std::exp(Vat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(myTableID).getDistRow(k)));
   }
 
   void evaluateDerivatives(ParticleSet& P,

@@ -206,7 +206,7 @@ public:
     // for (int i=0; i<centers.getTotalNum(); i++)
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
-    C               = C_host;
+    C = C_host;
   }
 };
 } // namespace qmcplusplus

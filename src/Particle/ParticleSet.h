@@ -665,8 +665,7 @@ public:
    */
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
 
-  static RefVectorWithLeader<DistanceTable> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                                 int id);
+  static RefVectorWithLeader<DistanceTable> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id);
   static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 

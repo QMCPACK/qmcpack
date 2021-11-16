@@ -33,7 +33,7 @@ DistanceTable* createDistanceTableABOMPTarget(const ParticleSet& s, ParticleSet&
     DIM = OHMMS_DIM
   };
   DistanceTable* dt = 0;
-  int sc                = t.Lattice.SuperCellEnum;
+  int sc            = t.Lattice.SuperCellEnum;
   std::ostringstream o;
   o << "  Distance table for dissimilar particles (A-B):" << std::endl;
   o << "    source: " << s.getName() << "  target: " << t.getName() << std::endl;

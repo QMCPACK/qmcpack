@@ -11,6 +11,7 @@
 
 
 #include "Particle/ParticleSet.h"
+#include "DistanceTable.h"
 #include "L2Potential.h"
 #include "Utilities/IteratorUtility.h"
 

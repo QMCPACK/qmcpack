@@ -152,8 +152,7 @@ public:
     auto resource_index = collection.addResource(std::make_unique<DTABMultiWalkerMem>());
   }
 
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTable>& dt_list) const override
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTABMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
@@ -163,8 +162,7 @@ public:
     associateResource(dt_list);
   }
 
-  void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTable>& dt_list) const override
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_));
     for (size_t iw = 0; iw < dt_list.size(); iw++)

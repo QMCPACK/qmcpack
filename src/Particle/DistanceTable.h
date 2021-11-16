@@ -229,13 +229,11 @@ public:
   virtual void createResource(ResourceCollection& collection) const {}
 
   /// acquire a shared resource from a collection
-  virtual void acquireResource(ResourceCollection& collection,
-                               const RefVectorWithLeader<DistanceTable>& dt_list) const
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const
   {}
 
   /// return a shared resource to a collection
-  virtual void releaseResource(ResourceCollection& collection,
-                               const RefVectorWithLeader<DistanceTable>& dt_list) const
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const
   {}
 };
 
@@ -272,9 +270,7 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAA(const ParticleSet& target, DTModes modes)
-      : DistanceTable(target, target, modes)
-  {}
+  DistanceTableAA(const ParticleSet& target, DTModes modes) : DistanceTable(target, target, modes) {}
 
   /** return full table distances
    */

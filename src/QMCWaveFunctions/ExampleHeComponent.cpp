@@ -12,6 +12,7 @@
 
 #include "ExampleHeComponent.h"
 #include "OhmmsData/AttributeSet.h"
+#include "DistanceTable.h"
 
 /**@file ExampleHeComponent.cpp
  */

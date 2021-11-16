@@ -13,6 +13,7 @@
 
 
 #include "StressPBC.h"
+#include "DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"

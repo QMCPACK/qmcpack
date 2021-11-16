@@ -125,8 +125,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
   }
 
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTable>& dt_list) const override
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
@@ -161,8 +160,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTable>& dt_list) const override
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
     const size_t nw = dt_list.size();

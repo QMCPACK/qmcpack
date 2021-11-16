@@ -15,6 +15,13 @@
 
 #ifndef QMCPLUSPLUS_BACKFLOW_TRANSFORMATION_H
 #define QMCPLUSPLUS_BACKFLOW_TRANSFORMATION_H
+
+#include "Configuration.h"
+#include <map>
+#include <cmath>
+#include "Particle/ParticleSet.h"
+#include "DistanceTable.h"
+#include "Particle/ParticleBase/ParticleAttribOps.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -24,11 +31,6 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "Particle/ParticleSet.h"
-#include "Particle/ParticleBase/ParticleAttribOps.h"
-#include "Configuration.h"
-#include <map>
-#include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus

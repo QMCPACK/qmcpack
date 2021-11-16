@@ -31,7 +31,7 @@ DistanceTable* createDistanceTableAA(ParticleSet& s, std::ostream& description)
   {
     DIM = OHMMS_DIM
   };
-  int sc                = s.Lattice.SuperCellEnum;
+  int sc            = s.Lattice.SuperCellEnum;
   DistanceTable* dt = 0;
   std::ostringstream o;
   o << "  Distance table for similar particles (A-A):" << std::endl;

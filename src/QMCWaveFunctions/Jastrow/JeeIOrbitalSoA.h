@@ -430,7 +430,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
-    const auto& eI_dists              = eI_table.getDistances();
+    const auto& eI_dists = eI_table.getDistances();
     const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
@@ -885,9 +885,9 @@ public:
       constexpr valT ctwo(2);
       constexpr valT lapfac = OHMMS_DIM - cone;
 
-      const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
-      const auto& ee_dists              = ee_table.getDistances();
-      const auto& ee_displs             = ee_table.getDisplacements();
+      const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+      const auto& ee_dists  = ee_table.getDistances();
+      const auto& ee_displs = ee_table.getDisplacements();
 
       build_compact_list(P);
 
