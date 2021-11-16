@@ -163,6 +163,7 @@ set(FERMION_SRCS
     Fermion/MultiDiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.2.cpp
     Fermion/BackflowBuilder.cpp
+    Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
     Fermion/SlaterDetWithBackflow.cpp
     Fermion/MultiSlaterDeterminantWithBackflow.cpp

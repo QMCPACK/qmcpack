@@ -14,8 +14,9 @@
 
 #include <regex>
 #include "OhmmsData/Libxml2Doc.h"
-#include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
+#include "ParticleSet.h"
+#include "ParticleSetPool.h"
+#include "DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"

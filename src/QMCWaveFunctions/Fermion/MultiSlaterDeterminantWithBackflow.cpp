@@ -15,6 +15,8 @@
 
 #include "MultiSlaterDeterminantWithBackflow.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "Fermion/DiracDeterminantWithBackflow.h"
+#include "Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
 {

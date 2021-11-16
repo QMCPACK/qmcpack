@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
