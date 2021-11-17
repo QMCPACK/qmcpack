@@ -25,7 +25,7 @@ namespace qmcplusplus
 template<typename T>
 struct kpdata
 {
-  TinyVector<T, 3> k;
+  TinyVector<T, OHMMS_DIM> k;
   T k2;
   int g;
 };
@@ -41,7 +41,7 @@ bool kpdata_comp(const kpdata<T>& left, const kpdata<T>& right)
 template<class T>
 struct HEGGrid
 {
-  typedef CrystalLattice<T, 3> PL_t;
+  typedef CrystalLattice<T, OHMMS_DIM> PL_t;
   typedef typename PL_t::SingleParticlePos_t PosType;
   typedef typename PL_t::Scalar_t RealType;
 
