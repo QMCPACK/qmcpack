@@ -63,7 +63,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildCo
   typedef SlaterDet SlaterDeterminant_t;
   int nat = targetPtcl.getTotalNum();
   int nup = nat / 2;
-  HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
+  HEGGrid<RealType> egGrid(targetPtcl.Lattice);
   if (nc == 0)
     nc = egGrid.getShellIndex(nup);
   egGrid.createGrid(nc, nup, twist);
