@@ -54,54 +54,24 @@ struct HEGGrid
   std::vector<PosType> kpt;
   std::vector<T> mk2;
   std::vector<int> deg;
-  std::vector<int> n_within_shell;
-  PosType twist;
+  static constexpr std::array<int, 31> n_within_shell{{1,   7,   19,  27,  33,  57,  81,  93,  123, 147, 171,
+                                                       179, 203, 251, 257, 305, 341, 365, 389, 437, 461, 485,
+                                                       515, 587, 619, 691, 739, 751, 799, 847, 895}};
+  PosType twist{0.0};
 
 
   typedef kpdata<T> kpdata_t;
   typedef std::vector<kpdata_t> kpoints_t;
 
   std::optional<kpoints_t> kpoints_grid;
-  int nctmp;
+  int nctmp{-1};
 
 
-  HEGGrid(PL_t& lat) : Lattice(lat), twist(0.0), nctmp(-1)
-  {
-    n_within_shell.resize(31);
-    n_within_shell[0]  = 1;
-    n_within_shell[1]  = 7;
-    n_within_shell[2]  = 19;
-    n_within_shell[3]  = 27;
-    n_within_shell[4]  = 33;
-    n_within_shell[5]  = 57;
-    n_within_shell[6]  = 81;
-    n_within_shell[7]  = 93;
-    n_within_shell[8]  = 123;
-    n_within_shell[9]  = 147;
-    n_within_shell[10] = 171;
-    n_within_shell[11] = 179;
-    n_within_shell[12] = 203;
-    n_within_shell[13] = 251;
-    n_within_shell[14] = 257;
-    n_within_shell[15] = 305;
-    n_within_shell[16] = 341;
-    n_within_shell[17] = 365;
-    n_within_shell[18] = 389;
-    n_within_shell[19] = 437;
-    n_within_shell[20] = 461;
-    n_within_shell[21] = 485;
-    n_within_shell[22] = 515;
-    n_within_shell[23] = 587;
-    n_within_shell[24] = 619;
-    n_within_shell[25] = 691;
-    n_within_shell[26] = 739;
-    n_within_shell[27] = 751;
-    n_within_shell[28] = 799;
-    n_within_shell[29] = 847;
-    n_within_shell[30] = 895;
-  }
+  HEGGrid(PL_t& lat) : Lattice(lat) {}
+
 
   ~HEGGrid() = default;
+
 
   /** return the estimated number of grid in each direction */
   inline int getNC(int nup) const { return static_cast<int>(std::pow(static_cast<T>(nup), 1.0 / 3.0)) / 2 + 1; }
@@ -133,7 +103,7 @@ struct HEGGrid
   //return the shell index for nkpt k-points
   inline int getShellIndex(int nkpt) const
   {
-    std::vector<int>::const_iterator loc = std::upper_bound(n_within_shell.begin(), n_within_shell.end(), nkpt);
+    auto loc = std::upper_bound(n_within_shell.begin(), n_within_shell.end(), nkpt);
     if (loc < n_within_shell.end())
       return loc - n_within_shell.begin() - 1;
     else
@@ -329,5 +299,6 @@ struct HEGGrid
     }
   }
 };
+
 } // namespace qmcplusplus
 #endif
