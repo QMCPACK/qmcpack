@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Configuration.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {

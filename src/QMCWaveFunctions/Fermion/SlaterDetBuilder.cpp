@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"

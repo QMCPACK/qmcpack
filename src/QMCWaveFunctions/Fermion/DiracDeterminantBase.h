@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
 {
