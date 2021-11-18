@@ -24,14 +24,17 @@ RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
       params_supplied(false),
       nel_major_(0)
 {
+  std::cerr << "Entering RotatedSPOs::RotatedSPOs...\n";
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
+  std::cerr << "Leaving RotatedSPOs::RotatedSPOs...\n";
 }
 
 RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
+  std::cerr << "Entering RotatedSPOs::buildOptVariables(const size_t nel)...\n";
 #if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
@@ -54,21 +57,55 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
     buildOptVariables(created_m_act_rot_inds);
   }
 #endif
+  std::cerr << "Leaving RotatedSPOs::buildOptVariables(const size_t nel)...\n";
 }
 
+
+  /* 
+     @TODO (JPT) 28.09.2021
+     What does this function do?
+  */
 void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
 {
-#if !defined(QMC_COMPLEX)
-  const size_t nmo = Phi->getOrbitalSetSize();
-  const size_t nb  = Phi->getBasisSetSize();
+  std::cerr << "Entered RotatedSPOs::buildOptVariables( vector rotations )...\n";
 
+#if !defined(QMC_COMPLEX)   // @TODO generalize for complex case
+
+  // nmo = Number of electrons = size of Slater Det
+  const size_t nmo = Phi->getOrbitalSetSize();
+  //const size_t nb  = Phi->getBasisSetSize();
+  std::cerr << "  Phi = " << Phi->getName() << "\n";
+  std::cerr << "  nmo = " << nmo << "\n";
+  
   // create active rotations
   m_act_rot_inds = rotations;
 
-  // This will add the orbital rotation parameters to myVars
-  // and will also read in initial parameter values supplied in input file
+  /* 
+     @DEBUG (JPT) 29.09.2021
+     nparams_active != to the number of values inside the <opt_vars> xml tag
+     So what's it holding?
+   */
   int p, q;
   int nparams_active = m_act_rot_inds.size();
+  for (int i = 0; i < nparams_active; i++)
+  {
+    p = m_act_rot_inds[i].first;
+    q = m_act_rot_inds[i].second;
+    std::cerr << myName << "_orb_rot_"
+	      << (p < 10 ? "0" : "")
+	      << (p < 100 ? "0" : "")
+	      << (p < 1000 ? "0" : "")
+	      << p << "_"
+	      << (q < 10 ? "0" : "")
+	      << (q < 100 ? "0" : "")
+	      << (q < 1000 ? "0" : "")
+	      << q
+	      << " = " << params[i] << "\n";
+  }
+  
+  // This will add the orbital rotation parameters to myVars
+  // and will also read in initial parameter values supplied in input file
+  std::cerr << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
 
   app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
   if (params_supplied)
@@ -118,10 +155,14 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     myVars.Recompute.erase(myVars.Recompute.begin(), myVars.Recompute.end());
   }
 #endif
+  std::cerr << "Exited RotatedSPOs::buildOptVariables( vector rotations )...\n";
 }
+
 
 void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
 {
+  std::cerr << "Entering RotatedSPOs::apply_rotation()...\n";
+  
   assert(param.size() == m_act_rot_inds.size());
 
   const size_t nmo = Phi->getOrbitalSetSize();
@@ -142,12 +183,14 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   exponentiate_antisym_matrix(rot_mat);
 
   Phi->applyRotation(rot_mat, use_stored_copy);
+  std::cerr << "Leaving RotatedSPOs::apply_rotation()...\n";
 }
 
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
 void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
 {
+  std::cerr << "Entering RotatedSPOs::exponentiate_antisym_matrix()...\n";
   const int n = mat.rows();
   std::vector<std::complex<RealType>> mat_h(n * n, 0);
   std::vector<RealType> eval(n, 0);
@@ -206,6 +249,7 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
       }
       mat[j][i] = mat_d[i + n * j].real();
     }
+  std::cerr << "Leaving RotatedSPOs::exponentiate_antisym_matrix()...\n";
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -215,6 +259,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const int& FirstIndex,
                                       const int& LastIndex)
 {
+  std::cerr << "Entering RotatedSPOs::EvaluateDerivatives()...\n";
   const size_t nel = LastIndex - FirstIndex;
   const size_t nmo = Phi->getOrbitalSetSize();
 
@@ -309,6 +354,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     dlogpsi.at(kk)      = T(p, q);
     dhpsioverpsi.at(kk) = ValueType(-0.5) * Y4(p, q);
   }
+  std::cerr << "Leaving RotatedSPOs::EvaluateDerivatives()...\n";
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -338,6 +384,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const size_t NP2,
                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
+  std::cerr << "Entering RotatedSPOs::EvaluateDerivatives( big version )...\n";
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -400,6 +447,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                       detValues_up, detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn,
                       B_grad, B_lapl, detData_up, N1, N2, NP1, NP2, lookup_tbl);
   }
+  std::cerr << "Leaving RotatedSPOs::EvaluateDerivatives( big version )...\n";
+
 }
 
 
@@ -419,6 +468,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
                                         const std::vector<int>& detData_up,
                                         const std::vector<std::vector<int>>& lookup_tbl)
 {
+  std::cerr << "Entering RotatedSPOs::EvaluateDerivativesWF()...\n";
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -437,6 +487,8 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
                         M_dn, Minv_up, Minv_dn, detData_up, lookup_tbl);
   }
+  std::cerr << "Leaving RotatedSPOs::EvaluateDerivativesWF()...\n";
+
 }
 
 void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,

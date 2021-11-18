@@ -85,8 +85,9 @@ public:
 
 
   /** return the size of the orbitals
+      @JPT 11.17.2021 made this virtual to support SplineR2R orbopt
    */
-  inline int getOrbitalSetSize() const { return OrbitalSetSize; }
+  virtual inline int getOrbitalSetSize() const { return OrbitalSetSize; }
 
   /** Query if this SPOSet uses OpenMP offload
   */

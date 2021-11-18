@@ -20,7 +20,161 @@
 
 namespace qmcplusplus
 {
-template<typename ST>
+
+  /*
+    @TODO (JPT) 20.09.2021
+    Set the number of orbitals to include in the rotations
+   */
+  template<typename ST>
+  inline void SplineR2R<ST>::setOrbitalSetSize( int norbs )
+  {
+    std::cerr << "Entered SplineR2R::setOrbitalSetSize()...\n";
+    std::cerr << "  Norbs = " << norbs << "\n";
+    Identity       = false;
+    m_ntot_orbs    = norbs;
+    myV.resize(m_ntot_orbs);
+    myL.resize(m_ntot_orbs);
+    this->checkObject();
+    std::cerr << "Exited SplineR2R::setOrbitalSetSize()...\n";
+  }
+
+  template <typename ST>
+  void SplineR2R<ST>::checkObject() const
+  {
+    std::cerr << "Entered SplineR2R::checkObject()...\n";
+    // If no rotations, ensure the number of electrons = number of orbitals
+    if (Identity)
+      {
+	if ( m_ntot_orbs != m_nocc_orbs )
+	  throw std::runtime_error("SplineR2R::checkObject() Norbs and Nelec must be equal if Identity = true!");
+      }
+    else
+      {
+	std::cerr << "SplineR2R::checkObject() case Identity = false is not implemented!\n";
+      }
+    std::cerr << "Exited SplineR2R::checkObject()...\n";
+  }
+  // End function
+
+  template <typename ST>
+  void SplineR2R<ST>::applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy)
+{
+  std::cerr << "Entered SplineR2R::applyRotation()...\n";
+
+  /* 
+     @TODO (JPT) 06.10.2021
+     This is where the orbitals are transformed. 
+     Operates directly on the spline coeffs.
+     
+     Q1: Do we need to carry around the original unrotated splines?
+
+     Q2: If Q1=yes, then how to do this efficiently?
+         Looks like spline coefs ~ 131 MB for 4atom Al cell. So, this array will be quite large in general....
+	 Probably going to need a strategy for handling very large arrays.
+
+     Q3: How do we do updates to rotations, e.g. during optimization?
+         I guess we need to expose derivatives via some function, but how?
+   */
+
+  // @DEBUG SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+  auto spline_ptr = SplineInst->getSplinePtr();
+  if ( spline_ptr == nullptr )  // Sanity check
+    {
+      APP_ABORT("ERROR in SplineR2R::apply_rotation()! spline_ptr is nullptr.");
+    }
+
+  /* @DEBUG (JPT) 12.10.2021 
+     ~~ Spline stuff ~~
+     num_splines = Total number of SPOs = N_up_elec + N_dn_elec (what about virtuals?)
+     coefs_size  = Size of the coefs = N_x_coefs * N_y_coefs * N_z_coefs * N_orbs
+     spl_coefs   = Raw pointer to a hunk o' memory
+     
+     Because coefs is a raw pointer, we have to take care to index into it
+     with some care. Supposedly, the value of the nth SPO at a point xi, yi, zi
+     is given by:
+
+     coefs[offset] = x_stride*xi + y_stride*yi + z_stride*zi + n
+
+     Observe that the SPO index is adjacent in memory. Also, it seems that the 
+     layout includes padding of the x,y,z, and orbital indices. In the case of 
+     the spatial indices, the padding depends on the boundary conditions.
+     For 3d PBC's, the padding seems to be 3 (Cf. MultiBspline.hpp) . 
+     I.e. for a 100x100x100 mesh, the "size" of the x-,y-, and z-dimensions 
+     of the coefs is actually 103x103x103. The orbital index is padded in order 
+     to achieve 16byte alignment for SSE.
+
+     So, in order to index into the coefs array, need 3 things:
+     1 - The strides
+     2 - The physical mesh dimensions
+     3 - The padding for the physical mesh and orbitals
+  */
+  unsigned long int spl_num_splines = spline_ptr->num_splines;
+  unsigned long int spl_coefs_size  = spline_ptr->coefs_size;
+  std::cerr << " *** TEST spline_ptr->num_splines = " << spl_num_splines << "\n";
+  std::cerr << " *** TEST spline_ptr->coefs_size = "  << spl_coefs_size  << "\n";
+
+  auto spl_coefs = spline_ptr->coefs;    // This is a float* or similar
+
+  // 1 - Strides incl. padding
+  auto x_stride = spline_ptr->x_stride;
+  auto y_stride = spline_ptr->y_stride;
+  auto z_stride = spline_ptr->z_stride;
+
+  // 2 - Physical mesh size (no padding)
+  auto nx_nopad = spline_ptr->x_grid.num;
+  auto ny_nopad = spline_ptr->y_grid.num;
+  auto nz_nopad = spline_ptr->z_grid.num;
+
+  // 3 - Padding in x,y,z directions
+  // Compare to multi_bspline_create.c lines 290-292.
+  auto nz_pad = y_stride / z_stride;
+  auto ny_pad = x_stride / y_stride;
+  auto nx_pad = spl_coefs_size / ny_pad / nz_pad / z_stride;
+
+  // Test that we got it right
+  std::cerr << " *** TEST x_stride = " << x_stride << "\n";
+  std::cerr << " *** TEST y_stride = " << y_stride << "\n";
+  std::cerr << " *** TEST z_stride = " << z_stride << "\n";
+
+  std::cerr << " *** TEST nx_nopad = " << nx_nopad << "\n";
+  std::cerr << " *** TEST ny_nopad = " << ny_nopad << "\n";
+  std::cerr << " *** TEST nz_nopad = " << nz_nopad << "\n";
+
+  std::cerr << " *** TEST nx_pad = " << nx_pad << "\n";
+  std::cerr << " *** TEST ny_pad = " << ny_pad << "\n";
+  std::cerr << " *** TEST nz_pad = " << nz_pad << "\n";
+
+  // Regarding Q2 above, figure out the size in MB of the coefs array
+  double arr_size_MB = static_cast<double>(spl_coefs_size) * sizeof(double) / 1000000.;
+  std::cerr << "*** TEST spl_coefs size = " << arr_size_MB << " (MB)\n";
+  std::cerr << "test\n";
+  /* 
+     ~~ Apply rotation to orbitals ~~
+  */
+  std::cerr << "Going to apply a rotation to the 1st spline...";
+  // Get the offsets for this SPO
+  for ( auto x=0; x<nx_pad; x++ )
+    {
+      for ( auto y=0; y<ny_pad; y++ )
+	{
+	  for ( auto z=0; z<nz_pad; z++ )
+	    {
+	      auto offset = x_stride*x + y_stride*y + z_stride*z + 0;
+	      auto val = *(spl_coefs + offset);
+	      *(spl_coefs + offset) = val + 0.2;
+	    }
+	}
+    }
+  
+  std::cerr << "Done!";
+    
+  std::cerr << "Exited SplineR2R::applyRotation()...\n";
+}
+
+
+
+  // @TODO (JPT) 04.10.2021 Dafuq does this do?
+  template<typename ST>
 inline void SplineR2R<ST>::set_spline(SingleSplineType* spline_r,
                                       SingleSplineType* spline_i,
                                       int twist,

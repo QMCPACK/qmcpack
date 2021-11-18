@@ -82,11 +82,13 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   if (optimize == "rotation" || optimize == "yes")
   {
+    // @JPT 13.11.2021 orbopt only works for real wfns at the moment
 #ifdef QMC_COMPLEX
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
     abort();
 #else
     // create sposet with rotation
+    std::cerr << "Going to make a RotatedSPOs wave function...\n";
     auto& sposet_ref = *sposet;
     auto rot_spo    = std::make_unique<RotatedSPOs>(std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -100,7 +102,8 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       }
       tcur = tcur->next;
     }
-
+    std::cerr << "Got this far!...\n";
+    
     // pass sposet name and rename sposet before rotation
     if (!sposet_ref.getName().empty())
     {

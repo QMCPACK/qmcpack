@@ -208,7 +208,12 @@ public:
 
   //  void setBasisSet(basis_type* bs);
 
-  int getBasisSetSize() const override { return Phi->getBasisSetSize(); }
+  int getBasisSetSize() const override
+  {
+    std::cerr << "Entered RotatedSPOs::getBasisSetSize()...\n";
+    std::cerr << "Exited  RotatedSPOs::getBasisSetSize()...\n";
+    return Phi->getBasisSetSize();
+  }
 
   void checkObject() const override { Phi->checkObject(); }
 
