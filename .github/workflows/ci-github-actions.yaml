@@ -84,11 +84,11 @@ jobs:
         run: tests/test_automation/github-actions/ci/run_step.sh test
 
       - name: Coverage
-        if: contains(matrix.jobname, 'coverage')
+        if: contains(matrix.jobname, 'Gcov')
         run: tests/test_automation/github-actions/ci/run_step.sh coverage
 
       - name: Upload Coverage
-        if: contains(matrix.jobname, 'coverage') && github.repository_owner == 'QMCPACK'
+        if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
         uses: codecov/codecov-action@v1
         with:
           file: ../qmcpack-build/coverage.xml
