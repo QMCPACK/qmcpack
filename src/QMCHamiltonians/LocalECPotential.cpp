@@ -14,7 +14,7 @@
 
 
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
@@ -89,7 +89,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
   else
 #endif
   {
-    const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+    const auto& d_table(P.getDistTableAB(myTableIndex));
     value_             = 0.0;
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
@@ -111,7 +111,7 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
                                                                    ParticleSet::ParticlePos_t& hf_terms,
                                                                    ParticleSet::ParticlePos_t& pulay_terms)
 {
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
   value_             = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
@@ -143,7 +143,7 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
 #if !defined(REMOVE_TRACEMANAGER)
 LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 {
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
   value_                      = 0.0;
   Array<RealType, 1>& Ve_samp = *Ve_sample;
   Array<RealType, 1>& Vi_samp = *Vi_sample;
@@ -202,7 +202,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 
 LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
 {
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
   value_             = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)

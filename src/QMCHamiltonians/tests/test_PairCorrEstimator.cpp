@@ -14,7 +14,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "Particle/ParticleSetPool.h"
 

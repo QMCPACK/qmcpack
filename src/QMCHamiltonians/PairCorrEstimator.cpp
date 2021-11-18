@@ -15,7 +15,7 @@
 
 
 #include "PairCorrEstimator.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
 #include <set>
@@ -85,7 +85,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   int toff = gof_r_prefix.size();
   for (int k = 0; k < other_ids.size(); ++k)
   {
-    const DistanceTableData& t(elns.getDistTable(other_ids[k]));
+    const DistanceTable& t(elns.getDistTable(other_ids[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets[k] = toff;
     const SpeciesSet& species(t.get_origin().getSpeciesSet());
@@ -114,7 +114,7 @@ int PairCorrEstimator::gen_pair_id(const int ig, const int jg, const int ns)
 PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 {
   BufferType& collectables(P.Collectables);
-  const DistanceTableData& dii(P.getDistTable(d_aa_ID_));
+  const auto& dii(P.getDistTableAA(d_aa_ID_));
   for (int iat = 1; iat < dii.centers(); ++iat)
   {
     const auto& dist = dii.getDistRow(iat);
@@ -133,7 +133,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   }
   for (int k = 0; k < other_ids.size(); ++k)
   {
-    const DistanceTableData& d1(P.getDistTable(other_ids[k]));
+    const auto& d1(P.getDistTableAB(other_ids[k]));
     const ParticleSet::ParticleIndex_t& gid(d1.get_origin().GroupID);
     int koff        = other_offsets[k];
     RealType overNI = 1.0 / d1.centers();

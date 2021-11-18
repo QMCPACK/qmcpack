@@ -33,8 +33,10 @@
 
 namespace qmcplusplus
 {
-///forward declaration of DistanceTableData
-class DistanceTableData;
+///forward declaration of DistanceTable
+class DistanceTable;
+class DistanceTableAA;
+class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
 
@@ -226,15 +228,18 @@ public:
 
   /** add a distance table
    * @param psrc source particle set
-   * @param modes bitmask DistanceTableData::DTModes
+   * @param modes bitmask DistanceTable::DTModes
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
   int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
 
-  /** get a distance table by table_ID
-   */
-  inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  ///get a distance table by table_ID
+  inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  ///get a distance table by table_ID and dyanmic_cast to DistanceTableAA
+  const DistanceTableAA& getDistTableAA(int table_ID) const;
+  ///get a distance table by table_ID and dyanmic_cast to DistanceTableAB
+  const DistanceTableAB& getDistTableAB(int table_ID) const;
 
   /** reset all the collectable quantities during a MC iteration
    */
@@ -295,7 +300,7 @@ public:
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    *
    * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
-   * Evaluate the related distance table data DistanceTableData::Temp.
+   * Evaluate the related distance table data DistanceTable::Temp.
    * If maybe_accept = false, certain operations for accepting moves will be skipped for optimal performance.
    */
   void makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept = true);
@@ -313,7 +318,7 @@ public:
    * @return true, if the move is valid
    *
    * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
-   * Evaluate the related distance table data DistanceTableData::Temp.
+   * Evaluate the related distance table data DistanceTable::Temp.
    *
    * When a Lattice is defined, passing two checks makes a move valid.
    * outOfBound(displ): invalid move, if displ is larger than half, currently, of the box in any direction
@@ -661,8 +666,7 @@ public:
    */
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
 
-  static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                                 int id);
+  static RefVectorWithLeader<DistanceTable> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id);
   static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
@@ -675,7 +679,7 @@ protected:
   std::map<std::string, int> myDistTableMap;
 
   /// distance tables that need to be updated by moving this ParticleSet
-  std::vector<DistanceTableData*> DistTables;
+  std::vector<DistanceTable*> DistTables;
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;

@@ -244,7 +244,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
     //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -271,7 +271,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
     //RealType du, d2u, temp;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
     //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -310,7 +310,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
     //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -359,7 +359,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int tg = P.GroupID[iat]; //species of this particle
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
@@ -391,7 +391,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int tg = P.GroupID[iat]; //species of this particle
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
@@ -432,7 +432,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int tg = P.GroupID[iat]; //species of this particle
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
@@ -465,7 +465,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluateBmatOnly")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
     //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
@@ -500,7 +500,7 @@ public:
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluateWithDerivatives")
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int sg = 0; sg < RadFunc.rows(); ++sg)
     //{
     //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)

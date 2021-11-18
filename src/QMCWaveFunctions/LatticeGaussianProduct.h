@@ -18,7 +18,7 @@
 #ifndef QMCPLUSPLUS_LATTICE_GAUSSIAN_PRODUCT
 #define QMCPLUSPLUS_LATTICE_GAUSSIAN_PRODUCT
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {

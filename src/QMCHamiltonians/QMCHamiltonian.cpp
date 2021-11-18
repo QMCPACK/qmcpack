@@ -18,7 +18,7 @@
 
 #include "QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"

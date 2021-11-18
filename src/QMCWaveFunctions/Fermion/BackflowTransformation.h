@@ -15,6 +15,13 @@
 
 #ifndef QMCPLUSPLUS_BACKFLOW_TRANSFORMATION_H
 #define QMCPLUSPLUS_BACKFLOW_TRANSFORMATION_H
+
+#include "Configuration.h"
+#include <map>
+#include <cmath>
+#include "Particle/ParticleSet.h"
+#include "DistanceTable.h"
+#include "Particle/ParticleBase/ParticleAttribOps.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -24,11 +31,6 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "Particle/ParticleSet.h"
-#include "Particle/ParticleBase/ParticleAttribOps.h"
-#include "Configuration.h"
-#include <map>
-#include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
@@ -336,7 +338,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
     newQP[iat] -= myTable.getTempDispls()[iat];
     indexQP.clear();
     for (int i = 0; i < bfFuns.size(); i++)
@@ -381,7 +383,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
     newQP[iat] -= myTable.getTempDispls()[iat];
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
@@ -406,7 +408,7 @@ public:
     activeParticle = iat;
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
 
     // this is from AoS, is it needed or not?
     //newQP[iat] += myTable.Temp[iat].dr1;
@@ -715,7 +717,7 @@ public:
       dr[1] = 0.05;
       dr[2] = -0.3;
       P.makeMove(iat, dr);
-      const auto& myTable = P.getDistTable(myTableIndex_);
+      const auto& myTable = P.getDistTableAA(myTableIndex_);
 
       //app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
       //app_log() << "cutOff: " << cutOff << std::endl;

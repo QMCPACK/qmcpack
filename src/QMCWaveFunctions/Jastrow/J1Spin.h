@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_ONEBODYSPINJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_ONEBODYSPINJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Utilities/qmc_common.h"
@@ -40,8 +40,8 @@ struct J1Spin : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRow  = DistanceTableData::DistRow;
-  using DisplRow = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTable::DistRow;
+  using DisplRow = DistanceTable::DisplRow;
   ///table index
   const int myTableID;
   ///number of ions
@@ -181,7 +181,7 @@ struct J1Spin : public WaveFunctionComponent
 
   void recompute(const ParticleSet& P) override
   {
-    const DistanceTableData& d_ie(P.getDistTable(myTableID));
+    const auto& d_ie(P.getDistTableAB(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
       computeU3(P, iat, d_ie.getDistRow(iat));
@@ -199,7 +199,7 @@ struct J1Spin : public WaveFunctionComponent
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override
   {
-    const DistanceTableData& d_ie(P.getDistTable(myTableID));
+    const auto& d_ie(P.getDistTableAB(myTableID));
     valT dudr, d2udr2;
 
     Tensor<valT, DIM> ident;
@@ -229,14 +229,15 @@ struct J1Spin : public WaveFunctionComponent
   PsiValueType ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
-    curAt      = computeU(P, iat, P.getDistTable(myTableID).getTempDists());
+    curAt      = computeU(P, iat, P.getDistTableAB(myTableID).getTempDists());
     return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
   }
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
     for (int k = 0; k < ratios.size(); ++k)
-      ratios[k] = std::exp(Vat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(myTableID).getDistRow(k)));
+      ratios[k] =
+          std::exp(Vat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(myTableID).getDistRow(k)));
   }
 
   void evaluateDerivatives(ParticleSet& P,
@@ -286,7 +287,7 @@ struct J1Spin : public WaveFunctionComponent
     }
     if (recalculate)
     {
-      const auto& d_table = P.getDistTable(myTableID);
+      const auto& d_table = P.getDistTableAB(myTableID);
       dLogPsi             = 0.0;
       for (int p = 0; p < NumVars; ++p)
         gradLogPsi[p] = 0.0;
@@ -384,7 +385,7 @@ struct J1Spin : public WaveFunctionComponent
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
-    const auto& dist = P.getDistTable(myTableID).getTempDists();
+    const auto& dist = P.getDistTableAB(myTableID).getTempDists();
     curAt            = valT(0);
     if (NumGroups > 0)
     {
@@ -505,8 +506,8 @@ struct J1Spin : public WaveFunctionComponent
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
-    computeU3(P, iat, P.getDistTable(myTableID).getTempDists());
-    curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).getTempDispls(), curGrad);
+    computeU3(P, iat, P.getDistTableAB(myTableID).getTempDists());
+    curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTableAB(myTableID).getTempDispls(), curGrad);
     curAt  = simd::accumulate_n(U.data(), Nions, valT());
     grad_iat += curGrad;
     return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
@@ -520,8 +521,8 @@ struct J1Spin : public WaveFunctionComponent
   {
     if (UpdateMode == ORB_PBYP_RATIO)
     {
-      computeU3(P, iat, P.getDistTable(myTableID).getTempDists());
-      curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTable(myTableID).getTempDispls(), curGrad);
+      computeU3(P, iat, P.getDistTableAB(myTableID).getTempDists());
+      curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTableAB(myTableID).getTempDispls(), curGrad);
     }
 
     log_value_ += Vat[iat] - curAt;
@@ -681,7 +682,7 @@ struct J1Spin : public WaveFunctionComponent
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
     GradType g_return(0.0);
-    const DistanceTableData& d_ie(P.getDistTable(myTableID));
+    const auto& d_ie(P.getDistTableAB(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
       const auto& dist  = d_ie.getDistRow(iat);
@@ -706,7 +707,7 @@ struct J1Spin : public WaveFunctionComponent
                                  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
   {
     GradType g_return(0.0);
-    const DistanceTableData& d_ie(P.getDistTable(myTableID));
+    const auto& d_ie(P.getDistTableAB(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
       const auto& dist  = d_ie.getDistRow(iat);

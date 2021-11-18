@@ -25,7 +25,7 @@
 #include "Utilities/Timer.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include <fftw3.h>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/einspline_helper.hpp"

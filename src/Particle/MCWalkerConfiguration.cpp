@@ -18,7 +18,6 @@
 
 
 #include "MCWalkerConfiguration.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"

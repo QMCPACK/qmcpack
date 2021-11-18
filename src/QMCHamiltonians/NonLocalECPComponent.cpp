@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "NonLocalECPComponent.h"
 #include "NLPPJob.h"
 #include "NonLocalData.h"

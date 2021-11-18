@@ -14,6 +14,8 @@
 
 
 #include "BackflowBuilder.h"
+#include <map>
+#include <cmath>
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -28,9 +30,8 @@
 #include "LongRange/LRHandlerTemp.h"
 #include "LongRange/LRRPABFeeHandlerTemp.h"
 #include "Particle/ParticleSet.h"
+#include "DistanceTable.h"
 #include "Configuration.h"
-#include <map>
-#include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Numerics/LinearFit.h"

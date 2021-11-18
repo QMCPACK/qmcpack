@@ -11,6 +11,7 @@
 
 
 #include "Particle/ParticleSet.h"
+#include "DistanceTable.h"
 #include "L2Potential.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -61,7 +62,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
         D2[n](i, j) += P.G[n][i] * P.G[n][j];
 
   // compute v_L2(r)*L^2 for all electron-ion pairs
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
   value_             = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
@@ -99,7 +100,7 @@ void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
   D = 0.0;
   D.diagonal(1.0);
 
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
 
   for (int iat = 0; iat < NumIons; iat++)
   {
@@ -127,7 +128,7 @@ void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
   D = 0.0;
   D.diagonal(1.0);
 
-  const DistanceTableData& d_table(P.getDistTable(myTableIndex));
+  const auto& d_table(P.getDistTableAB(myTableIndex));
 
   for (int iat = 0; iat < NumIons; iat++)
   {

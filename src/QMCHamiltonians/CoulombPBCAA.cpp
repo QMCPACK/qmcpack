@@ -16,7 +16,7 @@
 
 #include "EwaldRef.h"
 #include "CoulombPBCAA.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <numeric>
 
@@ -192,7 +192,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   V_samp                     = 0.0;
   {
     //SR
-    const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
+    const auto& d_aa(P.getDistTableAA(d_aa_ID));
     RealType z;
     for (int ipart = 1; ipart < NumCenters; ipart++)
     {
@@ -336,7 +336,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
-  const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
+  const auto& d_aa(P.getDistTableAA(d_aa_ID));
   mRealType SR = 0.0;
   for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
   {
@@ -438,7 +438,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
 {
-  const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
+  const auto& d_aa(P.getDistTableAA(d_aa_ID));
   mRealType SR = 0.0;
 #pragma omp parallel for reduction(+ : SR)
   for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
@@ -468,7 +468,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   const StructFact& PtclRhoK(*(P.SK));
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
   {
-    const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
+    const auto& d_aa(P.getDistTableAA(d_aa_ID));
     //distance table handles jat<iat
     for (int iat = 1; iat < NumCenters; ++iat)
     {

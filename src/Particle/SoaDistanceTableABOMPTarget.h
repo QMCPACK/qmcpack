@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
 
 #include "Lattice/ParticleBConds3DSoa.h"
-#include "DistanceTableData.h"
+#include "DistanceTable.h"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
@@ -27,7 +27,7 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for AB using a transposed form
  */
 template<typename T, unsigned D, int SC>
-class SoaDistanceTableABOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
+class SoaDistanceTableABOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
 private:
   template<typename DT>
@@ -77,7 +77,7 @@ private:
     }
   }
 
-  static void associateResource(const RefVectorWithLeader<DistanceTableData>& dt_list)
+  static void associateResource(const RefVectorWithLeader<DistanceTable>& dt_list)
   {
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
 
@@ -119,7 +119,7 @@ private:
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
-        DistanceTableData(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + name_,
@@ -152,8 +152,7 @@ public:
     auto resource_index = collection.addResource(std::make_unique<DTABMultiWalkerMem>());
   }
 
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTABMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
@@ -163,8 +162,7 @@ public:
     associateResource(dt_list);
   }
 
-  void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_));
     for (size_t iw = 0; iw < dt_list.size(); iw++)
@@ -238,7 +236,7 @@ public:
     }
   }
 
-  inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  inline void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                           const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     assert(this == &dt_list.getLeader());
@@ -354,7 +352,7 @@ public:
     }
   }
 
-  inline void mw_recompute(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  inline void mw_recompute(const RefVectorWithLeader<DistanceTable>& dt_list,
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            const std::vector<bool>& recompute) const override
   {

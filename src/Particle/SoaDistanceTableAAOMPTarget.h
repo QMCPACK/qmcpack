@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_DTDIMPL_AA_OMPTARGET_H
 
 #include "Lattice/ParticleBConds3DSoa.h"
-#include "DistanceTableData.h"
+#include "DistanceTable.h"
 #include "CPU/SIMD/algorithm.hpp"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
@@ -28,21 +28,19 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for dense case
  */
 template<typename T, unsigned D, int SC>
-struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
+struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
-  ///actual memory for dist and displacements_
+  /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
 
-  /// old distances
-  DistRow old_r_mem_;
-  DistRow old_r_;
-
-  /// old displacements
-  DisplRow old_dr_mem_;
-  DisplRow old_dr_;
-
+  /// actual memory for temp_r_
   DistRow temp_r_mem_;
+  /// actual memory for temp_dr_
   DisplRow temp_dr_mem_;
+  /// actual memory for old_r_
+  DistRow old_r_mem_;
+  /// actual memory for old_dr_
+  DisplRow old_dr_mem_;
 
   ///multi walker shared memory buffer
   struct DTAAMultiWalkerMem : public Resource
@@ -63,7 +61,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableData(target, target, DTModes::ALL_OFF),
+        DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
@@ -115,9 +113,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     temp_dr_mem_.resize(num_targets_);
   }
 
-  const DistRow& getOldDists() const override { return old_r_; }
-  const DisplRow& getOldDispls() const override { return old_dr_; }
-
   const RealType* getMultiWalkerTempDataPtr() const override
   {
     if (!mw_mem_)
@@ -130,8 +125,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
   }
 
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
@@ -166,8 +160,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
     collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
     const size_t nw = dt_list.size();
@@ -223,7 +216,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
    * If the temporary pair distance are consumed on the device directly, the device to host data transfer can be
    * skipped as an optimization.
    */
-  void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  void mw_move(const RefVectorWithLeader<DistanceTable>& dt_list,
                const RefVectorWithLeader<ParticleSet>& p_list,
                const std::vector<PosType>& rnew_list,
                const IndexType iat = 0,
@@ -406,7 +399,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  void mw_updatePartial(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  void mw_updatePartial(const RefVectorWithLeader<DistanceTable>& dt_list,
                         IndexType jat,
                         const std::vector<bool>& from_temp) override
   {
@@ -419,7 +412,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt_list[iw].updatePartial(jat, from_temp[iw]);
   }
 
-  void mw_finalizePbyP(const RefVectorWithLeader<DistanceTableData>& dt_list,
+  void mw_finalizePbyP(const RefVectorWithLeader<DistanceTable>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     // if the distance table is not updated by mw_move during p-by-p, needs to recompute the whole table

@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_DIFFERENTIAL_TWOBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -247,7 +247,7 @@ public:
       for (int p = 0; p < NumVars; ++p)
         (*lapLogPsi[p]) = 0.0;
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
-      const auto& d_table = P.getDistTable(my_table_ID_);
+      const auto& d_table = P.getDistTableAA(my_table_ID_);
       constexpr RealType cone(1);
       constexpr RealType lapfac(OHMMS_DIM - cone);
       const size_t n  = d_table.sources();

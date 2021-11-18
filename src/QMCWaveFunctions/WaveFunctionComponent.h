@@ -23,7 +23,6 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
@@ -439,11 +438,15 @@ public:
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+  {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+  {}
 
   /** make clone
    * @param tqp target Quantum ParticleSet

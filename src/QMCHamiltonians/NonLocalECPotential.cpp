@@ -15,7 +15,7 @@
 
 
 #include "NonLocalECPotential.h"
-#include <DistanceTableData.h>
+#include <DistanceTable.h>
 #include <IteratorUtility.h>
 #include <ResourceCollection.h>
 #include "NonLocalECPComponent.h"
@@ -156,7 +156,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
       if (!keepGrid)
         PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -266,7 +266,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         O.PPset[ipp]->randomize_grid(*O.myRNG);
 
     //loop over all the ions
-    const auto& myTable = P.getDistTable(O.myTableIndex);
+    const auto& myTable = P.getDistTableAB(O.myTableIndex);
     // clear all the electron and ion neighbor lists
     for (int iat = 0; iat < O.NumIons; iat++)
       O.IonNeighborElecs.getNeighborList(iat).clear();
@@ -412,7 +412,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
         PPset[ipp]->randomize_grid(*myRNG);
   }
   //loop over all the ions
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -468,7 +468,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDetermin
 void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
   tmove_xy_.clear();
-  const auto& myTable                  = P.getDistTable(myTableIndex);
+  const auto& myTable                  = P.getDistTableAB(myTableIndex);
   const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
 
   const auto& dist  = myTable.getDistRow(ref_elec);
@@ -554,7 +554,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
             Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat, true);
             // mark all affected electrons
-            markAffectedElecs(P.getDistTable(myTableIndex), iat);
+            markAffectedElecs(P.getDistTableAB(myTableIndex), iat);
             P.acceptMove(iat);
             NonLocalMoveAccepted++;
           }
@@ -573,7 +573,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   return NonLocalMoveAccepted;
 }
 
-void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, int iel)
+void NonLocalECPotential::markAffectedElecs(const DistanceTableAB& myTable, int iel)
 {
   std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(iel);
   for (int iat = 0; iat < NumIons; iat++)

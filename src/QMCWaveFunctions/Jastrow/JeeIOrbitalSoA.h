@@ -16,7 +16,7 @@
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "CPU/SIMD/algorithm.hpp"
 #include <map>
@@ -40,8 +40,8 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRow  = DistanceTableData::DistRow;
-  using DisplRow = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTable::DistRow;
+  using DisplRow = DistanceTable::DisplRow;
   ///table index for el-el
   const int ee_Table_ID_;
   ///table index for i-el
@@ -378,8 +378,8 @@ public:
 
   void build_compact_list(const ParticleSet& P)
   {
-    const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
-    const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
+    const auto& eI_dists  = P.getDistTableAB(ei_Table_ID_).getDistances();
+    const auto& eI_displs = P.getDistTableAB(ei_Table_ID_).getDisplacements();
 
     for (int iat = 0; iat < Nion; ++iat)
       for (int jg = 0; jg < eGroups; ++jg)
@@ -411,8 +411,8 @@ public:
   {
     UpdateMode = ORB_PBYP_RATIO;
 
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
@@ -423,15 +423,15 @@ public:
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
                            computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
-                                    VP.getDistTable(ei_Table_ID_).getDistRow(k),
-                                    VP.getDistTable(ee_Table_ID_).getDistRow(k), ions_nearby_old));
+                                    VP.getDistTableAB(ei_Table_ID_).getDistRow(k),
+                                    VP.getDistTableAB(ee_Table_ID_).getDistRow(k), ions_nearby_old));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const auto& eI_dists              = eI_table.getDistances();
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& eI_dists = eI_table.getDistances();
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
     {
@@ -462,8 +462,8 @@ public:
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(),
               ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
@@ -475,8 +475,8 @@ public:
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     // get the old value, grad, lapl
     computeU3(P, iat, eI_table.getDistRow(iat), eI_table.getDisplRow(iat), ee_table.getOldDists(),
               ee_table.getOldDispls(), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
@@ -565,8 +565,8 @@ public:
 
   inline void recompute(const ParticleSet& P) override
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
 
     build_compact_list(P);
 
@@ -885,9 +885,9 @@ public:
       constexpr valT ctwo(2);
       constexpr valT lapfac = OHMMS_DIM - cone;
 
-      const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-      const auto& ee_dists              = ee_table.getDistances();
-      const auto& ee_displs             = ee_table.getDisplacements();
+      const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+      const auto& ee_dists  = ee_table.getDistances();
+      const auto& ee_displs = ee_table.getDisplacements();
 
       build_compact_list(P);
 

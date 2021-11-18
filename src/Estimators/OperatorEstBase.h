@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-class DistanceTableData;
 class TrialWaveFunction;
 
 /** @ingroup Estimators

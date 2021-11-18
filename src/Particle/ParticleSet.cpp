@@ -21,7 +21,7 @@
 #include <iomanip>
 #include "ParticleSet.h"
 #include "Particle/DynamicCoordinatesBuilder.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/createDistanceTable.h"
 #include "LongRange/StructFact.h"
 #include "Utilities/IteratorUtility.h"
@@ -386,6 +386,16 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
 
   app_log().flush();
   return tid;
+}
+
+const DistanceTableAA& ParticleSet::getDistTableAA(int table_ID) const
+{
+  return dynamic_cast<DistanceTableAA&>(*DistTables[table_ID]);
+}
+
+const DistanceTableAB& ParticleSet::getDistTableAB(int table_ID) const
+{
+  return dynamic_cast<DistanceTableAB&>(*DistTables[table_ID]);
 }
 
 void ParticleSet::update(bool skipSK)
@@ -1011,10 +1021,9 @@ void ParticleSet::releaseResource(ResourceCollection& collection, const RefVecto
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
 }
 
-RefVectorWithLeader<DistanceTableData> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                                     int id)
+RefVectorWithLeader<DistanceTable> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id)
 {
-  RefVectorWithLeader<DistanceTableData> dt_list(*p_list.getLeader().DistTables[id]);
+  RefVectorWithLeader<DistanceTable> dt_list(*p_list.getLeader().DistTables[id]);
   dt_list.reserve(p_list.size());
   for (ParticleSet& p : p_list)
     dt_list.push_back(*p.DistTables[id]);

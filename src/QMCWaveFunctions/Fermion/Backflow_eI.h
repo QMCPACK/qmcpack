@@ -191,7 +191,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -208,7 +208,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -236,7 +236,7 @@ public:
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist  = myTable.getDistRow(jel);
@@ -270,7 +270,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //int iat             = index[0];
     //for (int j = 0; j < maxI; j++)
@@ -287,7 +287,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
@@ -304,7 +304,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //int iat             = index[0];
     //for (int j = 0; j < maxI; j++)
@@ -328,7 +328,7 @@ public:
                            HessMatrix_t& Amat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
@@ -356,7 +356,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //int iat             = index[0];
     //for (int j = 0; j < maxI; j++)
@@ -384,7 +384,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //for (int j = 0; j < maxI; j++)
     //{
@@ -410,7 +410,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -434,7 +434,7 @@ public:
                                       HessArray_t& Xmat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist  = myTable.getDistRow(jel);

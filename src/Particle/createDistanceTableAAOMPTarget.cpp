@@ -15,7 +15,7 @@
 
 
 #include "Particle/createDistanceTable.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/SoaDistanceTableAAOMPTarget.h"
 
 namespace qmcplusplus
@@ -24,15 +24,15 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description)
+DistanceTable* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description)
 {
   typedef OHMMS_PRECISION RealType;
   enum
   {
     DIM = OHMMS_DIM
   };
-  int sc                = s.Lattice.SuperCellEnum;
-  DistanceTableData* dt = 0;
+  int sc            = s.Lattice.SuperCellEnum;
+  DistanceTable* dt = 0;
   std::ostringstream o;
   o << "  Distance table for similar particles (A-A):" << std::endl;
   o << "    source/target: " << s.getName() << std::endl;
