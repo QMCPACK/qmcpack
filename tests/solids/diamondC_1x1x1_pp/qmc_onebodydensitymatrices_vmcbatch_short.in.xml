@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_spindens_short" series="0">
+   <project id="qmc_onebodydensitymatrices_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -94,7 +94,7 @@
        <parameter name="integrator"   >  density       </parameter>
        <parameter name="samples"      >  64            </parameter>
        <parameter name="timestep"     >  0.3           </parameter>
-       <parameter name="center"       >  0.0 0.0 0.1   </parameter>
+       <parameter name="corner"       >  0.0 0.0 0.0   </parameter>
        <parameter name="use_drift"    >  yes           </parameter>
      </estimator>
      <parameter name="total_walkers">   64 </parameter>
