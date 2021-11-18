@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+######################################################################################
+## This file is distributed under the University of Illinois/NCSA Open Source License.
+## See LICENSE file in top directory for details.
+##
+## Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+##
+## File developed by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla
+##
+## File created by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla 
+#######################################################################################
+
+from Eshdf_gpaw import EshdfFilePwGpaw
+
+def print_help_and_exit():
+    print('''
+Usage:  gpaw4qmcpack [options] INFILE [OUTFILE]
+
+  INFILE  is a .gpw restart file
+  OUTFILE is an .h5 orbital file for QMCPACK [default=eshdf.h5]
+
+  options and <arguments> where needed:
+
+    -d            Convert charge density data. Default: no.
+
+  TROUBLESHOOTING:
+
+  The GPAW restart file (INFILE) must be created with mode='all' to include 
+  the wave function information.
+  
+''')
+    exit()
+#end def
+
+# parse command lines arguments
+def parse_args(args):
+    if len(args)==1:
+        print_help_and_exit()
+    #end if
+    # parse arguments
+    infile_set = False
+    options    = {}
+    outfile    = 'eshdf.h5'
+    i = 1
+    while i<len(args):
+        arg = args[i]
+        if arg=='-d': # density
+            options['density'] = True
+        elif not infile_set:
+            infile = arg
+            # check if exists
+            infile_set = True
+        else:
+            outfile = arg
+        #end if
+        i += 1
+    #end while
+    return infile,outfile,options
+#end def
+
+if __name__=='__main__':
+    from sys import argv
+    infile,outfile,options = parse_args(argv)
+    eshdf = EshdfFilePwGpaw(infile=infile,outfile=outfile,**options)
+    eshdf.write(outfile)
+    print('Converted GPAW orbitals for QMCPACK!')
+#end if

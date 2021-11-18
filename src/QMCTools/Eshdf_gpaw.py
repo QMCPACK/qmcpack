@@ -1,14 +1,16 @@
-#!/usr/bin/env python3
+######################################################################################
+## This file is distributed under the University of Illinois/NCSA Open Source License.
+## See LICENSE file in top directory for details.
+##
+## Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+##
+## File developed by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla
+##
+## File created by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla 
+#######################################################################################
 
-from gpaw import restart,setup_paths
-from gpaw import __version__ as gpaw_version
-from ase.units import Bohr
 from numpy import array,pi,dot,real,imag,concatenate,unique,zeros
-
-# define dtypes for the HDF5
-int_dtype   = '<i4' # default integer dtype
-str_dtype   = 'S'   # default string dtype
-float_dtype = 'f'   # default float dtype
+from Eshdf import EshdfFilePw
 
 # Calculate vector norm of 2-float representation of a complex vector
 def calculate_norm(v):
@@ -34,14 +36,8 @@ def desymmetrize_z(gv,psi):
     return gv2,psi2
 #end def
 
-# WIP: class for an ESHDF file
-#   Currently only supports PW mode and reading data from GPAW structures
-class ESHDF_file():
-
-    loaded      = False
-    version     = [2,1,0]
-    fmt         = 'ES-HDF'
-    outfile     = 'eshdf.h5'
+# Eshdf File class from GPAW
+class EshdfFilePwGpaw(EshdfFilePw):
 
     # if infile and outfile provided, load automatically
     def __init__(
@@ -85,15 +81,9 @@ class ESHDF_file():
     def load_gpaw_restart(
         self,
         infile,
-        setups  = './', # add setup paths: for testing, defaults to './'
         **kwargs,
         ):
         from gpaw import restart
-        # Add a custom setup path before loading GPAW restart file
-        if setups is not None:
-            from gpaw import setup_paths
-            setup_paths.insert(0,setups)
-        #end if
         atoms,calc = restart(infile)
         try: # check if the wavefunction exists
             wfs = calc.wfs
@@ -140,6 +130,7 @@ class ESHDF_file():
 
     # GPAW: load "atoms" data
     def _load_atoms(self,calc,atoms):
+        from ase.units import Bohr
         num_atoms = atoms.get_global_number_of_atoms()
         supercell = calc.wfs.gd.cell_cv
         syms      = atoms.get_chemical_symbols()
@@ -285,153 +276,6 @@ class ESHDF_file():
         #end if
     #end def
 
-    # write the data to an HDF5 file
-    def write(self, outfile = None):
-        if not self.loaded:
-            print('Must load data from a file or GPAW calculator objects before writing!')
-            return
-        #end if
-        if outfile is None:
-            outfile = self.outfile
-        #end if
-        import h5py as h5
-        with h5.File(outfile,mode='w') as f:
-            self._write_application(f)
-            self._write_atoms(f)
-            self._write_electrons(f)
-            self._write_format(f)
-            self._write_supercell(f)
-            self._write_version(f)
-        #end with
-    #end def
-
-    def _write_application(self,f):
-        g = f.create_group('application')
-        g.create_dataset('code',shape=1,data=array(self.application,dtype=str_dtype))
-        g.create_dataset('version',shape=3,data=array(self.app_version,dtype=int_dtype))
-    #end def
-
-    def _write_atoms(self,f):
-        g  = f.create_group('atoms')
-        g.create_dataset('number_of_atoms',data=array([self.num_atoms],dtype=int_dtype))
-        g.create_dataset('number_of_species',data=array([self.num_spin],dtype=int_dtype))
-        g.create_dataset('positions',data=self.positions)
-        for s,sid in enumerate(self.species):
-            gs = g.create_group('species_'+str(s))
-            gs.create_dataset('atomic_number',data=array([self.species_Z[s]]),dtype=int_dtype)
-            gs.create_dataset('mass',data=array([self.species_mass[s]],dtype=float_dtype))
-            gs.create_dataset('name',data=array([self.species_name[s]],dtype=str_dtype))
-            gs.create_dataset('valence_charge',data=array([self.species_valence[s]],dtype=float_dtype))
-        #end for
-        g.create_dataset('species_ids',data=array(self.species_ids),dtype=int_dtype)
-    #end def
-
-    def _write_electrons(self,f):
-        g = f.create_group('electrons')
-        if self.density:
-            gd = g.create_group('density')
-            gd.create_dataset('gvectors',data=self.rho_gv)
-            gd.create_dataset('number_of_gvectors',data=array([self.rho_gv.shape[0]],dtype=int_dtype))
-            for s in range(self.num_spin):
-                gd0 = gd.create_group('spin_0')
-                gd0.create_dataset('density_g',data=self.rho_g)
-            #end for
-        #end if
-        for k,kpt in enumerate(self.kpts):
-            kp0 = g.create_group('kpoint_{}'.format(k))
-            if k==0:
-                kp0.create_dataset('gvectors',data=self.gvectors)
-                kp0.create_dataset('number_of_gvectors',data=array([self.gvectors.shape[0]],dtype=int_dtype))
-            #end if
-            kp0.create_dataset('numsym',data=array([self.numsym[k]],dtype=int_dtype))
-            kp0.create_dataset('reduced_k',data=kpt)
-            for s in range(self.num_spin):
-                kp00 = kp0.create_group('spin_{}'.format(s))
-                kp00.create_dataset('eigenvalues',data=self.eps[k][s])
-                kp00.create_dataset('number_of_states',data=array([self.num_bands[k][s]],dtype=int_dtype))
-                for n in range(self.num_bands[k][s]):
-                    kp00s = kp00.create_group('state_{}'.format(n))
-                    kp00s.create_dataset('psi_g',data=self.psi_g[k][s][n])
-                #end for
-            #end for
-            kp0.create_dataset('symgroup',data=array([self.symgroup[k]],dtype=int_dtype))
-            kp0.create_dataset('weight',data=array([self.W_kpt[k]],dtype=float_dtype))
-        #end for
-        g.create_dataset('number_of_electrons',data=self.num_elec)
-        g.create_dataset('number_of_kpoints',data=array([len(self.kpts)],dtype=int_dtype))
-        g.create_dataset('number_of_spins',data=array([self.num_spin],dtype=int_dtype))
-    #end def
-
-    def _write_format(self,f):
-        f.create_dataset('format',data=array(self.fmt,dtype=str_dtype))
-    #end def
-
-    def _write_supercell(self,f):
-        g = f.create_group('supercell')
-        g.create_dataset('primitive_vectors',data=self.supercell)
-    #end def
-    
-    def _write_version(self,f):
-        f.create_dataset('version',data=array(self.version,dtype=int_dtype))
-    #end def
+    # file writing functions are defined in the base classes
 
 #end class
-
-def print_help_and_exit():
-    print('''
-Usage:  gpaw4qmcpack [options] INFILE [OUTFILE]
-
-  INFILE  is a .gpw restart file
-  OUTFILE is an .h5 orbital file for QMCPACK [default=eshdf.h5]
-
-  options and <arguments> where needed:
-
-    -s <path>     GPAW Setup path for searching UPF files.
-                  By default, './' is added.
-    -d            Convert charge density data. Default: no.
-
-  TROUBLESHOOTING:
-
-  The GPAW restart file (INFILE) must include 
-  
-''')
-    exit()
-#end def
-
-# parse command lines arguments
-def parse_args(args):
-    if len(args)==1:
-        print_help_and_exit()
-    #end if
-    # parse arguments
-    infile_set = False
-    options    = {}
-    outfile    = 'eshdf.h5'
-    i = 1
-    while i<len(args):
-        arg = args[i]
-        if arg=='-s': # setup path
-            i += 1
-            arg = args[i]
-            options['setups'] = arg # test exists
-        elif arg=='-d': # density
-            options['density'] = True
-        elif not infile_set:
-            infile = arg
-            # check if exists
-            infile_set = True
-        else:
-            outfile = arg
-        #end if
-        i += 1
-    #end while
-    return infile,outfile,options
-#end def
-
-if __name__=='__main__':
-    from sys import argv
-    infile,outfile,options = parse_args(argv)
-    eshdf = ESHDF_file(infile=infile,outfile=outfile,**options)
-    eshdf.write(outfile)
-    print('Converted GPAW orbitals for QMCPACK!')
-#end if
