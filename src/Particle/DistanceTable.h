@@ -29,10 +29,11 @@ namespace qmcplusplus
 class ResourceCollection;
 
 /** @ingroup nnlist
- * @brief Abstract class to manage pair data between two ParticleSets.
+ * @brief Abstract class to manage operations on pair data between two ParticleSets.
  *
- * Each DistanceTable object is fined by Source and Target of ParticleSet types.
- *
+ * Each DistanceTable object is defined by Source and Target of ParticleSet types.
+ * This base class doesn't contain storage. It is intended for update/compute invoked by ParticleSet.
+ * Derived AA/AB classes handle the actual storage and data access.
  */
 class DistanceTable
 {
@@ -237,6 +238,7 @@ public:
   {}
 };
 
+/** AA type of DistanceTable containing storage */
 class DistanceTableAA : public DistanceTable
 {
 protected:
@@ -312,6 +314,7 @@ public:
   }
 };
 
+/** AB type of DistanceTable containing storage */
 class DistanceTableAB : public DistanceTable
 {
 protected:

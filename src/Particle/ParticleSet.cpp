@@ -392,6 +392,7 @@ const DistanceTableAA& ParticleSet::getDistTableAA(int table_ID) const
 {
   return dynamic_cast<DistanceTableAA&>(*DistTables[table_ID]);
 }
+
 const DistanceTableAB& ParticleSet::getDistTableAB(int table_ID) const
 {
   return dynamic_cast<DistanceTableAB&>(*DistTables[table_ID]);
