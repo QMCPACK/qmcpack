@@ -2467,6 +2467,29 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
       }
       xmlAddChild(hamPtr, pairpot3);
     }
+
+    std::string tmp_codename = CodeName;
+    tolower(tmp_codename);
+
+    if (tmp_codename == "rmg")
+    {
+      std::cout << "Adding MPC and Chiesa correction to Hamiltonian" << std::endl;
+      xmlNodePtr pairpotMPC = xmlNewNode(NULL, (const xmlChar*)"pairpot");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"name", (const xmlChar*)"MPC");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"type", (const xmlChar*)"MPC");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"source", (const xmlChar*)"e");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"target", (const xmlChar*)"e");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"ecut", (const xmlChar*)"60.0");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"physical", (const xmlChar*)"false");
+      xmlAddChild(hamPtr, pairpotMPC);
+
+      xmlNodePtr chiesaPtr = xmlNewNode(NULL, (const xmlChar*)"estimator");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"name", (const xmlChar*)"KEcorr");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"type", (const xmlChar*)"chiesa");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"source", (const xmlChar*)"e");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"psi", (const xmlChar*)psi_tag.c_str());
+      xmlAddChild(hamPtr, chiesaPtr);
+    }
   }
   return hamPtr;
 }

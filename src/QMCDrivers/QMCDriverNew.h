@@ -183,9 +183,13 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  std::vector<RandomGenerator_t*> RngCompatibility;
-
-  inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
+  inline RefVector<RandomGenerator_t> getRngRefs() const
+  {
+    RefVector<RandomGenerator_t> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
+  }
 
   // ///return the random generators
   //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
@@ -262,7 +266,7 @@ protected:
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
-  static bool checkLogAndGL(Crowd& crowd);
+  static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
   const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
 
@@ -281,6 +285,7 @@ protected:
     NewTimer& movepbyp_timer;
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
+    NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
           run_steps_timer(*timer_manager.createTimer(prefix + "RunSteps", timer_level_medium)),
@@ -289,7 +294,8 @@ protected:
           buffer_timer(*timer_manager.createTimer(prefix + "Buffer", timer_level_medium)),
           movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),
           hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
-          collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium))
+          collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium)),
+          resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
     {}
   };
 
@@ -375,7 +381,7 @@ protected:
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
 
   ///Random number generators
-  std::vector<std::unique_ptr<RandomGenerator_t>> Rng;
+  UPtrVector<RandomGenerator_t> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

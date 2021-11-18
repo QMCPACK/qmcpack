@@ -34,11 +34,10 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder("spline", comm),
       ParticleSets(psets),
       TargetPtcl(p),
-      MixedSplineReader(0),
       XMLRoot(cur),
       H5FileID(-1),
       Format(QMCPACK),
@@ -88,8 +87,6 @@ inline TinyVector<T, 3> FracPart(const TinyVector<T, 3>& twist)
 EinsplineSetBuilder::~EinsplineSetBuilder()
 {
   DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder");
-  if (MixedSplineReader)
-    delete MixedSplineReader;
   if (H5FileID >= 0)
     H5Fclose(H5FileID);
 }

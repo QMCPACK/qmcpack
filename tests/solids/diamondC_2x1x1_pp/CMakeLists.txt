@@ -914,6 +914,22 @@ if(NOT QMC_CUDA)
     DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
   )
 
+  qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers-checks_sdbatch_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers_with_checks.in.xml
+    1
+    4
+    TRUE
+    0
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
+    1
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
+    2
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
+  )
+
   if(QMC_MIXED_PRECISION)
     if(QMC_COMPLEX)
       # VMC without drift
@@ -1387,6 +1403,57 @@ if(NOT QMC_CUDA)
     2
     DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
   )
+
+  if(QMC_MIXED_PRECISION)
+    if(QMC_COMPLEX)
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "totenergy" "-20.82333418 0.00002128")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "kinetic" "16.28201421 0.00002563")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "potential" "-37.10534849 0.00000861")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "eeenergy" "-6.62968020 0.00000192")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "ionion" "-25.55133345 0.0000014")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "localecp" "-5.47510064 0.00000777")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "nonlocalecp" "0.55076580 0.00001229")
+    else()
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "totenergy" "-20.82178481 0.00001859")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "kinetic" "16.28358306 0.00002343")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "potential" "-37.10536785 0.00001142")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "eeenergy" "-6.62966523 0.00000163")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "ionion" "-25.55133345 0.00000135")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "localecp" "-5.47512422 0.00001074")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "nonlocalecp" "0.55075504 0.00001354")
+    endif()
+  else()
+    if(QMC_COMPLEX)
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "totenergy" "-20.82333435 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "kinetic" "16.28200884 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "potential" "-37.10534319 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "eeenergy" "-6.62968027 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "ionion" "-25.55132719 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "localecp" "-5.47510116 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "nonlocalecp" "0.55076543 0.000001")
+    else()
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "totenergy" "-20.82177682 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "kinetic" "16.28358399 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "potential" "-37.10536081 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "eeenergy" "-6.62966513 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "ionion" "-25.55132719 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "localecp" "-5.47512288 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS "nonlocalecp" "0.55075440 0.000001")
+    endif()
+  endif()
+
+  qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-dmcbatch_sdj_excited
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_vmcbatch_dmcbatch_excited
+    det_qmc_short_vmcbatch_dmcbatch_excited.in.xml
+    1
+    1
+    TRUE
+    1
+    DET_DIAMOND2_DMC_BATCH_EXCITED_SCALARS # DMC
+  )
+
 
   # CUDA references
 else()

@@ -332,7 +332,7 @@ public:
 class ElectronGasSPOBuilder : public SPOSetBuilder
 {
 protected:
-  HEGGrid<RealType, OHMMS_DIM> egGrid;
+  HEGGrid<RealType> egGrid;
   xmlNodePtr spo_node;
 
 public:

@@ -39,7 +39,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
                                 ContextForSteps& step_context,
-                                bool recompute)
+                                bool recompute,
+                                bool accumulate_this_step)
 {
   if (crowd.size() == 0)
     return;
@@ -49,11 +50,15 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walkers        = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-
+  // This is really a waste the resources can be aquired outside of the run steps loop in VMCD!
+  // I don't see an  easy way to measure the release without putting the weight of tons of timer_manager calls in
+  // ResourceCollectionTeamLock's constructor.
+  timers.resource_timer.start();
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
-
-  assert(QMCDriverNew::checkLogAndGL(crowd));
+  timers.resource_timer.stop();
+  if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_LOAD)
+    checkLogAndGL(crowd, "checkGL_after_load");
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -168,8 +173,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
-
-  assert(QMCDriverNew::checkLogAndGL(crowd));
+  if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+    checkLogAndGL(crowd, "checkGL_after_moves");
   timers.buffer_timer.stop();
 
   timers.hamiltonian_timer.start();
@@ -199,6 +204,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
+
+  if(accumulate_this_step)
+    crowd.accumulate(step_context.get_random_gen());
+
   timers.collectables_timer.stop();
   // TODO:
   //  check if all moves failed
@@ -215,18 +224,14 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-  auto& rng    = context_for_steps[crowd_id]->get_random_gen();
-
-  crowd.setRNGForHamiltonian(rng);
-
-  int max_steps = sft.qmcdrv_input.get_max_steps();
-  // \todo delete
-  RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
-  IndexType step = sft.step;
+  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  const int max_steps = sft.qmcdrv_input.get_max_steps();
+  const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
-  crowd.accumulate(rng);
+  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
+  // For VMC we don't call this method for warmup steps.
+  const bool accumulate_this_step = true;
+  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -295,7 +300,9 @@ bool VMCBatched::run()
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                             UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
       Crowd& crowd = *(crowds[crowd_id]);
-      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
+      const bool recompute = false;
+      const bool accumulate_this_step = false;
+      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
     };
 
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)

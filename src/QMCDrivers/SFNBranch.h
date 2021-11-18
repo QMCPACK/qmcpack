@@ -278,6 +278,7 @@ public:
   inline RealType getTau() const { return vParam[SBVP::TAU]; }
   inline RealType getTauEff() const { return vParam[SBVP::TAUEFF]; }
 
+  int getWarmupToDoSteps() const { return WarmUpToDoSteps; }
   /** perform branching
    * @param iter current step
    * @param w Walker configuration

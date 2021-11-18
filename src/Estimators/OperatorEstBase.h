@@ -38,7 +38,8 @@ public:
   using QMCT      = QMCTraits;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  /** the type in this variant changes based on data locality
+  /** Everything gets packed into RealType for now
+   *  \todo template and use whatever makes sense for the derived estimator this is just asking for bugs
    */
   using Data = UPtr<std::vector<QMCT::RealType>>;
 
@@ -99,8 +100,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-
-  virtual OperatorEstBase* clone() = 0;
+  virtual std::unique_ptr<OperatorEstBase> clone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *

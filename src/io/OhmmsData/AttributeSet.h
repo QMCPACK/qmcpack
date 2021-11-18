@@ -23,32 +23,12 @@
  */
 struct OhmmsAttributeSet
 {
-  typedef std::map<std::string, OhmmsElementBase*> Container_t;
-  typedef Container_t::iterator iterator;
-  typedef Container_t::const_iterator const_iterator;
-
-  Container_t m_param;
-
-  ~OhmmsAttributeSet()
-  {
-    iterator it(m_param.begin());
-    iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      delete (*it).second;
-      ++it;
-    }
-  }
+  std::map<std::string, std::unique_ptr<OhmmsElementBase>> m_param;
 
   bool get(std::ostream& os) const
   {
-    const_iterator it(m_param.begin());
-    const_iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      (*it).second->get(os);
-      ++it;
-    }
+    for (const auto& [name, param] : m_param)
+      param->get(os);
     return true;
   }
 
@@ -64,11 +44,8 @@ struct OhmmsAttributeSet
            std::vector<PDT>&& candidate_values = {},
            TagStatus status                    = TagStatus::OPTIONAL)
   {
-    iterator it(m_param.find(aname));
-    if (it == m_param.end())
-    {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname, std::move(candidate_values), status);
-    }
+    if (auto it = m_param.find(aname); it == m_param.end())
+      m_param[aname] = std::make_unique<OhmmsParameter<PDT>>(aparam, aname, std::move(candidate_values), status);
   }
 
   /** assign attributes to the set
@@ -81,11 +58,10 @@ struct OhmmsAttributeSet
     while (att != NULL)
     {
       std::string aname((const char*)(att->name));
-      iterator it = m_param.find(aname);
-      if (it != m_param.end())
+      if (auto it = m_param.find(aname); it != m_param.end())
       {
         std::istringstream stream((const char*)(att->children->content));
-        (*it).second->put(stream);
+        it->second->put(stream);
       }
       att = att->next;
     }

@@ -20,52 +20,52 @@ jobs:
       matrix:
         jobname:
           [
-            gcc-openmpi-real-coverage,
-            gcc-openmpi-complex-coverage,
-            gcc11-real-werror,
-            gcc11-complex-werror,
-            clang-real-asan,
-            clang-complex-asan,
-            clang-openmpi-real-ubsan,
-            clang-latest-openmp-offload,
+            GCC9-MPI-Gcov-Real,
+            GCC9-MPI-Gcov-Complex,
+            GCC11-NoMPI-Werror-Real,
+            GCC11-NoMPI-Werror-Complex,
+            Clang10-NoMPI-ASan-Real,
+            Clang10-NoMPI-ASan-Complex,
+            Clang10-NoMPI-UBSan-Real,
+            Clang12-NoMPI-Offload-Real,
           ]
         include:
-          - jobname: gcc-openmpi-real-coverage
+          - jobname: GCC9-MPI-Gcov-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
 
-          - jobname: gcc-openmpi-complex-coverage
+          - jobname: GCC9-MPI-Gcov-Complex
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
 
-          - jobname: gcc11-real-werror
+          - jobname: GCC11-NoMPI-Werror-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu2110-serial
               options: -u 1001
 
-          - jobname: gcc11-complex-werror
+          - jobname: GCC11-NoMPI-Werror-Complex
             container:
               image: williamfgc/qmcpack-ci:ubuntu2110-serial
               options: -u 1001
 
-          - jobname: clang-real-asan
+          - jobname: Clang10-NoMPI-ASan-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
 
-          - jobname: clang-complex-asan
+          - jobname: Clang10-NoMPI-ASan-Complex
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
 
-          - jobname: clang-openmpi-real-ubsan
+          - jobname: Clang10-NoMPI-UBSan-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
 
-          - jobname: clang-latest-openmp-offload
+          - jobname: Clang12-NoMPI-Offload-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-clang-latest
               options: -u 1001
@@ -105,7 +105,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [macOS-gcc11-real]
+        jobname: [macOS-GCC11-NoMPI-Real]
 
     steps:
       - name: Checkout Action
@@ -113,8 +113,8 @@ jobs:
 
       - name: Setup Dependencies
         run: |
-             brew install ninja hdf5 fftw boost
-             pip3 install numpy h5py pandas
+          brew install ninja hdf5 fftw boost
+          pip3 install numpy h5py pandas
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure

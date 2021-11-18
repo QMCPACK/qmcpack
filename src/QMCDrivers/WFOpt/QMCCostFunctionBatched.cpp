@@ -51,7 +51,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
 
 
 /** Clean up the vector */
-QMCCostFunctionBatched::~QMCCostFunctionBatched() { delete_iter(RngSaved.begin(), RngSaved.end()); }
+QMCCostFunctionBatched::~QMCCostFunctionBatched() = default;
 
 void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,
@@ -188,6 +188,7 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
     if (includeNonlocalH != "no")
     {
       OperatorBase* a(H.getHamiltonian(includeNonlocalH));
+      outputManager.resume();
       if (a)
       {
         app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -386,7 +387,8 @@ void QMCCostFunctionBatched::checkConfigurations()
           if (includeNonlocalH != "no")
           {
             OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
-            RecordsOnNode[is][ENERGY_FIXED] -= nlpp->getValue();
+            if (nlpp)
+              RecordsOnNode[is][ENERGY_FIXED] -= nlpp->getValue();
           }
         }
       }

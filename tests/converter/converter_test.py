@@ -54,6 +54,8 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
         cmd.extend(['-nojastrow', '-prefix', 'test', '-gamess', conv_inp])
     if code=='dirac':
         cmd.extend(['-nojastrow', '-prefix', 'test', '-TargetState','14','-dirac', conv_inp])
+    if code=='rmg':
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-rmg', conv_inp])
 
     for ex_arg in extra_cmd_args:
         if ex_arg == '-ci':
@@ -143,8 +145,14 @@ def run_one_converter_test(c4q_exe, h5diff_exe):
     if 'dirac' in test_name:
         code='dirac'
 
+    if 'rmg' in test_name:
+        code='rmg'
+
     if code=='gamess' or code=='dirac': 
        conv_input_files = glob.glob('*.out')
+
+    if code=='rmg': 
+       conv_input_files = glob.glob('*.h5')
 
     if code=='generic': 
        conv_input_files = glob.glob('*.h5')

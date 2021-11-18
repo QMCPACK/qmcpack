@@ -24,7 +24,7 @@ namespace qmcplusplus
  *  \brief Custom container for set of attributes for a set of species.
  *
  *  A confusingly equivalent of std::map<std::string, <std::map<std::string, Scalar>>
- *  implemented as two sets of key vectors and a single vector of Scalars. It leaks it implementation
+ *  implemented as two sets of key vectors and a single vector of Scalars. It leaks its implementation
  *  details i.e. the indexing to the vectors. Reduces readability and increases semantic load.
  *  Looks like premature optimization.
  *
@@ -76,7 +76,15 @@ public:
    * @return the index of the species
    * @brief When a name species does not exist, return attribute.size()
    */
-  int getAttribute(const std::string& aname);
+  int getAttribute(const std::string& aname) const;
+
+  /** Check for attribute presence
+   *  This replaces code that gets numAttributes then tries to addAttribute for
+   *  a particular name and compares the numAttributes and index of the new Attribute
+   * @param aname Unique name of the species to be looked up.
+   * @return is an attribute of that name present
+   */
+  bool hasAttribute(const std::string& aname) const;
 
   /**
    * @param i attribute index

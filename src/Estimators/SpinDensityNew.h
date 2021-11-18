@@ -62,7 +62,7 @@ public:
 
   /** standard interface
    */
-  SpinDensityNew* clone() override;
+  std::unique_ptr<OperatorEstBase> clone() const override;
 
   /** accumulate 1 or more walkers of SpinDensity samples
    */

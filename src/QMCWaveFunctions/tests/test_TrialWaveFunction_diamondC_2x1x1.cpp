@@ -260,7 +260,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   elec_.createResource(pset_res);
   psi.createResource(twf_res);
 
-  //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});

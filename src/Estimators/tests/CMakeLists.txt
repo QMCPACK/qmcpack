@@ -2,9 +2,10 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -15,7 +16,7 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 set(SRCS
     test_accumulator.cpp
@@ -37,8 +38,10 @@ set(SRCS
 if(NOT QMC_CUDA)
   set(SRCS
       ${SRCS}
+      test_MomentumDistribution.cpp
       test_OneBodyDensityMatricesInput.cpp
-      test_OneBodyDensityMatrices.cpp)
+      test_OneBodyDensityMatrices.cpp
+      )
 endif()
   
 add_executable(${UTEST_EXE} ${SRCS})

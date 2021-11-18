@@ -21,7 +21,6 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
-#include "Optimize/LeastSquaredFit.h"
 #include <set>
 //#define QMCCOSTFUNCTION_DEBUG
 
@@ -88,19 +87,17 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(std::vector<RandomGenerator_t*>& r)
+void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
 {
   if (MoverRng.size() < r.size())
   {
-    delete_iter(MoverRng.begin(), MoverRng.end());
-    delete_iter(RngSaved.begin(), RngSaved.end());
     MoverRng.resize(r.size());
     RngSaved.resize(r.size());
   }
   for (int ip = 0; ip < r.size(); ++ip)
-    MoverRng[ip] = r[ip];
+    MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
+    RngSaved[ip] = std::make_unique<RandomGenerator_t>(r[ip].get());
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
@@ -181,12 +178,12 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   //    if (NumWalkersEff < MinNumWalkers)
   {
     WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
-             << std::endl
-             << "  Number of effective walkers (samples) / total number of samples = "
-             << (1.0 * NumWalkersEff) / NumSamples << std::endl
-             << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
-             << "  If this message appears frequently. You might have to be cautious. " << std::endl
-             << "  Find info about parameter \"minwalkers\" in the user manual!");
+            << std::endl
+            << "  Number of effective walkers (samples) / total number of samples = "
+            << (1.0 * NumWalkersEff) / NumSamples << std::endl
+            << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
+            << "  If this message appears frequently. You might have to be cautious. " << std::endl
+            << "  Find info about parameter \"minwalkers\" in the user manual!");
     IsValid = false;
   }
   return CostValue;
@@ -1020,85 +1017,6 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
   }
 }
 
-bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
-                                           const std::vector<Return_rt>& gr,
-                                           Return_rt val0,
-                                           Return_rt& dl,
-                                           Return_rt& val_proj,
-                                           Return_rt& lambda_max)
-{
-  return false;
-  // PK: Commented out inaccessible code after return false, but why was return added?
-  //  const int maxclones=3;
-  //  const int max_poly=3;
-  //  //Matrix<Return_t> js(maxclones+1,x0.size());
-  //  Vector<Return_t> y(maxclones+1);
-  //  Vector<Return_t> sigma(maxclones+1);
-  //  Matrix<Return_t> A(maxclones+1,max_poly);
-  //  sigma=1e-6; //a small value
-  //  Return_t gr_norm=0.0;
-  //  for (int j=0; j<x0.size(); ++j)
-  //  {
-  //    //js(0,j)=x0[j];
-  //    gr_norm+=gr[j]*gr[j];
-  //  }
-  //  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
-  //  //Return_t MaxDispl=0.04;
-  //  gr_norm=std::sqrt(gr_norm);
-  //  Return_t dx=lambda_max/gr_norm;
-  //  dx=std::min((QMCTraits::RealType)0.25,dx);
-  //  if (val0<1e12)
-  //  {
-  //    y[0]=val0;
-  //    sigma[0]=std::sqrt(val0)*nw;
-  //  }
-  //  else
-  //  {
-  //    for (int j=0; j<x0.size(); ++j)
-  //      Params(j)=x0[j];
-  //    Return_t costval=Cost();
-  //    y[0]=costval;
-  //    sigma[0]=std::sqrt(costval)*nw;
-  //  }
-  //  app_log() << "  lineoptimization (" << 0.0 << "," << y[0] << ")";
-  //  for (int k=0; k<max_poly; ++k)
-  //    A(0,k)=0.0;
-  //  Return_t dxmax=0.0;
-  //  for (int i=1; i<=maxclones; ++i)
-  //  {
-  //    dxmax+=dx;
-  //    //set OptParams to vary
-  //    for (int j=0; j<x0.size(); ++j)
-  //    {
-  //      //js(i,j)=OptParams[j]=x0[j]+dx*gr[j];
-  //      Params(j)=x0[j]+dxmax*gr[j];
-  //    }
-  //    Return_t costval=Cost();
-  //    y[i]=costval;
-  //    sigma[i]=std::sqrt(costval)*nw;
-  //    for (int k=0; k<max_poly; ++k)
-  //      A(i,k)=std::pow(dxmax,k);
-  //    app_log() << " (" << dxmax << "," << y[i] << ")";
-  //  }
-  //  app_log() << std::endl;
-  //  Vector<QMCTraits::RealType> polys(max_poly);
-  //  Vector<QMCTraits::RealType> errors(max_poly);
-  //  LeastSquaredFitLU(y,sigma,A,polys,errors);
-  //  dl=-polys[1]/polys[2]*0.5;
-  //  val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);
-  //  if (dl<dx*0.25)
-  //    lambda_max *=0.5; // narrow the bracket
-  //  if (dl>dxmax*5.0)
-  //    lambda_max *=2.0; //widen the bracket
-  //  app_log() << "    minimum at " << dl << " estimated=" << val_proj << " LambdaMax " << lambda_max;
-  //  for (int j=0; j<x0.size(); ++j)
-  //    Params(j)=x0[j]+dl*gr[j];
-  //  val_proj=Cost();
-  //  app_log() << "  cost = " << val_proj << std::endl;
-  //  //Psi.reportStatus(app_log());
-  //  //return false;
-  //  return true;
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.

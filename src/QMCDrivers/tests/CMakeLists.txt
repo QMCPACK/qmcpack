@@ -18,7 +18,7 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 # test_drivers shouldn't be dependent on wavefunctions
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 set(DRIVER_TEST_SRC
     test_vmc.cpp

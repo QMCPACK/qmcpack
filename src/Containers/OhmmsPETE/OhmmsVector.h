@@ -43,7 +43,7 @@ public:
   typedef Vector<T, Alloc> This_t;
 
   /** constructor with size n*/
-  explicit inline Vector(size_t n = 0, Type_t val = Type_t()) : nLocal(n), nAllocated(0), X(nullptr)
+  explicit inline Vector(size_t n = 0, Type_t val = Type_t()) : nLocal(n)
   {
     if (n)
     {
@@ -53,10 +53,10 @@ public:
   }
 
   /** constructor with an initialized ref */
-  explicit inline Vector(T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref) {}
+  explicit inline Vector(T* ref, size_t n) : nLocal(n), X(ref) {}
 
   /** copy constructor */
-  Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
+  Vector(const Vector& rhs) : nLocal(rhs.nLocal)
   {
     if (nLocal)
     {
@@ -74,15 +74,33 @@ public:
    *  realspace dualspace allocator "interface"
    */
   template<typename CONTAINER>
-  Vector(CONTAINER& from, T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref)
+  Vector(CONTAINER& from, T* ref, size_t n) : nLocal(n), X(ref)
   {
     qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, from.data(), ref);
   }
 
+  /** Initializer list constructor that can deal with both POD
+   *  and nontrivial nested elements with move assignment operators.
+   */
   Vector(std::initializer_list<T> ts)
   {
     if (qmc_allocator_traits<Alloc>::is_host_accessible)
-      std::copy_n(ts.begin(), ts.size(), X);
+    {
+      if (ts.size() == 0)
+        return;
+      std::size_t num_elements = ts.size();
+      resize_impl(num_elements);
+      if constexpr (std::is_trivial<T>::value)
+      {
+        std::copy_n(ts.begin(), ts.size(), X);
+      }
+      else
+      {
+        auto ts_it = ts.begin();
+        for (int i = 0; i < num_elements; ++i, ++ts_it)
+          (*this)[i] = std::move(*ts_it);
+      }
+    }
     else
       throw std::runtime_error("initializer lists are not supported for Vector's inaccessible to the host");
   }
@@ -264,11 +282,11 @@ public:
 
 private:
   ///size
-  size_t nLocal;
+  size_t nLocal = 0;
   ///The number of allocated
-  size_t nAllocated;
+  size_t nAllocated = 0;
   ///pointer to the data accessed through this object
-  T* X;
+  T* X = nullptr;
   ///allocator
   Alloc mAllocator;
 

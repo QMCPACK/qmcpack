@@ -21,17 +21,20 @@
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
+#include "CUDA/CUDALinearAlgebraHandles.h"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "DualAllocatorAliases.hpp"
-#include "CUDA/CUDALinearAlgebraHandles.h"
+#include "DiracMatrixComputeCUDA.hpp"
 #include "ResourceCollection.h"
-
+#include "WaveFunctionTypes.hpp"
 
 namespace qmcplusplus
 {
 
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE in DiracDeterminantBatched.
+ * This is a 1 per walker class
+ *
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
@@ -44,6 +47,7 @@ public:
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
+  using DetInverter   = DiracMatrixComputeCUDA<FullPrecValue>;
 
   template<typename DT>
   using PinnedDualAllocator = PinnedDualAllocator<DT>;
@@ -57,17 +61,14 @@ public:
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
-    using UnPinnedDualVector = Vector<Value, UnpinnedDualAllocator<Value>>;
-    using DualMatrix         = Matrix<Value, PinnedDualAllocator<Value>>;
-
-    // constant array value T(1)
-    UnPinnedDualVector cone_vec;
-    // constant array value T(-1)
-    UnPinnedDualVector cminusone_vec;
-    // constant array value T(0)
-    UnPinnedDualVector czero_vec;
+    // constant array value VALUE(1)
+    UnpinnedDualVector<Value> cone_vec;
+    // constant array value VALUE(-1)
+    UnpinnedDualVector<Value> cminusone_vec;
+    // constant array value VALUE(0)
+    UnpinnedDualVector<Value> czero_vec;
     // multi walker of grads for transfer needs.
-    DualMatrix grads_value_v;
+    DualMatrix<Value> grads_value_v;
     // mw_updateRow pointer buffer
     Vector<char, PinnedDualAllocator<char>> updateRow_buffer_H2D;
     // mw_prepareInvRow pointer buffer
@@ -79,9 +80,9 @@ public:
     // mw_evalGrad pointer buffer
     Vector<char, PinnedDualAllocator<char>> evalGrad_buffer_H2D;
     /// scratch space for rank-1 update
-    UnPinnedDualVector mw_temp;
+    UnpinnedDualVector<Value> mw_temp;
     // scratch space for keeping one row of Ainv
-    UnPinnedDualVector mw_rcopy;
+    UnpinnedDualVector<Value> mw_rcopy;
 
     MatrixDelayedUpdateCUDAMultiWalkerMem() : Resource("MatrixDelayedUpdateCUDAMultiWalkerMem") {}
 
@@ -92,6 +93,8 @@ public:
     Resource* makeClone() const override { return new MatrixDelayedUpdateCUDAMultiWalkerMem(*this); }
   };
 
+  const DualMatrix<Value>& get_psiMinv() const { return psiMinv_; }
+  DualMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
 
 private:
   /// legacy single walker matrix inversion engine
@@ -104,7 +107,7 @@ private:
   DualMatrix<Value> psiMinv_;
   /// scratch space for rank-1 update
   UnpinnedDualVector<Value> temp;
-  // row of up-to-date Ainv
+  /// row of up-to-date Ainv
   UnpinnedDualVector<Value> invRow;
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
    *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
@@ -134,17 +137,22 @@ private:
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
+  /** @ingroup Resources
+   *  @{ */
   // CUDA stream, cublas handle object
   std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
-  // multi walker memory buffers
+  /// crowd scope memory resource
   std::unique_ptr<MatrixDelayedUpdateCUDAMultiWalkerMem> mw_mem_;
+  /**}@ */
 
   inline void waitStream()
   {
     cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
   }
 
-  // ensure no previous delay left
+  /** ensure no previous delay left.
+   *  This looks like it should be an assert
+   */
   inline void guard_no_delay() const
   {
     if (delay_count != 0)
@@ -152,8 +160,10 @@ private:
   }
 
   // check if the number of maximal delay is 1 (SM-1)
+  // \todo rename this something containing delay.
   inline bool isSM1() const { return Binv_gpu.rows() == 1; }
 
+  /** a bad smell */
   void resize_fill_constant_arrays(size_t nw)
   {
     if (mw_mem_->cone_vec.size() < nw)
@@ -189,7 +199,7 @@ private:
     auto& cone_vec                   = engine_leader.mw_mem_->cone_vec;
     auto& czero_vec                  = engine_leader.mw_mem_->czero_vec;
     auto& prepare_inv_row_buffer_H2D = engine_leader.mw_mem_->prepare_inv_row_buffer_H2D;
-    const int norb                   = engine_leader.get_ref_psiMinv().rows();
+    const int norb                   = engine_leader.get_psiMinv().rows();
     const int nw                     = engines.size();
     int& delay_count                 = engine_leader.delay_count;
     prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * 7 * nw);
@@ -200,7 +210,8 @@ private:
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];
-      ptr_buffer[0][iw] = engine.get_ref_psiMinv().device_data() + rowchanged * engine.get_ref_psiMinv().cols();
+      auto& psiMinv     = engine.get_ref_psiMinv();
+      ptr_buffer[0][iw] = psiMinv.device_data() + rowchanged * psiMinv.cols();
       ptr_buffer[1][iw] = engine.invRow.device_data();
       ptr_buffer[2][iw] = engine.U_gpu.data();
       ptr_buffer[3][iw] = engine.p_gpu.data();
@@ -244,6 +255,22 @@ private:
     engine_leader.invRow_id = rowchanged;
   }
 
+  /** Do complete row updates
+   *  many of these const arguments provide pointers or references
+   *  somwhere in here is an update that doesn't get where it belongs resulting in a 0
+   *  gradient later.
+   *  Sad example of OpenMP target code that is far from clear and a poor substitute for a
+   *  clear CPU reference implementation.
+   *
+   *  \param[in] engines
+   *  \param[in] rowchanged
+   *  \param[in] psiM_g_list        device ptrs
+   *  \param[in] psiM_l_list        device ptrs
+   *  \param[in] isAccepted         bool but wait some lists are also filtered
+   *  \param[in] phi_vgl_v_dev_ptr  device ptr
+   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[inout] ratios
+   */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
                            const int rowchanged,
                            const std::vector<Value*>& psiM_g_list,
@@ -257,6 +284,10 @@ private:
     engine_leader.guard_no_delay();
 
     const size_t n_accepted = psiM_g_list.size();
+#ifndef NDEBUG
+    size_t n_true = std::count_if(isAccepted.begin(), isAccepted.end(), [](bool accepted) { return accepted; });
+    assert(n_accepted == n_true);
+#endif
     if (n_accepted == 0)
       return;
 
@@ -357,6 +388,8 @@ public:
 
   void createResource(ResourceCollection& collection) const
   {
+    //the semantics of the ResourceCollection are such that we don't want to add a Resource that we need
+    //later in the chain of resource creation.
     collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
     collection.addResource(std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>());
   }
@@ -367,7 +400,6 @@ public:
     if (!res_ptr)
       throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast CUDALinearAlgebraHandles failed");
     cuda_handles_.reset(res_ptr);
-
     auto res2_ptr = dynamic_cast<MatrixDelayedUpdateCUDAMultiWalkerMem*>(collection.lendResource().release());
     if (!res2_ptr)
       throw std::runtime_error(
@@ -390,65 +422,16 @@ public:
    *
    *  perhaps this should be getRefHostPsiMinv() and it should guarantee consistency.
    */
-  DualMatrix<Value>& get_ref_psiMinv() { return psiMinv_; }
-  const DualMatrix<Value>& get_psiMinv() const { return psiMinv_; }
+  inline void checkResourcesForTest()
+  {
+    if (!cuda_handles_)
+    {
+      throw std::logic_error(
+          "Null cuda_handles_, Even for testing proper resource creation and acquisition must be made.");
+    }
+  }
 
   Value* getRow_psiMinv_offload(int row_id) { return psiMinv_.device_data() + row_id * psiMinv_.cols(); }
-
-  /** compute the inverse of the transpose of matrix psiM, result is in psiMinv
-   * \param[in] psiM orbital value matrix
-   * \param[out] psiMinv inverted orbital value matrix
-   * \param[out] log_value log(det(logdetT))
-   */
-  void invert_transpose(const DualMatrix<Value>& psiM, DualMatrix<Value>& psiMinv, LogValue& log_value)
-  {
-    guard_no_delay();
-    // call to legacy DiracMatrix
-    const Matrix<Value> psiM_host(const_cast<DualMatrix<Value>&>(psiM).data(), psiM.rows(), psiM.cols());
-    Matrix<Value> psiMinv_host(psiMinv.data(), psiMinv.rows(), psiMinv.cols());
-    detEng.invert_transpose(psiM_host, psiMinv_host, log_value);
-    Value* psiMinv_ptr = psiMinv.data();
-    PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
-  }
-
-  static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 const RefVector<const DualMatrix<Value>>& psiM_list,
-                                 const RefVector<DualMatrix<Value>>& psiMinv_list,
-                                 DualVector<LogValue>& log_values,
-                                 const std::vector<bool>& compute_mask)
-  {
-    auto& engine_leader = engines.getLeader();
-    // make this class unit tests friendly without the need of setup resources.
-    if (!engine_leader.cuda_handles_)
-    {
-      app_warning() << "MatrixDelayedUpdateCUDA : This message should not be seen in production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      engine_leader.cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
-    }
-    if (!engine_leader.mw_mem_)
-    {
-      app_warning() << "MatrixDelayedUpdateCUDA : This message should not be seen in production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      engine_leader.mw_mem_ = std::make_unique<MatrixDelayedUpdateCUDAMultiWalkerMem>();
-    }
-
-    engine_leader.guard_no_delay();
-
-    // FIXME use cublas datched inverse.
-    for (int iw = 0; iw < engines.size(); iw++)
-    {
-      auto& Ainv = psiMinv_list[iw].get();
-      Matrix<Value> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      Matrix<Value> logdetT_host_view(const_cast<DualMatrix<Value>&>(psiM_list[iw].get()).data(),
-                                      psiM_list[iw].get().rows(), psiM_list[iw].get().cols());
-      engine_leader.detEng.invert_transpose(logdetT_host_view, Ainv_host_view, log_values[iw]);
-      Value* Ainv_ptr = Ainv.data();
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
-    }
-    PRAGMA_OFFLOAD("omp taskwait")
-  }
 
   // prepare invRow and compute the old gradients.
   template<typename GT>
@@ -471,7 +454,10 @@ public:
     for (int iw = 0; iw < nw; iw++)
     {
       if (engine_leader.isSM1())
-        ptr_buffer[0][iw] = engines[iw].get_ref_psiMinv().device_data() + rowchanged * engine_leader.get_ref_psiMinv().cols();
+      {
+        auto& psiMinv     = engines[iw].get_ref_psiMinv();
+        ptr_buffer[0][iw] = psiMinv.device_data() + rowchanged * psiMinv.cols();
+      }
       else
         ptr_buffer[0][iw] = engines[iw].invRow.device_data();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
@@ -499,6 +485,15 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
+  /** Update the "local" psiMinv_ on the device.
+   *  Side Effect Transfers:
+   *  * phiV is left on host side in the single methods so it must be transferred to device
+   *  * psiMinv_ is transferred back to host since single calls from QMCHamitonian and others
+   *  * expect it to be.
+   *
+   *  Forced to use OpenMP target since resources are banned for single walker functions APIs
+   *  and the acquireRelease pattern for a single DDB was removed by #3324
+   */
   template<typename VVT>
   void updateRow(int rowchanged, const VVT& phiV, FullPrecValue c_ratio_in)
   {
@@ -516,11 +511,15 @@ public:
     Value* Ainv_ptr       = Ainv.data();
     Value* temp_ptr       = temp.data();
     Value* rcopy_ptr      = rcopy.data();
+    // This must be Ainv must be tofrom due to NonlocalEcpComponent and possibly
+    // other modules assumptions about the state of psiMinv.
     PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
+                    map(always, tofrom: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::gemv failed.");
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
@@ -528,11 +527,25 @@ public:
         for (int i = 0; i < norb; i++)
           rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
       }
-      ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(-1.0 / c_ratio_in), rcopy_ptr, 1, temp_ptr, 1, Ainv_ptr,
-                   lda);
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FullPrecValue(-1) / c_ratio_in), rcopy_ptr, 1,
+                             temp_ptr, 1, Ainv_ptr, lda);
+      if (success != 0)
+        throw std::runtime_error("ompBLAS::ger failed.");
     }
   }
 
+  /** Accept or Reject row updates
+   *  many of these const arguments provide pointers or references
+   *  to objects that do get modified.
+   *  \param[in] engines
+   *  \param[in] rowchanged
+   *  \param[in] psiM_g_list
+   *  \param[in] psiM_l_list
+   *  \param[in] isAccepted
+   *  \param[in] phi_vgl_v_dev_ptr
+   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[inout] ratios
+   */
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
                                   const int rowchanged,
                                   const std::vector<Value*>& psiM_g_list,
@@ -817,6 +830,13 @@ public:
                                      engine.get_psiMinv().size() * sizeof(Value), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync Ainv failed!");
     engine_leader.waitStream();
+  }
+
+  auto& getLAhandles()
+  {
+    if (!cuda_handles_)
+      throw std::logic_error("attempted to get null cuda_handles_, this is developer logic error");
+    return *cuda_handles_;
   }
 };
 } // namespace qmcplusplus

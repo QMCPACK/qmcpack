@@ -158,7 +158,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   //special heg processing
   if (rs > 0.0)
   {
-    HEGGrid<ParticleLayout_t::Scalar_t, OHMMS_DIM> heg(ref_);
+    HEGGrid<ParticleLayout_t::Scalar_t> heg(ref_);
     if (pol == 0)
     {
       if (nsh > 0)

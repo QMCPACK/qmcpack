@@ -75,7 +75,11 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
+  DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
+                          int first,
+                          int last,
+                          int ndelay                           = 1,
+                          DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
   DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
@@ -178,6 +182,14 @@ public:
 
   void recompute(const ParticleSet& P) override;
 
+  /** Does a Phi->mw_evaluate_notranspose then mw_invertPsiM over a set of
+   *  elements filtered based on the recompute mask.
+   *
+   */
+  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    const std::vector<bool>& recompute) const override;
+
   LogValue evaluateGL(const ParticleSet& P,
                       ParticleSet::ParticleGradient_t& G,
                       ParticleSet::ParticleLaplacian_t& L,
@@ -204,7 +216,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantBatched* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 
@@ -261,6 +273,12 @@ private:
   /// Delayed update engine 1 per walker.
   DET_ENGINE det_engine_;
 
+  /// slow but doesn't consume device memory
+  DiracMatrix<FullPrecValue> host_inverter_;
+
+  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
+  std::unique_ptr<typename DET_ENGINE::DetInverter> accel_inverter_;
+
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
@@ -278,18 +296,9 @@ private:
    *  list of walker elements and the implementation should decide what to do re
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
-  void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+  static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVector<const DualMatrix<Value>>& logdetT_list,
-                     const RefVector<DualMatrix<Value>>& a_inv_list,
-                     const std::vector<bool>& compute_mask) const;
-
-  /** Does a Phi->mw_evaluate_notranspose then mw_invertPsiM over a set of
-   *  elements filtered based on the recompute mask.
-   *
-   */
-  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVectorWithLeader<ParticleSet>& p_list,
-                    const std::vector<bool>& recompute) const override;
+                     const RefVector<DualMatrix<Value>>& a_inv_lis);
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()
@@ -309,6 +318,9 @@ private:
 
   /// maximal number of delayed updates
   const int ndelay_;
+
+  /// selected scheme for inversion with walker batching
+  DetMatInvertor matrix_inverter_kind_;
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;

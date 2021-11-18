@@ -21,6 +21,11 @@
 #include "config.h"
 #include "allocator_traits.hpp"
 
+#if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
+#include <CUDA/CUDAruntime.hpp>
+#include <omp.h>
+#endif
+
 namespace qmcplusplus
 {
 extern std::atomic<size_t> OMPallocator_device_mem_allocated;
@@ -78,16 +83,31 @@ struct OMPallocator : public HostAllocator
   {
     static_assert(std::is_same<T, value_type>::value, "OMPallocator and HostAllocator data types must agree!");
     value_type* pt = HostAllocator::allocate(n);
+#if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
+    cudaErrorCheck(cudaMalloc(&device_ptr_, n * sizeof(T)), "cudaMalloc failed in OMPallocator!");
+    const int status = omp_target_associate_ptr(pt, device_ptr_, n * sizeof(T), 0, omp_get_default_device());
+    if (status != 0)
+      throw std::runtime_error("omp_target_associate_ptr failed in OMPallocator!");
+#else
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
-    OMPallocator_device_mem_allocated += n * sizeof(T);
     device_ptr_ = getOffloadDevicePtr(pt);
+#endif
+    OMPallocator_device_mem_allocated += n * sizeof(T);
     return pt;
   }
 
   void deallocate(value_type* pt, std::size_t n)
   {
-    PRAGMA_OFFLOAD("omp target exit data map(delete:pt[0:n])")
     OMPallocator_device_mem_allocated -= n * sizeof(T);
+#if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
+    T* device_ptr_from_omp = getOffloadDevicePtr(pt);
+    const int status = omp_target_disassociate_ptr(pt, omp_get_default_device());
+    if (status != 0)
+      throw std::runtime_error("omp_target_disassociate_ptr failed in OMPallocator!");
+    cudaErrorCheck(cudaFree(device_ptr_from_omp), "cudaFree failed in OMPallocator!");
+#else
+    PRAGMA_OFFLOAD("omp target exit data map(delete:pt[0:n])")
+#endif
     HostAllocator::deallocate(pt, n);
   }
 

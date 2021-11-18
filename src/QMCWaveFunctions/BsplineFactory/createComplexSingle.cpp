@@ -31,10 +31,12 @@
 
 namespace qmcplusplus
 {
-BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
+std::unique_ptr<BsplineReaderBase> createBsplineComplexSingle(EinsplineSetBuilder* e,
+                                                              bool hybrid_rep,
+                                                              const std::string& useGPU)
 {
   typedef OHMMS_PRECISION RealType;
-  BsplineReaderBase* aReader = nullptr;
+  std::unique_ptr<BsplineReaderBase> aReader;
 
 #if defined(QMC_COMPLEX)
   app_summary() << "    Using complex valued spline SPOs with complex single precision storage (C2C)." << std::endl;
@@ -46,12 +48,12 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
       app_summary() << "OpenMP offload has not been implemented to support hybrid orbital representation!"
                     << "    Running on CPU." << std::endl;
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
+      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>>(e);
     }
     else
     {
       app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
-      aReader = new SplineSetReader<SplineC2COMPTarget<float>>(e);
+      aReader = std::make_unique<SplineSetReader<SplineC2COMPTarget<float>>>(e);
     }
   }
   else
@@ -61,10 +63,10 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
+      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>>(e);
     }
     else
-      aReader = new SplineSetReader<SplineC2C<float>>(e);
+      aReader = std::make_unique<SplineSetReader<SplineC2C<float>>>(e);
   }
 #else //QMC_COMPLEX
   app_summary() << "    Using real valued spline SPOs with complex single precision storage (C2R)." << std::endl;
@@ -76,12 +78,12 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
       app_summary() << "OpenMP offload has not been implemented to support hybrid orbital representation!"
                     << "    Running on CPU." << std::endl;
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>(e);
+      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>>(e);
     }
     else
     {
       app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
-      aReader = new SplineSetReader<SplineC2ROMPTarget<float>>(e);
+      aReader = std::make_unique<SplineSetReader<SplineC2ROMPTarget<float>>>(e);
     }
   }
   else
@@ -91,10 +93,10 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>(e);
+      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>>(e);
     }
     else
-      aReader = new SplineSetReader<SplineC2R<float>>(e);
+      aReader = std::make_unique<SplineSetReader<SplineC2R<float>>>(e);
   }
 #endif
   return aReader;

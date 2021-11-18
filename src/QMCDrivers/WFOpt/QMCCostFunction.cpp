@@ -36,7 +36,6 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
 /** Clean up the vector */
 QMCCostFunction::~QMCCostFunction()
 {
-  delete_iter(RngSaved.begin(), RngSaved.end());
   delete_iter(RecordsOnNode.begin(), RecordsOnNode.end());
   delete_iter(DerivRecords.begin(), DerivRecords.end());
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
