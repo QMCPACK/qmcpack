@@ -107,11 +107,13 @@ private:
   bool write_acceptance_ratio_ = false;
   /// This flag is derived from input so if you construct an OBDMI directly with center it must be set.
   bool center_defined_   = false;
+  bool corner_defined_   = false;
   Integrator integrator_ = Integrator::UNIFORM_GRID;
   Evaluator evaluator_   = Evaluator::LOOP;
   Real scale_            = 1.0;
   /// center_ does not have a default. The estimator sets if from input Lattice if it isn't set
   Position center_;
+  Position corner_;
   Real timestep_      = 0.5;
   int points_         = 10;
   int samples_        = 10;

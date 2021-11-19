@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "string_utils.h"
+#include "EstimatorInput.h"
 #include "OneBodyDensityMatricesInput.h"
 
 namespace qmcplusplus
@@ -32,6 +33,7 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
   setIfInInput(evaluator_, "evaluator");
   setIfInInput(scale_, "scale");
   center_defined_ = setIfInInput(center_, "center");
+  corner_defined_ = setIfInInput(corner_, "corner");
   setIfInInput(timestep_, "timestep");
   setIfInInput(points_, "points");
   setIfInInput(samples_, "samples");
@@ -41,7 +43,9 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 
 void OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::checkParticularValidity()
 {
+  using namespace estimatorinput;
   const std::string error_tag{"OneBodyDensityMatrices input: "};
+  checkCenterCorner(input_section, error_tag);
   if (has("scale"))
   {
     Real scale = get<Real>("scale");

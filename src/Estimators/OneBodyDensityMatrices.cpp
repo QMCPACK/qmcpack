@@ -40,14 +40,23 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
 {
   my_name_ = "OneBodyDensityMatrices";
   lattice_.reset();
-  if (input_.get_center_defined())
-    center_ = input_.get_center();
+
+  if (input_.get_corner_defined())
+  {
+    rcorner_ = input.get_corner();
+    center_ = rcorner_ + input.get_scale() * lattice_.Center;
+  }
   else
+  {
+    if (input_.get_center_defined())
+      center_  = input_.get_center();
+    else
     center_ = lattice_.Center;
+    rcorner_ = center_ - input_.get_scale() * lattice_.Center;
+  }
 
   volume_   = lattice_.Volume * std::exp(OHMMS_DIM * std::log(input_.get_scale()));
   periodic_ = lattice_.SuperCellEnum != SUPERCELL_OPEN;
-  rcorner_  = center_ - input_.get_scale() * lattice_.Center;
 
   // Here we discover sampling is derived (this may belong in input class)
   switch (input_.get_integrator())
