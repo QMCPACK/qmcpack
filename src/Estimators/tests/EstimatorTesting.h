@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_ESTIMATOR_TESTING_H
 
 #include "ParticleSet.h"
+#include "OperatorEstBase.h"
 
 namespace qmcplusplus
 {
@@ -30,9 +31,24 @@ enum class SpeciesCases
   NO_MEMBERSIZE
 };
 
- 
 Lattice makeTestLattice();
 SpeciesSet makeSpeciesSet(const SpeciesCases species_case);
-}
-}
+
+/** break encapsulation of data_ by  OperatorEstBase
+ *  only for testing!
+ */
+class OEBAccessor
+{
+public:
+  // break naming rule to make std::vector which we assume is the type of OperatorEstBase::Data
+  using value_type = OperatorEstBase::Data::value_type;
+  OEBAccessor(OperatorEstBase& oeb);
+  value_type& operator[](size_t pos);
+
+private:
+  OperatorEstBase& oeb_;
+};
+
+} // namespace testing
+} // namespace qmcplusplus
 #endif

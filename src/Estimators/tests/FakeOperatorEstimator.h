@@ -39,7 +39,7 @@ public:
 
   void startBlock(int nsteps) override {}
 
-  std::unique_ptr<OperatorEstBase> clone() const override { return std::make_unique<FakeOperatorEstimator>(*this); }
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override { return std::make_unique<FakeOperatorEstimator>(*this); }
 
   void set_walker_weights(QMCT::RealType weight) { walkers_weight_ = weight; }
 };

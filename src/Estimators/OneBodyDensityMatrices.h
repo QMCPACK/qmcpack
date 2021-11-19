@@ -67,14 +67,6 @@ private:
   OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
-  /** WaveFunctionFactory reference to allow delegation of the copy constructor
-   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
-   */
-  const WaveFunctionFactory& wf_factory_;
-  /** target particleset  reference to allow delegation of the copy constructor
-   *  \todo remove after copy constructor that directly shares or copys basis_set_ is done
-   */
-  ParticleSet& very_temp_pset_;
 
   /** @ingroup Derived simulation parameters determined by computation based in input
    *  @{
@@ -154,24 +146,21 @@ private:
 
 public:
   /** Standard Constructor
-   *  If you are making a new OBDM this is what you should be calling
+   *  Call this to make a new OBDM this is what you should be calling
    */
   OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                          const Lattice& lattice,
                          const SpeciesSet& species,
                          const WaveFunctionFactory& wf_factory,
-                         ParticleSet& pset_target,
-                         const DataLocality dl = DataLocality::crowd);
+                         ParticleSet& pset_target);
 
-  /** copy constructor delegates to standard constructor
-   *  This results in a copy construct and move of OneBodyDensityMatricesInput
-   *  But for the OBDM itself its as if it went through the standard construction.
-   *  This will be replaced within a few PR's by an optimized copy constructor.
+  /** Constructor used when spawing crowd clones
+   *  needs to be public so std::make_unique can call it.
+   *  Do not use directly unless you've really thought it through.
    */
-  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm);
-  ~OneBodyDensityMatrices() override;
+  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl);
 
-  std::unique_ptr<OperatorEstBase> clone() const override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -186,9 +175,16 @@ public:
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  void registerOperatorEstimator(hid_t gid) override {}
+  void registerOperatorEstimator(hid_t gid) override;
 
 private:
+  /** Default copy constructor.
+   *  Instances of this estimator is assume to be thread scope, i.e. never
+   *  called by more than one thread at a time. note the OperatorEstBase copy constructor does
+   *  not copy or even allocate data_
+   */
+  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm) = default;
+
   /** Unfortunate design RandomGenerator_t type aliasing and
    *  virtual inheritance requires this for testing.
    */
@@ -200,7 +196,7 @@ private:
 
   size_t calcFullDataSize(size_t basis_size, int num_species);
   //local functions
-  void normalize(ParticleSet& pset_target);
+  void normalizeBasis(ParticleSet& pset_target);
   //  printing
   void report(const std::string& pad = "");
   template<class RNG_GEN>
