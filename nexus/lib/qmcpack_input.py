@@ -4804,8 +4804,12 @@ def generate_determinantset_old(type           = 'bspline',
             #1. excitation=['up','0 45 3 46'] 
             #2. excitation=['up','-215 216']  
             #3. excitation=['up', 'L vb F cb']
-            if len(excitation) == 2: #Type 1 or 2 
-                if 'cb' not in excitation[1] and 'vb' not in excitation[1]:
+            #4. excitation=['up', 'homo lumo'] OR excitation=['up', 'homo-N lumo+M']
+            if len(excitation) == 2: #Type 1, 2, 3, or 4
+                if 'homo' in excitation[1] and 'lumo' in excitation[1]:
+                    print('HERE')
+                    quit()
+                elif 'cb' not in excitation[1] and 'vb' not in excitation[1]:
                     try:
                         tmp = array(excitation[1].split(),dtype=int)
                     except:
