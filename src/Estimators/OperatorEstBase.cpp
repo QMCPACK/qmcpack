@@ -19,7 +19,9 @@ namespace qmcplusplus
 {
 OperatorEstBase::OperatorEstBase(DataLocality dl) : data_locality_(dl), walkers_weight_(0) {}
 
-  OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : data_locality_(oth.data_locality_), my_name_(oth.my_name_), walkers_weight_(0) {}
+OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth)
+    : data_locality_(oth.data_locality_), my_name_(oth.my_name_), walkers_weight_(0)
+{}
 
 void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
 {
@@ -41,20 +43,20 @@ void OperatorEstBase::write()
 {
   if (h5desc_.size() == 0)
     return;
-  // We have to do this to deal with the legacy design that Observables using
-  // collectables in mixed precision were accumulated in float but always written
-  // to hdf5 in double.
+    // We have to do this to deal with the legacy design that Observables using
+    // collectables in mixed precision were accumulated in float but always written
+    // to hdf5 in double.
 #ifdef MIXED_PRECISION
-    std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
-    std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
-    assert(data_.size() > 0);
-    // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
-    // std::cout << "data size: " << data_->size() << " : " << total << '\n';
-    for (auto& h5d : h5desc_)
-      h5d->write(expanded_data.data(), nullptr);
+  std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
+  std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
+  assert(data_.size() > 0);
+  // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
+  // std::cout << "data size: " << data_->size() << " : " << total << '\n';
+  for (auto& h5d : h5desc_)
+    h5d->write(expanded_data.data(), nullptr);
 #else
-    for (auto& h5d : h5desc_)
-      h5d->write(data_.data(), nullptr);
+  for (auto& h5d : h5desc_)
+    h5d->write(data_.data(), nullptr);
 #endif
 }
 

@@ -48,5 +48,9 @@ SpeciesSet makeSpeciesSet(const SpeciesCases species_case)
   return species_set;
 }
 
+OEBAccessor::OEBAccessor(OperatorEstBase& oeb) : oeb_(oeb) {}
+
+OEBAccessor::value_type& OEBAccessor::operator[](size_t pos) { return oeb_.data_[pos]; }
+
 } // namespace testing
 } // namespace qmcplusplus

@@ -23,7 +23,10 @@
 namespace qmcplusplus
 {
 class SpeciesSet;
-
+namespace testing
+{
+class SpinDensityNewTests;
+}
 /** Class that collects density per species of particle
  *
  *  commonly used for spin up and down electrons
@@ -48,17 +51,22 @@ public:
    *  Ideally when validating input is built up enough there would be only one constructor with
    *  signature
    *
-   *      SpinDensityNew(SpinDensityInput&& sdi, SpinDensityInput::DerivedParameters&& dev_par, SpeciesSet species, DataLocality dl);
+   *  SpinDensityNew(SpinDensityInput&& sdi, 
+   *                 SpinDensityInput::DerivedParameters&& dev_par, 
+   *                 SpeciesSet species,
+   *                 DataLocality dl);
    */
   SpinDensityNew(SpinDensityInput&& sdi,
                  const Lattice&,
                  const SpeciesSet& species,
                  const DataLocality dl = DataLocality::crowd);
 
-  SpinDensityNew(const SpinDensityNew& sdn) = default;
+  /** Constructor used when spawing crowd clones
+   *  needs to be public so std::make_unique can call it.
+   *  Do not use directly unless you've really thought it through.
+   */
   SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl);
-                                                               
-  
+
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
   void startBlock(int steps) override;
@@ -98,6 +106,8 @@ public:
   void registerOperatorEstimator(hid_t gid) override;
 
 private:
+  SpinDensityNew(const SpinDensityNew& sdn) = default;
+
   static std::vector<int> getSpeciesSize(const SpeciesSet& species);
   /** derived_parameters_ must be valid i.e. initialized with call to input_.calculateDerivedParameters
    */
@@ -123,6 +133,8 @@ private:
   Lattice lattice_;
   SpinDensityInput::DerivedParameters derived_parameters_;
   /**}@*/
+
+  friend class testing::SpinDensityNewTests;
 };
 
 } // namespace qmcplusplus

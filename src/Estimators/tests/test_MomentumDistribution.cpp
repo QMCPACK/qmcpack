@@ -34,7 +34,26 @@ namespace qmcplusplus
 using RealType = QMCTraits::RealType;
 using PosType  = QMCTraits::PosType;
 
+namespace testing
+{
+/** class to preserve access control in MomentumDistribution
+ */
+class MomentumDistributionTests
+{
+public:
+  void testCopyConstructor(const MomentumDistribution& md)
+  {
+    MomentumDistribution md2(md);
 
+    CHECK(md2.M == md.M);
+    CHECK(md2.twist[0] == Approx(md.twist[0]));
+    CHECK(md2.twist[1] == Approx(md.twist[1]));
+    CHECK(md2.twist[2] == Approx(md.twist[2]));
+    CHECK(md2.kPoints.size() == md.kPoints.size());
+    CHECK(md.data_ != md2.data_);
+  }
+};
+} // namespace testing
 
 TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
 {
@@ -52,9 +71,9 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   MomentumDistributionInput mdi;
   mdi.readXML(node);
-  
+
   // Instantiate other dependencies (internal QMCPACK objects)
-  auto lattice     = testing::makeTestLattice();
+  auto lattice = testing::makeTestLattice();
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
@@ -64,27 +83,25 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   auto& pset                         = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
-  DataLocality dl = DataLocality::crowd;
-  
+  DataLocality dl                    = DataLocality::crowd;
+
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), 
-                          pset.Lattice, dl);
-  
-  CHECK(md.M==5);
-  CHECK(md.twist[0]==Approx(0.0));
-  CHECK(md.twist[1]==Approx(0.0));
-  CHECK(md.twist[2]==Approx(0.0));
-  CHECK(md.kPoints.size()==27);
-  
-  // Copy constructor
-  MomentumDistribution md2(md);
-  
-  CHECK(md2.M==5);
-  CHECK(md2.twist[0]==Approx(0.0));
-  CHECK(md2.twist[1]==Approx(0.0));
-  CHECK(md2.twist[2]==Approx(0.0));
-  CHECK(md2.kPoints.size()==27);
-  
+  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl);
+
+  CHECK(md.M == 5);
+  CHECK(md.twist[0] == Approx(0.0));
+  CHECK(md.twist[1] == Approx(0.0));
+  CHECK(md.twist[2] == Approx(0.0));
+  CHECK(md.kPoints.size() == 27);
+
+  // make sure there is something in mds data
+  using namespace testing;
+  OEBAccessor oeba(md);
+  oeba[0] = 1.0;
+
+  MomentumDistributionTests mdt;
+  mdt.testCopyConstructor(md);
+
   outputManager.resume();
 }
 
@@ -107,9 +124,9 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   MomentumDistributionInput mdi;
   mdi.readXML(node);
-  
+
   // Instantiate other dependencies (internal QMCPACK objects)
-  auto lattice     = testing::makeTestLattice();
+  auto lattice = testing::makeTestLattice();
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
@@ -119,31 +136,30 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   auto& pset                         = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
-  DataLocality dl = DataLocality::crowd;
+  DataLocality dl                    = DataLocality::crowd;
 
   // Setup particleset
   pset.R = ParticleSet::ParticlePos_t{{1.751870349, 4.381521229, 2.865202269}, {3.244515371, 4.382273176, 4.21105285},
                                       {3.000459944, 3.329603408, 4.265030556}, {3.748660329, 3.63420622, 5.393637791},
                                       {3.033228526, 3.391869137, 4.654413566}, {3.114198787, 2.654334594, 5.231075822},
                                       {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
-  
+
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), 
-                          pset.Lattice, dl);
-  
+  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl);
+
   // Test accumulate
-  
+
   //   Setup walker, particleset, wavefunction ref vectors
   //     Make clones
   std::vector<MCPWalker> walkers;
   int nwalkers = 4;
   for (int iw = 0; iw < nwalkers; ++iw)
     walkers.emplace_back(8);
-  
+
   std::vector<ParticleSet> psets;
   for (int iw = 0; iw < nwalkers; ++iw)
     psets.emplace_back(pset);
-  
+
   auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
   std::vector<UPtr<TrialWaveFunction>> wfns(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
@@ -177,11 +193,10 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   using Data = MomentumDistribution::Data;
   Data ref_data;
 
-  ref_data = {3.92261216, -5.752141485, 4.78276286, 8.307662762, -5.130834919, 0.08942598353, 
-              0.9716326509, 21.82310933, -9.177741101, -0.2024849597, -2.520417488, -9.470020717, 
-              -9.4969045, 3.866360129, -9.4969045, -9.470020717, -2.520417488, -0.2024849597, 
-              -9.177741101, 21.82310933, 0.9716326509, 0.08942598353, -5.130834919, 8.307662762, 
-              4.78276286, -5.752141485, 3.92261216 };
+  ref_data = {3.92261216,    -5.752141485, 4.78276286,    8.307662762,   -5.130834919, 0.08942598353, 0.9716326509,
+              21.82310933,   -9.177741101, -0.2024849597, -2.520417488,  -9.470020717, -9.4969045,    3.866360129,
+              -9.4969045,    -9.470020717, -2.520417488,  -0.2024849597, -9.177741101, 21.82310933,   0.9716326509,
+              0.08942598353, -5.130834919, 8.307662762,   4.78276286,    -5.752141485, 3.92261216};
 
   //std::cout<<"\n\n\nn(k) data:\n{";
   //for(int i=0;i<data.size();++i)
@@ -190,19 +205,17 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
 
   for (size_t id = 0; id < ref_data.size(); ++id)
   {
-     #ifdef MIXED_PRECISION
-     CHECK(data[id] == Approx(ref_data[id]).epsilon(2.e-05));
-     #else
-     // default Catch2 epsilon std::numeric_limits<float>::epsilon()*100
-     // set value for x86_64
-     CHECK(data[id] == Approx(ref_data[id]).epsilon(1.192092896e-05));
-     #endif
+#ifdef MIXED_PRECISION
+    CHECK(data[id] == Approx(ref_data[id]).epsilon(2.e-05));
+#else
+    // default Catch2 epsilon std::numeric_limits<float>::epsilon()*100
+    // set value for x86_64
+    CHECK(data[id] == Approx(ref_data[id]).epsilon(1.192092896e-05));
+#endif
   }
 
   outputManager.resume();
-
 }
-
 
 
 } // namespace qmcplusplus

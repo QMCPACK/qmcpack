@@ -146,7 +146,7 @@ private:
 
 public:
   /** Standard Constructor
-   *  If you are making a new OBDM this is what you should be calling
+   *  Call this to make a new OBDM this is what you should be calling
    */
   OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                          const Lattice& lattice,
@@ -154,15 +154,11 @@ public:
                          const WaveFunctionFactory& wf_factory,
                          ParticleSet& pset_target);
 
-  /** Default copy constructor.
-   *  Instances of this estimator is assume to be thread scope, i.e. never
-   *  called by more than one thread at a time. note the OperatorEstBase copy constructor does
-   *  not copy or even allocate data_
+  /** Constructor used when spawing crowd clones
+   *  needs to be public so std::make_unique can call it.
+   *  Do not use directly unless you've really thought it through.
    */
-  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm) = default;
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl);
-
-  ~OneBodyDensityMatrices() override;
 
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
@@ -182,6 +178,13 @@ public:
   void registerOperatorEstimator(hid_t gid) override;
 
 private:
+  /** Default copy constructor.
+   *  Instances of this estimator is assume to be thread scope, i.e. never
+   *  called by more than one thread at a time. note the OperatorEstBase copy constructor does
+   *  not copy or even allocate data_
+   */
+  OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm) = default;
+
   /** Unfortunate design RandomGenerator_t type aliasing and
    *  virtual inheritance requires this for testing.
    */

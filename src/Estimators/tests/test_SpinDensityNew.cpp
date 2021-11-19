@@ -30,6 +30,24 @@ namespace qmcplusplus
 
 using QMCT = QMCTraits;
 
+namespace testing
+{
+/** class to preserve access control in MomentumDistribution
+ */
+class SpinDensityNewTests
+{
+public:
+  void testCopyConstructor(const SpinDensityNew& sdn)
+  {
+    SpinDensityNew sdn2(sdn);
+
+    CHECK(sdn.species_size_ == sdn2.species_size_);
+    CHECK(sdn.data_ != sdn2.data_);
+  }
+};
+} // namespace testing
+
+
 void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
   for (int iops = 0; iops < ncrowds; ++iops)
@@ -133,7 +151,13 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[esti
   int iattribute                    = species_set.addAttribute("membersize");
   species_set(iattribute, ispecies) = 2;
   auto lattice                      = testing::makeTestLattice();
-  SpinDensityNew(std::move(sdi), lattice, species_set);
+  SpinDensityNew sdn(std::move(sdi), lattice, species_set);
+  // make sure there is something in obdm's data
+  using namespace testing;
+  OEBAccessor oeba(sdn);
+  oeba[0] = 1.0;
+  SpinDensityNewTests sdnt;
+  sdnt.testCopyConstructor(sdn);
 }
 
 TEST_CASE("SpinDensityNew::spawnCrowdClone()", "[estimators]")

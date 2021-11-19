@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File refactored from: MomentumEstimator.h
 //////////////////////////////////////////////////////////////////////////////////////
@@ -22,6 +23,10 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class MomentumDistributionTests;
+}
 /** Class that collects momentum distribution of electrons
  *  
  */
@@ -67,6 +72,7 @@ public:
   ///nofK
   aligned_vector<RealType> nofK;
 
+public:
   /** Constructor for MomentumDistributionInput 
    */
   MomentumDistribution(MomentumDistributionInput&& mdi,
@@ -75,10 +81,12 @@ public:
                        const LatticeType& lattice,
                        DataLocality dl = DataLocality::crowd);
 
-  //MomentumDistribution(const MomentumDistribution& md);
-
+  /** Constructor used when spawing crowd clones
+   *  needs to be public so std::make_unique can call it.
+   *  Do not use directly unless you've really thought it through.
+   */
   MomentumDistribution(const MomentumDistribution& md, DataLocality dl);
-  
+
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
   void startBlock(int steps) override;
@@ -117,6 +125,10 @@ public:
    */
   void registerOperatorEstimator(hid_t gid) override;
 
+private:
+  MomentumDistribution(const MomentumDistribution& md) = default;
+
+  friend class testing::MomentumDistributionTests;
 };
 
 } // namespace qmcplusplus

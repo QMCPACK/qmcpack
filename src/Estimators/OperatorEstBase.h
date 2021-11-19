@@ -26,7 +26,10 @@
 namespace qmcplusplus
 {
 class TrialWaveFunction;
-
+namespace testing
+{
+class OEBAccessor;
+}
 /** @ingroup Estimators
  * @brief An abstract class for gridded estimators
  *
@@ -38,7 +41,7 @@ public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   using Data = std::vector<QMCT::RealType>;
-    
+
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator
    *  The default is:
@@ -58,6 +61,13 @@ public:
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
+  /** Shallow copy constructor!
+   *  This alows us to keep the default copy constructors for derived classes which
+   *  is quite useful to the spawnCrowdClone design.
+   *  Data is likely to be quite large and since the OperatorEstBase design is that the children 
+   *  reduce to the parent it is infact undesirable for them to copy the data the parent has.
+   *  Initialization of Data (i.e. call to resize) if any is the responsibility of the derived class.
+   */
   OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
   virtual ~OperatorEstBase() = default;
@@ -127,17 +137,9 @@ protected:
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
-  /** create the typed data block for the Operator.
-   *
-   *  this is only slightly better than a byte buffer
-   *  it allows easy porting of the legacy implementations
-   *  Which wrote into a shared buffer per walker.
-   *  And it make's datalocality fairly easy but
-   *  more descriptive and safe data structures would be better
-   */
-  Data createLocalData(size_t size);
-
   Data data_;
+
+  friend testing::OEBAccessor;
 };
 } // namespace qmcplusplus
 #endif

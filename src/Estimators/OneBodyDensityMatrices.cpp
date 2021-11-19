@@ -156,8 +156,6 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obd
   data_locality_ = dl;
 }
 
-OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
-
 std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();

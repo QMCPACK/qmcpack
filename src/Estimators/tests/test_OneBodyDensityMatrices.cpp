@@ -46,6 +46,12 @@ public:
   using Data        = OneBodyDensityMatrices::Data;
   using Real        = Data::value_type;
 
+  void testCopyConstructor(const OneBodyDensityMatrices& obdm)
+  {
+    OneBodyDensityMatrices obdm2(obdm);
+    CHECK(obdm.sampling_ == obdm2.sampling_);
+    CHECK(obdm.data_ != obdm2.data_);
+  }
 
   OneBodyDensityMatricesTests() = default;
   void testGenerateSamples(onebodydensitymatrices::Inputs input,
@@ -161,17 +167,17 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto& pset_target                  = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
 
-  {
-    // Good constructor
-    OneBodyDensityMatrices obDenMat(std::move(obdmi), lattice, species_set, wf_factory, pset_target);
-    // Good copy constructor
-    OneBodyDensityMatrices obDenMat2(obDenMat);
-  }
-  {
-    species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
-    CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, wf_factory, pset_target),
-                    UniformCommunicateError);
-  }
+  // Good constructor
+  OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, wf_factory, pset_target);
+  // make sure there is something in obdm's data
+  OEBAccessor oeba(obdm);
+  oeba[0] = 1.0;
+  testing::OneBodyDensityMatricesTests<double> obdmt;
+  obdmt.testCopyConstructor(obdm);
+
+  species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
+  CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, wf_factory, pset_target),
+                  UniformCommunicateError);
 
   outputManager.resume();
 }
