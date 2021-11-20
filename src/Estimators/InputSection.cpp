@@ -195,5 +195,18 @@ void InputSection::report() const
   out << "\n\n";
 }
 
+std::any InputSection::lookupAnyEnum(const std::string& enum_name, const std::string& enum_value, const std::unordered_map<std::string, std::any>& enum_map)
+{
+  std::string enum_value_str(enum_name + "-" + enum_value);
+  tolower(enum_value_str);
+  try
+  {
+    return enum_map.at(enum_value_str);
+  }
+  catch (std::out_of_range& oor_exc)
+  {
+    std::throw_with_nested(std::logic_error("bad_enum_tag_value: " + enum_value_str));
+  }
+}
 
 } // namespace qmcplusplus
