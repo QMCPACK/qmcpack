@@ -12,6 +12,8 @@
 #ifndef QMCPLUSPLUS_ESIMATORINPUT_H
 #define QMCPLUSPLUS_ESIMATORINPUT_H
 
+#include <string>
+#include <any>
 #include "Configuration.h"
 #include "InputSection.h"
 
@@ -21,8 +23,9 @@ namespace qmcplusplus
 namespace estimatorinput
 {
 
-void checkCenterCorner(InputSection& input_section, std::string_view error_tag);
+void checkCenterCorner(InputSection& input_section, const std::string& error_tag);
 
-}
+
+} // namespace estimatorinput
 } // namespace qmcplusplus
 #endif
