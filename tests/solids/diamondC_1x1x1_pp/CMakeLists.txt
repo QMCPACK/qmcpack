@@ -476,13 +476,15 @@ if(add_estimator_tests)
       -q
       obdm
       -e
-      0
+      20
+      -n
+      16
       -c
-      4
+      8
       -p
       qmc_onebodydensitymatrices_short
       -r
-      qmc-ref/qmc_1rdm_noJ_short_real.s000.stat_ref_1rdm.dat)
+      qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat)
 
   simple_run_and_check(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity
