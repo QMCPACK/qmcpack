@@ -3,7 +3,6 @@
    <project id="qmc_onebodydensitymatrices_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
-   <random seed="71"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -39,10 +38,10 @@
          </group>
       </particleset>
 <wavefunction name="psi0" target='e'>
-  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" twist="0 0 0" precision="double">
+  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" twist="0 0 0" precision="float" truncate="no">
     <sposet name="spo_for_dets" size="4" spindataset="0"/>
   </sposet_collection>
-  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="no" meshfactor="1.0" twist="0 0 0" precision="double">
+  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="no" meshfactor="1.0" twist="0 0 0" precision="float" truncate="no">
     <sposet name="spo_ud" size="4" spindataset="0"/>
     <sposet name="spo_dm" index_min="4" index_max="8" spindataset="0"/>
   </sposet_collection>
@@ -52,30 +51,6 @@
       <determinant sposet='spo_for_dets'/>
     </slaterdeterminant>
   </determinantset>
-
-
-         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
-            <correlation elementType="C" size="8" cusp="0.0">
-               <coefficients id="eC" type="Array">                  
--0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 
--0.04445345869 -0.02135082917
-               </coefficients>
-            </correlation>
-         </jastrow>
-         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
-            <correlation speciesA="u" speciesB="u" size="8">
-               <coefficients id="uu" type="Array">                  
-0.2797730287 0.2172604155 0.1656172964 0.1216984261 0.083995349 0.05302065936 
-0.02915953995 0.0122402581
-               </coefficients>
-            </correlation>
-            <correlation speciesA="u" speciesB="d" size="8">
-               <coefficients id="ud" type="Array">                  
-0.4631099906 0.356399124 0.2587895287 0.1829298509 0.1233653291 0.07714708174 
-0.04145899033 0.01690645936
-               </coefficients>
-            </correlation>
-         </jastrow>
       </wavefunction>
       <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -83,7 +58,6 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp">
@@ -91,17 +65,15 @@
      <estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
        <parameter name="basis"        >  spo_ud spo_dm </parameter>
        <parameter name="evaluator"    >  matrix        </parameter>
-       <parameter name="integrator"   >  density       </parameter>
-       <parameter name="samples"      >  64            </parameter>
-       <parameter name="timestep"     >  0.3           </parameter>
-       <parameter name="corner"       >  0.0 0.0 0.0   </parameter>
+       <parameter name="scale"        >  1.0           </parameter>
+       <parameter name="integrator"   >  uniform_grid  </parameter>
+       <parameter name="center"       >  0.0 0.0 0.0   </parameter>
        <parameter name="use_drift"    >  yes           </parameter>
      </estimator>
-     <parameter name="total_walkers">   64 </parameter>
-     <parameter name="blocks"              >    3               </parameter>
-     <parameter name="steps"               >    3               </parameter>
+     <parameter name="total_walkers">   16 </parameter>
+     <parameter name="blocks"              >    200             </parameter>
+     <parameter name="steps"               >    8               </parameter>
      <parameter name="subSteps"            >    1               </parameter>
      <parameter name="timestep"            >    0.3             </parameter>
-     <parameter name="warmupSteps"         >    30              </parameter>
    </qmc>
 </simulation>
