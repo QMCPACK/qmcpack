@@ -611,6 +611,16 @@ class Qmcpack(Simulation):
 
 def generate_qmcpack(**kwargs):
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
+    #print('================================================== SIM ARGS')
+    #print(sim_args)
+    #print('================================================== INP ARGS')
+    #print(inp_args)
+    #print('================================================== SIM ARGS: sim_agrs.dependencies')
+    print(sim_args.dependencies[0]['ordered_dependencies'][0]['result_names'])
+    print(sim_args.dependencies[0]['ordered_dependencies'][0]['sim'].keys())
+    print(sim_args.dependencies[0]['ordered_dependencies'][0]['sim']['imlocdir'])
+    print(sim_args.dependencies[0]['ordered_dependencies'][0]['sim']['analyzer_image'])
+    quit()
 
     if 'input' not in sim_args:
         sim_args.input = generate_qmcpack_input(**inp_args)

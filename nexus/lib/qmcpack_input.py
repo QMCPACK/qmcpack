@@ -4807,16 +4807,21 @@ def generate_determinantset_old(type           = 'bspline',
             #4. excitation=['up', 'homo lumo'] OR excitation=['up', 'homo-N lumo+M']
             if len(excitation) == 2: #Type 1, 2, 3, or 4
                 if 'homo' in excitation[1] and 'lumo' in excitation[1]:
+                    print(system)
+                    print('=================================== SELF ========================================')
+                    print(self)
+                    quit()
+                    print('HERE')
                     try:
                         tmp = array(excitation[1].split(),dtype=str)
-                        if tmp[0][:4]!='homo' or tmp[1][:4]:
+                        if (tmp[0][:4]!='homo' or tmp[1][:4]!='lumo') or (not is_int(tmp[0][4:]) or not is_int(tmp[1][4:])):
                             format_failed = True
-                        else:
-                            print('pass')
-                        quit()
+                        #end if
                     except:
                         format_failed = True
                     #end try
+                    print(format_failed)
+                    quit()
                 elif 'cb' not in excitation[1] and 'vb' not in excitation[1]:
                     try:
                         tmp = array(excitation[1].split(),dtype=int)
