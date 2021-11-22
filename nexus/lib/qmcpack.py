@@ -41,6 +41,7 @@ from qmcpack_converters import Pw2qmcpack,Convert4qmc,PyscfToAfqmc
 from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
+from copy import deepcopy
 try:
     import h5py
 except:
@@ -176,6 +177,7 @@ class Qmcpack(Simulation):
                 h5file = result.h5file
 
                 wavefunction = input.get('wavefunction')
+                print(wavefunction)
                 if isinstance(wavefunction,collection):
                     wavefunction = wavefunction.get_single('psi0')
                 #end if
@@ -509,6 +511,89 @@ class Qmcpack(Simulation):
                     self.failed = True
                 #end if
             #end if
+            exc_run = 'excitation' in self
+            if exc_run:
+                edata = self.read_einspline_dat()
+                exc_input = self.excitation
+                
+                print(exc_input)
+                exc_failure = False
+                if 'cb' not in exc_input[1] and 'vb' not in exc_input[1] and len(exc_input[1].split())==4: 
+                    # Band Index 'tw1 band1 tw2 band2'. Eg., '0 45 3 46'
+                    # Check that tw1,band1 is no longer in occupied set
+                    tw1,bnd1 = exc_input[1].split()[0:2]
+                    tw2,bnd2 = exc_input[1].split()[2:4]
+                    if exc_input[0] in ('up','dn'):
+                        spinchan = exc_input[0]
+                        for idx,(tw,bnd) in enumerate(zip(edata[spinchan]['TwistIndex'],edata[spinchan]['BandIndex'])):
+                            if tw == int(tw1) and bnd == int(bnd1):
+                                # This orbital should no longer be in the set of occupied orbitals
+                                if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spinchan[0]].size:
+                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{} {}\' is still occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],tw1,bnd1)
+                                    exc_failure = True
+                                #end if
+                            elif tw == int(tw2) and bnd == int(bnd2):
+                                # This orbital should be in the set of occupied orbitals
+                                if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spinchan[0]].size:
+                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the second orbital \'{} {}\' is not occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],tw2,bnd2)
+                                    exc_failure = True
+                                #end if
+                            #end if
+                        #end for
+                    else:
+                        self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
+                    #end if
+                elif len(exc_input[1].split()) == 2:
+                    # Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
+                    orb1 = exc_input[1].split()[0][1:]
+                    orb2 = exc_input[1].split()[1][1:]
+                    if exc_input[0] in ('up','dn'):
+
+
+                        spinchan = exc_input[0]
+                        nelec = self.input.simulation.qmcsystem.particlesets.e.groups[spinchan[0]].size
+
+                        orb1_eig = sorted(edata[spinchan]['Energy'])[int(orb1)-1]
+                        orb2_eig = sorted(edata[spinchan]['Energy'])[int(orb2)-1]
+
+
+                        if orb1_eig not in edata[spinchan]['Energy'][nelec:]:
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],orb1)
+                            exc_failure = True
+                        elif orb2_eig not in edata[spinchan]['Energy'][:nelec]:
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],orb2)
+                            exc_failure = True
+
+
+                    elif exc_input[0] in ('singlet','triplet'):
+                        wf = self.input.get('wavefunction')
+                        occ = wf.determinantset.multideterminant.detlist.csf.occ
+                        if occ[int(orb1)-1]!='1':
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spinchan,exc_input[1],occ)
+                            exc_failure = True
+                        #end if
+                        if occ[int(orb2)-1]!='1':
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spinchan,exc_input[1],occ)
+                            exc_failure = True
+                        #end if
+
+                    #end if
+
+                elif exc_input[1] == 'lowest':
+
+
+                #end if
+
+                # exc_input interpretation code
+                #    if multidet
+                #        wf = self.input.get('wavefunction')
+                # exc checking code based on edata
+                # if problems
+                #    msg = ''
+                #    self.warn(msg)
+                #    filename = self.identifier+'_errors.txt'
+                #    open(os.path.join(self.lodcir,filename),'w').write(msg)
+            #end if
         #end if
     #end def post_analyze
 
@@ -605,27 +690,69 @@ class Qmcpack(Simulation):
             #end if
         #end if
     #end def write_prep
+
+
+    def read_einspline_dat(self):
+
+        edata = obj()
+
+        import glob
+        for einpath in glob.glob(self.locdir+'/einsplin*'):
+            ftokens = einpath.split('.')
+            fspin = int(ftokens[-5][5])
+            if fspin==0:
+                spinlab = 'up'
+            else:
+                spinlab = 'dn'
+            #end if
+            edata[spinlab] = obj()
+            with open(einpath) as f:
+                data = array(f.read().split()[1:])
+                data.shape = len(data)//12,12
+                data = data.T
+                for darr in data:
+                    if darr[0][0]=='K' or darr[0][0]=='E':
+                        edata[spinlab][darr[0]] = array(list(map(float,darr[1:])))
+                    else:
+                        edata[spinlab][darr[0]] = array(list(map(int,darr[1:])))
+
+                    #end if
+                #end for
+            #end with
+        #end for
+
+        return edata
+
+    #end def read_einspline_dat
 #end class Qmcpack
 
 
 
 def generate_qmcpack(**kwargs):
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
-    #print('================================================== SIM ARGS')
-    #print(sim_args)
-    #print('================================================== INP ARGS')
-    #print(inp_args)
-    #print('================================================== SIM ARGS: sim_agrs.dependencies')
-    print(sim_args.dependencies[0]['ordered_dependencies'][0]['result_names'])
-    print(sim_args.dependencies[0]['ordered_dependencies'][0]['sim'].keys())
-    print(sim_args.dependencies[0]['ordered_dependencies'][0]['sim']['imlocdir'])
-    print(sim_args.dependencies[0]['ordered_dependencies'][0]['sim']['analyzer_image'])
-    quit()
+
+    exc = None
+    if 'excitation' in inp_args:
+        exc = deepcopy(inp_args.excitation)
+    #end if
+
+    spp = None
+    if 'spin_polarized' in inp_args:
+        spp = deepcopy(inp_args.spin_polarized)
+    #end if
 
     if 'input' not in sim_args:
         sim_args.input = generate_qmcpack_input(**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)
+
+    if exc is not None:
+        qmcpack.excitation = exc
+    #end if
+
+    if spp is not None:
+        qmcpack.spin_polarized = spp
+    #end if
 
     return qmcpack
 #end def generate_qmcpack

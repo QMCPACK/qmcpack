@@ -4794,6 +4794,7 @@ def generate_determinantset_old(type           = 'bspline',
         dset.slaterdeterminant.delay_rank = delay_rank
     #end if
     if excitation is not None:
+        print('SET UP EXCITATION')
         format_failed = False
         if not isinstance(excitation,(tuple,list)):
             QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
@@ -4807,10 +4808,10 @@ def generate_determinantset_old(type           = 'bspline',
             #4. excitation=['up', 'homo lumo'] OR excitation=['up', 'homo-N lumo+M']
             if len(excitation) == 2: #Type 1, 2, 3, or 4
                 if 'homo' in excitation[1] and 'lumo' in excitation[1]:
-                    print(system)
-                    print('=================================== SELF ========================================')
-                    print(self)
-                    quit()
+                    #print(system)
+                    #print('=================================== SELF ========================================')
+                    #print(self)
+                    #quit()
                     print('HERE')
                     try:
                         tmp = array(excitation[1].split(),dtype=str)
@@ -4820,8 +4821,8 @@ def generate_determinantset_old(type           = 'bspline',
                     except:
                         format_failed = True
                     #end try
-                    print(format_failed)
-                    quit()
+                    #print(format_failed)
+                    #quit()
                 elif 'cb' not in excitation[1] and 'vb' not in excitation[1]:
                     try:
                         tmp = array(excitation[1].split(),dtype=int)
@@ -4864,7 +4865,7 @@ def generate_determinantset_old(type           = 'bspline',
                                       spos            = ''
                                      ),
                                sposet(name            = 'spo_d',
-                                      spindataset     = 0,
+                                      spindataset     = 1,
                                       size            = elns.up_electron.count+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=1),
