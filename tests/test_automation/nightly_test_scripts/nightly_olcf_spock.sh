@@ -3,11 +3,12 @@
 #SBATCH -J nightly_spock
 #SBATCH -o nightly_spock.%j
 #SBATCH -e nightly_spock.%j
-#SBATCH -t 00:25:00
+#SBATCH -t 00:40:00
 #SBATCH -p ecp
 #SBATCH -N 1
 
 base_dir=/gpfs/alpine/proj-shared/mat189/wgodoy/nightly_olcf_spock
+qmc_data_dir=/gpfs/alpine/mat189/proj-shared/qmc_data/Benchmark
 
 cd ${base_dir}
 
@@ -47,7 +48,8 @@ git clone --branch develop --depth 1 https://github.com/QMCPACK/qmcpack.git
 cd qmcpack/build
 
 # Start real build test
-echo "Start GCC10-NoMPI-CUDA2HIP-Release-Real test"
+now=$(date +"%T")
+echo "Start GCC10-NoMPI-CUDA2HIP-Release-Real test ${now}"
 export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Real-Release
 
 CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
@@ -55,18 +57,20 @@ CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
       -DQMC_MPI=0 \
       -DENABLE_CUDA=ON \
       -DQMC_CUDA2HIP=ON \
-      -DQMC_COMPLEX=0"
+      -DQMC_COMPLEX=0 \
+      -DQMC_OPTIONS='-DQMC_DATA=${qmc_data_dir};-DQMC_NIO_MAX_SIZE=8'"
 
 ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
       --stop-time $(date --date=now+20mins +%H:%M:%S) \
-      -VV -L 'deterministic' --timeout 600 &> \
+      -VV -R 'deterministic|performance-NiO' --timeout 600 &> \
       ${log_dir}/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 unset QMCPACK_TEST_SUBMIT_NAME
 
 # Start complex build test
-echo "Start GCC10-NoMPI-CUDA2HIP-Release-Complex test"
+now=$(date +"%T")
+echo "Start GCC10-NoMPI-CUDA2HIP-Release-Complex test ${now}"
 export QMCPACK_TEST_SUBMIT_NAME=GCC10-NoMPI-CUDA2HIP-Complex-Release
 
 cd ${base_dir}/qmcpack/build
@@ -77,12 +81,13 @@ CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
       -DQMC_MPI=0 \
       -DENABLE_CUDA=ON \
       -DQMC_CUDA2HIP=ON \
-      -DQMC_COMPLEX=1"
+      -DQMC_COMPLEX=1 \
+      -DQMC_OPTIONS='-DQMC_DATA=${qmc_data_dir};-DQMC_NIO_MAX_SIZE=8'"
 
 ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
       --stop-time $(date --date=now+20mins +%H:%M:%S) \
-      -VV -L 'deterministic' --timeout 600 &> \
+      -VV -R 'deterministic|performance-NiO' --timeout 600 &> \
       ${log_dir}/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 unset QMCPACK_TEST_SUBMIT_NAME
