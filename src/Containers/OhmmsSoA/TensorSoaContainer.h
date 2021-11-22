@@ -24,7 +24,7 @@ struct TensorSoaContainer
 {};
 
 /** SoA adaptor class for ParticleAttrib<TinyVector<T,3> >
-   * @tparm T data type, float, double, complex<float>, complex<double>
+   * @tparam T data type, float, double, complex<float>, complex<double>
    */
 template<typename T>
 struct TensorSoaContainer<T, 3>

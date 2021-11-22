@@ -35,7 +35,7 @@ extern std::atomic<size_t> CUDAallocator_device_mem_allocated;
 inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allocated; }
 
 /** allocator for CUDA unified memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct CUDAManagedAllocator
@@ -80,7 +80,7 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
 
 
 /** allocator for CUDA device memory
- * @tparm T data type
+ * @tparam T data type
  *
  * using this with something other than Ohmms containers?
  *  -- use caution, write unit tests! --
@@ -203,7 +203,7 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 };
 
 /** allocator for CUDA host pinned memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct CUDAHostAllocator
@@ -246,8 +246,8 @@ bool operator!=(const CUDAHostAllocator<T1>&, const CUDAHostAllocator<T2>&)
 }
 
 /** allocator locks memory pages allocated by ULPHA
- * @tparm T data type
- * @tparm ULPHA host memory allocator using unlocked page
+ * @tparam T data type
+ * @tparam ULPHA host memory allocator using unlocked page
  *
  * ULPHA cannot be CUDAHostAllocator
  */

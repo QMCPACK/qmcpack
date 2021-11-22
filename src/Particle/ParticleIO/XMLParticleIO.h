@@ -48,7 +48,7 @@ public:
   */
 
   /** add ParticleAttrib<AT>
-   * @tparm AT any element type, int, double, float ...
+   * @tparam AT any element type, int, double, float ...
    */
   template<typename AT>
   int add(ParticleAttrib<AT>& pa)
