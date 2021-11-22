@@ -19,6 +19,7 @@
 #include <string>
 
 using std::string;
+using qmcplusplus::ValueApprox;
 
 namespace optimize
 {
@@ -108,6 +109,27 @@ TEST_CASE("VariableSet output", "[optimize]")
   #endif
 
   REQUIRE(o.str() == formatted_output);
+}
+
+TEST_CASE("VariableSet XML output and input", "[optimize]")
+{
+  VariableSet vs;
+  VariableSet::value_type first_val(11234.56789);
+  VariableSet::value_type second_val(0.000256789);
+  VariableSet::value_type third_val(-1.2);
+  vs.insert("s", first_val);
+  vs.insert("second", second_val);
+  vs.insert("really_long_name", third_val);
+  vs.saveAsXML("vp.xml");
+
+  VariableSet vs2;
+  vs2.insert("s", 0.0);
+  vs2.insert("second", 0.0);
+  vs2.readFromXML("vp.xml");
+  CHECK(vs2.find("s")->second == ValueApprox(first_val));
+  CHECK(vs2.find("second")->second == ValueApprox(second_val));
+  // Was not present in vs2, reading from XML will not add it
+  CHECK(vs2.find("really_long_name") == vs2.end());
 }
 
 } // namespace optimize

@@ -18,8 +18,11 @@
 #include <iomanip>
 #include <ios>
 #include <algorithm>
+#include "io/OhmmsData/Libxml2Doc.h"
 
 using std::setw;
+
+using qmcplusplus::app_log;
 
 namespace optimize
 {
@@ -284,5 +287,66 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
          << " " << setw(max_index_len) << Index[i] << std::endl;
   }
 }
+
+void VariableSet::saveAsXML(const std::string& filename) const
+{
+  Libxml2Document doc;
+  doc.newDoc("variational_parameters");
+  xmlNodePtr pairs = doc.addChild(doc.getRoot(), "name_value_pairs");
+  for (auto pair_it : NameAndValue)
+  {
+    xmlNodePtr pair = doc.addChild(pairs, "vp");
+    doc.addChild(pair, "name", pair_it.first);
+    doc.addChild(pair, "value", pair_it.second);
+  }
+  doc.dump(filename);
+}
+
+bool VariableSet::readFromXML(const std::string& filename)
+{
+  Libxml2Document doc;
+  bool parse_okay = doc.parse(filename);
+  if (!parse_okay)
+  {
+    app_log() << "Failed to load or parse variational parameter file: " << filename << std::endl;
+    return false;
+  }
+
+  OhmmsXPathObject vp_base("//variational_parameters", doc.getXPathContext());
+  if (vp_base.empty())
+  {
+    app_log() << "No variational_parameters tag in file:" << filename << std::endl;
+    return false;
+  }
+  if (vp_base.size() > 1)
+  {
+    app_log() << "More than one variational_parameters tag in file:" << filename << std::endl;
+    app_log() << "Using only the first one" << std::endl;
+  }
+
+  processChildren(vp_base[0], [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "name_value_pairs")
+    {
+      processChildren(element, [&](const std::string cname2, const xmlNodePtr element2) {
+        if (cname2 == "vp")
+        {
+          std::string vp_name;
+          value_type vp_value;
+          processChildren(element2, [&](const std::string cname3, const xmlNodePtr element3) {
+            if (cname3 == "name")
+              putContent(vp_name, element3);
+            else if (cname3 == "value")
+              putContent(vp_value, element3);
+          });
+          if (find(vp_name) != end())
+            (*this)[vp_name] = vp_value;
+        }
+      });
+    }
+  });
+
+  return true;
+}
+
 
 } // namespace optimize
