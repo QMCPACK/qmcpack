@@ -186,8 +186,8 @@ QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
 
 QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
 {
-  for (int i = 0; i < optparm.size(); i++)
-    optTarget->Params(i) = optparm[i] + dl * optdir[i];
+  for (int i = 0; i < optparam.size(); i++)
+    optTarget->Params(i) = optparam[i] + dl * optdir[i];
   QMCLinearOptimize::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
@@ -249,7 +249,7 @@ bool QMCFixedSampleLinearOptimize::run()
     bestParameters[i] = currentParameters[i] = std::real(optTarget->Params(i));
   //   proposed direction and new parameters
   optdir.resize(numParams, 0);
-  optparm.resize(numParams, 0);
+  optparam.resize(numParams, 0);
 
   while (Total_iterations < Max_iterations)
   {
@@ -349,7 +349,7 @@ bool QMCFixedSampleLinearOptimize::run()
       else
       {
         for (int i = 0; i < numParams; i++)
-          optparm[i] = currentParameters[i];
+          optparam[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
         TOL              = param_tol / bigVec;
@@ -381,7 +381,7 @@ bool QMCFixedSampleLinearOptimize::run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+            optTarget->Params(i) = optparam[i] + Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }

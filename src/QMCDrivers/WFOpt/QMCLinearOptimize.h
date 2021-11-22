@@ -66,7 +66,7 @@ public:
   void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
-  std::vector<RealType> optdir, optparm;
+  std::vector<RealType> optdir, optparam;
   ///index to denote the partition id
   int PartID;
   ///total number of partitions that will share a set of configuratons
