@@ -37,8 +37,8 @@ namespace qmcplusplus
 {
 /** default struct to define a h5 dataspace, any intrinsic type T
  *
- * \tparm T intrinsic datatype
- * \tparm RANK rank of the multidimensional h5dataspace
+ * @tparam T intrinsic datatype
+ * @tparam RANK rank of the multidimensional h5dataspace
  */
 template<typename T, hsize_t RANK>
 struct h5_space_type

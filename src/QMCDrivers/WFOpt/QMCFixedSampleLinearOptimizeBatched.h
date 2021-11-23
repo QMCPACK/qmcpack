@@ -177,7 +177,7 @@ private:
   // ------------------------------------
   // Used by legacy linear method algos
 
-  std::vector<RealType> optdir, optparm;
+  std::vector<RealType> optdir, optparam;
 
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;

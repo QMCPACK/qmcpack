@@ -28,8 +28,8 @@
 namespace qmcplusplus
 {
 /** SoA adaptor class for Vector<TinyVector<T,D> >
- * @tparm T data type, float, double, complex<float>, complex<double>
- * @tparm Alloc memory allocator
+ * @tparam T data type, float, double, complex<float>, complex<double>
+ * @tparam Alloc memory allocator
  */
 template<typename T, unsigned D, typename Alloc = aligned_allocator<T>>
 struct VectorSoaContainer
