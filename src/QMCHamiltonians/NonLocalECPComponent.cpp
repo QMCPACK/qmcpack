@@ -18,6 +18,7 @@
 #include "NonLocalECPComponent.h"
 #include "NLPPJob.h"
 #include "NonLocalData.h"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

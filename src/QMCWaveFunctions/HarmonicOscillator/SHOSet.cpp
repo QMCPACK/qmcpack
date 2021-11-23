@@ -14,7 +14,6 @@
 #include "SHOSet.h"
 #include "Utilities/string_utils.h"
 
-
 namespace qmcplusplus
 {
 SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states) : length(l), center(c)

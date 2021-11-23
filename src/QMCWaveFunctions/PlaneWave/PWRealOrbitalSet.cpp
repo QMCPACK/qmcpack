@@ -21,6 +21,7 @@
 #include "Message/Communicate.h"
 #include "PWRealOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

@@ -20,6 +20,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
 #include "CPU/SIMD/simd.hpp"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

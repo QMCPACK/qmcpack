@@ -19,6 +19,7 @@
 #include "EinsplineSet.h"
 #include "einspline/multi_bspline.h"
 #include "CPU/math.hpp"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

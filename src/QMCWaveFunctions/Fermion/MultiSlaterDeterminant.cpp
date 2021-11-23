@@ -15,6 +15,7 @@
 
 #include "MultiSlaterDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

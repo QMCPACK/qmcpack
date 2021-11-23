@@ -24,30 +24,6 @@
 
 namespace qmcplusplus
 {
-template<class T>
-struct scalar_traits
-{
-  enum
-  {
-    DIM = 1
-  };
-  typedef T real_type;
-  typedef T value_type;
-  static inline T* get_address(T* a) { return a; }
-};
-
-template<typename T>
-struct scalar_traits<std::complex<T>>
-{
-  enum
-  {
-    DIM = 2
-  };
-  typedef T real_type;
-  typedef std::complex<T> value_type;
-  static inline T* get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
-};
-
 /** generic conversion from type T1 to type T2 using implicit conversion
 */
 template<typename T1, typename T2>
@@ -58,14 +34,8 @@ inline void convert(const T1& in, T2& out)
 
 /** specialization of conversion from complex to real
 */
-template<typename T1>
-inline void convert(const std::complex<T1>& in, double& out)
-{
-  out = in.real();
-}
-
-template<typename T1>
-inline void convert(const std::complex<T1>& in, float& out)
+template<typename T1, typename T2>
+inline void convert(const std::complex<T1>& in, T2& out)
 {
   out = in.real();
 }
@@ -129,24 +99,5 @@ inline void convert(const Tensor<T1, 3>& in, Tensor<T2, 3>& out)
 {
   convert(in.data(), out.data(), in.size());
 }
-
-
-// Fix to allow real, imag, conj on scalar and complex types
-///real part of a scalar
-inline float real(const float& c) { return c; }
-inline double real(const double& c) { return c; }
-inline float real(const std::complex<float>& c) { return c.real(); }
-inline double real(const std::complex<double>& c) { return c.real(); }
-///imaginary part of a scalar
-inline float imag(const float& c) { return 0; }
-inline double imag(const double& c) { return 0; }
-inline float imag(const std::complex<float>& c) { return c.imag(); }
-inline double imag(const std::complex<double>& c) { return c.imag(); }
-///complex conjugate of a scalar
-inline float conj(const float& c) { return c; }
-inline double conj(const double& c) { return c; }
-inline std::complex<float> conj(const std::complex<float>& c) { return std::conj(c); }
-inline std::complex<double> conj(const std::complex<double>& c) { return std::conj(c); }
-
 } // namespace qmcplusplus
 #endif

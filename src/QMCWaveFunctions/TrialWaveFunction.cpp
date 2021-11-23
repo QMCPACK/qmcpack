@@ -22,6 +22,7 @@
 #include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

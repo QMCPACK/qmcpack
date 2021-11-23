@@ -27,6 +27,7 @@
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "type_traits/complex_help.hpp"
 
 //#include "AFQMC/Wavefunctions/NOMSD.h"
 

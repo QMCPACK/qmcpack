@@ -16,12 +16,12 @@
 
 
 #include "kSpaceJastrow.h"
+#include <sstream>
+#include <algorithm>
 #include "LongRange/StructFact.h"
 #include "CPU/math.hpp"
 #include "CPU/e2iphi.h"
-#include <sstream>
-#include <algorithm>
-
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

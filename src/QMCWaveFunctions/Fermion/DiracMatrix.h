@@ -15,7 +15,7 @@
 #include "CPU/Blasf.h"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 
@@ -111,7 +111,7 @@ inline void computeLogDet(const T* restrict diag, int n, const int* restrict piv
 template<typename T_FP>
 class DiracMatrix
 {
-  typedef typename scalar_traits<T_FP>::real_type real_type_fp;
+  using Real_FP = RealAlias<T_FP>;
   aligned_vector<T_FP> m_work;
   aligned_vector<int> m_pivot;
   int Lwork;
@@ -126,7 +126,7 @@ class DiracMatrix
     m_pivot.resize(lda);
     Lwork = -1;
     T_FP tmp;
-    real_type_fp lw;
+    Real_FP lw;
     int status = Xgetri(lda, invMat_ptr, lda, m_pivot.data(), &tmp, Lwork);
     if (status != 0)
     {
@@ -135,7 +135,7 @@ class DiracMatrix
       throw std::runtime_error(msg.str());
     }
 
-    convert(tmp, lw);
+    lw = std::real(tmp);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
     LU_diag.resize(lda);

@@ -13,6 +13,7 @@
 #include <sstream>
 #include "DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

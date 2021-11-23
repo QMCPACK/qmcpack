@@ -26,6 +26,7 @@
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
+#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {

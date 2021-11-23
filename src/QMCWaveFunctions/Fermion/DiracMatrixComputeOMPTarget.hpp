@@ -104,7 +104,7 @@ private:
     VALUE_FP tmp;
     FullPrecReal lw;
     Xgetri(lda, psi_M.data(), lda, pivots_.data(), &tmp, lwork_);
-    convert(tmp, lw);
+    lw = std::real(tmp);
     lwork_ = static_cast<int>(lw);
     m_work_.resize(lwork_);
   }

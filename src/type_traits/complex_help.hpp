@@ -43,6 +43,20 @@ struct RealAlias_impl<T, IsComplex<T>> { using value_type = typename T::value_ty
  */
 template <typename T>
 using RealAlias = typename RealAlias_impl<T>::value_type;
+
+///real part of a scalar
+inline float real(const float& c) { return c; }
+inline double real(const double& c) { return c; }
+inline float real(const std::complex<float>& c) { return c.real(); }
+inline double real(const std::complex<double>& c) { return c.real(); }
+//using std::real;
+///imaginary part of a scalar
+using std::imag;
+///Fix to allow conj on scalar to return real instead of complex
+inline float conj(const float& c) { return c; }
+inline double conj(const double& c) { return c; }
+inline std::complex<float> conj(const std::complex<float>& c) { return std::conj(c); }
+inline std::complex<double> conj(const std::complex<double>& c) { return std::conj(c); }
   
 } // namespace qmcplusplus
 

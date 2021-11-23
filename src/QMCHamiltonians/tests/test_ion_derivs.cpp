@@ -13,12 +13,14 @@
 #include "catch.hpp"
 
 #include "type_traits/template_types.hpp"
+#include "type_traits/scalar_traits.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
+
 namespace qmcplusplus
 {
 void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
