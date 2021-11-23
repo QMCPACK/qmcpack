@@ -651,10 +651,10 @@ class Qmcpack(Simulation):
                         band_1, band_2 = bands
                         
                         # Convert k_1 k_2 to wavevector indexes
-                        if system.structure.has_folded():
-                            structure   = system.structure.folded_structure.copy()
+                        if self.system.structure.has_folded():
+                            structure   = self.system.structure.folded_structure.copy()
                         else:
-                            structure   = system.structure.copy()
+                            structure   = self.system.structure.copy()
                         #end if
                         structure.change_units('A')
                         kpath       = get_kpath(structure=structure)
