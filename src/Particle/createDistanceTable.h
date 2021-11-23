@@ -37,10 +37,10 @@ namespace qmcplusplus
  */
 
 ///free function to create a distable table of s-s
-DistanceTable* createDistanceTableAA(ParticleSet& s, std::ostream& description);
-DistanceTable* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableAA(ParticleSet& s, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description);
 
-inline DistanceTable* createDistanceTable(ParticleSet& s, std::ostream& description)
+inline std::unique_ptr<DistanceTable> createDistanceTable(ParticleSet& s, std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
@@ -54,10 +54,14 @@ inline DistanceTable* createDistanceTable(ParticleSet& s, std::ostream& descript
 }
 
 ///free function create a distable table of s-t
-DistanceTable* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
-DistanceTable* createDistanceTableABOMPTarget(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableABOMPTarget(const ParticleSet& s,
+                                                              ParticleSet& t,
+                                                              std::ostream& description);
 
-inline DistanceTable* createDistanceTable(const ParticleSet& s, ParticleSet& t, std::ostream& description)
+inline std::unique_ptr<DistanceTable> createDistanceTable(const ParticleSet& s,
+                                                          ParticleSet& t,
+                                                          std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
