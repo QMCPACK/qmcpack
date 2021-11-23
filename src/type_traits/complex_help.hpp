@@ -44,12 +44,12 @@ struct RealAlias_impl<T, IsComplex<T>> { using value_type = typename T::value_ty
 template <typename T>
 using RealAlias = typename RealAlias_impl<T>::value_type;
 
-///real part of a scalar. Cannot be replaced by std::real
+///real part of a scalar. Cannot be replaced by std::real due to AFQMC specific needs.
 inline float real(const float& c) { return c; }
 inline double real(const double& c) { return c; }
 inline float real(const std::complex<float>& c) { return c.real(); }
 inline double real(const std::complex<double>& c) { return c.real(); }
-///imaginary part of a scalar. Cannot be replaced by std::imag
+///imaginary part of a scalar. Cannot be replaced by std::imag due to AFQMC specific needs.
 inline float imag(const float& c) { return 0; }
 inline double imag(const double& c) { return 0; }
 inline float imag(const std::complex<float>& c) { return c.imag(); }
