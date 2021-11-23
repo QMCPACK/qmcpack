@@ -612,6 +612,7 @@ class Qmcpack(Simulation):
                         k_1, band_1, k_2, band_2 = excitation
                         tilematrix = self.system.structure.tilematrix()
                         
+                        wf = self.input.get('wavefunction')
                         if exc_input[0]=='up':
                             sdet =  wf.determinantset.get('updet')
                         else:
