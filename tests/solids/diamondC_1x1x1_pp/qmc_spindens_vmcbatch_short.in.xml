@@ -87,7 +87,8 @@
        <parameter name="grid">
          10 10 10
        </parameter>
-       <parameter name="center">
+       <!-- this is the default in the legacy implementation -->
+       <parameter name="corner">
          0.0 0.0 0.0
        </parameter>
        <parameter name="cell">

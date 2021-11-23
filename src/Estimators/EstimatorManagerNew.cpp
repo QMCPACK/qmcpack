@@ -16,6 +16,7 @@
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
+#include "OneBodyDensityMatrices.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -31,6 +32,7 @@
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 
@@ -328,7 +330,7 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second].get();
 }
 
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory, xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
@@ -390,6 +392,15 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         operator_ests_.emplace_back(
           std::make_unique<MomentumDistribution>(std::move(mdi), 
             pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl));
+      }
+      else if (est_type == "OneBodyDensityMatrices")
+      {
+        OneBodyDensityMatricesInput obdmi(cur);
+        // happens once insures golden particle set is not abused.
+        ParticleSet pset_target(pset);
+        operator_ests_.emplace_back(
+          std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), 
+                                                   pset.Lattice, pset.getSpeciesSet(), wf_factory, pset_target));
       }
       else
       {

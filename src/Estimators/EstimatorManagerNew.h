@@ -29,6 +29,7 @@
 namespace qmcplusplus
 {
 class QMCHamiltonian;
+class WaveFunctionFactory;
 class CollectablesEstimator;
 class hdf_archive;
 
@@ -75,7 +76,7 @@ public:
   int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory, xmlNodePtr cur);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.

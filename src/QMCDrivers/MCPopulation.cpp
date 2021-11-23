@@ -25,10 +25,12 @@ MCPopulation::MCPopulation(int num_ranks,
                            WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
+                           WaveFunctionFactory* wf_factory,
                            QMCHamiltonian* hamiltonian)
     : trial_wf_(trial_wf),
       elec_particle_set_(elecs),
       hamiltonian_(hamiltonian),
+      wf_factory_(wf_factory),
       num_ranks_(num_ranks),
       rank_(this_rank),
       walker_configs_ref_(mcwc)

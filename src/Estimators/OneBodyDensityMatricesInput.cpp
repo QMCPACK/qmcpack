@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "string_utils.h"
+#include "EstimatorInput.h"
 #include "OneBodyDensityMatricesInput.h"
 
 namespace qmcplusplus
@@ -32,6 +33,7 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
   setIfInInput(evaluator_, "evaluator");
   setIfInInput(scale_, "scale");
   center_defined_ = setIfInInput(center_, "center");
+  corner_defined_ = setIfInInput(corner_, "corner");
   setIfInInput(timestep_, "timestep");
   setIfInInput(points_, "points");
   setIfInInput(samples_, "samples");
@@ -41,11 +43,12 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 
 void OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::checkParticularValidity()
 {
+  using namespace estimatorinput;
   const std::string error_tag{"OneBodyDensityMatrices input: "};
+  checkCenterCorner(*this, error_tag);
   if (has("scale"))
   {
     Real scale = get<Real>("scale");
-    std::cout << "SCALE is :" << scale << '\n';
     if (scale > 1.0 + 1e-10)
       throw UniformCommunicateError(error_tag + "scale must be less than one");
     else if (scale < 0.0 - 1e-10)
@@ -70,16 +73,7 @@ void OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::checkParticu
 
 std::any OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::assignAnyEnum(const std::string& name) const
 {
-  std::string enum_value_str(name + "-" + get<std::string>(name));
-  tolower(enum_value_str);
-  try
-  {
-    return lookup_input_enum_value.at(enum_value_str);
-  }
-  catch (std::out_of_range& oor_exc)
-  {
-    std::throw_with_nested(std::logic_error("bad_enum_tag_value: " + enum_value_str));
-  }
+  return lookupAnyEnum(name, get<std::string>(name), lookup_input_enum_value);
 }
 
 } // namespace qmcplusplus

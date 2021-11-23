@@ -66,9 +66,7 @@ public:
 
   std::any assignAnyEnum(const std::string& name) const override
   {
-    std::string enum_value_str(name + "-" + get<std::string>(name));
-    tolower(enum_value_str);
-    return lookup_input_enum_value.at(enum_value_str);
+    return lookupAnyEnum(name, get<std::string>(name), lookup_input_enum_value);
   }
 };
 
