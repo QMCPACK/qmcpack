@@ -4995,7 +4995,11 @@ def generate_determinantset_old(type           = 'bspline',
             band_1, band_2 = bands
             
             # Convert k_1 k_2 to wavevector indexes
-            structure   = system.structure.folded_structure.copy()
+            if system.structure.has_folded():
+                structure   = system.structure.folded_structure.copy()
+            else:
+                structure   = system.structure.copy()
+            #end if
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
             kpath_label = array(kpath['explicit_kpoints_labels'])
