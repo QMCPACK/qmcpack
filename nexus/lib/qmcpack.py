@@ -657,6 +657,8 @@ class Qmcpack(Simulation):
                             structure   = self.system.structure.copy()
                         #end if
                         structure.change_units('A')
+
+                        from structure import get_kpath
                         kpath       = get_kpath(structure=structure)
                         kpath_label = array(kpath['explicit_kpoints_labels'])
                         kpath_rel   = kpath['explicit_kpoints_rel']
