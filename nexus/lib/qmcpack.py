@@ -690,14 +690,36 @@ class Qmcpack(Simulation):
                             QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
                         #end if
 
-                        #Write everything in band (ti,bi) format
-                        print()
-                        print('\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n')
+                        print("WE ARE CHECKING THE LAST CASE")
+                        tw1,bnd1 = (k_1,band_1)
+                        tw2,bnd2 = (k_2,band_2)
+                        spin_channel = exc_input[0]
+                        for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
+                            if tw == int(tw1) and bnd == int(bnd1):
+                                # This orbital should no longer be in the set of occupied orbitals
+                                if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the first orbital \'{} {}\' is still occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw1,bnd1)
+                                    exc_failure = True
+                                #end if
+                            elif tw == int(tw2) and bnd == int(bnd2):
+                                # This orbital should be in the set of occupied orbitals
+                                if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the second orbital \'{} {}\' is not occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw2,bnd2)
+                                    exc_failure = True
+                                #end if
+                            #end if
+                        #end for
+
+
+                        print('DID IT FAIL?')
+                        print(exc_failure)
                         quit()
-                        #occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
-                        #occ.format = 'band'
-                        
-                    #end if
 
                 #end if
 
