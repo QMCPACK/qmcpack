@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_PARTICLESET_H
 #define QMCPLUSPLUS_PARTICLESET_H
 
+#include <memory>
 #include <Configuration.h>
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
@@ -408,8 +409,6 @@ public:
   //        void resetPropertyHistory( );
   //        void addPropertyHistoryPoint(int index, RealType data);
 
-  void clearDistanceTables();
-
   void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
   void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
   void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
@@ -679,7 +678,7 @@ protected:
   std::map<std::string, int> myDistTableMap;
 
   /// distance tables that need to be updated by moving this ParticleSet
-  std::vector<DistanceTable*> DistTables;
+  std::vector<std::unique_ptr<DistanceTable>> DistTables;
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;

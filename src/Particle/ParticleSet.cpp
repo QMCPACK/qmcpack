@@ -124,11 +124,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   L = p.L;
 }
 
-ParticleSet::~ParticleSet()
-{
-  DEBUG_MEMORY("ParticleSet::~ParticleSet");
-  delete_iter(DistTables.begin(), DistTables.end());
-}
+ParticleSet::~ParticleSet() = default;
 
 void ParticleSet::create(int numPtcl)
 {
@@ -944,15 +940,6 @@ void ParticleSet::initPropertyList()
   //   app_error() << "NUMPROPERTIES " << WP::NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
   //   APP_ABORT("ParticleSet::initPropertyList");
   // }
-}
-
-void ParticleSet::clearDistanceTables()
-{
-  //Physically remove the tables
-  delete_iter(DistTables.begin(), DistTables.end());
-  DistTables.clear();
-  //for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
-  //DistTables.erase(DistTables.begin(),DistTables.end());
 }
 
 int ParticleSet::addPropertyHistory(int leng)
