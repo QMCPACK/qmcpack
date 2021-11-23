@@ -527,13 +527,19 @@ class Qmcpack(Simulation):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
                                 if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
-                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{} {}\' is still occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],tw1,bnd1)
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the first orbital \'{} {}\' is still occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw1,bnd1)
                                     exc_failure = True
                                 #end if
                             elif tw == int(tw2) and bnd == int(bnd2):
                                 # This orbital should be in the set of occupied orbitals
                                 if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
-                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the second orbital \'{} {}\' is not occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],tw2,bnd2)
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the second orbital \'{} {}\' is not occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw2,bnd2)
                                     exc_failure = True
                                 #end if
                             #end if
@@ -563,21 +569,34 @@ class Qmcpack(Simulation):
                         orb2_eig = sorted(edata[spin_channel]['Energy'])[orb2-1]
 
                         if orb1_eig not in edata[spin_channel]['Energy'][nelec:]:
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],orb1)
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                            msg += '         however, the first orbital \'{}\' is still occupied (see einspline file).\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],orb1)
                             exc_failure = True
                         elif orb2_eig not in edata[spin_channel]['Energy'][:nelec]:
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],orb2)
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n' 
+                            msg += '         however, the first orbital \'{}\' is still occupied (see einspline file).\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],orb2)
                             exc_failure = True
+                        #end if
 
                     elif exc_input[0] in ('singlet','triplet'):
                         wf = self.input.get('wavefunction')
                         occ = wf.determinantset.multideterminant.detlist.csf.occ
                         if occ[int(orb1)-1]!='1':
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spin_channel,exc_input[1],occ)
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                            msg += '         however, this is inconsistent with the occupations in detlist \'{}\'.\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],occ)
                             exc_failure = True
                         #end if
                         if occ[int(orb2)-1]!='1':
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spin_channel,exc_input[1],occ)
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                            msg += '         however, this is inconsistent with the occupations in detlist \'{}\'.\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],occ)
                             exc_failure = True
                         #end if
                     #end if
