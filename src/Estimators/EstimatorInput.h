@@ -13,7 +13,6 @@
 #define QMCPLUSPLUS_ESIMATORINPUT_H
 
 #include <string>
-#include <any>
 #include "Configuration.h"
 #include "InputSection.h"
 

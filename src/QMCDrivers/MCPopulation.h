@@ -74,6 +74,7 @@ private:
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
+  // Then these too can be references.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;

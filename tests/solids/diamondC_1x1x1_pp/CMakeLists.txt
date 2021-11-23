@@ -463,7 +463,8 @@ if(add_estimator_tests)
   #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
   #   )
 
-  # # Unlikey check_states.py will be able to digest this
+  # This is the new 1RDM test, it passes with 16 sigma, which is better than the
+  # old test but we need to fix these in general.
   simple_run_and_check(
     short-diamondC_1x1x1_pp-vmcbatch-estimator-onebodydensitymatrices
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
