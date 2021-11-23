@@ -618,7 +618,7 @@ class Qmcpack(Simulation):
                         else:
                             sdet =  wf.determinantset.get('downdet')
                         #end if
-                        from numpy import linalg,where
+                        from numpy import linalg,where,isclose
                         vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
                         cb = vb+1
                         # Convert band_1, band_2 to band indexes
