@@ -690,7 +690,6 @@ class Qmcpack(Simulation):
                             QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
                         #end if
 
-                        print("WE ARE CHECKING THE LAST CASE")
                         tw1,bnd1 = (k_1,band_1)
                         tw2,bnd2 = (k_2,band_2)
                         spin_channel = exc_input[0]
@@ -715,11 +714,6 @@ class Qmcpack(Simulation):
                                 #end if
                             #end if
                         #end for
-
-
-                        print('DID IT FAIL?')
-                        print(exc_failure)
-                        quit()
 
                 #end if
 
