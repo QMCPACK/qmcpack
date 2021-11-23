@@ -1803,6 +1803,7 @@ def read_command_line():
             'energydensity',
             '1rdm',
             '1redm',
+            'obdm',
             'momentum',
             ]
 
@@ -1858,6 +1859,7 @@ def read_command_line():
                 'energydensity' : 'EnergyDensity'  ,
                 '1rdm'          : 'DensityMatrices',
                 '1redm'         : 'DensityMatrices',
+                'obdm'          : 'OneBodyDensityMatrices' ,
                 'momentum'      : 'nofk'           ,
                 })
             options.qlabel = default_label[options.quantity]
@@ -1959,6 +1961,8 @@ def process_stat_file(options):
                                   d='number_matrix/d/value'),
             '1redm'         : obj(u='energy_matrix/u/value',
                                   d='energy_matrix/d/value'),
+            'obdm'          : obj(u='number_matrix/u/value',
+                                  d='number_matrix/d/value'),
             'energydensity' : obj(W=('spacegrid1/value',0,3),
                                   T=('spacegrid1/value',1,3),
                                   V=('spacegrid1/value',2,3)),

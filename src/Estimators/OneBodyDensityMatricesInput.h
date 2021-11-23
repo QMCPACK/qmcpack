@@ -48,6 +48,8 @@ public:
    *
    *  This plus the virtual assignAnyEnum method are needed by InputSection to
    *  validate and assign enum values from input.
+   *
+   *  In testing code we assume this map is bidirectional.
    */
   inline static const std::unordered_map<std::string, std::any>
       lookup_input_enum_value{{"integrator-uniform_grid", Integrator::UNIFORM_GRID},
@@ -66,7 +68,7 @@ public:
       section_name  = "OneBodyDensityMatrix";
       attributes    = {"name", "type"};
       parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
-                       "center", "points", "samples", "warmup", "timestep",
+                       "corner", "center", "points", "samples", "warmup", "timestep",
                        "use_drift", "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
                        "normalized", "volumed_normed"};
       bools         = {"energy_matrix", "use_drift", "normalized", "volume_normed",
@@ -76,7 +78,7 @@ public:
       multi_strings = {"basis"};
       integers      = {"points", "samples"};
       reals         = {"scale", "timestep"};
-      positions     = {"center"};
+      positions     = {"center", "corner"};
       required      = {"name", "basis"};
       // I'd much rather see the default defined in simple native c++ as below
       // clang-format on
@@ -107,11 +109,13 @@ private:
   bool write_acceptance_ratio_ = false;
   /// This flag is derived from input so if you construct an OBDMI directly with center it must be set.
   bool center_defined_   = false;
+  bool corner_defined_   = false;
   Integrator integrator_ = Integrator::UNIFORM_GRID;
   Evaluator evaluator_   = Evaluator::LOOP;
   Real scale_            = 1.0;
   /// center_ does not have a default. The estimator sets if from input Lattice if it isn't set
   Position center_;
+  Position corner_;
   Real timestep_      = 0.5;
   int points_         = 10;
   int samples_        = 10;
@@ -131,7 +135,9 @@ public:
   Evaluator get_evaluator() const { return evaluator_; }
   Real get_scale() const { return scale_; }
   Position get_center() const { return center_; }
+  Position get_corner() const { return corner_; }
   bool get_center_defined() const { return center_defined_; }
+  bool get_corner_defined() const { return corner_defined_; }
   Real get_timestep() const { return timestep_; }
   int get_points() const { return points_; }
   int get_samples() const { return samples_; }

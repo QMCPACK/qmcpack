@@ -74,7 +74,9 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   ProjectData test_project;
   DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::move(dmcdriver_input),
                        MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                    wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                    wavefunction_pool.getPrimary(),
+                                    wavefunction_pool.getWaveFunctionFactory("wavefunction"),
+                                    hamiltonian_pool.getPrimary()),
                        comm);
 
   // setStatus must be called before process

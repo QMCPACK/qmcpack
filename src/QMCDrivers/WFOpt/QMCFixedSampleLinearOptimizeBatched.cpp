@@ -192,8 +192,8 @@ QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
 
 QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::costFunc(RealType dl)
 {
-  for (int i = 0; i < optparm.size(); i++)
-    optTarget->Params(i) = optparm[i] + dl * optdir[i];
+  for (int i = 0; i < optparam.size(); i++)
+    optTarget->Params(i) = optparam[i] + dl * optdir[i];
   QMCFixedSampleLinearOptimizeBatched::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
@@ -363,7 +363,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
     bestParameters[i] = currentParameters[i] = std::real(optTarget->Params(i));
   //   proposed direction and new parameters
   optdir.resize(numParams, 0);
-  optparm.resize(numParams, 0);
+  optparam.resize(numParams, 0);
 
   while (Total_iterations < Max_iterations)
   {
@@ -463,7 +463,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       else
       {
         for (int i = 0; i < numParams; i++)
-          optparm[i] = currentParameters[i];
+          optparam[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
         objFuncWrapper_.TOL              = param_tol / bigVec;
@@ -495,7 +495,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparm[i] + objFuncWrapper_.Lambda * optdir[i];
+            optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -738,7 +738,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                                 population_.get_golden_electrons(), &population_.get_golden_twf(),
-                                                &population_.get_golden_hamiltonian()),
+                                                &population_.get_wf_factory(), &population_.get_golden_hamiltonian()),
                                    samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');

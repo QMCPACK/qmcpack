@@ -40,14 +40,23 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
 {
   my_name_ = "OneBodyDensityMatrices";
   lattice_.reset();
-  if (input_.get_center_defined())
-    center_ = input_.get_center();
+
+  if (input_.get_corner_defined())
+  {
+    rcorner_ = input_.get_corner();
+    center_  = rcorner_ + input_.get_scale() * lattice_.Center;
+  }
   else
-    center_ = lattice_.Center;
+  {
+    if (input_.get_center_defined())
+      center_ = input_.get_center();
+    else
+      center_ = lattice_.Center;
+    rcorner_ = center_ - input_.get_scale() * lattice_.Center;
+  }
 
   volume_   = lattice_.Volume * std::exp(OHMMS_DIM * std::log(input_.get_scale()));
   periodic_ = lattice_.SuperCellEnum != SUPERCELL_OPEN;
-  rcorner_  = center_ - input_.get_scale() * lattice_.Center;
 
   // Here we discover sampling is derived (this may belong in input class)
   switch (input_.get_integrator())
@@ -189,6 +198,16 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
 
+  // Steps will always be 0 unless these are samples for warmup which is only for metropolis
+  // This is not a clear way to write this
+  // \todo rewrite to make algorithm more clears
+  bool save = false;
+  if (steps == 0)
+  {
+    save  = true;
+    steps = samples_;
+  }
+  
   switch (input_.get_integrator())
   {
   case Integrator::UNIFORM_GRID:
@@ -198,27 +217,18 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
     generateUniformSamples(rng);
     break;
   case Integrator::DENSITY: {
-    bool save = false;
-    if (steps == 0)
-    {
-      save  = true;
-      steps = samples_;
-    }
-
     generateDensitySamples(save, steps, rng, pset_target);
-    if (save)
-    {
-      if (sampling_ == Sampling::METROPOLIS)
-        samples_weights_ *= weight;
-      else
-      {
-        //I can't see how you would ever get here.
-        assert(false);
-        std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
-      }
-    }
-    break;
   }
+  }
+
+  if (save)
+  {
+    if (sampling_ == Sampling::METROPOLIS)
+      samples_weights_ *= weight;
+    else
+    {
+      std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
+    }
   }
 
   // optional check

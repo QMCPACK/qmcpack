@@ -106,6 +106,26 @@ public:
 
   // Initialize from unordered_map/initializer list
   void init(const std::unordered_map<std::string, std::any>& init_values);
+  
+/** Get string represtation of enum class type value from enum_val
+ *  
+ *  This is just a way to get around the lack of a bidirectional map type.
+ */
+template<typename ENUM_T>
+static std::string reverseLookupInputEnumMap(ENUM_T enum_val, const std::unordered_map<std::string, std::any>& enum_map)
+{
+  std::string lookup_str = "not found";
+  for (const auto& enum_node : enum_map)
+  {
+    if (enum_node.second.type() == typeid(decltype(enum_val)) &&
+        enum_val == std::any_cast<decltype(enum_val)>(enum_node.second))
+    {
+      lookup_str = enum_node.first;
+      break;
+    }
+  }
+  return lookup_str;
+}  
 
 protected:
   /** Do validation for a particular subtype of InputSection
@@ -114,6 +134,12 @@ protected:
    */
   virtual void checkParticularValidity() {}
   /** Derived class overrides this to get proper assignment of scoped enum values.
+   *
+   *  In most cases all you'll need it to define the map and write:
+   *    std::any DerivedInputSection::assignAnyEnum(const std::string& name) const
+   *    {
+   *      return lookupAnyEnum(name, get<std::string>(name), derived_input_lookup_enum);
+   *    }
    *
    *  See test_InputSection.cpp and OneBodyDensityMatricesInput
    *  You really should do this if your input class has a finite set of string values for an input
@@ -126,6 +152,17 @@ protected:
     throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
     return std::any();
   }
+
+  /** Assign any enum helper for InputSection derived class
+   *  assumes enum lookup table of this form:
+   *    inline static const std::unordered_map<std::string, std::any>
+   *    lookup_input_enum_value{{"integrator-uniform_grid", Integrator::UNIFORM_GRID},
+   *                            {"integrator-uniform", Integrator::UNIFORM},
+   *                            {"integrator-density", Integrator::DENSITY},
+   *                            {"evaluator-loop", Evaluator::LOOP},
+   *                            {"evaluator-matrix", Evaluator::MATRIX}};
+   */
+  static std::any lookupAnyEnum(const std::string& enum_name, const std::string& enum_value, const std::unordered_map<std::string, std::any>& enum_map);
 
 private:
   // Query functions
