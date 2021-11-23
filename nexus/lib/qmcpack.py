@@ -610,7 +610,7 @@ class Qmcpack(Simulation):
                         # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
                         excitation = exc_input[1].upper().split(' ')
                         k_1, band_1, k_2, band_2 = excitation
-                        tilematrix = self.input.get('structure').tilematrix()
+                        tilematrix = self.system.structure.tilematrix()
                         quit()
                         
                         if exc_input[0]=='up':
