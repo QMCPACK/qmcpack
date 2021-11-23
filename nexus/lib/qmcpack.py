@@ -615,7 +615,7 @@ class Qmcpack(Simulation):
                         
                         if exc_input[0]=='up':
                             sdet =  wf.determinantset.get('updet')
-                        else;
+                        else:
                             sdet =  wf.determinantset.get('downdet')
                         #end if
                         vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
