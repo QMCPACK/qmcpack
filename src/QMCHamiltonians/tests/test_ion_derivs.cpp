@@ -13,7 +13,7 @@
 #include "catch.hpp"
 
 #include "type_traits/template_types.hpp"
-#include "type_traits/convert2real.h"
+#include "type_traits/ConvertToReal.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
@@ -193,8 +193,8 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert2real(wfgradraw[0], wf_grad[0]);
-  convert2real(wfgradraw[1], wf_grad[1]);
+  convertToReal(wfgradraw[0], wf_grad[0]);
+  convertToReal(wfgradraw[1], wf_grad[1]);
 
   //Reference from finite differences on this configuration.
   REQUIRE(wf_grad[0][0] == Approx(-1.9044650674260308));
@@ -378,8 +378,8 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert2real(wfgradraw[0], wf_grad[0]);
-  convert2real(wfgradraw[1], wf_grad[1]);
+  convertToReal(wfgradraw[0], wf_grad[0]);
+  convertToReal(wfgradraw[1], wf_grad[1]);
 
   //Reference from finite differences on this configuration.
   REQUIRE(wf_grad[0][0] == Approx(-1.8996878390353797));
@@ -562,8 +562,8 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert2real(wfgradraw[0], wf_grad[0]);
-  convert2real(wfgradraw[1], wf_grad[1]);
+  convertToReal(wfgradraw[0], wf_grad[0]);
+  convertToReal(wfgradraw[1], wf_grad[1]);
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.
@@ -718,8 +718,8 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert2real(wfgradraw[0], wf_grad[0]);
-  convert2real(wfgradraw[1], wf_grad[1]);
+  convertToReal(wfgradraw[0], wf_grad[0]);
+  convertToReal(wfgradraw[1], wf_grad[1]);
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.

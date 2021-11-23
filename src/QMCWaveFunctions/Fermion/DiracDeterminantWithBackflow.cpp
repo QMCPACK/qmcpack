@@ -20,7 +20,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
 #include "CPU/SIMD/simd.hpp"
-#include "type_traits/convert2real.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -863,8 +863,8 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       } // k
     }   // j
 #if defined(QMC_COMPLEX)
-    convert2real(dpsia, dlogpsi(offset, pa));
-    convert2real(dLa + sumL * dpsia + dotG * dpsia + static_cast<ValueType>(2.0 * Dot(myG, Gtemp)), dL(offset, pa));
+    convertToReal(dpsia, dlogpsi(offset, pa));
+    convertToReal(dLa + sumL * dpsia + dotG * dpsia + static_cast<ValueType>(2.0 * Dot(myG, Gtemp)), dL(offset, pa));
 #else
     dlogpsi(offset, pa) = dpsia; // \nabla_pa ln(D)
     dL(offset, pa)      = dLa + sumL * dpsia + dotG * dpsia + static_cast<ValueType>(2.0 * Dot(myG, Gtemp));

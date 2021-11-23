@@ -281,7 +281,7 @@ bool DMCcuda::run()
           v2bar += dot(wG_scaled, wG_scaled);
 #ifdef QMC_COMPLEX
           PosType wG_real;
-          convert2real(W.G[iat], wG_real);
+          convertToReal(W.G[iat], wG_real);
           v2 += dot(wG_real, wG_real);
 #else
           // should be removed when things work fine

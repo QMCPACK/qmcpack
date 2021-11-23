@@ -26,7 +26,7 @@
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
-#include "type_traits/convert2real.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -875,7 +875,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& 
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
     wfgradraw_[iat] = psi.evalGradSource(P, ions, iat);
-    convert2real(wfgradraw_[iat], wf_grad[iat]);
+    convertToReal(wfgradraw_[iat], wf_grad[iat]);
   }
   return localEnergy;
 }
@@ -897,7 +897,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
     wfgradraw_[iat] = psi.evalGradSource(P, ions, iat);
-    convert2real(wfgradraw_[iat], wf_grad[iat]);
+    convertToReal(wfgradraw_[iat], wf_grad[iat]);
   }
   return localEnergy;
 }

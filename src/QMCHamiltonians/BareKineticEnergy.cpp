@@ -23,7 +23,7 @@
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
-#include "type_traits/convert2real.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -191,7 +191,7 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
     }
     iongradpsi_[iat] = psi.evalGradSource(P, ions, iat, iongrad_grad_, iongrad_lapl_);
     //conversion from potentially complex to definitely real.
-    convert2real(iongradpsi_[iat], iongradpsireal_[iat]);
+    convertToReal(iongradpsi_[iat], iongradpsireal_[iat]);
     if (SameMass)
     {
       for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
@@ -220,7 +220,7 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
       }
     }
     //convert to real.
-    convert2real(pulaytmp_[iat], pulaytmpreal_[iat]);
+    convertToReal(pulaytmp_[iat], pulaytmpreal_[iat]);
   }
 
   if (SameMass)
