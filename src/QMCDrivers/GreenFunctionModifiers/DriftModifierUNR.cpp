@@ -13,14 +13,14 @@
 #include <sstream>
 #include "DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/convert2real.h"
 
 namespace qmcplusplus
 {
 void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift) const
 {
   // convert the complex WF gradient to real
-  convert(qf, drift);
+  convert2real(qf, drift);
 #ifndef NDEBUG
   PosType debug_drift = drift;
 #endif
@@ -54,7 +54,7 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
 void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet::Scalar_t& drift) const
 {
   // convert the complex WF gradient to real
-  convert(qf, drift);
+  convert2real(qf, drift);
   RealType vsq = drift * drift;
   RealType sc  = vsq < std::numeric_limits<RealType>::epsilon()
       ? tau

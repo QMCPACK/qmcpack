@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -14,8 +14,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_SCLAR_TRAITS_H
-#define QMCPLUSPLUS_SCLAR_TRAITS_H
+#ifndef QMCPLUSPLUS_CONVERT2REAL_H
+#define QMCPLUSPLUS_CONVERT2REAL_H
 #include <complex>
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/Tensor.h"
@@ -27,7 +27,7 @@ namespace qmcplusplus
 /** generic conversion from type T1 to type T2 using implicit conversion
 */
 template<typename T1, typename T2>
-inline void convert(const T1& in, T2& out)
+inline void convert2real(const T1& in, T2& out)
 {
   out = static_cast<T2>(in);
 }
@@ -35,7 +35,7 @@ inline void convert(const T1& in, T2& out)
 /** specialization of conversion from complex to real
 */
 template<typename T1, typename T2>
-inline void convert(const std::complex<T1>& in, T2& out)
+inline void convert2real(const std::complex<T1>& in, T2& out)
 {
   out = in.real();
 }
@@ -44,27 +44,27 @@ inline void convert(const std::complex<T1>& in, T2& out)
  *
  */
 template<typename T1, typename T2, unsigned D>
-inline void convert(const TinyVector<T1, D>& in, TinyVector<T2, D>& out)
+inline void convert2real(const TinyVector<T1, D>& in, TinyVector<T2, D>& out)
 {
   for (int i = 0; i < D; ++i)
-    convert(in[i], out[i]);
+    convert2real(in[i], out[i]);
 }
 
 /** specialization for 3D */
 template<typename T1, typename T2>
-inline void convert(const TinyVector<T1, 3>& in, TinyVector<T2, 3>& out)
+inline void convert2real(const TinyVector<T1, 3>& in, TinyVector<T2, 3>& out)
 {
-  convert(in[0], out[0]);
-  convert(in[1], out[1]);
-  convert(in[2], out[2]);
+  convert2real(in[0], out[0]);
+  convert2real(in[1], out[1]);
+  convert2real(in[2], out[2]);
 }
 
 /** specialization for D tensory*/
 template<typename T1, typename T2, unsigned D>
-inline void convert(const Tensor<T1, D>& in, Tensor<T2, D>& out)
+inline void convert2real(const Tensor<T1, D>& in, Tensor<T2, D>& out)
 {
   for (int i = 0; i < D * D; ++i)
-    convert(in[i], out[i]);
+    convert2real(in[i], out[i]);
 }
 
 /** generic function to convert arrays
@@ -73,31 +73,31 @@ inline void convert(const Tensor<T1, D>& in, Tensor<T2, D>& out)
  * @param n size of in/out
  */
 template<typename T1, typename T2>
-inline void convert(const T1* restrict in, T2* restrict out, std::size_t n)
+inline void convert2real(const T1* restrict in, T2* restrict out, std::size_t n)
 {
   for (int i = 0; i < n; ++i)
-    convert(in[i], out[i]);
+    convert2real(in[i], out[i]);
 }
 
 /** specialization for a vector */
 template<typename T1, typename T2>
-inline void convert(const Vector<T1>& in, Vector<T2>& out)
+inline void convert2real(const Vector<T1>& in, Vector<T2>& out)
 {
-  convert(in.data(), out.data(), in.size());
+  convert2real(in.data(), out.data(), in.size());
 }
 
 /** specialization for a vector */
 template<typename T1, typename T2>
-inline void convert(const Matrix<T1>& in, Matrix<T2>& out)
+inline void convert2real(const Matrix<T1>& in, Matrix<T2>& out)
 {
-  convert(in.data(), out.data(), in.size());
+  convert2real(in.data(), out.data(), in.size());
 }
 
 /** specialization for a vector */
 template<typename T1, typename T2>
-inline void convert(const Tensor<T1, 3>& in, Tensor<T2, 3>& out)
+inline void convert2real(const Tensor<T1, 3>& in, Tensor<T2, 3>& out)
 {
-  convert(in.data(), out.data(), in.size());
+  convert2real(in.data(), out.data(), in.size());
 }
 } // namespace qmcplusplus
 #endif

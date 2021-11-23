@@ -23,7 +23,6 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "Message/CommOperators.h"
-#include "type_traits/scalar_traits.h"
 #ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif

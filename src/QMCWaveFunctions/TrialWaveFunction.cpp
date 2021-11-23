@@ -22,7 +22,7 @@
 #include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/convert2real.h"
 
 namespace qmcplusplus
 {
@@ -272,8 +272,8 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   }
   P.G += fixedG;
   P.L += fixedL;
-  convert(logpsi_fixed, logpsi_fixed_r);
-  convert(logpsi_opt, logpsi_opt_r);
+  convert2real(logpsi_fixed, logpsi_fixed_r);
+  convert2real(logpsi_opt, logpsi_opt_r);
 }
 
 

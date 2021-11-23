@@ -18,7 +18,7 @@
 #include "NonLocalECPComponent.h"
 #include "NLPPJob.h"
 #include "NonLocalData.h"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/convert2real.h"
 
 namespace qmcplusplus
 {
@@ -319,7 +319,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradtmp_ *= psiratio[j];
 #if defined(QMC_COMPLEX)
       //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio[j]);
+      convert2real(gradtmp_, gradpsiratio[j]);
 #else
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
@@ -471,7 +471,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradtmp_ *= psiratio[j];
 #if defined(QMC_COMPLEX)
       //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio[j]);
+      convert2real(gradtmp_, gradpsiratio[j]);
 #else
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
@@ -520,7 +520,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
       iongradtmp_ *= psiratio[j];
 #ifdef QMC_COMPLEX
-      convert(iongradtmp_, pulay_quad[j][jat]);
+      convert2real(iongradtmp_, pulay_quad[j][jat]);
 #endif
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.

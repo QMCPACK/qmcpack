@@ -1,6 +1,6 @@
 #include "QMCHamiltonians/SpaceWarpTransformation.h"
 #include "Particle/DistanceTable.h"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/convert2real.h"
 namespace qmcplusplus
 {
 SpaceWarpTransformation::SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions)
@@ -77,7 +77,7 @@ void SpaceWarpTransformation::computeSWT(ParticleSet& P,
       el_contribution[iat] += w[iel] * dEl[iel];
 
 #if defined(QMC_COMPLEX)
-      convert(dlogpsi[iel], gwfn);
+      convert2real(dlogpsi[iel], gwfn);
 #else
       gwfn = dlogpsi[iel];
 #endif
