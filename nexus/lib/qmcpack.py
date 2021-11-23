@@ -601,6 +601,98 @@ class Qmcpack(Simulation):
                         #end if
                     #end if
 
+                else:
+                    # The format is: 'gamma vb z cb'
+                    if exc_input[0] in ('singlet','triplet'):
+                        self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
+                    else:
+
+                        # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
+                        excitation = exc_input[1].upper().split(' ')
+                        k_1, band_1, k_2, band_2 = excitation
+                        tilematrix = self.input.get('structure').tilematrix()
+                        quit()
+                        
+                        if exc_input[0]=='up':
+                            sdet =  wf.determinantset.get('updet')
+                        else;
+                            sdet =  wf.determinantset.get('downdet')
+                        #end if
+                        vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
+                        cb = vb+1
+                        # Convert band_1, band_2 to band indexes
+                        bands = [band_1, band_2]
+                        for bnum, b in enumerate(bands):
+                            if 'CB' in b:
+                                if '-' in b:
+                                    b = b.split('-')
+                                    bands[bnum] = cb - int(b[1])
+                                elif '+' in b:
+                                    b = b.split('+')
+                                    bands[bnum] = cb + int(b[1])
+                                else:
+                                    bands[bnum] = cb
+                                #end if
+                            elif 'VB' in b:
+                                if '-' in b:
+                                    b = b.split('-')
+                                    bands[bnum] = vb - int(b[1])
+                                elif '+' in b:
+                                    b = b.split('+')
+                                    bands[bnum] = vb + int(b[1])
+                                else:
+                                    bands[bnum] = vb
+                                #end if
+                            else:
+                                QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                            #end if
+                        #end for
+                        band_1, band_2 = bands
+                        
+                        # Convert k_1 k_2 to wavevector indexes
+                        if system.structure.has_folded():
+                            structure   = system.structure.folded_structure.copy()
+                        else:
+                            structure   = system.structure.copy()
+                        #end if
+                        structure.change_units('A')
+                        kpath       = get_kpath(structure=structure)
+                        kpath_label = array(kpath['explicit_kpoints_labels'])
+                        kpath_rel   = kpath['explicit_kpoints_rel']
+                        
+                        k1_in = k_1
+                        k2_in = k_2
+                        if k_1 in kpath_label and k_2 in kpath_label:   
+                            k_1 = kpath_rel[where(kpath_label == k_1)][0]
+                            k_2 = kpath_rel[where(kpath_label == k_2)][0]
+
+                            #kpts = nscf.input.k_points.kpoints
+                            kpts = structure.kpoints_unit()
+                            found_k1 = False
+                            found_k2 = False
+                            for knum, k in enumerate(kpts):
+                                if isclose(k_1, k).all():
+                                    k_1 = knum
+                                    found_k1 = True
+                                #end if
+                                if isclose(k_2, k).all():
+                                    k_2 = knum
+                                    found_k2 = True
+                                #end if
+                            #end for
+                            if not found_k1 or not found_k2:
+                                QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                            #end if
+                        else:
+                            QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                        #end if
+
+                        #Write everything in band (ti,bi) format
+                        occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
+                        occ.format = 'band'
+                        
+                    #end if
+
                 #end if
 
                 if exc_failure:
