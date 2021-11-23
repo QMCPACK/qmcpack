@@ -611,7 +611,6 @@ class Qmcpack(Simulation):
                         excitation = exc_input[1].upper().split(' ')
                         k_1, band_1, k_2, band_2 = excitation
                         tilematrix = self.system.structure.tilematrix()
-                        quit()
                         
                         if exc_input[0]=='up':
                             sdet =  wf.determinantset.get('updet')
@@ -688,8 +687,11 @@ class Qmcpack(Simulation):
                         #end if
 
                         #Write everything in band (ti,bi) format
-                        occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
-                        occ.format = 'band'
+                        print()
+                        print('\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n')
+                        quit()
+                        #occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
+                        #occ.format = 'band'
                         
                     #end if
 
