@@ -4794,36 +4794,21 @@ def generate_determinantset_old(type           = 'bspline',
         dset.slaterdeterminant.delay_rank = delay_rank
     #end if
     if excitation is not None:
-        print('SET UP EXCITATION')
         format_failed = False
         if not isinstance(excitation,(tuple,list)):
             QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
         elif excitation[0] not in ('up','down','singlet','triplet') or not isinstance(excitation[1],str):
             format_failed = True
         else:
-            #There are three types of input:
-            #1. excitation=['up','0 45 3 46'] 
-            #2. excitation=['up','-215 216']  
-            #3. excitation=['up', 'L vb F cb']
-            #4. excitation=['up', 'homo lumo'] OR excitation=['up', 'homo-N lumo+M']
+            # There are three types of input:
+            # 1. excitation=['up','0 45 3 46'] 
+            # 2. excitation=['up','-215 216']  
+            # 3. excitation=['up', 'L vb F cb']
+            # 4. excitation=['up', 'lowest']
+            # Note: Any of the types can use up or down for the first element.
+            #       Type 2 and 4 can also use singlet and triplet for the first element.
             if len(excitation) == 2: #Type 1, 2, 3, or 4
-                if 'homo' in excitation[1] and 'lumo' in excitation[1]:
-                    #print(system)
-                    #print('=================================== SELF ========================================')
-                    #print(self)
-                    #quit()
-                    print('HERE')
-                    try:
-                        tmp = array(excitation[1].split(),dtype=str)
-                        if (tmp[0][:4]!='homo' or tmp[1][:4]!='lumo') or (not is_int(tmp[0][4:]) or not is_int(tmp[1][4:])):
-                            format_failed = True
-                        #end if
-                    except:
-                        format_failed = True
-                    #end try
-                    #print(format_failed)
-                    #quit()
-                elif 'cb' not in excitation[1] and 'vb' not in excitation[1]:
+                if 'cb' not in excitation[1] and 'vb' not in excitation[1] and 'lowest' not in excitation[1]:
                     try:
                         tmp = array(excitation[1].split(),dtype=int)
                     except:
@@ -4846,7 +4831,9 @@ def generate_determinantset_old(type           = 'bspline',
             sdet = dset.get('downdet')
         elif spin_channel=='singlet' or spin_channel=='triplet':
 
-            # Is multi-det WF appropriate?
+            # Are there an equal number of up and down electrons?
+            # If no, then exit. Currently, singlet and triplet 
+            # excitations are assumed to have ms = 0.
             if elns.down_electron.count != elns.up_electron.count:
                 QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(elns.up_electron.count,elns.down_electron.count))
             #end if
@@ -4923,11 +4910,19 @@ def generate_determinantset_old(type           = 'bspline',
                     )
                 )
             
-            if '-' in excitation or '+' in excitation: #Type 2
-                # assume excitation of form '-216 +217'
-                exc_orbs = array(excitation.split(),dtype=int)
-                exc_orbs[0] *= -1
-                nel = elns.up_electron.count 
+            if 'cb' not in excitation and 'vb' not in excitation and (len(excitation.split())==2 or excitation=='lowest'): 
+                # Type 2 or Type 4
+
+                nup = elns.up_electron.count 
+                if excitation=='lowest':
+                    # Type 4
+                    exc_orbs = [nup,nup+1]
+                else:
+                    # Type 2
+                    # assume excitation of form '-216 +217' or '-216 217'
+                    exc_orbs = array(excitation.split(),dtype=int)
+                    exc_orbs[0] *= -1
+                #end if
 
                 for sp in dset.sposets:
                     sp.size=exc_orbs[1]
@@ -4935,18 +4930,20 @@ def generate_determinantset_old(type           = 'bspline',
 
                 dset.multideterminant.detlist.nstates = exc_orbs[1]
 
-                dset.multideterminant.detlist.csf.occ = '2'*nel+'0'*(exc_orbs[1]-nel-1)+'1'
+                dset.multideterminant.detlist.csf.occ = '2'*nup+'0'*(exc_orbs[1]-nup-1)+'1'
                 dset.multideterminant.detlist.csf.occ = dset.multideterminant.detlist.csf.occ[:exc_orbs[0]-1]+'1'+dset.multideterminant.detlist.csf.occ[exc_orbs[0]:]
 
-                dset.multideterminant.detlist.csf.dets[0].alpha = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
-                dset.multideterminant.detlist.csf.dets[0].beta = '1'*nel+'0'*(exc_orbs[1]-nel)
+                dset.multideterminant.detlist.csf.dets[0].alpha = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
+                dset.multideterminant.detlist.csf.dets[0].beta = '1'*nup+'0'*(exc_orbs[1]-nup)
 
-                dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nel+'0'*(exc_orbs[1]-nel)
-                dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
+                dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nup+'0'*(exc_orbs[1]-nup)
+                dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
 
-            elif 'cb' not in excitation and 'vb' not in excitation: #Type 1 
+            elif 'cb' not in excitation and 'vb' not in excitation: 
+                # Type 1 
                 QmcpackInput.class_error('{} excitation is not yet available for band type'.format(spin_channel))
-            else:
+            else: 
+                # Type 3
                 QmcpackInput.class_error('{} excitation is not yet available for type 3'.format(spin_channel))
             #end if
             return dset
@@ -5038,6 +5035,15 @@ def generate_determinantset_old(type           = 'bspline',
         elif '-' in excitation or '+' in excitation: #Type 2
             # assume excitation of form '-216 +217'
             occ.format = 'energy'
+        elif excitation=='lowest': # Type 4
+            occ.format = 'energy'
+            if spin_channel=='up':
+                nel = elns.up_electron.count 
+            else:
+                nel = elns.down_electron.count 
+            #end if
+            excitation = '-{} +{}'.format(nel,nel+1) 
+            occ.contents = '\n'+excitation+'\n'
         else: #Type 1
             # assume excitation of form '6 36 6 37'
             occ.format   = 'band'

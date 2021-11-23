@@ -177,7 +177,6 @@ class Qmcpack(Simulation):
                 h5file = result.h5file
 
                 wavefunction = input.get('wavefunction')
-                print(wavefunction)
                 if isinstance(wavefunction,collection):
                     wavefunction = wavefunction.get_single('psi0')
                 #end if
@@ -516,26 +515,25 @@ class Qmcpack(Simulation):
                 edata = self.read_einspline_dat()
                 exc_input = self.excitation
                 
-                print(exc_input)
                 exc_failure = False
                 if 'cb' not in exc_input[1] and 'vb' not in exc_input[1] and len(exc_input[1].split())==4: 
                     # Band Index 'tw1 band1 tw2 band2'. Eg., '0 45 3 46'
                     # Check that tw1,band1 is no longer in occupied set
                     tw1,bnd1 = exc_input[1].split()[0:2]
                     tw2,bnd2 = exc_input[1].split()[2:4]
-                    if exc_input[0] in ('up','dn'):
-                        spinchan = exc_input[0]
-                        for idx,(tw,bnd) in enumerate(zip(edata[spinchan]['TwistIndex'],edata[spinchan]['BandIndex'])):
+                    if exc_input[0] in ('up','down'):
+                        spin_channel = exc_input[0]
+                        for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
-                                if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spinchan[0]].size:
-                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{} {}\' is still occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],tw1,bnd1)
+                                if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{} {}\' is still occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],tw1,bnd1)
                                     exc_failure = True
                                 #end if
                             elif tw == int(tw2) and bnd == int(bnd2):
                                 # This orbital should be in the set of occupied orbitals
-                                if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spinchan[0]].size:
-                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the second orbital \'{} {}\' is not occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],tw2,bnd2)
+                                if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                    msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the second orbital \'{} {}\' is not occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],tw2,bnd2)
                                     exc_failure = True
                                 #end if
                             #end if
@@ -543,56 +541,55 @@ class Qmcpack(Simulation):
                     else:
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     #end if
-                elif len(exc_input[1].split()) == 2:
-                    # Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
-                    orb1 = exc_input[1].split()[0][1:]
-                    orb2 = exc_input[1].split()[1][1:]
-                    if exc_input[0] in ('up','dn'):
+                elif len(exc_input[1].split()) == 2 or exc_input[1]=='lowest':
+                    # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
+                    if exc_input[1]=='lowest':
+                        if exc_input[0]=='down':
+                            orb1 = self.input.simulation.qmcsystem.particlesets.e.groups.d.size
+                        else:
+                            orb1 = self.input.simulation.qmcsystem.particlesets.e.groups.u.size
+                        #end if
+                        orb2 = orb1+1 
+                    else:
+                        orb1 = int(exc_input[1].split()[0][1:])
+                        orb2 = int(exc_input[1].split()[1][1:])
+                    #end if
+                    if exc_input[0] in ('up','down'):
 
+                        spin_channel = exc_input[0]
+                        nelec = self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size
 
-                        spinchan = exc_input[0]
-                        nelec = self.input.simulation.qmcsystem.particlesets.e.groups[spinchan[0]].size
+                        orb1_eig = sorted(edata[spin_channel]['Energy'])[orb1-1]
+                        orb2_eig = sorted(edata[spin_channel]['Energy'])[orb2-1]
 
-                        orb1_eig = sorted(edata[spinchan]['Energy'])[int(orb1)-1]
-                        orb2_eig = sorted(edata[spinchan]['Energy'])[int(orb2)-1]
-
-
-                        if orb1_eig not in edata[spinchan]['Energy'][nelec:]:
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],orb1)
+                        if orb1_eig not in edata[spin_channel]['Energy'][nelec:]:
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],orb1)
                             exc_failure = True
-                        elif orb2_eig not in edata[spinchan]['Energy'][:nelec]:
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spinchan,exc_input[1],orb2)
+                        elif orb2_eig not in edata[spin_channel]['Energy'][:nelec]:
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, the first orbital \'{}\' is still occupied (see einspline file).\nPlease check your input.'.format(spin_channel,exc_input[1],orb2)
                             exc_failure = True
-
 
                     elif exc_input[0] in ('singlet','triplet'):
                         wf = self.input.get('wavefunction')
                         occ = wf.determinantset.multideterminant.detlist.csf.occ
                         if occ[int(orb1)-1]!='1':
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spinchan,exc_input[1],occ)
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spin_channel,exc_input[1],occ)
                             exc_failure = True
                         #end if
                         if occ[int(orb2)-1]!='1':
-                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spinchan,exc_input[1],occ)
+                            msg='WARNING: You requested \'{}\' excitation of type \'{}\', however, this is inconsistent with the occupations in detlist \'{}\'.\nPlease check your input.'.format(spin_channel,exc_input[1],occ)
                             exc_failure = True
                         #end if
-
                     #end if
-
-                elif exc_input[1] == 'lowest':
-
 
                 #end if
 
-                # exc_input interpretation code
-                #    if multidet
-                #        wf = self.input.get('wavefunction')
-                # exc checking code based on edata
-                # if problems
-                #    msg = ''
-                #    self.warn(msg)
-                #    filename = self.identifier+'_errors.txt'
-                #    open(os.path.join(self.lodcir,filename),'w').write(msg)
+                if exc_failure:
+                    self.warn(msg)
+                    filename = self.identifier+'_errors.txt'
+                    open(os.path.join(self.locdir,filename),'w').write(msg)
+                #end if
+
             #end if
         #end if
     #end def post_analyze
@@ -703,7 +700,7 @@ class Qmcpack(Simulation):
             if fspin==0:
                 spinlab = 'up'
             else:
-                spinlab = 'dn'
+                spinlab = 'down'
             #end if
             edata[spinlab] = obj()
             with open(einpath) as f:
