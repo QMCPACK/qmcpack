@@ -26,7 +26,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
 #include "AFQMC/Utilities/myTimer.h"

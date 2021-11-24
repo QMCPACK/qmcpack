@@ -16,12 +16,12 @@
 
 
 #include "kSpaceJastrow.h"
+#include <sstream>
+#include <algorithm>
 #include "LongRange/StructFact.h"
 #include "CPU/math.hpp"
 #include "CPU/e2iphi.h"
-#include <sstream>
-#include <algorithm>
-
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -864,8 +864,8 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
           {
             //real part of coeff
             dlogpsi[kk] += ValueType(Prefactor * real(z));
-            //convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
-            convert(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
+            //convertToReal(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
+            convertToReal(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
             dhpsioverpsi[kk] += ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) +
                                           Prefactor * real(z * eye) * tmp_dot);
             //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
@@ -913,7 +913,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         int kk        = myVars.where(TwoBodyVarMap[i]);
         if (kk > 0)
         {
-          convert(dot(P.G[iat], Gvec), tmp_dot);
+          convertToReal(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);
           dhpsioverpsi[kk] -=
               ValueType(Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -

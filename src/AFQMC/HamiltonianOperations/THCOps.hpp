@@ -24,7 +24,7 @@
 #include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shared_communicator.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
