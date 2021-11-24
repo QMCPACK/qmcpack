@@ -743,13 +743,13 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           //           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
           cnt++;
         }
-        convertToReal(cdet, dlogpsi[kk]);
+        dlogpsi[kk] = cdet;
         ValueType dhpsi = (RealType)(-0.5) * (q0 - cdet * lapl_sum) - cdet * gg + v1;
         //                            -cdet*gg-v1-v2;
         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
         //                         -cdet*lapl_sum)
         //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-        convertToReal(dhpsi, dhpsioverpsi[kk]);
+        dhpsioverpsi[kk] = dhpsi;
       }
     }
     else
@@ -790,13 +790,13 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         int upC        = C2node_up[ip];
         int dnC        = C2node_dn[ip];
         ValueType cdet = detValues_up[upC] * detValues_dn[dnC] * psiinv;
-        convertToReal(cdet, dlogpsi[kk]);
+        dlogpsi[kk] = cdet;
         ValueType dhpsi = ((RealType)(-0.5) * cdet) *
             (tempstorage_up[upC] + tempstorage_dn[dnC] - lapl_sum +
              (RealType)2.0 * (gg - static_cast<ValueType>(Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]))));
         //+2.0*(gg-Dot(g,grads_up[upC])-Dot(g,grads_dn[dnC])
         //+Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
-        convertToReal(dhpsi, dhpsioverpsi[kk]);
+        dhpsioverpsi[kk] = dhpsi;
       }
     }
   }

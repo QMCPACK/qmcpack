@@ -16,7 +16,9 @@
 
 #ifndef QMCPLUSPLUS_CONVERT2REAL_H
 #define QMCPLUSPLUS_CONVERT2REAL_H
+
 #include <complex>
+#include "complex_help.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -26,7 +28,7 @@ namespace qmcplusplus
 {
 /** generic conversion from type T1 to type T2 using implicit conversion
 */
-template<typename T1, typename T2>
+template<typename T1, typename T2, IsReal<T2> = true>
 inline void convertToReal(const T1& in, T2& out)
 {
   out = static_cast<T2>(in);
@@ -34,7 +36,7 @@ inline void convertToReal(const T1& in, T2& out)
 
 /** specialization of conversion from complex to real
 */
-template<typename T1, typename T2>
+template<typename T1, typename T2, IsReal<T2> = true>
 inline void convertToReal(const std::complex<T1>& in, T2& out)
 {
   out = in.real();
@@ -48,15 +50,6 @@ inline void convertToReal(const TinyVector<T1, D>& in, TinyVector<T2, D>& out)
 {
   for (int i = 0; i < D; ++i)
     convertToReal(in[i], out[i]);
-}
-
-/** specialization for 3D */
-template<typename T1, typename T2>
-inline void convertToReal(const TinyVector<T1, 3>& in, TinyVector<T2, 3>& out)
-{
-  convertToReal(in[0], out[0]);
-  convertToReal(in[1], out[1]);
-  convertToReal(in[2], out[2]);
 }
 
 /** specialization for D tensory*/
@@ -93,11 +86,5 @@ inline void convertToReal(const Matrix<T1>& in, Matrix<T2>& out)
   convertToReal(in.data(), out.data(), in.size());
 }
 
-/** specialization for a vector */
-template<typename T1, typename T2>
-inline void convertToReal(const Tensor<T1, 3>& in, Tensor<T2, 3>& out)
-{
-  convertToReal(in.data(), out.data(), in.size());
-}
 } // namespace qmcplusplus
 #endif
