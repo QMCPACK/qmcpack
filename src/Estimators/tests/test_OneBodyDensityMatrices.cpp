@@ -99,7 +99,7 @@ public:
 #if defined(MIXED_PRECISION)
         CHECK(ref_data[id] == ComplexApprox(test_data[id]).epsilon(1e-4));
 #else
-        CHECK(ref_data[id] == ComplexApprox(test_data[id])));
+        CHECK(ref_data[id] == ComplexApprox(test_data[id]));
 #endif
 
     }
