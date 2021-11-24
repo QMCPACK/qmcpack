@@ -19,6 +19,7 @@
 #include "EinsplineSet.h"
 #include "einspline/multi_bspline.h"
 #include "CPU/math.hpp"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -1124,7 +1125,7 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
     double phase = -dot(r, k);
     qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
-    convert(e_mikr * StorageValueVector[i], psi[i]);
+    psi[i] = e_mikr * StorageValueVector[i];
   }
   ValueTimer.stop();
 }
@@ -1162,10 +1163,10 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
     double phase = -dot(r, k);
     qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
-    convert(e_mikr * u, psi[j]);
-    convert(e_mikr * (-eye * u * ck + gradu), dpsi[j]);
+    psi[j] = e_mikr * u;
+    dpsi[j] = e_mikr * (-eye * u * ck + gradu);
     //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-    convert(e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu), d2psi[j]);
+    d2psi[j] = e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu);
   }
   VGLTimer.stop();
 }
@@ -1207,12 +1208,11 @@ void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
     double phase = -dot(r, k);
     qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
-    convert(e_mikr * u, psi[j]);
-    convert(e_mikr * (-eye * u * ck + gradu), dpsi[j]);
+    psi[j] = e_mikr * u;
+    dpsi[j] = e_mikr * (-eye * u * ck + gradu);
     //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-    //convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
-    convert(e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck)),
-            grad_grad_psi[j]);
+    //d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+    grad_grad_psi[j] = e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck));
   }
   VGLTimer.stop();
 }
@@ -1582,11 +1582,11 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       double phase = -dot(r, k);
       qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
-      convert(e_mikr * u, psi(i, j));
-      //convert(e_mikr * u, psi(j,i));
-      convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));
+      psi(i, j) = e_mikr * u;
+      //psi(j,i) = e_mikr * u;
+      dpsi(i, j) = e_mikr * (-eye * u * ck + gradu);
       //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-      convert(e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu), d2psi(i, j));
+      d2psi(i, j) = e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu);
     }
   }
   VGLMatTimer.stop();
@@ -1631,12 +1631,11 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       double phase = -dot(r, k);
       qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
-      convert(e_mikr * u, psi(i, j));
-      //convert(e_mikr * u, psi(j,i));
-      convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));
+      psi(i, j) = e_mikr * u;
+      //psi(j,i) = e_mikr * u;
+      dpsi(i, j) = e_mikr * (-eye * u * ck + gradu);
       //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-      convert(e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck)),
-              grad_grad_psi(i, j));
+      grad_grad_psi(i, j) = e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck));
     }
   }
   VGLMatTimer.stop();
@@ -1684,15 +1683,15 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     TinyVector<Tensor<std::complex<double>, OHMMS_DIM>, OHMMS_DIM> tmpghs, hvdot;
     for (int j = 0; j < NumValenceOrbs; j++)
     {
-      convert(dot(PG, StorageGradVector[j]), StorageGradVector[j]);
-      convert(dot(PG, StorageHessVector[j]), tmphs);
-      convert(dot(tmphs, TPG), StorageHessVector[j]);
+      StorageGradVector[j] = dot(PG, StorageGradVector[j]);
+      tmphs = dot(PG, StorageHessVector[j]);
+      StorageHessVector[j] = dot(tmphs, TPG);
       for (int n = 0; n < OHMMS_DIM; n++)
       {
-        convert(dot(PG, StorageGradHessVector[j][n]), tmpghs[n]);
-        convert(dot(tmpghs[n], TPG), StorageGradHessVector[j][n]);
+        tmpghs[n] = dot(PG, StorageGradHessVector[j][n]);
+        StorageGradHessVector[j][n] = dot(tmpghs[n], TPG);
       }
-      convert(dot(PG, StorageGradHessVector[j]), StorageGradHessVector[j]);
+      StorageGradHessVector[j] = dot(PG, StorageGradHessVector[j]);
       //              grad_grad_grad_logdet(i,j)=StorageGradHessVector[j];
       //              grad_grad_psi(i,j)=StorageHessVector[j];
       //              dpsi(i,j)=StorageGradVector[j];
@@ -1714,11 +1713,10 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       double phase = -dot(r, k);
       qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
-      convert(e_mikr * u, psi(i, j));
-      convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));
-      convert(e_mikr *
-                  (tmphs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck)),
-              grad_grad_psi(i, j));
+      psi(i, j) = e_mikr * u;
+      dpsi(i, j) = e_mikr * (-eye * u * ck + gradu);
+      grad_grad_psi(i, j) = e_mikr *
+                  (tmphs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck));
       //Is this right?
       StorageGradHessVector[j] *= e_mikr;
       for (unsigned a0(0); a0 < OHMMS_DIM; a0++)
@@ -1728,7 +1726,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
                 (meye * (ck[a0] * tmphs(a1, a2) + ck[a1] * tmphs(a0, a2) + ck[a2] * tmphs(a0, a1)) -
                  (ck[a0] * ck[a1] * gradu[a2] + ck[a0] * ck[a2] * gradu[a1] + ck[a1] * ck[a2] * gradu[a0]) +
                  eye * ck[a0] * ck[a1] * ck[a2] * u);
-      convert(StorageGradHessVector[j], grad_grad_grad_logdet(i, j));
+      grad_grad_grad_logdet(i, j) = StorageGradHessVector[j];
     }
   }
 }

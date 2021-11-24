@@ -22,7 +22,7 @@
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
 #include "AFQMC/SlaterDeterminantOperations/apply_expM.hpp"
 
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {

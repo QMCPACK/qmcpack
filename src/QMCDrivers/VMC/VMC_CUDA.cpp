@@ -20,7 +20,6 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/qmc_common.h"
 #ifdef USE_NVTX_API
