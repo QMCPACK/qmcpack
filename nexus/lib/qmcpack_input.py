@@ -4785,7 +4785,7 @@ def check_excitation_type(excitation):
             except:
                 format_failed = True
             #end try
-            if tmp not None:
+            if not tmp is None:
                 if len(tmp)==4:
                     # '0 45 3 46'
                     if not tmp[0]>=0 or not tmp[1]>=0 or not tmp[2]>=0 or not tmp[3]>=0:
