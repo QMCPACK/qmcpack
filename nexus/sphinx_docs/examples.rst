@@ -1522,7 +1522,7 @@ uses a non-optimal tiling matrix from Lab 5 in QMCPACK, whereas
 example, we will use ``vmc-opt-tiling.py``. Note, there is also an 
 additional VMC script included ``vmc_excitation_alternatives.py`` which
 does not use a tiling matrix but includes a variety of ways that
-excitations can be specified.
+excitations can be specified with Nexus.
 
 In `Lab 5 <https://qmcpack.readthedocs.io/en/develop/lab_excited.html>`_ of the QMCPACK manual we found that VBM is located at
 :math:`\Gamma` and the CBM is located at :math:`\Delta` ([0.377, 0.,
@@ -1546,6 +1546,11 @@ k-point grid density in one dimension.
   "excitation = [’up’, ’-11 +12’]". Band/twist index and energy indexes
   of the orbitals can be found in "einspline" files or they can be
   determined after parsing the "nscf.out" file using PwscfAnalyzer.
+  In addition to these options, "excitation = ['up','lowest']" can also 
+  be specified which will execute a homo-lumo excitation based on the
+  energetic ordering of the orbitals. Nexus also allows singlet and
+  triplet excitation types. Please refer to ``vmc_excitation_alternatives.py``
+  for examples using the various excitation types.
   Examples on how to do are provided in Lab 5 of the QMCPACK manual.
 
 ::
@@ -1699,3 +1704,4 @@ k-point grid density in one dimension.
       )
 
   run_project(scf,nscf,conv,qmc)
+
