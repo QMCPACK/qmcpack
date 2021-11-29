@@ -4727,6 +4727,104 @@ def generate_determinantset(up             = 'u',
 #end def generate_determinantset
 
 
+def check_excitation_type(excitation):
+
+    # Possible spin channels or spin states
+    exc_spins = obj(
+        up      = 1, # 'up'
+        down    = 2, # 'down'
+        singlet = 3, # 'singlet'
+        triplet = 4, # 'triplet'
+        )
+    # Possible orbital excitation types
+    exc_types = obj(
+        band    = 1, # '0 45 3 46'   # Type 1
+        energy  = 2, # '-215 +216'   # Type 2
+        kpoint  = 3, # 'L vb F cb'   # Type 3
+        lowest  = 4, # 'lowest'      # Type 4
+        )
+
+    exc_spin = None
+    exc_type = None
+
+    # Check that 'excitation' is correctly formated
+    format_failed = False
+    # Extract elements form excitation
+    if not isinstance(excitation,(tuple,list)) or len(excitation) != 2:
+        format_failed = True
+    else:
+        exc1,exc2 = excitation
+        if not isinstance(exc1,str) or not isinstance(exc2,str):
+            format_failed = True
+        #end if
+    #end if
+
+    # Check first element
+    if not format_failed:
+        if exc1.lower() not in ('up','down','singlet','triplet'):
+            format_failed = True
+        else:
+            exc_spin = exc_spins[exc1.lower()]
+        #end if
+    #end if
+
+    # Check second element
+    if not format_failed:
+        if any(substr in exc2.lower() for substr in ('vb','cb','lowest')):
+            if exc2.lower()=='lowest':
+                exc_type = exc_types.lowest
+            elif len(exc2.split())!=4:
+                format_failed = True
+            else:
+                exc_type = exc_types.kpoint
+            #end if
+        else:
+            tmp = None
+            try:
+                tmp = array(exc2.split(),dtype=int)
+            except:
+                format_failed = True
+            #end try
+            if tmp not None:
+                if len(tmp)==4:
+                    # '0 45 3 46'
+                    if not tmp[0]>=0 or not tmp[1]>=0 or not tmp[2]>=0 or not tmp[3]>=0:
+                        format_failed = True
+                    #end if
+                    exc_type = exc_types.band
+                elif len(tmp)==2:
+                    # '-215 +216'
+                    if not tmp[0]<0 or not tmp[1]>0:
+                        format_failed = True
+                    #end if
+                    exc_type = exc_types.energy
+                else:
+                    format_failed = True
+                #end if
+            #end if
+        #end if
+    #end if
+    
+    if format_failed:
+
+        msg  = 'excitation must be a tuple or list with with two elements.\n'
+        msg += 'The first element must be either "up", "down", "singlet", or "triplet"\n'
+        msg += 'and the second element must be a band format (e.g. "0 45 3 46"),\n'
+        msg += 'energy format (e.g. "-215 +216"), kpoint format (e.g. "L vb F cb"),\n'
+        msg += 'or lowest format (e.g. "lowest").\n'
+        msg += 'You Provided: {0}'
+        msg = msg.format(excitation)
+
+        QmcpackInput.class_error(msg)
+
+    #end if
+
+    return exc_spin,exc_type,exc_spins,exc_types
+
+
+#end def check_excitation_type
+
+
 def generate_determinantset_old(type           = 'bspline',
                                 meshfactor     = 1.0,
                                 precision      = 'float',

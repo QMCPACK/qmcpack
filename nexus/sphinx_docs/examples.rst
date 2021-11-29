@@ -1551,7 +1551,7 @@ k-point grid density in one dimension.
   energetic ordering of the orbitals. Nexus also allows singlet and
   triplet excitation types. Please refer to ``vmc_excitation_alternatives.py``
   for examples using the various excitation types.
-  Examples on how to do are provided in Lab 5 of the QMCPACK manual.
+  Examples are also provided in Lab 5 of the QMCPACK manual.
 
 ::
 
