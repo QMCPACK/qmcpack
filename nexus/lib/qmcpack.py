@@ -36,6 +36,7 @@ from qmcpack_input import TracedQmcpackInput
 from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot,bspline_builder
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
+from qmcpack_input import check_excitation_type
 from qmcpack_analyzer import QmcpackAnalyzer
 from qmcpack_converters import Pw2qmcpack,Convert4qmc,PyscfToAfqmc
 from debug import ci,ls,gs
@@ -512,17 +513,20 @@ class Qmcpack(Simulation):
             #end if
             exc_run = 'excitation' in self
             if exc_run:
+                exc_failure = False
+
                 edata = self.read_einspline_dat()
                 exc_input = self.excitation
+
+                exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(exc_input)
                 
-                exc_failure = False
-                if 'cb' not in exc_input[1] and 'vb' not in exc_input[1] and len(exc_input[1].split())==4: 
+                if exc_type==exc_types.band: 
                     # Band Index 'tw1 band1 tw2 band2'. Eg., '0 45 3 46'
                     # Check that tw1,band1 is no longer in occupied set
-                    tw1,bnd1 = exc_input[1].split()[0:2]
-                    tw2,bnd2 = exc_input[1].split()[2:4]
-                    if exc_input[0] in ('up','down'):
-                        spin_channel = exc_input[0]
+                    tw1,bnd1 = exc2.split()[0:2]
+                    tw2,bnd2 = exc2.split()[2:4]
+                    if exc1 in ('up','down'):
+                        spin_channel = exc1
                         for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
@@ -547,10 +551,10 @@ class Qmcpack(Simulation):
                     else:
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     #end if
-                elif len(exc_input[1].split()) == 2 or exc_input[1]=='lowest':
+                elif exc_type in (exc_types.energy,exc_types.lowest):
                     # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
-                    if exc_input[1]=='lowest':
-                        if exc_input[0]=='down':
+                    if exc_type==exc_types.lowest:
+                        if exc_spin==exc_spins.down:
                             orb1 = self.input.simulation.qmcsystem.particlesets.e.groups.d.size
                         else:
                             orb1 = self.input.simulation.qmcsystem.particlesets.e.groups.u.size
@@ -560,9 +564,9 @@ class Qmcpack(Simulation):
                         orb1 = int(exc_input[1].split()[0][1:])
                         orb2 = int(exc_input[1].split()[1][1:])
                     #end if
-                    if exc_input[0] in ('up','down'):
+                    if exc1 in ('up','down'):
 
-                        spin_channel = exc_input[0]
+                        spin_channel = exc1
                         nelec = self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size
 
                         orb1_eig = sorted(edata[spin_channel]['Energy'])[orb1-1]
@@ -582,7 +586,7 @@ class Qmcpack(Simulation):
                             exc_failure = True
                         #end if
 
-                    elif exc_input[0] in ('singlet','triplet'):
+                    elif exc1 in ('singlet','triplet'):
                         wf = self.input.get('wavefunction')
                         occ = wf.determinantset.multideterminant.detlist.csf.occ
                         if occ[int(orb1)-1]!='1':
@@ -603,17 +607,17 @@ class Qmcpack(Simulation):
 
                 else:
                     # The format is: 'gamma vb z cb'
-                    if exc_input[0] in ('singlet','triplet'):
+                    if exc1 in ('singlet','triplet'):
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     else:
 
                         # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
-                        excitation = exc_input[1].upper().split(' ')
+                        excitation = exc2.upper().split(' ')
                         k_1, band_1, k_2, band_2 = excitation
                         tilematrix = self.system.structure.tilematrix()
                         
                         wf = self.input.get('wavefunction')
-                        if exc_input[0]=='up':
+                        if exc_spin==exc_spins.up:
                             sdet =  wf.determinantset.get('updet')
                         else:
                             sdet =  wf.determinantset.get('downdet')
@@ -692,7 +696,7 @@ class Qmcpack(Simulation):
 
                         tw1,bnd1 = (k_1,band_1)
                         tw2,bnd2 = (k_2,band_2)
-                        spin_channel = exc_input[0]
+                        spin_channel = exc1
                         for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals

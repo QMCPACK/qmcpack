@@ -4819,7 +4819,7 @@ def check_excitation_type(excitation):
 
     #end if
 
-    return exc_spin,exc_type,exc_spins,exc_types
+    return exc_spin,exc_type,exc_spins,exc_types,exc1,exc2
 
 
 #end def check_excitation_type
@@ -4893,13 +4893,13 @@ def generate_determinantset_old(type           = 'bspline',
     #end if
     if excitation is not None:
 
-        exc_spin,exc_type,exc_spins,exc_types = check_excitation_type(excitation)
+        exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(excitation)
 
-        if spin_channel=='up':
+        if exc_spin==exc_spins.up:
             sdet = dset.get('updet')
-        elif spin_channel=='down':
+        elif exc_spin==exc_spins.down:
             sdet = dset.get('downdet')
-        elif spin_channel=='singlet' or spin_channel=='triplet':
+        elif exc_spin in (exc_spins.singlet,exc_spins.triplet):
 
             # Are there an equal number of up and down electrons?
             # If no, then exit. Currently, singlet and triplet 
@@ -4909,7 +4909,7 @@ def generate_determinantset_old(type           = 'bspline',
             #end if
 
             coeff_sign = ''
-            if spin_channel=='triplet':
+            if exc_spin==exc_spins.triplet:
                 coeff_sign = '-'
             #end if
 
@@ -4980,17 +4980,14 @@ def generate_determinantset_old(type           = 'bspline',
                     )
                 )
             
-            if 'cb' not in excitation and 'vb' not in excitation and (len(excitation.split())==2 or excitation=='lowest'): 
-                # Type 2 or Type 4
+            if exc_type in (exc_types.energy,exc_types.lowest):
 
                 nup = elns.up_electron.count 
-                if excitation=='lowest':
-                    # Type 4
+                if exc_type==exc_types.lowest:
                     exc_orbs = [nup,nup+1]
                 else:
-                    # Type 2
                     # assume excitation of form '-216 +217' or '-216 217'
-                    exc_orbs = array(excitation.split(),dtype=int)
+                    exc_orbs = array(exc2.split(),dtype=int)
                     exc_orbs[0] *= -1
                 #end if
 
@@ -5009,14 +5006,14 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nup+'0'*(exc_orbs[1]-nup)
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
 
-            elif 'cb' not in excitation and 'vb' not in excitation: 
-                # Type 1 
-                QmcpackInput.class_error('{} excitation is not yet available for band type'.format(spin_channel))
+            elif exc_type == exc_types.kpoint: 
+                QmcpackInput.class_error('{} excitation is not yet available for kpoint type'.format(exc1))
             else: 
-                # Type 3
-                QmcpackInput.class_error('{} excitation is not yet available for type 3'.format(spin_channel))
+                QmcpackInput.class_error('{} excitation is not yet available for band type'.format(exc1))
             #end if
+
             return dset
+
         #end if
 
         occ = sdet.occupation
@@ -5024,9 +5021,9 @@ def generate_determinantset_old(type           = 'bspline',
         occ.mode     = 'excited'
         occ.contents = '\n'+excitation+'\n'
         # add new input format
-        if 'cb' in excitation or 'vb' in excitation: #Type 3
+        if exc_type == exc_types.band:
             # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
-            excitation = excitation.upper().split(' ')
+            excitation = exc2.upper().split(' ')
             if len(excitation) == 4:
                 k_1, band_1, k_2, band_2 = excitation
             else:
@@ -5106,12 +5103,12 @@ def generate_determinantset_old(type           = 'bspline',
             occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
             occ.format = 'band'
             
-        elif '-' in excitation or '+' in excitation: #Type 2
+        elif exc_type == exc_types.energy:
             # assume excitation of form '-216 +217'
             occ.format = 'energy'
-        elif excitation=='lowest': # Type 4
+        elif exc_type == exc_types.lowest: # Type 4
             occ.format = 'energy'
-            if spin_channel=='up':
+            if exc_type == exc_types.up:
                 nel = elns.up_electron.count 
             else:
                 nel = elns.down_electron.count 
