@@ -5019,7 +5019,7 @@ def generate_determinantset_old(type           = 'bspline',
         occ = sdet.occupation
         occ.pairs    = 1
         occ.mode     = 'excited'
-        occ.contents = '\n'+excitation+'\n'
+        occ.contents = '\n'+exc2+'\n'
         # add new input format
         if exc_type == exc_types.band:
             # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
