@@ -3870,7 +3870,7 @@ class QmcpackInput(SimulationInput,Names):
 
         input = self.copy()
         input.pluralize()
-        return input.get('particlesets').get_electrons()
+        return input.get('particlesets').e
 
     #end def get_electron_particle_set
 
