@@ -3866,6 +3866,13 @@ class QmcpackInput(SimulationInput,Names):
         #end if
     #end def incorporate_system
         
+    def get_electron_particle_set(self):
+
+        input = self.copy()
+        input.pluralize()
+        return input.get('particlesets').get_electrons()
+
+    #end def get_electron_particle_set
 
     def return_system(self,structure_only=False):
         input = self.copy()
@@ -5021,7 +5028,7 @@ def generate_determinantset_old(type           = 'bspline',
         occ.mode     = 'excited'
         occ.contents = '\n'+exc2+'\n'
         # add new input format
-        if exc_type == exc_types.band:
+        if exc_type == exc_types.kpoint:
             # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
             excitation = exc2.upper().split(' ')
             if len(excitation) == 4:
@@ -5109,7 +5116,7 @@ def generate_determinantset_old(type           = 'bspline',
             occ.format = 'energy'
         elif exc_type == exc_types.lowest: # Type 4
             occ.format = 'energy'
-            if exc_type == exc_types.up:
+            if exc_spin == exc_spins.up:
                 nel = elns.up_electron.count 
             else:
                 nel = elns.down_electron.count 

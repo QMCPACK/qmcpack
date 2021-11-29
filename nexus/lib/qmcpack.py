@@ -519,6 +519,8 @@ class Qmcpack(Simulation):
                 exc_input = self.excitation
 
                 exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(exc_input)
+
+                elns = self.input.get_electron_particle_set()
                 
                 if exc_type==exc_types.band: 
                     # Band Index 'tw1 band1 tw2 band2'. Eg., '0 45 3 46'
@@ -530,7 +532,7 @@ class Qmcpack(Simulation):
                         for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
-                                if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                if idx<elns.groups[spin_channel[0]].size:
                                     msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
                                     msg += '         however, the first orbital \'{} {}\' is still occupied (see einspline file).\n'
                                     msg += '         Please check your input.'
@@ -539,7 +541,7 @@ class Qmcpack(Simulation):
                                 #end if
                             elif tw == int(tw2) and bnd == int(bnd2):
                                 # This orbital should be in the set of occupied orbitals
-                                if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                if idx>=elns.groups[spin_channel[0]].size:
                                     msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
                                     msg += '         however, the second orbital \'{} {}\' is not occupied (see einspline file).\n'
                                     msg += '         Please check your input.'
@@ -555,9 +557,9 @@ class Qmcpack(Simulation):
                     # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
                     if exc_type==exc_types.lowest:
                         if exc_spin==exc_spins.down:
-                            orb1 = self.input.simulation.qmcsystem.particlesets.e.groups.d.size
+                            orb1 = elns.groups.d.size
                         else:
-                            orb1 = self.input.simulation.qmcsystem.particlesets.e.groups.u.size
+                            orb1 = elns.groups.u.size
                         #end if
                         orb2 = orb1+1 
                     else:
@@ -567,7 +569,7 @@ class Qmcpack(Simulation):
                     if exc1 in ('up','down'):
 
                         spin_channel = exc1
-                        nelec = self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size
+                        nelec = elns.groups[spin_channel[0]].size
 
                         orb1_eig = sorted(edata[spin_channel]['Energy'])[orb1-1]
                         orb2_eig = sorted(edata[spin_channel]['Energy'])[orb2-1]
@@ -700,7 +702,7 @@ class Qmcpack(Simulation):
                         for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
-                                if idx<self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                if idx<elns.groups[spin_channel[0]].size:
                                     msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
                                     msg += '         however, the first orbital \'{} {}\' is still occupied (see einspline file).\n'
                                     msg += '         Please check your input.'
@@ -709,7 +711,7 @@ class Qmcpack(Simulation):
                                 #end if
                             elif tw == int(tw2) and bnd == int(bnd2):
                                 # This orbital should be in the set of occupied orbitals
-                                if idx>=self.input.simulation.qmcsystem.particlesets.e.groups[spin_channel[0]].size:
+                                if idx>=elns.groups[spin_channel[0]].size:
                                     msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
                                     msg += '         however, the second orbital \'{} {}\' is not occupied (see einspline file).\n'
                                     msg += '         Please check your input.'
