@@ -5034,6 +5034,7 @@ def generate_determinantset_old(type           = 'bspline',
             cb = vb+1
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
+            print(bands)
             for bnum, b in enumerate(bands):
                 if 'CB' in b:
                     if '-' in b:
