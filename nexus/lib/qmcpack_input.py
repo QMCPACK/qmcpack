@@ -4892,37 +4892,9 @@ def generate_determinantset_old(type           = 'bspline',
         dset.slaterdeterminant.delay_rank = delay_rank
     #end if
     if excitation is not None:
-        format_failed = False
-        if not isinstance(excitation,(tuple,list)):
-            QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
-        elif excitation[0] not in ('up','down','singlet','triplet') or not isinstance(excitation[1],str):
-            format_failed = True
-        else:
-            # There are three types of input:
-            # 1. excitation=['up','0 45 3 46'] 
-            # 2. excitation=['up','-215 216']  
-            # 3. excitation=['up', 'L vb F cb']
-            # 4. excitation=['up', 'lowest']
-            # Note: Any of the types can use up or down for the first element.
-            #       Type 2 and 4 can also use singlet and triplet for the first element.
-            if len(excitation) == 2: #Type 1, 2, 3, or 4
-                if 'cb' not in excitation[1] and 'vb' not in excitation[1] and 'lowest' not in excitation[1]:
-                    try:
-                        tmp = array(excitation[1].split(),dtype=int)
-                    except:
-                        format_failed = True
-                    #end try
-                #end if
-            else:
-                format_failed = True
-            #end if
-        #end if
-        if format_failed:
-            #Should be modified
-            QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
-        #end if
 
-        spin_channel,excitation = excitation
+        exc_spin,exc_type,exc_spins,exc_types = check_excitation_type(excitation)
+
         if spin_channel=='up':
             sdet = dset.get('updet')
         elif spin_channel=='down':
