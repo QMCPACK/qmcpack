@@ -69,6 +69,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(max_disp_sq_, "maxDisplSq");
   parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+  parameter_set.add(variational_parameter_file_, "variational_parameter_file_to_load");
 
   OhmmsAttributeSet aAttrib;
   // first stage in from QMCDriverFactory
