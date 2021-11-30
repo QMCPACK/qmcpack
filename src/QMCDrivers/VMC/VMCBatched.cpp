@@ -247,6 +247,37 @@ void VMCBatched::process(xmlNodePtr node)
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
     Base::startup(node, awc);
+
+
+    if (!qmcdriver_input_.get_variational_parameter_file().empty())
+    {
+      TrialWaveFunction& Psi = population_.get_golden_twf();
+      optimize::VariableSet tmpVar;
+      Psi.checkInVariables(tmpVar);
+      tmpVar.resetIndex();
+      Psi.checkOutVariables(tmpVar);
+
+      std::string vp_file = qmcdriver_input_.get_variational_parameter_file();
+      bool is_xml         = false;
+
+      if (vp_file.find(".xml") != std::string::npos)
+      {
+        is_xml = true;
+      }
+
+      if (is_xml)
+      {
+        tmpVar.readFromXML(vp_file);
+      }
+      else
+      {
+        tmpVar.readFromHDF(vp_file);
+      }
+      Psi.resetParameters(tmpVar);
+      population_.set_variational_parameters(tmpVar);
+      app_log() << "Variational parameters loaded from " << vp_file << std::endl;
+      tmpVar.print(app_log());
+    }
   }
   catch (const UniformCommunicateError& ue)
   {
