@@ -239,6 +239,21 @@ void QMCCostFunctionBase::reportParameters()
     *msg_stream << "  </optVariables>" << std::endl;
     updateXmlNodes();
     xmlSaveFormatFile(newxml, m_doc_out, 1);
+
+
+    std::ostringstream vp_filename;
+    bool vp_xml_format = false;
+
+    if (vp_xml_format)
+    {
+      vp_filename << RootName << ".vp.xml";
+      OptVariables.saveAsXML(vp_filename.str());
+    }
+    else
+    {
+      vp_filename << RootName << ".vp.h5";
+      OptVariables.saveAsHDF(vp_filename.str());
+    }
   }
 }
 /** This function stores optimized CI coefficients in HDF5 
@@ -325,6 +340,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv("no");
+  std::string variational_parameter_file;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
@@ -335,6 +351,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
+  m_param.add(variational_parameter_file, "variational_parameter_file_to_load");
   m_param.put(q);
 
   tolower(targetExcitedStr);
@@ -474,6 +491,31 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   if (NumOptimizables == 0)
   {
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
+  }
+
+  if (!variational_parameter_file.empty())
+  {
+    app_log() << "Loading variational parameters from " << variational_parameter_file << std::endl;
+    bool is_xml = false;
+
+    if (variational_parameter_file.find(".xml") != std::string::npos)
+    {
+      is_xml = true;
+    }
+
+    bool okay = true;
+    if (is_xml)
+    {
+      okay = OptVariables.readFromXML(variational_parameter_file);
+    }
+    else
+    {
+      OptVariables.readFromHDF(variational_parameter_file);
+    }
+    if (!okay)
+    {
+      APP_ABORT("Failure reading variational parameter file");
+    }
   }
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
