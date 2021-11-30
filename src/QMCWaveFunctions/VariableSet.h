@@ -365,6 +365,10 @@ struct VariableSet
   /// This assumes the VPs are already set up. It will only set existing named values.
   /// If the name does not exist in the list, it will be added.
   bool readFromXML(const std::string& filename);
+
+
+  void saveAsHDF(const std::string& filename) const;
+  void readFromHDF(const std::string& filename);
 };
 } // namespace optimize
 
