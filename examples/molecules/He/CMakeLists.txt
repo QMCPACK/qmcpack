@@ -35,7 +35,7 @@ if(NOT QMC_CUDA AND NOT QMC_COMPLEX)
     HE_SIMPLE_DMC_SCALARS # series for DMC data
   )
 
-  list(APPEND HE_SIMPLE_OPT_SCALARS "totenergy" "-2.88 .004") # total energy
+  list(APPEND HE_SIMPLE_OPT_SCALARS "totenergy" "-2.88 .005") # total energy
 
   qmc_run_and_check(
     example_He_simple_opt
