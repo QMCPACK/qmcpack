@@ -23,69 +23,71 @@
 
 namespace qmcplusplus
 {
-struct ACForce : public OperatorBase
+class ACForce : public OperatorBase
 {
-  typedef ParticleSet::ParticlePos_t Force_t;
+public:
+  using Force_t = ParticleSet::ParticlePos_t;
+
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
+
   /** Destructor **/
-  ~ACForce() override{};
-  /** Copy constructor **/
-  //ACForce(const ACForce& ac)  {};
+  ~ACForce() final = default;
 
   /** I/O Routines */
-  bool put(xmlNodePtr cur) override;
-  bool get(std::ostream& os) const override { return true; };
+  bool put(xmlNodePtr cur) final;
+
+  bool get(std::ostream& os) const final;
 
   /** Cloning **/
   //We don't actually use this makeClone method.  We just put an APP_ABORT here
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
   /** Initialization/assignment **/
-  void resetTargetParticleSet(ParticleSet& P) override{};
-  void addObservables(PropertySetType& plist, BufferType& collectables) override;
-  void setObservables(PropertySetType& plist) override;
-  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  void resetTargetParticleSet(ParticleSet& P) final;
+
+  void addObservables(PropertySetType& plist, BufferType& collectables) final;
+
+  void setObservables(PropertySetType& plist) final;
+
+  void setParticlePropertyList(PropertySetType& plist, int offset) final;
 
   /** Since we store a reference to QMCHamiltonian, the baseclass method add2Hamiltonian 
  *  isn't sufficient.  We override it here. **/
-  void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) override;
-  /** Evaluate **/
-  Return_t evaluate(ParticleSet& P) override;
+  void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) final;
 
+  /** Evaluate **/
+  Return_t evaluate(ParticleSet& P) final;
+
+private:
   ///Finite difference timestep
-  RealType delta; 
+  RealType delta_;
 
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
-  ParticleSet& ions;
-  ParticleSet& elns;
-  TrialWaveFunction& psi;
-  QMCHamiltonian& ham;
+  ParticleSet& ions_;
+  ParticleSet& elns_;
+  TrialWaveFunction& psi_;
+  QMCHamiltonian& ham_;
 
   ///For indexing observables
-  IndexType FirstForceIndex;
-  const IndexType Nions;
+  IndexType first_force_index_;
 
   ///Temporary Nion x 3 dimensional arrays for force storage.
-  Force_t hf_force;
-  Force_t pulay_force;
-  Force_t wf_grad;
-  Force_t sw_pulay;
-  Force_t sw_grad;
+  Force_t hf_force_;
+  Force_t pulay_force_;
+  Force_t wf_grad_;
+  Force_t sw_pulay_;
+  Force_t sw_grad_;
 
-  bool useSpaceWarp;
+  bool useSpaceWarp_;
 
   ///The space warp transformation class.
-  SpaceWarpTransformation swt;
-
-  //Class info.
-  std::string prefix;
-  //We also set the following from the OperatorBase class.
-  //std::string myName;
+  SpaceWarpTransformation swt_;
 };
 
 } // namespace qmcplusplus
