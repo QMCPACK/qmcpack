@@ -529,7 +529,8 @@ class Qmcpack(Simulation):
                     tw2,bnd2 = exc2.split()[2:4]
                     if exc1 in ('up','down'):
                         spin_channel = exc1
-                        for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
+                        dsc = edata[spin_channel]
+                        for idx,(tw,bnd) in enumerate(zip(dsc.TwistIndex,dsc.BandIndex)):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
                                 if idx<elns.groups[spin_channel[0]].size:
@@ -571,8 +572,8 @@ class Qmcpack(Simulation):
                         spin_channel = exc1
                         nelec = elns.groups[spin_channel[0]].size
 
-                        orb1_eig = sorted(edata[spin_channel]['Energy'])[orb1-1]
-                        orb2_eig = sorted(edata[spin_channel]['Energy'])[orb2-1]
+                        orb1_eig = sorted(edata[spin_channel].Energy)[orb1-1]
+                        orb2_eig = sorted(edata[spin_channel].Energy)[orb2-1]
 
                         if orb1_eig not in edata[spin_channel]['Energy'][nelec:]:
                             msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
@@ -657,11 +658,7 @@ class Qmcpack(Simulation):
                         band_1, band_2 = bands
                         
                         # Convert k_1 k_2 to wavevector indexes
-                        if self.system.structure.has_folded():
-                            structure   = self.system.structure.folded_structure.copy()
-                        else:
-                            structure   = self.system.structure.copy()
-                        #end if
+                        structure = self.system.structure.get_smallest().copy()
                         structure.change_units('A')
 
                         from structure import get_kpath
@@ -699,7 +696,8 @@ class Qmcpack(Simulation):
                         tw1,bnd1 = (k_1,band_1)
                         tw2,bnd2 = (k_2,band_2)
                         spin_channel = exc1
-                        for idx,(tw,bnd) in enumerate(zip(edata[spin_channel]['TwistIndex'],edata[spin_channel]['BandIndex'])):
+                        dsc = edata[spin_channel]
+                        for idx,(tw,bnd) in enumerate(zip(dsc.TwistIndex,dsc.BandIndex)):
                             if tw == int(tw1) and bnd == int(bnd1):
                                 # This orbital should no longer be in the set of occupied orbitals
                                 if idx<elns.groups[spin_channel[0]].size:
@@ -724,6 +722,7 @@ class Qmcpack(Simulation):
                 #end if
 
                 if exc_failure:
+                    self.failed = True
                     self.warn(msg)
                     filename = self.identifier+'_errors.txt'
                     open(os.path.join(self.locdir,filename),'w').write(msg)
@@ -827,11 +826,8 @@ class Qmcpack(Simulation):
         #end if
     #end def write_prep
 
-
     def read_einspline_dat(self):
-
         edata = obj()
-
         import glob
         for einpath in glob.glob(self.locdir+'/einsplin*'):
             ftokens = einpath.split('.')
@@ -851,14 +847,11 @@ class Qmcpack(Simulation):
                         edata[spinlab][darr[0]] = array(list(map(float,darr[1:])))
                     else:
                         edata[spinlab][darr[0]] = array(list(map(int,darr[1:])))
-
                     #end if
                 #end for
             #end with
         #end for
-
         return edata
-
     #end def read_einspline_dat
 #end class Qmcpack
 
