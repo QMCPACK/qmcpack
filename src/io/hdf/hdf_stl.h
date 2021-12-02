@@ -144,7 +144,7 @@ struct h5data_proxy<std::string>
   }
 };
 
-// Specialization for vector of strings
+/// Specialization for vector of strings
 template<>
 struct h5data_proxy<std::vector<std::string>>
 {
