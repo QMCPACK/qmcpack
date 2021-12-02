@@ -4827,8 +4827,6 @@ def check_excitation_type(excitation):
     #end if
 
     return exc_spin,exc_type,exc_spins,exc_types,exc1,exc2
-
-
 #end def check_excitation_type
 
 
@@ -5042,7 +5040,8 @@ def generate_determinantset_old(type           = 'bspline',
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
             for bnum, b in enumerate(bands):
-                if 'CB' in b:
+                b = b.lower()
+                if 'cb' in b:
                     if '-' in b:
                         b = b.split('-')
                         bands[bnum] = cb - int(b[1])
@@ -5052,7 +5051,7 @@ def generate_determinantset_old(type           = 'bspline',
                     else:
                         bands[bnum] = cb
                     #end if
-                elif 'VB' in b:
+                elif 'vb' in b:
                     if '-' in b:
                         b = b.split('-')
                         bands[bnum] = vb - int(b[1])
@@ -5069,11 +5068,7 @@ def generate_determinantset_old(type           = 'bspline',
             band_1, band_2 = bands
             
             # Convert k_1 k_2 to wavevector indexes
-            if system.structure.has_folded():
-                structure   = system.structure.folded_structure.copy()
-            else:
-                structure   = system.structure.copy()
-            #end if
+            structure = system.structure.get_smallest().copy()
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
             kpath_label = array(kpath['explicit_kpoints_labels'])

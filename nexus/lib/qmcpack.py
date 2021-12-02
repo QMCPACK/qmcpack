@@ -25,6 +25,7 @@
 
 
 import os
+import numpy as np
 from numpy import array,dot,pi
 from numpy.linalg import inv,norm
 from generic import obj
@@ -573,20 +574,22 @@ class Qmcpack(Simulation):
                         nelec = elns.groups[spin_channel[0]].size
                         eigs_spin = edata[spin_channel].Energy
 
-                        orb1_eig = sorted(eigs_spin)[orb1-1]
-                        orb2_eig = sorted(eigs_spin)[orb2-1]
-
-                        if orb1_eig not in edata[spin_channel]['Energy'][nelec:]:
+                        # Construct the correct set of occupied orbitals by hand based on
+                        # orb1 and orb2 values that were input by the user
+                        excited = eigs_spin
+                        order = eigs_spin.argsort()
+                        ground = excited[order]
+                        # einspline orbital ordering for excited state
+                        excited = excited[:nelec]
+                        # hand-crafted orbital order for excited state
+                        hc_excited = ground[:orb1]+ground[orb2-1]+ground[orb1+1:nelec]
+                            
+                        etol = 1e-6
+                        if np.abs(hc_excited-excited).max() > tol:
                             msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
-                            msg += '         however, the first orbital \'{}\' is still occupied (see einspline file).\n'
+                            msg += '         however, the second orbital \'{}\' is not occupied (see einspline file).\n'
                             msg += '         Please check your input.'
                             msg = msg.format(spin_channel,exc_input[1],orb1)
-                            exc_failure = True
-                        elif orb2_eig not in edata[spin_channel]['Energy'][:nelec]:
-                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n' 
-                            msg += '         however, the first orbital \'{}\' is still occupied (see einspline file).\n'
-                            msg += '         Please check your input.'
-                            msg = msg.format(spin_channel,exc_input[1],orb2)
                             exc_failure = True
                         #end if
 
@@ -632,7 +635,8 @@ class Qmcpack(Simulation):
                         # Convert band_1, band_2 to band indexes
                         bands = [band_1, band_2]
                         for bnum, b in enumerate(bands):
-                            if 'CB' in b:
+                            b = b.lower()
+                            if 'cb' in b:
                                 if '-' in b:
                                     b = b.split('-')
                                     bands[bnum] = cb - int(b[1])
@@ -642,7 +646,7 @@ class Qmcpack(Simulation):
                                 else:
                                     bands[bnum] = cb
                                 #end if
-                            elif 'VB' in b:
+                            elif 'vb' in b:
                                 if '-' in b:
                                     b = b.split('-')
                                     bands[bnum] = vb - int(b[1])
@@ -673,7 +677,6 @@ class Qmcpack(Simulation):
                             k_1 = kpath_rel[where(kpath_label == k_1)][0]
                             k_2 = kpath_rel[where(kpath_label == k_2)][0]
 
-                            #kpts = nscf.input.k_points.kpoints
                             kpts = structure.kpoints_unit()
                             found_k1 = False
                             found_k2 = False
