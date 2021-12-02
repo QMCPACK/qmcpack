@@ -431,11 +431,11 @@ to be reached. The following compilers have been verified:
   
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
 
-- HPE Cray 11. Support NVIDIA and AMD GPUs.
+- HPE Cray 11. It is derived from Clang and supports NVIDIA and AMD GPUs.
   
   ::
   
-    -D ENABLE_OFFLOAD=ON
+    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=nvptx64-nvidia-cuda -D OFFLOAD_ARCH=sm_80
 
 OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
 Some new CUDA functionality has been implemented to improve efficiency on NVIDIA GPUs in conjunction with the Offload code paths:
