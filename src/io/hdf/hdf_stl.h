@@ -148,10 +148,10 @@ struct h5data_proxy<std::string>
 template<>
 struct h5data_proxy<std::vector<std::string>>
 {
-  typedef std::vector<std::string> ArrayType_t;
-  ArrayType_t& ref;
+  using ArrayType = std::vector<std::string>;
+  ArrayType& ref;
 
-  h5data_proxy<ArrayType_t>(ArrayType_t& a) : ref(a) {}
+  h5data_proxy<ArrayType>(ArrayType& a) : ref(a) {}
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
