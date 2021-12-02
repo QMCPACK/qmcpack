@@ -571,9 +571,10 @@ class Qmcpack(Simulation):
 
                         spin_channel = exc1
                         nelec = elns.groups[spin_channel[0]].size
+                        eigs_spin = edata[spin_channel].Energy
 
-                        orb1_eig = sorted(edata[spin_channel].Energy)[orb1-1]
-                        orb2_eig = sorted(edata[spin_channel].Energy)[orb2-1]
+                        orb1_eig = sorted(eigs_spin)[orb1-1]
+                        orb2_eig = sorted(eigs_spin)[orb2-1]
 
                         if orb1_eig not in edata[spin_channel]['Energy'][nelec:]:
                             msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'

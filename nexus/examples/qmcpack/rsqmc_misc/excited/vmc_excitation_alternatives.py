@@ -135,6 +135,10 @@ qmc_ground = generate_qmcpack(
 ############ Single Determinant Excitations ####################################
 ################################################################################
 
+# In each of the following 4 examples, an optical excitation is performed in the up-channel
+# corresponding to the homo-lumo gap at the gamma k-point. All 4 examples lead to the same 
+# excitation, but show the various ways that the excitation can be specfified
+
 # up channel, gamma vb gamma cb
 qmc_optical = generate_qmcpack(
     det_format     = 'old',
@@ -244,6 +248,10 @@ qmc_optical = generate_qmcpack(
 ############ Triplet Excitations ###############################################
 ################################################################################
 
+# In each of the following 2 examples, an optical excitation is performed for a triplet state
+# corresponding to the homo-lumo gap at the gamma k-point. Both examples lead to the same 
+# excitation, but show the various ways that the excitation can be specfified
+
 # triplet, energy index
 qmc_optical = generate_qmcpack(
     det_format     = 'old',
@@ -299,6 +307,10 @@ qmc_optical = generate_qmcpack(
 ################################################################################
 ############ Singlet Excitations ###############################################
 ################################################################################
+
+# In each of the following 2 examples, an optical excitation is performed for a singlet state
+# corresponding to the homo-lumo gap at the gamma k-point. Both examples lead to the same 
+# excitation, but show the various ways that the excitation can be specfified
 
 # singlet, energy index
 qmc_optical = generate_qmcpack(
