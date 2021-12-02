@@ -356,3 +356,32 @@ TEST_CASE("hdf_archive_string", "[hdf]")
   REQUIRE(okay);
   REQUIRE(o.str() == o2);
 }
+
+TEST_CASE("hdf_archive_string_vector", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_string_vector.hdf");
+
+  std::vector<std::string> strings;
+  strings.push_back("first");
+  // One entry should be longer than 15 characters to avoid the short
+  // string optimization and allocate space for the string on the heap
+  strings.push_back("really long string");
+
+  bool okay = hd.writeEntry(strings, "string_vector");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_string_vector.hdf");
+  REQUIRE(okay);
+
+  std::vector<std::string> strings2;
+  okay = hd2.readEntry(strings2, "string_vector");
+  REQUIRE(okay);
+
+  REQUIRE(strings2.size() == 2);
+  REQUIRE(strings2[0] == "first");
+  REQUIRE(strings2[1] == "really long string");
+}
