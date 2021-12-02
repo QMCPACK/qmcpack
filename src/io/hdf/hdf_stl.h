@@ -201,7 +201,6 @@ struct h5data_proxy<std::vector<std::string>>
       hsize_t dim_out;
       hid_t dataspace = H5Dget_space(dataset);
       hid_t status    = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
-      H5Sclose(dataspace);
 
       char_list.resize(dim_out);
       ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
@@ -210,11 +209,12 @@ struct h5data_proxy<std::vector<std::string>>
       {
         ref.push_back(char_list[i]);
       }
-      H5Dvlen_reclaim(datatype, H5S_ALL, H5S_ALL, char_list.data());
+      H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
 
-      H5Tclose(datatype);
+      H5Sclose(dataspace);
       H5Dclose(dataset);
     }
+    H5Tclose(datatype);
 
     return ret >= 0;
   }
