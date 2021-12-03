@@ -242,18 +242,8 @@ void QMCCostFunctionBase::reportParameters()
 
 
     std::ostringstream vp_filename;
-    bool vp_xml_format = false;
-
-    if (vp_xml_format)
-    {
-      vp_filename << RootName << ".vp.xml";
-      OptVariables.saveAsXML(vp_filename.str());
-    }
-    else
-    {
-      vp_filename << RootName << ".vp.h5";
-      OptVariables.saveAsHDF(vp_filename.str());
-    }
+    vp_filename << RootName << ".vp.h5";
+    OptVariables.saveAsHDF(vp_filename.str());
   }
 }
 /** This function stores optimized CI coefficients in HDF5 
@@ -496,26 +486,9 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   if (!variational_parameter_file.empty())
   {
     app_log() << "Loading variational parameters from " << variational_parameter_file << std::endl;
-    bool is_xml = false;
 
-    if (variational_parameter_file.find(".xml") != std::string::npos)
-    {
-      is_xml = true;
-    }
+    OptVariables.readFromHDF(variational_parameter_file);
 
-    bool okay = true;
-    if (is_xml)
-    {
-      okay = OptVariables.readFromXML(variational_parameter_file);
-    }
-    else
-    {
-      OptVariables.readFromHDF(variational_parameter_file);
-    }
-    if (!okay)
-    {
-      APP_ABORT("Failure reading variational parameter file");
-    }
   }
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
