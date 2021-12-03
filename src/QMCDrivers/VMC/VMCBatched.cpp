@@ -258,21 +258,8 @@ void VMCBatched::process(xmlNodePtr node)
       Psi.checkOutVariables(tmpVar);
 
       std::string vp_file = qmcdriver_input_.get_variational_parameter_file();
-      bool is_xml         = false;
+      tmpVar.readFromHDF(vp_file);
 
-      if (vp_file.find(".xml") != std::string::npos)
-      {
-        is_xml = true;
-      }
-
-      if (is_xml)
-      {
-        tmpVar.readFromXML(vp_file);
-      }
-      else
-      {
-        tmpVar.readFromHDF(vp_file);
-      }
       Psi.resetParameters(tmpVar);
       population_.set_variational_parameters(tmpVar);
       app_log() << "Variational parameters loaded from " << vp_file << std::endl;
