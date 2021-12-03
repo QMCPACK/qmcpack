@@ -31,8 +31,8 @@ public:
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
 
-  /** Destructor **/
-  ~ACForce() final = default;
+  /** Destructor, "final" triggers a clang warning **/
+  ~ACForce() override = default;
 
   /** I/O Routines */
   bool put(xmlNodePtr cur) final;

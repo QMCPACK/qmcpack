@@ -134,6 +134,8 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 };
 void ACForce::setObservables(PropertySetType& plist)
 {
+  // TODO : bounds check for plist
+
   int myindex = first_force_index_;
   for (int iat = 0; iat < ions_.getTotalNum(); iat++)
   {

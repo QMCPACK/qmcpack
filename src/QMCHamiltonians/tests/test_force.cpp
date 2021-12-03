@@ -15,13 +15,13 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
+#include "QMCHamiltonians/ACForce.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-
 
 #include <stdio.h>
 #include <string>
@@ -425,4 +425,84 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
     REQUIRE(elecForce.forces[2][i] == Approx(0.0));
   }
 }
+
+TEST_CASE("AC Force", "[hamiltonian]")
+{
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ion");
+  ions.create(1);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+  elec.setName("elec");
+  elec.create(2);
+  elec.R[0][0] = 0.0;
+  elec.R[0][1] = 1.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 0.4;
+  elec.R[1][1] = 0.3;
+  elec.R[1][2] = 0.0;
+
+  SpeciesSet& tspecies = elec.getSpeciesSet();
+  int upIdx            = tspecies.addSpecies("u");
+  //int chargeIdx = tspecies.addAttribute("charge");
+  int massIdx                 = tspecies.addAttribute("mass");
+  int eChargeIdx              = tspecies.addAttribute("charge");
+  tspecies(eChargeIdx, upIdx) = -1.0;
+  tspecies(massIdx, upIdx)    = 1.0;
+
+
+  // The call to resetGroups is needed transfer the SpeciesSet
+  // settings to the ParticleSet
+  elec.resetGroups();
+
+  SpeciesSet& ion_species           = ions.getSpeciesSet();
+  int pIdx                          = ion_species.addSpecies("H");
+  int pChargeIdx                    = ion_species.addAttribute("charge");
+  int pMembersizeIdx                = ion_species.addAttribute("membersize");
+  ion_species(pChargeIdx, pIdx)     = 1;
+  ion_species(pMembersizeIdx, pIdx) = 1;
+
+  ions.resetGroups();
+  // Must update ions first in SoA so ions.coordinates_ is valid
+  ions.update();
+
+  elec.addTable(ions);
+  elec.update();
+
+  // defaults
+  TrialWaveFunction psi;
+  QMCHamiltonian qmcHamiltonian;
+
+  ACForce force(ions, elec, psi, qmcHamiltonian);
+
+  const std::string acforceXML = R"(<tmp> 
+  <acforce spacewarp="no" swpow="2." delta="1.e-3">  
+  </acforce> 
+  </tmp> 
+  )";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(acforceXML);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+  xmlNodePtr h1   = xmlFirstElementChild(root);
+
+  force.put(h1);
+  const auto v = force.evaluate(elec);
+  force.resetTargetParticleSet(elec); // does nothing?
+
+  REQUIRE(v == Approx(0));
+  REQUIRE(force.get(std::cout) == true);
+
+  force.add2Hamiltonian(elec, psi, qmcHamiltonian);
+
+  auto clone = force.makeClone(elec, psi, qmcHamiltonian);
+  REQUIRE(clone);
+}
+
 } // namespace qmcplusplus
