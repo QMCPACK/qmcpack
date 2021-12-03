@@ -291,67 +291,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
   }
 }
 
-void VariableSet::saveAsXML(const std::string& filename) const
-{
-  Libxml2Document doc;
-  doc.newDoc("variational_parameters");
-  doc.addChild(doc.getRoot(), "version", "1.0.0");
-  doc.addChild(doc.getRoot(), "timestamp", getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
-  xmlNodePtr pairs = doc.addChild(doc.getRoot(), "name_value_pairs");
-  for (auto pair_it : NameAndValue)
-  {
-    xmlNodePtr pair = doc.addChild(pairs, "vp");
-    doc.addChild(pair, "name", pair_it.first);
-    doc.addChild(pair, "value", pair_it.second);
-  }
-  doc.dump(filename);
-}
 
-bool VariableSet::readFromXML(const std::string& filename)
-{
-  Libxml2Document doc;
-  bool parse_okay = doc.parse(filename);
-  if (!parse_okay)
-  {
-    app_log() << "Failed to load or parse variational parameter file: " << filename << std::endl;
-    return false;
-  }
-
-  OhmmsXPathObject vp_base("//variational_parameters", doc.getXPathContext());
-  if (vp_base.empty())
-  {
-    app_log() << "No variational_parameters tag in file:" << filename << std::endl;
-    return false;
-  }
-  if (vp_base.size() > 1)
-  {
-    app_log() << "More than one variational_parameters tag in file:" << filename << std::endl;
-    app_log() << "Using only the first one" << std::endl;
-  }
-
-  processChildren(vp_base[0], [&](const std::string& cname, const xmlNodePtr element) {
-    if (cname == "name_value_pairs")
-    {
-      processChildren(element, [&](const std::string cname2, const xmlNodePtr element2) {
-        if (cname2 == "vp")
-        {
-          std::string vp_name;
-          value_type vp_value;
-          processChildren(element2, [&](const std::string cname3, const xmlNodePtr element3) {
-            if (cname3 == "name")
-              putContent(vp_name, element3);
-            else if (cname3 == "value")
-              putContent(vp_value, element3);
-          });
-          if (find(vp_name) != end())
-            (*this)[vp_name] = vp_value;
-        }
-      });
-    }
-  });
-
-  return true;
-}
 
 void VariableSet::saveAsHDF(const std::string& filename) const
 {
@@ -361,40 +301,16 @@ void VariableSet::saveAsHDF(const std::string& filename) const
   hout.write(vp_file_version, "version");
   std::string timestamp(getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
   hout.write(timestamp, "timestamp");
-  std::vector<std::string> string_list;
 
-  hid_t grp = hout.push("name_value_lists");
-  std::vector<const char*> char_list;
   std::vector<qmcplusplus::QMCTraits::ValueType> param_list;
   for (auto& pair_it : NameAndValue)
   {
-    string_list.push_back(pair_it.first);
-    char_list.push_back(pair_it.first.c_str());
     param_list.push_back(pair_it.second);
   }
 
-  std::string aname("names");
-  hout.write(param_list, "values");
+  hout.write(param_list, "parameter_values");
 
 
-#if 0
-  // Need to write specialization of std::vector<std::string> in hdf_stl.h
-  hout.write(char_list, aname);
-#endif
-
-#if 1
-  hid_t datatype = H5Tcopy(H5T_C_S1);
-  H5Tset_size(datatype, H5T_VARIABLE);
-
-  hsize_t dim1    = char_list.size();
-  hid_t dataspace = H5Screate_simple(1, &dim1, NULL);
-
-  hid_t h1 = H5Dcreate2(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5Dwrite(h1, datatype, dataspace, H5S_ALL, H5P_DEFAULT, char_list.data());
-  H5Sclose(dataspace);
-  H5Dclose(h1);
-#endif
-  hout.pop();
 }
 
 void VariableSet::readFromHDF(const std::string& filename)
@@ -407,65 +323,20 @@ void VariableSet::readFromHDF(const std::string& filename)
     APP_ABORT(err_msg.str().c_str());
   }
 
-  hid_t grp = hin.push("name_value_lists", false);
-  if (grp < 0)
-  {
+  std::vector<qmcplusplus::QMCTraits::ValueType> param_list;
+  hin.read(param_list, "parameter_values");
+
+  if (param_list.size() != NameAndValue.size()) {
     std::ostringstream err_msg;
-    err_msg << "The group name_value_lists is not present in VP filee: " << filename;
+    err_msg << "The number of variational parameters does not match wavefunction";
     APP_ABORT(err_msg.str().c_str());
   }
 
-  std::vector<qmcplusplus::QMCTraits::ValueType> param_list;
-  hin.read(param_list, "values");
-
-#if 0
-  // Need to write specialization of std::vector<std::string> in hdf_stl.h
-  hin.write(char_list, aname);
-#endif
-
-  std::string aname("names");
-  hid_t datatype = H5Tcopy(H5T_C_S1);
-  H5Tset_size(datatype, H5T_VARIABLE);
-
-
-  hid_t dataset = H5Dopen(grp, aname.c_str());
-  hsize_t dim_out;
-  hid_t dataspace = H5Dget_space(dataset);
-  hid_t status    = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
-
-  if (dim_out != param_list.size())
+  for (int i = 0; i < param_list.size(); i++)
   {
-    std::ostringstream err_msg;
-    err_msg << "Size of list of names (" << dim_out << ") does not match size of list of parameters ("
-            << param_list.size() << ") in VP file: " << filename;
-    APP_ABORT(err_msg.str());
+    NameAndValue[i].second = param_list[i];
   }
 
-  std::vector<char*> char_list;
-  char_list.resize(dim_out);
-  herr_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, char_list.data());
-  if (ret < 0)
-  {
-    std::ostringstream err_msg;
-    err_msg << "Error reading names in VP file: " << filename << std::endl;
-    APP_ABORT(err_msg.str());
-  }
-
-  std::vector<std::string> string_list;
-  for (int i = 0; i < dim_out; i++)
-  {
-    string_list.push_back(char_list[i]);
-  }
-  H5Dvlen_reclaim(datatype, H5S_ALL, H5S_ALL, char_list.data());
-
-  for (int i = 0; i < string_list.size(); i++)
-  {
-    std::string& vp_name = string_list[i];
-    if (find(vp_name) != end())
-      (*this)[vp_name] = param_list[i];
-  }
-
-  H5Sclose(dataspace);
 }
 
 

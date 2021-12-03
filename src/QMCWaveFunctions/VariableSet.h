@@ -358,16 +358,11 @@ struct VariableSet
 
   void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false) const;
 
-  /// Save variational parameters to an XML file
-  void saveAsXML(const std::string& filename) const;
-
-  /// Read variational parameters from an XML file.
-  /// This assumes the VPs are already set up. It will only set existing named values.
-  /// If the name does not exist in the list, it will be added.
-  bool readFromXML(const std::string& filename);
-
 
   void saveAsHDF(const std::string& filename) const;
+
+  /// Read variational parameters from an HDF file.
+  /// This assumes the VPs are already set up.  The wavefunction must match exactly.
   void readFromHDF(const std::string& filename);
 };
 } // namespace optimize
