@@ -247,7 +247,6 @@ void VMCBatched::process(xmlNodePtr node)
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
     Base::startup(node, awc);
-
   }
   catch (const UniformCommunicateError& ue)
   {
