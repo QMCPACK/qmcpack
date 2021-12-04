@@ -248,23 +248,6 @@ void VMCBatched::process(xmlNodePtr node)
 
     Base::startup(node, awc);
 
-
-    if (!qmcdriver_input_.get_variational_parameter_file().empty())
-    {
-      TrialWaveFunction& Psi = population_.get_golden_twf();
-      optimize::VariableSet tmpVar;
-      Psi.checkInVariables(tmpVar);
-      tmpVar.resetIndex();
-      Psi.checkOutVariables(tmpVar);
-
-      std::string vp_file = qmcdriver_input_.get_variational_parameter_file();
-      tmpVar.readFromHDF(vp_file);
-
-      Psi.resetParameters(tmpVar);
-      population_.set_variational_parameters(tmpVar);
-      app_log() << "Variational parameters loaded from " << vp_file << std::endl;
-      tmpVar.print(app_log());
-    }
   }
   catch (const UniformCommunicateError& ue)
   {
