@@ -330,7 +330,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv("no");
-  std::string variational_parameter_file;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
@@ -341,7 +340,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
-  m_param.add(variational_parameter_file, "variational_parameter_file_to_load");
   m_param.put(q);
 
   tolower(targetExcitedStr);
@@ -481,14 +479,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   if (NumOptimizables == 0)
   {
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
-  }
-
-  if (!variational_parameter_file.empty())
-  {
-    app_log() << "Loading variational parameters from " << variational_parameter_file << std::endl;
-
-    OptVariables.readFromHDF(variational_parameter_file);
-
   }
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
