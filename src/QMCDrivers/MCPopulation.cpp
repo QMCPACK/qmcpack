@@ -283,9 +283,6 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 {
   for (auto it_twfs = walker_trial_wavefunctions_.begin(); it_twfs != walker_trial_wavefunctions_.end(); ++it_twfs)
   {
-    opt_variables_type tmpVar;
-    (*it_twfs).get()->checkInVariables(tmpVar);
-    (*it_twfs).get()->checkOutVariables(active);
     (*it_twfs).get()->resetParameters(active);
   }
 }
