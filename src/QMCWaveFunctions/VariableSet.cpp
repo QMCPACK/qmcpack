@@ -320,7 +320,7 @@ void VariableSet::readFromHDF(const std::string& filename)
   {
     std::ostringstream err_msg;
     err_msg << "Unable to open VP file: " << filename;
-    APP_ABORT(err_msg.str().c_str());
+    throw std::runtime_error(err_msg.str());
   }
 
   std::vector<qmcplusplus::QMCTraits::ValueType> param_list;
@@ -328,8 +328,10 @@ void VariableSet::readFromHDF(const std::string& filename)
 
   if (param_list.size() != NameAndValue.size()) {
     std::ostringstream err_msg;
-    err_msg << "The number of variational parameters does not match wavefunction";
-    APP_ABORT(err_msg.str().c_str());
+    err_msg << "The number of variational parameters does not match wavefunction\n";
+    err_msg << "   # of parameters in wavefunction: " << NameAndValue.size() << "\n";
+    err_msg << "   # of parameters in file        : " << param_list.size() << "\n";
+    throw std::runtime_error(err_msg.str());
   }
 
   for (int i = 0; i < param_list.size(); i++)
