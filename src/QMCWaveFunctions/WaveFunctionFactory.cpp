@@ -182,7 +182,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   targetPsi->checkOutVariables(dummy);
 
   if (!vp_file_to_load.empty()) {
-    app_log() << "Reading variational parameters from " << vp_file_to_load << std::endl;
+    app_log() << "  Reading variational parameters from " << vp_file_to_load << std::endl;;
     dummy.readFromHDF(vp_file_to_load);
   }
 
