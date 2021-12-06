@@ -357,6 +357,13 @@ struct VariableSet
   void setDefaults(bool optimize_all);
 
   void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false) const;
+
+  // Save variational paramters to an HDF file
+  void saveAsHDF(const std::string& filename) const;
+
+  /// Read variational parameters from an HDF file.
+  /// This assumes VariableSet is already set up.
+  void readFromHDF(const std::string& filename);
 };
 } // namespace optimize
 
