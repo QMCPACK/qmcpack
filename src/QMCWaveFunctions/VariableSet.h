@@ -358,7 +358,7 @@ struct VariableSet
 
   void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false) const;
 
-  // Save variational paramters to an HDF file
+  // Save variational parameters to an HDF file
   void saveAsHDF(const std::string& filename) const;
 
   /// Read variational parameters from an HDF file.
