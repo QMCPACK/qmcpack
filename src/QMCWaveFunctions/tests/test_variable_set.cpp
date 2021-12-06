@@ -19,6 +19,7 @@
 #include <string>
 
 using std::string;
+using qmcplusplus::ValueApprox;
 
 namespace optimize
 {
@@ -109,5 +110,28 @@ TEST_CASE("VariableSet output", "[optimize]")
 
   REQUIRE(o.str() == formatted_output);
 }
+
+TEST_CASE("VariableSet HDF output and input", "[optimize]")
+{
+  VariableSet vs;
+  VariableSet::value_type first_val(11234.56789);
+  VariableSet::value_type second_val(0.000256789);
+  VariableSet::value_type third_val(-1.2);
+  vs.insert("s", first_val);
+  vs.insert("second", second_val);
+  vs.insert("really_really_really_long_name", third_val);
+  vs.saveAsHDF("vp.h5");
+
+  VariableSet vs2;
+  vs2.insert("s", 0.0);
+  vs2.insert("second", 0.0);
+  vs2.readFromHDF("vp.h5");
+  CHECK(vs2.find("s")->second == ValueApprox(first_val));
+  CHECK(vs2.find("second")->second == ValueApprox(second_val));
+  // This value as in the file, but not in the VariableSet that loaded the file,
+  // so the value does not get added.
+  CHECK(vs2.find("really_really_really_long_name") == vs2.end());
+}
+
 
 } // namespace optimize
