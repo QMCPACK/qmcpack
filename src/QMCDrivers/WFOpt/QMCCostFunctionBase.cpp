@@ -196,10 +196,6 @@ void QMCCostFunctionBase::Report()
   resetPsi();
   if (!myComm->rank())
   {
-    std::ostringstream vp_filename;
-    vp_filename << RootName << ".vp.h5";
-    OptVariables.saveAsHDF(vp_filename.str());
-
     updateXmlNodes();
     char newxml[128];
     if (Write2OneXml)
@@ -236,6 +232,10 @@ void QMCCostFunctionBase::reportParameters()
   resetPsi(true);
   if (!myComm->rank())
   {
+    std::ostringstream vp_filename;
+    vp_filename << RootName << ".vp.h5";
+    OptVariables.saveAsHDF(vp_filename.str());
+
     char newxml[128];
     sprintf(newxml, "%s.opt.xml", RootName.c_str());
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
@@ -329,6 +329,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv("no");
+  std::string output_override_str("no");
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
@@ -339,10 +340,14 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
+  m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
   m_param.put(q);
 
   tolower(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
+
+  if (output_override_str == "yes")
+    do_override_output = true;
 
   if (includeNonlocalH == "yes")
     includeNonlocalH = "NonLocalECP";
@@ -530,10 +535,13 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
     xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
-    std::ostringstream vp_filename;
-    vp_filename << RootName << ".vp.h5";
-    xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
-    xmlAddChild(wf_root, vp_file_node);
+    if (do_override_output)
+    {
+      std::ostringstream vp_filename;
+      vp_filename << RootName << ".vp.h5";
+      xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+      xmlAddChild(wf_root, vp_file_node);
+    }
 
     //check var
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
