@@ -7,17 +7,18 @@ Notable changes to QMCPACK are documented in this file.
 ### Notes
 
 This release incorporates several hundred changes to QMCPACK and the supporting
-ecosystem. It is a recommended release for all users. Changes include newly
-added support for the DIRAC quantum chemistry code, the RMG-DFT code, and
-updates for the latest version of Quantum ESPRESSO. Through DIRAC it is now
-possible to perform highly accurate molecular calculations incorporating
+ecosystem. It is a recommended release for all users. Note that compilers
+supporting C++17 and CMake version 3.15 or newer are now required. Changes
+include newly added support for the DIRAC quantum chemistry code, the RMG-DFT
+code, and updates for the latest version of Quantum ESPRESSO. Through DIRAC it
+is now possible to perform highly accurate molecular calculations incorporating
 spin-orbit with multideterminant trial wavefunctions. Behind the scenes updates
 include increased checking of inputs, fixes to many edge case bugs, and removal
 of memory leaks in both QMCPACK and the various converters. In readiness for
 transition to the new batched drivers that support both CPU and GPU execution,
 more features are supported and performance improved. Test coverage and
-robustness is improved in all areas. Note that compilers supporting C++17 and
-CMake version 3.15 or newer are now required. 
+robustness is improved in all areas. For developers, tests, sanitizers, and code
+coverage are now run on Pull Requests using GitHub Actions. 
 
 * To aid coexistence of real and complex builds, the qmcpack executable is now named qmcpack_complex for builds with QMC_COMPLEX=1
 * Added DIRAC converter and support for MSD wave functions [\#3510](https://github.com/QMCPACK/qmcpack/pull/3510)
