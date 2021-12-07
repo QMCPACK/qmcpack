@@ -89,9 +89,9 @@ jobs:
 
       - name: Upload Coverage
         if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
-          file: ../qmcpack-build/coverage.xml
+          files: ../qmcpack-build/coverage.xml
           flags: tests-deterministic # optional
           name: codecov-QMCPACK # optional
           fail_ci_if_error: true # optional (default = false)
