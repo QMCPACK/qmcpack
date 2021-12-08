@@ -57,7 +57,7 @@ if(QMC_OMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
   if(ENABLE_ROCM)
-    string(APPEND CMAKE_HIP_FLAGS "-fopenmp")
+    string(APPEND CMAKE_HIP_FLAGS "-fopenmp ")
   endif()
 endif(QMC_OMP)
 

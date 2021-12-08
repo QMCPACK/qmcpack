@@ -800,7 +800,7 @@ if(ENABLE_ROCM)
   #    "gfx906,gfx908"
   #    CACHE STRING "HIP architecture gfxXXX")
   set(CMAKE_HIP_ARCHITECTURES "gfx906;gfx908")
-  string(APPEND CMAKE_HIP_FLAGS " -fPIC -ffast-math -O3 -std=c++14")
+  string(APPEND CMAKE_HIP_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
   #list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   string(APPEND CMAKE_HIP_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
