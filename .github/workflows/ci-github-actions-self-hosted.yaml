@@ -31,6 +31,10 @@ jobs:
             GCC8-MPI-CUDA-AFQMC-Complex,
             Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload requires development llvm14
             Clang14Dev-MPI-CUDA-AFQMC-Offload-Real,
+            Intel19-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
+            Intel19-MPI-CUDA-AFQMC-Complex-Mixed,
+            Intel19-MPI-CUDA-AFQMC-Real,
+            Intel19-MPI-CUDA-AFQMC-Complex,
           ]
 
     steps:
