@@ -795,6 +795,7 @@ if(ENABLE_ROCM)
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
+  enable_language(HIP)
   # architecture flags
   set(HIP_ARCH
       "gfx906,gfx908"

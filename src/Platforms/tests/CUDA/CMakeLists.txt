@@ -14,10 +14,9 @@ set(SRC_DIR CUDA)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-if(NOT QMC_CUDA2HIP)
-  add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
-else()
-  hip_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+if(QMC_CUDA2HIP)
+  set_source_files_properties(test_device_value_kernels.cu PROPERTIES LANGUAGE HIP)
 endif()
 target_link_libraries(cuda_device_value_test_kernels PUBLIC platform_runtime)
 

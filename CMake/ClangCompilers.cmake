@@ -56,6 +56,7 @@ if(QMC_OMP)
   endif()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -fopenmp ")
 endif(QMC_OMP)
 
 # Set clang specific flags (which we always want)

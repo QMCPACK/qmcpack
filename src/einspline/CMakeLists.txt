@@ -36,11 +36,7 @@ set(SRCS
 
 if(QMC_CUDA)
   set(SRCS ${SRCS} multi_bspline_create_cuda.cu bspline_create_cuda.cu)
-  if(NOT QMC_CUDA2HIP)
-    add_library(einspline ${SRCS})
-  else()
-    hip_add_library(einspline ${SRCS})
-  endif(NOT QMC_CUDA2HIP)
+  add_library(einspline ${SRCS})
   target_link_libraries(einspline PRIVATE platform_runtime)
 else(QMC_CUDA)
   add_library(einspline ${SRCS})
