@@ -14,6 +14,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "DistanceTable.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
@@ -104,7 +105,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
   ions_.update();
@@ -236,7 +237,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
   ions_.update();

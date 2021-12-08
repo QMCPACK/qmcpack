@@ -15,7 +15,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "LongRange/StructFact.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #include "Particle/ParticleSetPool.h"
 #include <stdio.h>
@@ -198,10 +198,10 @@ TEST_CASE("SkAll", "[hamiltonian]")
   skall.addObservables(elec->PropertyList, elec->Collectables);
   skall.get(app_log()); // pretty print settings
 
-  // Hack to make a walker so that tWalker points to something
-  // Only used to set tWalker->Weight = 1 so that skall->evaluate()
+  // Hack to make a walker so that t_walker_ points to something
+  // Only used to set t_walker_->Weight = 1 so that skall->evaluate()
   // doesn't segfault.
-  // NB: setHistories(dummy) attaches dummy to tWalker
+  // NB: setHistories(dummy) attaches dummy to t_walker_
   ParticleSet::Walker_t dummy = ParticleSet::Walker_t(1);
   skall.setHistories(dummy);
   skall.evaluate(*elec);
@@ -210,8 +210,8 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // takes that pre-computed s(k) and pulls out rho(k)..
   // In order to compare to analytic result, need the list
   // of k-vectors in cartesian coordinates.
-  // Luckily, ParticleSet stores that in SK->KLists.kpts_cart
-  int nkpts      = elec->SK->KLists.numk;
+  // Luckily, ParticleSet stores that in SK->getKLists().kpts_cart
+  int nkpts = elec->SK->getKLists().numk;
   std::cout << "\n";
   std::cout << "SkAll results:\n";
   std::cout << std::fixed;
@@ -232,7 +232,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   std::cout << std::setprecision(5);
   for (int k = 0; k < nkpts; k++)
   {
-    auto kvec      = elec->SK->KLists.kpts_cart[k];
+    auto kvec      = elec->SK->getKLists().kpts_cart[k];
     RealType kx    = kvec[0];
     RealType ky    = kvec[1];
     RealType kz    = kvec[2];

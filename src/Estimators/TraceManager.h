@@ -676,7 +676,7 @@ struct CombinedTraceSample : public TraceSample<T>
     reset();
   }
 
-  virtual bool is_combined() { return true; }
+  bool is_combined() override { return true; }
 
   inline void reset() { combined = false; }
 
@@ -840,8 +840,6 @@ struct TraceSamples
         break;
       }
     }
-    if (ts == NULL)
-      APP_ABORT("TraceSamples::get_combined_trace  failed to get trace for quantity " + name + " in domain " + domain);
     return ts;
   }
 

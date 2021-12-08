@@ -73,33 +73,33 @@ public:
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {
     myFunc.reset(ref);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.SK->getKLists());
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.LRBox, 1);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.SK->getKLists());
     LR_rc = Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, mRealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
     //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs = rs_ext;
     myFunc.reset(ref, rs);
     InitBreakup(ref.LRBox, 1);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.SK->getKLists());
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) { myFunc.reset(ref); }
+  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     mRealType v = 0.0;
     if (r >= LR_rc)
@@ -115,7 +115,7 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     APP_ABORT("LRHandlerTemp::srDF not implemented (missing gcoefs)");
     mRealType df = 0.0;
@@ -128,12 +128,12 @@ public:
     return df;
   }
 
-  inline mRealType evaluate_vlr_k(mRealType k) { return evalFk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const override { return evalFk(k); }
 
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
+  inline mRealType evaluateLR(mRealType r) const override
   {
     mRealType v = 0.0;
     if (r >= LR_rc)
@@ -142,9 +142,10 @@ public:
       v += coefs[n] * Basis.h(n, r);
     return v;
   }
+
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType lrDf(mRealType r)
+  inline mRealType lrDf(mRealType r) const override
   {
     APP_ABORT("LRHandlerTemp::lrDF not implemented (missing gcoefs)");
     mRealType dv = 0.0;
@@ -160,7 +161,7 @@ public:
   }
 
 
-  inline mRealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0() const override
   {
     mRealType v0 = myFunc.integrate_r2(Basis.get_rc());
     for (int n = 0; n < coefs.size(); n++)
@@ -168,7 +169,7 @@ public:
     return v0 * 2.0 * TWOPI / Basis.get_CellVolume();
   }
 
-  inline mRealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0() const override
   {
     mRealType v0 = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -177,7 +178,7 @@ public:
   }
 
 private:
-  inline mRealType evalFk(mRealType k)
+  inline mRealType evalFk(mRealType k) const
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
     mRealType FatK = myFunc.Fk(k, Basis.get_rc());
@@ -185,7 +186,7 @@ private:
       FatK += coefs[n] * Basis.c(n, k);
     return FatK;
   }
-  inline mRealType evalXk(mRealType k)
+  inline mRealType evalXk(mRealType k) const
   {
     //RealType FatK;
     //FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
@@ -262,7 +263,7 @@ private:
     }
   }
 
-  void fillFk(KContainer& KList)
+  void fillFk(const KContainer& KList)
   {
     Fk.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);

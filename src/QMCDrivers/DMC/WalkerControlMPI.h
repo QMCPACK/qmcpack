@@ -67,7 +67,7 @@ struct WalkerControlMPI : public WalkerControlBase
                                            std::vector<int>& plus);
 
   /** legacy: perform branch and swap walkers as required */
-  int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
+  int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger) override;
 
   /** legacy: swap implementation
    */

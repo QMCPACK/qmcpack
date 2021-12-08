@@ -56,7 +56,7 @@ It is a small C++ executable that is built alongside the QMCPACK
 executable and can be found in ``build/bin``.
 
 To date, ``convert4qmc`` supports the following codes:
-GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO` and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
+GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO`, DIRAC :cite:`DIRAC`, RMG :cite:`RMG`, and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
 
 
 
@@ -71,7 +71,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
 
   Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
 
-   convert [-gaussian|-casino|-gamess|-orbitals]
+   convert [-gaussian|gamess|-orbitals|-dirac|-rmg]
    filename
   [-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]
   [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
@@ -81,7 +81,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
   -threshold 0.01 -TargetState 0 -prefix sample
   When the input format is missing, the  extension of filename is used to determine
   the format
-   *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.h5 -> hdf5 format
+   *.Fchk -> gaussian; *.out -> gamess; *.h5 -> hdf5 format
 
 As an example, to convert a GAMESS calculation using a single determinant, the following use is sufficient:
 
@@ -277,18 +277,20 @@ prefix ``Mysim`` and output files will be
 
 ``convert4qmc`` input type:
 
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | **option name** | **description**                                                            |                     |
-  +=================+============================================================================+=====================+
-  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|                     |
-  |                 | all codes  in molden2qmc                                                   | Actively maintained |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gamess``     | Gamess code                                                                | Maintained          |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gaussian``   | Gaussian code                                                              | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-casino``     | Casino code                                                                | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
+  +-----------------+----------------------------------------------------------------------------+
+  | **option name** | **description**                                                            |
+  +=================+============================================================================+
+  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|
+  |                 | all codes  in molden2qmc                                                   |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-gamess``     | Gamess code                                                                |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-gaussian``   | Gaussian code                                                              |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-dirac``      | get spinors from DIRAC code                                                |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-rmg``        | RMG code                                                                   |
+  +-----------------+----------------------------------------------------------------------------+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
@@ -689,6 +691,18 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 
   QMCPACK can use the output of GAMESS :cite:`schmidt93` for any type of single determinant calculation (HF or DFT) or multideterminant (MCSCF) calculation. A description with an example can be found in the Advanced Molecular Calculations Lab (:ref:`lab-advanced-molecules`).
 
+- **DIRAC**
+
+  QMCPACK can use the output of DIRAC to run spin-orbit calculations using single-particle spinor wave functions for single-determinant calculations (DFT or closed-shell Dirac HF) or multideterminant complete open-shell configuration interaction (COSCI) wavefunctions. In the case of COSCI, the desired ground or excited state can be requested with ``-TargetState x``.
+
+- **RMG**
+
+  QMCPACK can use the HDF5 output of RMG DFT calculations. To generate this HDF5 output, set ``write_qmcpack_restart = "true"`` in the RMG input (file will be written to ``Waves/wave.out.h5``). ``convert4qmc`` will read the data from this HDF5 file and generate ``*.structure.xml``, ``*.wf{j,noj}.xml``, and ``*.qmc.in-wf{j,noj}.xml``. Pseudopotential files must be generated/moved manually by the user to ``X.qmcpp.xml``, where ``X`` is the appropriate element symbol (PP filename/path can be changed in the Hamiltonian section of ``*.qmc.in-wf{j,noj}.xml``).
+
+  ::
+
+    convert4qmc -rmg wave.out.h5
+
 .. _pw2qmcpack:
 
 pw2qmcpack.x
@@ -772,20 +786,22 @@ wavefunctions suitable for qmcpack calculations with spin-orbit coupling.
 ppconvert
 ~~~~~~~~~
 
-``ppconvert`` is a utility to convert PPs between different commonly used formats. As with all operations on pseudopotentials, great care should be exercised when using this tool.
-It is a stand-alone executable that is not built by default but that is accessible via adding
-``-DBUILD_PPCONVERT=1`` to CMake.
-Currently it converts CASINO, FHI, UPF (generated by OPIUM), BFD, and GAMESS formats to several other formats
-including XML (QMCPACK) and UPF (QE). See all the formats via ``ppconvert -h``.
-For output formats requiring Kleinman-Bylander projectors, the atom will be solved with DFT
-if the projectors are not provided in the input formats.
+``ppconvert`` is a utility to convert PPs between different commonly used formats. As with all operations on pseudopotentials,
+great care should be exercised when using this tool. The tool is not yet considered to be fully robust and converted potentials
+should be examined carefully. Please report any issues. Generally DFT-derived potentials should not be used with QMC. The main
+intended use for the converter is to convert potentials generated for QMC calculations into formats acceptable to DFT and quantum
+chemistry codes for trial wavefunction generation.
 
-This requires providing reference states and sometimes needs extra tuning for heavy elements.
-To avoid ghost states, the local channel can be changed via the ``--local_channel`` option. Ghost state considerations are similar to those of DFT calculations but could be worse if ghost states were not considered during the original PP construction.
-To make the self-consistent calculation converge, the density mixing parameter may need to be reduced
-via the ``--density_mix`` option.
-Note that the reference state should include only the valence electrons.
-One reference state should be included for each channel in the PP.
+Currently it converts CASINO, FHI, UPF (generated by OPIUM), BFD, and GAMESS formats to several other formats including XML
+(QMCPACK) and UPF (QE). See all the formats via ``ppconvert -h``.
+
+For output formats requiring Kleinman-Bylander projectors, the atom will be solved with DFT if the projectors are not provided in
+the input formats. This requires providing reference states and often needs extra tuning for heavy elements. To avoid ghost
+states, the local channel can be changed via the ``--local_channel`` option. Ghost state considerations are similar to those of
+DFT calculations but could be worse if ghost states were not considered during the original PP construction. To make the
+self-consistent calculation converge, the density mixing parameter may need to be reduced via the ``--density_mix`` option. Note
+that the reference state should include only the valence electrons. One reference state should be included for each channel in the
+PP.
 
 For example, for a sodium atom with a neon core, the reference state would be "1s(1)."
 ``--s_ref`` needs to include a 1s state, ``--p_ref`` needs to include a 2p state,
@@ -797,8 +813,12 @@ For example, Ti PP has 12 valence electrons. When using the neutral atom state,
 ``--s_ref``, ``--p_ref``, and ``--d_ref`` are all set as "1s(2)2p(6)2s(2)3d(2)."
 When using an ionized state, the three reference states are all set as "1s(2)2p(6)2s(2)" or "1s(2)2p(6)2s(2)3d(0)."
 
-Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of "ghost" states. Potentially these can be removed by adjusting the local channel (e.g., by setting ``--local_channel 1``, which chooses the p channel as the local channel instead of d.
-For this reason, validation of UPF PPs is always required from the third row and is strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
+Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of "ghost"
+states. Potentially these can be removed by adjusting the local channel (e.g., by setting ``--local_channel 1``, which chooses the
+p channel as the local channel instead of d. For this reason, validation of UPF PPs is always required from the third row and is
+strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for
+the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does
+not use the Kleinman-Bylander projectors.
 
 .. _molden2qmc:
 

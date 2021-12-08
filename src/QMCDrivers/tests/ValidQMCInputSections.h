@@ -103,6 +103,19 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
 constexpr int valid_dmc_input_dmc_index       = 0;
 constexpr int valid_dmc_input_dmc_batch_index = 1;
 
+constexpr std::array<const char*, 2> valid_opt_input_sections{
+    R"(
+  <qmc method="opt_batch" move="pbyp" gpu="yes">
+  </qmc>
+)",
+    R"(
+  <qmc method="opt_batch" move="pbyp">
+    <optimize method="test" output_param_file="yes"/>
+    <parameter name="opt_num_crowds">                 4 </parameter>
+    <parameter name="opt_crowd_size">                 8 </parameter>
+  </qmc>
+)"};
+
 // clang-format: on
 } // namespace testing
 } // namespace qmcplusplus

@@ -16,7 +16,7 @@
 
 
 #include "ForceBase.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/MatrixOperators.h"
@@ -70,15 +70,16 @@ void ForceBase::addObservablesStress(QMCTraits::PropertySetType& plist)
     }
 }
 
-void ForceBase::registerObservablesF(std::vector<observable_helper*>& h5list, hid_t gid) const
+void ForceBase::registerObservablesF(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   std::vector<int> ndim(2);
-  ndim[0]                = Nnuc;
-  ndim[1]                = OHMMS_DIM;
-  observable_helper* h5o = new observable_helper(prefix);
-  h5o->set_dimensions(ndim, FirstForceIndex);
-  h5o->open(gid);
-  h5list.push_back(h5o);
+  ndim[0] = Nnuc;
+  ndim[1] = OHMMS_DIM;
+
+  h5list.emplace_back(prefix);
+  auto& h5o = h5list.back();
+  h5o.set_dimensions(ndim, FirstForceIndex);
+  h5o.open(gid);
 }
 
 void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist)
@@ -136,24 +137,27 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
 
 BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions))
 {
-  myName = "HF_Force_Base";
+  name_  = "HF_Force_Base";
   prefix = "HFBase";
 }
 
 void BareForce::resetTargetParticleSet(ParticleSet& P) {}
 
-OperatorBase* BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareForce(*this); }
+std::unique_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  return std::make_unique<BareForce>(*this);
+}
 
 void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   addObservablesF(plist);
-  myIndex = FirstForceIndex;
+  my_index_ = FirstForceIndex;
 }
 
 BareForce::Return_t BareForce::evaluate(ParticleSet& P)
 {
   forces                                    = forces_IonIon;
-  const auto& d_ab                          = P.getDistTable(d_ei_ID);
+  const auto& d_ab                          = P.getDistTableAB(d_ei_ID);
   const ParticleSet::Scalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs

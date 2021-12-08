@@ -14,7 +14,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "Particle/ParticleSetPool.h"
 
@@ -202,5 +202,25 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
   std::cout << "test_paircorr:: STOP\n";
+}
+
+TEST_CASE("Pair Correlation Pair Index", "[hamiltonian]")
+{
+  // Check generation of pair id for 2 species groups
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 0, 2) == 0);
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 1, 2) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 0, 2) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 1, 2) == 2);
+
+  // Check generation of pair id for 3 species groups
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 0, 3) == 0);
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 1, 3) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 2, 3) == 2);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 0, 3) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 1, 3) == 3);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 2, 3) == 4);
+  REQUIRE(PairCorrEstimator::gen_pair_id(2, 0, 3) == 2);
+  REQUIRE(PairCorrEstimator::gen_pair_id(2, 1, 3) == 4);
+  REQUIRE(PairCorrEstimator::gen_pair_id(2, 2, 3) == 5);
 }
 } // namespace qmcplusplus

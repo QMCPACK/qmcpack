@@ -32,7 +32,6 @@
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
@@ -61,7 +60,6 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
-      Collectables(0),
       max4ascii(8),
       FieldWidth(20)
 {
@@ -77,7 +75,6 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
-      Collectables(0),
       EstimatorMap(em.EstimatorMap),
       max4ascii(em.max4ascii),
       FieldWidth(20)
@@ -87,20 +84,13 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
 
   // Here Estimators are ScalarEstimatorBase
   for (int i = 0; i < em.Estimators.size(); i++)
-    Estimators.push_back(em.Estimators[i]->clone());
-  MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
+    Estimators.emplace_back(em.Estimators[i]->clone());
+  MainEstimator = Estimators[EstimatorMap[MainEstimatorName]].get();
   if (em.Collectables)
-    Collectables = em.Collectables->clone();
+    Collectables.reset(em.Collectables->clone());
 }
 
-EstimatorManagerBase::~EstimatorManagerBase()
-{
-  delete_iter(Estimators.begin(), Estimators.end());
-  delete_iter(RemoteData.begin(), RemoteData.end());
-  delete_iter(h5desc.begin(), h5desc.end());
-  if (Collectables)
-    delete Collectables;
-}
+EstimatorManagerBase::~EstimatorManagerBase() = default;
 
 void EstimatorManagerBase::setCommunicator(Communicate* c)
 {
@@ -115,8 +105,8 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
   Options.set(MANAGE, myComm->rank() == 0);
   if (RemoteData.empty())
   {
-    RemoteData.push_back(new BufferType);
-    RemoteData.push_back(new BufferType);
+    RemoteData.push_back(std::make_unique<BufferType>());
+    RemoteData.push_back(std::make_unique<BufferType>());
   }
 }
 
@@ -190,7 +180,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   //allocate buffer for data collection
   if (RemoteData.empty())
     for (int i = 0; i < sources; ++i)
-      RemoteData.push_back(new BufferType(BufferSize));
+      RemoteData.push_back(std::make_unique<BufferType>(BufferSize));
   else
     for (int i = 0; i < RemoteData.size(); ++i)
       RemoteData[i]->resize(BufferSize);
@@ -215,7 +205,6 @@ void EstimatorManagerBase::start(int blocks, bool record)
     addHeader(*Archive);
     if (h5desc.size())
     {
-      delete_iter(h5desc.begin(), h5desc.end());
       h5desc.clear();
     }
     fname  = myComm->getName() + ".stat.h5";
@@ -362,7 +351,7 @@ void EstimatorManagerBase::collectBlockAverages()
       *Archive << std::setw(FieldWidth) << PropertyCache[j];
     *Archive << std::endl;
     for (int o = 0; o < h5desc.size(); ++o)
-      h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
+      h5desc[o].write(AverageCache.data(), SquaredAverageCache.data());
     H5Fflush(h_file, H5F_SCOPE_LOCAL);
   }
   RecordCount++;
@@ -414,8 +403,8 @@ void EstimatorManagerBase::getApproximateEnergyVariance(RealType& e, RealType& v
 
 EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()
 {
-  if (MainEstimator == 0)
-    add(new LocalEnergyOnlyEstimator(), MainEstimatorName);
+  if (MainEstimator == nullptr)
+    add(std::make_unique<LocalEnergyOnlyEstimator>(), MainEstimatorName);
   return MainEstimator;
 }
 
@@ -423,9 +412,9 @@ EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getEstimator(const st
 {
   std::map<std::string, int>::iterator it = EstimatorMap.find(a);
   if (it == EstimatorMap.end())
-    return 0;
+    return nullptr;
   else
-    return Estimators[(*it).second];
+    return Estimators[(*it).second].get();
 }
 
 /** This should be moved to branch engine */
@@ -447,7 +436,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
       if ((est_name == MainEstimatorName) || (est_name == "elocal"))
       {
         max4ascii = H.sizeOfObservables() + 3;
-        add(new LocalEnergyEstimator(H, use_hdf5 == "yes"), MainEstimatorName);
+        add(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"), MainEstimatorName);
       }
       else if (est_name == "RMC")
       {
@@ -456,7 +445,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
         hAttrib.add(nobs, "nobs");
         hAttrib.put(cur);
         max4ascii = nobs * H.sizeOfObservables() + 3;
-        add(new RMCLocalEnergyEstimator(H, nobs), MainEstimatorName);
+        add(std::make_unique<RMCLocalEnergyEstimator>(H, nobs), MainEstimatorName);
       }
       else if (est_name == "CSLocalEnergy")
       {
@@ -464,7 +453,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
         int nPsi = 1;
         hAttrib.add(nPsi, "nPsi");
         hAttrib.put(cur);
-        add(new CSEnergyEstimator(H, nPsi), MainEstimatorName);
+        add(std::make_unique<CSEnergyEstimator>(H, nPsi), MainEstimatorName);
         app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
       }
       else
@@ -476,36 +465,37 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
-    add(new LocalEnergyEstimator(H, true), MainEstimatorName);
+    add(std::make_unique<LocalEnergyEstimator>(H, true), MainEstimatorName);
   }
   //Collectables is special and should not be added to Estimators
-  if (Collectables == 0 && H.sizeOfCollectables())
+  if (Collectables == nullptr && H.sizeOfCollectables())
   {
     app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
-    Collectables = new CollectablesEstimator(H);
+    Collectables = std::make_unique<CollectablesEstimator>(H);
   }
   return true;
 }
 
-int EstimatorManagerBase::add(EstimatorType* newestimator, const std::string& aname)
+int EstimatorManagerBase::add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname)
 {
-  std::map<std::string, int>::iterator it = EstimatorMap.find(aname);
-  int n                                   = Estimators.size();
+  //check the name and set the MainEstimator
+  if (aname == MainEstimatorName)
+  {
+    MainEstimator = newestimator.get();
+  }
+  auto it = EstimatorMap.find(aname);
+  int n   = Estimators.size();
   if (it == EstimatorMap.end())
   {
-    Estimators.push_back(newestimator);
+    Estimators.push_back(std::move(newestimator));
     EstimatorMap[aname] = n;
   }
   else
   {
     n = (*it).second;
     app_log() << "  EstimatorManagerBase::add replace " << aname << " estimator." << std::endl;
-    delete Estimators[n];
-    Estimators[n] = newestimator;
+    Estimators[n] = std::move(newestimator);
   }
-  //check the name and set the MainEstimator
-  if (aname == MainEstimatorName)
-    MainEstimator = newestimator;
   return n;
 }
 

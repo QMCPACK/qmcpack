@@ -16,12 +16,12 @@
 
 
 #include "kSpaceJastrow.h"
-#include "LongRange/StructFact.h"
-#include "config/stdlib/math.hpp"
-#include "CPU/e2iphi.h"
 #include <sstream>
 #include <algorithm>
-
+#include "LongRange/StructFact.h"
+#include "CPU/math.hpp"
+#include "CPU/e2iphi.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -627,7 +627,7 @@ void kSpaceJastrow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 
 void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  LogValue = evaluateLog(P, P.G, P.L);
+  log_value_ = evaluateLog(P, P.G, P.L);
   // eikr.resize(NumPtcls,MaxK);
   // eikr_new.resize(MaxK);
   // delta_eikr.resize(MaxK);
@@ -642,7 +642,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 
 kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
-  LogValue = evaluateLog(P, P.G, P.L);
+  log_value_ = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)
   //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
   // buf.put(Rhok.first_address(), Rhok.last_address());
@@ -650,7 +650,7 @@ kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBuffer
   // buf.put(d2U.first_address(), d2U.last_address());
   // buf.put(FirstAddressOfdU,LastAddressOfdU);
   // return LogValue;
-  return LogValue;
+  return log_value_;
 }
 
 void kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
@@ -754,9 +754,9 @@ void kSpaceJastrow::resetParameters(const opt_variables_type& active)
 
 bool kSpaceJastrow::put(xmlNodePtr cur) { return true; }
 
-WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> kSpaceJastrow::makeClone(ParticleSet& tqp) const
 {
-  kSpaceJastrow* kj = new kSpaceJastrow(Ions);
+  auto kj = std::make_unique<kSpaceJastrow>(Ions);
   kj->copyFrom(*this);
   // kSpaceJastrow *kj = new kSpaceJastrow(*this);
   // kj->VarMap.clear();
@@ -864,8 +864,8 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
           {
             //real part of coeff
             dlogpsi[kk] += ValueType(Prefactor * real(z));
-            //convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
-            convert(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
+            //convertToReal(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
+            convertToReal(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
             dhpsioverpsi[kk] += ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) +
                                           Prefactor * real(z * eye) * tmp_dot);
             //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
@@ -913,7 +913,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         int kk        = myVars.where(TwoBodyVarMap[i]);
         if (kk > 0)
         {
-          convert(dot(P.G[iat], Gvec), tmp_dot);
+          convertToReal(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);
           dhpsioverpsi[kk] -=
               ValueType(Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -

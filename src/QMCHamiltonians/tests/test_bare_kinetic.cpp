@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -31,9 +30,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   ParticleSet elec;
 
@@ -61,9 +57,6 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.update();
 
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
-
   const char* particles = "<tmp> \
 </tmp> \
 ";
@@ -75,10 +68,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  // This constructor has compile errors (Ps member not initialized)
-  //BareKineticEnergy<double> bare_ke;
-
-  BareKineticEnergy<double> bare_ke(elec);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   elec.L[0] = 1.0;
@@ -162,8 +152,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
   ions.resetGroups();
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -175,7 +163,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\">  \
+  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
       <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
           <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
         </correlation> \
@@ -221,7 +209,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy<double> bare_ke(elec);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   // update all distance tables

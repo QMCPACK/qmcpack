@@ -31,7 +31,7 @@ private:
 
 public:
   std::vector<FT*> RadFun;
-  std::vector<FT*> uniqueRadFun;
+  std::vector<std::unique_ptr<FT>> uniqueRadFun;
   std::vector<int> offsetPrms;
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions))
@@ -49,11 +49,9 @@ public:
       RadFun.push_back(RF);
   }
 
-  ~Backflow_eI(){};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_eI<FT>>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);
     clone->indexOfFirstParam = indexOfFirstParam;
     clone->offsetPrms        = offsetPrms;
@@ -62,15 +60,15 @@ public:
     clone->uniqueRadFun.resize(uniqueRadFun.size());
     clone->RadFun.resize(RadFun.size());
     for (int i = 0; i < uniqueRadFun.size(); i++)
-      clone->uniqueRadFun[i] = new FT(*(uniqueRadFun[i]));
+      clone->uniqueRadFun[i] = std::make_unique<FT>(*(uniqueRadFun[i]));
     for (int i = 0; i < RadFun.size(); i++)
     {
       bool done = false;
       for (int k = 0; k < uniqueRadFun.size(); k++)
-        if (RadFun[i] == uniqueRadFun[k])
+        if (RadFun[i] == uniqueRadFun[k].get())
         {
           done             = true;
-          clone->RadFun[i] = clone->uniqueRadFun[k];
+          clone->RadFun[i] = clone->uniqueRadFun[k].get();
           break;
         }
       if (!done)
@@ -81,7 +79,7 @@ public:
     return clone;
   }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) override
   {
     std::cerr << RadFun.size() << std::endl;
     std::cerr << isOptimizable() << std::endl;
@@ -92,25 +90,25 @@ public:
       uniqueRadFun[i]->reportStatus(os);
   }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       uniqueRadFun[i]->resetParameters(active);
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       uniqueRadFun[i]->checkInVariables(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       uniqueRadFun[i]->checkOutVariables(active);
   }
 
-  inline bool isOptimizable()
+  inline bool isOptimizable() override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       if (uniqueRadFun[i]->isOptimizable())
@@ -118,10 +116,10 @@ public:
     return false;
   }
 
-  inline int indexOffset() { return RadFun[0]->myVars.where(0); }
+  inline int indexOffset() override { return RadFun[0]->myVars.where(0); }
 
   // only elements of qp coordinates that changed should be copied
-  inline void acceptMove(int iat, int UpdateMode)
+  inline void acceptMove(int iat, int UpdateMode) override
   {
     int num;
     switch (UpdateMode)
@@ -167,14 +165,14 @@ public:
     BIJ_temp = 0.0;
   }
 
-  inline void restore(int iat, int UpdateType)
+  inline void restore(int iat, int UpdateType) override
   {
     UIJ_temp = 0.0;
     AIJ_temp = 0.0;
     BIJ_temp = 0.0;
   }
 
-  void registerData(WFBufferType& buf)
+  void registerData(WFBufferType& buf) override
   {
     FirstOfU = &(UIJ(0, 0)[0]);
     LastOfU  = FirstOfU + OHMMS_DIM * NumTargets * NumCenters;
@@ -189,11 +187,11 @@ public:
 
   /** calculate quasi-particle coordinates only
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP) override
   {
     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -210,7 +208,7 @@ public:
   {
     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -235,10 +233,10 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist  = myTable.getDistRow(jel);
@@ -266,11 +264,13 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)
+  inline void evaluatePbyP(const ParticleSet& P,
+                           ParticleSet::ParticlePos_t& newQP,
+                           const std::vector<int>& index) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //int iat             = index[0];
     //for (int j = 0; j < maxI; j++)
@@ -284,10 +284,10 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
@@ -300,11 +300,11 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            ParticleSet::ParticlePos_t& newQP,
                            const std::vector<int>& index,
-                           HessMatrix_t& Amat)
+                           HessMatrix_t& Amat) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //int iat             = index[0];
     //for (int j = 0; j < maxI; j++)
@@ -322,10 +322,13 @@ public:
     //}
   }
 
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
+  inline void evaluatePbyP(const ParticleSet& P,
+                           int iat,
+                           ParticleSet::ParticlePos_t& newQP,
+                           HessMatrix_t& Amat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
@@ -349,11 +352,11 @@ public:
                            ParticleSet::ParticlePos_t& newQP,
                            const std::vector<int>& index,
                            GradMatrix_t& Bmat_full,
-                           HessMatrix_t& Amat)
+                           HessMatrix_t& Amat) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //int iat             = index[0];
     //for (int j = 0; j < maxI; j++)
@@ -377,11 +380,11 @@ public:
                            int iat,
                            ParticleSet::ParticlePos_t& newQP,
                            GradMatrix_t& Bmat_full,
-                           HessMatrix_t& Amat)
+                           HessMatrix_t& Amat) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //int maxI            = myTable.sources();
     //for (int j = 0; j < maxI; j++)
     //{
@@ -403,11 +406,11 @@ public:
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
+  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) override
   {
     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAB(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -428,10 +431,10 @@ public:
                                       HessMatrix_t& Amat,
                                       GradMatrix_t& Cmat,
                                       GradMatrix_t& Ymat,
-                                      HessArray_t& Xmat)
+                                      HessArray_t& Xmat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAB(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist  = myTable.getDistRow(jel);

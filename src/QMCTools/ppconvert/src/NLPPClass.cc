@@ -9,8 +9,8 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 
@@ -24,7 +24,7 @@
 #include <cstdlib>
 
 void
-ChannelPotentialClass::WriteChannelLog (XMLWriterClass &writer, 
+ChannelPotentialClass::WriteChannelLog (XMLWriterClass &writer,
 					bool writeVl)
 {
   std::string channels[] = {"s", "p", "d", "f", "g", "h", "i", "j"};
@@ -74,7 +74,7 @@ ChannelPotentialClass::WriteChannelLog (XMLWriterClass &writer,
 
 
 void
-ChannelPotentialClass::WriteChannelLinear (XMLWriterClass &writer, 
+ChannelPotentialClass::WriteChannelLinear (XMLWriterClass &writer,
 					   double dr, double rmax, bool writeVl)
 {
   std::string channels[] = {"s", "p", "d", "f", "g", "h", "i", "j"};
@@ -130,7 +130,7 @@ PseudoClass::SetupMaps()
   UnitToHartreeMap[std::string("Hartrees")] = 1.0;
   UnitToHartreeMap[std::string("rydberg")] = 0.5;
   UnitToHartreeMap[std::string("ev")]      = 0.03674932595264097934;
-  
+
   UnitToBohrMap[std::string("bohr")]     = 1.0;
   UnitToBohrMap[std::string("atomic")]   = 1.0;
   UnitToBohrMap[std::string("angstrom")] = 1.8897261;
@@ -140,7 +140,7 @@ PseudoClass::SetupMaps()
   XCMap[XC_HF]  ="HF"  ; XCRevMap["HF"]  =XC_HF;   XCRevMap["hf"]  =XC_LDA;
   XCMap[XC_DF]  ="DF"  ; XCRevMap["DF"]  =XC_DF;   XCRevMap["df"]  =XC_DF;
   XCMap[XC_NONE]="NONE"; XCRevMap["NONE"]=XC_NONE; XCRevMap["none"]=XC_NONE;
-  
+
   ChannelMap[0] = "s";  ChannelRevMap["s"] = 0;
   ChannelMap[1] = "p";  ChannelRevMap["p"] = 1;
   ChannelMap[2] = "d";  ChannelRevMap["d"] = 2;
@@ -199,7 +199,7 @@ PseudoClass::SetupMaps()
   ZToSymbolMap[97]  = "Bk"; ZToSymbolMap[98]  = "Cf";
   ZToSymbolMap[99]  = "Es"; ZToSymbolMap[100] = "Fm";
   ZToSymbolMap[101] = "Mc"; ZToSymbolMap[102] = "No";
-  ZToSymbolMap[103] = "Lw"; 
+  ZToSymbolMap[103] = "Lw";
 
   ZToMassMap[  1] = 1.00794;
   ZToMassMap[  2] = 4.002602;
@@ -333,9 +333,9 @@ PseudoClass::WriteFPMD(std::string fname)
   XMLWriterClass writer;
   writer.StartDocument(fname, "1.0", "UTF-8");
   writer.StartElement("fpmd:species");
-  writer.WriteAttribute("xmlns:fpmd", 
+  writer.WriteAttribute("xmlns:fpmd",
 			"http://www.quantum-simulation.org/ns/fpmd/fpmd-1.0");
-  writer.WriteAttribute("xmlns:xsi", 
+  writer.WriteAttribute("xmlns:xsi",
 			"http://www.w3.org/2001/XMLSchema-instance");
   writer.WriteAttribute
     ("xsi:schemaLocation",
@@ -344,7 +344,7 @@ PseudoClass::WriteFPMD(std::string fname)
   writer.StartElement("description");
   writer.WriteData("ppconvert");
   writer.EndElement();
-  
+
   writer.StartElement("symbol");
   writer.WriteData(ZToSymbolMap[AtomicNumber]);
   writer.EndElement(); // "symbol"
@@ -390,7 +390,7 @@ PseudoClass::WriteFPMD(std::string fname)
     writer.StartElement("projector");
     writer.WriteAttribute("l", pot.l);
     writer.WriteAttribute("size", numPoints);
-    
+
     writer.StartElement("radial_potential");
     std::vector<double> vl(numPoints);
     for (int ir=0; ir<numPoints; ir++) {
@@ -450,7 +450,7 @@ PseudoClass::WriteCASINO(std::string fname)
     double r = (double) i/(double)(numPoints-1)*rMax;
     fprintf (fout, "  %22.16e\n", r);
   }
-  
+
   for (int l=0; l<ChannelPotentials.size(); l++) {
     ChannelPotentialClass &pot = (l < ChannelPotentials.size()) ?
       ChannelPotentials[l] : ChannelPotentials[LocalChannel];
@@ -462,7 +462,7 @@ PseudoClass::WriteCASINO(std::string fname)
 	     l);
     for (int i=0; i<numPoints; i++) {
       double r = (double) i/(double)(numPoints-1)*rMax;
-      fprintf (fout, "  %22.16e\n", 
+      fprintf (fout, "  %22.16e\n",
 	       (i==0) ? 0.0 : 2.0*pot.Vlr(r));
     }
   }
@@ -485,7 +485,7 @@ PseudoClass::WriteXML(std::string fname)
 //   xmlFreeTextWriter(writer);
   for (int l=0; l<ChannelPotentials.size(); l++)
     if (!ChannelPotentials[l].HasProjector) {
-      std::cerr << "Missing projector for l=" << l 
+      std::cerr << "Missing projector for l=" << l
 	   << ".  Aborting." << std::endl;
       exit(1);
     }
@@ -538,7 +538,7 @@ PseudoClass::WriteXML(std::string fname)
     writer.EndElement(); // "grid"
   }
 
-  writer.StartElement("semilocal"); 
+  writer.StartElement("semilocal");
   writer.WriteAttribute("units", "hartree");
   writer.WriteAttribute("format", "r*V");
   writer.WriteAttribute("npots-down", (int)ChannelPotentials.size());
@@ -554,10 +554,10 @@ PseudoClass::WriteXML(std::string fname)
   writer.StartElement("pseudowave-functions");
   writer.WriteAttribute("units", "electrons/bohr^(-3/2)");
   writer.WriteAttribute("format", "u_n,l (r) = 1/r R_n,l (r)");
-  writer.WriteAttribute("n-pseudowave-functions-down", 
+  writer.WriteAttribute("n-pseudowave-functions-down",
 			(int)ChannelPotentials.size());
   writer.WriteAttribute("n-pseudowave-functions-up", 0);
-  for (int l=0; l<ChannelPotentials.size(); l++) 
+  for (int l=0; l<ChannelPotentials.size(); l++)
     if (WriteLogGrid && false)
       ChannelPotentials[l].WriteChannelLog (writer, false);
     else
@@ -575,7 +575,7 @@ PseudoClass::Write4Block (FILE *fout, std::vector<double>& data, int indent)
   int N = data.size();
   for (int i=0; i<N/4; i++) {
     for (int j=0; j<indent; j++)   fprintf (fout, " ");
-    fprintf (fout, "%17.11e %1.17e %1.17e %1.17e\n", 
+    fprintf (fout, "%17.11e %1.17e %1.17e %1.17e\n",
 	     data[4*i+0], data[4*i+1], data[4*i+2], data[4*i+3]);
   }
   int last = N/4;
@@ -614,13 +614,13 @@ PseudoClass::WriteUPF (std::string fileName)
   fprintf (fout, "Author:  Kenneth P. Esler  Generation date: %s\n",
 	   date.str().c_str());
 
-	   
+
   fprintf (fout, "</PP_INFO>\n");
 
   // Write PP_HEADER section
   fprintf (fout, "<PP_HEADER>\n");
   fprintf (fout, "   0                  Version Number\n");
-  fprintf (fout, "  %2s                  Element\n", 
+  fprintf (fout, "  %2s                  Element\n",
 	   ZToSymbolMap[AtomicNumber].c_str());
   fprintf (fout, "  NC                  Norm - Conserving pseudopotential\n");
   fprintf (fout, "   F                  Nonlinear Core Correction\n");
@@ -628,7 +628,7 @@ PseudoClass::WriteUPF (std::string fileName)
   F_EX = "SLA";
   F_CORR = "PW";
   F_XC_GRAD = "PBE";
-  F_CORR_GRAD = "PBE"; 
+  F_CORR_GRAD = "PBE";
   fprintf (fout, " %4s %4s %4s %4s  Exchange-Corelation functional\n",
 	   F_EX.c_str(), F_CORR.c_str(), F_XC_GRAD.c_str(), F_CORR_GRAD.c_str());
   fprintf (fout, "  %1.10f        Z valence\n",
@@ -642,13 +642,13 @@ PseudoClass::WriteUPF (std::string fileName)
 	   N);
   fprintf (fout, "  %ld   %ld               Number of Wavefunctions, Number of Projectors\n", ChannelPotentials.size(), ChannelPotentials.size()-1);
   fprintf (fout, " WaveFunctions      nl   l   occ    \n");
-  for (int l=0; l<ChannelPotentials.size(); l++) 
+  for (int l=0; l<ChannelPotentials.size(); l++)
     fprintf (fout, "                    %d%s   %d   %1.4f\n",
 	     ChannelPotentials[l].n_principal,
 	     ChannelMap[l].c_str(),
 	     ChannelPotentials[l].l,
 	     ChannelPotentials[l].Occupation);
-    
+
   fprintf (fout, "</PP_HEADER>\n");
 
   // Write PP_MESH section
@@ -662,7 +662,7 @@ PseudoClass::WriteUPF (std::string fileName)
     dr[i] = 0.5*(PotentialGrid[i+1]-PotentialGrid[i-1]);
   dr[0]   = 2.0*dr[ 1 ]-dr[ 2 ];
   dr[N-1] = 2.0*dr[N-2]-dr[N-3];
-  
+
   Write4Block (fout, dr);
   fprintf (fout, "  </PP_RAB>\n");
   fprintf (fout, "</PP_MESH>\n");
@@ -675,7 +675,7 @@ PseudoClass::WriteUPF (std::string fileName)
   //vloc[0] = 2.0*ChannelPotentials[LocalChannel].Vl(1.0e-7)/1.0e-7;
   Write4Block (fout, vloc);
   fprintf (fout, "</PP_LOCAL>\n");
-  
+
   // Write the nonlocal section
   fprintf (fout, "<PP_NONLOCAL>\n");
   int betaNum = 1;
@@ -711,7 +711,7 @@ PseudoClass::WriteUPF (std::string fileName)
   // is diagonal.  The elements are
   // D_ll = 1.0/<u_l |Vl - Vloc | u_l>
   // We will numerically integrate with Simpson's rule
-  for (int l=0; l<ChannelPotentials.size(); l++) 
+  for (int l=0; l<ChannelPotentials.size(); l++)
     if (l != LocalChannel) {
       const int M = 100000;
       double DijInv = 0.0;
@@ -737,13 +737,13 @@ PseudoClass::WriteUPF (std::string fileName)
       }
       double Dij = 1.0/DijInv;
       fprintf (fout, "    %d %d  %1.20e\n", betaNum, betaNum, Dij);
-      fprintf (stderr, "l = %d, betaNum = %d, norm = %1.10e  Dij = %1.10e\n", 
+      fprintf (stderr, "l = %d, betaNum = %d, norm = %1.10e  Dij = %1.10e\n",
 	       l, betaNum, norm, Dij);
       betaNum++;
     }
   fprintf (fout, "  </PP_DIJ>\n");
   fprintf (fout, "</PP_NONLOCAL>\n");
-  
+
   // Write PP_PSWFC section
   fprintf (fout, "<PP_PSWFC>\n");
   for (int l=0; l<ChannelPotentials.size(); l++) {
@@ -773,7 +773,7 @@ PseudoClass::WriteUPF (std::string fileName)
     }
   }
   Write4Block (fout, rho_at);
-  
+
   fprintf (fout, "</PP_RHOATOM>\n");
 
   // Close the file
@@ -830,21 +830,21 @@ PseudoClass::WriteFHI (std::string fileName)
       double Vl = ChannelPotentials[l].Vlr(r)/r;
       double ul = ChannelPotentials[l].ul(r);
       nrm += 0.5*r*(amesh-1.0/amesh)*ul*ul;
-    
+
       fprintf (fout, "%5d  %20.16e %20.16e %20.16e\n",
 	       i+1, r, ul, Vl);
       r *= amesh;
     }
     fprintf (stderr, "Norm = %1.8f\n", nrm);
   }
-  fclose (fout);  
+  fclose (fout);
 }
 
 
 void
 PseudoClass::WriteABINIT (std::string fileName)
 {
-  if (fileName == "") 
+  if (fileName == "")
     fileName = ZToSymbolMap[AtomicNumber] + ".psp";
 
   FILE *fout = fopen (fileName.c_str(), "w");
@@ -891,7 +891,7 @@ PseudoClass::WriteABINIT (std::string fileName)
     // The local channel needs no projector
     int nproj = (l == lloc) ? 0 : 1;
     fprintf (fout, "%d %5.8f %5.8f %d %5.8f"
-	     "          l,e99.0,e99.9,nproj,rcpsp\n", 
+	     "          l,e99.0,e99.9,nproj,rcpsp\n",
 	     l, e99, e999, nproj, ChannelPotentials[l].Cutoff);
     fprintf (fout, "%14.10f %14.10f %14.10f %14.10f"
 	     "  rms,ekb1,ekb2,epsatm\n", rms, ekb1, ekb2, epsatm);
@@ -907,13 +907,13 @@ PseudoClass::WriteABINIT (std::string fileName)
       x += 0.01;
       double r = 100.0*x*x*x*x*x - 1.0e-8;
       double Vl;
-      if (r >= ChannelPotentials[l].Vl.grid.End()) 
+      if (r >= ChannelPotentials[l].Vl.grid.End())
 	Vl = -1.0*PseudoCharge/r;
       else
 	Vl = ChannelPotentials[l].Vl(r); // /r;
       double Vlold = Vl;
       Vl = ChannelPotentials[l].Vlr(r)/r;
-      if (i == 0) 
+      if (i == 0)
 	Vl = ChannelPotentials[l].Vl(0.0);
       // fprintf (stderr, "r = %1.10f  Interp diff = %1.8e\n", r, Vl-Vlold);
       fprintf (fout, "%23.16e ", Vl);
@@ -987,12 +987,12 @@ PseudoClass::ReadBFD_PP (std::string fileName)
 {
   MemParserClass parser;
   assert(parser.OpenFile (fileName));
-  
+
   assert (parser.FindToken ("Element Symbol:"));
   std::string symbol;
   assert (parser.ReadWord(symbol));
   AtomicNumber = SymbolToZMap[symbol];
-  std::cerr << "Reading element " << symbol 
+  std::cerr << "Reading element " << symbol
        << ", which has Z=" << AtomicNumber << std::endl;
   int numProtons, numProjectors;
   assert (parser.FindToken ("Number of replaced protons:"));
@@ -1128,7 +1128,7 @@ PseudoClass::ReadFHI_PP (std::string fileName)
     double a_ratio;
     assert (parser.ReadInt(numPoints));
     assert (parser.ReadDouble(a_ratio));
-    std::vector<double> points(numPoints), ul(numPoints), Vl(numPoints), 
+    std::vector<double> points(numPoints), ul(numPoints), Vl(numPoints),
       Vlr(numPoints);
     for (int m=0; m<numPoints; m++) {
       int mtest;
@@ -1195,15 +1195,15 @@ PseudoClass::ReadUPF_PP (std::string fileName)
   assert(parser.FindToken("<PP_HEADER>")); assert(parser.NextLine());
   // Skip version number
   assert(parser.NextLine());
-  std::string element, ppType, coreCorrection;  
+  std::string element, ppType, coreCorrection;
   assert(parser.ReadWord(element));  assert(parser.NextLine());
   assert(SymbolToZMap.find(element) != SymbolToZMap.end());
   AtomicNumber = SymbolToZMap[element];
   //  cerr << "Element = \"" << element << "\"\n";
-  
+
   assert(parser.ReadWord(ppType));
   if (ppType != "NC") {
-    std::cerr << "Psuedopotential type \"" << ppType 
+    std::cerr << "Psuedopotential type \"" << ppType
 	 << "\" is not norm-conserving.\n";
     abort();
   }
@@ -1234,9 +1234,9 @@ PseudoClass::ReadUPF_PP (std::string fileName)
   int numWF, numProj;
   assert (parser.ReadInt(numWF)); assert(parser.ReadInt(numProj));
   int numChannels = numProj+1;
-  
+
   ChannelPotentials.resize(numChannels);
-  
+
 
   assert(parser.FindToken("Wavefunctions"));
 //   for (int i=0; i<numWF; i++) {
@@ -1247,22 +1247,22 @@ PseudoClass::ReadUPF_PP (std::string fileName)
 //     assert(parser.ReadDouble(occ));
 //   }
   assert(parser.FindToken("</PP_HEADER>"));
-  
+
   assert(parser.FindToken("<PP_MESH>"));
   assert(parser.FindToken("<PP_R>"));
   std::vector<double> r(numPoints), dr(numPoints);
-  for (int i=0; i<numPoints; i++) 
+  for (int i=0; i<numPoints; i++)
     assert(parser.ReadDouble(r[i]));
   assert(parser.FindToken("</PP_R>"));
   PotentialGrid.Init(r);
 
 
   assert(parser.FindToken("<PP_RAB>"));
-  for (int i=0; i<numPoints; i++) 
+  for (int i=0; i<numPoints; i++)
     assert(parser.ReadDouble(dr[i]));
   assert(parser.FindToken("</PP_RAB>"));
   assert(parser.FindToken("</PP_MESH>"));
-	 
+
   assert(parser.FindToken("<PP_LOCAL>"));
   std::vector<double> Vlocal(numPoints);
   for (int i=0; i<numPoints; i++) {
@@ -1270,7 +1270,7 @@ PseudoClass::ReadUPF_PP (std::string fileName)
     Vlocal[i] *= 0.5;
   }
   assert(parser.FindToken("</PP_LOCAL>"));
-  
+
   assert(parser.FindToken("<PP_NONLOCAL>"));
 
   // Store which channels have nonlocal projectors:
@@ -1291,7 +1291,7 @@ PseudoClass::ReadUPF_PP (std::string fileName)
     assert (parser.ReadInt(npt));
 
     std::vector<double> beta(numPoints);
-    for (int ir=0; ir<numPoints; ir++) 
+    for (int ir=0; ir<numPoints; ir++)
       assert(parser.ReadDouble(beta[ir]));
     assert (parser.FindToken("</PP_BETA>"));
 
@@ -1322,7 +1322,7 @@ PseudoClass::ReadUPF_PP (std::string fileName)
       assert (parser.ReadDouble(occ));
       parser.NextLine();
       std::vector<double> wf(numPoints);
-      for (int ir=0; ir<numPoints; ir++) 
+      for (int ir=0; ir<numPoints; ir++)
 	assert (parser.ReadDouble(wf[ir]));
       // Now, setup the channel potentials
       if (l != llocal) {
@@ -1331,14 +1331,14 @@ PseudoClass::ReadUPF_PP (std::string fileName)
 	std::vector<double> Vl(numPoints), Vlr(numPoints);
 	for (int ir=0; ir<numPoints; ir++) {
 	  Vl[ir]  = Vlocal[ir];
-	  if (wf[ir] != 0.0) 
+	  if (wf[ir] != 0.0)
 	    Vl[ir] += proj.beta[ir]/(2.0*wf[ir]);
 	  Vlr[ir] = r[ir]*Vl[ir];
 	}
 	Vl[0] = 2.0*Vl[1] - Vl[2];
 	Vlr[0] = r[0] * Vl[0];
-	
-// 	for (int ir=0; ir<numPoints; ir++) 
+
+// 	for (int ir=0; ir<numPoints; ir++)
 // 	  fprintf (stderr, "Vl(%8.3f) = %22.16f\n", r[ir], Vl[ir]);
 
 	ChannelPotentials[l].Vl.Init(PotentialGrid, Vl);
@@ -1349,7 +1349,7 @@ PseudoClass::ReadUPF_PP (std::string fileName)
       ChannelPotentials[l].Occupation = occ;
       ChannelPotentials[l].HasProjector = true;
     }
-    
+
     assert (parser.FindToken("/PP_PSWFC"));
   }
 
@@ -1375,7 +1375,7 @@ PseudoClass::ReadUPF_PP (std::string fileName)
     ChannelPotentials[l].Cutoff = rmax;
 
   parser.CloseFile();
-	 
+
   // Read top comment line
 //   assert (parser.ReadLine(temp));
 //   double atomCharge;
@@ -1416,7 +1416,7 @@ PseudoClass::ReadUPF_PP (std::string fileName)
 //     double a_ratio;
 //     assert (parser.ReadInt(numPoints));
 //     assert (parser.ReadDouble(a_ratio));
-//     vector<double> points(numPoints), ul(numPoints), Vl(numPoints), 
+//     vector<double> points(numPoints), ul(numPoints), Vl(numPoints),
 //       Vlr(numPoints);
 //     for (int m=0; m<numPoints; m++) {
 //       int mtest;
@@ -1496,7 +1496,7 @@ PseudoClass::ReadGAMESS_PP (std::string fileName)
     double end = 150.0;
     double step  = 0.00625;
     double scale = end/(expm1(step*(numPoints-1)));
-    for (int i=1; i<numPoints; i++) 
+    for (int i=1; i<numPoints; i++)
       rPoints.push_back(scale * (expm1(step*i)));
   }
   else {
@@ -1518,7 +1518,7 @@ PseudoClass::ReadGAMESS_PP (std::string fileName)
     assert (parser.FindToken("\n"));
     std::vector<double> coefs(ngpot), exponents(ngpot);
     std::vector<int> powers(ngpot);
-    
+
     // The local channel is given first
     for (int i=0; i<ngpot; i++) {
       assert (parser.ReadDouble(    coefs[i]));
@@ -1532,7 +1532,7 @@ PseudoClass::ReadGAMESS_PP (std::string fileName)
 	double r = rPoints[n];
 	double val = 0.0;
 	for (int i=0; i<ngpot; i++)
-	  val += coefs[i] * pow(r,(double)(powers[i]-2)) 
+	  val += coefs[i] * pow(r,(double)(powers[i]-2))
 	    * exp(-exponents[i]*r*r);
 	Vlocal[n]   =   val -(double)PseudoCharge/r;
 	Vlocal_r[n] = r*val - (double)PseudoCharge;
@@ -1546,7 +1546,7 @@ PseudoClass::ReadGAMESS_PP (std::string fileName)
 	double r = rPoints[n];
 	double val = 0.0;
 	for (int i=0; i<ngpot; i++)
-	  val += coefs[i] * pow(r,(double)(powers[i]-2)) 
+	  val += coefs[i] * pow(r,(double)(powers[i]-2))
 	    * exp(-exponents[i]*r*r);
 	Vl[n]   = Vlocal[n] + val;
 	Vl_r[n] = Vlocal_r[n] + r*val;
@@ -1562,7 +1562,7 @@ PseudoClass::ReadGAMESS_PP (std::string fileName)
   if (ChannelPotentials.size() > 1) {
     while (ir > 0 && !done) {
       double vlocal = ChannelPotentials[LocalChannel].Vl(ir);
-      for (int l=0; l<ChannelPotentials.size(); l++) 
+      for (int l=0; l<ChannelPotentials.size(); l++)
 	if (ChannelPotentials[l].l != LocalChannel)
 	  if (fabs(ChannelPotentials[l].Vl(ir) - vlocal) > 1.0e-5)
 	    done = true;
@@ -1590,7 +1590,7 @@ ReadInt (std::string &s, int &n)
 {
   int pos=0;
   std::string sint;
-  while (s[pos] >= '0' && s[pos] <= '9') 
+  while (s[pos] >= '0' && s[pos] <= '9')
     sint.push_back(s[pos++]);
   s.erase(0,pos);
   n = atoi (sint.c_str());
@@ -1602,7 +1602,7 @@ ReadDouble (std::string &s, double &x)
 {
   int pos=0;
   std::string sd;
-  while ((s[pos] >= '0' && s[pos] <= '9') || s[pos]=='.') 
+  while ((s[pos] >= '0' && s[pos] <= '9') || s[pos]=='.')
     sd.push_back(s[pos++]);
   s.erase(0,pos);
   x = strtod(sd.c_str(), (char**)NULL);
@@ -1634,7 +1634,7 @@ Config::Config(std::string s)
 
 
 
-bool 
+bool
 PseudoClass::ReadCASINO_PP (std::string fileName)
 {
   MemParserClass parser;
@@ -1643,7 +1643,8 @@ PseudoClass::ReadCASINO_PP (std::string fileName)
   assert (parser.FindToken("pseudo-charge"));
   assert (parser.ReadInt (AtomicNumber));
   assert (parser.ReadDouble (PseudoCharge));
-  assert (parser.FindToken("(rydberg/hartree/ev):"));
+  assert (parser.FindToken("(rydberg/hartree/ev)"));
+  assert (parser.FindToken("\n"));
   assert (parser.ReadWord(EnergyUnit));
   std::cerr << "EnergyUnit = " << EnergyUnit << std::endl;
   assert (parser.FindToken("(0=s,1=p,2=d..)"));
@@ -1651,7 +1652,7 @@ PseudoClass::ReadCASINO_PP (std::string fileName)
   assert (parser.FindToken("grid points"));
   int numGridPoints;
   assert (parser.ReadInt(numGridPoints));
-  std::vector<double> gridPoints(numGridPoints), Vl(numGridPoints), 
+  std::vector<double> gridPoints(numGridPoints), Vl(numGridPoints),
     Vlr(numGridPoints);
   assert (parser.FindToken ("in"));
   assert (parser.ReadWord(LengthUnit));
@@ -1664,18 +1665,20 @@ PseudoClass::ReadCASINO_PP (std::string fileName)
   }
   PotentialGrid.Init (gridPoints);
   int l=0;
+  int numChannels=0;
   bool done(false);
   while (!done) {
     if (!parser.FindToken("(L="))
       done = true;
     else {
+      numChannels++;
       assert (parser.ReadInt(l));
       assert (parser.FindToken("\n"));
       for (int i=0; i<numGridPoints; i++) {
-	assert (parser.ReadDouble(Vl[i]));
-	Vl[i] *= UnitToHartreeMap[EnergyUnit];
-	Vlr[i] = Vl[i];
-	Vl[i] /= PotentialGrid[i];
+      	assert (parser.ReadDouble(Vl[i]));
+      	Vl[i] *= UnitToHartreeMap[EnergyUnit];
+      	Vlr[i] = Vl[i];
+      	Vl[i] /= PotentialGrid[i];
       }
       Vl[0] = 2.0*Vl[1]-Vl[2];
       ChannelPotentials.push_back(ChannelPotentialClass());
@@ -1684,93 +1687,89 @@ PseudoClass::ReadCASINO_PP (std::string fileName)
       ChannelPotentials[l].l = l;
     }
   }
-  std::cerr << "Found " << (l+1) << " l-channel potentials.\n";
+//  std::cerr << "Found " << (l+1) << " l-channel potentials.\n";
+  std::cerr << "Found " << numChannels << " l-channel potentials.\n";
 
   // Now read the summary file to get core radii
-  if (!parser.OpenFile ("summary.txt")) {
-    std::cerr << "Could not find summary.txt file.  Aborting.\n";
-    abort();
-  }
-  std::string summaryUnits;
-  assert (parser.FindToken("Units:"));
-  assert (parser.ReadWord (summaryUnits));
-  assert (parser.FindToken("core radii"));
-  assert (parser.FindToken("\n"));
-  assert (parser.FindToken("\n"));
-  // Read core radii
-  double rc;
-  for (int i=0; i<=l; i++) {
-    assert (parser.FindToken (ChannelMap[i]));
-    assert (parser.ReadDouble (rc));
-    ChannelPotentials[i].Cutoff = rc;
-  }
+  if (parser.OpenFile ("summary.txt")) {
+    std::string summaryUnits;
+    assert (parser.FindToken("Units:"));
+    assert (parser.ReadWord (summaryUnits));
+    assert (parser.FindToken("core radii"));
+    assert (parser.FindToken("\n"));
+    assert (parser.FindToken("\n"));
+    // Read core radii
+    double rc;
+    for (int i=0; i<=l; i++) {
+      assert (parser.FindToken (ChannelMap[i]));
+      assert (parser.ReadDouble (rc));
+      ChannelPotentials[i].Cutoff = rc;
+    }
 
-  assert (parser.FindToken("r_loc"));
-  assert (parser.FindToken("\n"));
-  assert (parser.FindToken("\n"));
-  assert (parser.FindToken("(Grid)"));
-  double rloc;
-  assert (parser.ReadDouble(rloc));
-  
-  // Overwrite radius with localization radius
-  for (int i=0; i<=l; i++)
-    ChannelPotentials[i].Cutoff = rloc;
+    assert (parser.FindToken("r_loc"));
+    assert (parser.FindToken("\n"));
+    assert (parser.FindToken("\n"));
+    assert (parser.FindToken("(Grid)"));
+    double rloc;
+    assert (parser.ReadDouble(rloc));
 
-  // Find ground state occupations
-  assert (parser.FindToken ("Eigenvalues of the"));
-  std::string GSconfig;
-  parser.ReadWord (GSconfig);
-  Config c(GSconfig);
-  for (int is=0; is<c.size(); is++)
-    ChannelPotentials[c[is].l].Occupation = c[is].occ;
-  // char cStr[2];
-  // cStr[1] = '\0';
-  // cerr << "GSconfig = " << GSconfig << endl;
-  // cStr[0] = GSconfig[1];
-  // l = ChannelRevMap[cStr];
-  // assert (GSconfig[2] == '(');
-  // ChannelPotentials[l].Occupation = (double)(GSconfig[3]-'0');
-  // assert (GSconfig[4] == ')');
-  // if (GSconfig.size() > 5) {
-  //   cStr[0] = GSconfig[6];
-  //   l = ChannelRevMap[cStr];
-  //   assert (GSconfig[7] == '(');
-  //   ChannelPotentials[l].Occupation = (double)(GSconfig[8]-'0');
-  //   assert (GSconfig[9] == ')');
-  // }
-  // if (GSconfig.size() > 10) {
-  //   cStr[0] = GSconfig[11];
-  //   l = ChannelRevMap[cStr];
-  //   assert (GSconfig[12] == '(');
-  //   ChannelPotentials[l].Occupation = (double)(GSconfig[13]-'0');
-  //   assert (GSconfig[14] == ')');
-  // }    
+    // Overwrite radius with localization radius
+    for (int i=0; i<=l; i++)
+      ChannelPotentials[i].Cutoff = rloc;
 
-  // Now read eigenvalues of ground state
-  assert (parser.FindToken ("Pseudo HF"));
-  assert (parser.FindToken ("\n"));
-  assert (parser.FindToken ("\n"));
-  std::string channel;
-  parser.ReadWord (channel);
-  while ((channel=="s") || (channel=="p") || (channel=="d") || 
-	 (channel=="f") || (channel=="g")) {
-    int l = ChannelRevMap[channel];
-    std::string tmp;
-    parser.ReadWord (tmp);
-    assert (parser.ReadDouble (ChannelPotentials[l].Eigenvalue));
-    ChannelPotentials[l].Eigenvalue *= UnitToHartreeMap[summaryUnits];
-    std::cerr << "Eigenvalue for " << channel << "-channel = " 
-	 << ChannelPotentials[l].Eigenvalue << std::endl;
-    parser.ReadLine (tmp);
+    // Find ground state occupations
+    assert (parser.FindToken ("Eigenvalues of the"));
+    std::string GSconfig;
+    parser.ReadWord (GSconfig);
+    Config c(GSconfig);
+    for (int is=0; is<c.size(); is++)
+      ChannelPotentials[c[is].l].Occupation = c[is].occ;
+
+    // Now read eigenvalues of ground state
+    assert (parser.FindToken ("Pseudo HF"));
+    assert (parser.FindToken ("\n"));
+    assert (parser.FindToken ("\n"));
+    std::string channel;
     parser.ReadWord (channel);
+    while ((channel=="s") || (channel=="p") || (channel=="d") ||
+  	 (channel=="f") || (channel=="g")) {
+      int l = ChannelRevMap[channel];
+      std::string tmp;
+      parser.ReadWord (tmp);
+      assert (parser.ReadDouble (ChannelPotentials[l].Eigenvalue));
+      ChannelPotentials[l].Eigenvalue *= UnitToHartreeMap[summaryUnits];
+      std::cerr << "Eigenvalue for " << channel << "-channel = "
+  	 << ChannelPotentials[l].Eigenvalue << std::endl;
+      parser.ReadLine (tmp);
+      parser.ReadWord (channel);
+    }
+    // Read total energy
+    assert (parser.FindToken ("total energy"));
+    assert (parser.FindToken ("="));
+    assert (parser.ReadDouble (TotalEnergy));
+    TotalEnergy *= UnitToHartreeMap[summaryUnits];
+    std::cerr << "Total energy = " << TotalEnergy << std::endl;
+  } else {
+    // Now, figure out what rcut should be
+    double rmax = PotentialGrid.End();
+    int n = PotentialGrid.NumPoints()-1;
+    bool diff = false;
+    while ((n>0) && !diff) {
+      double r = PotentialGrid[n];
+      rmax = r;
+      for (int l1=0; l1<numChannels; l1++) {
+        double Vl1 = ChannelPotentials[l1].Vl(r);
+        for (int l2=l1+1; l2<numChannels; l2++) {
+    double Vl2 = ChannelPotentials[l2].Vl(r);
+    if (fabs(Vl1-Vl2) > 1.0e-6)
+      diff = true;
+        }
+      }
+      n--;
+    }
+    for (int l=0; l<ChannelPotentials.size(); l++)
+      ChannelPotentials[l].Cutoff = rmax;
   }
-  // Read total energy
-  assert (parser.FindToken ("total energy"));
-  assert (parser.FindToken ("="));
-  assert (parser.ReadDouble (TotalEnergy));
-  TotalEnergy *= UnitToHartreeMap[summaryUnits];
-  std::cerr << "Total energy = " << TotalEnergy << std::endl;
-
 //   for (int i=0; i<=l; i++)
 //     ChannelPotentials[i].Cutoff = rloc;
 
@@ -1779,7 +1778,7 @@ PseudoClass::ReadCASINO_PP (std::string fileName)
 
 
 /// Note:  the pseudopotentials must be read before the wave
-/// functions.  
+/// functions.
 bool
 PseudoClass::ReadCASINO_WF (std::string fileName, int l)
 {
@@ -1828,8 +1827,8 @@ PseudoClass::ReadCASINO_WF (std::string fileName, int l)
     }
   }
   if (!orbFound) {
-    std::cerr << "Could not file orbital with l=" << l 
-	 << " in file ""filename""" << std::endl; 
+    std::cerr << "Could not file orbital with l=" << l
+	 << " in file ""filename""" << std::endl;
     exit(1);
   }
   return true;
@@ -1937,7 +1936,7 @@ int main(int argc, char **argv)
     nlpp.ReadCASINO_PP(parser.GetArg("casino_pot"));
   else if (parser.Found ("bfd_pot"))
     nlpp.ReadBFD_PP (parser.GetArg ("bfd_pot"));
-  else if (parser.Found ("fhi_pot")) 
+  else if (parser.Found ("fhi_pot"))
     nlpp.ReadFHI_PP (parser.GetArg ("fhi_pot"));
   else if (parser.Found ("upf_pot"))
     nlpp.ReadUPF_PP (parser.GetArg ("upf_pot"));
@@ -1953,7 +1952,7 @@ int main(int argc, char **argv)
   if (!nlpp.HaveProjectors()) {
     int numChannels = nlpp.GetNumChannels();
     if (numChannels > 0) {
-      if (parser.Found ("s_ref")) 
+      if (parser.Found ("s_ref"))
 	nlpp.CalcProjector (parser.GetArg("s_ref"), 0);
       else if (parser.Found("casino_us"))
 	nlpp.ReadCASINO_WF(parser.GetArg("casino_us"), 0);
@@ -2009,8 +2008,8 @@ int main(int argc, char **argv)
     }
   }
 
-  
-  if (parser.Found("xml")) 
+
+  if (parser.Found("xml"))
     nlpp.WriteXML(parser.GetArg("xml"));
   if (parser.Found("tm"))
     nlpp.WriteABINIT(parser.GetArg("tm"));
@@ -2074,7 +2073,7 @@ PseudoClass::GetNextState (std::string &state, int &n, int &l, double &occ)
     abort();
   }
   state.erase(0,3);
-  
+
   std::string occString;
   while ((state.length() > 0) && (state[0] != ')')) {
     occString.append (state.substr(0,1));
@@ -2088,7 +2087,7 @@ PseudoClass::GetNextState (std::string &state, int &n, int &l, double &occ)
     abort();
   }
   state.erase(0,1);
-  
+
   return true;
 }
 
@@ -2121,7 +2120,7 @@ PseudoClass::CalcProjector(std::string refstate, int lchannel)
     occList.push_back(0.0);
     lindex = nList.size()-1;
   }
-    
+
   atom.RadialWFs.resize(nList.size());
   for (int i=0; i<atom.RadialWFs.size(); i++) {
     // atom.RadialWFs(i).n = lList[i]+1;
@@ -2131,7 +2130,7 @@ PseudoClass::CalcProjector(std::string refstate, int lchannel)
     atom.RadialWFs(i).Energy = -0.5;
   }
   // Define a grid for solving
-  OptimalGrid *grid = new OptimalGrid(PseudoCharge, PotentialGrid.End());
+  std::shared_ptr<Grid> grid = std::make_shared<OptimalGrid>(PseudoCharge, PotentialGrid.End());
   atom.SetGrid (grid);
   // Set the potential
   atom.SetBarePot (this);
@@ -2139,7 +2138,7 @@ PseudoClass::CalcProjector(std::string refstate, int lchannel)
   atom.NewMix = DensityMix;
   std::cerr << "Solving atom for reference state " << saveState << ":\n";
   atom.Solve();
-  
+
   // Now, initialize the channel u functions
   std::vector<double> ul(PotentialGrid.NumPoints()),
     rhoAtom(PotentialGrid.NumPoints());
@@ -2169,8 +2168,8 @@ PseudoClass::d2Vdr2(double r)
 
 double
 PseudoClass::V(int l, double r)
-{ 
-  return ChannelPotentials[l].Vl(r); 
+{
+  return ChannelPotentials[l].Vl(r);
 }
 
 double
@@ -2190,4 +2189,3 @@ void
 PseudoClass::Read(IOSectionClass &in)
 {
 }
-

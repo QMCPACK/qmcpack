@@ -20,6 +20,7 @@
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/CUDATypes.h"
+#include "HamiltonianRef.h"
 
 namespace qmcplusplus
 {
@@ -38,12 +39,12 @@ public:
   QMCCostFunctionCUDA(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionCUDA();
+  ~QMCCostFunctionCUDA() override;
 
-  void getConfigurations(const std::string& aroot);
-  void checkConfigurations();
-  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0);
-  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
+  void getConfigurations(const std::string& aroot) override;
+  void checkConfigurations() override;
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
   using CTS = CUDAGlobalTypes;
@@ -51,6 +52,9 @@ protected:
   typedef TrialWaveFunction::RealMatrix_t RealMatrix_t;
   typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
   typedef TrialWaveFunction::GradMatrix_t GradMatrix_t;
+
+  ///Hamiltonians that depend on the optimization: KE
+  HamiltonianRef H_KE;
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
   std::vector<std::vector<Return_rt>> TempDerivRecords;
@@ -64,8 +68,8 @@ protected:
   std::vector<Matrix<Return_rt>*> HDerivRecords;
 
   Return_rt CSWeight;
-  void resetPsi(bool final_reset = false);
-  Return_rt correlatedSampling(bool needDerivs);
+  void resetPsi(bool final_reset = false) override;
+  Return_rt correlatedSampling(bool needDerivs) override;
 };
 } // namespace qmcplusplus
 #endif

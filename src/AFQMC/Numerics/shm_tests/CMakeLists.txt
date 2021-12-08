@@ -9,15 +9,17 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR afqmc_shm_numerics)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR afqmc_shm_numerics)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-ADD_EXECUTABLE(${UTEST_EXE} test_shm_gemm.cpp) 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil)
+add_executable(${UTEST_EXE} test_shm_gemm.cpp)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil)
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set_property(
+  TEST ${UTEST_NAME}
+  APPEND
+  PROPERTY LABELS "afqmc")

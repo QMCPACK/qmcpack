@@ -125,9 +125,6 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 // test SR and LR pieces separately
 TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
@@ -211,7 +208,7 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   //  QMCHamiltonian::makeClone
   //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
   TrialWaveFunction psi;
-  std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi)));
+  std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi).release()));
   clone->evaluate(elec);
   REQUIRE(clone->addionion == force.addionion);
   REQUIRE(clone->forces_IonIon[0][0] == Approx(-0.0228366));
@@ -228,9 +225,6 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 // 3 H atoms randomly distributed in a box
 TEST_CASE("fccz h3", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);

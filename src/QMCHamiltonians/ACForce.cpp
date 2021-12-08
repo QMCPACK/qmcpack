@@ -30,7 +30,7 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
       swt(target, source)
 {
   prefix = "ACForce";
-  myName = prefix;
+  name_  = prefix;
 
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
@@ -40,15 +40,15 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   delta = 1e-4;
 };
 
-OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   APP_ABORT("ACForce::makeClone(ParticleSet&,TrialWaveFunction&) shouldn't be called");
   return nullptr;
 }
 
-OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
+std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
-  OperatorBase* myclone = new ACForce(ions, qp, psi_in, ham_in);
+  std::unique_ptr<ACForce> myclone = std::make_unique<ACForce>(ions, qp, psi_in, ham_in);
   return myclone;
 }
 
@@ -77,9 +77,11 @@ bool ACForce::put(xmlNodePtr cur)
 void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
 {
   //The following line is modified
-  OperatorBase* myclone = makeClone(qp, psi, ham_in);
+  std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi, ham_in);
   if (myclone)
-    ham_in.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
+  {
+    ham_in.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
+  }
 }
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 {
@@ -90,7 +92,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   sw_grad     = 0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
+  value_ = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
 
   if (useSpaceWarp)
   {
@@ -153,7 +155,7 @@ void ACForce::setObservables(PropertySetType& plist)
       // add the minus one to be a force.
       plist[myindex++] = -hf_force[iat][iondim];
       plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
-      plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
+      plist[myindex++] = -value_ * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
 
       //TODO: Remove when ACForce is production ready
@@ -175,7 +177,7 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myindex++] = -hf_force[iat][iondim];
       plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
-      plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
+      plist[myindex++] = -value_ * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       //TODO: Remove when ACForce is production ready
       //      if(useSpaceWarp)

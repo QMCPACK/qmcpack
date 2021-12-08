@@ -17,7 +17,7 @@
 #include "CoulombPBCAA_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -60,15 +60,9 @@ void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 #endif
 }
 
-OperatorBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCAA_CUDA* myclone;
-  if (is_active)
-    myclone = new CoulombPBCAA_CUDA(qp, is_active, true);
-  else
-    myclone = new CoulombPBCAA_CUDA(*this); //nothing needs to be re-evaluated
-  myclone->SRSpline = SRSpline;
-  return myclone;
+  return std::make_unique<CoulombPBCAA_CUDA>(*this);
 }
 
 void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
@@ -76,11 +70,11 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
   if (is_active)
   {
     StructFact& SK = *(P.SK);
-    Numk           = SK.KLists.numk;
+    Numk           = SK.getKLists().numk;
     gpu::host_vector<CUDA_PRECISION_FULL> kpointsHost(OHMMS_DIM * Numk);
     for (int ik = 0; ik < Numk; ik++)
       for (int dim = 0; dim < OHMMS_DIM; dim++)
-        kpointsHost[ik * OHMMS_DIM + dim] = SK.KLists.kpts_cart[ik][dim];
+        kpointsHost[ik * OHMMS_DIM + dim] = SK.getKLists().kpts_cart[ik][dim];
     kpointsGPU = kpointsHost;
     gpu::host_vector<CUDA_PRECISION_FULL> FkHost(Numk);
     for (int ik = 0; ik < Numk; ik++)
@@ -91,14 +85,14 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
 
 void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
+  auto& walkers = W.WalkerList;
   // Short-circuit for constant contribution (e.g. fixed ions)
   if (!is_active)
   {
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
-      LocalEnergy[iw] += Value;
+      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = value_;
+      LocalEnergy[iw] += value_;
     }
     return;
   }
@@ -162,7 +156,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw] + myConst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = SumHost[iw] + myConst;
     LocalEnergy[iw] += SumHost[iw] + myConst;
   }
 }

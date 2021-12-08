@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_COSTFUNCTIONCROWDDATA_H
 
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
-#include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +35,7 @@ public:
                         ParticleSet& P,
                         TrialWaveFunction& Psi,
                         QMCHamiltonian& H,
-                        QMCHamiltonian& H_KE_Node,
+                        std::vector<std::string>& H_KE_node_names,
                         RandomGenerator_t& Rng);
 
   /// Set the log_psi_* arrays to zero
@@ -60,6 +60,7 @@ public:
   Return_rt& get_wgt() { return wgt_; }
   Return_rt& get_wgt2() { return wgt2_; }
 
+  DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
 
 private:
   // Temporary vectors for the call to flex_evaluateDeltaLogSetup
@@ -72,6 +73,9 @@ private:
   UPtrVector<QMCHamiltonian> h_ptr_list_;
   UPtrVector<QMCHamiltonian> h0_ptr_list_;
   UPtrVector<RandomGenerator_t> rng_ptr_list_;
+
+  // proivides multi walker resource
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
 
   // Saved RNG state to reset to before correlated sampling
   std::unique_ptr<RandomGenerator_t> rng_save_ptr_;

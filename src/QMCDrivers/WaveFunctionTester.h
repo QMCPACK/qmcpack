@@ -52,10 +52,10 @@ public:
                      ParticleSetPool& ptclPool,
                      Communicate* comm);
 
-  ~WaveFunctionTester();
+  ~WaveFunctionTester() override;
 
-  bool run();
-  bool put(xmlNodePtr q);
+  bool run() override;
+  bool put(xmlNodePtr q) override;
 
 private:
   ParticleSetPool& PtclPool;
@@ -109,7 +109,7 @@ private:
 
   bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1, std::stringstream& fail_log, bool& ignore);
 
-  QMCRunType getRunType() { return QMCRunType::WF_TEST; }
+  QMCRunType getRunType() override { return QMCRunType::WF_TEST; }
   //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
   std::ofstream fout;

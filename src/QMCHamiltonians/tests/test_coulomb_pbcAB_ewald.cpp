@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "LongRange/EwaldHandler3D.h"
@@ -29,9 +28,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(1.0);
@@ -57,6 +53,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
   ions.Lattice                      = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;
@@ -75,13 +72,11 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)     = -1;
   tspecies(massIdx, upIdx)       = 1.0;
 
+  elec.resetGroups();
   elec.createSK();
-
   elec.addTable(ions);
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
@@ -90,7 +85,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Self energy plus Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0523598776 * 2)); //not validated
 
   double val_ei = cab.evaluate(elec);
@@ -112,9 +107,6 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
@@ -142,6 +134,7 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 2;
   ions.Lattice                      = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;
@@ -164,14 +157,11 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)     = -1;
   tspecies(massIdx, upIdx)       = 1.0;
 
-  elec.createSK();
-
-  elec.addTable(ions);
   elec.resetGroups();
+  elec.createSK();
+  elec.addTable(ions);
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
@@ -179,7 +169,7 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0277076538 * 4)); //not validated
 
 

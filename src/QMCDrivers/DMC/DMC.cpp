@@ -28,7 +28,7 @@
 #include "Message/OpenMP.h"
 #include "Utilities/Timer.h"
 #include "Utilities/RunTimeManager.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/qmc_common.h"
 #include "Utilities/FairDivide.h"
@@ -70,6 +70,7 @@ void DMC::resetUpdateEngines()
               "reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
   makeClones(W, Psi, H);
   Timer init_timer;
+  bool spinor = false;
   if (Movers.empty())
   {
     W.loadEnsemble(wClones);
@@ -82,7 +83,7 @@ void DMC::resetUpdateEngines()
     }
     //if(qmc_driver_mode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
@@ -108,8 +109,6 @@ void DMC::resetUpdateEngines()
         o << "\n  Walkers are killed when a node crossing is detected";
       else
         o << "\n  DMC moves are rejected when a node crossing is detected";
-      if (SpinMoves == "yes")
-        o << "\n  Spins treated as dynamic variable with SpinMass: " << SpinMass;
       app_log() << o.str() << std::endl;
     }
 #pragma omp parallel for
@@ -121,13 +120,14 @@ void DMC::resetUpdateEngines()
       traceClones[ip] = Traces->makeClone();
 #endif
 #ifdef USE_FAKE_RNG
-      Rng[ip] = new FakeRandom();
+      Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
-      hClones[ip]->setRandomGenerator(Rng[ip]);
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
 #endif
-      if (SpinMoves == "yes")
+      if (W.is_spinor_)
       {
+        spinor = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
           Movers[ip] = new SODMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
@@ -177,6 +177,10 @@ void DMC::resetUpdateEngines()
     }
   }
 #endif
+
+  if (spinor)
+    app_log() << "   Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
+
   branchEngine->checkParameters(W);
   int mxage = mover_MaxAge;
   if (fixW)
@@ -287,7 +291,7 @@ bool DMC::run()
     {
 #ifndef USE_FAKE_RNG
       for (int ip = 0; ip < NumThreads; ip++)
-        *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+        *RandomNumberControl::Children[ip] = *Rng[ip];
 #endif
     }
     recordBlock(block);
@@ -311,7 +315,7 @@ bool DMC::run()
 
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ip++)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    *RandomNumberControl::Children[ip] = *Rng[ip];
 #endif
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)

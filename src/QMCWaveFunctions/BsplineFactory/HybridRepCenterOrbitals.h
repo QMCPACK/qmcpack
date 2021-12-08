@@ -17,13 +17,18 @@
 #ifndef QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 #define QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
+#include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
+template<class BSPLINESPO>
+class HybridRepSetReader;
+
 template<typename ST>
 class AtomicOrbitals
 {
@@ -138,7 +143,7 @@ public:
   bool read_splines(hdf_archive& h5f)
   {
     einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
-    int lmax_in, spline_npoints_in;
+    int lmax_in = 0, spline_npoints_in = 0;
     ST spline_radius_in;
     if (!h5f.readEntry(lmax_in, "l_max") || lmax_in != lmax)
       return false;
@@ -180,7 +185,7 @@ public:
 
     for (size_t lm = 0; lm < lm_tot; lm++)
     {
-#pragma omp simd aligned(val, local_val: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(val, local_val : QMC_SIMD_ALIGNMENT)
       for (size_t ib = 0; ib < myV.size(); ib++)
         val[ib] += Ylm_v[lm] * local_val[ib];
       local_val += Npad;
@@ -209,7 +214,7 @@ public:
       ST* restrict local_val = localV.data();
       for (size_t lm = 0; lm < lm_tot; lm++)
       {
-#pragma omp simd aligned(val, local_val: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(val, local_val : QMC_SIMD_ALIGNMENT)
         for (size_t ib = 0; ib < m; ib++)
           val[ib] += Ylm_v[lm] * local_val[ib];
         local_val += Npad;
@@ -278,7 +283,7 @@ public:
         const ST& r_power    = r_power_minus_l[lm];
         const ST Ylm_rescale = Ylm_v[lm] * r_power;
         const ST rhat_dot_G  = (rhatx * Ylm_gx[lm] + rhaty * Ylm_gy[lm] + rhatz * Ylm_gz[lm]) * r_power;
-#pragma omp simd aligned(val, g0, g1, g2, lapl, local_val, local_grad, local_lapl: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(val, g0, g1, g2, lapl, local_val, local_grad, local_lapl : QMC_SIMD_ALIGNMENT)
         for (size_t ib = 0; ib < myV.size(); ib++)
         {
           const ST local_v = local_val[ib];
@@ -324,7 +329,7 @@ public:
         const ST& r_power    = r_power_minus_l[lm];
         const ST Ylm_rescale = Ylm_v[lm] * r_power;
         const ST rhat_dot_G  = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz) * r_power * r;
-#pragma omp simd aligned(val, g0, g1, g2, lapl, local_val, local_grad, local_lapl: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(val, g0, g1, g2, lapl, local_val, local_grad, local_lapl : QMC_SIMD_ALIGNMENT)
         for (size_t ib = 0; ib < myV.size(); ib++)
         {
           const ST local_v = local_val[ib];
@@ -355,7 +360,7 @@ public:
       std::cout << "Warning: an electron is on top of an ion!" << std::endl;
       // strictly zero
 
-#pragma omp simd aligned(val, lapl, local_val, local_lapl: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(val, lapl, local_val, local_lapl : QMC_SIMD_ALIGNMENT)
       for (size_t ib = 0; ib < myV.size(); ib++)
       {
         // value
@@ -372,7 +377,7 @@ public:
         //std::cout << std::endl;
         for (size_t lm = 1; lm < 4; lm++)
         {
-#pragma omp simd aligned(g0, g1, g2, local_grad: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(g0, g1, g2, local_grad : QMC_SIMD_ALIGNMENT)
           for (size_t ib = 0; ib < myV.size(); ib++)
           {
             const ST local_g = local_grad[ib];
@@ -401,8 +406,8 @@ class HybridRepCenterOrbitals
 public:
   static const int D = 3;
   using PointType    = typename AtomicOrbitals<ST>::PointType;
-  using RealType     = typename DistanceTableData::RealType;
-  using PosType      = typename DistanceTableData::PosType;
+  using RealType     = typename DistanceTable::RealType;
+  using PosType      = typename DistanceTable::PosType;
 
 private:
   ///atomic centers
@@ -536,7 +541,7 @@ public:
   template<typename VV>
   inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
-    const auto& ei_dist  = P.getDistTable(myTableID);
+    const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
@@ -564,7 +569,7 @@ public:
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
+    return VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases
@@ -572,11 +577,11 @@ public:
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
+    dist_r               = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
-      myCenter.evaluateValues(VP.getDistTable(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(VP.getDistTableAB(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
@@ -591,11 +596,11 @@ public:
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
+    dist_r               = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
     if (dist_r < myCenter.getCutoff())
     {
-      const auto& displ = VP.getDistTable(myTableID).getDisplacements();
+      const auto& displ = VP.getDistTableAB(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
         r_image       = myCenter.getCenterPos() - displ[ivp][center_idx];
@@ -612,7 +617,7 @@ public:
   template<typename VV, typename GV>
   inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
-    const auto& ei_dist  = P.getDistTable(myTableID);
+    const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
@@ -631,7 +636,7 @@ public:
   template<typename VV, typename GV, typename HT>
   inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
-    const auto& ei_dist  = P.getDistTable(myTableID);
+    const auto& ei_dist  = P.getDistTableAB(myTableID);
     const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
     if (center_idx < 0)
       abort();
@@ -706,8 +711,12 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class HybridRepSetReader;
+  friend class qmcplusplus::HybridRepSetReader;
 };
 
+extern template class AtomicOrbitals<float>;
+extern template class AtomicOrbitals<double>;
+extern template class HybridRepCenterOrbitals<float>;
+extern template class HybridRepCenterOrbitals<double>;
 } // namespace qmcplusplus
 #endif

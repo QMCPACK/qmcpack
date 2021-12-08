@@ -79,10 +79,10 @@ private:
 
 public:
   /// Returns the type of the grid (in this case LINEAR)
-  GridType Type() { return (LINEAR); }
+  GridType Type() override { return (LINEAR); }
 
   /// Returns the index of the nearest point below r.
-  int ReverseMap(double r) { return ((int)nearbyint((r - Start) * deltainv - 0.5)); }
+  int ReverseMap(double r) override { return ((int)nearbyint((r - Start) * deltainv - 0.5)); }
 
   /// Initializes the linear grid.
   inline void Init(double start, double end, int numpoints)
@@ -98,7 +98,7 @@ public:
     CheckRoundingMode();
   }
 
-  void Write(IOSectionClass& outSection)
+  void Write(IOSectionClass& outSection) override
   {
     outSection.WriteVar("Points", grid);
     outSection.WriteVar("Type", std::string("Linear"));
@@ -107,7 +107,7 @@ public:
     outSection.WriteVar("NumPoints", NumPoints);
   }
 
-  void Read(IOSectionClass& inSection)
+  void Read(IOSectionClass& inSection) override
   {
     assert(inSection.ReadVar("Start", Start));
     assert(inSection.ReadVar("End", End));
@@ -142,10 +142,10 @@ class GeneralGrid : public Grid
 {
 public:
   /// Returns the type of the grid (in this case GENERAL)
-  GridType Type() { return (GENERAL); }
+  GridType Type() override { return (GENERAL); }
 
   /// Returns the index of the nearest point below r.
-  int ReverseMap(double r)
+  int ReverseMap(double r) override
   {
     if (r <= grid(0))
       return (0);
@@ -169,13 +169,13 @@ public:
     }
   }
 
-  void Write(IOSectionClass& outSection)
+  void Write(IOSectionClass& outSection) override
   {
     outSection.WriteVar("Points", grid);
     outSection.WriteVar("Type", std::string("General"));
   }
 
-  void Read(IOSectionClass& inSection)
+  void Read(IOSectionClass& inSection) override
   {
     assert(inSection.ReadVar("Points", grid));
     Start     = grid(0);
@@ -208,9 +208,9 @@ private:
   double a, b;
 
 public:
-  GridType Type() { return (OPTIMAL); }
+  GridType Type() override { return (OPTIMAL); }
 
-  int ReverseMap(double r)
+  int ReverseMap(double r) override
   {
     if ((r / a) < 1e-6)
       return ((int)floor(r / (a * b) + 0.5) - 1);
@@ -264,7 +264,7 @@ public:
   /// This form of the constructor takes a, b, and the number of points.
   OptimalGrid(double aval, double bval, int numPoints) { Init(aval, bval, numPoints); }
 
-  void Write(IOSectionClass& outSection)
+  void Write(IOSectionClass& outSection) override
   {
     outSection.WriteVar("Points", grid);
     outSection.WriteVar("Type", std::string("Optimal"));
@@ -273,7 +273,7 @@ public:
     outSection.WriteVar("NumPoints", NumPoints);
   }
 
-  void Read(IOSectionClass& inSection)
+  void Read(IOSectionClass& inSection) override
   {
     double aval, bval;
     int numPoints;
@@ -358,9 +358,9 @@ private:
   double Ratio;
 
 public:
-  GridType Type() { return (OPTIMAL2); }
+  GridType Type() override { return (OPTIMAL2); }
 
-  int ReverseMap(double r)
+  int ReverseMap(double r) override
   {
     //     if ((r/a) < 1e-6)
     //       return ((int)floor(r/(a*b)));
@@ -416,7 +416,7 @@ public:
   /// This form of the constructor takes a, b, and the number of points.
   OptimalGrid2(double start, double end, double ratio, int numpoints) { Init(start, end, ratio, numpoints); }
 
-  void Write(IOSectionClass& outSection)
+  void Write(IOSectionClass& outSection) override
   {
     outSection.WriteVar("Points", grid);
     outSection.WriteVar("Type", std::string("Optimal2"));
@@ -426,7 +426,7 @@ public:
     outSection.WriteVar("NumPoints", NumPoints);
   }
 
-  void Read(IOSectionClass& inSection)
+  void Read(IOSectionClass& inSection) override
   {
     double start, end, ratio;
     int numPoints;
@@ -451,16 +451,16 @@ private:
 public:
   // ratio gives approximately the largest grid spacing divided by the
   // smallest.
-  GridType Type() { return CENTER; }
+  GridType Type() override { return CENTER; }
 
-  int ReverseMap(double x)
+  int ReverseMap(double x) override
   {
     x -= center;
     double index = copysign(log1p(std::abs(x) * aInv) * bInv, x);
     return (int)floor(HalfPoints + index - EvenHalf);
   }
-  void Write(IOSectionClass& out) {}
-  void Read(IOSectionClass& in) {}
+  void Write(IOSectionClass& out) override {}
+  void Read(IOSectionClass& in) override {}
   void Init(double start, double end, double ratio, int numPoints)
   {
     assert(ratio > 1.0);
@@ -511,9 +511,9 @@ class LogGrid : public Grid
 public:
   double Z, r0, Spacing;
 
-  GridType Type() { return (LOG); }
+  GridType Type() override { return (LOG); }
 
-  int ReverseMap(double r) { return ((int)(floor(log(Z * r / r0) / log(Spacing)))); }
+  int ReverseMap(double r) override { return ((int)(floor(log(Z * r / r0) / log(Spacing)))); }
 
   LogGrid()
   {
@@ -535,7 +535,7 @@ public:
   }
 
 
-  void Write(IOSectionClass& outSection)
+  void Write(IOSectionClass& outSection) override
   {
     outSection.WriteVar("Points", grid);
     outSection.WriteVar("Type", std::string("Log"));
@@ -543,7 +543,7 @@ public:
     outSection.WriteVar("Spacing", Spacing);
   }
 
-  void Read(IOSectionClass& inSection)
+  void Read(IOSectionClass& inSection) override
   {
     double tempr0, tempSpacing;
     int tempNumPoints;
@@ -583,9 +583,9 @@ private:
 public:
   double Start, End, Cluster;
 
-  GridType Type() { return (CLUSTER); }
+  GridType Type() override { return (CLUSTER); }
 
-  int ReverseMap(double r) { return ((int)floor(dri / (r - rr) - 1.0 + x0)); }
+  int ReverseMap(double r) override { return ((int)floor(dri / (r - rr) - 1.0 + x0)); }
 
   void Init(double start, double end, double cluster, int numpoints)
   {
@@ -602,7 +602,7 @@ public:
       grid(i) = rr + dri / (i + 1.0 - x0);
   }
 
-  void Write(IOSectionClass& outSection)
+  void Write(IOSectionClass& outSection) override
   {
     outSection.WriteVar("Points", grid);
     outSection.WriteVar("Type", std::string("Cluster"));
@@ -612,7 +612,7 @@ public:
     outSection.WriteVar("NumPoints", NumPoints);
   }
 
-  void Read(IOSectionClass& inSection)
+  void Read(IOSectionClass& inSection) override
   {
     double start, end, cluster;
     int numpoints;
@@ -630,31 +630,31 @@ public:
 };
 
 
-inline Grid* ReadGrid(IOSectionClass& inSection)
+inline std::shared_ptr<Grid> ReadGrid(IOSectionClass& inSection)
 {
   std::string Type;
   assert(inSection.ReadVar("Type", Type));
 
-  Grid* newGrid;
+  std::shared_ptr<Grid> newGrid;
   if (Type == "Linear")
-    newGrid = new LinearGrid;
+    newGrid = std::make_shared<LinearGrid>();
   else if (Type == "General")
-    newGrid = new GeneralGrid;
+    newGrid = std::make_shared<GeneralGrid>();
   else if (Type == "Optimal")
-    newGrid = new OptimalGrid;
+    newGrid = std::make_shared<OptimalGrid>();
   else if (Type == "Optimal2")
-    newGrid = new OptimalGrid2;
+    newGrid = std::make_shared<OptimalGrid2>();
   else if (Type == "Log")
-    newGrid = new LogGrid;
+    newGrid = std::make_shared<LogGrid>();
   else if (Type == "Cluster")
-    newGrid = new ClusterGrid;
+    newGrid = std::make_shared<ClusterGrid>();
   else
   {
     std::cerr << "Unrecognized Grid type " << Type << "\n";
     exit(1);
   }
   newGrid->Read(inSection);
-  return (newGrid);
+  return newGrid;
 }
 
 

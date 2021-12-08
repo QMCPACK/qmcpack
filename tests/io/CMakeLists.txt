@@ -4,7 +4,15 @@
 
 message("Adding I/O tests for QMCPACK")
 
-function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check_script use_for_coverage)
+function(
+  RUN_RESTART_AND_CHECK
+  base_name
+  base_dir
+  input_file
+  procs
+  threads
+  check_script
+  use_for_coverage)
 
   # "run restart and check" function does 3 things:
   #  1. run qmcpack executable on $input_file.in.xml
@@ -13,24 +21,41 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  MESSAGE_VERBOSE("Adding test ${full_name}")
+  message(VERBOSE "Adding test ${full_name}")
 
   # add run (task 1)
-  set (test_added false)
-  set (test_labels "")
-  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added test_labels ${input_file}.in.xml)
-  if ( test_added )
+  set(test_added false)
+  set(test_labels "")
+  run_qmc_app(
+    ${full_name}
+    ${base_dir}
+    ${procs}
+    ${threads}
+    test_added
+    test_labels
+    ${input_file}.in.xml)
+  if(test_added)
 
     # add restart (task 2)
     set(restart_name "${base_name}-${procs}-${threads}-restart")
     #set (test_added false)
-    set (test_labels "")
-    RUN_QMC_APP_NO_COPY( ${restart_name} ${CMAKE_CURRENT_BINARY_DIR}/${full_name} ${procs} ${threads} test_added test_labels ${input_file}.restart.xml )
+    set(test_labels "")
+    run_qmc_app_no_copy(
+      ${restart_name}
+      ${CMAKE_CURRENT_BINARY_DIR}/${full_name}
+      ${procs}
+      ${threads}
+      test_added
+      test_labels
+      ${input_file}.restart.xml)
 
     # make restart depend on the initial run
-    set_property(TEST ${restart_name} APPEND PROPERTY DEPENDS ${full_name})
+    set_property(
+      TEST ${restart_name}
+      APPEND
+      PROPERTY DEPENDS ${full_name})
 
-    if ( use_for_coverage )
+    if(use_for_coverage)
       set_property(TEST ${full_name} APPEND PROPERTY LABELS "coverage")
       set_property(TEST ${restart_name} APPEND PROPERTY LABELS "coverage")
     endif()
@@ -43,21 +68,49 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
     set(test_name "${full_name}-check") # hard-code for single test
     set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
     #message(${work_dir})
-    add_test(NAME "${test_name}"
+    add_test(
+      NAME "${test_name}"
       COMMAND "${check_cmd}"
-      WORKING_DIRECTORY "${work_dir}"
-    )
+      WORKING_DIRECTORY "${work_dir}")
 
     # make test depend on the restart run
     set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name}-restart)
-    set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels} )
+    set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels})
 
   endif()
 
 endfunction()
 
-RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 8 2 check.sh false)
-RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 1 16 check.sh true)
+run_restart_and_check(
+  restart
+  "${qmcpack_SOURCE_DIR}/tests/io/restart"
+  qmc_short
+  8
+  2
+  check.sh
+  false)
+run_restart_and_check(
+  restart
+  "${qmcpack_SOURCE_DIR}/tests/io/restart"
+  qmc_short
+  1
+  16
+  check.sh
+  true)
 
-RUN_RESTART_AND_CHECK( save_coefs "${CMAKE_SOURCE_DIR}/tests/io/save_coefs" qmc_short 8 2 check.sh false)
-RUN_RESTART_AND_CHECK( save_coefs "${CMAKE_SOURCE_DIR}/tests/io/save_coefs" qmc_short 1 16 check.sh true)
+run_restart_and_check(
+  save_coefs
+  "${qmcpack_SOURCE_DIR}/tests/io/save_coefs"
+  qmc_short
+  8
+  2
+  check.sh
+  false)
+run_restart_and_check(
+  save_coefs
+  "${qmcpack_SOURCE_DIR}/tests/io/save_coefs"
+  qmc_short
+  1
+  16
+  check.sh
+  true)

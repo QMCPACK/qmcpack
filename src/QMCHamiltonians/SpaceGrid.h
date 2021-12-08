@@ -17,9 +17,9 @@
 #include <Configuration.h>
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/PooledData.h"
-#include "QMCHamiltonians/observable_helper.h"
-#include "Particle/DistanceTableData.h"
+#include "Pools/PooledData.h"
+#include "QMCHamiltonians/ObservableHelper.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -49,12 +49,12 @@ public:
   bool initialize_voronoi(std::map<std::string, Point>& points);
   void write_description(std::ostream& os, std::string& indent);
   int allocate_buffer_space(BufferType& buf);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid, int grid_index) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid, int grid_index) const;
   void evaluate(const ParticlePos_t& R,
                 const Matrix<RealType>& values,
                 BufferType& buf,
                 std::vector<bool>& particles_outside,
-                const DistanceTableData& dtab);
+                const DistanceTableAB& dtab);
 
   bool check_grid(void);
   inline int nDomains(void) { return ndomains; }

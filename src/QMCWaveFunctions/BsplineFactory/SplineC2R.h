@@ -33,7 +33,10 @@ namespace qmcplusplus
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
- * Internal storage use double sized arrays of ST type, aligned and padded.
+ * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
+ * The first nComplexBands complex splines produce 2 real orbitals.
+ * The rest complex splines produce 1 real orbital.
+ * All the output orbitals are real.
  */
 template<typename ST>
 class SplineC2R : public BsplineSet
@@ -88,7 +91,7 @@ public:
     KeyWord    = "SplineC2R";
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2R(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -155,12 +158,12 @@ public:
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const;
 
-  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
 
-  virtual void evaluateDetRatios(const VirtualParticleSet& VP,
-                                 ValueVector_t& psi,
-                                 const ValueVector_t& psiinv,
-                                 std::vector<TT>& ratios) override;
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector_t& psi,
+                         const ValueVector_t& psiinv,
+                         std::vector<TT>& ratios) override;
 
   /** assign_vgl
    */
@@ -171,11 +174,11 @@ public:
    */
   void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-  virtual void evaluateVGL(const ParticleSet& P,
-                           const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,
@@ -184,11 +187,11 @@ public:
                   int first,
                   int last) const;
 
-  virtual void evaluateVGH(const ParticleSet& P,
-                           const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           HessVector_t& grad_grad_psi) override;
+  void evaluateVGH(const ParticleSet& P,
+                   const int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override;
 
   void assign_vghgh(const PointType& r,
                     ValueVector_t& psi,
@@ -198,12 +201,12 @@ public:
                     int first = 0,
                     int last  = -1) const;
 
-  virtual void evaluateVGHGH(const ParticleSet& P,
-                             const int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             HessVector_t& grad_grad_psi,
-                             GGGVector_t& grad_grad_grad_psi) override;
+  void evaluateVGHGH(const ParticleSet& P,
+                     const int iat,
+                     ValueVector_t& psi,
+                     GradVector_t& dpsi,
+                     HessVector_t& grad_grad_psi,
+                     GGGVector_t& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
   friend struct SplineSetReader;

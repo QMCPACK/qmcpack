@@ -17,8 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 #include <stdio.h>
 #include <string>
@@ -68,9 +67,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.R[2][1] = 0.2;
   elec_.R[2][2] = 0.3;
 
-  elec_.spins[0] = 0.0;
-  elec_.spins[1] = 0.2;
-  elec_.spins[2] = 0.4;
+  elec_.spins[0]   = 0.0;
+  elec_.spins[1]   = 0.2;
+  elec_.spins[2]   = 0.4;
+  elec_.is_spinor_ = true;
 
   // O2 test example from pwscf non-collinear calculation.
   elec_.Lattice.R(0, 0) = 5.10509515;
@@ -97,7 +97,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"A\" type=\"spinorbspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
+   <sposet_builder name=\"A\" type=\"einspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\" meshfactor=\"4.0\"> \
      <sposet name=\"myspo\" size=\"3\"> \
        <occupation mode=\"ground\"/> \
      </sposet> \
@@ -107,15 +107,17 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  CHECK(okay);
 
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSpinorSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
-  REQUIRE(spo);
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  auto& builder = fac.createSPOSetBuilder(ein1);
+
+  SPOSet* spo = builder.createSPOSet(ein1);
+  CHECK(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -141,119 +143,121 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //These reference values were generated as follows:
   // 1.) Non-Collinear O2 calculation in PBC's performed using Quantum Espresso.
   // 2.) Spinor wavefunction converted to HDF5 using convertpw4qmc tool.  Mainly, this places the up channel in the spin_0 slot, and spin down in spin_1.
-  // 3.) The HDF5 metadata was hacked by hand to correspond to a fictional but consistent spin-polarized set of orbitals.
-  // 4.) A spin polarized QMCPACK run was done using the electron and ion configuration specified in this block.  Orbital values, gradients, and laplacians were calculated
-  //     for both "spin up" and "spin down" orbitals. This is where the psiM_up(down), d2psiM_up(down) values come from.
-  // 5.) By hand, the reference values, gradients, and laplacians are calculated by using the formula for a spinor e^is phi_up + e^{-is} phi_down.
-  // 6.) These are compared against the integrated initialization/parsing/evaluation of the Einspline Spinor object.
+  // 3.) Up and down values for spinor components are directly evaluated using plane waves to make reference values.
 
-  //Reference values for spin up component.
-  psiM_up[0][0] = ValueType(2.8696985245e+00, -2.8696982861e+00);
-  psiM_up[0][1] = ValueType(1.1698637009e+00, -1.1698638201e+00);
-  psiM_up[0][2] = ValueType(-2.6149117947e+00, 2.6149117947e+00);
-  psiM_up[1][0] = ValueType(2.8670933247e+00, -2.8670933247e+00);
-  psiM_up[1][1] = ValueType(1.1687355042e+00, -1.1687356234e+00);
-  psiM_up[1][2] = ValueType(-2.6131081581e+00, 2.6131081581e+00);
-  psiM_up[2][0] = ValueType(4.4833350182e+00, -4.4833350182e+00);
-  psiM_up[2][1] = ValueType(1.8927993774e+00, -1.8927993774e+00);
-  psiM_up[2][2] = ValueType(-8.3977413177e-01, 8.3977431059e-01);
+  //reference values, elec 0, orbital 0
+  psiM_up[0][0]       = ValueType(3.0546848269585873, 2.6698880339914073);
+  dpsiM_up[0][0][0]   = ValueType(-0.1851673255644419, -0.1618419361786101);
+  dpsiM_up[0][0][1]   = ValueType(0.60078848166567, 0.5251078699998748);
+  dpsiM_up[0][0][2]   = ValueType(-4.882727805715862, -4.267653505749376);
+  d2psiM_up[0][0]     = ValueType(-5.949965529898391, -5.200452764159391);
+  psiM_down[0][0]     = ValueType(1.26529305723931, 1.105896575232331);
+  dpsiM_down[0][0][0] = ValueType(-0.07669912992155427, -0.0670361472429191);
+  dpsiM_down[0][0][1] = ValueType(0.24885435007410817, 0.21750534167815624);
+  dpsiM_down[0][0][2] = ValueType(-2.0224938024371926, -1.7677088591422807);
+  d2psiM_down[0][0]   = ValueType(-2.4645607715652593, -2.1540811306541467);
 
-  //Reference values for spin down component.
-  psiM_down[0][0] = ValueType(1.1886650324e+00, -1.1886655092e+00);
-  psiM_down[0][1] = ValueType(-2.8243079185e+00, 2.8243076801e+00);
-  psiM_down[0][2] = ValueType(-1.0831292868e+00, 1.0831292868e+00);
-  psiM_down[1][0] = ValueType(1.1875861883e+00, -1.1875866652e+00);
-  psiM_down[1][1] = ValueType(-2.8215842247e+00, 2.8215837479e+00);
-  psiM_down[1][2] = ValueType(-1.0823822021e+00, 1.0823823214e+00);
-  psiM_down[2][0] = ValueType(1.8570541143e+00, -1.8570543528e+00);
-  psiM_down[2][1] = ValueType(-4.5696320534e+00, 4.5696320534e+00);
-  psiM_down[2][2] = ValueType(-3.4784498811e-01, 3.4784474969e-01);
+  //reference values, elec 0, orbital 1
+  psiM_up[0][1]       = ValueType(-0.05877385066521865, -1.652862402896465);
+  dpsiM_up[0][1][0]   = ValueType(0.003806703582748908, 0.1070679097294273);
+  dpsiM_up[0][1][1]   = ValueType(-0.01231680454381807, -0.34637011425999203);
+  dpsiM_up[0][1][2]   = ValueType(0.09976715349787516, 2.8057021736885446);
+  d2psiM_up[0][1]     = ValueType(0.11243204605091028, 3.1618388472842645);
+  psiM_down[0][1]     = ValueType(0.14190658959478397, 3.9903718588991324);
+  dpsiM_down[0][1][0] = ValueType(-0.009192765914265412, -0.258482966548934);
+  dpsiM_down[0][1][1] = ValueType(0.0297380860827861, 0.8362132640454849);
+  dpsiM_down[0][1][2] = ValueType(-0.24088367433889216, -6.773578493991127);
+  d2psiM_down[0][1]   = ValueType(-0.27145824651495754, -7.633377309590959);
 
-  //And the laplacians...
-  d2psiM_up[0][0] = ValueType(-6.1587309837e+00, 6.1587429047e+00);
-  d2psiM_up[0][1] = ValueType(-2.4736759663e+00, 2.4736781120e+00);
-  d2psiM_up[0][2] = ValueType(2.1381640434e-01, -2.1381306648e-01);
-  d2psiM_up[1][0] = ValueType(-5.0561609268e+00, 5.0561575890e+00);
-  d2psiM_up[1][1] = ValueType(-2.0328726768e+00, 2.0328762531e+00);
-  d2psiM_up[1][2] = ValueType(-7.4090242386e-01, 7.4090546370e-01);
-  d2psiM_up[2][0] = ValueType(-1.8970542908e+01, 1.8970539093e+01);
-  d2psiM_up[2][1] = ValueType(-8.2134075165e+00, 8.2134037018e+00);
-  d2psiM_up[2][2] = ValueType(1.0161912441e+00, -1.0161914825e+00);
-
-  d2psiM_down[0][0] = ValueType(-2.5510206223e+00, 2.5510258675e+00);
-  d2psiM_down[0][1] = ValueType(5.9720201492e+00, -5.9720129967e+00);
-  d2psiM_down[0][2] = ValueType(8.8568925858e-02, -8.8571548462e-02);
-  d2psiM_down[1][0] = ValueType(-2.0943276882e+00, 2.0943336487e+00);
-  d2psiM_down[1][1] = ValueType(4.9078116417e+00, -4.9078197479e+00);
-  d2psiM_down[1][2] = ValueType(-3.0689623952e-01, 3.0689093471e-01);
-  d2psiM_down[2][0] = ValueType(-7.8578405380e+00, 7.8578381538e+00);
-  d2psiM_down[2][1] = ValueType(1.9828968048e+01, -1.9828992844e+01);
-  d2psiM_down[2][2] = ValueType(4.2092007399e-01, -4.2091816664e-01);
-
-  //And now a looooot of gradient info.
-  ////////SPIN UP//////////
-  dpsiM_up[0][0][0] = ValueType(-1.7161563039e-01, 1.7161482573e-01);
-  dpsiM_up[0][0][1] = ValueType(5.6693041325e-01, -5.6692999601e-01);
-  dpsiM_up[0][0][2] = ValueType(-4.5538558960e+00, 4.5538554192e+00);
-  dpsiM_up[0][1][0] = ValueType(-7.4953302741e-02, 7.4952393770e-02);
-  dpsiM_up[0][1][1] = ValueType(2.4608184397e-01, -2.4608163536e-01);
-  dpsiM_up[0][1][2] = ValueType(-1.9720511436e+00, 1.9720509052e+00);
-  dpsiM_up[0][2][0] = ValueType(-4.2384520173e-02, 4.2384237051e-02);
-  dpsiM_up[0][2][1] = ValueType(1.1735939980e-01, -1.1735984683e-01);
-  dpsiM_up[0][2][2] = ValueType(-3.1189033985e+00, 3.1189031601e+00);
-
-  dpsiM_up[1][0][0] = ValueType(1.9333077967e-01, -1.9333113730e-01);
-  dpsiM_up[1][0][1] = ValueType(-5.7470333576e-01, 5.7470202446e-01);
-  dpsiM_up[1][0][2] = ValueType(-4.5568108559e+00, 4.5568113327e+00);
-  dpsiM_up[1][1][0] = ValueType(8.4540992975e-02, -8.4540143609e-02);
-  dpsiM_up[1][1][1] = ValueType(-2.4946013093e-01, 2.4946044385e-01);
-  dpsiM_up[1][1][2] = ValueType(-1.9727530479e+00, 1.9727528095e+00);
-  dpsiM_up[1][2][0] = ValueType(3.1103719026e-02, -3.1103719026e-02);
-  dpsiM_up[1][2][1] = ValueType(-1.2540178001e-01, 1.2540178001e-01);
-  dpsiM_up[1][2][2] = ValueType(-3.1043677330e+00, 3.1043677330e+00);
-
-  dpsiM_up[2][0][0] = ValueType(-8.8733488321e-01, 8.8733488321e-01);
-  dpsiM_up[2][0][1] = ValueType(-1.7726477385e+00, 1.7726477385e+00);
-  dpsiM_up[2][0][2] = ValueType(7.3728728294e-01, -7.3728692532e-01);
-  dpsiM_up[2][1][0] = ValueType(-3.8018247485e-01, 3.8018330932e-01);
-  dpsiM_up[2][1][1] = ValueType(-7.5880718231e-01, 7.5880759954e-01);
-  dpsiM_up[2][1][2] = ValueType(2.7537062764e-01, -2.7537041903e-01);
-  dpsiM_up[2][2][0] = ValueType(-9.5389984548e-02, 9.5390148461e-02);
-  dpsiM_up[2][2][1] = ValueType(-1.8467208743e-01, 1.8467210233e-01);
-  dpsiM_up[2][2][2] = ValueType(-2.4704084396e+00, 2.4704084396e+00);
-
-  ////////SPIN DOWN//////////
-  dpsiM_down[0][0][0] = ValueType(-7.1084961295e-02, 7.1085616946e-02);
-  dpsiM_down[0][0][1] = ValueType(2.3483029008e-01, -2.3482969403e-01);
-  dpsiM_down[0][0][2] = ValueType(-1.8862648010e+00, 1.8862643242e+00);
-  dpsiM_down[0][1][0] = ValueType(1.8095153570e-01, -1.8095159531e-01);
-  dpsiM_down[0][1][1] = ValueType(-5.9409534931e-01, 5.9409546852e-01);
-  dpsiM_down[0][1][2] = ValueType(4.7609643936e+00, -4.7609624863e+00);
-  dpsiM_down[0][2][0] = ValueType(-1.7556600273e-02, 1.7556769773e-02);
-  dpsiM_down[0][2][1] = ValueType(4.8611730337e-02, -4.8612065613e-02);
-  dpsiM_down[0][2][2] = ValueType(-1.2918885946e+00, 1.2918891907e+00);
-
-  dpsiM_down[1][0][0] = ValueType(8.0079451203e-02, -8.0079004169e-02);
-  dpsiM_down[1][0][1] = ValueType(-2.3804906011e-01, 2.3804855347e-01);
-  dpsiM_down[1][0][2] = ValueType(-1.8874882460e+00, 1.8874886036e+00);
-  dpsiM_down[1][1][0] = ValueType(-2.0409825444e-01, 2.0409949124e-01);
-  dpsiM_down[1][1][1] = ValueType(6.0225284100e-01, -6.0225236416e-01);
-  dpsiM_down[1][1][2] = ValueType(4.7626581192e+00, -4.7626576424e+00);
-  dpsiM_down[1][2][0] = ValueType(1.2884057127e-02, -1.2884397991e-02);
-  dpsiM_down[1][2][1] = ValueType(-5.1943197846e-02, 5.1943652332e-02);
-  dpsiM_down[1][2][2] = ValueType(-1.2858681679e+00, 1.2858685255e+00);
-
-  dpsiM_down[2][0][0] = ValueType(-3.6754500866e-01, 3.6754477024e-01);
-  dpsiM_down[2][0][1] = ValueType(-7.3425340652e-01, 7.3425388336e-01);
-  dpsiM_down[2][0][2] = ValueType(3.0539327860e-01, -3.0539402366e-01);
-  dpsiM_down[2][1][0] = ValueType(9.1784656048e-01, -9.1784602404e-01);
-  dpsiM_down[2][1][1] = ValueType(1.8319253922e+00, -1.8319247961e+00);
-  dpsiM_down[2][1][2] = ValueType(-6.6480386257e-01, 6.6480308771e-01);
-  dpsiM_down[2][2][0] = ValueType(-3.9511863142e-02, 3.9511814713e-02);
-  dpsiM_down[2][2][1] = ValueType(-7.6493337750e-02, 7.6493576169e-02);
-  dpsiM_down[2][2][2] = ValueType(-1.0232743025e+00, 1.0232743025e+00);
+  //reference values, elec 0, orbital 2
+  psiM_up[0][2]       = ValueType(1.7341610599591415, 3.26452640029962);
+  dpsiM_up[0][2][0]   = ValueType(0.02410454300409052, 0.04537650582197769);
+  dpsiM_up[0][2][1]   = ValueType(-0.0812208525894339, -0.15289674365675554);
+  dpsiM_up[0][2][2]   = ValueType(2.056759046129918, 3.871811527443685);
+  d2psiM_up[0][2]     = ValueType(-0.3715079628152589, -0.6993565364031098);
+  psiM_down[0][2]     = ValueType(0.7183159092489255, 1.3522053467852482);
+  dpsiM_down[0][2][0] = ValueType(0.009984891703495969, 0.01879614056538452);
+  dpsiM_down[0][2][1] = ValueType(-0.033643334635896874, -0.06333185576262795);
+  dpsiM_down[0][2][2] = ValueType(0.8519414150210098, 1.603750121892103);
+  d2psiM_down[0][2]   = ValueType(-0.15388532808689237, -0.2896807896155573);
 
 
+  //reference values, elec 1, orbital 0
+  psiM_up[1][0]       = ValueType(3.0526148989188244, 2.6680787492636187);
+  dpsiM_up[1][0][0]   = ValueType(0.20449301174627027, 0.17873282170446286);
+  dpsiM_up[1][0][1]   = ValueType(-0.6096780888298439, -0.5328779559603193);
+  dpsiM_up[1][0][2]   = ValueType(-4.885040183718155, -4.269674660852541);
+  d2psiM_up[1][0]     = ValueType(-5.875072106235885, -5.134991421765417);
+  psiM_down[1][0]     = ValueType(1.2644358252460446, 1.1051472909800415);
+  dpsiM_down[1][0][0] = ValueType(0.0847027693565092, 0.0740326785381825);
+  dpsiM_down[1][0][1] = ValueType(-0.25253678670740615, -0.22072360765802454);
+  dpsiM_down[1][0][2] = ValueType(-2.023451052801436, -1.768545254958754);
+  d2psiM_down[1][0]   = ValueType(-2.433542859102463, -2.126969850545346);
+
+  //reference values, elec 1, orbital 1
+  psiM_up[1][1]       = ValueType(-0.05872929134760467, -1.6516107719315123);
+  dpsiM_up[1][1][0]   = ValueType(-0.0042225364734192325, -0.11876835593196035);
+  dpsiM_up[1][1][1]   = ValueType(0.012491965861615007, 0.35129150754532346);
+  dpsiM_up[1][1][2]   = ValueType(0.09980846579193113, 2.806855260627992);
+  d2psiM_up[1][1]     = ValueType(0.11086616211845124, 3.1178291585160025);
+  psiM_down[1][1]     = ValueType(0.14179908178203693, 3.9873502499791);
+  dpsiM_down[1][1][0] = ValueType(0.010197668920898767, 0.2867312658960351);
+  dpsiM_down[1][1][1] = ValueType(-0.030160592987572725, -0.8480940968707702);
+  dpsiM_down[1][1][2] = ValueType(-0.24098310461934494, -6.776362513721667);
+  d2psiM_down[1][1]   = ValueType(-0.26767894399782044, -7.527130337670782);
+
+  //reference values, elec 1, orbital 2
+  psiM_up[1][2]       = ValueType(1.7338733833257558, 3.263984881354726);
+  dpsiM_up[1][2][0]   = ValueType(-0.02165584086872901, -0.0407670903699481);
+  dpsiM_up[1][2][1]   = ValueType(0.08288083949305346, 0.15602164581174188);
+  dpsiM_up[1][2][2]   = ValueType(2.0621151061966456, 3.881894235760205);
+  d2psiM_up[1][2]     = ValueType(-0.3566890854259599, -0.6714605501817572);
+  psiM_down[1][2]     = ValueType(0.7181968101586865, 1.3519810682722548);
+  dpsiM_down[1][2][0] = ValueType(-0.00897085696147509, -0.01688677968381685);
+  dpsiM_down[1][2][1] = ValueType(0.03433096009876233, 0.06462627360298884);
+  dpsiM_down[1][2][2] = ValueType(0.8541600134552085, 1.6079267140278);
+  d2psiM_down[1][2]   = ValueType(-0.1477482607270697, -0.2781267037329471);
+
+
+  //reference values, elec 2, orbital 0
+  psiM_up[2][0]       = ValueType(4.774972481925916, 4.173472045741891);
+  dpsiM_up[2][0][0]   = ValueType(-0.9457258313862555, -0.8265932416325468);
+  dpsiM_up[2][0][1]   = ValueType(-1.899691502097708, -1.6603886891267976);
+  dpsiM_up[2][0][2]   = ValueType(0.7771301258291673, 0.6792356362625406);
+  d2psiM_up[2][0]     = ValueType(-20.40945585069239, -17.83848971293892);
+  psiM_down[2][0]     = ValueType(1.9778599493693798, 1.7286974948556129);
+  dpsiM_down[2][0][0] = ValueType(-0.3917329590645693, -0.3423838452062018);
+  dpsiM_down[2][0][1] = ValueType(-0.786878588427934, -0.6877513351266712);
+  dpsiM_down[2][0][2] = ValueType(0.3218978428488249, 0.281346363058232);
+  d2psiM_down[2][0]   = ValueType(-8.45387947982597, -7.388894117402044);
+
+  //reference values, elec 2, orbital 1
+  psiM_up[2][1]       = ValueType(-0.095146182382511, -2.6757440636563343);
+  dpsiM_up[2][1][0]   = ValueType(0.01912387482485274, 0.53780199541144);
+  dpsiM_up[2][1][1]   = ValueType(0.03838799057297392, 1.0795586887258484);
+  dpsiM_up[2][1][2]   = ValueType(-0.013683016882420245, -0.38479709783829663);
+  d2psiM_up[2][1]     = ValueType(0.41702609987278866, 11.727776988772089);
+  psiM_down[2][1]     = ValueType(0.22972652344682393, 6.459831671158625);
+  dpsiM_down[2][1][0] = ValueType(-0.046172654628017486, -1.2983723819140731);
+  dpsiM_down[2][1][1] = ValueType(-0.09268554947869961, -2.606290867185097);
+  dpsiM_down[2][1][2] = ValueType(0.03303644631176311, 0.9289838072933512);
+  d2psiM_down[2][1]   = ValueType(-1.006891760427076, -28.313415815931304);
+
+  //reference values, elec 2, orbital 2
+  psiM_up[2][2]       = ValueType(0.5573944761518197, 1.0492847452220198);
+  dpsiM_up[2][2][0]   = ValueType(0.06369314000215545, 0.11990123738728313);
+  dpsiM_up[2][2][1]   = ValueType(0.1265010825081423, 0.23813600324436654);
+  dpsiM_up[2][2][2]   = ValueType(1.6373025933118952, 3.082192181081695);
+  d2psiM_up[2][2]     = ValueType(-0.8650133588132842, -1.6283710474610622);
+  psiM_down[2][2]     = ValueType(0.23088102734804172, 0.43462602449526555);
+  dpsiM_down[2][2][0] = ValueType(0.02638262680056288, 0.0496645026299118);
+  dpsiM_down[2][2][1] = ValueType(0.052398844163716374, 0.0986386889965079);
+  dpsiM_down[2][2][2] = ValueType(0.6781955750070273, 1.276680192776833);
+  d2psiM_down[2][2]   = ValueType(-0.3583001666840082, -0.6744889374649511);
+
+
+  RealType h  = 0.001;
+  RealType h2 = 0.1;
   for (unsigned int iat = 0; iat < 3; iat++)
   {
     RealType s = elec_.spins[iat];
@@ -289,26 +293,26 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   for (unsigned int iat = 0; iat < 3; iat++)
   {
-    REQUIRE(psiM[iat][0] == ComplexApprox(psiM_ref[iat][0]));
-    REQUIRE(psiM[iat][1] == ComplexApprox(psiM_ref[iat][1]));
-    REQUIRE(psiM[iat][2] == ComplexApprox(psiM_ref[iat][2]));
+    CHECK(psiM[iat][0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psiM[iat][1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psiM[iat][2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    REQUIRE(dpsiM[iat][0][0] == ComplexApprox(dpsiM_ref[iat][0][0]));
-    REQUIRE(dpsiM[iat][0][1] == ComplexApprox(dpsiM_ref[iat][0][1]));
-    REQUIRE(dpsiM[iat][0][2] == ComplexApprox(dpsiM_ref[iat][0][2]));
+    CHECK(dpsiM[iat][0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dpsiM[iat][0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dpsiM[iat][0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
 
-    REQUIRE(dpsiM[iat][1][0] == ComplexApprox(dpsiM_ref[iat][1][0]));
-    REQUIRE(dpsiM[iat][1][1] == ComplexApprox(dpsiM_ref[iat][1][1]));
-    REQUIRE(dpsiM[iat][1][2] == ComplexApprox(dpsiM_ref[iat][1][2]));
+    CHECK(dpsiM[iat][1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dpsiM[iat][1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dpsiM[iat][1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
 
-    REQUIRE(dpsiM[iat][2][0] == ComplexApprox(dpsiM_ref[iat][2][0]));
-    REQUIRE(dpsiM[iat][2][1] == ComplexApprox(dpsiM_ref[iat][2][1]));
-    REQUIRE(dpsiM[iat][2][2] == ComplexApprox(dpsiM_ref[iat][2][2]));
+    CHECK(dpsiM[iat][2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dpsiM[iat][2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dpsiM[iat][2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
 
 
-    REQUIRE(d2psiM[iat][0] == ComplexApprox(d2psiM_ref[iat][0]));
-    REQUIRE(d2psiM[iat][1] == ComplexApprox(d2psiM_ref[iat][1]));
-    REQUIRE(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]));
+    CHECK(d2psiM[iat][0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2psiM[iat][1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
   }
 
   //Now we're going to test evaluateValue and evaluateVGL:
@@ -367,9 +371,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateValue(elec_, iat, psi_work);
 
-    REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]));
-    REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]));
-    REQUIRE(psi_work[2] == ComplexApprox(psiM_ref[iat][2]));
+    CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
     elec_.rejectMove(iat);
   }
 
@@ -384,29 +388,29 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateVGL_spin(elec_, iat, psi_work, dpsi_work, d2psi_work, dspsi_work);
 
-    REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]));
-    REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]));
-    REQUIRE(psi_work[2] == ComplexApprox(psiM_ref[iat][2]));
+    CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    REQUIRE(dpsi_work[0][0] == ComplexApprox(dpsiM_ref[iat][0][0]));
-    REQUIRE(dpsi_work[0][1] == ComplexApprox(dpsiM_ref[iat][0][1]));
-    REQUIRE(dpsi_work[0][2] == ComplexApprox(dpsiM_ref[iat][0][2]));
+    CHECK(dpsi_work[0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dpsi_work[0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dpsi_work[0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
 
-    REQUIRE(dpsi_work[1][0] == ComplexApprox(dpsiM_ref[iat][1][0]));
-    REQUIRE(dpsi_work[1][1] == ComplexApprox(dpsiM_ref[iat][1][1]));
-    REQUIRE(dpsi_work[1][2] == ComplexApprox(dpsiM_ref[iat][1][2]));
+    CHECK(dpsi_work[1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dpsi_work[1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dpsi_work[1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
 
-    REQUIRE(dpsi_work[2][0] == ComplexApprox(dpsiM_ref[iat][2][0]));
-    REQUIRE(dpsi_work[2][1] == ComplexApprox(dpsiM_ref[iat][2][1]));
-    REQUIRE(dpsi_work[2][2] == ComplexApprox(dpsiM_ref[iat][2][2]));
+    CHECK(dpsi_work[2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dpsi_work[2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dpsi_work[2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
 
-    REQUIRE(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]));
-    REQUIRE(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]));
-    REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]));
+    CHECK(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
 
-    REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]));
-    REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]));
-    REQUIRE(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]));
+    CHECK(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
+    CHECK(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
+    CHECK(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
 
     elec_.rejectMove(iat);
   }
@@ -421,13 +425,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluate_spin(elec_, iat, psi_work, dspsi_work);
 
-    REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]));
-    REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]));
-    REQUIRE(psi_work[2] == ComplexApprox(psiM_ref[iat][2]));
+    CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
 
-    REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]));
-    REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]));
-    REQUIRE(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]));
+    CHECK(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
+    CHECK(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
+    CHECK(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
 
     elec_.rejectMove(iat);
   }

@@ -23,7 +23,7 @@
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Particle/Walker.h"
@@ -113,14 +113,14 @@ public:
    * @param aname name of the estimator
    * @return locator of newestimator
    */
-  int add(EstimatorType* newestimator, const std::string& aname);
+  int add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname);
   //int add(CompositeEstimatorBase* newestimator, const std::string& aname);
 
   /** add a main estimator
    * @param newestimator New Estimator
    * @return locator of newestimator
    */
-  int add(EstimatorType* newestimator) { return add(newestimator, MainEstimatorName); }
+  int add(std::unique_ptr<EstimatorType> newestimator) { return add(std::move(newestimator), MainEstimatorName); }
 
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
@@ -229,7 +229,7 @@ protected:
    *
    * Do not need to clone: owned by the master thread
    */
-  CollectablesEstimator* Collectables;
+  std::unique_ptr<CollectablesEstimator> Collectables;
   /** accumulator for the energy
    *
    * @todo expand it for all the scalar observables to report the final results
@@ -256,9 +256,9 @@ protected:
   ///column map
   std::map<std::string, int> EstimatorMap;
   ///estimators of simple scalars
-  std::vector<EstimatorType*> Estimators;
+  std::vector<std::unique_ptr<EstimatorType>> Estimators;
   ///convenient descriptors for hdf5
-  std::vector<observable_helper*> h5desc;
+  std::vector<ObservableHelper> h5desc;
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
@@ -268,7 +268,7 @@ private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
   //Data for communication
-  std::vector<BufferType*> RemoteData;
+  std::vector<std::unique_ptr<BufferType>> RemoteData;
   ///collect data and write
   void collectBlockAverages();
   ///add header to an std::ostream

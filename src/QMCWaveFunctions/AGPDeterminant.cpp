@@ -106,7 +106,7 @@ AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(const ParticleSet& P,
   evaluateLogAndStore(P);
   G += myG;
   L += myL;
-  return LogValue;
+  return log_value_;
 }
 
 void AGPDeterminant::evaluateLogAndStore(const ParticleSet& P)
@@ -132,7 +132,7 @@ void AGPDeterminant::evaluateLogAndStore(const ParticleSet& P)
     }
   }
   //CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
-  InvertWithLog(psiM.data(), Nup, Nup, WorkSpace.data(), Pivot.data(), LogValue);
+  InvertWithLog(psiM.data(), Nup, Nup, WorkSpace.data(), Pivot.data(), log_value_);
   for (int iat = 0; iat < Nup; iat++)
   {
     for (int d = 0, jat = Nup; d < Ndown; d++, jat++)
@@ -177,7 +177,7 @@ void AGPDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
   //add the data: determinant, inverse, gradient and laplacians
   //buf.add(CurrentDet);
-  buf.add(LogValue);
+  buf.add(log_value_);
   buf.add(psiM.begin(), psiM.end());
   buf.add(phiT.begin(), phiT.end());
   buf.add(d2psiU.begin(), d2psiU.end());
@@ -199,7 +199,7 @@ AGPDeterminant::LogValueType AGPDeterminant::updateBuffer(ParticleSet& P, WFBuff
   //if(UseBuffer)
   {
     //buf.put(CurrentDet);
-    buf.put(LogValue);
+    buf.put(log_value_);
     buf.put(psiM.begin(), psiM.end());
     buf.put(phiT.begin(), phiT.end());
     buf.put(d2psiU.begin(), d2psiU.end());
@@ -212,7 +212,7 @@ AGPDeterminant::LogValueType AGPDeterminant::updateBuffer(ParticleSet& P, WFBuff
     buf.put(myL.first_address(), myL.last_address());
     //buf.put(myL.begin(), myL.end());
   }
-  return LogValue;
+  return log_value_;
   //return CurrentDet;
 }
 
@@ -221,7 +221,7 @@ void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   //if(UseBuffer)
   {
     //buf.get(CurrentDet);
-    buf.get(LogValue);
+    buf.get(log_value_);
     buf.get(psiM.begin(), psiM.end());
     buf.get(phiT.begin(), phiT.end());
     buf.get(d2psiU.begin(), d2psiU.end());
@@ -355,7 +355,7 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
  */
 void AGPDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
-  LogValue += convertValueToLog(curRatio);
+  log_value_ += convertValueToLog(curRatio);
   //CurrentDet *= curRatio;
   if (UpdateMode == ORB_PBYP_RATIO)
   {
@@ -413,10 +413,10 @@ void AGPDeterminant::restore(int iat)
   curRatio = 1.0;
 }
 
-WaveFunctionComponentPtr AGPDeterminant::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> AGPDeterminant::makeClone(ParticleSet& tqp) const
 {
-  AGPDeterminant* myclone = new AGPDeterminant(0);
-  myclone->GeminalBasis   = GeminalBasis->makeClone();
+  auto myclone          = std::make_unique<AGPDeterminant>(nullptr);
+  myclone->GeminalBasis = GeminalBasis->makeClone();
   myclone->resize(Nup, Ndown);
   myclone->Lambda = Lambda;
   if (Nup != Ndown)

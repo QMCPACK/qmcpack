@@ -29,10 +29,7 @@
 namespace qmcplusplus
 {
 PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(comm, els),
-      ptclPool(psets),
-      hfileID(-1),
-      rootNode(NULL)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(psets), hfileID(-1), rootNode(NULL)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -40,9 +37,9 @@ PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPool
 PWOrbitalBuilder::~PWOrbitalBuilder() { delete myParam; }
 
 //All data parsing is handled here, outside storage classes.
-WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
-  WaveFunctionComponent* slater_det = nullptr;
+  std::unique_ptr<WaveFunctionComponent> slater_det;
   //save the parent
   rootNode = cur;
   //
@@ -57,7 +54,6 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
   //no file, check the root
   if (hfileID < 0)
     hfileID = getH5(rootNode, "href");
-  bool success = true;
   //Move through the XML tree and read basis information
   cur = cur->children;
   while (cur != NULL)
@@ -66,7 +62,8 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
     if (cname == "basisset")
     {
       const XMLAttrString a(cur, "ecut");
-      if (!a.empty()) myParam->Ecut = std::stod(a);
+      if (!a.empty())
+        myParam->Ecut = std::stod(a);
     }
     else if (cname == "coefficients")
     {
@@ -84,7 +81,7 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
         APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
         OHMMS::Controller->abort();
       }
-      success = createPWBasis(cur);
+      createPWBasis(cur);
       slater_det = putSlaterDet(cur);
     }
     cur = cur->next;
@@ -93,13 +90,12 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
   return slater_det;
 }
 
-WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
 {
   //catch parameters
   myParam->put(cur);
-  typedef SlaterDet SlaterDeterminant_t;
-  typedef DiracDeterminant<> Det_t;
-  SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
+
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
   int spin_group = 0;
   cur            = cur->children;
   while (cur != NULL)
@@ -116,38 +112,33 @@ WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       aAttrib.put(cur);
       if (ref == "0")
         ref = id;
-      int firstIndex = targetPtcl.first(spin_group);
+      const int firstIndex = targetPtcl.first(spin_group);
+      const int lastIndex  = targetPtcl.last(spin_group);
       std::map<std::string, SPOSetPtr>::iterator lit(spomap.find(ref));
-      Det_t* adet = 0;
       //int spin_group=0;
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
         std::unique_ptr<SPOSet> psi(createPW(cur, spin_group));
         spomap[ref] = psi.get();
-        adet        = new Det_t(std::move(psi), firstIndex);
+        dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psi), firstIndex, lastIndex));
       }
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
         std::unique_ptr<SPOSet> psi((*lit).second->makeClone());
-        adet = new Det_t(std::move(psi), firstIndex);
+        dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psi), firstIndex, lastIndex));
       }
       app_log() << "    spin=" << spin_group << " id=" << id << " ref=" << ref << std::endl;
-      if (adet)
-      {
-        adet->set(firstIndex, targetPtcl.last(spin_group) - firstIndex);
-        sdet->add(adet, spin_group);
-      }
       spin_group++;
     }
     cur = cur->next;
   }
 
   if (spin_group)
-    return sdet;
+    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));;
 
-  APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
+  myComm->barrier_and_abort(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
   return nullptr;
 }
 
@@ -495,7 +486,8 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
   const XMLAttrString a(cur, aname);
-  if (a.empty()) return -1;
+  if (a.empty())
+    return -1;
   hid_t h = H5Fopen(a.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (h < 0)
   {

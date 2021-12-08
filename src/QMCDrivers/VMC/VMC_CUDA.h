@@ -35,7 +35,7 @@ public:
           Communicate* comm,
           bool enable_profiling);
 
-  bool run();
+  bool run() override;
   bool runWithDrift();
 
   /// advance walkers without drift
@@ -43,7 +43,7 @@ public:
   /// advance walkers with drift
   void advanceWalkersWithDrift();
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
   RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
   inline void setOpt(bool o) { forOpt = o; };
 
@@ -65,7 +65,7 @@ private:
   VMCcuda& operator=(const VMCcuda&) = delete;
   ///hide initialization from the main function
   bool checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
-  QMCRunType getRunType() { return QMCRunType::VMC; }
+  QMCRunType getRunType() override { return QMCRunType::VMC; }
   void resetRun();
 
   opt_variables_type dummy;

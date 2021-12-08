@@ -9,10 +9,13 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(IO_HDF5_SRC hdf_archive.cpp)
 
-SET(IO_HDF5_SRC hdf_archive.cpp)
-
-ADD_LIBRARY(qmcio_hdf ${IO_HDF5_SRC})
+add_library(qmcio_hdf ${IO_HDF5_SRC})
 
 #TARGET_INCLUDE_DIRECTORIES(qmcio_hdf PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcio_hdf PUBLIC containers IO::HDF5 message)
+target_link_libraries(qmcio_hdf PUBLIC containers IO::HDF5 message)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

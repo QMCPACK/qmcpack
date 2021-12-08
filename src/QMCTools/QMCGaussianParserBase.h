@@ -27,7 +27,6 @@
 #include "Utilities/SimpleParser.h"
 #include "Particle/ParticleSet.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "hdf/hdf_archive.h"
 
 using namespace qmcplusplus;
@@ -53,10 +52,12 @@ struct QMCGaussianParserBase
   bool debug;
   bool Structure;
   bool DoCusp;
+  // if true, adjust valence electron count output based on gCoreTable
   bool FixValence;
   bool singledetH5;
   bool optDetCoeffs;
   bool usingCSF;
+  bool isSpinor;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -85,6 +86,7 @@ struct QMCGaussianParserBase
   std::string CurrentCenter;
   std::string outputFile;
   std::string angular_type;
+  std::string expandYlm;
   std::string h5file;
   std::string multih5file;
   std::string WFS_name;
@@ -102,7 +104,8 @@ struct QMCGaussianParserBase
   std::vector<value_type> EigVec;
   //std::vector<GaussianCombo<value_type> > gExp, gC0, gC1;
   //std::string EigVecU, EigVecD;
-  xmlNodePtr gridPtr;
+  std::unique_ptr<xmlNode, void (*)(xmlNodePtr)> gridPtr =
+      std::unique_ptr<xmlNode, void (*)(xmlNodePtr)>(nullptr, nullptr);
   std::vector<std::string> CIalpha, CIbeta;
   std::vector<std::string> CSFocc;
   std::vector<std::vector<std::string>> CSFalpha, CSFbeta;
@@ -117,6 +120,8 @@ struct QMCGaussianParserBase
 
   QMCGaussianParserBase();
   QMCGaussianParserBase(int argc, char** argv);
+
+  virtual ~QMCGaussianParserBase() = default;
 
   void setOccupationNumbers();
 
@@ -166,6 +171,8 @@ struct QMCGaussianParserBase
 
   static std::vector<std::string> gShellType;
   static std::vector<int> gShellID;
+
+  static const std::vector<double> gCoreTable;
 
   static void init();
 };

@@ -25,7 +25,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -34,11 +34,10 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder("spline", comm),
       ParticleSets(psets),
       TargetPtcl(p),
-      MixedSplineReader(0),
       XMLRoot(cur),
       H5FileID(-1),
       Format(QMCPACK),
@@ -65,12 +64,11 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Co
   MyToken = 0;
 
   //invalidate states by the basis class
-  delete_iter(states.begin(), states.end());
   states.clear();
-  states.resize(p.groups(), 0);
+  states.resize(p.groups());
 
   //create vectors with nullptr
-  FullBands.resize(p.groups(), 0);
+  FullBands.resize(p.groups());
 }
 
 template<typename T>
@@ -89,8 +87,6 @@ inline TinyVector<T, 3> FracPart(const TinyVector<T, 3>& twist)
 EinsplineSetBuilder::~EinsplineSetBuilder()
 {
   DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder");
-  if (MixedSplineReader)
-    delete MixedSplineReader;
   if (H5FileID >= 0)
     H5Fclose(H5FileID);
 }
@@ -476,19 +472,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     int n_tot_irred(0);
     for (int si = 0; si < numSuperTwists; si++)
     {
-      //      bool irreducible(false);
-      int irrep_wgt(0);
-      // 	 for (int i=0; i<superSets[si].size(); i++)
-      if (TwistSymmetry[superSets[si][0]] == 1)
-      {
-        irrep_wgt = TwistWeight[superSets[si][0]];
-        //        irreducible=true;
-        n_tot_irred++;
-      }
-      //	if((irreducible) and ((Version[0] >= 2) and (Version[1] >= 0)))
-      //	  fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]  IRREDUCIBLE-K %d  %d \n",
-      // 		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2], si, irrep_wgt);
-      //	else
       char buf[1000];
       snprintf(buf, 1000, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n", si, superFracs[si][0], superFracs[si][1],
                superFracs[si][2]);
@@ -635,7 +618,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     }
   }
   // Find out if we can make real orbitals
-  UseRealOrbitals = true;
+  use_real_splines_ = true;
   for (int i = 0; i < DistinctTwists.size(); i++)
   {
     int ti        = DistinctTwists[i];
@@ -643,18 +626,18 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     for (int j = 0; j < OHMMS_DIM; j++)
       if (std::abs(twist[j] - 0.0) > MatchingTol && std::abs(twist[j] - 0.5) > MatchingTol &&
           std::abs(twist[j] + 0.5) > MatchingTol)
-        UseRealOrbitals = false;
+        use_real_splines_ = false;
   }
-  if (UseRealOrbitals && (DistinctTwists.size() > 1))
+  if (use_real_splines_ && (DistinctTwists.size() > 1))
   {
     app_log() << "***** Use of real orbitals is possible, but not currently implemented\n"
               << "      with more than one twist angle.\n";
-    UseRealOrbitals = false;
+    use_real_splines_ = false;
   }
-  if (UseRealOrbitals)
-    app_log() << "Using real orbitals.\n";
+  if (use_real_splines_)
+    app_log() << "Using real splines.\n";
   else
-    app_log() << "Using complex orbitals.\n";
+    app_log() << "Using complex splines.\n";
 #else
   DistinctTwists.resize(IncludeTwists.size());
   MakeTwoCopies.resize(IncludeTwists.size());
@@ -663,7 +646,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     DistinctTwists[i] = IncludeTwists[i];
     MakeTwoCopies[i]  = false;
   }
-  UseRealOrbitals = false;
+  use_real_splines_ = false;
 #endif
 }
 

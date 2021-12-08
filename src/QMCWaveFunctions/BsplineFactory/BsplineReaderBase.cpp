@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false)
+    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false), rotate(true)
 {
   myComm = mybuilder->getCommunicator();
 }
@@ -99,7 +99,7 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
   saveSplineCoefs = saveCoefs == "yes";
 }
 
-SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
 {
   int ns(0);
   OhmmsAttributeSet a;
@@ -117,8 +117,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   if (spo2band[spin].empty())
   {
     spo2band[spin].reserve(fullband.size());
-    if (mybuilder->states[spin] == 0)
-      mybuilder->states[spin] = new SPOSetInfo;
+    if (!mybuilder->states[spin])
+      mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
     initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
@@ -132,7 +132,7 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   return create_spline_set(spin, vals);
 }
 
-SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
@@ -142,8 +142,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInp
   if (spo2band[spin].empty())
   {
     spo2band[spin].reserve(fullband.size());
-    if (mybuilder->states[spin] == 0)
-      mybuilder->states[spin] = new SPOSetInfo;
+    if (!mybuilder->states[spin])
+      mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
     initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }

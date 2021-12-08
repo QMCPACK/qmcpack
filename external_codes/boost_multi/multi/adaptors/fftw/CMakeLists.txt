@@ -5,9 +5,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(boost-multi-adaptors-fftw VERSION 0.1 LANGUAGES CXX)
 
-find_package(FFTW REQUIRED COMPONENTS DOUBLE_LIB)
-include_directories(${FFTW_INCLUDE_DIRS})
-link_libraries(${FFTW_LIBRARIES})
+find_package(PkgConfig REQUIRED)
+pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
+include_directories(PkgConfig::FFTW)
+link_libraries(PkgConfig::FFTW)
 
 link_libraries(${BLAS_LIBRARIES})
 

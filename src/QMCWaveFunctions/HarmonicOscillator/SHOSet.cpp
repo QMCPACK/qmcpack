@@ -14,7 +14,6 @@
 #include "SHOSet.h"
 #include "Utilities/string_utils.h"
 
-
 namespace qmcplusplus
 {
 SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states) : length(l), center(c)
@@ -64,7 +63,7 @@ void SHOSet::initialize()
 SHOSet::~SHOSet() {}
 
 
-SPOSet* SHOSet::makeClone() const { return new SHOSet(*this); }
+std::unique_ptr<SPOSet> SHOSet::makeClone() const { return std::make_unique<SHOSet>(*this); }
 
 
 void SHOSet::report(const std::string& pad) const

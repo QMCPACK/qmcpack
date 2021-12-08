@@ -14,7 +14,9 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
-#include "Numerics/OptimizableFunctorBase.h"
+
+// this reference to OptimizableFunctorBase.h in QMCWaveFunctions is ugly
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
@@ -112,15 +114,15 @@ struct GaussianTimesRN : public OptimizableFunctorBase
       : basePower(0), nodeName(node_name), expName(exp_name), coeffName(c_name), powerName(p_name)
   {}
 
-  ~GaussianTimesRN() {}
+  ~GaussianTimesRN() override {}
 
-  OptimizableFunctorBase* makeClone() const { return new GaussianTimesRN<T>(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new GaussianTimesRN<T>(*this); }
 
-  void reset();
+  void reset() override;
 
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override {}
+  void checkOutVariables(const opt_variables_type& active) override {}
+  void resetParameters(const opt_variables_type& active) override
   {
     ///DO NOTHING FOR NOW
   }
@@ -129,7 +131,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
    */
   inline int size() const { return gset.size(); }
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) override
   {
     real_type res = 0;
     real_type r2  = r * r;
@@ -143,7 +145,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
     return res;
   }
 
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) override
   {
     real_type res = 0;
     real_type r2  = r * r;
@@ -184,9 +186,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
     }
   }
 
-  bool put(xmlNodePtr cur);
-
-  void addOptimizables(VarRegistry<real_type>& vlist) {}
+  bool put(xmlNodePtr cur) override;
 
   /** process cur xmlnode
    * @param cur root node

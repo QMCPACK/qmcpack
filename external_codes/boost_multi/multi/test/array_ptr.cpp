@@ -12,9 +12,9 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 namespace multi = boost::multi;
 
 // NOLINTNEXTLINE(fuchsia-trailing-return): trailing return helps readability
-template<class T> auto fwd_array(T&& t)->T&&{return std::forward<T>(t);}
+template<class T> auto fwd_array(T&& t)->T&& {return std::forward<T>(t);}
 
-BOOST_AUTO_TEST_CASE(multi_array_ptr_equality){
+BOOST_AUTO_TEST_CASE(multi_array_ptr_equality) {
 	multi::array<double, 2> A = {
 		{1., 2., 3.},
 		{4., 5., 6.},
@@ -36,13 +36,13 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr_equality){
 	BOOST_REQUIRE( &ac2 == &A[2] );
 }
 
-BOOST_AUTO_TEST_CASE(multi_array_ptr){
+BOOST_AUTO_TEST_CASE(multi_array_ptr) {
 	{
 		std::array<std::array<double, 5>, 4> a{
 			{
-				{ 0.,  1.,  2.,  3.,  4.}, 
-				{ 5.,  6.,  7.,  8.,  9.}, 
-				{10., 11., 12., 13., 14.}, 
+				{ 0.,  1.,  2.,  3.,  4.},
+				{ 5.,  6.,  7.,  8.,  9.},
+				{10., 11., 12., 13., 14.},
 				{15., 16., 17., 18., 19.}
 			}
 		};
@@ -73,15 +73,13 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr){
 		BOOST_REQUIRE( size(aR) == aP->size() );
 	}
 	{
-		std::array<std::array<double, 5>, 4> a = 
-	//	double a[4][5] 
-		{
-			std::array<double, 5>{ 0.,  1.,  2.,  3.,  4.}, 
-			std::array<double, 5>{ 5.,  6.,  7.,  8.,  9.}, 
-			std::array<double, 5>{10., 11., 12., 13., 14.}, 
+		std::array<std::array<double, 5>, 4> a = {
+			std::array<double, 5>{ 0.,  1.,  2.,  3.,  4.},
+			std::array<double, 5>{ 5.,  6.,  7.,  8.,  9.},
+			std::array<double, 5>{10., 11., 12., 13., 14.},
 			std::array<double, 5>{15., 16., 17., 18., 19.}
 		};
-		
+
 		std::vector<multi::array_ptr<double, 1>> ps;
 		ps.emplace_back(&a[0][0], 5);
 		ps.emplace_back(&a[2][0], 5);
@@ -90,9 +88,8 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr){
 		BOOST_REQUIRE( &(*ps[2])[4] == &a[3][4] );
 		BOOST_REQUIRE( (*ps[2])[4] == 19 );
 		BOOST_REQUIRE( ps[2]->operator[](4) == 19 );
-
 	}
-	{
+	 {
 		std::vector<double> v1(100, 3.);
 		std::vector<double> const v2(100, 4.);
 		multi::array_ptr<double, 2> v1P2D(v1.data(), {10, 10});

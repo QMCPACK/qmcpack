@@ -37,17 +37,17 @@ public:
                         RandomGenerator_t& rg,
                         std::vector<int> act,
                         std::vector<int> tp);
-  ~RMCUpdateAllWithDrift();
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  ~RMCUpdateAllWithDrift() override;
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) override;
   void advanceWalkersVMC();
   void advanceWalkersRMC();
   void checkReptile(WalkerIter_t it, WalkerIter_t it_end);
-  void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  void initWalkers(WalkerIter_t it, WalkerIter_t it_end) override;
 
   void accumulate(WalkerIter_t it, WalkerIter_t it_end);
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
 private:
   /// Copy Constructor (disabled)

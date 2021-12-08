@@ -24,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P)
 {
   using WP = WalkerProperties::Indexes;
@@ -79,7 +78,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
         app_log() << " Hamiltonian Element " << tagName << " was found at " << Hindex << std::endl;
         int numT = blockSeries / blockFreq;
         nObservables += 1;
-        nValues      += numT;
+        nValues += numT;
         app_log() << "   " << numT << " values will be calculated every " << blockFreq << "*tau H^-1" << std::endl;
         std::vector<int> pms(3);
         pms[0] = blockFreq;
@@ -116,7 +115,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
             Hindices.push_back(Hindex);
             int numT = blockSeries / blockFreq;
             nObservables += 1;
-            nValues      += numT;
+            nValues += numT;
             app_log() << "   " << numT << " values will be calculated every " << blockFreq << "*tau H^-1" << std::endl;
             std::vector<int> pms(3);
             pms[0] = blockFreq;
@@ -151,10 +150,10 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
   return true;
 }
 
-OperatorBase* ForwardWalking::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForwardWalking::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //nothing to worry, default copy constructor will do
-  return new ForwardWalking(*this);
+  return std::make_unique<ForwardWalking>(*this);
 }
 
 void ForwardWalking::addObservables(PropertySetType& plist)
@@ -164,8 +163,8 @@ void ForwardWalking::addObservables(PropertySetType& plist)
 
 void ForwardWalking::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.size();
-  int nc  = 0;
+  my_index_ = plist.size();
+  int nc    = 0;
   for (int i = 0; i < nObservables; ++i)
     for (int j = 0; j < walkerLengths[i][1]; ++j, ++nc)
     {
@@ -175,6 +174,6 @@ void ForwardWalking::addObservables(PropertySetType& plist, BufferType& collecta
       //         myIndex=std::min(myIndex,id);
       //app_log() <<" Observables named "<<sstr.str() << " at " << id << std::endl;
     }
-  app_log() << "ForwardWalking::Observables [" << myIndex << ", " << myIndex + nc << ")" << std::endl;
+  app_log() << "ForwardWalking::Observables [" << my_index_ << ", " << my_index_ + nc << ")" << std::endl;
 }
 } // namespace qmcplusplus

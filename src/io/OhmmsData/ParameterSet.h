@@ -27,38 +27,18 @@ struct ParameterSet : public OhmmsElementBase
 {
   //  public std::map<std::string, OhmmsElementBase*> {
 
-  typedef std::map<std::string, OhmmsElementBase*> Container_t;
-  typedef Container_t::iterator iterator;
-  typedef Container_t::const_iterator const_iterator;
-
-  Container_t m_param;
+  std::map<std::string, std::unique_ptr<OhmmsElementBase>> m_param;
 
   ParameterSet(const char* aname = "parameter") : OhmmsElementBase(aname) {}
 
-  ~ParameterSet()
+  inline bool get(std::ostream& os) const override
   {
-    iterator it(m_param.begin());
-    iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      delete (*it).second;
-      ++it;
-    }
-  }
-
-  inline bool get(std::ostream& os) const
-  {
-    const_iterator it(m_param.begin());
-    const_iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      (*it).second->get(os);
-      ++it;
-    }
+    for (const auto& [name, param] : m_param)
+      param->get(os);
     return true;
   }
 
-  inline bool put(std::istream& is) { return true; }
+  inline bool put(std::istream& is) override { return true; }
 
   /** assign parameters to the set
    * @param cur the xml node to work on
@@ -69,7 +49,7 @@ struct ParameterSet : public OhmmsElementBase
    * - <parameter name="aname"> value </parameter>
    * aname is converted into lower cases.
    */
-  inline bool put(xmlNodePtr cur)
+  inline bool put(xmlNodePtr cur) override
   {
     if (cur == NULL)
       return true; //handle empty node
@@ -79,8 +59,7 @@ struct ParameterSet : public OhmmsElementBase
     {
       std::string cname((const char*)(cur->name));
       tolower(cname);
-      iterator it_tag = m_param.find(cname);
-      if (it_tag == m_param.end())
+      if (auto it_tag = m_param.find(cname); it_tag == m_param.end())
       {
         if (cname == myName)
         {
@@ -88,11 +67,10 @@ struct ParameterSet : public OhmmsElementBase
           if (!aname.empty())
           {
             tolower(aname);
-            iterator it = m_param.find(aname);
-            if (it != m_param.end())
+            if (auto it = m_param.find(aname); it != m_param.end())
             {
               something = true;
-              (*it).second->put(cur);
+              it->second->put(cur);
             }
           }
         }
@@ -100,14 +78,14 @@ struct ParameterSet : public OhmmsElementBase
       else
       {
         something = true;
-        (*it_tag).second->put(cur);
+        it_tag->second->put(cur);
       }
       cur = cur->next;
     }
     return something;
   }
 
-  inline void reset() {}
+  inline void reset() override {}
 
   /** add a new parameter corresponding to an xmlNode <parameter/>
    *@param aparam reference the object which this parameter is assigned to.
@@ -123,10 +101,9 @@ struct ParameterSet : public OhmmsElementBase
   {
     std::string aname(aname_in);
     tolower(aname);
-    iterator it = m_param.find(aname);
-    if (it == m_param.end())
+    if (auto it = m_param.find(aname); it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname, std::move(candidate_values), status);
+      m_param[aname] = std::make_unique<OhmmsParameter<PDT>>(aparam, aname, std::move(candidate_values), status);
     }
   }
 
@@ -135,10 +112,9 @@ struct ParameterSet : public OhmmsElementBase
   {
     std::string aname(aname_in);
     tolower(aname);
-    iterator it = m_param.find(aname);
-    if (it != m_param.end())
+    if (auto it = m_param.find(aname); it != m_param.end())
     {
-      (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);
+      (dynamic_cast<OhmmsParameter<PDT>&>(*it->second)).setValue(aval);
     }
   }
 };

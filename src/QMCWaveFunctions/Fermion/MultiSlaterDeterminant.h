@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
 {
@@ -54,8 +53,6 @@ public:
   NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
   NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer, &evalOrbTimer;
 
-  typedef DiracDeterminantBase* DiracDeterminantBasePtr;
-  typedef SPOSet* SPOSetPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
@@ -70,42 +67,40 @@ public:
 
   ///constructor
   MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                         std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                         std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
+                         std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
                          const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
-  ~MultiSlaterDeterminant();
+  ~MultiSlaterDeterminant() override;
 
-  virtual void checkInVariables(opt_variables_type& active);
-  virtual void checkOutVariables(const opt_variables_type& active);
-  virtual void resetParameters(const opt_variables_type& active);
-  virtual void reportStatus(std::ostream& os);
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
-  ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
+  virtual ValueType evaluate(const ParticleSet& P,
+                             ParticleSet::ParticleGradient_t& G,
+                             ParticleSet::ParticleLaplacian_t& L);
 
-  virtual ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  virtual LogValueType evaluateLog(const ParticleSet& P,
-                                   ParticleSet::ParticleGradient_t& G,
-                                   ParticleSet::ParticleLaplacian_t& L);
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  void restore(int iat) override;
 
-  virtual GradType evalGrad(ParticleSet& P, int iat);
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual PsiValueType ratio(ParticleSet& P, int iat);
-  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
-  virtual void restore(int iat);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  virtual void registerData(ParticleSet& P, WFBufferType& buf);
-  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
-  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-
-  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
 
   virtual void resize(int, int);
 
@@ -127,8 +122,8 @@ public:
   std::shared_ptr<SPOSetProxyForMSD> spo_up;
   std::shared_ptr<SPOSetProxyForMSD> spo_dn;
 
-  std::vector<DiracDeterminantBasePtr> dets_up;
-  std::vector<DiracDeterminantBasePtr> dets_dn;
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets_up;
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets_dn;
 
   // map determinant in linear combination to unique det list
   std::vector<size_t> C2node_up;

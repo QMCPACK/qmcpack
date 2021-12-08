@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANTCALCULATOR_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Numerics/DeterminantOperators.h"
 
 namespace qmcplusplus
 {

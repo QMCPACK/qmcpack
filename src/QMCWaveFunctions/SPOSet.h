@@ -30,7 +30,6 @@
 
 namespace qmcplusplus
 {
-
 class ResourceCollection;
 
 /** base class for Single-particle orbital sets
@@ -215,7 +214,7 @@ public:
    * @param ratios_list a list of returning determinant ratios
    */
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const;
@@ -246,8 +245,7 @@ public:
                                 ValueVector_t& psi,
                                 GradVector_t& dpsi,
                                 ValueVector_t& d2psi,
-                                ValueVector_t& dspin
-                                );
+                                ValueVector_t& dspin);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -324,12 +322,12 @@ public:
   virtual void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
-   * @param P current ParticleSet
-   * @param first starting index of the particles
-   * @param last ending index of the particles
-   * @param logdet determinant matrix to be inverted
-   * @param dlogdet gradients
-   * @param d2logdet laplacians
+   * @param[in] P current ParticleSet
+   * @param[in] first starting index of the particles
+   * @param[in] last ending index of the particles
+   * @param[out] logdet determinant matrix to be inverted
+   * @param[out] dlogdet gradients
+   * @param[out] d2logdet laplacians
    *
    */
   virtual void evaluate_notranspose(const ParticleSet& P,
@@ -338,6 +336,26 @@ public:
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles, including the spin gradient
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param d2logdet laplacians
+   * @param dspinlogdet, spin gradients
+   *
+   * default implementation will abort for all SPOSets except SpinorSet
+   *
+   */
+  virtual void evaluate_notranspose_spin(const ParticleSet& P,
+                                         int first,
+                                         int last,
+                                         ValueMatrix_t& logdet,
+                                         GradMatrix_t& dlogdet,
+                                         ValueMatrix_t& d2logdet,
+                                         ValueMatrix_t& dspinlogdet);
 
   virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                        const RefVectorWithLeader<ParticleSet>& P_list,
@@ -426,16 +444,16 @@ public:
 
   /** acquire a shared resource from collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
 
   /** return a shared resource to collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
 
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.
    */
-  virtual SPOSet* makeClone() const;
+  virtual std::unique_ptr<SPOSet> makeClone() const;
 
   /** Used only by cusp correction in AOS LCAO.
    * Ye: the SoA LCAO moves all this responsibility to the builder.
@@ -468,7 +486,9 @@ public:
   //////////////////////////////////////////
   virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool) {}
 
-  virtual void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi);
+  virtual void evaluate(std::vector<Walker_t*>& walkers,
+                        int iat,
+                        gpu::device_vector<CTS::ValueType*>& phi);
 
   virtual void evaluate(std::vector<Walker_t*>& walkers,
                         std::vector<PosType>& new_pos,

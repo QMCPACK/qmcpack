@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 
 
@@ -29,9 +28,6 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
@@ -73,9 +69,6 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
@@ -120,9 +113,6 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic

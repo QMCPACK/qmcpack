@@ -22,9 +22,9 @@ class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotatedSPOs(SPOSet* spos);
+  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
   //destructor
-  ~RotatedSPOs();
+  ~RotatedSPOs() override;
 
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
@@ -36,7 +36,7 @@ public:
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
   //A particular SPOSet used for Orbitals
-  SPOSet* Phi;
+  std::unique_ptr<SPOSet> Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
@@ -46,7 +46,7 @@ public:
   /// the number of electrons of the majority spin
   size_t nel_major_;
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   // myG_temp (myL_temp) is the Gradient (Laplacian) value of of the Determinant part of the wfn
   // myG_J is the Gradient of the all other parts of the wavefunction (typically just the Jastrow).

@@ -44,6 +44,8 @@ struct BsplineReaderBase
   bool checkNorm;
   ///save spline coefficients to storage
   bool saveSplineCoefs;
+  ///apply orbital rotations
+  bool rotate;
   ///map from spo index to band index
   std::vector<std::vector<int>> spo2band;
 
@@ -164,20 +166,23 @@ struct BsplineReaderBase
 
   /** create the actual spline sets
    */
-  virtual SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup) = 0;
+  virtual std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup) = 0;
 
   /** setting common parameters
    */
   void setCommon(xmlNodePtr cur);
 
   /** create the spline after one of the kind is created */
-  SPOSet* create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
+  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /** create the spline set */
-  SPOSet* create_spline_set(int spin, xmlNodePtr cur);
+  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur);
 
   /** Set the checkNorm variable */
   inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
+
+  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
+  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
 
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,
@@ -185,8 +190,8 @@ struct BsplineReaderBase
                            std::vector<int>& band2spo);
 
   /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
-  virtual void export_MultiSpline(multi_UBspline_3d_z** target) = 0;
-  virtual void export_MultiSpline(multi_UBspline_3d_d** target) = 0;
+  virtual std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() = 0;
+  virtual std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() = 0;
 };
 
 } // namespace qmcplusplus

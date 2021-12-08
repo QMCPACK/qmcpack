@@ -17,13 +17,13 @@
 
 #include<mutex>
 
-namespace boost{
-namespace multi::cuda::cublas{
+namespace boost {
+namespace multi::cuda::cublas {
 
 class operation{
 	cublasOperation_t impl_;
 public:
-	operation(char trans) : impl_{[=]{
+	explicit operation(char trans) : impl_{[=]{
 		switch(trans){
 		case 'N': return CUBLAS_OP_N;
 		case 'T': return CUBLAS_OP_T;
@@ -31,27 +31,27 @@ public:
 		default : assert(0);
 		}
 		return cublasOperation_t{};
-	}()}{}
+	}()} {}
 	operator cublasOperation_t() const{return impl_;}
 };
 
 class side{
 	cublasSideMode_t impl_;
 public:
-	side(char trans) : impl_{[=]{
+	explicit side(char trans) : impl_{[=]{
 		switch(trans){
 		case 'L': return CUBLAS_SIDE_LEFT;
 		case 'R': return CUBLAS_SIDE_RIGHT;
 		}
 		assert(0); return cublasSideMode_t{};
-	}()}{}
+	}()} {}
 	operator cublasSideMode_t() const{return impl_;}
 };
 
 class filling{
 	cublasFillMode_t impl_;
 public:
-	filling(char trans) : impl_{[=]{
+	explicit filling(char trans) : impl_{[=]{
 		switch(trans){
 		case 'L': return CUBLAS_FILL_MODE_LOWER;
 		case 'U': return CUBLAS_FILL_MODE_UPPER;
@@ -64,7 +64,7 @@ public:
 class diagonal{
 	cublasDiagType_t impl_;
 public:
-	diagonal(char trans) : impl_{[=]{
+	explicit diagonal(char trans) : impl_{[=]{
 		switch(trans){
 		case 'N': return CUBLAS_DIAG_NON_UNIT;
 		case 'U': return CUBLAS_DIAG_UNIT;
@@ -97,8 +97,8 @@ public:
 	using ssize_t = int;
 	static int version(){int ret; cublas::call<cublasGetVersion>(nullptr, &ret); return ret;}
 	void synchronize(){
-	//	cudaError_t	e = cudaDeviceSynchronize();
-		cudaError_t e = cudaStreamSynchronize(stream());
+		cudaError_t	e = cudaDeviceSynchronize();
+		//cudaError_t e = cudaStreamSynchronize(stream());
 		if(e != cudaSuccess) throw std::runtime_error{"cannot synchronize stream in cublas context"};
 	}
 	template<class ALPHA, class XP, class X = typename std::pointer_traits<XP>::element_type, class YP, class Y = typename std::pointer_traits<YP>::element_type, 
@@ -142,6 +142,36 @@ public:
 	>
 	void trsm(char side, char ul, char transA, char diag, ssize_t m, ssize_t n, ALPHA alpha, AAP aa, ssize_t lda, BBP bb, ssize_t ldb){
 		sync_call<cublasZtrsm>(cublas::side{side}, cublas::filling{ul}, cublas::operation{transA}, cublas::diagonal{diag}, m, n, (cuDoubleComplex const*)&alpha, (cuDoubleComplex const*)raw_pointer_cast(aa), lda, (cuDoubleComplex*)raw_pointer_cast(bb), ldb);
+	}
+	template<
+		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,
+		class YYP, class YY = typename std::pointer_traits<YYP>::element_type,
+		class RRP, class RR = typename std::pointer_traits<RRP>::element_type,
+		std::enable_if_t<
+			is_d<XX>{} and is_d<YY>{} and is_d<RR>{} and is_assignable<RR&, decltype(XX{}*YY{})>{} and
+			is_convertible_v<XXP, memory::cuda::ptr<XX>> and is_convertible_v<YYP, memory::cuda::ptr<YY>> and is_convertible_v<RRP, RR*>
+		, int> =0
+	>
+	void dot(int n, XXP xx, int incx, YYP yy, int incy, RRP rr){
+		cublasPointerMode_t mode;
+		auto s = cublasGetPointerMode(get(), &mode); assert( s == CUBLAS_STATUS_SUCCESS );
+		assert( mode == CUBLAS_POINTER_MODE_HOST );
+		sync_call<cublasDdot>(n, raw_pointer_cast(xx), incx, raw_pointer_cast(yy), incy, rr);
+	}
+	template<
+		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,
+		class YYP, class YY = typename std::pointer_traits<YYP>::element_type,
+		class RRP, class RR = typename std::pointer_traits<RRP>::element_type,
+		std::enable_if_t<
+			is_z<XX>{} and is_z<YY>{} and is_z<RR>{} and is_assignable<RR&, decltype(XX{}*YY{})>{} and
+			is_convertible_v<XXP, memory::cuda::ptr<XX>> and is_convertible_v<YYP, memory::cuda::ptr<YY>> and is_convertible_v<RRP, RR*>
+		, int> =0
+	>
+	void dotc(int n, XXP xx, int incx, YYP yy, int incy, RRP rr){
+		cublasPointerMode_t mode;
+		auto s = cublasGetPointerMode(get(), &mode); assert( s == CUBLAS_STATUS_SUCCESS );
+		assert( mode == CUBLAS_POINTER_MODE_HOST );
+		sync_call<cublasZdotc>(n, (cuDoubleComplex const*)raw_pointer_cast(xx), incx, (cuDoubleComplex const*)raw_pointer_cast(yy), incy, (cuDoubleComplex*)rr);
 	}
 //	template<class ALPHA, class AAP, class AA = typename pointer_traits<AAP>::element_type, class BETA, class CCP, class CC = typename pointer_traits<CCP>::element_type,
 //		std::enable_if_t<

@@ -61,29 +61,6 @@ public:
         uni(generator_type(iseed), boost::uniform_real<T>(0, 1))
   {}
 
-  ///copy constructor
-  BoostRandom(const BoostRandom& rng)
-      : ClassName(rng.ClassName),
-        EngineName(rng.EngineName),
-        myContext(rng.myContext),
-        nContexts(rng.nContexts),
-        baseOffset(rng.baseOffset),
-        uni(rng.uni)
-  {}
-
-  ///copy operator (unnecessary but why not)
-  BoostRandom<T, RNG>& operator=(const BoostRandom& r)
-  {
-    ClassName  = r.ClassName;
-    EngineName = r.EngineName;
-    myContext  = r.myContext;
-    nContexts  = r.nContexts;
-    baseOffset = r.baseOffset, uni = r.uni;
-    return *this;
-  }
-
-  ~BoostRandom() {}
-
   /** initialize the generator
    * @param i thread index
    * @param nstr number of threads

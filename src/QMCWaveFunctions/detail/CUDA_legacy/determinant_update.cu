@@ -3,17 +3,19 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include "config.h"
 #include "determinant_update.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -1412,7 +1414,7 @@ __global__ void calc_ratio_grad_lapl(T** Ainv_list,
   // ratio to make it w.r.t. new position
   if (tid < 4)
     ratio_prod[(tid + 1) * BS1] /= ratio_prod[0];
-  __syncthreads();  
+  __syncthreads();
   if (tid < 5)
     ratio_grad_lapl[5 * blockIdx.x + tid] = ratio_prod[tid * BS1];
 }

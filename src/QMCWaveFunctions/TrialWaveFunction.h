@@ -112,13 +112,13 @@ public:
 
   inline RealType getPhaseDiff() const { return PhaseDiff; }
   inline void resetPhaseDiff() { PhaseDiff = 0.0; }
-  inline RealType getLogPsi() const { return LogValue; }
-  inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
+  inline RealType getLogPsi() const { return log_real_; }
+  inline void setLogPsi(RealType LogPsi_new) { log_real_ = LogPsi_new; }
 
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
    */
-  void addComponent(WaveFunctionComponent* aterm);
+  void addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -128,17 +128,42 @@ public:
   void startOptimization();
   /** set WaveFunctionComponent::IsOptimizing to flase */
   void stopOptimization();
-  /** check in an optimizable parameter
-   * * @param o a super set of optimizable variables
+
+  // Wavefunction Parameter Optimization
+  //
+  // The wavefunction consists of a set of components (derived from WaveFunctionComponent).
+  // Each of these components may or may not have variational parameters.
+  // In order to perform optimization:
+  //  1. Parameters are collected into a single list.
+  //  2. Optimization algorithm computes new values for those parameters.
+  //  3. Changed parameters are propagated back to each of the components.
+  //
+  // The collection of variables is of type VariableSet (opt_variables_type is a typedef).
+  // The variables local to each component are stored in WaveFunctionComponent::myVars, which
+  // is set to the local parameters when the component is set up.
+  // The call to checkInVariables collects all the local parameters into a global list (step 1).
+  // The resetIndex function on VariableSet then computes indices for this global list.
+  // The call to checkOutVariables sets up the mapping from global index to local index in each component's 'myVars'.
+  // Finally, the call to resetParameters progates the new values (step 3).
+  // The call to checkOutVariables is a prerequisite for resetParameters to set the local values successfully.
+
+  /** Check in an optimizable parameter
+   * * @param o aggregated list of optimizable variables
    *
-   * Update myOptIndex if o is found among the "active" paramemters.
+   * Gather all the optimizable parameters from wavefunction components into a single list
    */
   void checkInVariables(opt_variables_type& o);
-  /** check out optimizable variables
+
+  /** Check out optimizable variables
+   * Assign index mappings from global list (o) to local values in each component
    */
   void checkOutVariables(const opt_variables_type& o);
-  ///reset member data
+
+  /**  Set values of parameters in each component from the global list
+   */
   void resetParameters(const opt_variables_type& active);
+
+
   /** print out state of the trial wavefunction
    */
   void reportStatus(std::ostream& os);
@@ -277,7 +302,7 @@ public:
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
   static void mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVector<const VirtualParticleSet>& Vp_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 
@@ -376,6 +401,9 @@ public:
                                    int iat,
                                    const std::vector<bool>& isAccepted,
                                    bool safe_to_delay = false);
+
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   *  See WaveFunctionComponent::completeUpdates for more detail */
   void completeUpdates();
   /* batched version of completeUpdates.  */
   static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
@@ -406,11 +434,11 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   RealType KECorrection() const;
 
@@ -435,9 +463,9 @@ public:
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
   void evaluateHessian(ParticleSet& P, HessVector_t& all_grad_grad_psi);
 
-  TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<TrialWaveFunction> makeClone(ParticleSet& tqp) const;
 
-  std::vector<WaveFunctionComponent*>& getOrbitals() { return Z; }
+  std::vector<std::unique_ptr<WaveFunctionComponent>> const& getOrbitals() { return Z; }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
@@ -477,8 +505,8 @@ private:
   ///diff of the phase of the trial wave function during ratio calls
   RealType PhaseDiff;
 
-  ///log of the trial wave function
-  RealType LogValue;
+  ///real part of trial wave function log 
+  RealType log_real_;
 
   ///One over mass of target particleset, needed for Local Energy Derivatives
   RealType OneOverM;
@@ -487,7 +515,7 @@ private:
   const bool use_tasking_;
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
-  std::vector<WaveFunctionComponent*> Z;
+  std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;

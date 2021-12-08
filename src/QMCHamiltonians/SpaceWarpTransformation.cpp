@@ -1,6 +1,6 @@
 #include "QMCHamiltonians/SpaceWarpTransformation.h"
-#include "Particle/DistanceTableData.h"
-#include "type_traits/scalar_traits.h"
+#include "Particle/DistanceTable.h"
+#include "type_traits/ConvertToReal.h"
 namespace qmcplusplus
 {
 SpaceWarpTransformation::SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions)
@@ -18,7 +18,7 @@ SpaceWarpTransformation::RealType SpaceWarpTransformation::df(RealType r) { retu
 //This allows the calculation of any space warp value or gradient by a matrix lookup, combined with a sum over columns.
 void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, const ParticleSet& ions)
 {
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+  const auto& d_ab(P.getDistTableAB(myTableIndex));
   for (size_t iel = 0; iel < Nelec; ++iel)
   {
     const auto& dist = d_ab.getDistRow(iel);
@@ -77,7 +77,7 @@ void SpaceWarpTransformation::computeSWT(ParticleSet& P,
       el_contribution[iat] += w[iel] * dEl[iel];
 
 #if defined(QMC_COMPLEX)
-      convert(dlogpsi[iel], gwfn);
+      convertToReal(dlogpsi[iel], gwfn);
 #else
       gwfn = dlogpsi[iel];
 #endif

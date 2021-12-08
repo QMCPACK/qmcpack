@@ -19,7 +19,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -44,7 +44,7 @@ struct RealEGOSet : public SPOSet
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override {}
 
-  SPOSet* makeClone() const override { return new RealEGOSet(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<RealEGOSet>(*this); }
 
   PosType get_k(int i) override
   {
@@ -100,7 +100,11 @@ struct RealEGOSet : public SPOSet
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  inline void evaluateVGL(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          ValueVector_t& d2psi) override
   {
     psi[0]           = 1.0;
     dpsi[0]          = 0.0;
@@ -127,7 +131,11 @@ struct RealEGOSet : public SPOSet
    * @param dpsi gradient row
    * @param hess hessian row
    */
-  inline void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& hess) override
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& hess) override
   {
     psi[0]           = 1.0;
     dpsi[0]          = 0.0;
@@ -314,10 +322,9 @@ public:
   ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els);
 
   ///implement vritual function
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
   bool UseBackflow;
-  BackflowTransformation* BFTrans;
 };
 
 /** OrbitalBuilder for Slater determinants of electron-gas
@@ -325,7 +332,7 @@ public:
 class ElectronGasSPOBuilder : public SPOSetBuilder
 {
 protected:
-  HEGGrid<RealType, OHMMS_DIM> egGrid;
+  HEGGrid<RealType> egGrid;
   xmlNodePtr spo_node;
 
 public:
@@ -335,7 +342,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 };
 
 } // namespace qmcplusplus

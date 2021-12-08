@@ -119,10 +119,10 @@ public:
   enum class SimpleBranchVectorParameter
   {
     TAU = 0,
-    TAUEFF,
-    ETRIAL,
-    EREF,
-    ENOW,
+    TAUEFF, // effective time step
+    ETRIAL, // Trial energy
+    EREF,   // Center of the branching cutoff energy window
+    ENOW,   // weighted average energy of the population in the current step
     BRANCHMAX,
     BRANCHCUTOFF,
     BRANCHFILTER,
@@ -278,6 +278,7 @@ public:
   inline RealType getTau() const { return vParam[SBVP::TAU]; }
   inline RealType getTauEff() const { return vParam[SBVP::TAUEFF]; }
 
+  int getWarmupToDoSteps() const { return WarmUpToDoSteps; }
   /** perform branching
    * @param iter current step
    * @param w Walker configuration
@@ -306,11 +307,10 @@ private:
   IParamType iParam;
 
   VParamType vParam;
-  /** number of remaning steps for a specific tasks
-   *
-   * set differently for BranchMode[B_DMCSTAGE]
-   */
-  int ToDoSteps;
+  /// number of remaning steps in warmup, [0, iParam[B_WARMUPSTEPS]]
+  int WarmUpToDoSteps;
+  /// number of remaning steps in before adjusting ETRIAL, [0, iParam[B_ENERGYUPDATEINTERVAL]]
+  int EtrialUpdateToDoSteps;
   ///save xml element
   xmlNodePtr myNode;
   ///a simple accumulator for energy
@@ -323,8 +323,6 @@ private:
   accumulator_set<RealType> R2Proposed;
   ///a simple accumulator for reptation's center slice
   accumulator_set<RealType> R2Center;
-  /////histogram of populations
-  //BlockHistogram<RealType> PopHist;
   /////histogram of populations
   //BlockHistogram<RealType> DMCEnergyHist;
   ///scheme of branching cutoff

@@ -39,10 +39,10 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
 }
 
 ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els)
-    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false), BFTrans(nullptr)
+    : WaveFunctionComponentBuilder(comm, els), UseBackflow(false)
 {}
 
-WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
   ValueType bosonic_eps(-999999);
@@ -73,8 +73,7 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-  typedef SlaterDet SlaterDeterminant_t;
-  HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
+  HEGGrid<RealType> egGrid(targetPtcl.Lattice);
   int nat = targetPtcl.getTotalNum();
   if (nc == 0)
     nc = nc2 = egGrid.getShellIndex(nat / 2);
@@ -107,60 +106,38 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
     if (nup != ndn)
     {
       int nkpts2 = (ndn - 1) / 2;
-      HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
+      HEGGrid<RealType> egGrid2(targetPtcl.Lattice);
       egGrid2.createGrid(nc2, nkpts2);
     }
     psid = std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
   }
 
   //create a Slater determinant
-  SlaterDeterminant_t* sdet;
-  if (UseBackflow)
-    sdet = new SlaterDetWithBackflow(targetPtcl, BFTrans);
-  else
-    sdet = new SlaterDeterminant_t(targetPtcl);
-
   if (UseBackflow)
   {
-    DiracDeterminantWithBackflow *updet, *downdet;
     app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
-    //create up determinant
-    updet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psiu), BFTrans, 0);
-    updet->set(0, nup);
-    if (ndn > 0)
-    {
-      //create down determinant
-      downdet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psid), BFTrans, nup);
-      downdet->set(nup, ndn);
-    }
     PtclPoolType dummy;
     BackflowBuilder bfbuilder(targetPtcl, dummy);
-    BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
-    sdet->add(updet, 0);
+    auto BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
+    std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dets;
+    //create up determinant
+    dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(std::move(psiu), *BFTrans, 0, nup));
+    //create down determinant
     if (ndn > 0)
-      sdet->add(downdet, 1);
-    sdet->setBF(BFTrans);
-    if (BFTrans->isOptimizable())
-      sdet->Optimizable = true;
+      dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(std::move(psid), *BFTrans, nup, nup + ndn));
+    auto sdet = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dets), std::move(BFTrans));
+    return sdet;
   }
   else
   {
-    DiracDeterminant<>*updet, *downdet;
+    std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
     //create up determinant
-    updet = new DiracDeterminant<>(std::move(psiu));
-    updet->set(0, nup);
+    dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psiu), 0, nup));
+    //create down determinant
     if (ndn > 0)
-    {
-      //create down determinant
-      downdet = new DiracDeterminant<>(std::move(psid));
-      downdet->set(nup, ndn);
-    }
-    sdet->add(updet, 0);
-    if (ndn > 0)
-      sdet->add(downdet, 1);
+      dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psid), nup, nup + ndn));
+    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
   }
-
-  return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
@@ -169,7 +146,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, 
   ClassName = "ElectronGasSPOBuilder";
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int nc = 0;
   int ns = 0;
@@ -190,7 +167,7 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("ElectronGasOrbitalBuilder::put");
   }
   egGrid.createGrid(nc, (ns - 1) / 2);
-  return new RealEGOSet(egGrid.kpt, egGrid.mk2);
+  return std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
 }
 
 } // namespace qmcplusplus

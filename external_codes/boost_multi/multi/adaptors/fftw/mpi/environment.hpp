@@ -22,7 +22,7 @@ namespace mpi{
 namespace bmpi3 = boost::mpi3;
 
 struct environment{
-	 environment(bmpi3::environment&){fftw_mpi_init();}
+	explicit environment(bmpi3::environment&){fftw_mpi_init();}
 	~environment(){fftw_mpi_cleanup();}
 };
 

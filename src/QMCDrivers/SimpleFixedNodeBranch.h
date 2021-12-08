@@ -28,6 +28,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/BlockHistogram.h"
 #include "Estimators/accumulators.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/Crowd.h"
@@ -215,8 +216,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
 
-  ///TODO: Should not be raw pointer
-  EstimatorManagerBase* MyEstimator;
+  std::unique_ptr<EstimatorManagerBase> MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
   ///a simple accumulator for variance
@@ -278,13 +278,13 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline void regressQMCCounter() { iParam[B_COUNTER]--; }
 
   /** get the EstimatorManager */
-  EstimatorManagerBase* getEstimatorManager() { return MyEstimator; }
+  EstimatorManagerBase* getEstimatorManager() { return MyEstimator.get(); }
 
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
    * this assumes estimator managers are reused section to section
    * */
-  void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
+  void setEstimatorManager(std::unique_ptr<EstimatorManagerBase> est) { MyEstimator = std::move(est); }
 
   /** initialize  the WalkerController
    * @param mcwc Walkers

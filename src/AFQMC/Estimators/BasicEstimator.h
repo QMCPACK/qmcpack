@@ -90,7 +90,7 @@ public:
 
   ~BasicEstimator() {}
 
-  void accumulate_block(WalkerSet& wset) {}
+  void accumulate_block(WalkerSet& wset) override {}
 
 
   //  curData:
@@ -101,7 +101,7 @@ public:
   //  4: 1/nW * sum_i abs(<psi_T|phi_i>)
   //  5: nW                          (total number of walkers)
   //  6: "healthy" nW                (total number of "healthy" walkers)
-  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData)
+  void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData) override
   {
     ncalls++;
     if (nwfacts > 0)
@@ -129,7 +129,7 @@ public:
     nwalk_good += static_cast<int>(std::floor(curData[6].real()));
   }
 
-  void tags(std::ofstream& out)
+  void tags(std::ofstream& out) override
   {
     if (writer)
     {
@@ -145,7 +145,7 @@ public:
     }
   }
 
-  void tags_timers(std::ofstream& out)
+  void tags_timers(std::ofstream& out) override
   {
     if (writer)
       if (timers)
@@ -153,7 +153,7 @@ public:
                "extra_t Block_t ";
   }
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     data[0] = enume.real() / ncalls;
     data[1] = edeno.real() / ncalls;
@@ -185,7 +185,7 @@ public:
     ovlp       = 0;
   }
 
-  void print_timers(std::ofstream& out)
+  void print_timers(std::ofstream& out) override
   {
     if (writer)
     {
@@ -217,9 +217,9 @@ public:
     }
   }
 
-  double getEloc() { return data[0] / data[1]; }
+  double getEloc() override { return data[0] / data[1]; }
 
-  double getEloc_step() { return data2[0] / data2[1]; }
+  double getEloc_step() override { return data2[0] / data2[1]; }
 
 
 private:

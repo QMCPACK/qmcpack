@@ -19,10 +19,16 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
 {
+/// determinant matrix inverter select
+enum class DetMatInvertor
+{
+  HOST,
+  ACCEL,
+};
+
 class DiracDeterminantBase : public WaveFunctionComponent
 {
 public:
@@ -31,8 +37,9 @@ public:
    *  shared_ptr is intended neither for sharing between spin up and down electrons nor for sharing between clones.
    *  The sharing aspect is for the determinants used by the the multi-determinant slow implementation.
    *@param first index of the first particle
+   *@param last index of last particle
    */
-  DiracDeterminantBase(const std::string& class_name, std::shared_ptr<SPOSet>&& spos, int first = 0)
+  DiracDeterminantBase(const std::string& class_name, std::shared_ptr<SPOSet>&& spos, int first, int last)
       : WaveFunctionComponent(class_name),
         UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
@@ -42,9 +49,9 @@ public:
         SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
         Phi(std::move(spos)),
         FirstIndex(first),
-        LastIndex(first + Phi->size()),
-        NumOrbitals(Phi->size()),
-        NumPtcls(Phi->size())
+        LastIndex(last),
+        NumOrbitals(last - first),
+        NumPtcls(last - first)
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
@@ -52,7 +59,7 @@ public:
   }
 
   ///default destructor
-  virtual ~DiracDeterminantBase() {}
+  ~DiracDeterminantBase() override {}
 
   // copy constructor and assign operator disabled
   DiracDeterminantBase(const DiracDeterminantBase& s) = delete;
@@ -69,23 +76,14 @@ public:
   virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
 #endif
 
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   */
-  virtual void set(int first, int nel, int delay = 1){};
-
-  ///set BF pointers
-  virtual void setBF(BackflowTransformation* BFTrans) {}
-
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
+  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
+  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
-  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
+  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
-  inline void reportStatus(std::ostream& os) override final {}
+  inline void reportStatus(std::ostream& os) final {}
 
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
@@ -132,19 +130,19 @@ public:
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
   }
 
-  // Stop makeClone
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override final
+  // final keyword is intended to disable makeClone being further inherited.
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
-    return 0;
+    return std::unique_ptr<DiracDeterminantBase>();
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
     return 0.0;
   }
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
     return GradType();
@@ -156,7 +154,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
+  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
 
 #ifdef QMC_CUDA
   // expose GPU interfaces
@@ -183,15 +181,18 @@ protected:
    */
   const std::shared_ptr<SPOSet> Phi;
   ///index of the first particle with respect to the particle set
-  int FirstIndex;
+  const int FirstIndex;
   ///index of the last particle with respect to the particle set
-  int LastIndex;
+  const int LastIndex;
   ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
+  const int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
+  const int NumPtcls;
 
 #ifndef NDEBUG
+  // This is for debugging and testing in debug mode
+  // psiMinv is not a base class data member or public in most implementations
+  // it is frequently Dual and its consistency not guaranteed.
   ValueMatrix_t dummy_vmt;
 #endif
 

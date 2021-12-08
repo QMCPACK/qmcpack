@@ -19,7 +19,7 @@
 #include "CPU/BLAS.hpp"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Numerics/DeterminantOperators.h"
 #include <set>
 
@@ -28,7 +28,7 @@ namespace qmcplusplus
 MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
     : M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   psi_ratios.resize(elns.getTotalNum());
   twist = elns.getTwist();
 }
@@ -72,7 +72,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
       const RealType* restrict phases_vPos_c = phases_vPos[s].data(0);
       const RealType* restrict phases_vPos_s = phases_vPos[s].data(1);
       RealType* restrict nofK_here           = nofK.data();
-#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s : QMC_SIMD_ALIGNMENT)
       for (int ik = 0; ik < nk; ++ik)
         nofK_here[ik] += (phases_c[ik] * phases_vPos_c[ik] - phases_s[ik] * phases_vPos_s[ik]) * ratio_c -
             (phases_s[ik] * phases_vPos_c[ik] + phases_c[ik] * phases_vPos_s[ik]) * ratio_s;
@@ -80,8 +80,8 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   }
   if (hdf5_out)
   {
-    RealType w = tWalker->Weight * norm_nofK;
-    int j      = myIndex;
+    RealType w = t_walker_->Weight * norm_nofK;
+    int j      = my_index_;
     for (int ik = 0; ik < nofK.size(); ++ik, ++j)
       P.Collectables[j] += w * nofK[ik];
   }
@@ -94,20 +94,20 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void MomentumEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {
     //descriptor for the data, 1-D data
     std::vector<int> ng(1);
     //add nofk
-    ng[0]                  = nofK.size();
-    observable_helper* h5o = new observable_helper("nofk");
-    h5o->set_dimensions(ng, myIndex);
-    h5o->open(gid);
-    h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-    h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
-    h5desc.push_back(h5o);
+    ng[0] = nofK.size();
+    h5desc.emplace_back("nofk");
+    auto& h5o = h5desc.back();
+    h5o.set_dimensions(ng, my_index_);
+    h5o.open(gid);
+    h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
+    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
   }
 }
 
@@ -116,12 +116,12 @@ void MomentumEstimator::addObservables(PropertySetType& plist, BufferType& colle
 {
   if (hdf5_out)
   {
-    myIndex = collectables.size();
+    my_index_ = collectables.size();
     collectables.add(nofK.begin(), nofK.end());
   }
   else
   {
-    myIndex = plist.size();
+    my_index_ = plist.size();
     for (int i = 0; i < nofK.size(); i++)
     {
       std::stringstream sstr;
@@ -136,7 +136,7 @@ void MomentumEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
   {
-    copy(nofK.begin(), nofK.end(), plist.begin() + myIndex);
+    copy(nofK.begin(), nofK.end(), plist.begin() + my_index_);
   }
 }
 
@@ -144,7 +144,7 @@ void MomentumEstimator::setParticlePropertyList(PropertySetType& plist, int offs
 {
   if (!hdf5_out)
   {
-    copy(nofK.begin(), nofK.end(), plist.begin() + myIndex + offset);
+    copy(nofK.begin(), nofK.end(), plist.begin() + my_index_ + offset);
   }
 }
 
@@ -421,11 +421,11 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 
 bool MomentumEstimator::get(std::ostream& os) const { return true; }
 
-OperatorBase* MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  MomentumEstimator* myclone = new MomentumEstimator(qp, psi);
+  std::unique_ptr<MomentumEstimator> myclone = std::make_unique<MomentumEstimator>(qp, psi);
   myclone->resize(kPoints, M);
-  myclone->myIndex   = myIndex;
+  myclone->my_index_ = my_index_;
   myclone->norm_nofK = norm_nofK;
   myclone->hdf5_out  = hdf5_out;
   return myclone;

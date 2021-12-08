@@ -114,18 +114,18 @@ public:
   using SPOSet::acquireResource;
   using SPOSet::releaseResource;
 
-  virtual SPOSet* makeClone() const override = 0;
+  std::unique_ptr<SPOSet> makeClone() const override = 0;
 
   void resetParameters(const opt_variables_type& active) override {}
 
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
-  virtual void evaluate_notranspose(const ParticleSet& P,
-                                    int first,
-                                    int last,
-                                    ValueMatrix_t& logdet,
-                                    GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet) override
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet) override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
@@ -138,13 +138,13 @@ public:
     }
   }
 
-  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
-                                       const RefVectorWithLeader<ParticleSet>& P_list,
-                                       int first,
-                                       int last,
-                                       const RefVector<ValueMatrix_t>& logdet_list,
-                                       const RefVector<GradMatrix_t>& dlogdet_list,
-                                       const RefVector<ValueMatrix_t>& d2logdet_list) const override
+  void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int first,
+                               int last,
+                               const RefVector<ValueMatrix_t>& logdet_list,
+                               const RefVector<GradMatrix_t>& dlogdet_list,
+                               const RefVector<ValueMatrix_t>& d2logdet_list) const override
   {
     assert(this == &spo_list.getLeader());
     typedef ValueMatrix_t::value_type value_type;
@@ -187,12 +187,12 @@ public:
     }
   }
 
-  virtual void evaluate_notranspose(const ParticleSet& P,
-                                    int first,
-                                    int last,
-                                    ValueMatrix_t& logdet,
-                                    GradMatrix_t& dlogdet,
-                                    HessMatrix_t& grad_grad_logdet) override
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet) override
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
@@ -203,13 +203,13 @@ public:
     }
   }
 
-  virtual void evaluate_notranspose(const ParticleSet& P,
-                                    int first,
-                                    int last,
-                                    ValueMatrix_t& logdet,
-                                    GradMatrix_t& dlogdet,
-                                    HessMatrix_t& grad_grad_logdet,
-                                    GGGMatrix_t& grad_grad_grad_logdet) override
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet,
+                            GGGMatrix_t& grad_grad_grad_logdet) override
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
@@ -221,24 +221,24 @@ public:
     }
   }
 
-  virtual void evaluateGradSource(const ParticleSet& P,
-                                  int first,
-                                  int last,
-                                  const ParticleSet& source,
-                                  int iat_src,
-                                  GradMatrix_t& gradphi) override
+  void evaluateGradSource(const ParticleSet& P,
+                          int first,
+                          int last,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradMatrix_t& gradphi) override
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
 
-  virtual void evaluateGradSource(const ParticleSet& P,
-                                  int first,
-                                  int last,
-                                  const ParticleSet& source,
-                                  int iat_src,
-                                  GradMatrix_t& grad_phi,
-                                  HessMatrix_t& grad_grad_phi,
-                                  GradMatrix_t& grad_lapl_phi) override
+  void evaluateGradSource(const ParticleSet& P,
+                          int first,
+                          int last,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradMatrix_t& grad_phi,
+                          HessMatrix_t& grad_grad_phi,
+                          GradMatrix_t& grad_lapl_phi) override
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }

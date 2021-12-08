@@ -53,6 +53,7 @@ from basisset import process_gaussian_text,GaussianBasisSet
 from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
+#from testing import *
 
 try:
     import matplotlib.pyplot as plt
@@ -595,7 +596,7 @@ class SemilocalPP(Pseudopotential):
 
     # test needed
     def add_L2(self,v):
-        self.set_component('L2',guard=True)
+        self.set_component('L2',v,guard=True)
     #end def add_L2
 
 
@@ -1579,7 +1580,7 @@ Number of grid points
 
 class GaussianPP(SemilocalPP):
     requires_format = True
-    formats = SemilocalPP.formats + 'gaussian gamess crystal'.split()
+    formats = SemilocalPP.formats + 'gaussian gamess crystal numhf'.split()
 
     @staticmethod
     def process_float(s):
@@ -1690,6 +1691,27 @@ class GaussianPP(SemilocalPP):
                 channels[l] = c[0:len(c)-len(loc)]
             #end for
             channels = [loc] + channels
+        elif format=='numhf':
+            name = None
+            i=0
+            Zval,lmax = lines[i].split(); i+=1;
+            Zval = int(Zval)
+            lmax = int(lmax)-1
+            element = self.element
+            Zcore = int(pt[element].atomic_number)-Zval
+            ns =  [int(n) for n in lines[i].split()]; i+= 1;
+            while i<len(lines):
+                for n in ns:
+                    terms = []
+                    for j in range(n):
+                        rpow,expon,coeff = lines[i].split(); i+=1
+                        terms.append((float(coeff),int(rpow),float(expon)))
+                    #end for
+                    channels.append(terms)
+                #end for
+            #end while
+            # Bring local channel to front
+            channels.insert(0,channels.pop())
         else:
             self.error('ability to read file format {0} has not been implemented'.format(format))
         #end if
@@ -1860,6 +1882,20 @@ class GaussianPP(SemilocalPP):
                 #end if
             #end for
             text += '\n'
+        elif format=='numhf':
+            channel_order = self.l_channels[:self.lmax+1]
+            text += '{} {}\n'.format(self.Zval,len(self.components))
+            for c in channel_order:
+                text += '{} '.format(len(self.components[c]))
+            #end for
+            text = text[:-1]+'\n'
+            for c in channel_order:
+                comp = self.components[c]
+                for i in sorted(comp.keys()):
+                    g = comp[i]
+                    text += '{0} {1:12.8f} {2:12.8f}\n'.format(g.rpow,g.expon,g.coeff)
+                #end for
+            #end for
         else:
             self.error('ability to write file format {0} has not been implemented'.format(format))
         #end if
@@ -1956,6 +1992,532 @@ class GaussianPP(SemilocalPP):
         execute(command,verbose=True)
         os.system('rm '+tmpfile)
     #end def ppconvert
+
+
+    # test needed
+    def append_to_component(self,l,coeff,expon,rpow):
+        '''
+        This function is used to append a term to a Gaussian ECP component.
+        l: the angular ccomponent that the Gaussian term will be appended to 
+        coeff, expon, rpow: the coefficient, exponent, and r-power of the Gaussian term
+        '''
+        if l>self.lmax:
+            self.error('component {} not present in PP.'.format(l))
+        #end if
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
+    #end def append_to_component
+
+
+    # test needed
+    def scale_component(self,l,scale):
+        '''
+        This function is used to scale a Gaussian ECP component by a factor.
+        l: the angular component that is scaled.
+        scale: the scaling factor
+        '''
+        if l>self.lmax:
+            self.error('component {} not present in PP.'.format(l))
+        #end if
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        for term in self.components[chan_labels[l]]:
+            term.coeff*=scale
+        #end for
+    #end def scale_component
+
+
+    # test needed
+    def simplify(self):
+        '''
+        This function simplifies the Guassian ECP. The simplificactions are as follows:
+        1. Remove all terms with coefficients that are equal to zero -- unless only one term exists.
+        2. Within each component, look for terms that have matching exponents and r-powers, if any are
+           present, then sum their coefficicents to make a single term. If the coefficients sum to
+           zero, then remove the terms (unless that leaves the component empty)
+        '''
+        dec=16
+        # Remove terms with coefficients equivalent to zero
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        remove = []
+        for l in np.arange(self.lmax+1):
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                if abs(term.coeff)<1e-12 and len(self.components[chan_labels[l]])>1:
+                    remove.append((chan_labels[l],term_idx))
+                #end if
+            #end for
+        #end for
+        for r in remove:
+            self.components[r[0]].delete(r[1])
+        #end for
+        comps = self.components.copy()
+        for l in np.arange(self.lmax+1):
+            comps[chan_labels[l]] = obj()
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                comps[chan_labels[l]].append(term)
+            #end for
+        #end for
+        self.components = comps.copy()
+        comps = self.components.copy()
+        for l in np.arange(self.lmax+1):
+            terms = []
+            comps[chan_labels[l]] = obj()
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                terms.append(term.list())
+            #end for
+            terms = np.array(terms)
+            like_terms = []
+            if len(terms)>1:
+                rpows  = terms[:,2]
+                expons = terms[:,1]
+                coeffs = terms[:,0]
+                for ex_idx,ex in enumerate(expons.round(decimals=dec)):
+                    if any(ex_idx in subl for subl in like_terms):
+                        continue
+                    #end if
+                    match = np.argwhere(expons.round(decimals=dec)==ex)
+                    if len(match)>1:
+                        match = match.flatten()
+                        unique_pows = np.unique(rpows[match].round(decimals=dec))
+                        if len(unique_pows)==1:
+                            like_terms.append(match.tolist())
+                        else:
+                            for uv in unique_pows:
+                                uv_count = rpows[match].round(decimals=dec).tolist().count(uv)
+                                if uv_count>1:
+                                    m = match[rpows[match].round(decimals=dec)==uv][0]
+                                    if any(m in subl for subl in like_terms):
+                                        continue
+                                    else:
+                                        like_terms.append(match[rpows[match].round(decimals=dec)==uv].tolist())
+                                    #end if
+                                #end if
+                            #end for
+                        #end if
+                    #end if
+                #end for
+            #end if
+            # update comps
+            comps[chan_labels[l]] = obj()
+            added = []
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                if any(term_idx in subl for subl in like_terms):
+                    if term_idx in added:
+                        continue
+                    else:
+                        for mlist in like_terms:
+                            if term_idx in mlist and not term_idx in added:
+                                coeff = 0.0
+                                mod_term = term.copy()
+                                for ti in mlist: 
+                                    coeff += self.components[chan_labels[l]][ti].coeff
+                                #end for
+                                if abs(coeff)>1e-12:
+                                    mod_term.coeff = coeff
+                                    comps[chan_labels[l]].append(mod_term)
+                                #end if
+                                added.extend(mlist)
+                            #end if
+                        #end for
+                    #end if
+                else:
+                    comps[chan_labels[l]].append(term)
+                    added.append(term_idx)
+                #end if
+            #end for
+            if len(comps[chan_labels[l]])==0:
+                # All terms cancelled. Add placeholder
+                plcehldr = self.components['s'][0].copy()
+                plcehldr.coeff = 0.0
+                plcehldr.rpow = 2
+                plcehldr.expon = 1.0
+                comps[chan_labels[l]].append(plcehldr)
+        #end for
+        self.components = comps.copy()
+    #end def simplify
+
+
+    # test needed
+    def is_truncated_L2(self):
+        '''
+        Determine if the Gaussian ECP's channels follow an L2 relationship.
+        '''
+        # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
+        # Only checked for lmax=2 and higher
+        p1 = self.copy()
+        p1.simplify()
+        p2 = self.copy()
+        p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
+        p2.simplify()
+        return object_eq(p2,p1)
+    #end def is_truncated_L2
+
+
+    # test needed
+    def get_unboundedness(self,db,dbs):
+        '''
+        This function quantifies how unbounded a truncated L2 potential is.
+        This is done by constructing a function that corrects VL2 in the unbounded region.
+        Then integrating the difference between VL2 and the correcting function.
+        '''
+        if not self.is_truncated_L2():
+            self.error('The PP must be in the truncated L2 form.')
+        #end if
+        import math
+        def poly(x,c):
+            val=0
+            for ci,cv in enumerate(c):
+                val+=cv*x**ci
+            return val
+        #end def
+        
+        def Rs(x,dx,s,c):
+            if x+1-s<-dx:
+                return 0-(1-s)
+            elif x+1-s>dx:
+                return x
+            else:
+                return poly(x+1-s,c)-(1-s)
+        #end def
+        A=[]
+        for i in range(8):
+            row=[]
+            for j in range(8):
+                if i<4:
+                    if j-i<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-i)
+                        dpower=j-i
+                    #end if
+                    row.append(dcoeff*db**dpower)
+                else:
+                    if j-(i-4)<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-(i-4))
+                        dpower=j-(i-4)
+                    #end if
+                    row.append(dcoeff*(-db)**dpower)
+                #end if
+            #end for
+            A.append(row)
+        #end for
+        
+        A = np.array(A)
+        b = np.array([db,1]+[0]*6)
+        c = np.linalg.inv(A).dot(b)
+
+        ng=3000
+        gmin=0.02
+        gmax=0.85
+        r = np.linspace( gmin, gmax, ng )
+
+
+        # PP
+        v = []
+        for l in ['s','p']:
+            vtmp = []
+            for ri in r:
+                vtmp.append(self.evaluate_component(r=ri,l=l))
+            #for
+            v.append(vtmp)
+        #for
+        v=np.array(v)
+
+        # 2*r^2*VL2 
+        if self.lmax>1:
+            f = r*r*(v[1]-v[0])
+        elif self.lmax==1:
+            f = -r*r*v[0]
+        else:
+            self.error('Not sure what to do with fully local potential.')
+        #end if
+            
+        # 2*r^2*V'L2 
+        fp = [Rs(fr,db,dbs,c) for fr in f]
+
+        unboundedness = 0
+        for fi,fx in enumerate(f):
+            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+        #end for
+
+        return unboundedness
+
+    #end def get_unboundedness
+
+
+    # test needed
+    def make_L2_bounded(self,db,dbs,exps0=None,plot=False):
+        '''
+        For a truncated L2 potential, this function constructs a correction to VL2 in the unbounded region.
+        Then the correction is fit to a set of Gaussian primitives that are provided in the array 'exps0'.
+        The fitted Gaussian primitives are then appended to the ECP, resulting in a bounded truncated L2 potential.
+        '''
+        if not self.is_truncated_L2():
+            self.error('The PP must be in the truncated L2 form.')
+        #end if
+        if exps0 is None:
+            self.error('Please provide a aet of exponents to be used for correction.')
+        import math
+        def poly(x,c):
+            val=0
+            for ci,cv in enumerate(c):
+                val+=cv*x**ci
+            return val
+        #end def
+        
+        def Rs(x,dx,s,c):
+            if x+1-s<-dx:
+                return 0-(1-s)
+            elif x+1-s>dx:
+                return x
+            else:
+                return poly(x+1-s,c)-(1-s)
+        #end def
+        class fitClass:
+        
+            def __init__(self):
+                pass
+        
+            def gauss_correction(self,x,c1,c2,c3):
+                val = 0
+                for ci,c in enumerate([c1,c2,c3]):
+                    val+=x**2.*c*np.exp(-self.exps[ci]*x**2.)
+                #end for
+                return val
+            #end def
+        
+            def gauss_correction_2_param(self,x,c1,c2):
+                val = 0
+                for ci,c in enumerate([c1,c2]):
+                    val+=x**2.*c*np.exp(-self.exps[ci]*x**2.)
+                #end for
+                return val
+            #end def
+        
+            def gauss_correction_1_param(self,x,c1):
+                val = 0
+                for ci,c in enumerate([c1]):
+                    val+=x**2.*c*np.exp(-self.exps[ci]*x**2.)
+                #end for
+                return val
+            #end def
+        
+        #end class
+
+        A=[]
+        for i in range(8):
+            row=[]
+            for j in range(8):
+                if i<4:
+                    if j-i<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-i)
+                        dpower=j-i
+                    #end if
+                    row.append(dcoeff*db**dpower)
+                else:
+                    if j-(i-4)<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-(i-4))
+                        dpower=j-(i-4)
+                    #end if
+                    row.append(dcoeff*(-db)**dpower)
+                #end if
+            #end for
+            A.append(row)
+        #end for
+        
+        A = np.array(A)
+        b = np.array([db,1]+[0]*6)
+        c = np.linalg.inv(A).dot(b)
+
+        ng=3000
+        gmin=0.02
+        gmax=0.85
+        r = np.linspace( gmin, gmax, ng )
+
+
+        # PP
+        v = []
+        for l in ['s','p']:
+            vtmp = []
+            for ri in r:
+                vtmp.append(self.evaluate_component(r=ri,l=l))
+            #for
+            v.append(vtmp)
+        #for
+        v=np.array(v)
+
+        # 2*r^2*VL2 
+        if self.lmax>1:
+            f = r*r*(v[1]-v[0])
+        elif self.lmax==1:
+            f = -r*r*v[0]
+        else:
+            self.error('Not sure what to do with fully local potential.')
+        #end if
+            
+        # 2*r^2*V'L2 
+        fp = [Rs(fr,db,dbs,c) for fr in f]
+
+        unboundedness = 0
+        for fi,fx in enumerate(f):
+            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+        #end for
+        #print('\npseudopotential undoundedness: ',undoundedness)
+        from scipy.optimize import curve_fit
+
+        fit_instance = fitClass()
+        fit_instance.exps=exps0
+        if len(exps0)==1:
+            popt, pcov = curve_fit(fit_instance.gauss_correction_1_param, r, f-fp)
+        elif len(exps0)==2:
+            popt, pcov = curve_fit(fit_instance.gauss_correction_2_param, r, f-fp)
+        elif len(exps0)==3:
+            popt, pcov = curve_fit(fit_instance.gauss_correction, r, f-fp)
+        else:
+            self.error('Number of correction primitives not coded.')
+        #end if
+
+        if plot:
+            import matplotlib.pyplot as plt
+
+            plt.plot(r, fp, 'g-', label='fp')
+
+            plt.xlabel('r (bohr)')
+            plt.ylabel('$2r^2v_{L^2}$')
+
+            if len(exps0)==1:
+                plt.plot(r, f-fit_instance.gauss_correction_1_param(r, *popt), 'r-',label='f-corr')
+            elif len(exps0)==2:
+                plt.plot(r, f-fit_instance.gauss_correction_2_param(r, *popt), 'r-',label='f-corr')
+            elif len(exps0)==3:
+                plt.plot(r, f-fit_instance.gauss_correction(r, *popt), 'r-',label='f-corr')
+            #end if
+
+            plt.plot(r, f, 'b-',label='f')
+            plt.plot(r, [-1]*len(r), 'k-',label=None)
+            plt.legend()
+            plt.show()
+        #end if
+        for expon_idx,expon in enumerate(exps0):
+            self.components['s'].append(obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2))
+        #end if
+        self.transform_to_truncated_L2(keep='s p',lmax=self.lmax)
+        self.simplify()
+
+    #end def make_L2_bounded
+
+
+    # test needed
+    def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+        '''
+        This function transforms a Gaussian ECP into a truncated L2 form, i.e., a form
+        for which all channels follow an L2 relationship. For a semi-local ECP, this 
+        transformation can have a significant negative impact on transferability. For
+        an ECP that is already in a trucnated L2 form, the transformation has no affect.
+        '''
+        ##############################################################################
+        # WARNING: ONLY PERFORM THIS TRANSFORMATION IF YOU KNOW WHAT YOU ARE DOING.
+        #          TRANSFERABILITY IS GENERALLY REDUCED SEVERELY AFTER TRANSFORM.
+        ##############################################################################
+        comps = list(self.components.keys())
+        if keep is None or lmax is None:
+            self.error('parameters \'keep\' and \'lmax\' must be specified.')
+        #end if
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        keep_chans = keep.split()
+        # Are the labels recognized?
+        if keep_chans[0] not in chan_labels or keep_chans[1] not in chan_labels:
+            slef.error('Requested channel to keep is not recognized')
+        #end if
+        # Does the original potential contain the requested channels?
+        if keep_chans[0] not in comps or keep_chans[1] not in comps:
+            self.error('Cannot keep channel that is not already present')
+        #end if
+        ## Are the requested 'keep' channels different?
+        if chan_labels.index(keep_chans[0]) == chan_labels.index(keep_chans[1]):
+            self.error('The two channels must be different.')
+        #end if
+        keep_l_vals = []
+        keep_l_vals.append(chan_labels.index(keep_chans[0]))
+        keep_l_vals.append(chan_labels.index(keep_chans[1]))
+        keep_l_vals.sort()
+        # Is one of the channels the local channel?
+        if keep_l_vals[0]==self.lmax or keep_l_vals[1]==self.lmax:
+            keep_local=True
+        else:
+            keep_local=False
+        #end if
+        old_lmax = self.lmax
+        old_local = self.local
+        self.lmax  = lmax
+        self.local = chan_labels[lmax]
+        if not keep_local:
+            
+            lm = keep_l_vals[0]
+            ln = keep_l_vals[1]
+
+            self.components[chan_labels[lmax]] = self.components[old_local]
+            fctr = lm*(lm+1)-lmax*(lmax+1)
+            fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
+            for term in self.components[chan_labels[ln]]:
+                self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
+            #end for
+            fctr = lmax*(lmax+1)-ln*(ln+1)
+            fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
+            for term in self.components[chan_labels[lm]]:
+                self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
+            #end for
+
+            vm_comp = self.components[chan_labels[lm]].copy()
+            vn_comp = self.components[chan_labels[ln]].copy()
+            for l in np.arange(lmax):
+                fctr = l*(l+1)-lmax*(lmax+1)
+                fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
+                self.components[chan_labels[l]] = obj()
+                for term_idx,term in enumerate(vm_comp):
+                    self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
+                #end for
+                for term_idx,term in enumerate(vn_comp):
+                    self.append_to_component(l,coeff=-fctr*term.coeff,expon=term.expon,rpow=term.rpow)
+                #end for
+            #end for
+
+        else:
+            
+            lloc = keep_l_vals[1]
+            lm = keep_l_vals[0]
+
+            fctr = lmax*(lmax+1)-lloc*(lloc+1)
+            fctr = float(fctr)/(lm*(lm+1)-lloc*(lloc+1))
+            self.components[chan_labels[lmax]] = self.components[chan_labels[lloc]]
+            for term in self.components[chan_labels[lm]]:
+                self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
+            #end for
+
+            vm_comp = self.components[chan_labels[lm]].copy()
+            for l in np.arange(lmax):
+                fctr = l*(l+1)-lmax*(lmax+1)
+                fctr = float(fctr)/(lm*(lm+1)-lloc*(lloc+1))
+                self.components[chan_labels[l]] = obj()
+                for term_idx,term in enumerate(vm_comp):
+                    self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
+                #end for
+            #end for
+
+        #end if
+
+        self.simplify()
+
+    #end def transform_to_truncated_L2
 #end class GaussianPP
 
 

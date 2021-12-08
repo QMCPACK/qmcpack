@@ -39,7 +39,6 @@ public:
   void output(Matrix<RealType>& mat);
 
 private:
-
   int index_;
 
   std::ofstream output_file_;

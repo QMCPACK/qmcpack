@@ -19,10 +19,14 @@
 #include "Configuration.h"
 #include "OperatorEstBase.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
-#include "Utilities/SpeciesSet.h"
 
 namespace qmcplusplus
 {
+class SpeciesSet;
+namespace testing
+{
+class SpinDensityNewTests;
+}
 /** Class that collects density per species of particle
  *
  *  commonly used for spin up and down electrons
@@ -34,25 +38,6 @@ public:
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout_t;
   using QMCT    = QMCTraits;
-
-  //data members
-  SpinDensityInput input_;
-  SpeciesSet species_;
-
-  /** @ingroup SpinDensity mutable parameters
-   *
-   *  they should be limited to values that can be changed from input
-   *  or are not present explicitly in the SpinDensityInput
-   *  @{
-   */
-
-  /// Lattice is always local since it is either in the input or a constructor argument.
-  Lattice lattice_;
-  SpinDensityInput::DerivedParameters derived_parameters_;
-  /**}@*/
-  
-  // this is a bit of a mess to get from SpeciesSet
-  std::vector<int> species_size_;
 
   /** Constructor for SpinDensityInput that contains an explicitly defined cell
    */
@@ -66,10 +51,21 @@ public:
    *  Ideally when validating input is built up enough there would be only one constructor with
    *  signature
    *
-   *      SpinDensityNew(SpinDensityInput&& sdi, SpinDensityInput::DerivedParameters&& dev_par, SpeciesSet species, DataLocality dl);
+   *  SpinDensityNew(SpinDensityInput&& sdi, 
+   *                 SpinDensityInput::DerivedParameters&& dev_par, 
+   *                 SpeciesSet species,
+   *                 DataLocality dl);
    */
-  SpinDensityNew(SpinDensityInput&& sdi, const Lattice&, const SpeciesSet& species, const DataLocality dl = DataLocality::crowd);
-  SpinDensityNew(const SpinDensityNew& sdn);
+  SpinDensityNew(SpinDensityInput&& sdi,
+                 const Lattice&,
+                 const SpeciesSet& species,
+                 const DataLocality dl = DataLocality::crowd);
+
+  /** Constructor used when spawing crowd clones
+   *  needs to be public so std::make_unique can call it.
+   *  Do not use directly unless you've really thought it through.
+   */
+  SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl);
 
   /** This allows us to allocate the necessary data for the DataLocality::queue 
    */
@@ -77,11 +73,14 @@ public:
 
   /** standard interface
    */
-  OperatorEstBase* clone() override;
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
   /** accumulate 1 or more walkers of SpinDensity samples
    */
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override;
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator_t& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SpinDensityNew's data.
@@ -107,13 +106,35 @@ public:
   void registerOperatorEstimator(hid_t gid) override;
 
 private:
-  static std::vector<int> getSpeciesSize(SpeciesSet& species);
+  SpinDensityNew(const SpinDensityNew& sdn) = default;
+
+  static std::vector<int> getSpeciesSize(const SpeciesSet& species);
   /** derived_parameters_ must be valid i.e. initialized with call to input_.calculateDerivedParameters
    */
   size_t getFullDataSize();
   void accumulateToData(size_t point, QMCT::RealType weight);
   void reset();
   void report(const std::string& pad);
+
+  //data members
+  const SpinDensityInput input_;
+  const SpeciesSet& species_;
+  // this is a bit of a mess to get from SpeciesSet
+  const std::vector<int> species_size_;
+
+  /** @ingroup SpinDensity mutable parameters
+   *
+   *  they should be limited to values that can be changed from input
+   *  or are not present explicitly in the SpinDensityInput
+   *  @{
+   */
+
+  /// Lattice is always local since it is either in the input or a constructor argument.
+  Lattice lattice_;
+  SpinDensityInput::DerivedParameters derived_parameters_;
+  /**}@*/
+
+  friend class testing::SpinDensityNewTests;
 };
 
 } // namespace qmcplusplus

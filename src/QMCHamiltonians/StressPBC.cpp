@@ -13,6 +13,7 @@
 
 
 #include "StressPBC.h"
+#include "DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"
@@ -35,7 +36,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       firstTimeStress(true)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
-  myName = "StressPBC";
+  name_  = "StressPBC";
   prefix = "StressPBC";
   //This sets up the long range breakups.
   initBreakup(PtclTarg);
@@ -83,11 +84,10 @@ void StressPBC::initBreakup(ParticleSet& P)
   }
 
   for (int spec = 0; spec < NumSpeciesA; spec++) {}
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
 
   AA = LRCoulombSingleton::getDerivHandler(P);
 }
@@ -106,9 +106,10 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     {
 #if defined(USE_REAL_STRUCT_FACTOR)
       esum += Qspec[j] *
-          AA->evaluateStress(RhoKA.KLists.kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
+          AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j],
+                             RhoKB.rhok_i[j]);
 #else
-      esum += Qspec[j] * AA->evaluateStress(RhoKA.KLists.kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
+      esum += Qspec[j] * AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
 
 #endif
     }
@@ -120,7 +121,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& P)
 {
-  const auto& d_ab                   = P.getDistTable(ei_table_index);
+  const auto& d_ab                   = P.getDistTableAB(ei_table_index);
   SymTensor<RealType, OHMMS_DIM> res = 0.0;
   //Loop over distinct eln-ion pairs
   for (int jpart = 0; jpart < NptclB; jpart++)
@@ -138,7 +139,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& 
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& P, int itabSelf)
 {
-  const auto& d_aa = P.getDistTable(itabSelf);
+  const auto& d_aa = P.getDistTableAA(itabSelf);
 
   SymTensor<RealType, OHMMS_DIM> stress_aa;
   for (int ipart = 0; ipart < NptclB; ipart++)
@@ -183,10 +184,10 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
     {
 #if !defined(USE_REAL_STRUCT_FACTOR)
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+          AA->evaluateStress(PtclRhoK.getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
 #else
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
+          AA->evaluateStress(PtclRhoK.getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                              PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
 #endif
       if (spec2 == spec1)
@@ -334,14 +335,14 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-OperatorBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  StressPBC* tmp       = new StressPBC(PtclA, qp, psi);
-  tmp->firstTimeStress = firstTimeStress;
-  tmp->stress_IonIon   = stress_IonIon;
-  tmp->stress_ee_const = stress_ee_const;
-  tmp->stress_eI_const = stress_eI_const;
-  tmp->addionion       = addionion;
+  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp, psi);
+  tmp->firstTimeStress           = firstTimeStress;
+  tmp->stress_IonIon             = stress_IonIon;
+  tmp->stress_ee_const           = stress_ee_const;
+  tmp->stress_eI_const           = stress_eI_const;
+  tmp->addionion                 = addionion;
   return tmp;
 }
 } // namespace qmcplusplus

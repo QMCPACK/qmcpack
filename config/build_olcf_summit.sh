@@ -10,10 +10,10 @@ echo "Sourcing file: $BUILD_MODULES to build QMCPACK"
 
 echo "Either source $BUILD_MODULES or load these same modules to run QMCPACK"
 
-declare -A builds=( ["cpu"]="-DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1" \
-                    ["complex_cpu"]="-DQMC_COMPLEX=1 -DENABLE_MASS=1 -DMASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1" \
-                    ["legacy_gpu"]="-DQMC_CUDA=1 -DCUDA_ARCH=sm_70 " \
-		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCUDA_ARCH=sm_70 " )
+declare -A builds=( ["cpu"]=" -DQMC_MATH_VENDOR=IBM_MASS -DMASS_ROOT=/sw/summit/xl/16.1.1-10/xlmass/9.1.1" \
+                    ["complex_cpu"]="-DQMC_COMPLEX=1  -DQMC_MATH_VENDOR=IBM_MASS -DMASS_ROOT=/sw/summit/xl/16.1.1-10/xlmass/9.1.1" \
+                    ["legacy_gpu"]="-DQMC_CUDA=1 -DCMAKE_CUDA_ARCHITECTURES=70 " \
+                    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCMAKE_CUDA_ARCHITECTURES=70 " )
 
 mkdir bin
 
@@ -31,7 +31,11 @@ do
     make -j 20
     if [ $? -eq 0 ]; then
       build_dir=$(pwd)
-      ln -sf ${build_dir}/bin/qmcpack ${build_dir}/../bin/qmcpack_${build}
+      if [ -e ${build_dir}/bin/qmcpack_complex ]; then
+        ln -sf ${build_dir}/bin/qmcpack_complex ${build_dir}/../bin/qmcpack_${build}
+      else
+        ln -sf ${build_dir}/bin/qmcpack ${build_dir}/../bin/qmcpack_${build}
+      fi
     fi
     cd ..
 done

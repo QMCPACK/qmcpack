@@ -2,11 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//		      Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//  		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -52,11 +53,20 @@ public:
   /** constructor with an initialized ref */
   inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(ref, n * m) {}
 
+  /** This allows construction of a Matrix on another containers owned memory that is using a dualspace allocator.
+   *  It can be any span of that memory.
+   *  You're going to get a bunch of compile errors if the Container in questions is not using a the QMCPACK
+   *  realspace dualspace allocator "interface"
+   */
+  template<typename CONTAINER>
+  Matrix(CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
+  {}
+
   // Copy Constructor
   Matrix(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (allocator_traits<Alloc>::is_host_accessible)
+    if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
   }
 
@@ -86,7 +96,8 @@ public:
 
   inline void resize(size_type n, size_type m)
   {
-    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Matrix and Alloc data types must agree!");
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
+                  "Matrix and Alloc data types must agree!");
     D1      = n;
     D2      = m;
     TotSize = n * m;
@@ -107,6 +118,18 @@ public:
     X.attachReference(ref, TotSize);
   }
 
+  /** Attach to pre-allocated memory and propagate the allocator of the owning container.
+   *  Required for sane access to dual space memory
+   */
+  template<typename CONTAINER>
+  inline void attachReference(const CONTAINER& other, T* ref, size_type n, size_type m)
+  {
+    D1      = n;
+    D2      = m;
+    TotSize = n * m;
+    X.attachReference(other, ref, TotSize);
+  }
+
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(size_type n) // you can add rows: adding columns are forbidden
   {
@@ -121,11 +144,27 @@ public:
     assign(*this, rhs);
   }
 
+  /** This assigns from a matrix with larger row size (used for alignment)
+   *  to whatever the rowsize is here.
+   *  Hacky but so is just making the matrix n x (n + padding) to handle row alignment.
+   *  This is unoptimized.
+   */
+  template<class T_FROM, typename ALLOC_FROM>
+  void assignUpperLeft(const Matrix<T_FROM, ALLOC_FROM>& from)
+  {
+    auto& this_ref    = *this;
+    const size_t cols = std::min(this_ref.cols(), from.cols());
+    const size_t rows = std::min(this_ref.rows(), from.rows());
+    for (int i = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j)
+        this_ref(i, j) = from(i, j);
+  }
+
   // Assignment Operators
   inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (allocator_traits<Alloc>::is_host_accessible)
+    if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
     return *this;
   }
@@ -144,9 +183,15 @@ public:
   inline const_pointer data() const { return X.data(); }
 
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline pointer device_data() { return X.device_data(); }
+  inline pointer device_data()
+  {
+    return X.device_data();
+  }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline const_pointer device_data() const { return X.device_data(); }
+  inline const_pointer device_data() const
+  {
+    return X.device_data();
+  }
 
   // returns a const pointer of i-th row
   inline const Type_t* data(size_type i) const { return X.data() + i * D2; }
@@ -319,6 +364,18 @@ public:
     return m;
   }
 
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    X.updateTo();
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    X.updateFrom();
+  }
+
 protected:
   size_type D1, D2;
   size_type TotSize;
@@ -328,7 +385,7 @@ protected:
 template<class T, class Alloc>
 bool operator==(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 {
-  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
   if (lhs.size() == rhs.size())
   {
     for (int i = 0; i < rhs.size(); i++)
@@ -343,7 +400,7 @@ bool operator==(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 template<class T, class Alloc>
 bool operator!=(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 {
-  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
   return !(lhs == rhs);
 }
 

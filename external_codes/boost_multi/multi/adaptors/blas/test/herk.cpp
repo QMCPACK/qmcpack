@@ -19,7 +19,7 @@ namespace multi = boost::multi;
 //namespace cuda = multi::cuda;
 
 
-BOOST_AUTO_TEST_CASE(multi_blas_herk){
+BOOST_AUTO_TEST_CASE(multi_blas_herk) {
 	namespace blas = multi::blas;
 	using complex = std::complex<double>; constexpr complex I{0, 1};
 
@@ -27,7 +27,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 		{ 1. + 3.*I, 3.- 2.*I, 4.+ 1.*I},
 		{ 9. + 1.*I, 7.- 8.*I, 1.- 3.*I}
 	};
-	{
+
+	 {
 		multi::array<complex, 2> c({2, 2}, 9999.);
 		blas::herk(a, c);
 		BOOST_REQUIRE( c[1][0] == complex(50., -49.) );
@@ -79,7 +80,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 //		BOOST_REQUIRE( c_copy == c );
 //	}
 //	{
-//		cuda::array<complex, 2> const acu = a; 
+//		cuda::array<complex, 2> const acu = a;
 //		BOOST_REQUIRE(a == acu);
 
 //		cuda::array<complex, 2> ccu({3, 3}, 9999.);
@@ -159,9 +160,9 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 
 //BOOST_AUTO_TEST_CASE(multi_blas_cuda_herk_row){
 //	namespace blas = multi::blas;
-//	auto const a = []{ 
+//	auto const a = []{
 //		multi::array<complex, 2> ret({1, 100});
-//		std::generate(begin(ret[0]), end(ret[0]), [c=complex{1, 2}]()mutable{return c+=2.;}); 
+//		std::generate(begin(ret[0]), end(ret[0]), [c=complex{1, 2}]()mutable{return c+=2.;});
 //		return ret;
 //	}();
 //	BOOST_REQUIRE( size(a) == 1 );
@@ -193,7 +194,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 //	//	BOOST_REQUIRE( c == c_copy );
 //	}
 //	{
-//		cuda::array<double, 2> acu = a; 
+//		cuda::array<double, 2> acu = a;
 //		BOOST_REQUIRE(a == acu);
 
 //		cuda::array<double, 2> ccu({2, 2}, 9999.);
@@ -221,7 +222,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 		cuda::array<double, 2> const ccu_copy = herk(1., acu);
 		BOOST_REQUIRE( herk(1., acu) == ccu );
 	}
-	{
+	 {
 		cuda::managed::array<double, 2> const amcu = a; BOOST_REQUIRE(a == amcu);
 		cuda::managed::array<double, 2> cmcu({2, 2}, 9999.);
 		using multi::blas::herk;
@@ -232,7 +233,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 		cuda::managed::array<double, 2> const cmcu_copy = herk(1., amcu);
 		BOOST_REQUIRE( cmcu_copy == cmcu );
 	}
-	if(0){
+	if(0) {
 		multi::array<double, 2> c({3, 3}, 9999.);
 		using multi::blas::herk;
 		using multi::blas::hermitized;
@@ -243,7 +244,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 		multi::array<double, 2> const c_copy = herk(1., hermitized(a));
 		BOOST_REQUIRE( c_copy == c );
 	}
-	if(0){
+	if(0) {
 		cuda::array<double, 2> const acu = a; BOOST_REQUIRE(acu == a);
 		cuda::array<double, 2> ccu({3, 3}, 9999.);
 		using multi::blas::herk;
@@ -255,7 +256,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk){
 		cuda::array<double, 2> const c_copy = herk(1., hermitized(a));
 		BOOST_REQUIRE( c_copy == ccu );
 	}
-	if(0){
+	if(0) {
 		cuda::managed::array<double, 2> const amcu = a; BOOST_REQUIRE(amcu == a);
 		cuda::managed::array<double, 2> cmcu({3, 3}, 9999.);
 		using multi::blas::herk;

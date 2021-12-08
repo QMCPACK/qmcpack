@@ -676,7 +676,7 @@ def test_read_write():
 
 
 
-if versions.pycifrw_available:
+if versions.pycifrw_available and versions.cif2cell_available:
     def test_read_cif():
         """
         Read La2CuO4 structure from a CIF file.
@@ -1642,6 +1642,6 @@ if versions.spglib_available and versions.seekpath_available:
                  )
         #end for
 
-        assert(testing.check_object_eq(res,ref))
+        assert(testing.check_object_eq(res,ref,atol=1e-12))
     #end def test_rmg_transform
 #end if

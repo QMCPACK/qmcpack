@@ -53,7 +53,7 @@ public:
   point_type delta_inv;
   data_type m_Y1;
 
-  OneDimLinearSpline(grid_type* gt = 0) : base_type(gt), r_min(0), r_max(0)
+  OneDimLinearSpline(const grid_type* gt = 0) : base_type(gt), r_min(0), r_max(0)
   {
     if (gt)
     {

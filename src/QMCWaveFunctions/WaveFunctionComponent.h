@@ -17,11 +17,12 @@
 
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+
+#include <memory>
 #include "Message/Communicate.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
@@ -46,12 +47,9 @@ struct NLjob
 #endif
 
 ///forward declaration
-struct WaveFunctionComponent;
+class WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
-
-typedef WaveFunctionComponent* WaveFunctionComponentPtr;
-typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
 
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
@@ -70,8 +68,9 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-struct WaveFunctionComponent : public QMCTraits
+class WaveFunctionComponent : public QMCTraits
 {
+public:
   /** enum for a update mode */
   enum
   {
@@ -82,8 +81,6 @@ struct WaveFunctionComponent : public QMCTraits
     ORB_ALLWALKER     /*!< all walkers update */
   };
 
-  typedef ParticleAttrib<ValueType> ValueVectorType;
-  typedef ParticleAttrib<GradType> GradVectorType;
   typedef ParticleSet::Walker_t Walker_t;
   typedef Walker_t::WFBuffer_t WFBufferType;
   typedef Walker_t::Buffer_t BufferType;
@@ -110,20 +107,11 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** current update mode */
   int UpdateMode;
-  /** current \f$\log\phi \f$
-   */
-  LogValueType LogValue;
   /** Pointer to the differential WaveFunctionComponent of this object
    *
    * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
    */
-  DiffWaveFunctionComponentPtr dPsi;
-  /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
-   */
-  GradVectorType dLogPsi;
-  /** A vector for \f$ \frac{\partial \nabla^2 \log\phi}{\partial \alpha} \f$
-   */
-  ValueVectorType d2LogPsi;
+  std::shared_ptr<DiffWaveFunctionComponent> dPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
   const std::string ClassName;
@@ -137,19 +125,30 @@ struct WaveFunctionComponent : public QMCTraits
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
+protected:
+  /** Current \f$\log\phi \f$.
+   *  Exception! Slater Determinant most of the time has inconsistent a log_value inconsistent with the determinants
+   *  it contains dduring a move sequence. That case the log_value_ would be more safely calculated on the fly.
+   *
+   *  There could be others.
+   */
+  LogValueType log_value_;
+
+public:
+  const LogValueType& get_log_value() const { return log_value_; }
+
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
-
   ///default destructor
-  virtual ~WaveFunctionComponent() {}
+  virtual ~WaveFunctionComponent();
 
   inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
 
   ///assign a differential WaveFunctionComponent
-  virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
+  virtual void setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d);
 
   ///assembles the full value
-  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }
+  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -172,13 +171,13 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void reportStatus(std::ostream& os) = 0;
 
   /** evaluate the value of the WaveFunctionComponent from scratch
-   * @param P  active ParticleSet
-   * @param G Gradients, \f$\nabla\ln\Psi\f$
-   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   * @return the log value
+   * \param[in] P  active ParticleSet
+   * \param[out] G Gradients, \f$\nabla\ln\Psi\f$
+   * \param[out] L Laplacians, \f$\nabla^2\ln\Psi\f$
+   * \return the log value
    *
    * Mainly for walker-by-walker move. The initial stage of particle-by-particle
-   * move also uses this.
+   * move also uses this. causes complete state update in WFC's
    */
   virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
@@ -344,12 +343,14 @@ struct WaveFunctionComponent : public QMCTraits
                                     const std::vector<bool>& isAccepted,
                                     bool safe_to_delay = false) const;
 
-  /** complete all the delayed updates, must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   * Must be called at the end of each substep if p-by-p move is used.
+   * This function was initially introduced for determinant delayed updates to complete all the delayed operations.
+   * It has been extended to handle asynchronous operations on accellerators before leaving the p-by-p move region.
    */
   virtual void completeUpdates() {}
 
-  /** complete all the delayed updates for all the walkers in a batch
-   * must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations for all the walkers in a batch before leaving the p-by-p move region.
    */
   virtual void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const;
 
@@ -437,11 +438,15 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+  {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+  {}
 
   /** make clone
    * @param tqp target Quantum ParticleSet
@@ -449,7 +454,7 @@ struct WaveFunctionComponent : public QMCTraits
    *
    * If not true, return a proxy class
    */
-  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  virtual std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const;
 
   /** Return the Chiesa kinetic energy correction
    */
@@ -470,13 +475,13 @@ struct WaveFunctionComponent : public QMCTraits
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi);
 
-  /** Compute derivatives of rhe wavefunction with respect to the optimizable 
+  /** Compute derivatives of rhe wavefunction with respect to the optimizable
    *  parameters
    *  @param P particle set
    *  @param optvars optimizable parameters
    *  @param dlogpsi array of derivatives of the log of the wavefunction
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
-   *        the derivative of the log of the wavefunction. 
+   *        the derivative of the log of the wavefunction.
   */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
@@ -484,7 +489,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
-    RealType myrat = std::real(LogToValue<PsiValueType>::convert(LogValue));
+    RealType myrat = std::real(LogToValue<PsiValueType>::convert(log_value_));
     for (int j = 0; j < myVars.size(); j++)
     {
       int loc = myVars.where(j);
@@ -492,7 +497,7 @@ struct WaveFunctionComponent : public QMCTraits
     }
   }
 
-  /** Calculates the derivatives of \f$ \grad(\textrm{log}(\psif)) \f$ with respect to
+  /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
       performed with the passed-in G_in gradient vector. This object is then
       returned as dgradlogpsi.
@@ -523,7 +528,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios of all the virtual moves of all the walkers
    */
   virtual void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<const VirtualParticleSet>& vp_list,
+                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
 
   /** evaluate ratios to evaluate the non-local PP

@@ -71,9 +71,9 @@ public:
              SampleStack& samples_,
              Communicate* comm);
 
-  void process(xmlNodePtr node);
+  void process(xmlNodePtr node) override;
 
-  bool run();
+  bool run() override;
 
   /** Refactor of VMCUpdatePbyP in crowd context
    *
@@ -84,7 +84,8 @@ public:
                              Crowd& crowd,
                              DriverTimers& timers,
                              ContextForSteps& move_context,
-                             bool recompute);
+                             bool recompute,
+                             bool accumulate_this_step);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
@@ -111,7 +112,7 @@ private:
   int prevSteps;
   int prevStepsBetweenSamples;
   const VMCDriverInput vmcdriver_input_;
-  QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
+  QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
   ///copy constructor

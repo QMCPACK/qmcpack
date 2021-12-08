@@ -9,10 +9,13 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(IO_XML_SRC Libxml2Doc.cpp)
 
-SET(IO_XML_SRC Libxml2Doc.cpp)
-
-ADD_LIBRARY(qmcio_xml ${IO_XML_SRC})
+add_library(qmcio_xml ${IO_XML_SRC})
 
 #TARGET_INCLUDE_DIRECTORIES(qmcio_xml PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcio_xml PUBLIC containers LibXml2::LibXml2)
+target_link_libraries(qmcio_xml PUBLIC containers LibXml2::LibXml2)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

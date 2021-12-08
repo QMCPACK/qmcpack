@@ -98,7 +98,7 @@ class VLog(DevBase):
         self.verbosity = self.verbosity_levels.high
     #end def set_high
 
-    def set_verbosity(level):
+    def set_verbosity(self,level):
         if level not in self.verbosity_levels:
             vlinv = self.verbosity_levels.inverse()
             error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
@@ -1210,7 +1210,7 @@ class Density(ObservableWithComponents):
     #end def change_density_units
 
 
-    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False):
+    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False,species=None):
         
         vlog('Computing radial density',time=True)
         vlog('Current memory:',n=1,mem=True)
@@ -1224,12 +1224,24 @@ class Density(ObservableWithComponents):
         #end if
         vlog('Finding equivalent atomic sites',n=1,time=True)
         equiv_atoms = s.equivalent_atoms()
-        species = None
         species_rmax = obj()
         if isinstance(rmax,float):
-            species = list(equiv_atoms.keys())
+            if species is None:
+                species = list(equiv_atoms.keys())
+            #end if
             for s in species:
                 species_rmax[s] = rmax
+            #end for
+        elif isinstance(rmax,list):
+            if species is None:
+                species = list(equiv_atoms.keys())
+            #end if
+            for si,s in enumerate(species):
+                if len(rmax)>1:
+                    species_rmax[s] = rmax[si]
+                else:
+                    species_rmax[s] = rmax[0]
+                #end if
             #end for
         else:
             species = list(rmax.keys())

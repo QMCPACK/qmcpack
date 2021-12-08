@@ -28,15 +28,17 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
-      LogValue(0.0),
       dPsi(nullptr),
       ClassName(class_name),
       myName(obj_name),
-      Bytes_in_WFBuffer(0)
+      Bytes_in_WFBuffer(0),
+      log_value_(0.0)
 {
   if (ClassName.empty())
     throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
 }
+
+WaveFunctionComponent::~WaveFunctionComponent() = default;
 
 void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
@@ -162,7 +164,7 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
-void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
+void WaveFunctionComponent::setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d) { dPsi = std::move(d); }
 
 void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
                                                 const opt_variables_type& active,
@@ -183,10 +185,10 @@ void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
 
 /*@todo makeClone should be a pure virtual function
  */
-WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const
+std::unique_ptr<WaveFunctionComponent> WaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
   APP_ABORT("Implement WaveFunctionComponent::makeClone " + ClassName + " class.");
-  return 0;
+  return std::unique_ptr<WaveFunctionComponent>();
 }
 
 WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection() { return 0; }
@@ -206,7 +208,7 @@ void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vec
 }
 
 void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                              const RefVector<const VirtualParticleSet>& vp_list,
+                                              const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                               std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());

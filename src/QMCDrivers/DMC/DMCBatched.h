@@ -87,7 +87,7 @@ public:
 
   DMCBatched(DMCBatched&&) = default;
 
-  ~DMCBatched();
+  ~DMCBatched() override;
 
   /** DMCBatched driver will eventually ignore cur
    *
@@ -101,9 +101,9 @@ public:
    *
    *  walkers is still badly named.
    */
-  void process(xmlNodePtr cur);
+  void process(xmlNodePtr cur) override;
 
-  bool run();
+  bool run() override;
 
   // This is the task body executed at crowd scope
   // it does not have access to object members by design
@@ -115,7 +115,7 @@ public:
                          UPtrVector<Crowd>& crowds);
 
 
-  QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }
+  QMCRunType getRunType() override { return QMCRunType::DMC_BATCH; }
 
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
@@ -137,7 +137,8 @@ private:
                              DriverTimers& timers,
                              DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
-                             bool recompute);
+                             bool recompute,
+                             bool accumulate_this_step);
 
   friend class qmcplusplus::testing::DMCBatchedTest;
 };

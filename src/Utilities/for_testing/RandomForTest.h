@@ -12,6 +12,7 @@
 #ifndef QMCPLUSPLUS_RANDOMFORTEST_H
 #define QMCPLUSPLUS_RANDOMFORTEST_H
 
+#include <complex>
 #include <vector>
 #include "Utilities/StdRandom.h"
 
@@ -20,20 +21,30 @@ namespace qmcplusplus
 namespace testing
 {
 
-template<typename REAL>
+/** Get a known sequence of random numbers for testing.
+ *  VT is the floating point precision 
+ *  While inelegant to have separate named calls for the cplx types in the same class
+ *  separate class templates for RandomForTest<double> and RandomForTest<std::complex<double>>
+ *  turned out to be surprisingly difficult. Someone is welcome to try when we required > c++14
+ */
+template<typename VT>
 class RandomForTest
 {
 public:
   RandomForTest();
-  std::vector<REAL> getRealRandoms(int ncount);
-  void makeRngReals(std::vector<REAL>& rng_reals);
-
+  std::vector<VT> getRngVec(int ncount);
+  std::vector<std::complex<VT>> getRngVecComplex(int ncount);
+  void fillVecRng(std::vector<VT>& rng_reals);
+  void fillVecRng(std::vector<std::complex<VT>>& rng_reals);
+  void fillBufferRng(VT* rng_reals, size_t number);
+  void fillBufferRng(std::complex<VT>* rng_reals, size_t number);
+  VT operator()();
 private:
-  StdRandom<REAL> rng;
+  StdRandom<VT> rng;
 };
-
-extern template class RandomForTest<double>;
-extern template class RandomForTest<float>;
+  
+  extern template class RandomForTest<double>;
+  extern template class RandomForTest<float>;
 } // namespace testing
 } // namespace qmcplusplus
 #endif

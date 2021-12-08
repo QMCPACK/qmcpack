@@ -2,42 +2,87 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR estimators)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR estimators)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
-SET(SRCS test_accumulator.cpp test_local_energy_est.cpp FakeOperatorEstimator.cpp EstimatorManagerBaseTest.cpp EstimatorManagerNewTest.cpp test_manager.cpp test_EstimatorManagerNew.cpp test_trace_manager.cpp SpinDensityTesting.cpp test_SpinDensityInput.cpp test_SpinDensityNew.cpp)
+set(SRCS
+    test_accumulator.cpp
+    test_local_energy_est.cpp
+    FakeOperatorEstimator.cpp
+    EstimatorManagerBaseTest.cpp
+    EstimatorManagerNewTest.cpp
+    test_manager.cpp
+    test_EstimatorManagerNew.cpp
+    test_trace_manager.cpp
+    EstimatorTesting.cpp
+    test_SpinDensityInput.cpp
+    test_SpinDensityNew.cpp
+    test_InputSection.cpp
+    )
 
-ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
-IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget utilities_for_test)
-ENDIF()
+# OneBodyDensityMatrices are not tested with legacy CUDA
+# DiracDeterminantsCUDA cannot be copied
+if(NOT QMC_CUDA)
+  set(SRCS
+      ${SRCS}
+      test_MomentumDistribution.cpp
+      test_OneBodyDensityMatricesInput.cpp
+      test_OneBodyDensityMatrices.cpp
+      )
+endif()
+  
+add_executable(${UTEST_EXE} ${SRCS})
+use_fake_rng(${UTEST_EXE})
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(
+    ${UTEST_EXE}
+    qmcutil
+    qmcestimators_unit
+    qmcham_unit
+    qmcwfs
+    qmcparticle
+    qmcutil
+    platform_omptarget_LA
+    utilities_for_test)
+endif()
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-IF( "${ENABLE_SANITIZER}" STREQUAL "asan" ) 
-  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
-ENDIF()
 
-IF(HAVE_MPI)
-  SET(UTEST_EXE test_${SRC_DIR}_mpi)
-  SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+if(HAVE_MPI)
+  set(UTEST_EXE test_${SRC_DIR}_mpi)
+  set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  SET(SRCS FakeOperatorEstimator.cpp EstimatorManagerNewTest.cpp test_manager_mpi.cpp)
-  ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-  IF(USE_OBJECT_TARGET)
-    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcdriver_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget utilities_for_test)
-  ENDIF()
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcestimators_unit)
+  set(SRCS FakeOperatorEstimator.cpp EstimatorManagerNewTest.cpp test_manager_mpi.cpp)
+  add_executable(${UTEST_EXE} ${SRCS})
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(
+      ${UTEST_EXE}
+      qmcestimators_unit
+      qmcham_unit
+      qmcdriver_unit
+      qmcwfs
+      qmcparticle
+      qmcutil
+      platform_omptarget_LA
+      utilities_for_test)
+  endif()
+  target_link_libraries(${UTEST_EXE} catch_main qmcestimators_unit)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-ENDIF()
+  add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
+endif()

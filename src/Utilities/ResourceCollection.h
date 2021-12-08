@@ -44,42 +44,6 @@ private:
   std::vector<std::unique_ptr<Resource>> collection_;
 };
 
-/** handles acquire/release resource by the consumer.
- */
-template<class CONSUMER>
-class ResourceCollectionLock
-{
-public:
-  ResourceCollectionLock(ResourceCollection& res_ref, CONSUMER& consumer_ref, size_t cursor = 0)
-      : resource(res_ref), consumer(consumer_ref), cursor_begin_(cursor), active(!res_ref.empty())
-  {
-    if (active)
-    {
-      resource.rewind(cursor_begin_);
-      consumer.acquireResource(resource);
-    }
-  }
-
-  ~ResourceCollectionLock()
-  {
-    if (active)
-    {
-      resource.rewind(cursor_begin_);
-      consumer.releaseResource(resource);
-    }
-  }
-
-  ResourceCollectionLock(const ResourceCollectionLock&) = delete;
-  ResourceCollectionLock(ResourceCollectionLock&&)      = delete;
-
-private:
-  ResourceCollection& resource;
-  CONSUMER& consumer;
-  const size_t cursor_begin_;
-  const bool active;
-};
-
-
 /** handles acquire/release resource by the consumer (RefVectorWithLeader type).
  */
 template<class CONSUMER>

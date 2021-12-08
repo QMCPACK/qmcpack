@@ -18,7 +18,6 @@
 
 
 #include "MCWalkerConfiguration.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -26,6 +25,7 @@
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
+#include "Particle/Reptile.h"
 #include "hdf/hdf_hyperslab.h"
 #include "hdf/HDFVersion.h"
 #include <map>
@@ -79,13 +79,15 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
   //initPropertyList();
 }
 
+MCWalkerConfiguration::~MCWalkerConfiguration() = default;
+
 void MCWalkerConfiguration::createWalkers(int n)
 {
   const int old_nw = getActiveWalkers();
   WalkerConfigurations::createWalkers(n, TotalNum);
   // no pre-existing walkers, need to initialized based on particleset.
   if (old_nw == 0)
-    for (auto* awalker : WalkerList)
+    for (auto& awalker : WalkerList)
     {
       awalker->R     = R;
       awalker->spins = spins;
@@ -103,7 +105,7 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
   WalkerConfigurations::resize(numWalkers, TotalNum);
   // no pre-existing walkers, need to initialized based on particleset.
   if (old_nw == 0)
-    for (auto* awalker : WalkerList)
+    for (auto& awalker : WalkerList)
     {
       awalker->R     = R;
       awalker->spins = spins;
@@ -234,14 +236,13 @@ void MCWalkerConfiguration::loadEnsemble()
   if (samples.empty() || nsamples == 0)
     return;
   Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::MAXPROPERTIES);
-  delete_iter(WalkerList.begin(), WalkerList.end());
   WalkerList.resize(nsamples);
   for (int i = 0; i < nsamples; ++i)
   {
-    Walker_t* awalker = new Walker_t(TotalNum);
+    auto awalker = std::make_unique<Walker_t>(TotalNum);
     awalker->Properties.copy(prop);
     samples.getSample(i).convertToWalker(*awalker);
-    WalkerList[i] = awalker;
+    WalkerList[i] = std::move(awalker);
   }
   resizeWalkerHistories();
   samples.clearEnsemble();
@@ -286,7 +287,7 @@ void MCWalkerConfiguration::loadEnsemble()
 //}
 
 bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others,
-                                         HDFWalkerOutput* out,
+                                         HDFWalkerOutput& out,
                                          int np,
                                          int nBlock)
 {
@@ -315,10 +316,10 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
       SampleStack& astack(others[i]->getSampleStack());
       for (int j = 0, iw = off[i]; iw < off[i + 1]; ++j, ++iw)
       {
-        Walker_t* awalker = new Walker_t(TotalNum);
+        auto awalker = std::make_unique<Walker_t>(TotalNum);
         awalker->Properties.copy(prop);
         astack.getSample(j).convertToWalker(*awalker);
-        WalkerList[iw] = awalker;
+        WalkerList[iw] = std::move(awalker);
       }
       if (doclean)
         others[i]->clearEnsemble();
@@ -395,7 +396,7 @@ void MCWalkerConfiguration::allocateGPU(size_t buffersize)
   int N    = WalkerList[0]->R.size();
   int Numk = 0;
   if (SK)
-    Numk = SK->KLists.numk;
+    Numk = SK->getKLists().numk;
   int NumSpecies = getSpeciesSet().TotalNum;
   for (int iw = 0; iw < WalkerList.size(); iw++)
   {

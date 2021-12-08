@@ -14,7 +14,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include "Configuration.h"
 #include "Message/Communicate.h"
 

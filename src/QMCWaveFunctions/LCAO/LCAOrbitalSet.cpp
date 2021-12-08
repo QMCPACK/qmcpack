@@ -46,12 +46,12 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
 
 void LCAOrbitalSet::setOrbitalSetSize(int norbs)
 {
-  if(C)
+  if (C)
     throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize cannot reset existing MO coefficients");
 
-  Identity = false;
+  Identity       = false;
   OrbitalSetSize = norbs;
-  C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
+  C              = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
   Tempv.resize(OrbitalSetSize);
   Temphv.resize(OrbitalSetSize);
   Tempghv.resize(OrbitalSetSize);
@@ -79,7 +79,7 @@ void LCAOrbitalSet::checkObject() const
   }
 }
 
-SPOSet* LCAOrbitalSet::makeClone() const { return new LCAOrbitalSet(*this); }
+std::unique_ptr<SPOSet> LCAOrbitalSet::makeClone() const { return std::make_unique<LCAOrbitalSet>(*this); }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {

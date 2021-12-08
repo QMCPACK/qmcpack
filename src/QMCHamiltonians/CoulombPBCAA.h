@@ -19,7 +19,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -36,20 +36,14 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
-  // using shared_ptr on AA, dAA is a compromise
-  // When ion-ion is_active = false, makeClone calls the copy constructor.
-  // AA, dAA are shared between clones.
-  // When elec-elec is_active = true, makeClone calls the constructor
-  // AA, dAA are not shared between clones and behave more like unique_ptr
-
-  // energy-optimized
+  /// energy-optimized long range handle
   std::shared_ptr<LRHandlerType> AA;
-  GridType* myGrid;
-  RadFunctorType* rVs;
-  // force-optimized
+  /// energy-optimized short range pair potential
+  std::shared_ptr<RadFunctorType> rVs;
+  /// force-optimized long range handle
   std::shared_ptr<LRHandlerType> dAA;
-  GridType* myGridforce;
-  RadFunctorType* rVsforce;
+  /// force-optimized short range pair potential
+  std::shared_ptr<RadFunctorType> rVsforce;
 
   bool is_active;
   bool FirstTime;
@@ -84,37 +78,37 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   /** constructor */
   CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
 
-  ~CoulombPBCAA();
+  ~CoulombPBCAA() override;
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
-  void update_source(ParticleSet& s);
+                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+  void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "CoulombPBCAA potential: " << PtclRefName;
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void initBreakup(ParticleSet& P);
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities();
-  virtual void checkout_particle_quantities(TraceManager& tm);
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities();
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evalSR(ParticleSet& P);
@@ -123,16 +117,16 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t evalLRwithForces(ParticleSet& P);
   Return_t evalConsts(bool report = true);
 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist)
+  void setObservables(PropertySetType& plist) override
   {
     OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
+  void setParticlePropertyList(PropertySetType& plist, int offset) override
   {
     OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)

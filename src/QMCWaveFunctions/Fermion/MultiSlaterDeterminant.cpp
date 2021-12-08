@@ -15,12 +15,12 @@
 
 #include "MultiSlaterDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
 MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                                               std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                                               std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
+                                               std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
                                                const std::string& class_name)
     : WaveFunctionComponent(class_name),
       RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
@@ -33,11 +33,12 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
       Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
       evalOrbTimer(*timer_manager.createTimer(ClassName + "evalOrbGrad")),
-      spo_up(std::move(upspo)),
-      spo_dn(std::move(dnspo))
+      spo_up(std::move(spos[0])),
+      spo_dn(std::move(spos[1]))
 {
+  assert(spos.size() == targetPtcl.groups());
   registerTimers();
-  //Optimizable=true;
+
   Optimizable   = false;
   is_fermionic  = true;
   usingCSF      = false;
@@ -53,16 +54,21 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
       DetID[j] = i;
 }
 
-WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
-  typedef DiracDeterminant<> SingleDet_t;
-  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()), FirstIndex_up, LastIndex_up);
-  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()), FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup               = spo_up->occup;
-  spo_dn_C->occup               = spo_dn->occup;
-  MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, std::move(spo_up_C), std::move(spo_dn_C));
-  clone->C2node_up              = C2node_up;
-  clone->C2node_dn              = C2node_dn;
+  typedef DiracDeterminant<> Det_t;
+  auto spo_up_C    = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
+                                                      FirstIndex_up, LastIndex_up);
+  auto spo_dn_C    = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
+                                                      FirstIndex_dn, LastIndex_dn);
+  spo_up_C->occup  = spo_up->occup;
+  spo_dn_C->occup  = spo_dn->occup;
+  std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos;
+  spos.push_back(std::move(spo_up_C));
+  spos.push_back(std::move(spo_dn_C));
+  auto clone       = std::make_unique<MultiSlaterDeterminant>(tqp, std::move(spos));
+  clone->C2node_up = C2node_up;
+  clone->C2node_dn = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());
   if (usingCSF)
   {
@@ -70,36 +76,12 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
     clone->CSFexpansion = CSFexpansion;
     clone->DetsPerCSF   = DetsPerCSF;
   }
-  //     SPOSetProxyForMSD* spo = clone->spo_up;
-  //     spo->occup.resize(uniqueConfg_up.size(),clone->nels_up);
+
   for (int i = 0; i < dets_up.size(); i++)
-  {
-    //       int nq=0;
-    // //       configuration& ci = uniqueConfg_up[i];
-    //       for(int k=0; k<uniqueConfg_up[i].occup.size(); k++) {
-    //         if(uniqueConfg_up[i].occup[k]) {
-    //           spo->occup(i,nq++) = k;
-    //         }
-    //       }
-    SingleDet_t* adet = new SingleDet_t(std::static_pointer_cast<SPOSet>(clone->spo_up), 0);
-    adet->set(clone->FirstIndex_up, clone->nels_up);
-    clone->dets_up.push_back(adet);
-  }
-  //     spo = clone->spo_dn;
-  //     spo->occup.resize(uniqueConfg_dn.size(),clone->nels_dn);
+    clone->dets_up.push_back(std::make_unique<Det_t>(std::static_pointer_cast<SPOSet>(clone->spo_up), clone->FirstIndex_up, clone->FirstIndex_up + clone->nels_up));
   for (int i = 0; i < dets_dn.size(); i++)
-  {
-    //       int nq=0;
-    // //       configuration& ci = uniqueConfg_dn[i];
-    //       for(int k=0; k<uniqueConfg_dn[i].occup.size(); k++) {
-    //         if(uniqueConfg_dn[i].occup[k]) {
-    //           spo->occup(i,nq++) = k;
-    //         }
-    //       }
-    SingleDet_t* adet = new SingleDet_t(std::static_pointer_cast<SPOSet>(clone->spo_dn), 0);
-    adet->set(clone->FirstIndex_dn, clone->nels_dn);
-    clone->dets_dn.push_back(adet);
-  }
+    clone->dets_dn.emplace_back(std::make_unique<Det_t>(std::static_pointer_cast<SPOSet>(clone->spo_dn), clone->FirstIndex_dn, clone->FirstIndex_dn + clone->nels_dn));
+
   clone->Optimizable = Optimizable;
   clone->C           = C;
   clone->myVars      = myVars;
@@ -209,7 +191,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(const Pa
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {
-  return LogValue = convertValueToLog(evaluate(P, G, L));
+  return log_value_ = convertValueToLog(evaluate(P, G, L));
 }
 
 WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
@@ -400,7 +382,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
       // ratio(P,iat)
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -410,7 +392,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         detValues_up[i] *= detsRatios[i];
         grads_up[i][iat] = grad_temp[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -421,13 +403,13 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         grads_up[i] = tempgrad[i];
         lapls_up[i] = templapl[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_up.size(); i++)
         detValues_up[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -442,7 +424,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
       // ratio(P,iat)
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_PARTIAL:
@@ -452,7 +434,7 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         detValues_dn[i] *= detsRatios[i];
         grads_dn[i][iat] = grad_temp[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     case ORB_PBYP_ALL:
@@ -463,13 +445,13 @@ void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_de
         grads_dn[i] = tempgrad[i];
         lapls_dn[i] = templapl[i];
       }
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     default:
       for (int i = 0; i < detValues_dn.size(); i++)
         detValues_dn[i] *= detsRatios[i];
-      LogValue += convertValueToLog(curRatio);
+      log_value_ += convertValueToLog(curRatio);
       curRatio = 1.0;
       break;
     }
@@ -598,7 +580,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(Particl
   for (int i = 0; i < P.L.size(); i++)
     P.L[i] += myL[i] - dot(myG[i], myG[i]);
   UpdateTimer.stop();
-  return LogValue = convertValueToLog(psi);
+  return log_value_ = convertValueToLog(psi);
   ;
 }
 
@@ -691,8 +673,8 @@ void MultiSlaterDeterminant::reportStatus(std::ostream& os) {}
 
 void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
                                                  const opt_variables_type& optvars,
-                                                 std::vector<RealType>& dlogpsi,
-                                                 std::vector<RealType>& dhpsioverpsi)
+                                                 std::vector<ValueType>& dlogpsi,
+                                                 std::vector<ValueType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
@@ -709,7 +691,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
     if (usingCSF)
     {
       int n            = P.getTotalNum();
-      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
@@ -761,19 +743,19 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           //           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
           cnt++;
         }
-        convert(cdet, dlogpsi[kk]);
+        dlogpsi[kk] = cdet;
         ValueType dhpsi = (RealType)(-0.5) * (q0 - cdet * lapl_sum) - cdet * gg + v1;
         //                            -cdet*gg-v1-v2;
         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
         //                         -cdet*lapl_sum)
         //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-        convert(dhpsi, dhpsioverpsi[kk]);
+        dhpsioverpsi[kk] = dhpsi;
       }
     }
     else
     {
       int n            = P.getTotalNum();
-      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
+      ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
       ParticleSet::ParticleGradient_t g(n), gmP(n);
@@ -808,13 +790,13 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         int upC        = C2node_up[ip];
         int dnC        = C2node_dn[ip];
         ValueType cdet = detValues_up[upC] * detValues_dn[dnC] * psiinv;
-        convert(cdet, dlogpsi[kk]);
+        dlogpsi[kk] = cdet;
         ValueType dhpsi = ((RealType)(-0.5) * cdet) *
             (tempstorage_up[upC] + tempstorage_dn[dnC] - lapl_sum +
              (RealType)2.0 * (gg - static_cast<ValueType>(Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]))));
         //+2.0*(gg-Dot(g,grads_up[upC])-Dot(g,grads_dn[dnC])
         //+Dot(P.G,grads_up[upC])+Dot(P.G,grads_dn[dnC])-ggP));
-        convert(dhpsi, dhpsioverpsi[kk]);
+        dhpsioverpsi[kk] = dhpsi;
       }
     }
   }

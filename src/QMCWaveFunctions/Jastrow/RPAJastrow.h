@@ -29,15 +29,16 @@ namespace qmcplusplus
  *  Modification of RPAJastrow
  *
  */
-struct RPAJastrow : public WaveFunctionComponent
+class RPAJastrow : public WaveFunctionComponent
 {
   typedef LRHandlerBase HandlerType;
   typedef BsplineFunctor<RealType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
-  RPAJastrow(ParticleSet& target, bool is_manager);
+public:
+  RPAJastrow(ParticleSet& target);
 
-  ~RPAJastrow();
+  ~RPAJastrow() override;
 
   bool put(xmlNodePtr cur);
 
@@ -51,44 +52,45 @@ struct RPAJastrow : public WaveFunctionComponent
   void makeShortRange();
   void makeLongRange();
 
-  void setHandler(HandlerType* Handler) { myHandler = Handler; };
+  void setHandler(std::unique_ptr<HandlerType> Handler) { myHandler = std::move(Handler); };
 
   /** check out optimizable variables
     */
-  void checkOutVariables(const opt_variables_type& o);
+  void checkOutVariables(const opt_variables_type& o) override;
 
   /** check in an optimizable parameter
         * @param o a super set of optimizable variables
     */
-  void checkInVariables(opt_variables_type& o);
+  void checkInVariables(opt_variables_type& o) override;
 
   /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os);
+  void reportStatus(std::ostream& os) override;
 
   /** reset the parameters during optimizations
     */
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active) override;
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  PsiValueType ratio(ParticleSet& P, int iat);
-  GradType evalGrad(ParticleSet& P, int iat);
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
-  void restore(int iat);
+  void restore(int iat) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
 private:
-  bool IsManager;
   bool IgnoreSpin;
   bool DropLongRange;
   bool DropShortRange;
@@ -102,7 +104,7 @@ private:
   ///@}
   /** main handler
    */
-  HandlerType* myHandler;
+  std::unique_ptr<HandlerType> myHandler;
   ///object to handle the long-range part
   kSpaceJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
@@ -111,11 +113,9 @@ private:
   ///numerical function owned by ShortRangeRPA
   FuncType* nfunc;
   GridType* myGrid;
-  ///adaptor function to initialize nfunc
-  ShortRangePartAdapter<RealType>* SRA;
   ParticleSet& targetPtcl;
   ///A list of WaveFunctionComponent*
-  std::vector<WaveFunctionComponent*> Psi;
+  UPtrVector<WaveFunctionComponent> Psi;
 };
 } // namespace qmcplusplus
 #endif

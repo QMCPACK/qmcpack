@@ -13,6 +13,8 @@
 #ifndef QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 
+#include <stdexcept>
+#include <limits>
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/Tensor.h"
 
@@ -355,14 +357,16 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
 {
-  APP_ABORT("SoaSphericalTensor<T>::evaluateVGH(x,y,z):  Not implemented\n");
+  throw std::runtime_error("SoaSphericalTensor<T>::evaluateVGH(x,y,z):  Not implemented\n");
 }
 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGHGH(T x, T y, T z)
 {
-  APP_ABORT("SoaSphericalTensor<T>::evaluateVGHGH(x,y,z):  Not implemented\n");
+  throw std::runtime_error("SoaSphericalTensor<T>::evaluateVGHGH(x,y,z):  Not implemented\n");
 }
 
+extern template struct SoaSphericalTensor<float>;
+extern template struct SoaSphericalTensor<double>;
 } // namespace qmcplusplus
 #endif

@@ -63,7 +63,7 @@ public:
   inline double operator()(double x);
 
   void SetupProjector(double G_max, double G_FFT);
-  void Read(IOSectionClass& in, Grid* grid);
+  void Read(IOSectionClass& in, std::shared_ptr<Grid>& grid);
   void Write(IOSectionClass& out);
 };
 
@@ -77,11 +77,11 @@ protected:
   double Zion;
   int AtomicNumber;
   std::string Symbol;
-  Grid* PotentialGrid;
+  std::shared_ptr<Grid> PotentialGrid;
 
 public:
   // General accessor functions
-  bool IsNonlocal();
+  bool IsNonlocal() override;
   inline int LocalChannel() { return lLocal; }
   inline int NumChannels() { return Vl.size(); }
   inline CubicSplineCommon& GetLocalSpline() { return Vl[lLocal].V; }
@@ -99,20 +99,20 @@ public:
   inline double Getrc(int l) { return Vl[l].rc; }
   inline double GetDeltaV(int l, double r) { return Vl[l].DeltaV(r); }
   // Override default for local potentials
-  double V(int l, double r);
-  double dVdr(int l, double r);
-  double d2Vdr2(int l, double r);
+  double V(int l, double r) override;
+  double dVdr(int l, double r) override;
+  double d2Vdr2(int l, double r) override;
 
 
   // Required member functions:  These give information about the
   // local part of the pseudopotential only
-  double V(double r);
-  double dVdr(double r);
-  double d2Vdr2(double r);
+  double V(double r) override;
+  double dVdr(double r) override;
+  double d2Vdr2(double r) override;
 
   // IO routines
-  void Write(IOSectionClass& out);
-  void Read(IOSectionClass& in);
+  void Write(IOSectionClass& out) override;
+  void Read(IOSectionClass& in) override;
   void SetupProjectors(double G_max, double G_FFT);
 };
 

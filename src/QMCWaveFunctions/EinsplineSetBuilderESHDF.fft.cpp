@@ -14,14 +14,12 @@
 
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
-#include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/qmc_common.h"
 
@@ -184,6 +182,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     const auto& ii_table = SourcePtcl->getDistTable(table_id);
     SourcePtcl->update(true);
     for (int i = 0; i < IonPos.size(); i++)
+    {
+      AtomicCentersInfo.non_overlapping_radius[i] = std::numeric_limits<RealType>::max();
+      //should only call get_first_neighbor to set non_overlapping_radius if there are more than one atom  in the cell
+      if (Super2Prim.size() == 1)
+        continue;
       for (int j = 0; j < Super2Prim.size(); j++)
         if (Super2Prim[j] == i)
         {
@@ -207,6 +210,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
           AtomicCentersInfo.non_overlapping_radius[i] = 0.5 * r;
           break;
         }
+    }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
     const int inner_cutoff_ind   = SourcePtcl->mySpecies.findAttribute("inner_cutoff");
@@ -464,6 +468,13 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
         maxOrbs++;
     }
   }
+
+  app_log() << SortBands.size() << " complex-valued orbitals supplied by h5 can be expanded up to " << maxOrbs
+            << " SPOs." << std::endl;
+  if (maxOrbs < numOrbs)
+    myComm->barrier_and_abort("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
+                              "more orbitals than what the h5 file supplies.");
+
   // Now sort the bands by energy
   if (sortBands == 2)
   {
@@ -640,7 +651,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     orbIndex++;
   }
   NumDistinctOrbitals = orbIndex;
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
+  app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
 }
 

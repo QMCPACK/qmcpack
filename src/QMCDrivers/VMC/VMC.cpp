@@ -20,7 +20,8 @@
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "QMCDrivers/VMC/SOVMCUpdateAll.h"
+#include "RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
@@ -129,13 +130,13 @@ bool VMC::run()
   //copy back the random states
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ++ip)
-    *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
+    *RandomNumberControl::Children[ip] = *Rng[ip];
 #endif
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
+    wrotesamples = W.dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
@@ -155,13 +156,14 @@ void VMC::resetRun()
   app_log() << std::endl;
 
   bool movers_created = false;
+  bool spinors        = false;
   if (Movers.empty())
   {
     movers_created = true;
     Movers.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    Rng.resize(NumThreads, 0);
+    Rng.resize(NumThreads);
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
@@ -173,21 +175,21 @@ void VMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
 #ifdef USE_FAKE_RNG
-      Rng[ip] = new FakeRandom();
+      Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
 #endif
-      hClones[ip]->setRandomGenerator(Rng[ip]);
-
-      if (SpinMoves == "yes")
+      hClones[ip]->setRandomGenerator(Rng[ip].get());
+      if (W.is_spinor_)
       {
+        spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
           Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         }
         else
         {
-          APP_ABORT("Spin moves only implemented with PbyP moves\n");
+          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         }
       }
       else
@@ -238,7 +240,7 @@ void VMC::resetRun()
       Movers[i]->UseDrift = false;
   }
 
-  if (SpinMoves == "yes")
+  if (spinors)
   {
     app_log() << "  Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
     for (int i = 0; i < Movers.size(); i++)
@@ -390,7 +392,6 @@ bool VMC::put(xmlNodePtr q)
   app_log() << "  target samples = " << nTargetPopulation << std::endl;
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
-  app_log() << "  SpinMoves      = " << SpinMoves << std::endl;
 
   m_param.get(app_log());
 

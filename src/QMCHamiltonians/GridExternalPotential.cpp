@@ -84,7 +84,7 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   hin.read(data, dataset_name);
 
-  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()));
+  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()), destroy_Bspline);
 
   return true;
 }
@@ -97,21 +97,21 @@ bool GridExternalPotential::get(std::ostream& os) const
 }
 
 
-OperatorBase* GridExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
-  return new GridExternalPotential(*this);
+  return std::make_unique<GridExternalPotential>(*this);
 }
 
 
 GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-    Value = evaluate_sp(P);
+  if (streaming_particles_)
+    value_ = evaluate_sp(P);
   else
   {
 #endif
-    Value = 0.0;
+    value_ = 0.0;
     for (int i = 0; i < P.getTotalNum(); ++i)
     {
       PosType r = P.R[i];
@@ -119,12 +119,12 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
       double val = 0.0;
       eval_UBspline_3d_d(spline_data.get(), r[0], r[1], r[2], &val);
 
-      Value += val;
+      value_ += val;
     }
 #if !defined(REMOVE_TRACEMANAGER)
   }
 #endif
-  return Value;
+  return value_;
 }
 
 
@@ -132,15 +132,15 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
 GridExternalPotential::Return_t GridExternalPotential::evaluate_sp(ParticleSet& P)
 {
   Array<TraceReal, 1>& V_samp = *V_sample;
-  Value                       = 0.0;
+  value_                      = 0.0;
   for (int i = 0; i < P.getTotalNum(); ++i)
   {
     PosType r   = P.R[i];
     RealType v1 = dot(r, r);
     V_samp(i)   = v1;
-    Value += v1;
+    value_ += v1;
   }
-  return Value;
+  return value_;
 }
 #endif
 

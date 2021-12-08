@@ -55,13 +55,18 @@ struct ptr<void const, RawPtr>{
 	raw_pointer rp_;
 	template<typename, typename> friend struct ptr;
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
-	ptr(raw_pointer rp) : rp_{rp}{}
-public:
+	explicit ptr(raw_pointer rp) : rp_{rp} {}
+
+ public:
 	ptr() = default;
 	ptr(ptr const&) = default;
-	ptr(std::nullptr_t n) : rp_{n}{}
+
+	// cppcheck-suppress noExplicitConstructor ; initialized from nullptr
+	ptr(std::nullptr_t n) : rp_{n} {}
+
 	template<class Other, typename = decltype(raw_pointer{std::declval<Other const&>().rp_})>
-	ptr(Other const& o) : rp_{o.rp_}{}
+	// cppcheck-suppress noExplicitConstructor ; any pointer can be converted to void pointer
+	ptr(Other const& o) : rp_{o.rp_} {}
 	ptr& operator=(ptr const&) = default;
 
 	using pointer = ptr<T>;
@@ -69,8 +74,8 @@ public:
 	using difference_type = void;//typename std::pointer_traits<impl_t>::difference_type;
 	explicit operator bool() const{return rp_;}
 //	explicit operator raw_pointer&()&{return rp_;}
-	bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& self, ptr const& other){return self.rp_==other.rp_;}
+	friend constexpr bool operator!=(ptr const& self, ptr const& other){return self.rp_!=other.rp_;}
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() const = delete;
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
@@ -95,12 +100,17 @@ public:
 	explicit ptr(raw_pointer rp) : rp_{rp}{}
 	ptr() = default;
 	ptr(ptr const& p) = default;
-	ptr(std::nullptr_t n) : rp_{n}{}
+
+	// cppcheck-suppress noExplicitConstructor ; initialized from nullptr
+	ptr(std::nullptr_t n) : rp_{n} {}
+
 	template<class Other, typename = decltype(raw_pointer{std::declval<Other const&>().impl_})>
+	// cppcheck-suppress noExplicitConstructor ; any pointer is convertible to void pointer
 	ptr(Other const& o) : rp_{o.rp_}{}
+
 	ptr& operator=(ptr const&) = default;
-	bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& self, ptr const& other){return self.rp_==other.rp_;}
+	friend constexpr bool operator!=(ptr const& self, ptr const& other){return self.rp_!=other.rp_;}
 	operator cuda::ptr<void>(){return {rp_};}
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
 
@@ -127,25 +137,34 @@ protected:
 public:
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<RawPtr>::template rebind<U>>;
 //	explicit ptr(cuda::ptr<T, RawPtr> const& other) : rp_{other.rp_}{}
+
 	template<class Other, typename = std::enable_if_t<std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>>
+	// cppcheck-suppress noExplicitConstructor ; propagate implicit of underlying pointer
 	/*explicit(false)*/ constexpr ptr(ptr<Other> const& o) : cuda::ptr<T, RawPtr>{static_cast<raw_pointer>(o.rp_)}{}
+
 	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>, typename = decltype(static_cast<raw_pointer>(std::declval<ptr<Other>>().rp_))>
 	explicit/*(true)*/ constexpr ptr(ptr<Other> const& o, void** = 0) : cuda::ptr<T, RawPtr>{static_cast<raw_pointer>(o.rp_)}{}
+
 	explicit constexpr ptr(void* vp) : cuda::ptr<T, RawPtr>{static_cast<raw_pointer>(vp)}{}
 //	template<class Other, typename = std::enable_if_t<std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>>
 //	ptr(ptr<Other> const& o) HD : rp_{static_cast<raw_pointer>(o.rp_)}{}
 //	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>>
 //	explicit ptr(ptr<Other> const& o, void** = 0) HD : rp_{static_cast<raw_pointer>(o.rp_)}{}
 	explicit ptr(cuda::ptr<T, raw_pointer> const& other) : ptr{other.rp_}{
-		assert(other.rp_!=nullptr or Cuda::pointer::type(other.rp_) == cudaMemoryTypeManaged);
+	//	assert(other.rp_!=nullptr or Cuda::pointer::type(other.rp_) == cudaMemoryTypeManaged);
 	}
 	explicit constexpr ptr(raw_pointer p) : cuda::ptr<T, RawPtr>{p}{}//Cuda::pointer::is_device(p);}
 	ptr() = default;
+
+	// cppcheck-suppress noExplicitConstructor ; bug in cppcheck 2.3
 	ptr(ptr const&) = default;
+
+	// cppcheck-suppress noExplicitConstructor ; initialize from nullptr
 	constexpr ptr(std::nullptr_t n) : cuda::ptr<T, RawPtr>{n}{}
+
 	ptr& operator=(ptr const&) = default;
-	constexpr bool operator==(ptr const& other) const{return this->rp_==other.rp_;}
-	constexpr bool operator!=(ptr const& other) const{return this->rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& s, ptr const& o){return s.rp_==o.rp_;}
+	friend constexpr bool operator!=(ptr const& s, ptr const& o){return s.rp_!=o.rp_;}
 
 	using element_type = typename std::pointer_traits<raw_pointer>::element_type;
 	using difference_type = typename std::pointer_traits<raw_pointer>::difference_type;
@@ -154,7 +173,11 @@ public:
 	using iterator_category = typename std::iterator_traits<raw_pointer>::iterator_category; //	using iterator_concept  = typename std::iterator_traits<impl_t>::iterator_concept;
 	explicit constexpr operator bool() const{return this->rp_;}
 //	bool operator not() const{return !rp_;}
-	constexpr operator raw_pointer()const&{return this->rp_;} // do not =delete
+	constexpr 
+#ifndef MULTI_ALLOW_IMPLICIT_CPU_CONVERSION
+	explicit
+#endif
+	operator raw_pointer()const&{return this->rp_;} // do not =delete
 	constexpr operator ptr<void>() const{return ptr<void>{this->rp_};}
 //	template<class PM>
 //	decltype(auto) operator->*(PM pm) const{return *ptr<std::decay_t<decltype(rp_->*pm)>, decltype(&(rp_->*pm))>{&(rp_->*pm)};}
@@ -169,12 +192,7 @@ public:
 	constexpr ptr operator+(typename ptr::difference_type n) const{return ptr{(this->rp_) + n};} // remove
 	constexpr ptr operator-(typename ptr::difference_type n) const{return (*this) + (-n);} // remove
 	using reference = typename std::pointer_traits<raw_pointer>::element_type&;//ref<element_type>;
-//	[[SLOW]] 
-//	[[deprecated]] 
-	constexpr reference operator*() const{
-//		cudaDeviceSynchronize();
-		return *(this->rp_);
-	}
+	constexpr reference operator*() const{return *(this->rp_);}
 	constexpr reference operator[](difference_type n){return *((*this)+n);}
 	friend inline ptr to_address(ptr const& p){return p;}
 	constexpr typename ptr::difference_type operator-(ptr const& other) const{return (this->rp_)-other.rp_;}

@@ -56,9 +56,9 @@ public:
    *
    * Builder takes care of who owns what
    */
-  ~PWRealOrbitalSet();
+  ~PWRealOrbitalSet() override;
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   /** resize  the orbital base
    * @param bset PWBasis

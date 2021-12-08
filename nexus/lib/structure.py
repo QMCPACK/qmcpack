@@ -520,7 +520,7 @@ class MaskFilter(DevBase):
 mask_filter = MaskFilter()
             
 
-def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5):
+def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5,Tref=None):
     if mask is not None:
         mask_filter.set(mask)
         filter = mask_filter
@@ -537,7 +537,11 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     volume = abs(det(axes))*volfac
     axinv  = inv(axes)
     cube   = volume**(1./3)*identity(dim)
-    Tref   = array(around(dot(cube,axinv)),dtype=int)
+    if Tref is None:
+        Tref = array(around(dot(cube,axinv)),dtype=int)
+    else:
+        Tref = np.asarray(Tref)
+    #end if
     # calculate and store all tiling matrix variations
     if dn not in opt_tm_matrices:
         mats = []
@@ -719,6 +723,8 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
         s = -1
     elif len(other)>0:
         cells = other
+    else:
+        cells = []
     #end if
     skew_min = 1e99
     if len(cells)>0:
@@ -3066,7 +3072,7 @@ class Structure(Sobj):
 
 
     # test needed
-    # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
+    # get nearest neighbors according to constraints (voronoi, max distance, coord. number)
     def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos))
@@ -5026,7 +5032,7 @@ class Structure(Sobj):
     #end def write_fhi_aims
 
 
-    def plot2d_ax(self,ix,iy,*args,**kwargs):
+    def plot2d_ax(self,ix=0,iy=1,*args,**kwargs):
         if self.dim!=3:
             self.error('plot2d_ax is currently only implemented for 3 dimensions')
         #end if
@@ -5043,7 +5049,7 @@ class Structure(Sobj):
     #end def plot2d_ax
 
 
-    def plot2d_pos(self,ix,iy,*args,**kwargs):
+    def plot2d_pos(self,ix=0,iy=1,*args,**kwargs):
         if self.dim!=3:
             self.error('plot2d_pos is currently only implemented for 3 dimensions')
         #end if
@@ -5055,6 +5061,20 @@ class Structure(Sobj):
         #end for
         plot(pp[:,ix],pp[:,iy],*args,**kwargs)
     #end def plot2d_pos
+
+
+    def plot2d_points(self,points,ix=0,iy=1,*args,**kwargs):
+        if self.dim!=3:
+            self.error('plot2d_points is currently only implemented for 3 dimensions')
+        #end if
+        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        pp = np.array(points,dtype=float)
+        a = self.axes[iz]
+        for i in range(len(pp)):
+            pp[i] -= dot(a,pp[i])/dot(a,a)*a
+        #end for
+        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+    #end def plot2d_points
 
 
     def plot2d(self,pos_style='b.',ax_style='k-'):
@@ -5542,7 +5562,7 @@ def _getseekpath(
         structure = structure.folded_structure
     #end if
     structure = structure.copy()
-    if structure.units is not 'A':
+    if structure.units != 'A':
         structure.change_units('A')
     #end if
     axes       = structure.axes
@@ -6763,10 +6783,12 @@ class Crystal(Structure):
         pos  = []
         if basis_vectors is None:
             basis_vectors = axes
-        elif basis_vectors is 'primitive':
-            basis_vectors = axes_prim
-        elif basis_vectors is 'conventional':
-            basis_vectors = axes_conv
+        elif isinstance(basis_vectors,str):
+            if basis_vectors=='primitive':
+                basis_vectors = axes_prim
+            elif basis_vectors=='conventional':
+                basis_vectors = axes_conv
+            #end if
         #end if
         nbasis = len(atoms)
         for point in points:

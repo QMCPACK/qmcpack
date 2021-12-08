@@ -22,6 +22,7 @@
 #include <string>
 #include <mutex>
 #include <map>
+#include <memory>
 #include "NewTimer.h"
 #include "config.h"
 #include "OhmmsData/Libxml2Doc.h"

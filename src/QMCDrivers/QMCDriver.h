@@ -23,7 +23,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -107,7 +107,7 @@ public:
   ///Copy operator (disabled).
   QMCDriver& operator=(const QMCDriver&) = delete;
 
-  virtual ~QMCDriver() override;
+  ~QMCDriver() override;
 
   ///return current step
   inline int current() const { return CurrentStep; }
@@ -187,7 +187,13 @@ public:
   std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
+  inline RefVector<RandomGenerator_t> getRngRefs() const
+  {
+    RefVector<RandomGenerator_t> RngRefs;
+    for (int i = 0; i < Rng.size(); ++i)
+      RngRefs.push_back(*Rng[i]);
+    return RngRefs;
+  }
 
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) override { return (*Rng[i]); }
@@ -311,7 +317,7 @@ protected:
   QMCHamiltonian& H;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -320,7 +326,7 @@ protected:
   std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> Rng;
+  UPtrVector<RandomGenerator_t> Rng;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
@@ -331,8 +337,7 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///turn on spin moves
-  std::string SpinMoves;
+  ///spin mass for spinor calcs
   RealType SpinMass;
 
   bool putQMCInfo(xmlNodePtr cur);
@@ -344,7 +349,7 @@ protected:
    *
    * virtual function with a default implementation
    */
-  virtual void recordBlock(int block) override;
+  void recordBlock(int block) override;
 
   /** finalize a qmc section
    * @param block current block

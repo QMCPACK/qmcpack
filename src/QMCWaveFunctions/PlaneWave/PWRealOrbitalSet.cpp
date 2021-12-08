@@ -21,6 +21,7 @@
 #include "Message/Communicate.h"
 #include "PWRealOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -30,10 +31,10 @@ PWRealOrbitalSet::~PWRealOrbitalSet()
     delete myBasisSet;
 }
 
-SPOSet* PWRealOrbitalSet::makeClone() const
+std::unique_ptr<SPOSet> PWRealOrbitalSet::makeClone() const
 {
-  PWRealOrbitalSet* myclone = new PWRealOrbitalSet(*this);
-  myclone->myBasisSet       = new PWBasis(*myBasisSet);
+  auto myclone        = std::make_unique<PWRealOrbitalSet>(*this);
+  myclone->myBasisSet = new PWBasis(*myBasisSet);
   return myclone;
 }
 
@@ -139,8 +140,8 @@ void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
     const ComplexType* restrict tptr = Temp.data();
     for (int j = 0; j < OrbitalSetSize; j++, tptr += PW_MAXINDEX)
     {
-      convert(tptr[PW_VALUE], logdet(i, j));
-      convert(tptr[PW_LAP], d2logdet(i, j));
+      convertToReal(tptr[PW_VALUE], logdet(i, j));
+      convertToReal(tptr[PW_LAP], d2logdet(i, j));
 #if OHMMS_DIM == 3
       dlogdet(i, j) = GradType(tptr[PW_GRADX].real(), tptr[PW_GRADY].real(), tptr[PW_GRADZ].real());
 #elif OHMMS_DIM == 2

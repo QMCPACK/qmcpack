@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 
@@ -30,9 +29,6 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
@@ -57,6 +53,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
   ions.Lattice                      = Lattice;
   ions.createSK();
+  ions.update();
 
 
   elec.Lattice = Lattice;
@@ -75,20 +72,16 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)     = -1;
   tspecies(massIdx, upIdx)       = 1.0;
 
-  elec.createSK();
-
-  elec.addTable(ions);
   elec.resetGroups();
+  elec.createSK();
+  elec.addTable(ions);
   elec.update();
-
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
 
   CoulombPBCAB cab(ions, elec);
 
   // Self energy plus Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(2 * 0.0506238028)); // not validated
 
   double val_ei = cab.evaluate(elec);
@@ -106,9 +99,6 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
@@ -136,7 +126,7 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 2;
   ions.Lattice                      = Lattice;
   ions.createSK();
-
+  ions.update();
 
   elec.Lattice = Lattice;
   elec.setName("elec");
@@ -157,20 +147,15 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   tspecies(chargeIdx, upIdx)     = -1;
   tspecies(massIdx, upIdx)       = 1.0;
 
-  elec.createSK();
-
-  elec.addTable(ions);
   elec.resetGroups();
+  elec.createSK();
+  elec.addTable(ions);
   elec.update();
-
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
 
   CoulombPBCAB cab(ions, elec);
 
   // Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0267892759 * 4)); // not validated
 
 

@@ -190,7 +190,7 @@ protected:
   ///filename for dmc.dat
   std::string dmcFname;
   ///file to save energy histogram
-  std::ofstream* dmcStream;
+  std::unique_ptr<std::ofstream> dmcStream;
   ///Number of walkers created by this rank
   IndexType NumWalkersCreated;
   ///context id
@@ -204,7 +204,7 @@ protected:
   ///any temporary data includes many ridiculous conversions of integral types to and from fp
   std::vector<FullPrecRealType> curData;
   ///temporary storage for good and bad walkers
-  std::vector<Walker_t*> good_w, bad_w;
+  std::vector<std::unique_ptr<Walker_t>> good_w, bad_w;
   ///temporary storage for copy counters
   std::vector<int> ncopy_w;
   ///Add released-node fields to .dmc.dat file

@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
@@ -10,15 +10,13 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR lattice)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR lattice)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
+add_executable(${UTEST_EXE} test_ParticleBConds.cpp test_CrystalLattice.cpp test_LRBreakupParameters.cpp)
+target_include_directories(${UTEST_EXE} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+target_link_libraries(${UTEST_EXE} catch_main qmcutil platform_runtime)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_ParticleBConds.cpp test_CrystalLattice.cpp test_LRBreakupParameters.cpp)
-TARGET_INCLUDE_DIRECTORIES(${UTEST_EXE} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil Math::scalar_vector_functions)
-
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

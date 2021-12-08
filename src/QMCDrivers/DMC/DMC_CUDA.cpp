@@ -17,13 +17,12 @@
 #include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "Message/CommOperators.h"
-#include "type_traits/scalar_traits.h"
 #ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif
@@ -42,7 +41,6 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, comm, "DMCcuda", enable_profiling),
       myWarmupSteps(0),
       Mover(0),
-      NLop(w.getTotalNum()),
       ResizeTimer(*timer_manager.createTimer("DMCcuda::resize")),
       DriftDiffuseTimer(*timer_manager.createTimer("DMCcuda::Drift_Diffuse")),
       BranchTimer(*timer_manager.createTimer("DMCcuda::Branch")),
@@ -283,7 +281,7 @@ bool DMCcuda::run()
           v2bar += dot(wG_scaled, wG_scaled);
 #ifdef QMC_COMPLEX
           PosType wG_real;
-          convert(W.G[iat], wG_real);
+          convertToReal(W.G[iat], wG_real);
           v2 += dot(wG_real, wG_real);
 #else
           // should be removed when things work fine

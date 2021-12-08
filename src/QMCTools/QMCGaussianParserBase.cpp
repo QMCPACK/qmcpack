@@ -18,7 +18,6 @@
 #include "QMCGaussianParserBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
@@ -35,6 +34,17 @@ const int OhmmsAsciiParser::bufferSize;
 std::map<int, std::string> QMCGaussianParserBase::IonName;
 std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
+
+const std::vector<double> QMCGaussianParserBase::gCoreTable = {
+    0,                                      /* index zero*/
+    1,  2,                                  /*H He */
+    2,  2,  2,  2,  2,  2,  2,  10,         /*Li-Ne*/
+    10, 10, 10, 10, 10, 10, 10, 18,         /*Na-Ar*/
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
+    28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
+    46, 46, 46, 46, 46, 54                  /*In-Xe*/
+};
 
 QMCGaussianParserBase::QMCGaussianParserBase()
     : multideterminant(false),
@@ -57,6 +67,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       singledetH5(false),
       optDetCoeffs(false),
       usingCSF(false),
+      isSpinor(false),
       NumberOfAtoms(0),
       NumberOfEls(0),
       target_state(0),
@@ -84,6 +95,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       CurrentCenter(""),
       outputFile(""),
       angular_type("spherical"),
+      expandYlm("Gamess"),
       h5file(""),
       multih5file(""),
       WFS_name("wfj"),
@@ -93,7 +105,6 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       gBound(0),
       Occ_alpha(0),
       Occ_beta(0),
-      gridPtr(0),
       X(0),
       Y(0),
       Z(0)
@@ -120,6 +131,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       singledetH5(false),
       optDetCoeffs(false),
       usingCSF(false),
+      isSpinor(false),
       NumberOfAtoms(0),
       NumberOfEls(0),
       target_state(0),
@@ -147,6 +159,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       CurrentCenter(""),
       outputFile(""),
       angular_type("spherical"),
+      expandYlm("Gamess"),
       h5file(""),
       multih5file(""),
       WFS_name("wfj"),
@@ -156,7 +169,6 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       gBound(0),
       Occ_alpha(0),
       Occ_beta(0),
-      gridPtr(0),
       X(0),
       Y(0),
       Z(0)
@@ -288,56 +300,81 @@ void QMCGaussianParserBase::init()
 
 void QMCGaussianParserBase::setOccupationNumbers()
 {
-  int ds        = SpinMultiplicity - 1;
-  NumberOfBeta  = (NumberOfEls - ds) / 2;
-  NumberOfAlpha = NumberOfEls - NumberOfBeta;
-  if (!SpinRestricted)
-  //UHF
+  if (isSpinor)
   {
-    std::multimap<value_type, int> e;
-    for (int i = 0; i < numMO; i++)
-      e.insert(std::pair<value_type, int>(EigVal_alpha[i], 0));
-    for (int i = 0; i < numMO; i++)
-      e.insert(std::pair<value_type, int>(EigVal_beta[i], 1));
-    int n = 0;
-    std::multimap<value_type, int>::iterator it(e.begin());
-    LOGMSG("Unrestricted HF. Sorted eigen values")
-    while (n < NumberOfEls && it != e.end())
-    {
-      LOGMSG(n << " " << (*it).first << " " << (*it).second)
-      ++it;
-      ++n;
-    }
+    Occ_alpha.resize(numMO, 0);
+    for (int i = 0; i < NumberOfAlpha; i++)
+      Occ_alpha[i] = 1;
   }
-  //}
-  LOGMSG("Number of alpha electrons " << NumberOfAlpha)
-  LOGMSG("Number of beta electrons " << NumberOfBeta)
-  Occ_alpha.resize(numMO, 0);
-  Occ_beta.resize(numMO, 0);
-  for (int i = 0; i < NumberOfAlpha; i++)
-    Occ_alpha[i] = 1;
-  for (int i = 0; i < NumberOfBeta; i++)
-    Occ_beta[i] = 1;
+  else
+  {
+    int ds        = SpinMultiplicity - 1;
+    NumberOfBeta  = (NumberOfEls - ds) / 2;
+    NumberOfAlpha = NumberOfEls - NumberOfBeta;
+    if (!SpinRestricted)
+    //UHF
+    {
+      std::multimap<value_type, int> e;
+      for (int i = 0; i < numMO; i++)
+        e.insert(std::pair<value_type, int>(EigVal_alpha[i], 0));
+      for (int i = 0; i < numMO; i++)
+        e.insert(std::pair<value_type, int>(EigVal_beta[i], 1));
+      int n = 0;
+      std::multimap<value_type, int>::iterator it(e.begin());
+      LOGMSG("Unrestricted HF. Sorted eigen values")
+      while (n < NumberOfEls && it != e.end())
+      {
+        LOGMSG(n << " " << (*it).first << " " << (*it).second)
+        ++it;
+        ++n;
+      }
+    }
+    //}
+    LOGMSG("Number of alpha electrons " << NumberOfAlpha)
+    LOGMSG("Number of beta electrons " << NumberOfBeta)
+    Occ_alpha.resize(numMO, 0);
+    Occ_beta.resize(numMO, 0);
+    for (int i = 0; i < NumberOfAlpha; i++)
+      Occ_alpha[i] = 1;
+    for (int i = 0; i < NumberOfBeta; i++)
+      Occ_beta[i] = 1;
+  }
 }
 
 xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
 {
   ParticleSet els;
   els.setName("e");
-  std::vector<int> nel(2);
-  nel[0] = NumberOfAlpha;
-  nel[1] = NumberOfBeta;
-  els.create(nel);
-  int iu                      = els.getSpeciesSet().addSpecies("u");
-  int id                      = els.getSpeciesSet().addSpecies("d");
-  int ic                      = els.getSpeciesSet().addAttribute("charge");
-  els.getSpeciesSet()(ic, iu) = -1;
-  els.getSpeciesSet()(ic, id) = -1;
+  if (!isSpinor)
+  {
+    std::vector<int> nel(2);
+    nel[0] = NumberOfAlpha;
+    nel[1] = NumberOfBeta;
+    els.create(nel);
+    int iu                      = els.getSpeciesSet().addSpecies("u");
+    int id                      = els.getSpeciesSet().addSpecies("d");
+    int ic                      = els.getSpeciesSet().addAttribute("charge");
+    els.getSpeciesSet()(ic, iu) = -1;
+    els.getSpeciesSet()(ic, id) = -1;
+  }
+  else
+  {
+    std::vector<int> nel(1);
+    nel[0] = NumberOfAlpha;
+    assert(NumberOfBeta == 0);
+    els.create(nel);
+    int iu                      = els.getSpeciesSet().addSpecies("u");
+    int ic                      = els.getSpeciesSet().addAttribute("charge");
+    els.getSpeciesSet()(ic, iu) = -1;
+  }
 
   xmlNodePtr cur = xmlNewNode(NULL, (const xmlChar*)"particleset");
   xmlNewProp(cur, (const xmlChar*)"name", (const xmlChar*)els.getName().c_str());
   xmlNewProp(cur, (const xmlChar*)"random", (const xmlChar*)"yes");
   xmlNewProp(cur, (const xmlChar*)"randomsrc", (const xmlChar*)ion_tag.c_str());
+  if (isSpinor)
+    xmlNewProp(cur, (const xmlChar*)"spinor", (const xmlChar*)"yes");
+
 
   //Electron up
   {
@@ -351,6 +388,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
     xmlAddChild(cur, g);
   }
   //Electron dn
+  if (!isSpinor)
   {
     std::ostringstream ng;
     ng << els.last(1) - els.first(1);
@@ -398,23 +436,18 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     IonSystem.R *= ang_to_bohr;
   }
-  double CoreTable[] = {
-      0,                                      /* index zero*/
-      1,  2,                                  /*H He */
-      2,  2,  2,  2,  2,  2,  2,  10,         /*Li-Ne*/
-      10, 10, 10, 10, 10, 10, 10, 18,         /*Na-Ar*/
-      18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
-      28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
-      36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
-      46, 46, 46, 46, 46, 54                  /*In-Xe*/
-  };
-  SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+  SpeciesSet& ionSpecies = IonSystem.getSpeciesSet();
   for (int i = 0; i < ionSpecies.getTotalNum(); i++)
   {
     int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
     double valence = ionSpecies(IonChargeIndex, i);
-    if (valence > CoreTable[z] && FixValence != true)
-      valence -= CoreTable[z];
+    if (FixValence)
+    {
+      if (z > gCoreTable.size())
+        return nullptr;
+      else if (valence > gCoreTable[z])
+        valence -= gCoreTable[z];
+    }
     ionSpecies(ValenceChargeIndex, i) = valence;
     ionSpecies(AtomicNumberIndex, i)  = z;
   }
@@ -448,8 +481,13 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
       hout.push(SpecieID.str().c_str(), true);
       int z          = static_cast<int>(ionSpecies(AtomicNumberIndex, i));
       double valence = ionSpecies(IonChargeIndex, i);
-      if (valence > CoreTable[z] && FixValence != true)
-        valence -= CoreTable[z];
+      if (FixValence)
+      {
+        if (z > gCoreTable.size())
+          return nullptr;
+        else if (valence > gCoreTable[z])
+          valence -= gCoreTable[z];
+      }
       hout.write(z, "charge");
       hout.write(z, "atomic_number");
       hout.write(valence, "core");
@@ -586,37 +624,76 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
   hout.write(Ctemp, "eigenset_0");
 
   xmlNodePtr ddet;
-  if (SpinRestricted)
+  if (isSpinor)
   {
-    ddet = xmlCopyNode(udet, 1);
-    xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
-    xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
-    if (DoCusp == true)
-      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
-  }
-  else
-  {
-    ddet = xmlCopyNode(udet, 2);
-    xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
-    xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
-    if (DoCusp == true)
-      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
-    xmlNodePtr o = xmlAddChild(ddet, xmlCopyNode(occ_data, 1));
-    xmlNodePtr c = xmlCopyNode(coeff_data, 1);
-    xmlSetProp(c, (const xmlChar*)"spindataset", (const xmlChar*)"1");
-    o = xmlAddSibling(o, c);
-
     n = numMO * SizeOfBasisSet;
     for (int i = 0; i < numMO; i++)
+    {
       for (int j = 0; j < SizeOfBasisSet; j++)
       {
         Ctemp[i][j] = EigVec[n];
         n++;
       }
-
+    }
     hout.write(Ctemp, "eigenset_1");
+    n = 2 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_0_imag");
+    n = 3 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_1_imag");
+
+    hout.write(EigVal_alpha, "eigenval_0");
   }
-  cur = xmlAddSibling(cur, ddet);
+  else
+  {
+    if (SpinRestricted)
+    {
+      ddet = xmlCopyNode(udet, 1);
+      xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
+      xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
+      if (DoCusp == true)
+        xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
+    }
+    else
+    {
+      ddet = xmlCopyNode(udet, 2);
+      xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
+      xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
+      if (DoCusp == true)
+        xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
+      xmlNodePtr o = xmlAddChild(ddet, xmlCopyNode(occ_data, 1));
+      xmlNodePtr c = xmlCopyNode(coeff_data, 1);
+      xmlSetProp(c, (const xmlChar*)"spindataset", (const xmlChar*)"1");
+      o = xmlAddSibling(o, c);
+
+      n = numMO * SizeOfBasisSet;
+      for (int i = 0; i < numMO; i++)
+        for (int j = 0; j < SizeOfBasisSet; j++)
+        {
+          Ctemp[i][j] = EigVec[n];
+          n++;
+        }
+
+      hout.write(Ctemp, "eigenset_1");
+    }
+    cur = xmlAddSibling(cur, ddet);
+  }
+
   hout.close();
   return slaterdet;
 }
@@ -854,14 +931,18 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   xmlNewProp(spoUP, (const xmlChar*)"size", (const xmlChar*)nstates_alpha.str().c_str());
 
   //create a spoDN
-  xmlNewProp(spoDN, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
-  xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
+  if (!isSpinor)
+  {
+    xmlNewProp(spoDN, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
+    xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
+  }
 
 
   if (DoCusp == true)
   {
     xmlNewProp(spoUP, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
-    xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
+    if (!isSpinor)
+      xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
   }
 
 
@@ -885,32 +966,68 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
       n++;
     }
 
-
   hout.write(Ctemp, "eigenset_0");
 
-
-  //add occupation DN
-  occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
-  xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
-  xmlAddChild(spoDN, occ_data);
-
-  coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
-  xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
-  if (SpinRestricted)
-    xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
-  else
+  if (isSpinor)
   {
-    xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"1");
     n = numMO * SizeOfBasisSet;
     for (int i = 0; i < numMO; i++)
+    {
       for (int j = 0; j < SizeOfBasisSet; j++)
       {
         Ctemp[i][j] = EigVec[n];
         n++;
       }
+    }
     hout.write(Ctemp, "eigenset_1");
+    n = 2 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_0_imag");
+    n = 3 * numMO * SizeOfBasisSet;
+    for (int i = 0; i < numMO; i++)
+    {
+      for (int j = 0; j < SizeOfBasisSet; j++)
+      {
+        Ctemp[i][j] = EigVec[n];
+        n++;
+      }
+    }
+    hout.write(Ctemp, "eigenset_1_imag");
+
+    hout.write(EigVal_alpha, "eigenval_0");
   }
-  xmlAddChild(spoDN, coeff_data);
+  else
+  {
+    //add occupation DN
+    occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
+    xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
+    xmlAddChild(spoDN, occ_data);
+
+    coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+    xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+    if (SpinRestricted)
+      xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
+    else
+    {
+      xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"1");
+      n = numMO * SizeOfBasisSet;
+      for (int i = 0; i < numMO; i++)
+        for (int j = 0; j < SizeOfBasisSet; j++)
+        {
+          Ctemp[i][j] = EigVec[n];
+          n++;
+        }
+      hout.write(Ctemp, "eigenset_1");
+    }
+    xmlAddChild(spoDN, coeff_data);
+  }
 
   hout.close();
 }
@@ -922,8 +1039,13 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
   else
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
+  if (isSpinor)
+    xmlNewProp(multislaterdet, (const xmlChar*)"spo_0", (const xmlChar*)"spo-up");
+  else
+  {
+    xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
+    xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
+  }
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
   std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
   cisize << ci_size;
@@ -935,10 +1057,18 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   ci_thr << ci_threshold;
   xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
-  xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+  if (isSpinor)
+  {
+    xmlNewProp(detlist, (const xmlChar*)"nc0", (const xmlChar*)cinca.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"ne0", (const xmlChar*)cinea.str().c_str());
+  }
+  else
+  {
+    xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+  }
   xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
@@ -947,7 +1077,12 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     std::cerr << " CI configuration list is empty. \n";
     exit(101);
   }
-  if (CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
+  if (CIcoeff.size() != CIalpha.size())
+  {
+    std::cerr << " Problem with CI configuration lists. \n";
+    exit(102);
+  }
+  if (!isSpinor && CIcoeff.size() != CIbeta.size())
   {
     std::cerr << " Problem with CI configuration lists. \n";
     exit(102);
@@ -1017,7 +1152,8 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     }
   }
   hout.write(tempAlpha, "CI_Alpha");
-  hout.write(tempBeta, "CI_Beta");
+  if (!isSpinor)
+    hout.write(tempBeta, "CI_Beta");
 
   hout.pop();
   xmlAddChild(multislaterdet, detlist);
@@ -1222,7 +1358,6 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_, int numelem)
   int numbasisgroups(0);
   std::stringstream tempcenter;
   std::string CenterID;
-  std::string expandYlm("Gamess");
   tempcenter << CurrentCenter << "";
   CenterID = tempcenter.str();
   std::stringstream tempElem;
@@ -1275,7 +1410,7 @@ xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_)
   xmlNewProp(abasis, (const xmlChar*)"type", (const xmlChar*)basisType.c_str());
   xmlNewProp(abasis, (const xmlChar*)"elementType", (const xmlChar*)CurrentCenter.c_str());
   xmlNewProp(abasis, (const xmlChar*)"normalized", (const xmlChar*)Normalized.c_str());
-  xmlAddChild(abasis, xmlCopyNode(gridPtr, 1));
+  xmlAddChild(abasis, xmlCopyNode(gridPtr.get(), 1));
   for (int ig = gBound[iat], n = 0; ig < gBound[iat + 1]; ig++, n++)
   {
     createShell(n, ig, off_, abasis);
@@ -1445,22 +1580,25 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
     xmlNewProp(a, (const xmlChar*)"optimize", (const xmlChar*)"yes");
     xmlAddChild(j3, uuc);
 
-    xmlNodePtr udc = xmlNewNode(NULL, (const xmlChar*)"correlation");
-    xmlNewProp(udc, (const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
-    xmlNewProp(udc, (const xmlChar*)"especies1", (const xmlChar*)"u");
-    xmlNewProp(udc, (const xmlChar*)"especies2", (const xmlChar*)"d");
-    xmlNewProp(udc, (const xmlChar*)"isize", (const xmlChar*)"3");
-    xmlNewProp(udc, (const xmlChar*)"esize", (const xmlChar*)"3");
-    if (!PBC)
-      xmlNewProp(udc, (const xmlChar*)"rcut", (const xmlChar*)"5");
+    if (!isSpinor)
+    {
+      xmlNodePtr udc = xmlNewNode(NULL, (const xmlChar*)"correlation");
+      xmlNewProp(udc, (const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
+      xmlNewProp(udc, (const xmlChar*)"especies1", (const xmlChar*)"u");
+      xmlNewProp(udc, (const xmlChar*)"especies2", (const xmlChar*)"d");
+      xmlNewProp(udc, (const xmlChar*)"isize", (const xmlChar*)"3");
+      xmlNewProp(udc, (const xmlChar*)"esize", (const xmlChar*)"3");
+      if (!PBC)
+        xmlNewProp(udc, (const xmlChar*)"rcut", (const xmlChar*)"5");
 
-    xmlNodePtr b = xmlNewTextChild(udc, NULL, (const xmlChar*)"coefficients", (const xmlChar*)"\n        ");
-    std::ostringstream o2;
-    o2 << "ud" << ionSpecies.speciesName[i];
-    xmlNewProp(b, (const xmlChar*)"id", (const xmlChar*)o2.str().c_str());
-    xmlNewProp(b, (const xmlChar*)"type", (const xmlChar*)"Array");
-    xmlNewProp(b, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-    xmlAddChild(j3, udc);
+      xmlNodePtr b = xmlNewTextChild(udc, NULL, (const xmlChar*)"coefficients", (const xmlChar*)"\n        ");
+      std::ostringstream o2;
+      o2 << "ud" << ionSpecies.speciesName[i];
+      xmlNewProp(b, (const xmlChar*)"id", (const xmlChar*)o2.str().c_str());
+      xmlNewProp(b, (const xmlChar*)"type", (const xmlChar*)"Array");
+      xmlNewProp(b, (const xmlChar*)"optimize", (const xmlChar*)"yes");
+      xmlAddChild(j3, udc);
+    }
   }
   return j3;
 }
@@ -1535,7 +1673,7 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
 
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 {
-  gridPtr = xmlNewNode(NULL, (const xmlChar*)"grid");
+  gridPtr = std::unique_ptr<xmlNode, void (*)(xmlNodePtr)>(xmlNewNode(NULL, (const xmlChar*)"grid"), xmlFreeNode);
   std::string gridType("log");
   std::string gridFirst("1.e-6");
   std::string gridLast("1.e2");
@@ -1566,10 +1704,10 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
     }
     ++iargc;
   }
-  xmlNewProp(gridPtr, (const xmlChar*)"type", (const xmlChar*)gridType.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"ri", (const xmlChar*)gridFirst.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"rf", (const xmlChar*)gridLast.c_str());
-  xmlNewProp(gridPtr, (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"type", (const xmlChar*)gridType.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"ri", (const xmlChar*)gridFirst.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"rf", (const xmlChar*)gridLast.c_str());
+  xmlNewProp(gridPtr.get(), (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
 }
 
 void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& ion_tag)
@@ -1580,7 +1718,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
     //if (UseHDF5 || multidetH5)
     if (UseHDF5)
     {
-      bool IsComplex = false;
+      bool IsComplex = (isSpinor) ? true : false;
       hdf_archive hout;
       hout.create(h5file.c_str(), H5F_ACC_TRUNC);
       hout.push("PBC", true);
@@ -1618,12 +1756,23 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       exit(0);
       // xmlAddChild(qm_root_p, createCell());
     }
-    xmlAddChild(qm_root_p, createIonSet());
-    xmlAddChild(qm_root_p, createElectronSet(ion_tag));
-    xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title + ".structure.xml";
-    xmlSaveFormatFile(fname.c_str(), doc_p, 1);
-    xmlFreeDoc(doc_p);
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dump, check out of "
+                               "bounds for valence calculation\n");
+    }
     Structure = true;
   }
   xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");
@@ -1647,7 +1796,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       //BASISSET
       {
         if (UseHDF5)
+        {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
+          xmlFreeNode(bsetPtr);
+        }
         else
         {
           if (!singledetH5)
@@ -1659,8 +1811,8 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
         if (multideterminant)
         {
           xmlNodePtr spoupPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
-          xmlNodePtr spodnPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
           xmlNewProp(spoupPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
+          xmlNodePtr spodnPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
           xmlNewProp(spodnPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
           if (multidetH5)
           {
@@ -1677,7 +1829,11 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
             {
               createSPOSetsH5(spoupPtr, spodnPtr);
               xmlAddChild(detPtr, spoupPtr);
-              xmlAddChild(detPtr, spodnPtr);
+              //for spinors, we don't need the spodn so just free it
+              if (isSpinor)
+                xmlFreeNode(spodnPtr);
+              else
+                xmlAddChild(detPtr, spodnPtr);
               xmlNodePtr multislaterdetPtr = NULL;
               if (usingCSF)
               {
@@ -1754,12 +1910,24 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     if (PBC)
       xmlAddChild(qm_root_p, createCell());
-    xmlAddChild(qm_root_p, createIonSet());
-    xmlAddChild(qm_root_p, createElectronSet(ion_tag));
-    xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title + ".structure.xml";
-    xmlSaveFormatFile(fname.c_str(), doc_p, 1);
-    xmlFreeDoc(doc_p);
+
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dumpPBC, check out of "
+                               "bounds for valence calculation\n");
+    }
     Structure = true;
   }
   xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");
@@ -2299,6 +2467,29 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
       }
       xmlAddChild(hamPtr, pairpot3);
     }
+
+    std::string tmp_codename = CodeName;
+    tolower(tmp_codename);
+
+    if (tmp_codename == "rmg")
+    {
+      std::cout << "Adding MPC and Chiesa correction to Hamiltonian" << std::endl;
+      xmlNodePtr pairpotMPC = xmlNewNode(NULL, (const xmlChar*)"pairpot");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"name", (const xmlChar*)"MPC");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"type", (const xmlChar*)"MPC");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"source", (const xmlChar*)"e");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"target", (const xmlChar*)"e");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"ecut", (const xmlChar*)"60.0");
+      xmlNewProp(pairpotMPC, (const xmlChar*)"physical", (const xmlChar*)"false");
+      xmlAddChild(hamPtr, pairpotMPC);
+
+      xmlNodePtr chiesaPtr = xmlNewNode(NULL, (const xmlChar*)"estimator");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"name", (const xmlChar*)"KEcorr");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"type", (const xmlChar*)"chiesa");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"source", (const xmlChar*)"e");
+      xmlNewProp(chiesaPtr, (const xmlChar*)"psi", (const xmlChar*)psi_tag.c_str());
+      xmlAddChild(hamPtr, chiesaPtr);
+    }
   }
   return hamPtr;
 }
@@ -2416,7 +2607,8 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
     app_log() << "WARNING!! THE HDF5 Contains CI coefficients for " << nbexcitedstates
               << ". By default, the ground state coefficients will be loaded ( ext_level=0). If you want to evaluate "
                  "an excited for which the coefficients are stored in the HDF5 file, modify the value of ext_level "
-                 "Using [1," << nbexcitedstates<< "]" <<std::endl;
+                 "Using [1,"
+              << nbexcitedstates << "]" << std::endl;
     xmlNewProp(detlist, (const xmlChar*)"ext_level", (const xmlChar*)"0");
   }
   if (!debug)

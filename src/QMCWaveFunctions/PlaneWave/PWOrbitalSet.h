@@ -52,9 +52,9 @@ public:
    *
    * Builder takes care of who owns what
    */
-  ~PWOrbitalSet();
+  ~PWOrbitalSet() override;
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
   /** resize  the orbital base
    * @param bset PWBasis
    * @param nbands number of bands

@@ -26,7 +26,6 @@
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#include "QMCWaveFunctions/EinsplineSet.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
@@ -121,7 +120,7 @@ public:
   typedef CrystalLattice<ParticleSet::Scalar_t, DIM> UnitCellType;
 
   ///reference to the particleset pool
-  PtclPoolType& ParticleSets;
+  const PtclPoolType& ParticleSets;
   ///quantum particle set
   ParticleSet& TargetPtcl;
   ///ionic system
@@ -129,10 +128,10 @@ public:
 
   /**  Helper vector for sorting bands
    */
-  std::vector<std::vector<BandInfo>*> FullBands;
+  std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
   /// reader to use BsplineReaderBase
-  BsplineReaderBase* MixedSplineReader;
+  std::unique_ptr<BsplineReaderBase> MixedSplineReader;
 
   ///This is true if we have the orbital derivatives w.r.t. the ion positions
   bool HaveOrbDerivs;
@@ -142,23 +141,23 @@ public:
   std::map<H5OrbSet, SPOSet*, H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
 
   ///destructor
-  ~EinsplineSetBuilder();
+  ~EinsplineSetBuilder() override;
 
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
-  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks=false);
+  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks = false);
 
   /** initialize with the existing SPOSet */
-  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
 
   //////////////////////////////////////
   // HDF5-related data  and functions //
@@ -176,8 +175,8 @@ public:
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
   bool HasCoreOrbs;
-  bool ReadOrbitalInfo(bool skipChecks=false);
-  bool ReadOrbitalInfo_ESHDF(bool skipChecks=false);
+  bool ReadOrbitalInfo(bool skipChecks = false);
+  bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 
@@ -193,8 +192,8 @@ public:
   template<typename SPE>
   inline void setTiling(SPE* oset, int numOrbs)
   {
-    oset->TileFactor   = TileFactor;
-    oset->Tiling       = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
+    oset->TileFactor = TileFactor;
+    oset->Tiling     = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
     oset->PrimLattice.set(Lattice);
     oset->SuperLattice.set(SuperLattice);
     oset->GGt = GGt;
@@ -235,7 +234,8 @@ public:
   // clone
   std::vector<TinyVector<int, OHMMS_DIM>> UseTwists;
   std::vector<int> IncludeTwists, DistinctTwists;
-  bool UseRealOrbitals;
+  /// if false, splines are conceptually complex valued
+  bool use_real_splines_;
   int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
   // This is true if the corresponding twist in DistinctTwists should
   // should be used to generate two distinct orbitals from the real and
@@ -247,7 +247,7 @@ public:
   //void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
-  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks=false);
+  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
   void CopyBands(int numOrbs);

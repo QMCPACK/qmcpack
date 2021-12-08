@@ -35,19 +35,22 @@ public:
    */
   PairCorrEstimator(ParticleSet& elns, std::string& sources);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   /* evaluate the pair correlation functions */
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
+
+  /// generate the unique pair id from the group ids of particle i and j and the number of species
+  static int gen_pair_id(const int ig, const int jg, const int ns);
 
   void addObservables(PropertySetType& plist) {}
-  void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(std::vector<observable_helper*>& h5list, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void set_norm_factor();
   void report();

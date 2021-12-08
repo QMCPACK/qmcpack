@@ -28,9 +28,9 @@ public:
   /// Constructor.
   VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
 
-  ~VMCUpdatePbyP();
+  ~VMCUpdatePbyP() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
   NewTimer& buffer_timer_;

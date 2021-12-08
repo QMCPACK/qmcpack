@@ -3,17 +3,19 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Christos Kartsaklis, kartsaklisc@ornl.gov, Oak Ridge National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "PhaseFactors.h"
 #include <assert.h>
 #include <thrust/complex.h>
@@ -25,6 +27,14 @@
    In such case extra synchronizations are necessary.
 */
 
+__device__ inline void sincos_t(float x, float *sin, float *cos) {
+  sincosf(x, sin, cos);
+}
+
+__device__ inline void sincos_t(double x, double *sin, double *cos) {
+  sincos(x, sin, cos);
+}
+
 template<typename T, int BS> __global__
 void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                           T *pos, T **phi_in, T **phi_out,
@@ -35,7 +45,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
   volatile __shared__ T out_shared[2*BS+1];
   __shared__ T *phi_in_ptr[BS], *phi_out_ptr[BS];
   int tid = threadIdx.x;
-  assert(warpSize == 32);
+  assert(warpSize == 32 || warpSize == 64);
 #pragma unroll
   for (int i=0; i<3; i++)
   {
@@ -107,7 +117,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
         T phase = -(pos_s[i][0]*kPoints_s[tid][0] +
                     pos_s[i][1]*kPoints_s[tid][1] +
                     pos_s[i][2]*kPoints_s[tid][2]);
-        sincos(phase, &s, &c);
+        sincos_t(phase, &s, &c);
         T phi_real = in_shared[2*tid]*c - in_shared[2*tid+1]*s;
         T phi_imag = in_shared[2*tid]*s + in_shared[2*tid+1]*c;
         out_shared[outIndex] = phi_real;
@@ -153,7 +163,7 @@ void phase_factor_kernel_new (T *kPoints, int *makeTwoCopies,
                 kPoints_s[tid][1]*pos_s[1] +
                 kPoints_s[tid][2]*pos_s[2]);
     T s, c;
-    sincosf (phase, &s, &c);
+    sincos_t(phase, &s, &c);
     int off = 2*ib*BS + tid;
     in_shared[tid]    = phi_in_ptr[off];
     in_shared[tid+BS] = phi_in_ptr[off+BS];
@@ -250,7 +260,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                 pos_s[1]*kPoints_s[tid][1] +
                 pos_s[2]*kPoints_s[tid][2]);
     T s, c;
-    sincos (phase, &s, &c);
+    sincos_t(phase, &s, &c);
     T u_re, u_im, gradu_re[3], gradu_im[3], laplu_re, laplu_im;
     u_re        = in_shared[0][2*tid+0];
     u_im        = in_shared[0][2*tid+1];
@@ -396,7 +406,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                 pos_s[1]*kPoints_s[1] +
                 pos_s[2]*kPoints_s[2]);
     T s, c;
-    sincos (phase, &s, &c);
+    sincos_t(phase, &s, &c);
     T u_re, u_im, gradu_re[3], gradu_im[3], laplu_re, laplu_im;
     u_re        = in_shared[0][0];
     u_im        = in_shared[0][1];
@@ -638,7 +648,7 @@ void phase_factor_kernel (T *kPoints,
   // Copy electron position into shared memory
   if (tid < 3)
     pos_s[tid] = pos[3*blockIdx.x+tid];
-  // BS>warpSize sync needed 
+  // BS>warpSize sync needed
   __syncthreads();
 
   // "ib" is NOT the thread block! This is just a "block" of BS splines that the BS threads
@@ -661,7 +671,7 @@ void phase_factor_kernel (T *kPoints,
                   kPoints_s[1]*pos_s[1] +
                   kPoints_s[2]*pos_s[2]);
       T s, c;
-      sincos (phase, &s, &c);
+      sincos_t(phase, &s, &c);
       T2 e_mikr = T2(c,s);
       int my_off=in_off+spline_offset;
       T2 u = phi_in_ptr[my_off];
@@ -720,7 +730,7 @@ void phase_factor_kernel (T *kPoints,
                   kPoints_s[1]*pos_s[1] +
                   kPoints_s[2]*pos_s[2]);
       T s, c;
-      sincos (phase, &s, &c);
+      sincos_t(phase, &s, &c);
       T2 e_mikr = T2(c,s);
 
       // Temp. storage for phi, grad, lapl in the registers
@@ -805,7 +815,7 @@ void apply_phase_factors(float kPoints[], float pos[],
                          int num_splines, int num_walkers, int row_stride)
 {
 
-  const int BS = 128; 
+  const int BS = 128;
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
@@ -827,7 +837,7 @@ void apply_phase_factors(double kPoints[], double pos[],
                          std::complex<double>* GL_in[], std::complex<double>* GL_out[],
                          int num_splines, int num_walkers, int row_stride)
 {
-  const int BS = 128; 
+  const int BS = 128;
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 

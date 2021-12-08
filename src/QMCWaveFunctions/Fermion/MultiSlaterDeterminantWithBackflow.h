@@ -17,14 +17,14 @@
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #include <Configuration.h>
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
+class BackflowTransformation;
+
 /** @ingroup WaveFunctionComponent
  *  @brief MultiSlaterDeterminantWithBackflow
  */
@@ -33,54 +33,46 @@ class MultiSlaterDeterminantWithBackflow : public MultiSlaterDeterminant
 public:
   ///constructor
   MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
-                                     std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                                     std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
-                                     BackflowTransformation* tr);
+                                     std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
+                                     std::unique_ptr<BackflowTransformation> tr);
 
   ///destructor
-  ~MultiSlaterDeterminantWithBackflow();
+  ~MultiSlaterDeterminantWithBackflow() override;
 
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
-  ///set BF pointers
-  void setBF(BackflowTransformation* bf)
-  {
-    BFTrans = bf;
-    for (int i = 0; i < dets_up.size(); i++)
-      dets_up[i]->setBF(bf);
-    for (int i = 0; i < dets_dn.size(); i++)
-      dets_dn[i]->setBF(bf);
-  }
-
-  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  ValueType evaluate(const ParticleSet& P,
+                     ParticleSet::ParticleGradient_t& G,
+                     ParticleSet::ParticleLaplacian_t& L) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L);
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  GradType evalGrad(ParticleSet& P, int iat);
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  PsiValueType ratio(ParticleSet& P, int iat);
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
-  void restore(int iat);
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  void restore(int iat) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi) override;
 
-  void resize(int, int);
+private:
+  void resize(int, int) override;
 
   // transformation
-  BackflowTransformation* BFTrans;
+  const std::unique_ptr<BackflowTransformation> BFTrans;
 
   // temporary storage for evaluateDerivatives
   Matrix<RealType> dpsia_up, dLa_up;

@@ -35,24 +35,18 @@
 Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
-Communicate::Communicate()
-    : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
-{}
+Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
 
 #ifdef HAVE_MPI
-Communicate::Communicate(const mpi3::environment& env) : GroupLeaderComm(nullptr) { initialize(env); }
+Communicate::Communicate(const mpi3::environment& env) { initialize(env); }
 #endif
 
-Communicate::~Communicate()
-{
-  if (GroupLeaderComm != nullptr)
-    delete GroupLeaderComm;
-}
+Communicate::~Communicate() = default;
 
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-Communicate::Communicate(const mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1)
 {
   // const_cast is used to enable non-const call to duplicate()
   comm        = const_cast<mpi3::communicator&>(in_comm).duplicate();
@@ -79,9 +73,9 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   nplist.pop_back();
   mpi3::communicator leader_comm = in_comm.comm.subcomm(nplist);
   if (isGroupLeader())
-    GroupLeaderComm = new Communicate(leader_comm);
+    GroupLeaderComm = std::make_unique<Communicate>(leader_comm);
   else
-    GroupLeaderComm = nullptr;
+    GroupLeaderComm.reset();
 }
 
 
@@ -151,7 +145,7 @@ void Communicate::cleanupMessage(void*) {}
 Communicate::Communicate(const Communicate& in_comm, int nparts)
     : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
-  GroupLeaderComm = new Communicate();
+  GroupLeaderComm = std::make_unique<Communicate>();
 }
 #endif // !HAVE_MPI
 

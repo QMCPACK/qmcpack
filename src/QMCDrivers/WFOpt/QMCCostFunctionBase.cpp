@@ -19,8 +19,8 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
-#include "Optimize/LeastSquaredFit.h"
 #include <set>
 //#define QMCCOSTFUNCTION_DEBUG
 
@@ -81,24 +81,23 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
 {
   delete_iter(dLogPsi.begin(), dLogPsi.end());
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
-  //     if (m_doc_out != NULL) xmlFreeDoc(m_doc_out);
+  if (m_doc_out != NULL)
+    xmlFreeDoc(m_doc_out);
   if (debug_stream)
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(std::vector<RandomGenerator_t*>& r)
+void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
 {
   if (MoverRng.size() < r.size())
   {
-    delete_iter(MoverRng.begin(), MoverRng.end());
-    delete_iter(RngSaved.begin(), RngSaved.end());
     MoverRng.resize(r.size());
     RngSaved.resize(r.size());
   }
   for (int ip = 0; ip < r.size(); ++ip)
-    MoverRng[ip] = r[ip];
+    MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = new RandomGenerator_t(*MoverRng[ip]);
+    RngSaved[ip] = std::make_unique<RandomGenerator_t>(r[ip].get());
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
@@ -162,8 +161,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
   // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << std::endl;
   // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
-  Return_rt wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
-  wgt_var *= wgtinv;
   CostValue             = 0.0;
   const Return_rt small = 1.0e-10;
   if (std::abs(w_abs) > small)
@@ -180,14 +177,13 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   if (NumWalkersEff < NumSamples * MinNumWalkers)
   //    if (NumWalkersEff < MinNumWalkers)
   {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! "
-             << std::endl
-             << "  Number of effective walkers (samples) / total number of samples = "
-             << (1.0 * NumWalkersEff) / NumSamples << std::endl
-             << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
-             << "  If this message appears frequently. You might have to be cautious. " << std::endl
-             << "  Find info about parameter \"minwalkers\" in the user manual!");
-    // ERRORMSG("Going to stop now.")
+    WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
+            << std::endl
+            << "  Number of effective walkers (samples) / total number of samples = "
+            << (1.0 * NumWalkersEff) / NumSamples << std::endl
+            << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
+            << "  If this message appears frequently. You might have to be cautious. " << std::endl
+            << "  Find info about parameter \"minwalkers\" in the user manual!");
     IsValid = false;
   }
   return CostValue;
@@ -525,7 +521,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   {
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root, m_wfPtr);
+    xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
@@ -533,75 +529,60 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (oit != OptVariablesForPsi.end())
-      {
+      if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
         paramNodes[aname] = cur;
-      }
     }
     xmlXPathFreeObject(result);
     //check radfunc
     result = xmlXPathEvalExpression((const xmlChar*)"//radfunc", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      std::string expID = aname + "_E";
-      xmlAttrPtr aptr   = xmlHasProp(cur, (const xmlChar*)"exponent");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
       {
-        attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
+        std::string expID = aname + "_E";
+        if (auto oit = OptVariablesForPsi.find(expID); oit != OptVariablesForPsi.end())
+          attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
       }
       std::string cID = aname + "_C";
-      aptr            = xmlHasProp(cur, (const xmlChar*)"contraction");
-      oit             = OptVariablesForPsi.find(cID);
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"contraction"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(cID); oit != OptVariablesForPsi.end())
+          attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
     }
     xmlXPathFreeObject(result);
     //check ci
     result = xmlXPathEvalExpression((const xmlChar*)"//ci", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     //check csf
     result = xmlXPathEvalExpression((const xmlChar*)"//csf", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
-      xmlNodePtr cur      = result->nodesetval->nodeTab[iparam];
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar*)"id");
-      if (iptr == NULL)
+      xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+      XMLAttrString aname(cur, "id");
+      if (aname.empty())
         continue;
-      std::string aname((const char*)iptr);
-      xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
-      if (aptr != NULL && oit != OptVariablesForPsi.end())
-      {
-        attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
-      }
+      if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
+        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+          attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
     if (CI_Opt)
@@ -621,53 +602,43 @@ void QMCCostFunctionBase::updateXmlNodes()
     addCJParams(acontext, "//jastrow");
     xmlXPathFreeContext(acontext);
   }
-  //     Psi.reportStatus(app_log());
-  std::map<std::string, xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
-  while (pit != pit_end)
+  for (const auto& [pname, pptr] : paramNodes)
   {
     //FIXME real value is forced here to makde sure that the code builds
-    Return_rt v = std::real(OptVariablesForPsi[(*pit).first]);
-    getContent(v, (*pit).second);
-    //         vout <<(*pit).second<< std::endl;
-    ++pit;
+    Return_rt v = std::real(OptVariablesForPsi[pname]);
+    getContent(v, pptr);
   }
-  std::map<std::string, std::pair<xmlNodePtr, std::string>>::iterator ait(attribNodes.begin()),
-      ait_end(attribNodes.end());
-  while (ait != ait_end)
+  for (const auto& [aname, attrib] : attribNodes)
   {
     std::ostringstream vout;
     vout.setf(std::ios::scientific, std::ios::floatfield);
     vout.precision(16);
-    vout << OptVariablesForPsi[(*ait).first];
-    xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(), (const xmlChar*)vout.str().c_str());
-    ++ait;
+    vout << OptVariablesForPsi[aname];
+    xmlSetProp(attrib.first, (const xmlChar*)attrib.second.c_str(), (const xmlChar*)vout.str().c_str());
   }
-  std::map<std::string, xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
-  while (cit != cit_end)
+  for (const auto& [cname, cptr] : coeffNodes)
   {
-    std::string rname((*cit).first);
+    std::string rname(cname);
     OhmmsAttributeSet cAttrib;
     std::string datatype("none");
     std::string aname("0");
     cAttrib.add(datatype, "type");
     cAttrib.add(aname, "id");
-    cAttrib.put((*cit).second);
+    cAttrib.put(cptr);
     if (datatype == "Array")
     {
       //
       aname.append("_");
-      opt_variables_type::iterator vit(OptVariablesForPsi.begin());
       std::vector<Return_rt> c;
-      while (vit != OptVariablesForPsi.end())
+      for (const auto& [name, value] : OptVariablesForPsi)
       {
-        if ((*vit).first.find(aname) == 0)
+        if (name.find(aname) == 0)
         {
           //FIXME real value is forced here to makde sure that the code builds
-          c.push_back(std::real((*vit).second));
+          c.push_back(std::real(value));
         }
-        ++vit;
       }
-      xmlNodePtr contentPtr = cit->second;
+      xmlNodePtr contentPtr = cptr;
       if (xmlNodeIsText(contentPtr->children))
         contentPtr = contentPtr->children;
       getContent(c, contentPtr);
@@ -675,15 +646,15 @@ void QMCCostFunctionBase::updateXmlNodes()
     // counting jastrow variables
     else if (rname.find("cj_") == 0)
     {
-      printCJParams(cit->second, rname);
+      printCJParams(cptr, rname);
     }
     else
     {
-      xmlNodePtr cur = (*cit).second->children;
+      xmlNodePtr cur = cptr->children;
       while (cur != NULL)
       {
-        std::string cname((const char*)(cur->name));
-        if (cname == "lambda")
+        std::string childName((const char*)(cur->name));
+        if (childName == "lambda")
         {
           int i = 0;
           int j = -1;
@@ -709,7 +680,6 @@ void QMCCostFunctionBase::updateXmlNodes()
         cur = cur->next;
       }
     }
-    ++cit;
   }
 }
 
@@ -1047,85 +1017,6 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
   }
 }
 
-bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
-                                           const std::vector<Return_rt>& gr,
-                                           Return_rt val0,
-                                           Return_rt& dl,
-                                           Return_rt& val_proj,
-                                           Return_rt& lambda_max)
-{
-  return false;
-  // PK: Commented out inaccessible code after return false, but why was return added?
-  //  const int maxclones=3;
-  //  const int max_poly=3;
-  //  //Matrix<Return_t> js(maxclones+1,x0.size());
-  //  Vector<Return_t> y(maxclones+1);
-  //  Vector<Return_t> sigma(maxclones+1);
-  //  Matrix<Return_t> A(maxclones+1,max_poly);
-  //  sigma=1e-6; //a small value
-  //  Return_t gr_norm=0.0;
-  //  for (int j=0; j<x0.size(); ++j)
-  //  {
-  //    //js(0,j)=x0[j];
-  //    gr_norm+=gr[j]*gr[j];
-  //  }
-  //  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
-  //  //Return_t MaxDispl=0.04;
-  //  gr_norm=std::sqrt(gr_norm);
-  //  Return_t dx=lambda_max/gr_norm;
-  //  dx=std::min((QMCTraits::RealType)0.25,dx);
-  //  if (val0<1e12)
-  //  {
-  //    y[0]=val0;
-  //    sigma[0]=std::sqrt(val0)*nw;
-  //  }
-  //  else
-  //  {
-  //    for (int j=0; j<x0.size(); ++j)
-  //      Params(j)=x0[j];
-  //    Return_t costval=Cost();
-  //    y[0]=costval;
-  //    sigma[0]=std::sqrt(costval)*nw;
-  //  }
-  //  app_log() << "  lineoptimization (" << 0.0 << "," << y[0] << ")";
-  //  for (int k=0; k<max_poly; ++k)
-  //    A(0,k)=0.0;
-  //  Return_t dxmax=0.0;
-  //  for (int i=1; i<=maxclones; ++i)
-  //  {
-  //    dxmax+=dx;
-  //    //set OptParams to vary
-  //    for (int j=0; j<x0.size(); ++j)
-  //    {
-  //      //js(i,j)=OptParams[j]=x0[j]+dx*gr[j];
-  //      Params(j)=x0[j]+dxmax*gr[j];
-  //    }
-  //    Return_t costval=Cost();
-  //    y[i]=costval;
-  //    sigma[i]=std::sqrt(costval)*nw;
-  //    for (int k=0; k<max_poly; ++k)
-  //      A(i,k)=std::pow(dxmax,k);
-  //    app_log() << " (" << dxmax << "," << y[i] << ")";
-  //  }
-  //  app_log() << std::endl;
-  //  Vector<QMCTraits::RealType> polys(max_poly);
-  //  Vector<QMCTraits::RealType> errors(max_poly);
-  //  LeastSquaredFitLU(y,sigma,A,polys,errors);
-  //  dl=-polys[1]/polys[2]*0.5;
-  //  val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);
-  //  if (dl<dx*0.25)
-  //    lambda_max *=0.5; // narrow the bracket
-  //  if (dl>dxmax*5.0)
-  //    lambda_max *=2.0; //widen the bracket
-  //  app_log() << "    minimum at " << dl << " estimated=" << val_proj << " LambdaMax " << lambda_max;
-  //  for (int j=0; j<x0.size(); ++j)
-  //    Params(j)=x0[j]+dl*gr[j];
-  //  val_proj=Cost();
-  //  app_log() << "  cost = " << val_proj << std::endl;
-  //  //Psi.reportStatus(app_log());
-  //  //return false;
-  //  return true;
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.

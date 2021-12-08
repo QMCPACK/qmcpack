@@ -66,7 +66,6 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
   {
     ScopedTimer local_timer(myTimers[SODMC_movePbyP]);
     for (int ig = 0; ig < W.groups(); ++ig) //loop over species
@@ -125,7 +124,6 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
             rr_accepted += rr;
-            gf_acc *= prob; //accumulate the ratio
           }
           else
           {
@@ -148,7 +146,8 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       ScopedTimer local_timer(myTimers[SODMC_buffer]);
       thisWalker.Age = 0;
       logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
-      assert(checkLogAndGL(W, Psi));
+      if (debug_checks_ & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+        checkLogAndGL(W, Psi, "checkGL_after_moves");
       W.saveWalker(thisWalker);
     }
     {
@@ -175,8 +174,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
     H.rejectedMove(W, thisWalker);
     thisWalker.Weight = wtmp;
     ++nAllRejected;
-    enew   = eold; //copy back old energy
-    gf_acc = 1.0;
+    enew = eold; //copy back old energy
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)

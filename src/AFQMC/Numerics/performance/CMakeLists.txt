@@ -9,9 +9,8 @@
 #// File created by: Fionn Malone malone14@llnl.gov, Lawrence Livermore National Laboratory
 #////////////////////////////////////////////////////////////////////////////////////////////
 
-MESSAGE("Building AFQMC performance executable ")
+message("Building AFQMC performance executable ")
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${qmcpack_BINARY_DIR}/bin)
 
-ADD_EXECUTABLE(qmc-afqmc-performance performance.cpp)
-TARGET_LINK_LIBRARIES(qmc-afqmc-performance afqmc Math::BLAS_LAPACK)
+add_executable(qmc-afqmc-performance performance.cpp)
+target_link_libraries(qmc-afqmc-performance afqmc platform_LA)

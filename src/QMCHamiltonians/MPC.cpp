@@ -17,7 +17,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -29,19 +29,12 @@ namespace qmcplusplus
 {
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
-MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : VlongSpline(0), DensitySpline(0), Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
+MPC::MPC(ParticleSet& ptcl, double cutoff) : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
 {
   initBreakup();
 }
 
-MPC::~MPC()
-{
-  if (VlongSpline)
-    destroy_Bspline(VlongSpline);
-  if (DensitySpline)
-    destroy_Bspline(DensitySpline);
-}
+MPC::~MPC() = default;
 
 void MPC::init_gvecs()
 {
@@ -188,7 +181,6 @@ void MPC::init_f_G()
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
-  int iworst = 0;
   for (int iG = 0; iG < numG; iG++)
   {
     TinyVector<double, 2> g_12(g_G_2N[iG], g_G_4N[iG]);
@@ -199,7 +191,6 @@ void MPC::init_f_G()
     if (diff > worst)
     {
       worst     = diff;
-      iworst    = iG;
       worstLin  = linearExtrap;
       worstQuad = quadExtrap;
     }
@@ -281,7 +272,9 @@ void MPC::init_spline()
   bc0.lCode = bc0.rCode = PERIODIC;
   bc1.lCode = bc1.rCode = PERIODIC;
   bc2.lCode = bc2.rCode = PERIODIC;
-  VlongSpline           = create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data());
+  VlongSpline =
+      std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()),
+                                     destroy_Bspline);
   //     grid0.num = PtclRef->Density_r.size(0);
   //     grid1.num = PtclRef->Density_r.size(1);
   //     grid2.num = PtclRef->Density_r.size(2);
@@ -323,18 +316,18 @@ void MPC::initBreakup()
   app_log() << "  === MPC interaction initialized === \n\n";
 }
 
-OperatorBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
-  MPC* newMPC = new MPC(*this);
+  std::unique_ptr<MPC> newMPC = std::make_unique<MPC>(*this);
   newMPC->resetTargetParticleSet(qp);
   return newMPC;
 }
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
-  RealType SR                   = 0.0;
+  const auto& d_aa = P.getDistTableAA(d_aa_ID);
+  RealType SR      = 0.0;
   const RealType cone(1);
   for (size_t ipart = 0; ipart < NParticles; ipart++)
   {
@@ -358,7 +351,7 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
     PosType u = P.Lattice.toUnit(P.R[i]);
     for (int j = 0; j < OHMMS_DIM; j++)
       u[j] -= std::floor(u[j]);
-    eval_UBspline_3d_d(VlongSpline, u[0], u[1], u[2], &val);
+    eval_UBspline_3d_d(VlongSpline.get(), u[0], u[1], u[2], &val);
     LR += val;
   }
   return LR;
@@ -367,8 +360,8 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
 MPC::Return_t MPC::evaluate(ParticleSet& P)
 {
   //if (FirstTime || P.tag() == PtclRef->tag())
-  Value = evalSR(P) + evalLR(P) + Vconst;
-  return Value;
+  value_ = evalSR(P) + evalLR(P) + Vconst;
+  return value_;
 }
 
 void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)

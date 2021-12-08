@@ -22,7 +22,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -63,35 +63,35 @@ struct LocalECPotential : public OperatorBase
 
   LocalECPotential(const ParticleSet& ions, ParticleSet& els);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities();
-  virtual void checkout_particle_quantities(TraceManager& tm);
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities();
+  void deleteParticleQuantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
+                                 ParticleSet::ParticlePos_t& pulay_terms) override;
 
 
   Return_t evaluate_orig(ParticleSet& P);
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "LocalECPotential: " << IonConfig.getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

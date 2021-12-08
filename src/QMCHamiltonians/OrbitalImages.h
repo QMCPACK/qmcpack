@@ -168,10 +168,10 @@ public:
   std::vector<std::string> sposet_names;
 
   ///indices of orbitals within each sposet to evaluate
-  std::vector<std::vector<int>*> sposet_indices;
+  const std::shared_ptr<std::vector<std::vector<int>>> sposet_indices;
 
   ///sposets obtained by name from WaveFunctionFactory
-  std::vector<SPOSet*> sposets;
+  std::vector<std::unique_ptr<SPOSet>> sposets;
 
   ///evaluate points at grid cell centers instead of edges
   bool center_grid;
@@ -215,32 +215,31 @@ public:
   ///temporary array to hold values of a single orbital at all grid points
   std::vector<ValueType> orbital;
 
-
-  //constructor/destructor
+  //constructors
   OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
-  ~OrbitalImages(){};
+  OrbitalImages(const OrbitalImages& other);
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 
   ///read xml input
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   ///hijack estimator evaluate to evaluate and write all orbitals
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   //optional standard interface
-  //void get_required_traces(TraceManager& tm);
+  //void getRequiredTraces(TraceManager& tm);
   //void setRandomGenerator(RandomGenerator_t* rng);
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist, BufferType& olist) {}
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  void addObservables(PropertySetType& plist, BufferType& olist) override {}
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override {}
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) {}
-  void setObservables(PropertySetType& plist) {}
-  void setParticlePropertyList(PropertySetType& plist, int offset) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
+  void setObservables(PropertySetType& plist) override {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 #if !defined(REMOVE_TRACEMANAGER)
   void checkout_scalar_arrays(TraceManager& tm) {}
   void collect_scalar_samples() {}
@@ -248,7 +247,7 @@ public:
 #endif
 
   //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  bool get(std::ostream& os) const override { return false; }
 
   //local functions
   ///write brief report of configuration data

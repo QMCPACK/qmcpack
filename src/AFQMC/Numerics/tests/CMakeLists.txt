@@ -9,20 +9,29 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-MESSAGE_VERBOSE("Adding AFQMC numerics unit tests")
+message(VERBOSE "Adding AFQMC numerics unit tests")
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR afqmc_numerics)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR afqmc_numerics)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-ADD_EXECUTABLE(${UTEST_EXE} test_dense_numerics.cpp test_ma_blas.cpp
-  test_sparse_numerics.cpp test_sparse_numerics_native.cpp test_batched_operations.cpp
-  test_ma_blas_extensions.cpp test_tensor_operations.cpp test_determinant.cpp
+add_executable(
+  ${UTEST_EXE}
+  test_dense_numerics.cpp
+  test_ma_blas.cpp
+  test_sparse_numerics.cpp
+  test_sparse_numerics_native.cpp
+  test_batched_operations.cpp
+  test_ma_blas_extensions.cpp
+  test_tensor_operations.cpp
+  test_determinant.cpp
   test_misc_kernels.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main afqmc Math::BLAS_LAPACK)
+target_link_libraries(${UTEST_EXE} catch_main afqmc platform_LA)
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set_property(
+  TEST ${UTEST_NAME}
+  APPEND
+  PROPERTY LABELS "afqmc")

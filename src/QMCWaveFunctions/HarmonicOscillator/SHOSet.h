@@ -30,7 +30,7 @@ struct SHOState : public SPOInfo
     energy         = 0.0;
   }
 
-  ~SHOState() {}
+  ~SHOState() override {}
 
   inline void set(TinyVector<int, DIM> qn, RealType e)
   {
@@ -66,13 +66,13 @@ struct SHOSet : public SPOSet
   //construction/destruction
   SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states);
 
-  ~SHOSet();
+  ~SHOSet() override;
 
   void initialize();
 
 
   //SPOSet interface methods
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 

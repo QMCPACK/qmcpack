@@ -15,7 +15,7 @@
  */
 #ifndef QMCPLUSPLUS_SHORTRANGECUSPFUNCTOR_H
 #define QMCPLUSPLUS_SHORTRANGECUSPFUNCTOR_H
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 #include <stdexcept>
@@ -91,7 +91,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   ///sets the cusp condition and disables optimization of the cusp-determining parameter
-  void setCusp(real_type cusp)
+  void setCusp(real_type cusp) override
   {
     //throw std::runtime_error("ShortRangeCuspFunctor::setCusp was called");
     A     = cusp;
@@ -100,10 +100,10 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   ///clone the functor
-  OptimizableFunctorBase* makeClone() const { return new ShortRangeCuspFunctor(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new ShortRangeCuspFunctor(*this); }
 
   ///Implement the reset function, which was pure virtual in OptimizableFunctorBase, even though we don't need it
-  void reset()
+  void reset() override
   {
     //cutoff_radius = 1.0e4; //some big range
   }
@@ -121,12 +121,10 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
     // sum up the sigmoidal function expansion
     real_type sig_sum = 0.0;
-    real_type n = 2.0;
     real_type sn = s * s; // s^n
     for (int i = 0; i < B.size(); i++) {
       sig_sum += B[i] * sn / ( 1.0 + sn );
       sn *= s;  // update s^n
-      n += 1.0; // update n
     }
 
     // return U(r)
@@ -231,7 +229,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   ///compute U(r) at a particular distance or return zero if beyond the cutoff
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) override
   {
     if (r >= cutoff_radius)
       return 0.0;
@@ -239,7 +237,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   ///compute dU/dr at a particular distance or return zero if beyond the cutoff
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) override
   {
     if (r >= cutoff_radius)
       return 0.0;
@@ -249,7 +247,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   /// compute derivatives of U(r), dU/dr, and d^2U/dr^2 with respect to the variational parameters
-  inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs) override
   {
 
     // get the ratio of the distance and the soft cutoff distance
@@ -413,12 +411,10 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     // evaluate derivatives with respect to the sigmoidal expansion coefficients
     if (Opt_B)
     {
-      real_type n = 2.0;
       real_type sn = s * s; // s^n
       for (int j = 0; j < B.size(); j++) {
         derivs[i] = -ex * sn / ( 1.0 + sn ); // dU/dB_j
         sn *= s;  // update s^n
-        n += 1.0; // update n
         ++i;      // increment the index tracking where to put derivatives
       }
     }
@@ -464,7 +460,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   ///read in information about the functor from an xml node
-  bool put(xmlNodePtr cur)
+  bool put(xmlNodePtr cur) override
   {
 
     // set up an object for info / warning / error reporting
@@ -598,19 +594,19 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
     //myVars.print(std::cout);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
     //myVars.print(std::cout);
   }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (myVars.size())
     {

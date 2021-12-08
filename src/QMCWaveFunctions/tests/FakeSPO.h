@@ -27,24 +27,29 @@ public:
   Matrix<ValueType> v2;
 
   SPOSet::GradVector_t gv;
-  
+
   FakeSPO();
-  virtual ~FakeSPO() {}
+  ~FakeSPO() override {}
 
+  std::unique_ptr<SPOSet> makeClone() const override;
   virtual void report() {}
-  virtual void resetParameters(const opt_variables_type& optVariables) {}
-  virtual void setOrbitalSetSize(int norbs);
+  void resetParameters(const opt_variables_type& optVariables) override {}
+  void setOrbitalSetSize(int norbs) override;
 
-  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override;
 
-  virtual void evaluate_notranspose(const ParticleSet& P,
-                                    int first,
-                                    int last,
-                                    ValueMatrix_t& logdet,
-                                    GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet) override;
 };
 
 } // namespace qmcplusplus

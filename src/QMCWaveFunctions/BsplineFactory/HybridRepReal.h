@@ -61,7 +61,7 @@ public:
     this->KeyWord   = "Hybrid" + this->KeyWord;
   }
 
-  virtual SPOSet* makeClone() const override { return new HybridRepReal(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepReal>(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -218,7 +218,7 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend struct HybridRepSetReader;
+  friend class HybridRepSetReader;
   template<class BSPLINESPO>
   friend struct SplineSetReader;
   friend struct BsplineReaderBase;

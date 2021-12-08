@@ -38,7 +38,7 @@ public:
                  std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
 };
@@ -53,7 +53,7 @@ public:
                           std::vector<QMCHamiltonian*>& h,
                           RandomGenerator_t& rg);
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
 };

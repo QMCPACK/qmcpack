@@ -44,13 +44,13 @@ public:
     return TinyVector<T, OHMMS_DIM>(myfabs(s[0]), myfabs(s[1]), myfabs(s[2]));
   }
 
-  std::vector<SPOSet*>& sposets;
+  std::vector<std::unique_ptr<SPOSet>>& sposets;
   ParticleSet& target;
-  PtclPoolType& PtclPool;
+  const PtclPoolType& PtclPool;
   ParticleSet* ions;
 
   // construction/destruction
-  SPOSetScanner(std::vector<SPOSet*>& sposets_in, ParticleSet& targetPtcl, PtclPoolType& psets)
+  SPOSetScanner(std::vector<std::unique_ptr<SPOSet>>& sposets_in, ParticleSet& targetPtcl, const PtclPoolType& psets)
       : sposets(sposets_in), target(targetPtcl), PtclPool(psets), ions(0){};
   //~SPOSetScanner(){};
 
@@ -63,7 +63,7 @@ public:
     OhmmsAttributeSet aAttrib;
     aAttrib.add(sourcePtcl, "source");
     aAttrib.put(cur);
-    PtclPoolType::iterator pit(PtclPool.find(sourcePtcl));
+    auto pit(PtclPool.find(sourcePtcl));
     if (pit == PtclPool.end())
       app_log() << "Source particle set not found. Can not be used as reference point." << std::endl;
     else
@@ -71,7 +71,7 @@ public:
 
     // scanning the SPO sets
     xmlNodePtr cur_save = cur;
-    for (auto* sposet : sposets)
+    for (auto& sposet : sposets)
     {
       app_log() << "  Processing SPO " << sposet->getName() << std::endl;
       // scanning the paths

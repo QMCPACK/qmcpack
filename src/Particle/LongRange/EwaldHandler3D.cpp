@@ -40,9 +40,9 @@ void EwaldHandler3D::initBreakup(ParticleSet& ref)
   app_log() << "  Sigma=" << Sigma << std::endl;
   Volume     = ref.Lattice.Volume;
   PreFactors = 0.0;
-  fillFk(ref.SK->KLists);
-  fillYkgstrain(ref.SK->KLists);
-  filldFk_dk(ref.SK->KLists);
+  fillFk(ref.SK->getKLists());
+  fillYkgstrain(ref.SK->getKLists());
+  filldFk_dk(ref.SK->getKLists());
 }
 
 EwaldHandler3D::EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref)
@@ -51,7 +51,7 @@ EwaldHandler3D::EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref)
   SuperCellEnum = aLR.SuperCellEnum;
 }
 
-void EwaldHandler3D::fillFk(KContainer& KList)
+void EwaldHandler3D::fillFk(const KContainer& KList)
 {
   Fk.resize(KList.kpts_cart.size());
   Fkg.resize(KList.kpts_cart.size());
@@ -79,7 +79,7 @@ void EwaldHandler3D::fillFk(KContainer& KList)
   app_log().flush();
 }
 
-EwaldHandler3D::mRealType EwaldHandler3D::evaluate_vlr_k(mRealType k)
+EwaldHandler3D::mRealType EwaldHandler3D::evaluate_vlr_k(mRealType k) const
 {
   mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
   mRealType knorm  = 4 * M_PI / Volume;

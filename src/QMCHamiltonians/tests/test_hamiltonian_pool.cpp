@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-extern ParticleSet* createElectronParticleSet();
+extern std::unique_ptr<ParticleSet> createElectronParticleSet();
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
@@ -47,7 +47,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   xmlNodePtr root = doc.getRoot();
 
   ParticleSetPool pp(c);
-  std::unique_ptr<ParticleSet> qp(createElectronParticleSet());
+  auto qp = createElectronParticleSet();
   pp.addParticleSet(std::move(qp));
 
   WaveFunctionPool wfp(pp, c);

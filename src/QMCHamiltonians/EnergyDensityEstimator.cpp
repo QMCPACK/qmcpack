@@ -15,7 +15,7 @@
 #include "EnergyDensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/string_utils.h"
 #include <string>
@@ -26,14 +26,14 @@ namespace qmcplusplus
 EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   defKE      = defaultKE;
   nsamples   = 0;
   ion_points = false;
   nions      = -1;
-  request.request_scalar("weight");
-  request.request_array("Kinetic");
-  request.request_array("LocalPotential");
+  request_.request_scalar("weight");
+  request_.request_array("Kinetic");
+  request_.request_array("LocalPotential");
 }
 
 
@@ -53,11 +53,11 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
 {
   input_xml = cur;
   //initialize simple xml attributes
-  myName = "EnergyDensity";
+  name_ = "EnergyDensity";
   std::string dyn, stat = "";
   ion_points = false;
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(name_, "name");
   attrib.add(dyn, "dynamic");
   attrib.add(stat, "static");
   attrib.add(ion_points, "ion_points");
@@ -203,7 +203,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 }
 
 
-void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
+void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
   w_trace    = tm.get_real_trace("weight");
@@ -211,7 +211,7 @@ void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
   Vd_trace   = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
   if (Pstatic)
     Vs_trace = tm.get_real_combined_trace(*Pstatic, "LocalPotential");
-  have_required_traces = true;
+  have_required_traces_ = true;
 }
 
 
@@ -257,7 +257,7 @@ void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
 {
-  if (have_required_traces)
+  if (have_required_traces_)
   {
     Pdynamic = &P;
     //Collect positions from ParticleSets
@@ -319,7 +319,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         }
     }
     //Accumulate energy density in spacegrids
-    const DistanceTableData& dtab(P.getDistTable(dtable_index));
+    const auto& dtab(P.getDistTableAB(dtable_index));
     fill(particles_outside.begin(), particles_outside.end(), true);
     for (int i = 0; i < spacegrids.size(); i++)
     {
@@ -457,7 +457,7 @@ void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
 
 void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.size();
+  my_index_ = collectables.size();
   //allocate space for energy density outside of any spacegrid
   outside_buffer_offset = collectables.size();
   int nvalues           = (int)nEDValues;
@@ -478,29 +478,31 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 }
 
 
-void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t g = H5Gcreate(gid, myName.c_str(), 0);
-  observable_helper* oh;
-  oh = new observable_helper("variables");
-  oh->open(g);
-  oh->addProperty(const_cast<int&>(nparticles), "nparticles");
+  hid_t g = H5Gcreate(gid, name_.c_str(), 0);
+  h5desc.emplace_back("variables");
+  auto& oh = h5desc.back();
+  oh.open(g);
+  oh.addProperty(const_cast<int&>(nparticles), "nparticles");
   int nspacegrids = spacegrids.size();
-  oh->addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
-  oh->addProperty(const_cast<int&>(nsamples), "nsamples");
+  oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
+  oh.addProperty(const_cast<int&>(nsamples), "nsamples");
   if (ion_points)
   {
-    oh->addProperty(const_cast<int&>(nions), "nions");
-    oh->addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
+    oh.addProperty(const_cast<int&>(nions), "nions");
+    oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
   }
-  h5desc.push_back(oh);
+
+
   ref.save(h5desc, g);
-  oh = new observable_helper("outside");
+
+  h5desc.emplace_back("outside");
+  auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
-  oh->set_dimensions(ng, outside_buffer_offset);
-  oh->open(g);
-  h5desc.push_back(oh);
+  ohOutside.set_dimensions(ng, outside_buffer_offset);
+  ohOutside.open(g);
   for (int i = 0; i < spacegrids.size(); i++)
   {
     SpaceGrid& sg = *spacegrids[i];
@@ -508,13 +510,14 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*
   }
   if (ion_points)
   {
-    oh = new observable_helper("ions");
     std::vector<int> ng2(2);
     ng2[0] = nions;
     ng2[1] = (int)nEDValues;
-    oh->set_dimensions(ng2, ion_buffer_offset);
-    oh->open(g);
-    h5desc.push_back(oh);
+
+    h5desc.emplace_back("ions");
+    auto& ohIons = h5desc.back();
+    ohIons.set_dimensions(ng2, ion_buffer_offset);
+    ohIons.open(g);
   }
 }
 
@@ -529,12 +532,13 @@ void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist, int
 }
 
 
-OperatorBase* EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   bool write = omp_get_thread_num() == 0;
   if (write)
     app_log() << "EnergyDensityEstimator::makeClone" << std::endl;
-  EnergyDensityEstimator* edclone = new EnergyDensityEstimator(psetpool, defKE);
+
+  std::unique_ptr<EnergyDensityEstimator> edclone = std::make_unique<EnergyDensityEstimator>(psetpool, defKE);
   edclone->put(input_xml, qp);
   //int thread = omp_get_thread_num();
   //app_log()<<thread<<"make edclone"<< std::endl;

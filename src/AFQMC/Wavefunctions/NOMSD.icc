@@ -20,13 +20,14 @@
 #include <tuple>
 #include <mutex>
 
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/Timer.h"
 #include "Utilities/FairDivide.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "type_traits/complex_help.hpp"
 
 //#include "AFQMC/Wavefunctions/NOMSD.h"
 

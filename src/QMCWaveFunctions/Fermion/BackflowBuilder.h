@@ -14,46 +14,40 @@
 
 #ifndef QMCPLUSPLUS_BACKFLOW_BUILDER_H
 #define QMCPLUSPLUS_BACKFLOW_BUILDER_H
-//#include "Utilities/ProgressReportEngine.h"
-#include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/Backflow_ee.h"
-#include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
-#include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "LongRange/LRHandlerBase.h"
-#include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-#include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
-#include "LongRange/LRHandlerTemp.h"
-#include "LongRange/LRRPABFeeHandlerTemp.h"
-#include "Particle/ParticleSet.h"
-#include "Configuration.h"
+
 #include <map>
 #include <cmath>
+#include "Configuration.h"
+#include "Numerics/OneDimGridBase.h"
+#include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
+#include "LongRange/LRHandlerBase.h"
 
 namespace qmcplusplus
 {
+class BackflowTransformation;
+class Backflow_ee_kSpace;
+template<class T>
+struct BsplineFunctor;
+template<class FT>
+class Backflow_ee;
+
 class BackflowBuilder
 {
-  using RealType = BackflowFunctionBase::RealType;
-  using HandlerType = LRHandlerBase;
-  using GridType = LinearGrid<RealType>;
+  using RealType     = BackflowFunctionBase::RealType;
+  using HandlerType  = LRHandlerBase;
+  using GridType     = LinearGrid<RealType>;
   using PtclPoolType = std::map<std::string, ParticleSet*>;
 
 public:
   BackflowBuilder(ParticleSet& p, PtclPoolType& pool);
 
-  BackflowTransformation* buildBackflowTransformation(xmlNodePtr cur);
+  std::unique_ptr<BackflowTransformation> buildBackflowTransformation(xmlNodePtr cur);
 
   RealType cutOff;
 
 private:
   ParticleSet& targetPtcl;
   PtclPoolType& ptclPool;
-  BackflowTransformation* BFTrans;
   bool IgnoreSpin;
   RealType Rs;
   RealType Kc;
@@ -63,11 +57,11 @@ private:
 
   HandlerType* myHandler;
 
-  void addOneBody(xmlNodePtr cur);
+  std::unique_ptr<BackflowFunctionBase> addOneBody(xmlNodePtr cur);
 
-  void addTwoBody(xmlNodePtr cur);
+  std::unique_ptr<BackflowFunctionBase> addTwoBody(xmlNodePtr cur);
 
-  void addRPA(xmlNodePtr cur);
+  std::unique_ptr<BackflowFunctionBase> addRPA(xmlNodePtr cur);
 
   void makeShortRange_oneBody();
 

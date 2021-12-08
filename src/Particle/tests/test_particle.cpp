@@ -17,7 +17,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 
 #include <stdio.h>
@@ -56,14 +56,14 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   REQUIRE(ei_table_id2 == 0);
   REQUIRE(ee_table_id2 == 1);
 
-  REQUIRE(&(ions.getDistTable(ii_table_id2).origin()) == &ions);
-  REQUIRE(&(ions.getDistTable(ie_table_id2).origin()) == &elecs);
-  REQUIRE(&(elecs.getDistTable(ei_table_id2).origin()) == &ions);
-  REQUIRE(&(elecs.getDistTable(ee_table_id2).origin()) == &elecs);
+  REQUIRE(&(ions.getDistTable(ii_table_id2).get_origin()) == &ions);
+  REQUIRE(&(ions.getDistTable(ie_table_id2).get_origin()) == &elecs);
+  REQUIRE(&(elecs.getDistTable(ei_table_id2).get_origin()) == &ions);
+  REQUIRE(&(elecs.getDistTable(ee_table_id2).get_origin()) == &elecs);
 
   ParticleSet elecs_copy(elecs);
-  REQUIRE(elecs_copy.getDistTable(ei_table_id2).origin().getName() == "ions");
-  REQUIRE(elecs_copy.getDistTable(ee_table_id2).origin().getName() == "electrons");
+  REQUIRE(elecs_copy.getDistTable(ei_table_id2).get_origin().getName() == "ions");
+  REQUIRE(elecs_copy.getDistTable(ee_table_id2).get_origin().getName() == "electrons");
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
@@ -87,18 +87,14 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
   const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTableAA(TableID);
   const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
-  REQUIRE(aa_dists[0][1] == Approx(1.62788206));
-  REQUIRE(aa_dists[1][0] == Approx(1.62788206));
-  REQUIRE(aa_displs[0][1][0] == Approx(1.1));
-  REQUIRE(aa_displs[0][1][1] == Approx(0.0));
-  REQUIRE(aa_displs[0][1][2] == Approx(1.2));
-  REQUIRE(aa_displs[1][0][0] == Approx(-1.1));
-  REQUIRE(aa_displs[1][0][1] == Approx(0.0));
-  REQUIRE(aa_displs[1][0][2] == Approx(-1.2));
+  CHECK(aa_dists[1][0] == Approx(1.62788206));
+  CHECK(aa_displs[1][0][0] == Approx(-1.1));
+  CHECK(aa_displs[1][0][1] == Approx(0.0));
+  CHECK(aa_displs[1][0][2] == Approx(-1.2));
 }
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
@@ -122,75 +118,72 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTableAA(TableID);
   const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
-  REQUIRE(aa_dists[1][2] == Approx(2.9212432441));
-  REQUIRE(aa_dists[2][1] == Approx(2.9212432441));
-  REQUIRE(aa_displs[1][2][0] == Approx(1.68658057));
-  REQUIRE(aa_displs[1][2][1] == Approx(1.68658057));
-  REQUIRE(aa_displs[1][2][2] == Approx(-1.68658058));
-  REQUIRE(aa_displs[2][1][0] == Approx(-1.68658057));
-  REQUIRE(aa_displs[2][1][1] == Approx(-1.68658057));
-  REQUIRE(aa_displs[2][1][2] == Approx(1.68658057));
+  CHECK(aa_dists[2][1] == Approx(2.9212432441));
+  CHECK(aa_displs[2][1][0] == Approx(-1.68658057));
+  CHECK(aa_displs[2][1][1] == Approx(-1.68658057));
+  CHECK(aa_displs[2][1][2] == Approx(1.68658057));
 }
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
-  ParticleSet source;
-
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   // PPP case
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true;
-  Lattice.R(0)      = 1.0;
-  Lattice.R(1)      = 2.0;
-  Lattice.R(2)      = 3.0;
-
-  Lattice.R(3) = 0.0;
-  Lattice.R(4) = 1.0;
-  Lattice.R(5) = 0.0;
-
-  Lattice.R(6) = 0.0;
-  Lattice.R(7) = 0.0;
-  Lattice.R(8) = 1.0;
+  Lattice.R         = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
   Lattice.VacuumScale = 2.0;
   Lattice.reset();
+  {
+    ParticleSet source;
+    source.setName("electrons");
+    source.Lattice = Lattice;
+    source.createSK();
 
-  source.setName("electrons");
-  source.Lattice = Lattice;
-  source.createSK();
-
-  REQUIRE(source.LRBox.R(0, 0) == 1.0);
-  REQUIRE(source.LRBox.R(0, 1) == 2.0);
-  REQUIRE(source.LRBox.R(0, 2) == 3.0);
+    CHECK(Lattice.SuperCellEnum == SUPERCELL_BULK);
+    CHECK(source.LRBox.R(0, 0) == 1.0);
+    CHECK(source.LRBox.R(0, 1) == 2.0);
+    CHECK(source.LRBox.R(0, 2) == 3.0);
+  }
 
   // PPN case
   Lattice.BoxBConds[2] = false;
   Lattice.reset();
-  source.Lattice = Lattice;
-  source.createSK();
+  {
+    ParticleSet source;
+    source.setName("electrons");
+    source.Lattice = Lattice;
+    source.createSK();
 
-  REQUIRE(source.LRBox.R(2, 0) == 0.0);
-  REQUIRE(source.LRBox.R(2, 1) == 0.0);
-  REQUIRE(source.LRBox.R(2, 2) == 2.0);
+    CHECK(Lattice.SuperCellEnum == SUPERCELL_SLAB);
+    CHECK(source.LRBox.R(2, 0) == 0.0);
+    CHECK(source.LRBox.R(2, 1) == 0.0);
+    CHECK(source.LRBox.R(2, 2) == 2.0);
+  }
 
   // PNN case
   Lattice.BoxBConds[1] = false;
   Lattice.reset();
-  source.Lattice = Lattice;
-  source.createSK();
+  {
+    ParticleSet source;
+    source.setName("electrons");
+    source.Lattice = Lattice;
+    source.createSK();
 
-  REQUIRE(source.LRBox.R(0, 0) == 1.0);
-  REQUIRE(source.LRBox.R(0, 1) == 2.0);
-  REQUIRE(source.LRBox.R(0, 2) == 3.0);
-  REQUIRE(source.LRBox.R(1, 0) == 0.0);
-  REQUIRE(source.LRBox.R(1, 1) == 2.0);
-  REQUIRE(source.LRBox.R(1, 2) == 0.0);
-  REQUIRE(source.LRBox.R(2, 0) == 0.0);
-  REQUIRE(source.LRBox.R(2, 1) == 0.0);
-  REQUIRE(source.LRBox.R(2, 2) == 2.0);
+    CHECK(Lattice.SuperCellEnum == SUPERCELL_WIRE);
+    CHECK(source.LRBox.R(0, 0) == 1.0);
+    CHECK(source.LRBox.R(0, 1) == 2.0);
+    CHECK(source.LRBox.R(0, 2) == 3.0);
+    CHECK(source.LRBox.R(1, 0) == 0.0);
+    CHECK(source.LRBox.R(1, 1) == 2.0);
+    CHECK(source.LRBox.R(1, 2) == 0.0);
+    CHECK(source.LRBox.R(2, 0) == 0.0);
+    CHECK(source.LRBox.R(2, 1) == 0.0);
+    CHECK(source.LRBox.R(2, 2) == 2.0);
+  }
 }
 
 } // namespace qmcplusplus

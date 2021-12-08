@@ -18,7 +18,8 @@
 #include "CPU/e2iphi.h"
 #include "EinsplineSet.h"
 #include "einspline/multi_bspline.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -143,6 +144,7 @@ void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
   OrbitalSetSize = norbs;
 }
 
+#if !defined(QMC_COMPLEX)
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
 {
@@ -254,30 +256,6 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
   ValueTimer.stop();
 }
 
-
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
-{
-  ValueTimer.start();
-  const PosType& r(P.activeR(iat));
-  PosType ru(PrimLattice.toUnit(r));
-  for (int i = 0; i < OHMMS_DIM; i++)
-    ru[i] -= std::floor(ru[i]);
-  EinsplineTimer.start();
-  EinsplineMultiEval(MultiSpline, ru, StorageValueVector);
-  EinsplineTimer.stop();
-  //computePhaseFactors(r);
-  for (int i = 0; i < psi.size(); i++)
-  {
-    PosType k = kPoints[i];
-    double s, c;
-    double phase = -dot(r, k);
-    qmcplusplus::sincos(phase, &s, &c);
-    std::complex<double> e_mikr(c, s);
-    convert(e_mikr * StorageValueVector[i], psi[i]);
-  }
-  ValueTimer.stop();
-}
 
 // This is an explicit specialization of the above for real orbitals
 // with a real return value, i.e. simulations at the gamma or L
@@ -500,94 +478,6 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
         psiIndex++;
       }
     }
-  }
-  VGLTimer.stop();
-}
-
-// Value, gradient, and laplacian
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
-                                                    int iat,
-                                                    ComplexValueVector_t& psi,
-                                                    ComplexGradVector_t& dpsi,
-                                                    ComplexValueVector_t& d2psi)
-{
-  VGLTimer.start();
-  const PosType& r(P.activeR(iat));
-  PosType ru(PrimLattice.toUnit(r));
-  for (int i = 0; i < OHMMS_DIM; i++)
-    ru[i] -= std::floor(ru[i]);
-  EinsplineTimer.start();
-  EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
-  EinsplineTimer.stop();
-  //computePhaseFactors(r);
-  std::complex<double> eye(0.0, 1.0);
-  for (int j = 0; j < psi.size(); j++)
-  {
-    std::complex<double> u, laplu;
-    TinyVector<std::complex<double>, OHMMS_DIM> gradu;
-    u         = StorageValueVector[j];
-    gradu     = dot(PrimLattice.G, StorageGradVector[j]);
-    laplu     = trace(StorageHessVector[j], GGt);
-    PosType k = kPoints[j];
-    TinyVector<std::complex<double>, OHMMS_DIM> ck;
-    for (int n = 0; n < OHMMS_DIM; n++)
-      ck[n] = k[n];
-    double s, c;
-    double phase = -dot(r, k);
-    qmcplusplus::sincos(phase, &s, &c);
-    std::complex<double> e_mikr(c, s);
-    convert(e_mikr * u, psi[j]);
-    convert(e_mikr * (-eye * u * ck + gradu), dpsi[j]);
-    //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-    convert(e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu), d2psi[j]);
-  }
-  VGLTimer.stop();
-}
-
-// Value, gradient, and laplacian
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
-                                                    int iat,
-                                                    ComplexValueVector_t& psi,
-                                                    ComplexGradVector_t& dpsi,
-                                                    ComplexHessVector_t& grad_grad_psi)
-{
-  VGLTimer.start();
-  const PosType& r(P.activeR(iat));
-  PosType ru(PrimLattice.toUnit(r));
-  for (int i = 0; i < OHMMS_DIM; i++)
-    ru[i] -= std::floor(ru[i]);
-  EinsplineTimer.start();
-  EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
-  EinsplineTimer.stop();
-  //computePhaseFactors(r);
-  std::complex<double> eye(0.0, 1.0);
-  for (int j = 0; j < psi.size(); j++)
-  {
-    std::complex<double> u;
-    TinyVector<std::complex<double>, OHMMS_DIM> gradu;
-    Tensor<std::complex<double>, OHMMS_DIM> hs, tmphs;
-    u     = StorageValueVector[j];
-    gradu = dot(PrimLattice.G, StorageGradVector[j]);
-    ////laplu = trace(StorageHessVector[j], GGt);
-    tmphs = dot(PrimLattice.G, StorageHessVector[j]);
-    //hs = dot(tmphs,PrimLattice.G);
-    hs        = dot(tmphs, PrimLattice.Gt);
-    PosType k = kPoints[j];
-    TinyVector<std::complex<double>, OHMMS_DIM> ck;
-    for (int n = 0; n < OHMMS_DIM; n++)
-      ck[n] = k[n];
-    double s, c;
-    double phase = -dot(r, k);
-    qmcplusplus::sincos(phase, &s, &c);
-    std::complex<double> e_mikr(c, s);
-    convert(e_mikr * u, psi[j]);
-    convert(e_mikr * (-eye * u * ck + gradu), dpsi[j]);
-    //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-    //convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
-    convert(e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck)),
-            grad_grad_psi[j]);
   }
   VGLTimer.stop();
 }
@@ -886,7 +776,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         MuffinTins[tin].evaluate(r, StorageValueVector, StorageGradVector, StorageHessVector);
         if (need2blend)
         {
-          disp      = MuffinTins[tin].disp(r);
+          disp = MuffinTins[tin].disp(r);
         }
         break;
       }
@@ -988,7 +878,6 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
   VGLMatTimer.stop();
 }
 
-#if !defined(QMC_COMPLEX)
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            int first,
@@ -1215,104 +1104,121 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
   }
 }
 
+#else
+
+template<typename StorageType>
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
+{
+  ValueTimer.start();
+  const PosType& r(P.activeR(iat));
+  PosType ru(PrimLattice.toUnit(r));
+  for (int i = 0; i < OHMMS_DIM; i++)
+    ru[i] -= std::floor(ru[i]);
+  EinsplineTimer.start();
+  EinsplineMultiEval(MultiSpline, ru, StorageValueVector);
+  EinsplineTimer.stop();
+  //computePhaseFactors(r);
+  for (int i = 0; i < psi.size(); i++)
+  {
+    PosType k = kPoints[i];
+    double s, c;
+    double phase = -dot(r, k);
+    qmcplusplus::sincos(phase, &s, &c);
+    std::complex<double> e_mikr(c, s);
+    psi[i] = e_mikr * StorageValueVector[i];
+  }
+  ValueTimer.stop();
+}
+
+// Value, gradient, and laplacian
+template<typename StorageType>
+void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
+                                                    int iat,
+                                                    ComplexValueVector_t& psi,
+                                                    ComplexGradVector_t& dpsi,
+                                                    ComplexValueVector_t& d2psi)
+{
+  VGLTimer.start();
+  const PosType& r(P.activeR(iat));
+  PosType ru(PrimLattice.toUnit(r));
+  for (int i = 0; i < OHMMS_DIM; i++)
+    ru[i] -= std::floor(ru[i]);
+  EinsplineTimer.start();
+  EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
+  EinsplineTimer.stop();
+  //computePhaseFactors(r);
+  std::complex<double> eye(0.0, 1.0);
+  for (int j = 0; j < psi.size(); j++)
+  {
+    std::complex<double> u, laplu;
+    TinyVector<std::complex<double>, OHMMS_DIM> gradu;
+    u         = StorageValueVector[j];
+    gradu     = dot(PrimLattice.G, StorageGradVector[j]);
+    laplu     = trace(StorageHessVector[j], GGt);
+    PosType k = kPoints[j];
+    TinyVector<std::complex<double>, OHMMS_DIM> ck;
+    for (int n = 0; n < OHMMS_DIM; n++)
+      ck[n] = k[n];
+    double s, c;
+    double phase = -dot(r, k);
+    qmcplusplus::sincos(phase, &s, &c);
+    std::complex<double> e_mikr(c, s);
+    psi[j] = e_mikr * u;
+    dpsi[j] = e_mikr * (-eye * u * ck + gradu);
+    //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+    d2psi[j] = e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu);
+  }
+  VGLTimer.stop();
+}
+
+// Value, gradient, and laplacian
+template<typename StorageType>
+void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
+                                                    int iat,
+                                                    ComplexValueVector_t& psi,
+                                                    ComplexGradVector_t& dpsi,
+                                                    ComplexHessVector_t& grad_grad_psi)
+{
+  VGLTimer.start();
+  const PosType& r(P.activeR(iat));
+  PosType ru(PrimLattice.toUnit(r));
+  for (int i = 0; i < OHMMS_DIM; i++)
+    ru[i] -= std::floor(ru[i]);
+  EinsplineTimer.start();
+  EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
+  EinsplineTimer.stop();
+  //computePhaseFactors(r);
+  std::complex<double> eye(0.0, 1.0);
+  for (int j = 0; j < psi.size(); j++)
+  {
+    std::complex<double> u;
+    TinyVector<std::complex<double>, OHMMS_DIM> gradu;
+    Tensor<std::complex<double>, OHMMS_DIM> hs, tmphs;
+    u     = StorageValueVector[j];
+    gradu = dot(PrimLattice.G, StorageGradVector[j]);
+    ////laplu = trace(StorageHessVector[j], GGt);
+    tmphs = dot(PrimLattice.G, StorageHessVector[j]);
+    //hs = dot(tmphs,PrimLattice.G);
+    hs        = dot(tmphs, PrimLattice.Gt);
+    PosType k = kPoints[j];
+    TinyVector<std::complex<double>, OHMMS_DIM> ck;
+    for (int n = 0; n < OHMMS_DIM; n++)
+      ck[n] = k[n];
+    double s, c;
+    double phase = -dot(r, k);
+    qmcplusplus::sincos(phase, &s, &c);
+    std::complex<double> e_mikr(c, s);
+    psi[j] = e_mikr * u;
+    dpsi[j] = e_mikr * (-eye * u * ck + gradu);
+    //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+    //d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+    grad_grad_psi[j] = e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck));
+  }
+  VGLTimer.stop();
+}
 #endif
 
-
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
-                                                             int first,
-                                                             int last,
-                                                             ComplexValueMatrix_t& psi,
-                                                             ComplexGradMatrix_t& dpsi,
-                                                             ComplexValueMatrix_t& d2psi)
-{
-  VGLMatTimer.start();
-  for (int iat = first, i = 0; iat < last; iat++, i++)
-  {
-    const PosType& r(P.activeR(iat));
-    PosType ru(PrimLattice.toUnit(r));
-    for (int n = 0; n < OHMMS_DIM; n++)
-      ru[n] -= std::floor(ru[n]);
-    EinsplineTimer.start();
-    EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
-    EinsplineTimer.stop();
-    //computePhaseFactors(r);
-    std::complex<double> eye(0.0, 1.0);
-    for (int j = 0; j < OrbitalSetSize; j++)
-    {
-      std::complex<double> u, laplu;
-      TinyVector<std::complex<double>, OHMMS_DIM> gradu;
-      u         = StorageValueVector[j];
-      gradu     = dot(PrimLattice.G, StorageGradVector[j]);
-      laplu     = trace(StorageHessVector[j], GGt);
-      PosType k = kPoints[j];
-      TinyVector<std::complex<double>, OHMMS_DIM> ck;
-      for (int n = 0; n < OHMMS_DIM; n++)
-        ck[n] = k[n];
-      double s, c;
-      double phase = -dot(r, k);
-      qmcplusplus::sincos(phase, &s, &c);
-      std::complex<double> e_mikr(c, s);
-      convert(e_mikr * u, psi(i, j));
-      //convert(e_mikr * u, psi(j,i));
-      convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));
-      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-      convert(e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu), d2psi(i, j));
-    }
-  }
-  VGLMatTimer.stop();
-}
-
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
-                                                             int first,
-                                                             int last,
-                                                             ComplexValueMatrix_t& psi,
-                                                             ComplexGradMatrix_t& dpsi,
-                                                             ComplexHessMatrix_t& grad_grad_psi)
-{
-  VGLMatTimer.start();
-  for (int iat = first, i = 0; iat < last; iat++, i++)
-  {
-    const PosType& r(P.activeR(iat));
-    PosType ru(PrimLattice.toUnit(r));
-    for (int n = 0; n < OHMMS_DIM; n++)
-      ru[n] -= std::floor(ru[n]);
-    EinsplineTimer.start();
-    EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
-    EinsplineTimer.stop();
-    //computePhaseFactors(r);
-    std::complex<double> eye(0.0, 1.0);
-    for (int j = 0; j < OrbitalSetSize; j++)
-    {
-      std::complex<double> u;
-      TinyVector<std::complex<double>, OHMMS_DIM> gradu;
-      Tensor<std::complex<double>, OHMMS_DIM> hs, tmphs;
-      u     = StorageValueVector[j];
-      gradu = dot(PrimLattice.G, StorageGradVector[j]);
-      // tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
-      tmphs = dot(PrimLattice.G, StorageHessVector[j]);
-      hs    = dot(tmphs, PrimLattice.Gt);
-      //laplu = trace(StorageHessVector[j], GGt);
-      PosType k = kPoints[j];
-      TinyVector<std::complex<double>, OHMMS_DIM> ck;
-      for (int n = 0; n < OHMMS_DIM; n++)
-        ck[n] = k[n];
-      double s, c;
-      double phase = -dot(r, k);
-      qmcplusplus::sincos(phase, &s, &c);
-      std::complex<double> e_mikr(c, s);
-      convert(e_mikr * u, psi(i, j));
-      //convert(e_mikr * u, psi(j,i));
-      convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));
-      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
-      convert(e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck)),
-              grad_grad_psi(i, j));
-    }
-  }
-  VGLMatTimer.stop();
-}
-
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
                                                         int first,
@@ -1565,98 +1471,6 @@ template<>
 void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
                                                         int first,
                                                         int last,
-                                                        ComplexValueMatrix_t& psi,
-                                                        ComplexGradMatrix_t& dpsi,
-                                                        ComplexHessMatrix_t& grad_grad_psi,
-                                                        ComplexGGGMatrix_t& grad_grad_grad_logdet)
-{
-  APP_ABORT(
-      " EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
-}
-
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
-                                                             int first,
-                                                             int last,
-                                                             ComplexValueMatrix_t& psi,
-                                                             ComplexGradMatrix_t& dpsi,
-                                                             ComplexHessMatrix_t& grad_grad_psi,
-                                                             ComplexGGGMatrix_t& grad_grad_grad_logdet)
-{
-  //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
-  //    VGLMatTimer.start();
-  for (int iat = first, i = 0; iat < last; iat++, i++)
-  {
-    const PosType& r(P.activeR(iat));
-    PosType ru(PrimLattice.toUnit(r));
-    for (int n = 0; n < OHMMS_DIM; n++)
-      ru[n] -= std::floor(ru[n]);
-    EinsplineTimer.start();
-    EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector,
-                       StorageGradHessVector);
-    EinsplineTimer.stop();
-    Tensor<double, OHMMS_DIM> PG;
-    PG = PrimLattice.G;
-    Tensor<double, OHMMS_DIM> TPG;
-    TPG = transpose(PrimLattice.G);
-    Tensor<std::complex<double>, OHMMS_DIM> hs, tmphs;
-    TinyVector<Tensor<std::complex<double>, OHMMS_DIM>, OHMMS_DIM> tmpghs, hvdot;
-    for (int j = 0; j < NumValenceOrbs; j++)
-    {
-      convert(dot(PG, StorageGradVector[j]), StorageGradVector[j]);
-      convert(dot(PG, StorageHessVector[j]), tmphs);
-      convert(dot(tmphs, TPG), StorageHessVector[j]);
-      for (int n = 0; n < OHMMS_DIM; n++)
-      {
-        convert(dot(PG, StorageGradHessVector[j][n]), tmpghs[n]);
-        convert(dot(tmpghs[n], TPG), StorageGradHessVector[j][n]);
-      }
-      convert(dot(PG, StorageGradHessVector[j]), StorageGradHessVector[j]);
-      //              grad_grad_grad_logdet(i,j)=StorageGradHessVector[j];
-      //              grad_grad_psi(i,j)=StorageHessVector[j];
-      //              dpsi(i,j)=StorageGradVector[j];
-      //              psi(i,j)=StorageValueVector[j];
-    }
-    const std::complex<double> eye(0.0, 1.0);
-    const std::complex<double> meye(0.0, -1.0);
-    for (int j = 0; j < NumValenceOrbs; j++)
-    {
-      std::complex<double> u(StorageValueVector[j]);
-      TinyVector<std::complex<double>, OHMMS_DIM> gradu(StorageGradVector[j]);
-      tmphs     = StorageHessVector[j];
-      tmpghs    = StorageGradHessVector[j];
-      PosType k = kPoints[j];
-      TinyVector<double, OHMMS_DIM> ck;
-      for (int n = 0; n < OHMMS_DIM; n++)
-        ck[n] = k[n];
-      double s, c;
-      double phase = -dot(r, k);
-      qmcplusplus::sincos(phase, &s, &c);
-      std::complex<double> e_mikr(c, s);
-      convert(e_mikr * u, psi(i, j));
-      convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));
-      convert(e_mikr *
-                  (tmphs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck)),
-              grad_grad_psi(i, j));
-      //Is this right?
-      StorageGradHessVector[j] *= e_mikr;
-      for (unsigned a0(0); a0 < OHMMS_DIM; a0++)
-        for (unsigned a1(0); a1 < OHMMS_DIM; a1++)
-          for (unsigned a2(0); a2 < OHMMS_DIM; a2++)
-            StorageGradHessVector[j][a0](a1, a2) += e_mikr *
-                (meye * (ck[a0] * tmphs(a1, a2) + ck[a1] * tmphs(a0, a2) + ck[a2] * tmphs(a0, a1)) -
-                 (ck[a0] * ck[a1] * gradu[a2] + ck[a0] * ck[a2] * gradu[a1] + ck[a1] * ck[a2] * gradu[a0]) +
-                 eye * ck[a0] * ck[a1] * ck[a2] * u);
-      convert(StorageGradHessVector[j], grad_grad_grad_logdet(i, j));
-    }
-  }
-}
-
-
-template<>
-void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
-                                                        int first,
-                                                        int last,
                                                         RealValueMatrix_t& psi,
                                                         RealGradMatrix_t& dpsi,
                                                         RealHessMatrix_t& grad_grad_psi,
@@ -1667,22 +1481,17 @@ void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
   for (int iat = first, i = 0; iat < last; iat++, i++)
   {
     const PosType& r(P.activeR(iat));
+
     // Do core states first
-    int icore = NumValenceOrbs;
-    for (int tin = 0; tin < MuffinTins.size(); tin++)
-    {
+    if (MuffinTins.size())
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-      //        MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
-      //                                     StorageHessVector, icore);
-      icore += MuffinTins[tin].get_num_core();
-    }
+
     // Check if we are in the muffin tin;  if so, evaluate
     bool inTin = false, need2blend = false;
     PosType disp;
     for (int tin = 0; tin < MuffinTins.size(); tin++)
-    {
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-    }
+
     bool inAtom = false;
     // Otherwise, evaluate the B-splines
     if (!inTin || need2blend)
@@ -1737,6 +1546,193 @@ void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
 }
 
 
+#else
+template<typename StorageType>
+void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
+                                                             int first,
+                                                             int last,
+                                                             ComplexValueMatrix_t& psi,
+                                                             ComplexGradMatrix_t& dpsi,
+                                                             ComplexValueMatrix_t& d2psi)
+{
+  VGLMatTimer.start();
+  for (int iat = first, i = 0; iat < last; iat++, i++)
+  {
+    const PosType& r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
+    for (int n = 0; n < OHMMS_DIM; n++)
+      ru[n] -= std::floor(ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
+    EinsplineTimer.stop();
+    //computePhaseFactors(r);
+    std::complex<double> eye(0.0, 1.0);
+    for (int j = 0; j < OrbitalSetSize; j++)
+    {
+      std::complex<double> u, laplu;
+      TinyVector<std::complex<double>, OHMMS_DIM> gradu;
+      u         = StorageValueVector[j];
+      gradu     = dot(PrimLattice.G, StorageGradVector[j]);
+      laplu     = trace(StorageHessVector[j], GGt);
+      PosType k = kPoints[j];
+      TinyVector<std::complex<double>, OHMMS_DIM> ck;
+      for (int n = 0; n < OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s, c;
+      double phase = -dot(r, k);
+      qmcplusplus::sincos(phase, &s, &c);
+      std::complex<double> e_mikr(c, s);
+      psi(i, j) = e_mikr * u;
+      //psi(j,i) = e_mikr * u;
+      dpsi(i, j) = e_mikr * (-eye * u * ck + gradu);
+      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+      d2psi(i, j) = e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu);
+    }
+  }
+  VGLMatTimer.stop();
+}
+
+template<typename StorageType>
+void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
+                                                             int first,
+                                                             int last,
+                                                             ComplexValueMatrix_t& psi,
+                                                             ComplexGradMatrix_t& dpsi,
+                                                             ComplexHessMatrix_t& grad_grad_psi)
+{
+  VGLMatTimer.start();
+  for (int iat = first, i = 0; iat < last; iat++, i++)
+  {
+    const PosType& r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
+    for (int n = 0; n < OHMMS_DIM; n++)
+      ru[n] -= std::floor(ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector);
+    EinsplineTimer.stop();
+    //computePhaseFactors(r);
+    std::complex<double> eye(0.0, 1.0);
+    for (int j = 0; j < OrbitalSetSize; j++)
+    {
+      std::complex<double> u;
+      TinyVector<std::complex<double>, OHMMS_DIM> gradu;
+      Tensor<std::complex<double>, OHMMS_DIM> hs, tmphs;
+      u     = StorageValueVector[j];
+      gradu = dot(PrimLattice.G, StorageGradVector[j]);
+      // tmphs = dot(transpose(PrimLattice.G),StorageHessVector[j]);
+      tmphs = dot(PrimLattice.G, StorageHessVector[j]);
+      hs    = dot(tmphs, PrimLattice.Gt);
+      //laplu = trace(StorageHessVector[j], GGt);
+      PosType k = kPoints[j];
+      TinyVector<std::complex<double>, OHMMS_DIM> ck;
+      for (int n = 0; n < OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s, c;
+      double phase = -dot(r, k);
+      qmcplusplus::sincos(phase, &s, &c);
+      std::complex<double> e_mikr(c, s);
+      psi(i, j) = e_mikr * u;
+      //psi(j,i) = e_mikr * u;
+      dpsi(i, j) = e_mikr * (-eye * u * ck + gradu);
+      //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+      grad_grad_psi(i, j) = e_mikr * (hs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck));
+    }
+  }
+  VGLMatTimer.stop();
+}
+
+template<>
+void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
+                                                        int first,
+                                                        int last,
+                                                        ComplexValueMatrix_t& psi,
+                                                        ComplexGradMatrix_t& dpsi,
+                                                        ComplexHessMatrix_t& grad_grad_psi,
+                                                        ComplexGGGMatrix_t& grad_grad_grad_logdet)
+{
+  APP_ABORT(
+      " EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+}
+
+template<typename StorageType>
+void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
+                                                             int first,
+                                                             int last,
+                                                             ComplexValueMatrix_t& psi,
+                                                             ComplexGradMatrix_t& dpsi,
+                                                             ComplexHessMatrix_t& grad_grad_psi,
+                                                             ComplexGGGMatrix_t& grad_grad_grad_logdet)
+{
+  //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
+  //    VGLMatTimer.start();
+  for (int iat = first, i = 0; iat < last; iat++, i++)
+  {
+    const PosType& r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
+    for (int n = 0; n < OHMMS_DIM; n++)
+      ru[n] -= std::floor(ru[n]);
+    EinsplineTimer.start();
+    EinsplineMultiEval(MultiSpline, ru, StorageValueVector, StorageGradVector, StorageHessVector,
+                       StorageGradHessVector);
+    EinsplineTimer.stop();
+    Tensor<double, OHMMS_DIM> PG;
+    PG = PrimLattice.G;
+    Tensor<double, OHMMS_DIM> TPG;
+    TPG = transpose(PrimLattice.G);
+    Tensor<std::complex<double>, OHMMS_DIM> hs, tmphs;
+    TinyVector<Tensor<std::complex<double>, OHMMS_DIM>, OHMMS_DIM> tmpghs, hvdot;
+    for (int j = 0; j < NumValenceOrbs; j++)
+    {
+      StorageGradVector[j] = dot(PG, StorageGradVector[j]);
+      tmphs = dot(PG, StorageHessVector[j]);
+      StorageHessVector[j] = dot(tmphs, TPG);
+      for (int n = 0; n < OHMMS_DIM; n++)
+      {
+        tmpghs[n] = dot(PG, StorageGradHessVector[j][n]);
+        StorageGradHessVector[j][n] = dot(tmpghs[n], TPG);
+      }
+      StorageGradHessVector[j] = dot(PG, StorageGradHessVector[j]);
+      //              grad_grad_grad_logdet(i,j)=StorageGradHessVector[j];
+      //              grad_grad_psi(i,j)=StorageHessVector[j];
+      //              dpsi(i,j)=StorageGradVector[j];
+      //              psi(i,j)=StorageValueVector[j];
+    }
+    const std::complex<double> eye(0.0, 1.0);
+    const std::complex<double> meye(0.0, -1.0);
+    for (int j = 0; j < NumValenceOrbs; j++)
+    {
+      std::complex<double> u(StorageValueVector[j]);
+      TinyVector<std::complex<double>, OHMMS_DIM> gradu(StorageGradVector[j]);
+      tmphs     = StorageHessVector[j];
+      tmpghs    = StorageGradHessVector[j];
+      PosType k = kPoints[j];
+      TinyVector<double, OHMMS_DIM> ck;
+      for (int n = 0; n < OHMMS_DIM; n++)
+        ck[n] = k[n];
+      double s, c;
+      double phase = -dot(r, k);
+      qmcplusplus::sincos(phase, &s, &c);
+      std::complex<double> e_mikr(c, s);
+      psi(i, j) = e_mikr * u;
+      dpsi(i, j) = e_mikr * (-eye * u * ck + gradu);
+      grad_grad_psi(i, j) = e_mikr *
+                  (tmphs - u * outerProduct(ck, ck) - eye * outerProduct(ck, gradu) - eye * outerProduct(gradu, ck));
+      //Is this right?
+      StorageGradHessVector[j] *= e_mikr;
+      for (unsigned a0(0); a0 < OHMMS_DIM; a0++)
+        for (unsigned a1(0); a1 < OHMMS_DIM; a1++)
+          for (unsigned a2(0); a2 < OHMMS_DIM; a2++)
+            StorageGradHessVector[j][a0](a1, a2) += e_mikr *
+                (meye * (ck[a0] * tmphs(a1, a2) + ck[a1] * tmphs(a0, a2) + ck[a2] * tmphs(a0, a1)) -
+                 (ck[a0] * ck[a1] * gradu[a2] + ck[a0] * ck[a2] * gradu[a1] + ck[a1] * ck[a2] * gradu[a0]) +
+                 eye * ck[a0] * ck[a1] * ck[a2] * u);
+      grad_grad_grad_logdet(i, j) = StorageGradHessVector[j];
+    }
+  }
+}
+
+#endif
+
 template<typename StorageType>
 std::string EinsplineSetExtended<StorageType>::Type()
 {
@@ -1755,9 +1751,9 @@ void EinsplineSetExtended<StorageType>::registerTimers()
 
 
 template<typename StorageType>
-SPOSet* EinsplineSetExtended<StorageType>::makeClone() const
+std::unique_ptr<SPOSet> EinsplineSetExtended<StorageType>::makeClone() const
 {
-  EinsplineSetExtended<StorageType>* clone = new EinsplineSetExtended<StorageType>(*this);
+  auto clone = std::make_unique<EinsplineSetExtended<StorageType>>(*this);
   clone->registerTimers();
   for (int iat = 0; iat < clone->AtomicOrbitals.size(); iat++)
     clone->AtomicOrbitals[iat].registerTimers();
@@ -1780,9 +1776,9 @@ std::string EinsplineSetHybrid<double>::Type()
 
 
 template<typename StorageType>
-SPOSet* EinsplineSetHybrid<StorageType>::makeClone() const
+std::unique_ptr<SPOSet> EinsplineSetHybrid<StorageType>::makeClone() const
 {
-  EinsplineSetHybrid<StorageType>* clone = new EinsplineSetHybrid<StorageType>(*this);
+  auto clone = std::make_unique<EinsplineSetHybrid<StorageType>>(*this);
   clone->registerTimers();
   return clone;
 }

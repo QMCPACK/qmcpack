@@ -73,7 +73,7 @@ public:
   QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  virtual ~QMCCostFunctionBase();
+  ~QMCCostFunctionBase() override;
 
   ///process xml node
   bool put(xmlNodePtr cur);
@@ -84,23 +84,23 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i) { return OptVariables[i]; }
+  Return_t& Params(int i) override { return OptVariables[i]; }
   ///return optimization parameter i
-  Return_t Params(int i) const { return OptVariables[i]; }
+  Return_t Params(int i) const override { return OptVariables[i]; }
   int getType(int i) const { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
-  Return_rt Cost(bool needGrad = true);
+  Return_rt Cost(bool needGrad = true) override;
 
   ///return the cost value for CGMinimization
   Return_rt computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(std::vector<Return_rt>& PGradient,
-                        const std::vector<Return_rt>& PM,
-                        Return_rt FiniteDiff = 0){};
+  void GradCost(std::vector<Return_rt>& PGradient,
+                const std::vector<Return_rt>& PM,
+                Return_rt FiniteDiff = 0) override{};
   ///return the number of optimizable parameters
-  inline int getNumParams() const { return OptVariables.size(); }
-  ///return the number of optimizable parameters
+  inline int getNumParams() const override { return OptVariables.size(); }
+  ///return the global number of samples
   inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
@@ -109,7 +109,7 @@ public:
   inline void getParameterTypes(std::vector<int>& types) { return OptVariablesForPsi.getParameterTypeList(types); }
 
   ///dump the current parameters and other report
-  void Report();
+  void Report() override;
   ///report  parameters at the end
   void reportParameters();
 
@@ -132,22 +132,6 @@ public:
 
   void addCJParams(xmlXPathContextPtr acontext, const char* cname);
 
-  /** implement the virtual function
-   * @param x0 current parameters
-   * @param gr gradients or conjugate gradients
-   * @param dl return the displacelement to minimize the cost function
-   * @param val_proj projected cost
-   *
-   * If successful, any optimization object updates the parameters by x0 + dl*gr
-   * and proceeds with a new step.
-   */
-  bool lineoptimization(const std::vector<Return_rt>& x0,
-                        const std::vector<Return_rt>& gr,
-                        Return_rt val0,
-                        Return_rt& dl,
-                        Return_rt& val_proj,
-                        Return_rt& lambda_max);
-
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE
@@ -165,14 +149,14 @@ public:
 
 #endif
 
-  void setRng(std::vector<RandomGenerator_t*>& r);
+  void setRng(RefVector<RandomGenerator_t> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline std::string getParamName(int i) const { return OptVariables.name(i); }
+  inline std::string getParamName(int i) const override { return OptVariables.name(i); }
 
   inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 
@@ -204,7 +188,7 @@ protected:
   int PowerE;
   ///number of times cost function evaluated
   int NumCostCalls;
-  ///total number of samples to use in correlated sampling
+  /// global number of samples to use in correlated sampling
   int NumSamples;
   ///total number of optimizable variables
   int NumOptimizables;
@@ -285,11 +269,10 @@ protected:
   std::map<std::string, std::pair<xmlNodePtr, std::string>> attribNodes;
   ///string for the file root
   std::string RootName;
-  ///Hamiltonians that depend on the optimization: KE
-  QMCHamiltonian H_KE;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> RngSaved, MoverRng;
+  UPtrVector<RandomGenerator_t> RngSaved;
+  std::vector<RandomGenerator_t*> MoverRng;
   std::string includeNonlocalH;
 
 

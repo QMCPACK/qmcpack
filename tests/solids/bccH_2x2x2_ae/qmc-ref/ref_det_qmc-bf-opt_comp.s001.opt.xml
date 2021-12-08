@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 2 0 0 0 2" twistnum="0" source="ion0" version="0.10" meshfactor="1.0">
+            <sposet type="bspline" name="spo_ud" size="8" spindataset="0"/>
+         </sposet_builder>
+         <determinantset>
+            <backflow>
+              <transformation name="eHB" type="e-I" function="Bspline" source="ion0">
+                 <correlation elementType="H" cusp="0.0" size="8" rcut="1.0">
+                  <coefficients id="eHB" type="Array" optimize="yes"> -0.4050730119 -0.02550086374 0.1297634893 -0.001858104091 -0.02368661617 -0.002096340324 -0.002621966171 0.02586175465</coefficients>
+                 </correlation>
+              </transformation>
+              <transformation name="eeB" type="e-e" function="Bspline">
+                 <correlation speciesA="u" speciesB="u" cusp="0.0" size="8" rcut="1.0">
+                  <coefficients id="uuB" type="Array" optimize="yes"> 0.09613117178 0.0693866824 0.03503165795 -0.1488515407 -0.2367655005 -0.146876156 -0.08566200773 -0.04757958646</coefficients>
+                 </correlation>
+                 <correlation speciesA="u" speciesB="d" cusp="0.0" size="8" rcut="1.0">
+                  <coefficients id="udB" type="Array" optimize="yes"> 0.03674342117 -0.2469749748 0.1311424782 0.1948213533 0.1294488342 0.1018291813 0.04555871589 0.04199679333</coefficients>
+                 </correlation>
+              </transformation>
+            </backflow>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="8"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="8"/>
+            </slaterdeterminant>
+         </determinantset>
+      </wavefunction>
+</qmcsystem>

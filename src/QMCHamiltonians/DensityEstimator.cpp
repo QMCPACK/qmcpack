@@ -19,7 +19,7 @@
 #include "DensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
@@ -30,7 +30,7 @@ typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
 DensityEstimator::DensityEstimator(ParticleSet& elns)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   Periodic = (elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
   for (int dim = 0; dim < OHMMS_DIM; ++dim)
   {
@@ -43,7 +43,7 @@ void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
-  RealType wgt = tWalker->Weight;
+  RealType wgt = t_walker_->Weight;
   if (Periodic)
   {
     for (int iat = 0; iat < P.getTotalNum(); ++iat)
@@ -110,7 +110,7 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
 void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   //current index
-  myIndex = collectables.current();
+  my_index_ = collectables.current();
   std::vector<RealType> tmp(NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
   //potentialIndex=collectables.current();
@@ -118,20 +118,16 @@ void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collec
   //collectables.add(tmp2.begin(),tmp2.end());
 }
 
-void DensityEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   int loc = h5desc.size();
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
-  observable_helper* h5o = new observable_helper(myName);
-  h5o->set_dimensions(ng, myIndex);
-  h5o->open(gid);
-  h5desc.push_back(h5o);
-  //h5o=new observable_helper("Potential");
-  //h5o->set_dimensions(ng,potentialIndex);
-  //h5o->open(gid);
-  //h5desc.push_back(h5o);
+  h5desc.emplace_back(name_);
+  auto& h5o = h5desc.back();
+  h5o.set_dimensions(ng, my_index_);
+  h5o.open(gid);
 }
 
 void DensityEstimator::setObservables(PropertySetType& plist)
@@ -176,14 +172,14 @@ bool DensityEstimator::put(xmlNodePtr cur)
 
 bool DensityEstimator::get(std::ostream& os) const
 {
-  os << myName << " bin =" << Delta << " bohrs " << std::endl;
+  os << name_ << " bin =" << Delta << " bohrs " << std::endl;
   return true;
 }
 
-OperatorBase* DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
-  return new DensityEstimator(*this);
+  return std::make_unique<DensityEstimator>(*this);
 }
 
 void DensityEstimator::resize()

@@ -13,6 +13,7 @@
 
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "DistanceTable.h"
 #include "CPU/BLAS.hpp"
 #include "Utilities/Timer.h"
 
@@ -23,21 +24,21 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
                                                                                const std::vector<ValueType>& dlogpsi,
                                                                                std::vector<ValueType>& dhpsioverpsi)
 {
-  Value = 0.0;
+  value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
     const auto& dist  = myTable.getDistRow(jel);
     const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < NumIons; iat++)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+        value_ += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                       dhpsioverpsi);
   }
-  return Value;
+  return value_;
 }
 
 /** evaluate the non-local potential of the iat-th ionic center

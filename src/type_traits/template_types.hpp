@@ -37,8 +37,18 @@ template<typename T>
 using UPtrVector = std::vector<std::unique_ptr<T>>;
 /** }@ */
 
-
-// temporary helper function
+/** helper function to take vector of class A to refvector of any valid reference type for A
+ *
+ *  intended usage looks like this
+ *  std::vector<DerivedType> vdt
+ *  auto refvecbase = makeRefVector<BaseType>(vdt)
+ *  or if you just want a refvector of type vdt
+ *  auto refvec = makeRefVector<decltype(vdt)::value_type>(vdt)
+ *
+ *  godbolt.org indicates at least with clang 11&12 we get RVO here.
+ *  auto ref_whatevers = makeRefVector<ValidTypeForReference>(whatevers);
+ *  makes no extra copy.
+ */
 template<class TR, class T>
 static RefVector<TR> makeRefVector(std::vector<T>& vec_list)
 {
@@ -67,6 +77,17 @@ static RefVector<T> convertPtrToRefVector(const std::vector<T*>& ptr_list)
   RefVector<T> ref_list;
   ref_list.reserve(ptr_list.size());
   for (auto ptr : ptr_list)
+    ref_list.push_back(*ptr);
+  return ref_list;
+}
+
+// temporary helper function
+template<class T2, class T>
+static RefVector<T2> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
+{
+  RefVector<T2> ref_list;
+  ref_list.reserve(ptr_list.size());
+  for (const UPtr<T>& ptr : ptr_list)
     ref_list.push_back(*ptr);
   return ref_list;
 }

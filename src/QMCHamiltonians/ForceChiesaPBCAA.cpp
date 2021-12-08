@@ -12,7 +12,7 @@
 
 
 #include "ForceChiesaPBCAA.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"
@@ -30,7 +30,7 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
       d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
-  myName = "Chiesa_Force_Base_PBCAB";
+  name_  = "Chiesa_Force_Base_PBCAB";
   prefix = "FChiesaPBC";
   //Defaults for the chiesa S-wave polynomial filtering.
   Rcut          = 0.4;
@@ -96,11 +96,10 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   {
     Qspec[spec] = tspeciesB(ChargeAttribIndxB, spec);
   }
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
   dAB = LRCoulombSingleton::getDerivHandler(P);
 }
 
@@ -121,7 +120,7 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 
 void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 {
-  const DistanceTableData& d_ab(P.getDistTable(d_ei_ID));
+  const auto& d_ab(P.getDistTableAB(d_ei_ID));
   for (size_t jat = 0; jat < NptclB; ++jat)
   {
     const auto& dist  = d_ab.getDistRow(jat);
@@ -140,7 +139,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 
 void ForceChiesaPBCAA::evaluateSR_AA()
 {
-  const DistanceTableData& d_aa(PtclA.getDistTable(d_aa_ID));
+  const auto& d_aa(PtclA.getDistTableAA(d_aa_ID));
   for (size_t ipart = 1; ipart < NptclA; ipart++)
   {
     const auto& dist  = d_aa.getDistRow(ipart);
@@ -228,16 +227,16 @@ void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P) { dAB->resetTarget
 
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.add(myName.c_str());
+  my_index_ = plist.add(name_.c_str());
   addObservablesF(plist);
 }
 
-OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  ForceChiesaPBCAA* tmp = new ForceChiesaPBCAA(PtclA, qp, false);
-  tmp->Rcut             = Rcut;    // parameter: radial distance within which estimator is used
-  tmp->m_exp            = m_exp;   // parameter: exponent in polynomial fit
-  tmp->N_basis          = N_basis; // parameter: size of polynomial basis set
+  std::unique_ptr<ForceChiesaPBCAA> tmp = std::make_unique<ForceChiesaPBCAA>(PtclA, qp, false);
+  tmp->Rcut                             = Rcut;    // parameter: radial distance within which estimator is used
+  tmp->m_exp                            = m_exp;   // parameter: exponent in polynomial fit
+  tmp->N_basis                          = N_basis; // parameter: size of polynomial basis set
   tmp->Sinv.resize(N_basis, N_basis);
   tmp->Sinv = Sinv; // terms in fitting polynomial
   tmp->h.resize(N_basis);

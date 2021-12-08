@@ -16,7 +16,7 @@
 #ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 #define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
@@ -45,7 +45,8 @@ private:
   using ValueMatrix_t = typename JBase::ValueMatrix_t;
   using RealMatrix_t  = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
+  std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;
   int MaxCoefs;
   ParticleSet& ElecRef;
   gpu::device_vector<CTS::RealType> L, Linv;
@@ -79,15 +80,19 @@ private:
 public:
   typedef ParticleSet::Walker_t Walker_t;
 
-  void resetParameters(const opt_variables_type& active);
-  void checkInVariables(opt_variables_type& active);
-  void addFunc(int ig, FT* j, int jg = -1);
-  void recompute(MCWalkerConfiguration& W, bool firstTime);
+  void resetParameters(const opt_variables_type& active) override;
+  void checkInVariables(opt_variables_type& active) override;
+  void addFunc(int ig, std::unique_ptr<FT> j, int jg = -1);
+  void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
-  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
+  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;
+  void update(MCWalkerConfiguration* W,
+              std::vector<Walker_t*>& walkers,
+              int iat,
+              std::vector<bool>* acc,
+              int k) override;
 
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
+  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override
   {
     /* This function doesn't really need to return the ratio */
   }
@@ -95,24 +100,24 @@ public:
              int iat,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl);
+             std::vector<ValueType>& lapl) override;
   void calcRatio(MCWalkerConfiguration& W,
                  int iat,
                  std::vector<ValueType>& psi_ratios,
                  std::vector<GradType>& grad,
-                 std::vector<ValueType>& lapl);
+                 std::vector<ValueType>& lapl) override;
   void addRatio(MCWalkerConfiguration& W,
                 int iat,
                 int k,
                 std::vector<ValueType>& psi_ratios,
                 std::vector<GradType>& grad,
-                std::vector<ValueType>& lapl);
+                std::vector<ValueType>& lapl) override;
   void ratio(std::vector<Walker_t*>& walkers,
              std::vector<int>& iatList,
              std::vector<PosType>& rNew,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl)
+             std::vector<ValueType>& lapl) override
   {
     /* This function doesn't really need to return the ratio */
   }
@@ -124,22 +129,22 @@ public:
                      int iat,
                      int k,
                      int kd,
-                     int nw)
+                     int nw) override
   {
     /* The one-body jastrow can be calculated for the entire k-block, so this function doesn't need to return anything */
   }
 
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios);
+                std::vector<ValueType>& psi_ratios) override;
   void evaluateDerivatives(MCWalkerConfiguration& W,
                            const opt_variables_type& optvars,
                            RealMatrix_t& dlogpsi,
-                           RealMatrix_t& dlapl_over_psi);
+                           RealMatrix_t& dlapl_over_psi) override;
   OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs)
       : J1OrbitalSoA<FT>(obj_name, centers, elecs),
         ElecRef(elecs),
@@ -201,7 +206,7 @@ public:
     // for (int i=0; i<centers.getTotalNum(); i++)
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
-    C               = C_host;
+    C = C_host;
   }
 };
 } // namespace qmcplusplus

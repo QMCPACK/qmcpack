@@ -36,7 +36,6 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
       n_max_(10),
       MaxCopy(2),
       target_sigma_(10),
-      dmcStream(0),
       NumWalkersCreated(0),
       SwapMode(0),
       write_release_nodes_(rn)
@@ -51,15 +50,7 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   accumData.resize(LE_MAX);
 }
 
-WalkerControlBase::~WalkerControlBase()
-{
-  if (dmcStream)
-  {
-    // without this its possible to end up without all data flushed to dmc.dat.
-    (*dmcStream) << std::endl;
-    delete dmcStream;
-  }
-}
+WalkerControlBase::~WalkerControlBase() = default;
 
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
@@ -84,13 +75,7 @@ void WalkerControlBase::start()
       hname.append(".dmc.dat");
     if (hname != dmcFname)
     {
-      if (dmcStream)
-      {
-        *dmcStream << std::endl;
-        delete dmcStream;
-      }
-      dmcStream = new std::ofstream(hname.c_str());
-      //oa = new boost::archive::binary_oarchive (*dmcStream);
+      dmcStream = std::make_unique<std::ofstream>(hname.c_str());
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)
@@ -182,9 +167,9 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
   MCWalkerConfiguration::iterator it_end(W.end());
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nrn(0), ncr(0), nfn(0), ngoodfn(0), nc(0);
+  int nrn(0), ncr(0), nfn(0), nc(0);
   for (; it != it_end; ++it)
   {
     bool inFN = (((*it)->ReleasedNodeAge) == 0);
@@ -196,7 +181,6 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       else if ((*it)->ReleasedNodeAge == 0)
       {
         nfn += 1;
-        ngoodfn += nc;
       }
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);
@@ -207,7 +191,6 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       esum += wgt * rnwgt * e;
       e2sum += wgt * rnwgt * e * e;
       wsum += rnwgt * wgt;
-      w2sum += rnwgt * rnwgt * wgt * wgt;
       ecum += e;
       besum += bfe * wgt;
       bwgtsum += wgt;
@@ -228,7 +211,6 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
       ecum += e;
     }
   }
@@ -299,13 +281,13 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
 int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
-  std::vector<Walker_t*> good_rn;
+  std::vector<std::unique_ptr<Walker_t>> good_rn;
   std::vector<int> ncopy_rn;
   NumWalkers = 0;
   MCWalkerConfiguration::iterator it_end(W.end());
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nfn(0), nrn(0), ngoodfn(0), ncr(0), nc(0);
+  int nfn(0), nrn(0), ncr(0), nc(0);
   while (it != it_end)
   {
     bool inFN = (((*it)->ReleasedNodeAge) == 0);
@@ -317,7 +299,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       else if ((*it)->ReleasedNodeAge == 0)
       {
         nfn += 1;
-        ngoodfn += nc;
       }
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);
@@ -328,7 +309,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       esum += wgt * rnwgt * local_energy;
       e2sum += wgt * rnwgt * local_energy * local_energy;
       wsum += rnwgt * wgt;
-      w2sum += rnwgt * rnwgt * wgt * wgt;
       ecum += local_energy;
       besum += alternate_energy * wgt;
       bwgtsum += wgt;
@@ -346,26 +326,25 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
       ecum += e;
     }
 
     if ((nc) && (inFN))
     {
       NumWalkers += nc;
-      good_w.push_back(*it);
+      good_w.push_back(std::move(*it));
       ncopy_w.push_back(nc - 1);
     }
     else if (nc)
     {
       NumWalkers += nc;
       nrn += nc;
-      good_rn.push_back(*it);
+      good_rn.push_back(std::move(*it));
       ncopy_rn.push_back(nc - 1);
     }
     else
     {
-      bad_w.push_back(*it);
+      bad_w.push_back(std::move(*it));
     }
     ++it;
   }
@@ -400,7 +379,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     int indy(0);
     while (it != it_end)
     {
-      good_w.push_back(*it);
+      good_w.push_back(std::move(*it));
       ncopy_w.push_back(ncopy_rn[indy]);
       it++, indy++;
     }
@@ -442,7 +421,7 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
                           << "Removing good walkers." << std::endl;
             do
             {
-              bad_w.push_back(good_w.back());
+              bad_w.push_back(std::move(good_w.back()));
               good_w.pop_back();
               ncopy_w.pop_back();
               --n_remove;
@@ -533,7 +512,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
       }
       else
       {
-        good_w.push_back(bad_w.back());
+        good_w.push_back(std::move(bad_w.back()));
         bad_w.pop_back();
       }
       copy_list.push_back(i);
@@ -546,7 +525,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
     auto& wRef    = good_w[copy_list[i - size_good_w]];
     auto& awalker = good_w[i];
     if (awalker == nullptr)
-      awalker = new Walker_t(*wRef);
+      awalker = std::make_unique<Walker_t>(*wRef);
     else
       *awalker = *wRef;
     // not fully sure this is correct or even used
@@ -556,11 +535,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 
   //clear the WalkerList to populate them with the good walkers
   W.clear();
-  W.insert(W.begin(), good_w.begin(), good_w.end());
-
-  //remove bad walkers if there are any left
-  for (int i = 0; i < bad_w.size(); i++)
-    delete bad_w[i];
+  W.insert(W.begin(), std::make_move_iterator(good_w.begin()), std::make_move_iterator(good_w.end()));
 
   //clear good_w and ncopy_w for the next branch
   good_w.clear();

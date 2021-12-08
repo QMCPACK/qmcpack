@@ -3,11 +3,13 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -20,7 +22,12 @@
 #include "Utilities/SimpleParser.h"
 //#include "Utilities/IteratorUtility.h"
 #ifdef QMC_CUDA
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 #endif
 
 namespace qmcplusplus
@@ -297,8 +304,8 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
   const int max_points = 100000;
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  mRealType d                 = 1e-4;
-  LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
+  mRealType d = 1e-4;
+  auto agrid  = std::make_unique<LinearGrid<RealType>>();
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
@@ -330,7 +337,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     for (int i = 0; i < ngIn; i++)
       newPin[i] = Vprefactor * vp[i];
 
-    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, 0.0, ngIn - 1, 0.0);
     for (int i = 1; i < ng - 1; i++)
     {
@@ -339,7 +346,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     }
     newP[0]                  = newP[1];
     newP[ng - 1]             = 0.0;
-    RadialPotentialType* app = new RadialPotentialType(agrid, newP);
+    RadialPotentialType* app = new RadialPotentialType(agrid->makeClone(), newP);
     app->spline();
     pp_so->add(angList[l], app);
   }
@@ -393,7 +400,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aParser.skiplines(fin, 1); //R(i) in atomic units
   aParser.getValues(fin, temp.begin(), temp.end());
   //create a global grid of numerical type
-  grid_global = new NumericalGrid<mRealType>(temp);
+  grid_global = std::make_unique<NumericalGrid<mRealType>>(temp);
   Matrix<mRealType> vnn(Lmax + 1, npts);
   for (int l = 0; l <= Lmax; l++)
   {
@@ -455,8 +462,8 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 #endif
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  mRealType d                 = 1e-4;
-  LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
+  mRealType d = 1e-4;
+  auto agrid  = std::make_unique<LinearGrid<RealType>>();
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
@@ -503,16 +510,16 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     int ll                          = angList[l];
     for (int i = 0; i < ngIn; i++)
       newPin[i] = Vprefactor * (vp[i] - vpLoc[i]);
-    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, 0.0, ngIn - 1, 0.0);
     for (int i = 1; i < ng - 1; i++)
     {
       mRealType r = d * i;
       newP[i]     = infunc.splint(r) / r;
     }
-    newP[0]                  = newP[1];
-    newP[ng - 1]             = 0.0;
-    RadialPotentialType* app = new RadialPotentialType(agrid, newP);
+    newP[0]      = newP[1];
+    newP[ng - 1] = 0.0;
+    auto app     = new RadialPotentialType(agrid->makeClone(), newP);
     app->spline();
     pp_nonloc->add(angList[l], app);
   }
@@ -537,13 +544,13 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     for (int i = 0; i < ngIn; i++)
       newPin[i] = vfac * vpLoc[i];
     double dy0 = (newPin[1] - newPin[0]) / ((*grid_global)[1] - (*grid_global)[0]);
-    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, dy0, ngIn - 1, 0.0);
-    int m                          = grid_global->size();
-    double loc_max                 = grid_global->r(m - 1);
-    int nloc                       = (int)std::floor(loc_max / d);
-    loc_max                        = (nloc - 1) * d;
-    LinearGrid<RealType>* grid_loc = new LinearGrid<RealType>;
+    int m          = grid_global->size();
+    double loc_max = grid_global->r(m - 1);
+    int nloc       = (int)std::floor(loc_max / d);
+    loc_max        = (nloc - 1) * d;
+    auto grid_loc  = std::make_unique<LinearGrid<RealType>>();
     grid_loc->set(0.0, loc_max, nloc);
     app_log() << "   Making L=" << Llocal << " a local potential with a radial cutoff of " << loc_max << std::endl;
     std::vector<RealType> newPloc(nloc);
@@ -554,7 +561,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     }
     newPloc[0]        = 0.0;
     newPloc[nloc - 1] = 1.0;
-    pp_loc            = std::make_unique<RadialPotentialType>(grid_loc, newPloc);
+    pp_loc            = std::make_unique<RadialPotentialType>(std::move(grid_loc), newPloc);
     pp_loc->spline(0, dy0, nloc - 1, 0.0);
     // for (double r=0.0; r<3.50001; r+=0.001)
     //   fprintf (stderr, "%10.5f %10.5f\n", r, pp_loc->splint(r));

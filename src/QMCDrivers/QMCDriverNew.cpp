@@ -24,7 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
@@ -87,12 +87,11 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
 // the nullptr from the optimizer).  However, the order is fixed by the order the destructors
 // are called.
 // To work around the issue, check the local pointer for nullptr before restoring to global storage.
-
 QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
-    if (Rng[i] != nullptr)
-      RandomNumberControl::Children[i] = Rng[i].release();
+    if (Rng[i])
+      RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
@@ -121,12 +120,13 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  * - initialize Estimators
  * - initialize Walkers
  */
-void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
+void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc)
 {
-  app_summary() << this->QMCType << " Driver running with target_walkers = " << awc.global_walkers << std::endl
-                << "                               walkers_per_rank = " << awc.walkers_per_rank << std::endl
-                << "                               num_crowds = " << awc.walkers_per_crowd.size() << std::endl
-                << "                    on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
+  app_summary() << QMCType << " Driver running with" << std::endl
+                << "             total_walkers     = " << awc.global_walkers << std::endl
+                << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
+                << "             num_crowds        = " << awc.walkers_per_crowd.size() << std::endl
+                << "  on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
                 << std::endl;
 
   // set num_global_walkers explicitly and then make local walkers.
@@ -135,7 +135,8 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
-  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(), cur);
+  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
+                          population_.get_golden_twf(), population_.get_wf_factory(), cur);
 
   if (dispatchers_.are_walkers_batched())
   {
@@ -151,7 +152,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i].reset(new Crowd(*estimator_manager_, golden_resource_, dispatchers_));
+    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
   }
 
   //now give walkers references to their walkers
@@ -281,10 +282,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
 void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
-
   Rng.resize(num_crowds);
-
-  RngCompatibility.resize(num_crowds);
 
   if (RandomNumberControl::Children.size() == 0)
   {
@@ -295,12 +293,9 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 
   for (int i = 0; i < num_crowds; ++i)
   {
-    Rng[i].reset(RandomNumberControl::Children[i]);
-    // Ye: RandomNumberControl::Children needs to be replaced with unique_ptr and use Rng[i].swap()
-    RandomNumberControl::Children[i] = nullptr;
-    step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
+    Rng[i].reset(RandomNumberControl::Children[i].release());
+    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
-    RngCompatibility[i] = Rng[i].get();
   }
 }
 
@@ -317,16 +312,16 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
-  auto& walkers = crowd.get_walkers();
-  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
-                                               crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+  ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
+  ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
 
+  auto& walkers = crowd.get_walkers();
   std::vector<bool> recompute_mask(walkers.size(), true);
   ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
   ps_dispatcher.flex_donePbyP(walker_elecs);
@@ -339,7 +334,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
-      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_elecs));
+      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_twfs, walker_elecs));
 
   // \todo rename these are sets not resets.
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy) {
@@ -508,7 +503,7 @@ void QMCDriverNew::endBlock()
   estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
 }
 
-bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
+void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
 {
   bool success         = true;
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
@@ -532,7 +527,14 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
   ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
-  const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
+  RealType threshold;
+  // mixed precision can't make this test with cuda direct inversion
+  if constexpr (std::is_same<RealType, FullPrecRealType>::value)
+    threshold = 100 * std::numeric_limits<float>::epsilon();
+  else
+    threshold = 500 * std::numeric_limits<float>::epsilon();
+
+  std::ostringstream msg;
   for (int iw = 0; iw < log_values.size(); iw++)
   {
     auto& ref_G = walker_twfs[iw].G;
@@ -541,28 +543,34 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;
-      std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
+      msg << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
     }
+
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
       auto grad_diff = ref_G[iel] - Gs[iw][iel];
       if (std::sqrt(std::abs(dot(grad_diff, grad_diff))) > std::sqrt(std::abs(dot(ref_G[iel], ref_G[iel]))) * threshold)
       {
         success = false;
-        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel]
-                  << " Delta " << grad_diff << std::endl;
+        msg << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel]
+            << " Delta " << grad_diff << std::endl;
       }
+
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
       if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threshold)
       {
         // very hard to check mixed precision case, only print, no error out
-        success = !std::is_same<RealType, FullPrecRealType>::value;
-        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel]
-                  << " Delta " << lap_diff << std::endl;
+        if (std::is_same<RealType, FullPrecRealType>::value)
+          success = false;
+        msg << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << " Delta "
+            << lap_diff << std::endl;
       }
     }
   }
-  return success;
+
+  std::cerr << msg.str();
+  if (!success)
+    throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
 
 } // namespace qmcplusplus

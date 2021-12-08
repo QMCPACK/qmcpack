@@ -16,7 +16,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -41,25 +41,25 @@ class LatticeDeviationEstimator : public OperatorBase
 {
 public:
   LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
-  ~LatticeDeviationEstimator() {}
+  ~LatticeDeviationEstimator() override {}
 
-  bool put(xmlNodePtr cur);         // read input xml node, required
-  bool get(std::ostream& os) const; // class description, required
+  bool put(xmlNodePtr cur) override;         // read input xml node, required
+  bool get(std::ostream& os) const override; // class description, required
 
-  Return_t evaluate(ParticleSet& P); // main function that calculates the observable
+  Return_t evaluate(ParticleSet& P) override; // main function that calculates the observable
 
   // allow multiple scalars to be registered in scalar.dat
-  void addObservables(PropertySetType& plist, BufferType& collectables);
-  void setObservables(PropertySetType& plist);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
+  void setObservables(PropertySetType& plist) override;
   //void setParticlePropertyList(PropertySetType& plist, int offset); // is this method ever used?
 
   // make room in hdf5 observable registry
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
   //void addObservables(PropertySetType& plist, BufferType& collectables); // also used for multiple scalars
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P);                            // required
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  void resetTargetParticleSet(ParticleSet& P) override;                                   // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
 
 private:
   SpeciesSet& tspecies;       // species table of target particle set
@@ -74,7 +74,7 @@ private:
   xmlNodePtr input_xml;       // original xml
   // distance table ID
   const int myTableID_;
-};                            // LatticeDeviationEstimator
+}; // LatticeDeviationEstimator
 
 } // namespace qmcplusplus
 #endif

@@ -31,9 +31,10 @@ EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) :
 bool EstimatorManagerNewTest::testAddGetEstimator()
 {
   // Must create on heap since the EstimatorManager destructor deletes all estimators
-  FakeEstimator* fake_est = new FakeEstimator;
+  auto fake_est_uptr      = std::make_unique<FakeEstimator>();
+  FakeEstimator* fake_est = fake_est_uptr.get();
 
-  em.add(fake_est, "fake");
+  em.add(std::move(fake_est_uptr), "fake");
 
   ScalarEstimatorBase* est2 = em.getEstimator("fake");
   FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
@@ -68,7 +69,7 @@ void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
 {
   em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
   FakeOperatorEstimator& foe        = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
-  std::vector<QMCT::RealType>& data = foe.get_data_ref();
+  std::vector<QMCT::RealType>& data = foe.get_data();
   for (int id = 0; id < data.size(); ++id)
   {
     if (id > rank)

@@ -40,7 +40,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
     PreFactors[1] = 2.0 * std::sqrt(M_PI) / (Sigma * Area); //\f$  \frac{2\pi}{A}\frac{1}{Sigma\pi}\f$
     PreFactors[2] = 1.0 / (2 * Sigma);                      //Used for the k-dependent term
   }
-  fillFk(ref.SK->KLists);
+  fillFk(ref.SK->getKLists());
 }
 
 EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
@@ -51,7 +51,7 @@ EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
     kMag = aLR.kMag;
 }
 
-void EwaldHandler::fillFk(KContainer& KList)
+void EwaldHandler::fillFk(const KContainer& KList)
 {
   Fk.resize(KList.kpts_cart.size());
   const std::vector<int>& kshell(KList.kshell);
@@ -106,7 +106,7 @@ void EwaldHandler::fillFk(KContainer& KList)
   app_log().flush();
 }
 
-EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
+EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
 {
   mRealType uk = 0.0;
   if (SuperCellEnum == SUPERCELL_SLAB)
@@ -133,7 +133,7 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
 
   EwaldHandler::mRealType EwaldHandler::evaluate_slab(pRealType z, const std::vector<int>& kshell,
                                                       const pComplexType* restrict eikr_i,
-                                                      const pComplexType* restrict eikr_j)
+                                                      const pComplexType* restrict eikr_j) const
   {
     mRealType zp = z * Sigma;
     mRealType vk = -SlabFunc0(z, zp);
