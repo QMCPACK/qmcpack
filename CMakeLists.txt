@@ -718,6 +718,9 @@ set(HAVE_CUDA 0)
 if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
+    if(CMAKE_VERSION VERSION_LESS 3.21.0)
+      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.18.0 or later")
+    endif()
   else(QMC_CUDA2HIP)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
@@ -788,25 +791,22 @@ if(ENABLE_ROCM)
 
   list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
   list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
-  # need FindHIP for hip_add_library similar to deprecated FindCUDA style
-  find_package(HIP MODULE REQUIRED)
-  # need hip in config mode for hip::host target.
-  find_package(hip CONFIG REQUIRED)
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
   enable_language(HIP)
   # architecture flags
-  set(HIP_ARCH
-      "gfx906,gfx908"
-      CACHE STRING "HIP architecture gfxXXX")
-  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
-  list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
-  list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
+  #set(HIP_ARCH
+  #    "gfx906,gfx908"
+  #    CACHE STRING "HIP architecture gfxXXX")
+  set(CMAKE_HIP_ARCHITECTURES "gfx906;gfx908")
+  string(APPEND CMAKE_HIP_FLAGS " -fPIC -ffast-math -O3 -std=c++14")
+  #list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
+  string(APPEND CMAKE_HIP_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-vla")
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-deprecated-declarations")
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
+  string(APPEND CMAKE_HIP_FLAGS "-Wno-vla")
+  string(APPEND CMAKE_HIP_FLAGS "-Wno-deprecated-declarations")
+  string(APPEND CMAKE_HIP_FLAGS "-Wno-unused-command-line-argument")
 
   if(BUILD_AFQMC)
     find_package(rocrand CONFIG REQUIRED)
