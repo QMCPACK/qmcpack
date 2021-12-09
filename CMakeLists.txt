@@ -719,7 +719,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
     if(CMAKE_VERSION VERSION_LESS 3.21.0)
-      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.18.0 or later")
+      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
     endif()
   else(QMC_CUDA2HIP)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
