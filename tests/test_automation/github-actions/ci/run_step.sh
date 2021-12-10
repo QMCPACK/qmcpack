@@ -126,6 +126,31 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
+      *"Intel19-MPI-CUDA-AFQMC"*)
+        echo "Configure for building with ENABLE_CUDA and AFQMC  " \
+              "with Intel 2019 compiler, need built-from-source OpenBLAS due to bug in rpm"
+        
+        source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
+
+        export OMPI_CC=/opt/intel2020/bin/icc
+        export OMPI_CXX=/opt/intel2020/bin/icpc
+        
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=/opt/intel2020/bin/icc" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/intel2020/bin/icpc" >> $GITHUB_ENV
+
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
+              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
+              -DBUILD_AFQMC=ON \
+              -DENABLE_CUDA=ON \
+              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
         cmake -GNinja \
@@ -227,6 +252,11 @@ case "$1" in
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
        export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH}
+    fi
+
+    if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
+    then
+       source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
     fi
     
     ctest --output-on-failure $TEST_LABEL

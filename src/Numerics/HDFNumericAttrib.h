@@ -57,33 +57,6 @@ struct HDFAttribIO<std::string>: public HDFAttribIOBase {
   }
   };*/
 
-
-/** Specialization for hsize_t */
-template<>
-struct HDFAttribIO<hsize_t> : public HDFAttribIOBase
-{
-  hsize_t& ref;
-
-  HDFAttribIO<hsize_t>(hsize_t& a) : ref(a) {}
-
-  inline void write(hid_t grp, const char* name) override
-  {
-    hsize_t dim     = 1;
-    hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset   = H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name) override
-  {
-    hid_t h1  = H5Dopen(grp, name);
-    hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
-    H5Dclose(h1);
-  }
-};
-
 template<>
 struct HDFAttribIO<unsigned long> : public HDFAttribIOBase
 {
