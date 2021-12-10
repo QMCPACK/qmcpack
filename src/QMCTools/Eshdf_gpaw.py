@@ -2,7 +2,7 @@
 ## This file is distributed under the University of Illinois/NCSA Open Source License.
 ## See LICENSE file in top directory for details.
 ##
-## Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+## Copyright (c) 2021 Juha Tiihonen and QMCPACK developers.
 ##
 ## File developed by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla
 ##
@@ -90,7 +90,7 @@ class EshdfFilePwGpaw(EshdfFilePw):
         except:
             print('ERROR: No wavefunctions found in the GPAW restart file {}'.format(filename))
             print("Make sure to write the GPAW file with mode='all'!")
-            return
+            raise NoWavefunctionFound
         #end try
         if self.density: 
             # run SCF to re-populate density

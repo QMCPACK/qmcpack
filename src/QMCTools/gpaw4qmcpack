@@ -3,65 +3,25 @@
 ## This file is distributed under the University of Illinois/NCSA Open Source License.
 ## See LICENSE file in top directory for details.
 ##
-## Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+## Copyright (c) 2021 Juha Tiihonen and QMCPACK developers.
 ##
 ## File developed by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla
 ##
 ## File created by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla 
 #######################################################################################
 
+import argparse
+
 from Eshdf_gpaw import EshdfFilePwGpaw
 
-def print_help_and_exit():
-    print('''
-Usage:  gpaw4qmcpack [options] INFILE [OUTFILE]
-
-  INFILE  is a .gpw restart file
-  OUTFILE is an .h5 orbital file for QMCPACK [default=eshdf.h5]
-
-  options and <arguments> where needed:
-
-    -d            Convert charge density data. Default: no.
-
-  TROUBLESHOOTING:
-
-  The GPAW restart file (INFILE) must be created with mode='all' to include 
-  the wave function information.
-  
-''')
-    exit()
-#end def
-
-# parse command lines arguments
-def parse_args(args):
-    if len(args)==1:
-        print_help_and_exit()
-    #end if
-    # parse arguments
-    infile_set = False
-    options    = {}
-    outfile    = 'eshdf.h5'
-    i = 1
-    while i<len(args):
-        arg = args[i]
-        if arg=='-d': # density
-            options['density'] = True
-        elif not infile_set:
-            infile = arg
-            # check if exists
-            infile_set = True
-        else:
-            outfile = arg
-        #end if
-        i += 1
-    #end while
-    return infile,outfile,options
-#end def
+parser = argparse.ArgumentParser(description='GPAW4QMCPACK')
+parser.add_argument('infile',help='input .gpw restart file')
+parser.add_argument('outfile',default='eshdf.h5',help='output .h5 orbital file')
+parser.add_argument('-d','--density',action='store_true',help='whether or not to convert density')
 
 if __name__=='__main__':
-    from sys import argv
-    infile,outfile,options = parse_args(argv)
-    eshdf = EshdfFilePwGpaw(infile=infile,outfile=outfile,**options)
-    eshdf.write(outfile)
+    args = vars(parser.parse_args())
+    eshdf = EshdfFilePwGpaw(**args)
+    eshdf.write()
     print('Converted GPAW orbitals for QMCPACK!')
 #end if

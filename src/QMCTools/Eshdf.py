@@ -2,14 +2,13 @@
 ## This file is distributed under the University of Illinois/NCSA Open Source License.
 ## See LICENSE file in top directory for details.
 ##
-## Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+## Copyright (c) 2021 Juha Tiihonen and QMCPACK developers.
 ##
 ## File developed by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla
 ##
 ## File created by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla 
 #######################################################################################
 
-#from numpy import array,pi,dot,real,imag,concatenate,unique,zeros
 from numpy import array
 
 # This file defines python classes to load/write data needed by the ESHDF file format.
@@ -121,8 +120,7 @@ class EshdfFileBase():
     #   default: write to HDF5
     def write(self, outfile = None):
         if not self.loaded:
-            print('Must load data first')
-            return
+            raise(DataNotLoaded('Must load data first'))
         #end if
         if outfile is None:
             outfile = self.outfile
