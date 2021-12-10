@@ -795,13 +795,10 @@ if(ENABLE_ROCM)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
   enable_language(HIP)
+  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
   # architecture flags
-  #set(HIP_ARCH
-  #    "gfx906,gfx908"
-  #    CACHE STRING "HIP architecture gfxXXX")
   set(CMAKE_HIP_ARCHITECTURES "gfx906;gfx908")
   string(APPEND CMAKE_HIP_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
-  #list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   string(APPEND CMAKE_HIP_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
   string(APPEND CMAKE_HIP_FLAGS "-Wno-vla")
