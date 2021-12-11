@@ -153,7 +153,7 @@ Variational Monte Carlo
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks    |
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 Additional information:
@@ -300,7 +300,7 @@ The following is an example of VMC section storing configurations (walker sample
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks    |
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 Additional information:
@@ -1213,7 +1213,7 @@ parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks    |
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 .. centered:: Table 9 Main DMC input parameters.
@@ -1548,7 +1548,7 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks    |
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
