@@ -767,33 +767,17 @@ endif(USE_NVTX_API)
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_ROCM)
-  if(ROCM_ROOT)
-    message(STATUS "ROCM_ROOT provided. Searching for FindHIP.cmake file")
-    find_path(
-      HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS ${ROCM_ROOT}
-      PATH_SUFFIXES hip/cmake REQUIRED
-      NO_DEFAULT_PATH)
-  else()
-    message(STATUS "ROCM_ROOT not provided. Searching for FindHIP.cmake file.")
-    find_path(
-      HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS /opt/rocm
-      PATH_SUFFIXES hip/cmake)
-    if(HIP_MODULE_FILE_DIR)
-      message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
-    else()
-      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installation.")
-    endif()
-    string(REGEX REPLACE "\/hip\/cmake" "" ROCM_ROOT "${HIP_MODULE_FILE_DIR}")
+  if(DEFINED ROCM_ROOT)
+    message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
+    # explicit ROCM_ROOT takes precedence
+    #list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
   endif()
-  message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
 
-  list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
-  list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
+  # use hip package to verify hip runtime can be found
+  find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
   # architecture flags
@@ -804,6 +788,10 @@ if(ENABLE_ROCM)
   string(APPEND CMAKE_HIP_FLAGS "-Wno-vla")
   string(APPEND CMAKE_HIP_FLAGS "-Wno-deprecated-declarations")
   string(APPEND CMAKE_HIP_FLAGS "-Wno-unused-command-line-argument")
+
+  if(NOT DEFINED ROCM_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
+  endif()
 
   if(BUILD_AFQMC)
     find_package(rocrand CONFIG REQUIRED)
