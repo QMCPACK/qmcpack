@@ -168,7 +168,7 @@ public:
    *
    *  return of the log of the dirac determinant is the least of what it does.
    *
-   *  call to generate valid inital state for determinant and when you
+   *  call to generate valid initial state for determinant and when you
    *  suspect psiMinv or other state variables may have picked up error.
    */
   LogValue evaluateLog(const ParticleSet& P,
@@ -279,7 +279,7 @@ private:
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
   std::unique_ptr<typename DET_ENGINE::DetInverter> accel_inverter_;
 
-  /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
+  /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
   /// single invert logdetT(psiM)

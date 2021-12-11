@@ -40,11 +40,11 @@ typedef rocrand_status hiprandStatus_t;
 typedef rocrand_generator hiprandGenerator_t;
 
 void hip_check_error();
-void hip_check(hipError_t sucess, std::string message = "");
-void hipblas_check(hipblasStatus_t sucess, std::string message = "");
-void hipsparse_check(hipsparseStatus_t sucess, std::string message = "");
-void hiprand_check(hiprandStatus_t sucess, std::string message = "");
-void hipsolver_check(hipsolverStatus_t sucess, std::string message = "");
+void hip_check(hipError_t success, std::string message = "");
+void hipblas_check(hipblasStatus_t success, std::string message = "");
+void hipsparse_check(hipsparseStatus_t success, std::string message = "");
+void hiprand_check(hiprandStatus_t success, std::string message = "");
+void hipsolver_check(hipsolverStatus_t success, std::string message = "");
 hipblasOperation_t hipblasOperation(char A);
 rocblasOperation_t rocblasOperation(char A);
 hipsparseOperation_t hipsparseOperation(char A);

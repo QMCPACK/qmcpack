@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
-/** Doesn't depend on the resource managment scheme thats out of scope for unit tests */
+/** Doesn't depend on the resource management scheme thats out of scope for unit tests */
 struct CUDAHandles
 {
   // CUDA specific variables

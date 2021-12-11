@@ -878,7 +878,7 @@ private:
   //Cholesky Tensor Lik[i][k][n]
   shmSpRMatrix Likn;
 
-  // permuted half-tranformed Cholesky tensor
+  // permuted half-transformed Cholesky tensor
   // Lnak[ 2*idet + ispin ]
   std::vector<shmSpC3Tensor> Lnak;
 

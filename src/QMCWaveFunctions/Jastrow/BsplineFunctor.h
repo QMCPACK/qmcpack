@@ -278,7 +278,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
    * @param nnum_pairs the number of particle pairs
    * @param ref_at the source particles that should be avoided (self pairs)
    * @param mw_vgl return resutls. Multi walker value, gradient and laplacian [nw][1(v)+DIM(g)+1(l)]
-   * @param dist_stride the offset of distance pointers beween to consecutive walkers
+   * @param dist_stride the offset of distance pointers between to consecutive walkers
    * @param mw_dist Multi walker distance table [nw][1(distance)+DIM(displacements)][n_padded]
    * @param transfer_buffer temporary transfer buffer.
    *

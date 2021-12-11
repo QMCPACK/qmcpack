@@ -671,7 +671,7 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 
     convert4qmc -gamess Myrun.out -hdf5
 
-  This option is only used/usefull with the gamess code as it is the onlycode not providing an HDF5 output
+  This option is only used/useful with the gamess code as it is the onlycode not providing an HDF5 output
   The result will create QMCPACK input files but will also store all key data in the HDF5 format.
 
 - **Mixing orbitals and multideterminants**

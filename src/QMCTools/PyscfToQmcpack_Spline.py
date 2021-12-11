@@ -633,7 +633,7 @@ class InputXml:
      Inputs:
        cell: pyscf.pbc.gto.Cell class, should have lattice_vectors() and unit
        bconds: boundary conditions in each of the x,y,z directions, p for periodic, n for non-periodic, default to 'p p p ' 
-       lr_cut: long-range cutoff paramter rc*kc, default to 15
+       lr_cut: long-range cutoff parameter rc*kc, default to 15
      Output: 
        etree.Element representing <simulationcell>
      Effect:
