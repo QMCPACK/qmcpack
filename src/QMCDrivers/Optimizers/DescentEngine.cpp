@@ -1011,7 +1011,7 @@ void DescentEngine::computeFinalizationUncertainties(std::vector<ValueType>& wei
   // Depending on when this function is called, this will be the uncertainty in
   // the variance
   // of either the energy or the target function.
-  // Which one should be clear from the preceeding print statements in the
+  // Which one should be clear from the preceding print statements in the
   // output file.
   app_log() << "Uncertainty in variance of averaged quantity: " << var_uncertainty << std::endl;
 

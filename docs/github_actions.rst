@@ -6,11 +6,11 @@ Github  Actions  CI   on   QMCPACK
 
 QMCPACK uses GitHub Actions as part of the suite of continuous integration (CI) checks before a pull request can be merged in the main `develop` branch. Github Actions is an event driven automation tool that allows us to automatically execute commands in response to QMCPACK repo related actions. For example, merging a branch into master might then trigger our test scripts to run.
 
-This guide covers the purpose and usual interactions a QMCPACK contributor would have with GitHub Actions CI.  For more information on Github Actions please refer to the offical `Github Actions Docs <https://docs.github.com/en/actions/guides>`_ and our scripts located `here <https://github.com/QMCPACK/qmcpack/tree/develop/tests/test_automation/github-actions/ci>`_.
+This guide covers the purpose and usual interactions a QMCPACK contributor would have with GitHub Actions CI.  For more information on Github Actions please refer to the official `Github Actions Docs <https://docs.github.com/en/actions/guides>`_ and our scripts located `here <https://github.com/QMCPACK/qmcpack/tree/develop/tests/test_automation/github-actions/ci>`_.
 
 Currently we are using GitHub Actions to automatically handle a few different jobs. These jobs are either run on the Github provided build VM's or are pushed to our supplied hardware.  Usually the jobs are only run on our hardware when they require GPU's to run.
 
-Note: This is not necesarily the intended typical way for users to build QMCPACK, please refer to our getting started and other build documentation for that.
+Note: This is not necessarily the intended typical way for users to build QMCPACK, please refer to our getting started and other build documentation for that.
 
 Summary of Test Jobs
 --------------------

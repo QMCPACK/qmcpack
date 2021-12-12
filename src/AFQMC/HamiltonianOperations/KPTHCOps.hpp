@@ -1071,7 +1071,7 @@ protected:
   //Cholesky Tensor Lik[Q][nk][i][k][n]
   std::vector<shmSpMatrix> LQKikn;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKank;
 };
 

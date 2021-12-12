@@ -234,9 +234,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if ((iter != SPOSetMap.end()) && (!NewOcc))
   {
     app_log() << "SPOSet parameters match in EinsplineSetBuilder. cloning EinsplineSet object." << std::endl;
-    app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions "
+    app_warning() << "!!!!!!! Deprecated input style: implicit sharing one SPOSet for spin-up and spin-down electrions "
                      "has been deprecated. Create a single SPO set outside determinantset instead."
-                  << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
+                  << "Use sposet_collection to construct an explicit sposet for explicit sharing." << std::endl;
     auto OrbitalSet = std::unique_ptr<SPOSet>(iter->second->makeClone());
     OrbitalSet->setName("");
     return OrbitalSet;

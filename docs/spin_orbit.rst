@@ -52,7 +52,7 @@ Using the generated single particle spinors, we build the many-body wavefunction
 where we now utilize determinants of spinors, as opposed to the usual product of up and down determinants. An example xml input block for the trial wave function is show below:
 
 .. code-block::
-  :caption: wavefunction specification for a single determinant trial wave funciton
+  :caption: wavefunction specification for a single determinant trial wave function
   :name: slisting1
 
   <?xml version="1.0"?>
