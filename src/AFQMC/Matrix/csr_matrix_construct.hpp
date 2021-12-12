@@ -319,7 +319,7 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q,
 /*
  * Constructs a new csr_matrix from the elements in the container Q. 
  * The global matrix (including all elements in all cores) will be evenly distributed
- * accross the nodes in every task group. No particular stucture will be followed in the
+ * across the nodes in every task group. No particular structure will be followed in the
  * partitioning, only strict distribution of non-zero elements.
  * All TGs will have identical distributions among its nodes. 
  * This approach uses more memory (up to 2 copies of the submatrix), but avoids

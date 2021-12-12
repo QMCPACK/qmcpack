@@ -176,7 +176,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
   // MAM: this is wrong in NONCOLLINEAR, but how do I know what
   // walker type it is right here???
-  // Might need to read dimensions ahead of time from hdf5 file and check consistensy
+  // Might need to read dimensions ahead of time from hdf5 file and check consistency
   // later
   // Also, OneBodyHamiltonian doesn't make much sense now that you have KP classes.
   // Consider refactoring this part of the code...
