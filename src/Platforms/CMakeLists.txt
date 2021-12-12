@@ -16,7 +16,7 @@
 
 # platform_runtime is for host and programming model runtime systems which inclues
 # Device management: device assignement, memory management. Note: CPU is a device
-# Math functions: scalar and vector math funcitons from OS or vendors
+# Math functions: scalar and vector math functions from OS or vendors
 set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp DeviceManager.cpp)
 add_library(platform_runtime ${DEVICE_SRCS})
 target_link_libraries(platform_runtime PUBLIC platform_host_runtime)

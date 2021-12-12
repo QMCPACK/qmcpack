@@ -11,8 +11,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
- * Implements a vector of sequences of diferent sizes.
- * Designed derived from ucsr_matrix. Essentually similar to ucsr_matrix, but
+ * Implements a vector of sequences of different sizes.
+ * Designed derived from ucsr_matrix. Essentially similar to ucsr_matrix, but
  * without a column index.
  */
 #ifndef AFQMC_ARRAY_OF_SEQUENCES_HPP
