@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -x
+HOST_NAME=$(hostname -s)
 
 case "$1" in 
 
@@ -222,6 +223,11 @@ case "$1" in
       echo "Enabling OpenMPI oversubscription"
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
+      if [[ "$HOST_NAME" =~ (sulfur) ]]
+      then
+        echo "Set the management layer to ucx"
+        export OMPI_MCA_pml=ucx
+      fi
     fi 
     
     if [[ "${GH_JOBNAME}" =~ (Clang12-NoMPI-Offload) ]]
