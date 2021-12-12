@@ -83,7 +83,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
-  { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space
+  { // using scope to control lifetime of StaticArrays, avoiding unnecessary buffer space
 
     StaticSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 

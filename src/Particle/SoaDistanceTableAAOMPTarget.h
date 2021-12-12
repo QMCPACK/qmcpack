@@ -212,7 +212,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   /** evaluate the temporary pair relations when a move is proposed
    * this implementation is asynchronous and the synchronization is managed at ParticleSet.
-   * Transfering results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
+   * Transferring results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
    * If the temporary pair distance are consumed on the device directly, the device to host data transfer can be
    * skipped as an optimization.
    */

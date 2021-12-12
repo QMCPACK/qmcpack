@@ -309,7 +309,7 @@ struct SplineSetReader : public BsplineReaderBase
         {
           std::ostringstream msg;
           msg << "SplineSetReader Failed to read band(s) from h5 file. "
-              << "Attemped dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
+              << "Attempted dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
           throw std::runtime_error(msg.str());
         }
         double total_norm = compute_norm(cG);

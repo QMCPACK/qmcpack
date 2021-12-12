@@ -51,11 +51,11 @@ extern cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 extern std::vector<cudaStream_t> afqmc_cuda_streams;
 
 void cuda_check_error();
-void cuda_check(cudaError_t sucess, std::string message = "");
-void cublas_check(cublasStatus_t sucess, std::string message = "");
-void cusparse_check(cusparseStatus_t sucess, std::string message = "");
-void curand_check(curandStatus_t sucess, std::string message = "");
-void cusolver_check(cusolverStatus_t sucess, std::string message = "");
+void cuda_check(cudaError_t success, std::string message = "");
+void cublas_check(cublasStatus_t success, std::string message = "");
+void cusparse_check(cusparseStatus_t success, std::string message = "");
+void curand_check(curandStatus_t success, std::string message = "");
+void cusolver_check(cusolverStatus_t success, std::string message = "");
 cublasOperation_t cublasOperation(char A);
 cusparseOperation_t cusparseOperation(char A);
 

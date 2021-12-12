@@ -41,21 +41,21 @@ cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
 std::vector<cudaStream_t> afqmc_cuda_streams;
 
-void cuda_check(cudaError_t sucess, std::string message)
+void cuda_check(cudaError_t success, std::string message)
 {
-  if (cudaSuccess != sucess)
+  if (cudaSuccess != success)
   {
     std::cerr << message << std::endl;
-    std::cerr << " cudaGetErrorName: " << cudaGetErrorName(sucess) << std::endl;
-    std::cerr << " cudaGetErrorString: " << cudaGetErrorString(sucess) << std::endl;
+    std::cerr << " cudaGetErrorName: " << cudaGetErrorName(success) << std::endl;
+    std::cerr << " cudaGetErrorString: " << cudaGetErrorString(success) << std::endl;
     std::cerr.flush();
     throw std::runtime_error(" Error code returned by cuda. \n");
   }
 }
 
-void cublas_check(cublasStatus_t sucess, std::string message)
+void cublas_check(cublasStatus_t success, std::string message)
 {
-  if (CUBLAS_STATUS_SUCCESS != sucess)
+  if (CUBLAS_STATUS_SUCCESS != success)
   {
     std::cerr << message << std::endl;
     std::cerr.flush();
@@ -63,9 +63,9 @@ void cublas_check(cublasStatus_t sucess, std::string message)
   }
 }
 
-void cusparse_check(cusparseStatus_t sucess, std::string message)
+void cusparse_check(cusparseStatus_t success, std::string message)
 {
-  if (CUSPARSE_STATUS_SUCCESS != sucess)
+  if (CUSPARSE_STATUS_SUCCESS != success)
   {
     std::cerr << message << std::endl;
     std::cerr.flush();
@@ -73,9 +73,9 @@ void cusparse_check(cusparseStatus_t sucess, std::string message)
   }
 }
 
-void curand_check(curandStatus_t sucess, std::string message)
+void curand_check(curandStatus_t success, std::string message)
 {
-  if (CURAND_STATUS_SUCCESS != sucess)
+  if (CURAND_STATUS_SUCCESS != success)
   {
     std::cerr << message << std::endl;
     std::cerr.flush();
@@ -83,9 +83,9 @@ void curand_check(curandStatus_t sucess, std::string message)
   }
 }
 
-void cusolver_check(cusolverStatus_t sucess, std::string message)
+void cusolver_check(cusolverStatus_t success, std::string message)
 {
-  if (CUSOLVER_STATUS_SUCCESS != sucess)
+  if (CUSOLVER_STATUS_SUCCESS != success)
   {
     std::cerr << message << std::endl;
     std::cerr.flush();

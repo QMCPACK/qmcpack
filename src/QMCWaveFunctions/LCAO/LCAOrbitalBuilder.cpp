@@ -491,7 +491,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     // Create a temporary particle set to use for cusp initialization.
-    // The particle coordinates left at the end are unsuitable for futher computations.
+    // The particle coordinates left at the end are unsuitable for further computations.
     // The coordinates get set to nuclear positions, which leads to zero e-N distance,
     // which causes a NaN in SoaAtomicBasisSet.h
     // This problem only appears when the electron positions are specified in the input.

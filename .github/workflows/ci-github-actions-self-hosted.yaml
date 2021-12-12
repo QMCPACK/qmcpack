@@ -34,7 +34,6 @@ jobs:
             Intel19-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
             Intel19-MPI-CUDA-AFQMC-Complex-Mixed,
             Intel19-MPI-CUDA-AFQMC-Real,
-            Intel19-MPI-CUDA-AFQMC-Complex,
           ]
 
     steps:
