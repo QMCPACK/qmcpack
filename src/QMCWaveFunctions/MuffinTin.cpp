@@ -308,14 +308,14 @@ void MuffinTinClass::set_APW(int orbNum,
   ///////////////////////////////////////////////////////////
   Array<std::complex<double>, 1> uvec(num_r);
   double rlast2l = 1.0;
-  int lastr      = u_lm.size(1) - 1;
-  double rlast   = RadialGrid->points[lastr];
+  int last      = u_lm.size(1) - 1;
+  double rlast   = RadialGrid->points[last];
   for (int l = 0; l <= lMax; l++)
   {
     for (int m = -l; m <= l; m++)
     {
       int lm                  = l * (l + 1) + m;
-      std::complex<double> u  = u_lm(lm, lastr);
+      std::complex<double> u  = u_lm(lm, last);
       std::complex<double> du = du_lm_final(lm);
       du_lm_final(lm)         = (1.0 / rlast2l) * (du - (double)l / rlast * u);
     }

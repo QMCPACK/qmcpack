@@ -257,7 +257,7 @@ private:
 
   /** Do complete row updates
    *  many of these const arguments provide pointers or references
-   *  somwhere in here is an update that doesn't get where it belongs resulting in a 0
+   *  somewhere in here is an update that doesn't get where it belongs resulting in a 0
    *  gradient later.
    *  Sad example of OpenMP target code that is far from clear and a poor substitute for a
    *  clear CPU reference implementation.

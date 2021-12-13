@@ -50,7 +50,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walkers        = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-  // This is really a waste the resources can be aquired outside of the run steps loop in VMCD!
+  // This is really a waste the resources can be acquired outside of the run steps loop in VMCD!
   // I don't see an  easy way to measure the release without putting the weight of tons of timer_manager calls in
   // ResourceCollectionTeamLock's constructor.
   timers.resource_timer.start();

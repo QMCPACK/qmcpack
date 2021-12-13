@@ -181,7 +181,7 @@ WalkerElementsRef MCPopulation::spawnWalker()
   else
   {
     app_warning() << "Spawning walker number " << walkers_.size() + 1
-                  << " outside of reserves, this ideally should never happend." << std::endl;
+                  << " outside of reserves, this ideally should never happened." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back())));
 
     // There is no value in doing this here because its going to be wiped out
