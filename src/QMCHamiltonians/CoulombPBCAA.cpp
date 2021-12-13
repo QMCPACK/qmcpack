@@ -29,7 +29,10 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       myConst(0.0),
       ComputeForces(computeForces),
       Ps(ref),
-      d_aa_ID(ref.addTable(ref))
+      d_aa_ID(ref.addTable(ref)),
+      evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
+      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine))
+
 {
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   setEnergyDomain(POTENTIAL);
@@ -438,6 +441,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
 {
+  ScopedTimer local_timer(evalSR_timer_);
   const auto& d_aa(P.getDistTableAA(d_aa_ID));
   mRealType SR = 0.0;
 #pragma omp parallel for reduction(+ : SR)
@@ -464,6 +468,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
 {
+  ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(*(P.SK));
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
