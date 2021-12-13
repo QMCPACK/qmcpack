@@ -346,7 +346,7 @@ public:
         PRAGMA_OFFLOAD(
             "omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
       }
-      // wait for computing and (optional) transfering back to host.
+      // wait for computing and (optional) transferring back to host.
       // It can potentially be moved to ParticleSet to fuse multiple similar taskwait
       PRAGMA_OFFLOAD("omp taskwait")
     }

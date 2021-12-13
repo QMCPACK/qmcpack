@@ -31,9 +31,9 @@ inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnSgetrf_bufferSize(handle, m, n, A, lda, Lwork);
+  cusolverStatus_t success = cusolverDnSgetrf_bufferSize(handle, m, n, A, lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
@@ -43,9 +43,9 @@ inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnCgetrf_bufferSize(handle, m, n, reinterpret_cast<cuComplex*>(A), lda, Lwork);
+  cusolverStatus_t success = cusolverDnCgetrf_bufferSize(handle, m, n, reinterpret_cast<cuComplex*>(A), lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
@@ -55,9 +55,9 @@ inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnDgetrf_bufferSize(handle, m, n, A, lda, Lwork);
+  cusolverStatus_t success = cusolverDnDgetrf_bufferSize(handle, m, n, A, lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
@@ -67,10 +67,10 @@ inline cusolverStatus_t cusolver_getrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnZgetrf_bufferSize(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
@@ -82,9 +82,9 @@ inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
                                        int* devIpiv,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnSgetrf(handle, m, n, A, lda, Work, devIpiv, devInfo);
+  cusolverStatus_t success = cusolverDnSgetrf(handle, m, n, A, lda, Work, devIpiv, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
@@ -96,9 +96,9 @@ inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
                                        int* devIpiv,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnDgetrf(handle, m, n, A, lda, Work, devIpiv, devInfo);
+  cusolverStatus_t success = cusolverDnDgetrf(handle, m, n, A, lda, Work, devIpiv, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
@@ -110,10 +110,10 @@ inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
                                        int* devIpiv,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnCgetrf(handle, m, n, reinterpret_cast<cuComplex*>(A), lda,
+  cusolverStatus_t success = cusolverDnCgetrf(handle, m, n, reinterpret_cast<cuComplex*>(A), lda,
                                              reinterpret_cast<cuComplex*>(Work), devIpiv, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
@@ -125,10 +125,10 @@ inline cusolverStatus_t cusolver_getrf(cusolverDnHandle_t handle,
                                        int* devIpiv,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnZgetrf(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda,
+  cusolverStatus_t success = cusolverDnZgetrf(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda,
                                              reinterpret_cast<cuDoubleComplex*>(Work), devIpiv, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 
@@ -144,9 +144,9 @@ inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
                                        int ldb,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnSgetrs(handle, trans, n, nrhs, A, lda, devIpiv, B, ldb, devInfo);
+  cusolverStatus_t success = cusolverDnSgetrs(handle, trans, n, nrhs, A, lda, devIpiv, B, ldb, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
@@ -160,9 +160,9 @@ inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
                                        int ldb,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnDgetrs(handle, trans, n, nrhs, A, lda, devIpiv, B, ldb, devInfo);
+  cusolverStatus_t success = cusolverDnDgetrs(handle, trans, n, nrhs, A, lda, devIpiv, B, ldb, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
@@ -176,10 +176,10 @@ inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
                                        int ldb,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnCgetrs(handle, trans, n, nrhs, reinterpret_cast<cuComplex const*>(A), lda,
+  cusolverStatus_t success = cusolverDnCgetrs(handle, trans, n, nrhs, reinterpret_cast<cuComplex const*>(A), lda,
                                              devIpiv, reinterpret_cast<cuComplex*>(B), ldb, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
@@ -193,10 +193,10 @@ inline cusolverStatus_t cusolver_getrs(cusolverDnHandle_t handle,
                                        int ldb,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnZgetrs(handle, trans, n, nrhs, reinterpret_cast<cuDoubleComplex const*>(A), lda,
+  cusolverStatus_t success = cusolverDnZgetrs(handle, trans, n, nrhs, reinterpret_cast<cuDoubleComplex const*>(A), lda,
                                              devIpiv, reinterpret_cast<cuDoubleComplex*>(B), ldb, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 //geqrf_bufferSize
@@ -207,9 +207,9 @@ inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnSgeqrf_bufferSize(handle, m, n, A, lda, Lwork);
+  cusolverStatus_t success = cusolverDnSgeqrf_bufferSize(handle, m, n, A, lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
@@ -219,9 +219,9 @@ inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnDgeqrf_bufferSize(handle, m, n, A, lda, Lwork);
+  cusolverStatus_t success = cusolverDnDgeqrf_bufferSize(handle, m, n, A, lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
@@ -231,9 +231,9 @@ inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnCgeqrf_bufferSize(handle, m, n, reinterpret_cast<cuComplex*>(A), lda, Lwork);
+  cusolverStatus_t success = cusolverDnCgeqrf_bufferSize(handle, m, n, reinterpret_cast<cuComplex*>(A), lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
@@ -243,10 +243,10 @@ inline cusolverStatus_t cusolver_geqrf_bufferSize(cusolverDnHandle_t handle,
                                                   int lda,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnZgeqrf_bufferSize(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 //geqrf
@@ -260,9 +260,9 @@ inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
                                        int Lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnSgeqrf(handle, m, n, A, lda, TAU, Workspace, Lwork, devInfo);
+  cusolverStatus_t success = cusolverDnSgeqrf(handle, m, n, A, lda, TAU, Workspace, Lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
@@ -275,9 +275,9 @@ inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
                                        int Lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnDgeqrf(handle, m, n, A, lda, TAU, Workspace, Lwork, devInfo);
+  cusolverStatus_t success = cusolverDnDgeqrf(handle, m, n, A, lda, TAU, Workspace, Lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
@@ -290,11 +290,11 @@ inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
                                        int Lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnCgeqrf(handle, m, n, reinterpret_cast<cuComplex*>(A), lda, reinterpret_cast<cuComplex*>(TAU),
                        reinterpret_cast<cuComplex*>(Workspace), Lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
@@ -307,11 +307,11 @@ inline cusolverStatus_t cusolver_geqrf(cusolverDnHandle_t handle,
                                        int Lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnZgeqrf(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda,
+  cusolverStatus_t success = cusolverDnZgeqrf(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda,
                                              reinterpret_cast<cuDoubleComplex*>(TAU),
                                              reinterpret_cast<cuDoubleComplex*>(Workspace), Lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 
@@ -327,11 +327,11 @@ inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
                                                 int lda,
                                                 int* lwork)
 {
-  cusolverStatus_t sucess = cusolverDnSorgqr_bufferSize(handle, m, n, k, A, lda, A, lwork);
+  cusolverStatus_t success = cusolverDnSorgqr_bufferSize(handle, m, n, k, A, lda, A, lwork);
   // HACK
   //              cusolverDnSorgqr_bufferSize(handle,m,n,k,A,lda,lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
@@ -342,11 +342,11 @@ inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
                                                 int lda,
                                                 int* lwork)
 {
-  cusolverStatus_t sucess = cusolverDnDorgqr_bufferSize(handle, m, n, k, A, lda, A, lwork);
+  cusolverStatus_t success = cusolverDnDorgqr_bufferSize(handle, m, n, k, A, lda, A, lwork);
   // HACK
   //              cusolverDnDorgqr_bufferSize(handle,m,n,k,A,lda,lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
@@ -357,12 +357,12 @@ inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
                                                 int lda,
                                                 int* lwork)
 {
-  cusolverStatus_t sucess = cusolverDnCungqr_bufferSize(handle, m, n, k, reinterpret_cast<cuComplex const*>(A), lda,
+  cusolverStatus_t success = cusolverDnCungqr_bufferSize(handle, m, n, k, reinterpret_cast<cuComplex const*>(A), lda,
                                                         reinterpret_cast<cuComplex const*>(A), lwork);
   // HACK
   //                                          lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
@@ -373,12 +373,12 @@ inline cusolverStatus_t cusolver_gqr_bufferSize(cusolverDnHandle_t handle,
                                                 int lda,
                                                 int* lwork)
 {
-  cusolverStatus_t sucess = cusolverDnZungqr_bufferSize(handle, m, n, k, reinterpret_cast<cuDoubleComplex const*>(A),
+  cusolverStatus_t success = cusolverDnZungqr_bufferSize(handle, m, n, k, reinterpret_cast<cuDoubleComplex const*>(A),
                                                         lda, reinterpret_cast<cuDoubleComplex const*>(A), lwork);
   // HACK
   //                                          lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 //gqr
@@ -393,9 +393,9 @@ inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
                                      int lwork,
                                      int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnSorgqr(handle, m, n, k, A, lda, tau, work, lwork, devInfo);
+  cusolverStatus_t success = cusolverDnSorgqr(handle, m, n, k, A, lda, tau, work, lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
@@ -409,9 +409,9 @@ inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
                                      int lwork,
                                      int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnDorgqr(handle, m, n, k, A, lda, tau, work, lwork, devInfo);
+  cusolverStatus_t success = cusolverDnDorgqr(handle, m, n, k, A, lda, tau, work, lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
@@ -425,11 +425,11 @@ inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
                                      int lwork,
                                      int* devInfo)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnCungqr(handle, m, n, k, reinterpret_cast<cuComplex*>(A), lda, reinterpret_cast<cuComplex const*>(tau),
                        reinterpret_cast<cuComplex*>(work), lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
@@ -443,11 +443,11 @@ inline cusolverStatus_t cusolver_gqr(cusolverDnHandle_t handle,
                                      int lwork,
                                      int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnZungqr(handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A), lda,
+  cusolverStatus_t success = cusolverDnZungqr(handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A), lda,
                                              reinterpret_cast<cuDoubleComplex const*>(tau),
                                              reinterpret_cast<cuDoubleComplex*>(work), lwork, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gqr_strided(cusolverDnHandle_t handle,
@@ -481,11 +481,11 @@ inline cusolverStatus_t cusolver_gqr_strided(cusolverDnHandle_t handle,
   for (int i = 0; i < batchsize; i++)
   {
     qmc_cuda::cusolver_check(cusolverDnSetStream(handle, afqmc_cuda_streams[i]), "cusolverDnSetStream");
-    cusolverStatus_t sucess =
+    cusolverStatus_t success =
         cusolverDnZungqr(handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A) + i * Astride, lda,
                          reinterpret_cast<cuDoubleComplex const*>(tau) + i * tstride,
                          reinterpret_cast<cuDoubleComplex*>(work) + i * lwork, lwork, devInfo + i);
-    qmc_cuda::cusolver_check(sucess, "cusolver_gqr_strided_status");
+    qmc_cuda::cusolver_check(success, "cusolver_gqr_strided_status");
   }
   qmc_cuda::cuda_check(cudaDeviceSynchronize(), "cusolver_gqr_strided_sync");
   qmc_cuda::cuda_check(cudaGetLastError(), "cusolver_gqr_strided_error");
@@ -497,16 +497,16 @@ inline cusolverStatus_t cusolver_gqr_strided(cusolverDnHandle_t handle,
 //gesvd_bufferSize
 inline cusolverStatus_t cusolver_gesvd_bufferSize(cusolverDnHandle_t handle, int m, int n, float* A, int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnSgesvd_bufferSize(handle, m, n, Lwork);
+  cusolverStatus_t success = cusolverDnSgesvd_bufferSize(handle, m, n, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gesvd_bufferSize(cusolverDnHandle_t handle, int m, int n, double* A, int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnDgesvd_bufferSize(handle, m, n, Lwork);
+  cusolverStatus_t success = cusolverDnDgesvd_bufferSize(handle, m, n, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
@@ -515,9 +515,9 @@ inline cusolverStatus_t cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
                                                   std::complex<float>* A,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnCgesvd_bufferSize(handle, m, n, Lwork);
+  cusolverStatus_t success = cusolverDnCgesvd_bufferSize(handle, m, n, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
@@ -526,9 +526,9 @@ inline cusolverStatus_t cusolver_gesvd_bufferSize(cusolverDnHandle_t handle,
                                                   std::complex<double>* A,
                                                   int* Lwork)
 {
-  cusolverStatus_t sucess = cusolverDnZgesvd_bufferSize(handle, m, n, Lwork);
+  cusolverStatus_t success = cusolverDnZgesvd_bufferSize(handle, m, n, Lwork);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 //gesvd
@@ -548,10 +548,10 @@ inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
                                        int lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnSgesvd(handle, jobu, jobvt, m, n, A, lda, S, U, ldu, VT, ldvt, work, lwork, nullptr, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
@@ -570,10 +570,10 @@ inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
                                        int lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnDgesvd(handle, jobu, jobvt, m, n, A, lda, S, U, ldu, VT, ldvt, work, lwork, nullptr, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
@@ -592,11 +592,11 @@ inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
                                        int lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess = cusolverDnCgesvd(handle, jobu, jobvt, m, n, reinterpret_cast<cuComplex*>(A), lda, S,
+  cusolverStatus_t success = cusolverDnCgesvd(handle, jobu, jobvt, m, n, reinterpret_cast<cuComplex*>(A), lda, S,
                                              reinterpret_cast<cuComplex*>(U), ldu, reinterpret_cast<cuComplex*>(VT),
                                              ldvt, reinterpret_cast<cuComplex*>(work), lwork, nullptr, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
@@ -615,12 +615,12 @@ inline cusolverStatus_t cusolver_gesvd(cusolverDnHandle_t handle,
                                        int lwork,
                                        int* devInfo)
 {
-  cusolverStatus_t sucess =
+  cusolverStatus_t success =
       cusolverDnZgesvd(handle, jobu, jobvt, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda, S,
                        reinterpret_cast<cuDoubleComplex*>(U), ldu, reinterpret_cast<cuDoubleComplex*>(VT), ldvt,
                        reinterpret_cast<cuDoubleComplex*>(work), lwork, nullptr, devInfo);
   cudaDeviceSynchronize();
-  return sucess;
+  return success;
 }
 
 } // namespace cusolver

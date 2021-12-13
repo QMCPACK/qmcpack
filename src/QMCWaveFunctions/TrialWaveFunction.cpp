@@ -146,7 +146,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
 
   // due to historic design issue, ParticleSet holds G and L instead of TrialWaveFunction.
   // TrialWaveFunction now also holds G and L to move forward but they need to be copied to P.G and P.L
-  // to be compatiable with legacy use pattern.
+  // to be compatible with legacy use pattern.
   const int num_particles = p_leader.getTotalNum();
   auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
                                           ParticleSet::ParticleLaplacian_t& lapl) {
