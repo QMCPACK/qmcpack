@@ -34,10 +34,10 @@ if(NOT QMC_CUDA)
     else()
       set(complex_flag)
     endif()
-    set(SDIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_param/")
+    set(SDIR "${CMAKE_CURRENT_SOURCE_DIR}")
     # Normally the directory is created by qmc_run_and_check_custom_scalar,
     # but we need to write a file there before that runs
-    set(TDIR "${qmcpack_BINARY_DIR}/tests/molecules/He_param/He_param_grad_load-1-16/")
+    set(TDIR "${CMAKE_CURRENT_BINARY_DIR}")
     file(MAKE_DIRECTORY ${TDIR})
     execute_process(COMMAND ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py ${SDIR}/he_vp_opt.txt ${complex_flag} -o ${TDIR}/he_vp_opt.h5)
 
