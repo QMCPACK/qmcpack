@@ -730,6 +730,11 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(CMAKE_CUDA_EXTENSIONS OFF)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
+    if(NOT TARGET CUDA::cublas)
+      message(FATAL_ERROR "Found an incomplete CUDA toolkit installation. "
+                          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
+                          "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
+    endif()
     # Automatically set the default NVCC flags
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
     if(QMC_COMPLEX)
