@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python3
 import sys
 import numpy as np
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         nm.append(nm_tmp)
 
     nm = np.array(nm)
-    print 'Shape of nm : (num_k,num_s,num_b,num_ks,num_ks) = ' + str(nm.shape)
+    print('Shape of nm : (num_k,num_s,num_b,num_ks,num_ks) = ' + str(nm.shape))
 
     # shape of nmu[k][s] : 200 x 8 x 8
     #   number of basis (bloch states) = 8
