@@ -75,6 +75,16 @@ nscf = generate_pwscf(
     dependencies = (scf,'charge_density'),
     )
 
+pwf = generate_projwfc(
+    identifier      = 'pwf',
+    path            = 'nscf',
+    job             = job(nodes=1,app='projwfc.x',hours=1),
+    lwrite_overlaps = True,
+    lsym            = False,
+    dependencies    = (scf,'other')
+    )
+
+
 #conv = generate_pw2qmcpack(
 #    identifier   = 'conv',
 #    path         = 'diamond/nscf',
@@ -102,15 +112,6 @@ nscf = generate_pwscf(
 #        center        = (0,0,0),
 #        check_overlap = False,
 #        )
-
-#pwf = generate_projwfc(
-#    identifier      = 'pwf',
-#    path            = basepath+'/ccecp_o/scf',
-#    lwrite_overlaps = True,
-#    lsym            = False,
-#    job             = pwfjob,
-#    dependencies    = (scf,'other')
-#    )
 
 #qmc = generate_qmcpack(
 #    identifier   = 'vmc_1rdm_noJ',
