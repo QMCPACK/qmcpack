@@ -31,7 +31,7 @@ dia16 = generate_physical_system(
     pos    = [[ 0.    ,  0.    ,  0.    ],
               [ 0.8925,  0.8925,  0.8925]],
     tiling = (1,1,1),
-    kgrid  = (1,1,1),
+    kgrid  = (2,2,2),
     kshift = (0,0,0),
     C      = 4
     )
@@ -76,31 +76,28 @@ nscf = generate_pwscf(
     dependencies = (scf,'charge_density'),
     )
 
+# To obtain the overlaps between the Bloch states and atomic orbitals,
+# projwfc.x needs to be run. The overlaps will be stored in:
+# pwscf_output/pwscf.save/atomic_proj.xml
+# WARNING: Always check the the <OVERLAPS> element is written to atomic_proj.xml
+#          Sometimes QE will not write <OVERLAPS> if running on >1 core.
 pwf = generate_projwfc(
     identifier      = 'pwf',
     path            = 'nscf',
     job             = job(nodes=1,app='projwfc.x',hours=1),
     lwrite_overlaps = True,
     lsym            = False,
-    dependencies    = (scf,'other')
+    dependencies    = (nscf,'other')
     )
 
-
-#conv = generate_pw2qmcpack(
-#    identifier   = 'conv',
-#    path         = 'diamond/nscf',
-#    job          = job(cores=1,app='pw2qmcpack.x', hours = 1),
-#    write_psir   = False,
-#    dependencies = (nscf,'orbitals'),
-#    )
-
-#conv = generate_pw2qmcpack(
-#    identifier   = 'conv',
-#    path         = 'scf',
-#    job          = p2qjob,
-#    write_psir   = False,
-#    dependencies = (scf,'orbitals'),
-#    )
+# Generate orbital h5 file
+conv = generate_pw2qmcpack(
+    identifier   = 'conv',
+    path         = 'nscf',
+    job          = job(cores=1,app='pw2qmcpack.x',hours=1),
+    write_psir   = False,
+    dependencies = (nscf,'orbitals'),
+    )
 
 ## Define 1RDM Parameters
 #dm_estimator = dm1b(
