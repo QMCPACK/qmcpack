@@ -34,12 +34,14 @@ dia16 = generate_physical_system(
     pos    = [[ 0.    ,  0.    ,  0.    ],
               [ 0.8925,  0.8925,  0.8925]],
     tiling = (1,1,1),
-    kgrid  = (2,2,2),
-    kshift = (0,0,0),
     C      = 4
     )
               
-kg = dia16.structure.kgrid_from_kspacing(0.5) # Get SCF kmesh from k-spacing
+# k-mesh used for density
+scf_kg = dia16.structure.kgrid_from_kspacing(0.5) # Get SCF kmesh from k-spacing
+
+# twist-mesh used for qmc
+dia16.structure.add_symmetrized_kmesh(kgrid=(2,2,2),kshift=(0,0,0))
 
 scf = generate_pwscf(
     identifier   = 'scf',
@@ -117,7 +119,7 @@ dm_estimator = dm1b(
 qmc = generate_qmcpack(
     identifier   = 'vmc_1rdm_noJ',
     path         = 'vmc_1rdm_noJ',
-    job          = job(cores=4,app='qmcpack_complex',hours=1),
+    job          = job(cores=3,app='qmcpack_complex',hours=1),
     input_type   = 'basic',
     system       = dia16,
     pseudos      = ['C.BFD.xml'],
