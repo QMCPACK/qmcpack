@@ -57,7 +57,7 @@ scf = generate_pwscf(
     wf_collect   = False,
     system       = dia16,
     tot_magnetization = 0,
-    kgrid        = kg,
+    kgrid        = scf_kg,
     kshift       = (0,0,0),
     pseudos      = ['C.BFD.upf'],
     )
