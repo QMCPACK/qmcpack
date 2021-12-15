@@ -104,11 +104,11 @@ if __name__ == '__main__':
 
         qa_tmp = []
 
-        qa_tmp_u = QmcpackAnalyzer('runs/kgrid_1x2x2/vmc_1rdm_noJ/vmc_1rdm_noJ.g00'+str(tn)+'.twistnum_'+str(tn)+'.in.xml',verbose=False)
+        qa_tmp_u = QmcpackAnalyzer('runs/vmc_1rdm_noJ/vmc_1rdm_noJ.g00'+str(tn)+'.twistnum_'+str(tn)+'.in.xml',verbose=False)
         qa_tmp_u.analyze()
         qa_tmp.append(qa_tmp_u)
 
-        qa_tmp_d = QmcpackAnalyzer('runs/kgrid_1x2x2/vmc_1rdm_noJ_dwn/vmc_1rdm_noJ_dwn.g00'+str(tn)+'.twistnum_'+str(tn)+'.in.xml',verbose=False)
+        qa_tmp_d = QmcpackAnalyzer('runs/vmc_1rdm_noJ_dwn/vmc_1rdm_noJ_dwn.g00'+str(tn)+'.twistnum_'+str(tn)+'.in.xml',verbose=False)
         qa_tmp_d.analyze()
         qa_tmp.append(qa_tmp_d)
 
