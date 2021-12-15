@@ -17,6 +17,7 @@ from qmcpack_input import sposet
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
+    runs          = 'runs_spin',
     results       = '',
     status_only   = 0,
     generate_only = 0,
@@ -49,10 +50,11 @@ number_of_ks_orbs = 11
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'scf',
-    job          = job(nodes=1,app='pw.x',hours=1),
+    job          = job(cores=1,app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'scf',
-    nspin        = 1,
+    nspin        = 2,
+    tot_magnetization = 0,
     nbnd         = number_of_ks_orbs,
     input_dft    = 'lda',
     ecutwfc      = 200,
@@ -68,12 +70,13 @@ scf = generate_pwscf(
 nscf = generate_pwscf(
     identifier   = 'nscf',
     path         = 'nscf',
-    job          = job(nodes=1,app='pw.x',hours=1),
+    job          = job(cores=1,app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'nscf',
     input_dft    = 'lda',
     ecutwfc      = 200,
-    nspin        = 1,
+    nspin        = 2,
+    tot_magnetization = 0,
     conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
@@ -92,7 +95,7 @@ nscf = generate_pwscf(
 pwf = generate_projwfc(
     identifier      = 'pwf',
     path            = 'nscf',
-    job             = job(nodes=1,app='projwfc.x',hours=1),
+    job             = job(cores=1,app='projwfc.x',hours=1),
     lwrite_overlaps = True,
     lsym            = False,
     dependencies    = (nscf,'other')
@@ -119,6 +122,18 @@ dm_estimator = dm1b(
         check_overlap = False,
         )
 
+down_dm_estimator = dm1b(
+        energy_matrix = False,
+        integrator    = 'uniform_grid',
+        points        = 6,
+        scale         = 1.0,
+        basis         = sposet(type='bspline',size=number_of_ks_orbs,spindataset=1),
+        evaluator     = 'matrix',
+        center        = (0,0,0),
+        check_overlap = False,
+        )
+
+
 qmc = generate_qmcpack(
     identifier   = 'vmc_1rdm_noJ',
     path         = 'vmc_1rdm_noJ',
@@ -141,4 +156,26 @@ qmc = generate_qmcpack(
     dependencies = (conv,'orbitals'),
     )
 
+qmc = generate_qmcpack(
+    identifier   = 'vmc_1rdm_down_noJ',
+    path         = 'vmc_1rdm_down_noJ',
+    job          = job(cores=3,app='qmcpack_complex',hours=1),
+    input_type   = 'basic',
+    system       = dia16,
+    pseudos      = ['C.BFD.xml'],
+    estimators   = [down_dm_estimator],
+    jastrows     = [],
+    calculations = [
+        vmc(
+            walkers     =   1,
+            warmupsteps =  20,
+            blocks      = 200,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
 run_project()
+
