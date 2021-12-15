@@ -49,7 +49,8 @@ scf = generate_pwscf(
     job          = job(nodes=1,app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'scf',
-    nspin        = 2,
+    nspin        = 1,
+    nbnd         = 8,
     input_dft    = 'lda',
     ecutwfc      = 200,
     conv_thr     = 1e-8,
@@ -75,7 +76,7 @@ nscf = generate_pwscf(
     nosym        = True,
     wf_collect   = True,
     system       = dia16,
-    nbnd         = 8,      #a sensible nbnd value can be given
+    nbnd         = 8,
     verbosity    = 'high', #verbosity must be set to high
     pseudos      = ['C.BFD.upf'],
     dependencies = (scf,'charge_density'),
@@ -110,7 +111,7 @@ dm_estimator = dm1b(
         integrator    = 'uniform_grid',
         points        = 6,
         scale         = 1.0,
-        basis         = sposet(type='bspline',size=29,spindataset=0),
+        basis         = sposet(type='bspline',size=8,spindataset=0),
         evaluator     = 'matrix',
         center        = (0,0,0),
         check_overlap = False,
