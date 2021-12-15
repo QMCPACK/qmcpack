@@ -5,6 +5,7 @@ from nexus import job
 from nexus import run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
+from nexus import generate_projwfc
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
 from nexus import vmc
