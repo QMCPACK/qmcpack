@@ -8,6 +8,8 @@ from nexus import generate_pwscf
 from nexus import generate_projwfc
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
+from nexus import dm1b
+from nexus import sposet
 from nexus import vmc
 
 from structure import *
@@ -99,37 +101,38 @@ conv = generate_pw2qmcpack(
     dependencies = (nscf,'orbitals'),
     )
 
-## Define 1RDM Parameters
-#dm_estimator = dm1b(
-#        energy_matrix = False,
-#        integrator    = 'uniform_grid',
-#        points        = 6,
-#        scale         = 1.0,
-#        basis         = sposet(type='bspline',size=29,spindataset=0),
-#        evaluator     = 'matrix',
-#        center        = (0,0,0),
-#        check_overlap = False,
-#        )
+# Define 1RDM Parameters
+dm_estimator = dm1b(
+        energy_matrix = False,
+        integrator    = 'uniform_grid',
+        points        = 6,
+        scale         = 1.0,
+        basis         = sposet(type='bspline',size=29,spindataset=0),
+        evaluator     = 'matrix',
+        center        = (0,0,0),
+        check_overlap = False,
+        )
 
-#qmc = generate_qmcpack(
-#    identifier   = 'vmc_1rdm_noJ',
-#    path         = 'vmc_1rdm_noJ',
-#    job          = qmcjob_default,
-#    input_type   = 'basic',
-#    system       = dia16,
-#    pseudos      = ['C.BFD.xml'],
-#    jastrows     = [],
-#    calculations = [
-#        vmc(
-#            walkers     =   1,
-#            warmupsteps =  20,
-#            blocks      = 200,
-#            steps       =  10,
-#            substeps    =   2,
-#            timestep    =  .4
-#            )
-#        ],
-#    dependencies = (conv,'orbitals'),
-#    )
+qmc = generate_qmcpack(
+    identifier   = 'vmc_1rdm_noJ',
+    path         = 'vmc_1rdm_noJ',
+    job          = job(cores=4,app='qmcpack_complex',hours=1),
+    input_type   = 'basic',
+    system       = dia16,
+    pseudos      = ['C.BFD.xml'],
+    estimators   = [dm_estimator],
+    jastrows     = [],
+    calculations = [
+        vmc(
+            walkers     =   1,
+            warmupsteps =  20,
+            blocks      = 200,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
 
 run_project()
