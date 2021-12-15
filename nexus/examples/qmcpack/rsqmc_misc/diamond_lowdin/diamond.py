@@ -35,7 +35,7 @@ dia16 = generate_physical_system(
     C      = 4
     )
               
-kg = dia.structure.kgrid_from_kspacing(0.5) # Get SCF kmesh from k-spacing
+kg = dia16.structure.kgrid_from_kspacing(0.5) # Get SCF kmesh from k-spacing
 
 scf = generate_pwscf(
     identifier   = 'scf',
