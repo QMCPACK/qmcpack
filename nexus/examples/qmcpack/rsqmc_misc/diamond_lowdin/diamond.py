@@ -8,11 +8,12 @@ from nexus import generate_pwscf
 from nexus import generate_projwfc
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
-from nexus import dm1b
-from nexus import sposet
 from nexus import vmc
 
 from structure import *
+
+from qmcpack_input import dm1b
+from qmcpack_input import sposet
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
