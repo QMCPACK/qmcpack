@@ -776,7 +776,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 {
   app_log() << "========================================================================================\n";
   app_log() << "========================================================================================\n";
-  app_log() << "====================Ion Derivative Test:  Prototype Single Slater+Jastrow===============\n";
+  app_log() << "====================Ion Derivative Test:  Prototype Single Slater+ No Jastrow===========\n";
   app_log() << "========================================================================================\n";
   app_log() << "========================================================================================\n";
   using RealType  = QMCTraits::RealType;
@@ -787,10 +787,11 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   ParticleSet ions;
   ParticleSet elec;
 
+  //Build a CN test molecule.
   create_CN_particlesets(elec, ions);
   //////////////////////////////////
   /////////////////////////////////
-
+  //Incantation to read and build a TWF from cn.wfnoj//
   Libxml2Document doc2;
   bool okay = doc2.parse("cn.wfnoj.xml");
   REQUIRE(okay);
@@ -808,7 +809,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   TrialWaveFunction* psi = wff.getTWF();
   REQUIRE(psi != nullptr);
-
+  //end incantation
 
 //  TWFPrototype twf;
 
@@ -820,7 +821,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-
+  //Incantation to build hamiltonian
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -840,7 +841,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   hf.put(root);
 
   QMCHamiltonian* ham = hf.getH();
-
+  //end incantation
+  
+  //This is already defined in QMCHamiltonian, but keep it here for easy access.
   enum observ_id
   {
     KINETIC = 0,
@@ -853,20 +856,29 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
 
   int IONINDEX = 1;
+ 
+  //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
+  //These matrices are not necessarily square to accomodate orb opt and multidets.  
 
-  ValueMatrix_t upmat;
-  ValueMatrix_t dnmat;
+  ValueMatrix_t upmat; //Up slater matrix.
+  ValueMatrix_t dnmat; //Down slater matrix.
   int Nup=5;  //These are hard coded until the interface calls get implemented/cleaned up.
   int Ndn=4;
   int Norb=14;
   upmat.resize(Nup, Norb);
   dnmat.resize(Ndn, Norb);
 
-  std::vector<ValueMatrix_t> matlist;
-  std::vector<ValueMatrix_t> Bkin;
-  std::vector<ValueMatrix_t> B, M, X;
-  std::vector<std::vector<ValueMatrix_t>> dM;
-  std::vector<std::vector<ValueMatrix_t>> dB;
+  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.  
+  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons. 
+  std::vector<ValueMatrix_t> matlist; //Vector of slater matrices.  
+  std::vector<ValueMatrix_t> B, M, X; //Vector of B matrix, slater matrix (redundant?), and auxiliary X matrix.  
+
+  //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
+  // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
+  // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
+
+  std::vector<std::vector<ValueMatrix_t>> dM; //Derivative of slater matrix.
+  std::vector<std::vector<ValueMatrix_t>> dB; //Derivative of B matrices. 
   matlist.push_back(upmat);
   matlist.push_back(dnmat);
 
@@ -878,10 +890,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dB.push_back(matlist);
   dB.push_back(matlist);
 
-  Bkin.push_back(upmat);
-  Bkin.push_back(dnmat);
-
-  M.push_back(upmat);
+  M.push_back(upmat); //I think this is redundant
   M.push_back(dnmat);
 
   B.push_back(upmat);
@@ -896,8 +905,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
 //  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
+  
   std::vector<ValueMatrix_t> minv;
-  std::vector<ValueMatrix_t> B_gs, M_gs;
+  std::vector<ValueMatrix_t> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations. 
+                                         //These are N_s x N_s square matrices (N_s is number of particles for species s).
   B_gs.push_back(upmat);
   B_gs.push_back(dnmat);
   M_gs.push_back(upmat);
@@ -931,6 +942,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
   dM_gs.push_back(tmp_gs);
+
+  //Finally, we have all the data structures with the right dimensions.  Continue.
 
   ParticleSet::ParticleGradient_t fkin_complex(ions.getTotalNum());
   ParticleSet::ParticlePos_t fkin(ions.getTotalNum());
