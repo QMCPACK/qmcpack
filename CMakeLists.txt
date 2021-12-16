@@ -1050,6 +1050,23 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   endif(RMG_FOUND)
 endif()
 
+#-------------------------------------------------------------------
+# If the timestamp of test_labels.py changes, unset any cached values
+#-------------------------------------------------------------------
+
+file(TIMESTAMP ${qmcpack_SOURCE_DIR}/tests/scripts/test_labels.py TIMESTAMP_TEST_LABELS)
+if(NOT DEFINED CACHE_TIMESTAMP_TEST_LABELS)
+  set(CACHE_TIMESTAMP_TEST_LABELS ${TIMESTAMP_TEST_LABELS} CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables")
+endif()
+if(NOT ${TIMESTAMP_TEST_LABELS} STREQUAL ${CACHE_TIMESTAMP_TEST_LABELS})
+  get_cmake_property(_variableNames VARIABLES)
+  list(FILTER _variableNames INCLUDE REGEX "^TEST_LABELS_*")
+  foreach(_variableName ${_variableNames})
+    unset(${_variableName} CACHE)
+  endforeach()
+  set(CACHE_TIMESTAMP_TEST_LABELS ${TIMESTAMP_TEST_LABELS} CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables" FORCE)
+endif()
+
 ######################################################################
 message(STATUS "Ready to parse QMCPACK source tree")
 ######################################################################
