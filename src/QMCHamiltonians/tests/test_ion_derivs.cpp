@@ -871,7 +871,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.  
   //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons. 
   std::vector<ValueMatrix_t> matlist; //Vector of slater matrices.  
-  std::vector<ValueMatrix_t> B, M, X; //Vector of B matrix, slater matrix (redundant?), and auxiliary X matrix.  
+  std::vector<ValueMatrix_t> B, X; //Vector of B matrix, and auxiliary X matrix.  
 
   //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
   // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
@@ -889,9 +889,6 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dB.push_back(matlist);
   dB.push_back(matlist);
   dB.push_back(matlist);
-
-  M.push_back(upmat); //I think this is redundant
-  M.push_back(dnmat);
 
   B.push_back(upmat);
   B.push_back(dnmat);
