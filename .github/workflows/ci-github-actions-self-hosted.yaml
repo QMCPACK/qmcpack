@@ -25,6 +25,10 @@ jobs:
             GCC8-NoMPI-Legacy-CUDA-Complex-Mixed,
             GCC8-NoMPI-Legacy-CUDA-Real, # full precision
             GCC8-NoMPI-Legacy-CUDA-Complex,
+            GCC8-NoMPI-MKL-Real-Mixed, # mixed precision
+            GCC8-NoMPI-MKL-Complex-Mixed,
+            GCC8-NoMPI-MKL-Real, # full precision
+            GCC8-NoMPI-MKL-Complex,
             GCC8-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
             GCC8-MPI-CUDA-AFQMC-Complex-Mixed,
             GCC8-MPI-CUDA-AFQMC-Real,

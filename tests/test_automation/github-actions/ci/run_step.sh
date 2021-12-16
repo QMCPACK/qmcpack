@@ -190,6 +190,19 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
+      *"GCC8-NoMPI-MKL-"*)
+        echo 'Configure for building with GCC and Intel MKL'
+
+        source /opt/intel2020/mkl/bin/mklvars.sh intel64
+
+        cmake -GNinja \
+              -DBLA_VENDOR=Intel10_64lp \
+              -DQMC_MPI=0 \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"macOS-GCC11-NoMPI-Real"*)
         echo 'Configure for building on macOS using gcc11'
         cmake -GNinja \
@@ -263,6 +276,11 @@ case "$1" in
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
     then
        source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
+    fi
+
+    if [[ "${GH_JOBNAME}" =~ (MKL) ]]
+    then 
+       source /opt/intel2020/mkl/bin/mklvars.sh intel64
     fi
     
     ctest --output-on-failure $TEST_LABEL
