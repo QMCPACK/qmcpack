@@ -105,8 +105,9 @@ jobs:
       github.repository_owner == 'QMCPACK' &&
       github.event.issue.pull_request &&
       ( startsWith(github.event.comment.body, 'Test this please') || 
-        startsWith(github.event.comment.body, 'Start testing in-house') ) &&
-      github.event.cpu-intel64.conclusion == 'success'
+        startsWith(github.event.comment.body, 'Start testing in-house') )
+
+    needs: cpu-intel64
 
     runs-on: [self-hosted, Linux, X64, gpu, cuda]
 
