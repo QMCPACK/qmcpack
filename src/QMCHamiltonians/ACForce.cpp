@@ -96,7 +96,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 
   if (useSpaceWarp_)
   {
-    Force_t el_grad;
+    Forces el_grad;
     el_grad.resize(P.getTotalNum());
     el_grad = 0;
 

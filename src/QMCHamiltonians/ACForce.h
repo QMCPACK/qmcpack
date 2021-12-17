@@ -26,7 +26,7 @@ namespace qmcplusplus
 class ACForce : public OperatorBase
 {
 public:
-  using Force_t = ParticleSet::ParticlePos_t;
+  using Forces = ParticleSet::ParticlePos_t;
 
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
@@ -78,11 +78,11 @@ private:
   IndexType first_force_index_;
 
   ///Temporary Nion x 3 dimensional arrays for force storage.
-  Force_t hf_force_;
-  Force_t pulay_force_;
-  Force_t wf_grad_;
-  Force_t sw_pulay_;
-  Force_t sw_grad_;
+  Forces hf_force_;
+  Forces pulay_force_;
+  Forces wf_grad_;
+  Forces sw_pulay_;
+  Forces sw_grad_;
 
   bool useSpaceWarp_;
 
