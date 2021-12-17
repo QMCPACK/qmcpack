@@ -5,16 +5,15 @@ from testing import execute,text_eq,check_value_eq
 
 
 if versions.h5py_available:
-    def test_density():
+    def test_radial_density():
         import os
 
-        tpath = testing.setup_unit_test_output_directory('qdens-radial','test_density')
+        tpath = testing.setup_unit_test_output_directory('qdens_radial','test_radial_density')
 
-        qdens_exe = testing.executable_path('qdens')
-        qdens_radial_exe = testing.executable_path('qdens-radial')
+        exe = testing.executable_path('qdens-radial')
 
-        qa_files_path = testing.unit_test_file_path('qdens-radial','diamond_twist/vmc')
-        command = 'rsync -a {} {}'.format(qa_files_path,tpath)
+        qr_vmc_files_path = testing.unit_test_file_path('qdens_radial','diamond_twist/vmc')
+        command = 'rsync -a {} {}'.format(qr_vmc_files_path,tpath)
         out,err,rc = execute(command)
         assert(rc==0)
         vmc_path = os.path.join(tpath,'vmc')
@@ -28,144 +27,135 @@ if versions.h5py_available:
         assert(os.path.exists(vmc_infile))
 
         files_bef = '''
-    vmc.err                          vmc.g000.s000.stat.h5            vmc.g001.s000.qmc.xml            vmc.g001.twistnum_1.in.g001.qmc
-    vmc.g002.s000.scalar.dat         vmc.g002.twistnum_2.in.xml       vmc.g003.s000.stat.h5            vmc.in
-    vmc.g000.s000.qmc.xml            vmc.g000.twistnum_0.in.g000.qmc  vmc.g001.s000.scalar.dat         vmc.g001.twistnum_1.in.xml
-    vmc.g002.s000.stat.h5            vmc.g003.s000.qmc.xml            vmc.g003.twistnum_3.in.g003.qmc  vmc.out
-    vmc.g000.s000.scalar.dat         vmc.g000.twistnum_0.in.xml       vmc.g001.s000.stat.h5            vmc.g002.s000.qmc.xml
-    vmc.g002.twistnum_2.in.g002.qmc  vmc.g003.s000.scalar.dat         vmc.g003.twistnum_3.in.xml
+        vmc.avg.s000.SpinDensity_u+d+err.xsf  vmc.avg.s000.SpinDensity_u-d+err.xsf
+        vmc.avg.s000.SpinDensity_u+d-err.xsf  vmc.avg.s000.SpinDensity_u-d-err.xsf
+        vmc.avg.s000.SpinDensity_u+d.xsf      vmc.avg.s000.SpinDensity_u-d.xsf
+        vmc.err                               vmc.g000.twistnum_0.in.xml
+        vmc.g000.s000.scalar.dat              vmc.g001.s000.scalar.dat
+        vmc.g000.twistnum_0.in.g000.qmc       vmc.g001.twistnum_1.in.g001.qmc
+        vmc.g001.twistnum_1.in.xml            vmc.g002.twistnum_2.in.xml
+        vmc.g002.s000.scalar.dat              vmc.g003.s000.scalar.dat
+        vmc.g002.twistnum_2.in.g002.qmc       vmc.g003.twistnum_3.in.g003.qmc
+        vmc.g003.twistnum_3.in.xml            vmc.out
+        vmc.in                                vmc.info.xml
         '''.split()
 
-        assert(check_value_eq(set(os.listdir(vmc_path)),set(files_bef)))
-
-        command = '{0} -a -v -e 4 -f xsf -i {1}/vmc.g000.twistnum_0.in.xml {1}/*stat.h5'.format(qdens_exe,vmc_path)
-
-        print(command)
-        print(set(os.listdir(vmc_path)))
+        qr_dmc_files_path = testing.unit_test_file_path('qdens_radial','diamond_twist/dmc')
+        command = 'rsync -a {} {}'.format(qr_dmc_files_path,tpath)
         out,err,rc = execute(command)
-        print()
-        print()
-        print(set(os.listdir(vmc_path)))
-        quit()
+        assert(rc==0)
+        dmc_path = os.path.join(tpath,'dmc')
+        dmc_infile = os.path.join(dmc_path,'dmc.g000.twistnum_0.in.xml')
+        assert(os.path.exists(dmc_infile))
+        dmc_infile = os.path.join(dmc_path,'dmc.g001.twistnum_1.in.xml')
+        assert(os.path.exists(dmc_infile))
+        dmc_infile = os.path.join(dmc_path,'dmc.g002.twistnum_2.in.xml')
+        assert(os.path.exists(dmc_infile))
+        dmc_infile = os.path.join(dmc_path,'dmc.g003.twistnum_3.in.xml')
+        assert(os.path.exists(dmc_infile))
 
-        files_aft = '''
-            dmc.err                           dmc.s001.stat.h5
-            dmc.in.xml                        dmc.s002.scalar.dat
-            dmc.out                           dmc.s002.SpinDensity_d-err.xsf
-            dmc.s000.scalar.dat               dmc.s002.SpinDensity_d+err.xsf
-            dmc.s000.SpinDensity_d-err.xsf    dmc.s002.SpinDensity_d.xsf
-            dmc.s000.SpinDensity_d+err.xsf    dmc.s002.SpinDensity_u-d-err.xsf
-            dmc.s000.SpinDensity_d.xsf        dmc.s002.SpinDensity_u-d+err.xsf
-            dmc.s000.SpinDensity_u-d-err.xsf  dmc.s002.SpinDensity_u+d-err.xsf
-            dmc.s000.SpinDensity_u-d+err.xsf  dmc.s002.SpinDensity_u+d+err.xsf
-            dmc.s000.SpinDensity_u+d-err.xsf  dmc.s002.SpinDensity_u-d.xsf
-            dmc.s000.SpinDensity_u+d+err.xsf  dmc.s002.SpinDensity_u+d.xsf
-            dmc.s000.SpinDensity_u-d.xsf      dmc.s002.SpinDensity_u-err.xsf
-            dmc.s000.SpinDensity_u+d.xsf      dmc.s002.SpinDensity_u+err.xsf
-            dmc.s000.SpinDensity_u-err.xsf    dmc.s002.SpinDensity_u.xsf
-            dmc.s000.SpinDensity_u+err.xsf    dmc.s002.stat.h5
-            dmc.s000.SpinDensity_u.xsf        dmc.s003.scalar.dat
-            dmc.s000.stat.h5                  dmc.s003.SpinDensity_d-err.xsf
-            dmc.s001.scalar.dat               dmc.s003.SpinDensity_d+err.xsf
-            dmc.s001.SpinDensity_d-err.xsf    dmc.s003.SpinDensity_d.xsf
-            dmc.s001.SpinDensity_d+err.xsf    dmc.s003.SpinDensity_u-d-err.xsf
-            dmc.s001.SpinDensity_d.xsf        dmc.s003.SpinDensity_u-d+err.xsf
-            dmc.s001.SpinDensity_u-d-err.xsf  dmc.s003.SpinDensity_u+d-err.xsf
-            dmc.s001.SpinDensity_u-d+err.xsf  dmc.s003.SpinDensity_u+d+err.xsf
-            dmc.s001.SpinDensity_u+d-err.xsf  dmc.s003.SpinDensity_u-d.xsf
-            dmc.s001.SpinDensity_u+d+err.xsf  dmc.s003.SpinDensity_u+d.xsf
-            dmc.s001.SpinDensity_u-d.xsf      dmc.s003.SpinDensity_u-err.xsf
-            dmc.s001.SpinDensity_u+d.xsf      dmc.s003.SpinDensity_u+err.xsf
-            dmc.s001.SpinDensity_u-err.xsf    dmc.s003.SpinDensity_u.xsf
-            dmc.s001.SpinDensity_u+err.xsf    dmc.s003.stat.h5
-            dmc.s001.SpinDensity_u.xsf
-            '''.split()
+        files_bef = '''
+        dmc.avg.s001.SpinDensity_u+d+err.xsf  dmc.avg.s001.SpinDensity_u-d-err.xsf
+        dmc.avg.s001.SpinDensity_u+d-err.xsf  dmc.avg.s001.SpinDensity_u-d.xsf      
+        dmc.avg.s001.SpinDensity_u+d.xsf      dmc.err                               
+        dmc.avg.s001.SpinDensity_u-d+err.xsf  dmc.g000.s000.scalar.dat              
+        dmc.g000.s001.scalar.dat              dmc.g001.s001.scalar.dat       
+        dmc.g000.twistnum_0.in.g000.qmc       dmc.g001.twistnum_1.in.g001.qmc
+        dmc.g000.twistnum_0.in.xml            dmc.g001.twistnum_1.in.xml     
+        dmc.g001.s000.scalar.dat              dmc.g002.s000.scalar.dat       
+        dmc.g002.s001.scalar.dat              dmc.g003.s001.scalar.dat       
+        dmc.g002.twistnum_2.in.g002.qmc       dmc.g003.twistnum_3.in.g003.qmc
+        dmc.g002.twistnum_2.in.xml            dmc.g003.twistnum_3.in.xml
+        dmc.g003.s000.scalar.dat              dmc.in
+        dmc.out
+        '''.split()
 
-        assert(check_value_eq(set(os.listdir(dmc_path)),set(files_aft),verbose=True))
+        assert(check_value_eq(set(os.listdir(dmc_path)),set(files_bef)))
 
-        tot_file = os.path.join(dmc_path,'dmc.s003.SpinDensity_u+d.xsf')
-        pol_file = os.path.join(dmc_path,'dmc.s003.SpinDensity_u-d.xsf')
+        # VMC non-cumulative
+        command = '{0} -s C -r 0.6 {1}/vmc.avg.s000.SpinDensity_u+d.xsf'.format(exe,vmc_path)
+        out,err,rc = execute(command)
 
-        tot = open(tot_file,'r').read()
-        pol = open(pol_file,'r').read()
+        # Assert that return code is 0
+        assert(rc==0)
 
-        tot_ref = '''
-             CRYSTAL
-             PRIMVEC 
-                 1.78500000   1.78500000   0.00000000
-                -0.00000000   1.78500000   1.78500000
-                 1.78500000  -0.00000000   1.78500000
-             PRIMCOORD 
-               2 1
-                 6   0.00000000   0.00000000   0.00000000
-                 6   0.89250000   0.89250000   0.89250000
-             BEGIN_BLOCK_DATAGRID_3D
-               density
-               BEGIN_DATAGRID_3D_density
-                 4 4 4
-                 0.59500000   0.59500000   0.59500000
-                 1.78500000   1.78500000   0.00000000
-                -0.00000000   1.78500000   1.78500000
-                 1.78500000  -0.00000000   1.78500000
-                   0.73126076   0.62407496   0.51676366   0.73126076
-                   0.62575089   0.19225114   0.18686389   0.62575089
-                   0.51847569   0.18457799   0.42203355   0.51847569
-                   0.73126076   0.62407496   0.51676366   0.73126076
-                   0.62659840   0.19325900   0.18422995   0.62659840
-                   0.19219866   0.04873728   0.13184395   0.19219866
-                   0.18474638   0.13013188   0.10227670   0.18474638
-                   0.62659840   0.19325900   0.18422995   0.62659840
-                   0.51793019   0.18615766   0.41806405   0.51793019
-                   0.18425005   0.13092538   0.10088238   0.18425005
-                   0.41967003   0.10133434   0.14471118   0.41967003
-                   0.51793019   0.18615766   0.41806405   0.51793019
-                   0.73126076   0.62407496   0.51676366   0.73126076
-                   0.62575089   0.19225114   0.18686389   0.62575089
-                   0.51847569   0.18457799   0.42203355   0.51847569
-                   0.73126076   0.62407496   0.51676366   0.73126076
-               END_DATAGRID_3D_density
-             END_BLOCK_DATAGRID_3D
-            '''
+        # Assert that output is consistent with reference
+        out_ref = '''
+Norm:   tot             = 8.00000003
 
-        pol_ref = '''
-             CRYSTAL
-             PRIMVEC 
-                 1.78500000   1.78500000   0.00000000
-                -0.00000000   1.78500000   1.78500000
-                 1.78500000  -0.00000000   1.78500000
-             PRIMCOORD 
-               2 1
-                 6   0.00000000   0.00000000   0.00000000
-                 6   0.89250000   0.89250000   0.89250000
-             BEGIN_BLOCK_DATAGRID_3D
-               density
-               BEGIN_DATAGRID_3D_density
-                 4 4 4
-                 0.59500000   0.59500000   0.59500000
-                 1.78500000   1.78500000   0.00000000
-                -0.00000000   1.78500000   1.78500000
-                 1.78500000  -0.00000000   1.78500000
-                   0.00106753   0.00015792  -0.00122859   0.00106753
-                  -0.00003402   0.00018762  -0.00051347  -0.00003402
-                   0.00154254   0.00067654   0.00073434   0.00154254
-                   0.00106753   0.00015792  -0.00122859   0.00106753
-                   0.00263956   0.00079744  -0.00118289   0.00263956
-                  -0.00039348  -0.00026396  -0.00069392  -0.00039348
-                   0.00087929   0.00000719   0.00113934   0.00087929
-                   0.00263956   0.00079744  -0.00118289   0.00263956
-                  -0.00013655  -0.00041508  -0.00235212  -0.00013655
-                   0.00003805  -0.00025962  -0.00133495   0.00003805
-                   0.00040692   0.00051699  -0.00198263   0.00040692
-                  -0.00013655  -0.00041508  -0.00235212  -0.00013655
-                   0.00106753   0.00015792  -0.00122859   0.00106753
-                  -0.00003402   0.00018762  -0.00051347  -0.00003402
-                   0.00154254   0.00067654   0.00073434   0.00154254
-                   0.00106753   0.00015792  -0.00122859   0.00106753
-               END_DATAGRID_3D_density
-             END_BLOCK_DATAGRID_3D
-            '''
+Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.773264912162242
+'''
+        assert(text_eq(out,out_ref))
 
-        assert(text_eq(tot,tot_ref,atol=1e-7))
-        assert(text_eq(pol,pol_ref,atol=1e-7))
-    #end def test_density
+        # VMC cumulative
+        command = '{0} -s C -r 0.6 -c {1}/vmc.avg.s000.SpinDensity_u+d.xsf'.format(exe,vmc_path)
+        out,err,rc = execute(command)
+
+        # Assert that return code is 0
+        assert(rc==0)
+
+        # Assert that output is consistent with reference
+        out_ref = '''
+Norm:   tot             = 8.00000003
+
+Cumulative Value of C Species at Cutoff 0.6 is: 1.0684248641866259
+'''
+
+        # DMC extrapolated non-cumulative
+        command = '{0} -s C -r 0.6 --vmc={1}/vmc.avg.s000.SpinDensity_u+d.xsf {2}/dmc.avg.s001.SpinDensity_u+d.xsf'.format(exe,vmc_path,dmc_path)
+        out,err,rc = execute(command)
+
+        # Assert that return code is 0
+        assert(rc==0)
+
+        # Assert that output is consistent with reference
+        out_ref = '''
+Extrapolating from VMC and DMC densities...
+
+Norm:   tot             = 7.999999969999998
+
+Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.910093964664309
+'''
+        assert(text_eq(out,out_ref))
+
+        # DMC extrapolated cumulative
+        command = '{0} -s C -r 0.6 -c --vmc={1}/vmc.avg.s000.SpinDensity_u+d.xsf {2}/dmc.avg.s001.SpinDensity_u+d.xsf'.format(exe,vmc_path,dmc_path)
+        out,err,rc = execute(command)
+
+        # Assert that return code is 0
+        assert(rc==0)
+
+        # Assert that output is consistent with reference
+        out_ref = '''
+Extrapolating from VMC and DMC densities...
+
+Norm:   tot             = 7.999999969999998
+
+Cumulative Value of C Species at Cutoff 0.6 is: 1.1078267486386275
+'''
+        assert(text_eq(out,out_ref))
+
+
+        # DMC extrapolated cumulative with error bar
+        command = '{0} -s C -r 0.6 -c -n 3 --seed=0 --vmc={1}/vmc.avg.s000.SpinDensity_u+d.xsf --vmcerr={1}/vmc.avg.s000.SpinDensity_u+d+err.xsf --dmcerr={2}/dmc.avg.s001.SpinDensity_u+d+err.xsf {2}/dmc.avg.s001.SpinDensity_u+d.xsf'.format(exe,vmc_path,dmc_path)
+        out,err,rc = execute(command)
+
+        # Assert that return code is 0
+        assert(rc==0)
+
+        # Assert that output is consistent with reference
+        out_ref = '''
+Extrapolating from VMC and DMC densities...
+Resampling to obtain error bar (NOTE: This can be slow)...
+Will compute 3 samples...
+sample: 0
+sample: 1
+sample: 2
+
+Norm:   tot             = 7.999999969999998
+
+Cumulative Value of C Species at Cutoff 0.6 is: 1.1078267486386275+/-0.0016066467833404942
+'''
+        assert(text_eq(out,out_ref))
+    #end def test_radial_density
 #end if
