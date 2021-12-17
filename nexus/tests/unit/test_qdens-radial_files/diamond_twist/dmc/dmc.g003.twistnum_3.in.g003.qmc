@@ -1,4 +1,4 @@
-  Input file(s): vmc.g000.twistnum_0.in.xml vmc.g001.twistnum_1.in.xml vmc.g002.twistnum_2.in.xml vmc.g003.twistnum_3.in.xml 
+  Input file(s): dmc.g000.twistnum_0.in.xml dmc.g001.twistnum_1.in.xml dmc.g002.twistnum_2.in.xml dmc.g003.twistnum_3.in.xml 
 
 =====================================================
                     QMCPACK 3.11.9
@@ -31,10 +31,10 @@
   CPU only build
   Timer build option is enabled. Current timer level is coarse
 
-  Input XML = vmc.g003.twistnum_3.in.xml
+  Input XML = dmc.g003.twistnum_3.in.xml
 
-  Project = vmc
-  date    = 2021-12-17 13:04:35 EST
+  Project = dmc
+  date    = 2021-12-17 13:12:37 EST
   host    = WorkshopVBX
 
   hamiltonian has MPC. Will read density if it is found.
@@ -42,9 +42,9 @@
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 307
+  Offset for the random number seeds based on time: 789
 
-  Range of prime numbers to use as seeds over processors and threads = 2039-2293
+  Range of prime numbers to use as seeds over processors and threads = 6067-6323
 
 
  Lattice
@@ -147,8 +147,8 @@ Atom type(1) = 6
   Read 29363 density G-vectors.
   EinsplineSetBuilder found density in the HDF5 file.
   Read 0 VHXC G-vectors.
-TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0252321660
-TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0000009320
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0263253990
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0000005960
 Found 4 distinct supercell twists.
 number of things
 4
@@ -180,10 +180,10 @@ Maxmimum number of Gvecs 3992
   vs input meshsize=                44                44                40
 MEMORY 2 MB allocated for the coefficients in 3D spline orbital representation
 Start transforming plane waves to 3D B-Splines.
-  Time to gather the table = 0.0000034520
-  Time to bcast the table = 0.0000002160
-  SplineSetReader initialize_spline_pio 0.4510520990 sec
-Time spent in creating B-spline SPOs 0.4588554400sec
+  Time to gather the table = 0.0000026530
+  Time to bcast the table = 0.0000003200
+  SplineSetReader initialize_spline_pio 0.4481646210 sec
+Time spent in creating B-spline SPOs 0.4559096400sec
 
    Single Slater determinant
    -------------------------
@@ -354,7 +354,7 @@ QMCHamiltonian::addOperatorType added type chiesa named KEcorr
     54 to P::Collectables 
     starting Index of the observables in P::PropertyList = 9
 ParticleSetPool::randomize 0 ParticleSets.
-  Initialization Execution time = 4.9958e+00 secs
+  Initialization Execution time = 2.7721e+00 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -362,14 +362,14 @@ ParticleSetPool has:
 
   ParticleSet 'e' contains 8 particles :  u(4) d(4)
 
-    u  3.7133638321e+00  5.0756283221e+00  3.7001793736e+00
-    u  2.8829061313e+00  4.3696068617e+00  4.8715596902e+00
-    u  2.6819331834e+00  1.0850866185e+00  2.2891240874e+00
-    u  4.0227294919e+00  5.0252632828e+00  5.0510567239e+00
-    d  3.7066071802e+00  3.5140990981e+00  5.7826779895e+00
-    d  1.2055207372e+00  1.2768186022e-01  1.2295325765e+00
-    d  4.4799623922e+00  2.2035192419e+00  3.3606406266e+00
-    d  4.2493540886e+00  4.7310598708e+00  3.5430730648e+00
+    u  2.7465312655e+00  4.0843595851e+00  3.6180045596e+00
+    u  3.0428030599e+00  3.0066824837e+00  2.8657845096e+00
+    u  3.0895058024e+00  3.7634226794e+00  3.5293649998e+00
+    u  1.7813535923e+00  3.4823569042e+00  4.6705715617e+00
+    d  1.8422995898e+00  3.1258694335e+00  4.6171798243e+00
+    d  4.7827460063e+00  4.3032328992e+00  4.5991285122e+00
+    d  1.8135210896e+00  2.3710213025e+00  4.0439179824e+00
+    d  4.9614063319e+00  4.6231669199e+00  5.1047450858e+00
 
   Distance table for similar particles (A-A):
     source/target: e
@@ -403,7 +403,7 @@ ParticleSetPool has:
 
 =========================================================
   Start VMC
-  File Root vmc.g003.s000 append = no 
+  File Root dmc.g003.s000 append = no 
 =========================================================
 Resetting walkers
   Adding 8 walkers to 0 existing sets
@@ -414,31 +414,31 @@ Resetting walkers
 <vmc function="put">
   qmc_counter=0  my_counter=0
   time step      = 3.0000000000e-01
-  blocks         = 100
-  steps          = 50
+  blocks         = 10
+  steps          = 26
   substeps       = 3
   current        = 0
-  target samples = 0.0000000000e+00
+  target samples = 2.0480000000e+03
   walkers/mpi    = 8
 
-  stepsbetweensamples = 5050
-<parameter name="blocks">100</parameter>
+  stepsbetweensamples = 1
+<parameter name="blocks">10</parameter>
 <parameter name="blocks_between_recompute">0</parameter>
 <parameter name="check_properties">100</parameter>
 <parameter name="checkproperties">100</parameter>
 <parameter name="current">0</parameter>
-<parameter name="dmcwalkersperthread">0.0000000000e+00</parameter>
+<parameter name="dmcwalkersperthread">2.5600000000e+02</parameter>
 <parameter name="max_seconds">360000</parameter>
 <parameter name="maxcpusecs">360000</parameter>
 <parameter name="record_configs">0</parameter>
-<parameter name="record_walkers">5050</parameter>
+<parameter name="record_walkers">1</parameter>
 <parameter name="recordconfigs">0</parameter>
-<parameter name="recordwalkers">5050</parameter>
-<parameter name="samples">0.0000000000e+00</parameter>
-<parameter name="samplesperthread">0.0000000000e+00</parameter>
+<parameter name="recordwalkers">1</parameter>
+<parameter name="samples">2.0480000000e+03</parameter>
+<parameter name="samplesperthread">2.5600000000e+02</parameter>
 <parameter name="spinmass">1.0000000000e+00</parameter>
-<parameter name="steps">50</parameter>
-<parameter name="stepsbetweensamples">5050</parameter>
+<parameter name="steps">26</parameter>
+<parameter name="stepsbetweensamples">1</parameter>
 <parameter name="store_configs">0</parameter>
 <parameter name="storeconfigs">0</parameter>
 <parameter name="sub_steps">3</parameter>
@@ -449,10 +449,10 @@ Resetting walkers
 <parameter name="use_drift">yes</parameter>
 <parameter name="usedrift">yes</parameter>
 <parameter name="walkers">8</parameter>
-<parameter name="warmup_steps">50</parameter>
-<parameter name="warmupsteps">50</parameter>
+<parameter name="warmup_steps">8</parameter>
+<parameter name="warmupsteps">8</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 5050 steps.
+  Walker Samples are dumped every 1 steps.
 </vmc>
   Set drift_modifier UNR parameter a = 1.0000000000e+00
   Adding a default LocalEnergyEstimator for the MainEstimator 
@@ -462,27 +462,27 @@ Resetting walkers
 =========================================================
 --- Memory usage report : Memory Usage before cloning ---
 =========================================================
-Available memory on node 0, free + buffers :    2241 MiB
-Memory footprint by rank 0 on node 0       :     559 MiB
+Available memory on node 0, free + buffers :    2226 MiB
+Memory footprint by rank 0 on node 0       :     560 MiB
 =========================================================
 ========================================================
 --- Memory usage report : Memory Usage after cloning ---
 ========================================================
-Available memory on node 0, free + buffers :    2239 MiB
-Memory footprint by rank 0 on node 0       :     559 MiB
+Available memory on node 0, free + buffers :    2223 MiB
+Memory footprint by rank 0 on node 0       :     560 MiB
 ========================================================
   Initial partition of walkers 0 1 2 3 4 5 6 7 8 
 
   Using Particle by Particle moves
   Walker moves with drift
-  Total Sample Size   =0
+  Total Sample Size   =2048
   Walker distribution on root = 0 1 2 3 4 5 6 7 8 
   Using Locality Approximation
 ========================================================================
 --- Memory usage report : Memory Usage after the buffer registration ---
 ========================================================================
-Available memory on node 0, free + buffers :    2233 MiB
-Memory footprint by rank 0 on node 0       :     559 MiB
+Available memory on node 0, free + buffers :    2217 MiB
+Memory footprint by rank 0 on node 0       :     560 MiB
 ========================================================================
   Anonymous Buffer size per walker : 20128 Bytes.
 MEMORY increase 0 MB VMC::resetRun
@@ -490,18 +490,103 @@ MEMORY increase 0 MB VMC::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.3
-    reference energy   = -11.8175
-    reference variance = 0.294209
+    reference energy   = -11.842
+    reference variance = 0.275764
 ====================================================
-  QMC Execution time = 1.8875e+01 secs
-  Total Execution time = 1.8878e+01 secs
+  QMC Execution time = 1.0663e+00 secs
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001100 0000001100
+ iParam (old):                  8                 1                 0              2048                 8                 8                 1                 0
+ iParam (new):                 80                 1                 0              2048                 8                 8                 1                 0
+ vParam (old):   3.0000000000e-01  3.0000000000e-01 -1.1842002414e+01 -1.1842002414e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  2.7576377214e-01 -1.1842002414e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00
+ vParam (new):   5.0000000000e-03  3.0000000000e-01 -1.1842002414e+01 -1.1842002414e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  2.7576377214e-01 -1.1842002414e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00
 
 =========================================================
-  A new xml input file : vmc.g003.s000.cont.xml
+  Start DMC
+  File Root dmc.g003.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 16
+  Set drift_modifier UNR parameter a = 1.0000000000e+00
+  Cannot make clones again. Use existing 8 clones
+  Total number of walkers: 2.0480000000e+03
+  Total weight: 2.0480000000e+03
+  Creating WalkerController: target  number of walkers = 2048
+  Using WalkerControlBase for dynamic population control.
+  START ALL OVER 
+  WalkerControlBase parameters 
+    maxCopy = 2
+    Max Walkers per MPI rank 4097
+    Min Walkers per MPI rank 410
+    Using non-blocking send/recv
+  QMC counter      = 1
+  time step        = 5.0000000000e-03
+  effective time step = 5.0000000000e-03
+  trial energy     = -1.1842002414e+01
+  reference energy = -1.1842002414e+01
+  Feedback = 1.0000000000e+00
+  reference variance = 2.7576377214e-01
+  target walkers = 2048
+  branching cutoff scheme classic
+  branch cutoff = 5.0000000000e+01 7.5000000000e+01
+  Max and minimum walkers per node= 4097 410
+  QMC Status (BranchMode) = 0000001101
+Using DMCUpdatePbyPWithRejectionFast
+  Initial partition of walkers on a node: 0 256 512 768 1024 1280 1536 1792 2048 
+  Updates by particle-by-particle moves
+  DMC moves are rejected when a node crossing is detected
+  Using Locality Approximation
+========================================================================
+--- Memory usage report : Memory Usage after the buffer registration ---
+========================================================================
+Available memory on node 0, free + buffers :    1933 MiB
+Memory footprint by rank 0 on node 0       :     560 MiB
+========================================================================
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -11.842
+  Energy Variance = 0.275764
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 4
+  Number of blocks = 200
+
+  DMC Engine Initialization = 8.4196881300e-01 secs
+
+ Warmup is completed after 80
+
+  TauEff     = 4.9883272959e-03
+ TauEff/Tau = 9.9766545918e-01
+  Etrial     = -1.1864054721e+01
+ Running average of energy = -1.1849141502e+01
+                  Variance = 2.8293379644e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 1
+    time step                     = 0.005
+    effective time step           = 0.00498826
+    trial energy                  = -11.877
+    reference energy              = -11.8721
+    reference variance            = 0.282934
+    target walkers                = 2048
+    branch cutoff                 = 10 15
+    Max and minimum walkers per node= 4097 410
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 7.2590e+02 secs
+  Total Execution time = 7.2697e+02 secs
+
+=========================================================
+  A new xml input file : dmc.g003.s001.cont.xml
 
 Use --enable-timers=<value> command line option to increase or decrease level of timing information
 Stack timer profile
 Timer      Inclusive_time  Exclusive_time  Calls       Time_per_call
-Total        23.9493     0.0003              1      23.949327019
-  Startup     5.0710     5.0710              1       5.070990845
-  VMC        18.8781    18.8781              1      18.878075166
+Total       729.7384     0.0001              1     729.738374459
+  DMC       725.8990   725.8990              1     725.899000985
+  Startup     2.7722     2.7722              1       2.772218360
+  VMC         1.0670     1.0670              1       1.067010587
