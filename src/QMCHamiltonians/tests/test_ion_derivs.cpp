@@ -91,6 +91,33 @@ void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
   elec.addTable(ions);
   elec.update();
 }
+//Takes a HamiltonianFactory and handles the XML I/O to get a QMCHamiltonian pointer.  For CN molecule with pseudopotentials.
+QMCHamiltonian* create_CN_Hamiltonian(HamiltonianFactory& hf)
+{
+  //Incantation to build hamiltonian
+//  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+
+  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
+         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
+         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
+         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
+           <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
+           <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
+         </pairpot> \
+         </hamiltonian>";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(hamiltonian_xml);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+  hf.put(root);
+
+  QMCHamiltonian* ham = hf.getH();
+  //end incantation
+  
+  return ham;
+}
 
 TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 {
@@ -119,22 +146,6 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
-           <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
-           <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
-         </pairpot> \
-         </hamiltonian>";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  hf.put(root);
-
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfnoj.xml");
   REQUIRE(wfokay);
@@ -158,8 +169,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-14.233853149));
 
-  QMCHamiltonian* ham = hf.getH();
-
+  QMCHamiltonian* ham = create_CN_Hamiltonian(hf);
   RealType eloc = ham->evaluateDeterministic(elec);
   enum observ_id
   {
@@ -305,22 +315,6 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
-           <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
-           <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
-         </pairpot> \
-         </hamiltonian>";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  hf.put(root);
-
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfj.xml");
   REQUIRE(wfokay);
@@ -343,7 +337,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-8.9455094611e+00));
 
-  QMCHamiltonian* ham = hf.getH();
+  QMCHamiltonian* ham = create_CN_Hamiltonian(hf);
 
   RealType eloc = ham->evaluateDeterministic(elec);
   enum observ_id
@@ -489,22 +483,6 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
-           <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
-           <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
-         </pairpot> \
-         </hamiltonian>";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  hf.put(root);
-
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
   REQUIRE(wfokay);
@@ -527,7 +505,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-1.41149961982e+01));
 
-  QMCHamiltonian* ham = hf.getH();
+  QMCHamiltonian* ham = create_CN_Hamiltonian(hf);
 
   RealType eloc = ham->evaluateDeterministic(elec);
   enum observ_id
@@ -644,22 +622,6 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
-           <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
-           <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
-         </pairpot> \
-         </hamiltonian>";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  hf.put(root);
-
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
   REQUIRE(wfokay);
@@ -683,7 +645,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   REQUIRE(logpsi == Approx(-8.69329994846e+00));
 
-  QMCHamiltonian* ham = hf.getH();
+  QMCHamiltonian* ham = create_CN_Hamiltonian(hf);
 
   RealType eloc = ham->evaluateDeterministic(elec);
   enum observ_id
@@ -821,27 +783,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-  //Incantation to build hamiltonian
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-         <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
-           <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
-           <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
-         </pairpot> \
-         </hamiltonian>";
-
-  Libxml2Document doc;
-  okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  hf.put(root);
-
-  QMCHamiltonian* ham = hf.getH();
-  //end incantation
+  QMCHamiltonian* ham = create_CN_Hamiltonian(hf);
   
   //This is already defined in QMCHamiltonian, but keep it here for easy access.
   enum observ_id
