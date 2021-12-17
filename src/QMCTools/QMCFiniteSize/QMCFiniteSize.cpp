@@ -5,9 +5,6 @@
 #include <cmath>
 #include "Configuration.h"
 #include "einspline/bspline_eval_d.h"
-#include "einspline/nubspline_eval_d.h"
-#include "einspline/nugrid.h"
-#include "einspline/nubspline_create.h"
 #include "QMCTools/QMCFiniteSize/FSUtilities.h"
 #include "Utilities/RandomGenerator.h"
 

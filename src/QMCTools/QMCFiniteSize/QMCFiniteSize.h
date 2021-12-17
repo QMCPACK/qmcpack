@@ -6,7 +6,6 @@
 #include "Particle/ParticleSetPool.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "einspline/bspline_structs.h"
-#include "einspline/nubspline_structs.h"
 
 namespace qmcplusplus
 {
