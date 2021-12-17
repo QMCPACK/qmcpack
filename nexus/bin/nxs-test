@@ -1627,6 +1627,10 @@ def qdens():
 #end def qdens
 
 
+def qdens_radial():
+    nunit_all()
+#end def qdens
+
 
 def qmca():
     nunit('help')
@@ -1968,6 +1972,7 @@ NexusTest( nxs_sim                         )
 NexusTest( qmca                            )
 NexusTest( qmc_fit                         )
 NexusTest( qdens                           )
+NexusTest( qdens_radial                    )
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
