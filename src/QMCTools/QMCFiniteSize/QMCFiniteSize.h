@@ -6,7 +6,6 @@
 #include "Particle/ParticleSetPool.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "einspline/bspline_structs.h"
-#include "einspline/nubspline_structs.h"
 
 namespace qmcplusplus
 {
@@ -42,8 +41,8 @@ public:
   UBspline_3d_d* getSkSpline(vector<RealType> sk, RealType limit = 1.0);
   RealType sphericalAvgSk(UBspline_3d_d* spline, RealType k);
 
-  RealType integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N);
-  NUBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
+  RealType integrate_spline(UBspline_1d_d* spline, RealType a, RealType b, IndexType N);
+  UBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
 
   void initialize();
   void calcPotentialCorrection();
