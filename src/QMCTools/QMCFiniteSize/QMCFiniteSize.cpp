@@ -328,6 +328,7 @@ UBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
 //provided your delta is smaller than the smallest bspline mesh spacing.
 // JPT 13/03/2018 - Fixed an intermittant segfault that occurred b/c
 //                  eval_NUB_spline_1d_d sometimes went out of bounds.
+// #3677 changed NUBspline to UBspline.
 QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(UBspline_1d_d* spline, RealType a, RealType b, IndexType N)
 {
   if (N % 2 != 0) // if N odd, warn that destruction is imminent
@@ -338,7 +339,7 @@ QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(UBspline_1d_d* spline, R
 
   RealType eps         = (b - a) / RealType(N);
   RealType sum         = 0.0;
-  FullPrecRealType tmp = 0.0; //hack to interface to NUBspline_1d_d
+  FullPrecRealType tmp = 0.0; //hack to interface to UBspline_1d_d
   RealType xi          = 0.0;
   for (int i = 1; i < N / 2; i++)
   {
