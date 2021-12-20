@@ -85,6 +85,7 @@ Norm:   tot             = 8.00000003
 
 Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.773264912162242
 '''
+        print(out)
         assert(text_eq(out,out_ref))
 
         # VMC cumulative
