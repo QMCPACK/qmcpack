@@ -46,7 +46,7 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   const int ee_Table_ID_;
   ///table index for i-el
   const int ei_Table_ID_;
-  //nuber of particles
+  //number of particles
   int Nelec, Nion;
   ///number of particles + padded
   size_t Nelec_padded;
