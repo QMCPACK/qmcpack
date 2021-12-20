@@ -51,6 +51,8 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(qmcfinitesize qmcparticle qmcutil)
 endif()
 
+configure_file(gpaw4qmcpack ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpaw4qmcpack COPYONLY)
+
 install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize
         RUNTIME DESTINATION bin)
 
