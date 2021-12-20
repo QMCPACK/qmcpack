@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "SOECPComponent.h"
 #include "Numerics/Ylm.h"
 

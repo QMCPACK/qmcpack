@@ -15,7 +15,7 @@
 
 
 #include "ForceCeperley.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"
@@ -44,7 +44,7 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
 void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const
 {
   forces = 0.0;
-  const DistanceTableData& d_aa(Ions.getDistTable(d_aa_ID));
+  const auto& d_aa(Ions.getDistTableAA(d_aa_ID));
   const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
   for (size_t ipart = 1; ipart < Nnuc; ipart++)
   {
@@ -85,7 +85,7 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
     forces = forces_IonIon;
   else
     forces = 0.0;
-  const auto& d_ab                     = P.getDistTable(d_ei_ID);
+  const auto& d_ab                     = P.getDistTableAB(d_ei_ID);
   const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleScalar_t* restrict Qat = P.Z.first_address();
   for (int jat = 0; jat < Nel; jat++)

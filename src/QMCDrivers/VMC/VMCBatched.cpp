@@ -50,7 +50,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walkers        = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-  // This is really a waste the resources can be aquired outside of the run steps loop in VMCD!
+  // This is really a waste the resources can be acquired outside of the run steps loop in VMCD!
   // I don't see an  easy way to measure the release without putting the weight of tons of timer_manager calls in
   // ResourceCollectionTeamLock's constructor.
   timers.resource_timer.start();
@@ -204,11 +204,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
-
-  if(accumulate_this_step)
-    crowd.accumulate(step_context.get_random_gen());
-
   timers.collectables_timer.stop();
+
+  if (accumulate_this_step)
+  {
+    ScopedTimer est_timer(timers.estimators_timer);
+    crowd.accumulate(step_context.get_random_gen());
+  }
   // TODO:
   //  check if all moves failed
 }
@@ -225,7 +227,7 @@ void VMCBatched::runVMCStep(int crowd_id,
 {
   Crowd& crowd = *(crowds[crowd_id]);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
-  const int max_steps = sft.qmcdrv_input.get_max_steps();
+  const int max_steps  = sft.qmcdrv_input.get_max_steps();
   const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
@@ -299,8 +301,8 @@ bool VMCBatched::run()
     // Run warm-up steps
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                             UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
-      Crowd& crowd = *(crowds[crowd_id]);
-      const bool recompute = false;
+      Crowd& crowd                    = *(crowds[crowd_id]);
+      const bool recompute            = false;
       const bool accumulate_this_step = false;
       advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
     };

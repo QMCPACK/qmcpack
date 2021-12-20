@@ -15,7 +15,7 @@
 
 
 #include "CoulombPBCAB.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 
@@ -141,7 +141,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   Vi_samp                     = 0.0;
   {
     //SR
-    const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+    const auto& d_ab(P.getDistTableAB(myTableIndex));
     RealType z;
     //Loop over distinct eln-ion pairs
     for (size_t b = 0; b < NptclB; ++b)
@@ -304,7 +304,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(const ParticleSet& Peln, bool re
 CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
 {
   constexpr mRealType czero(0);
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+  const auto& d_ab(P.getDistTableAB(myTableIndex));
   mRealType res = czero;
   //can be optimized but not important enough
   for (size_t b = 0; b < NptclB; ++b)
@@ -326,7 +326,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
   const StructFact& RhoKB(*(P.SK));
   if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
   {
-    const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+    const auto& d_ab(P.getDistTableAB(myTableIndex));
     for (int iat = 0; iat < NptclA; ++iat)
     {
       mRealType u = 0;
@@ -567,7 +567,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
   constexpr mRealType czero(0);
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+  const auto& d_ab(P.getDistTableAB(myTableIndex));
   mRealType res = czero;
   //Temporary variables for computing energy and forces.
   mRealType rV(0);

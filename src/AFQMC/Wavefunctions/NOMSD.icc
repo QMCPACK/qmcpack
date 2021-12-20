@@ -27,6 +27,7 @@
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "type_traits/complex_help.hpp"
 
 //#include "AFQMC/Wavefunctions/NOMSD.h"
 
@@ -2290,7 +2291,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
           {
             found = true;
             app_warning() << " WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field "
-                             "substraction potential is potentially wrong. ! \n";
+                             "subtraction potential is potentially wrong. ! \n";
             //              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q],PsiT,
             //                                G_.sliced(0,NMO),false);
           }
@@ -2299,7 +2300,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
           {
             found = true;
             app_warning() << " WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field "
-                             "substraction potential is potentially wrong. ! \n";
+                             "subtraction potential is potentially wrong. ! \n";
             //              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q+1],PsiTB,
             //                                G_.sliced(NMO,2*NMO),false);
           }

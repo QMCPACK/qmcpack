@@ -42,7 +42,6 @@ class MCWalkerConfiguration;
  * @brief QMCHamiltonian and its component, OperatorBase
  *
  */
-class DistanceTableData;
 class TrialWaveFunction;
 class QMCHamiltonian;
 class ResourceCollection;

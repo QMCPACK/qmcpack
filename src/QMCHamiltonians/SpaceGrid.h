@@ -19,7 +19,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Pools/PooledData.h"
 #include "QMCHamiltonians/ObservableHelper.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -54,7 +54,7 @@ public:
                 const Matrix<RealType>& values,
                 BufferType& buf,
                 std::vector<bool>& particles_outside,
-                const DistanceTableData& dtab);
+                const DistanceTableAB& dtab);
 
   bool check_grid(void);
   inline int nDomains(void) { return ndomains; }

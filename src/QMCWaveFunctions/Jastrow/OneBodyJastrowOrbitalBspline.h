@@ -16,7 +16,7 @@
 #ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 #define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
@@ -206,7 +206,7 @@ public:
     // for (int i=0; i<centers.getTotalNum(); i++)
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
-    C               = C_host;
+    C = C_host;
   }
 };
 } // namespace qmcplusplus

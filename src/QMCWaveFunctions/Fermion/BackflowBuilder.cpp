@@ -14,10 +14,13 @@
 
 
 #include "BackflowBuilder.h"
+#include <map>
+#include <cmath>
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "DistanceTable.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
@@ -29,8 +32,6 @@
 #include "LongRange/LRRPABFeeHandlerTemp.h"
 #include "Particle/ParticleSet.h"
 #include "Configuration.h"
-#include <map>
-#include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Numerics/LinearFit.h"

@@ -12,7 +12,7 @@
 
 #include <memory>
 #include "SoaLocalizedBasisSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "SoaAtomicBasisSet.h"
 #include "MultiQuinticSpline1D.h"
 #include "MultiFunctorAdapter.h"
@@ -104,7 +104,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 {
   const auto& IonID(ions_.GroupID);
   const auto& coordR  = P.activeR(iat);
-  const auto& d_table = P.getDistTable(myTableIndex);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
   const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
@@ -122,7 +122,7 @@ template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
   const auto& IonID(ions_.GroupID);
-  const auto& d_table = P.getDistTable(myTableIndex);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
   const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
@@ -137,7 +137,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
   // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
 
   const auto& IonID(ions_.GroupID);
-  const auto& d_table = P.getDistTable(myTableIndex);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
   const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
@@ -151,7 +151,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
 {
   const auto& IonID(ions_.GroupID);
   const auto& coordR  = P.activeR(iat);
-  const auto& d_table = P.getDistTable(myTableIndex);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
   const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
@@ -185,7 +185,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
   }
 
   const auto& IonID(ions_.GroupID);
-  const auto& d_table = P.getDistTable(myTableIndex);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
   const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
@@ -257,7 +257,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceVGL(const ParticleSet& P
   // Since jion is indexed on the source ions not the ions_ the distinction between
   // ions_ and ions is extremely important.
   const auto& IonID(ions.GroupID);
-  const auto& d_table = P.getDistTable(myTableIndex);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
   const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 

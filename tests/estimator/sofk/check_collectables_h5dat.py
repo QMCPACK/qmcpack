@@ -23,7 +23,7 @@ def get_last_sk(fdat,fh5):
 
   # get S(k) from stat.h5
   fp = h5py.File(fh5, 'r')
-  h5y = fp['h5sk/value'].value.T[-1]
+  h5y = fp['h5sk/value'][:].T[-1]
   fp.close()
 
   return myy, h5y

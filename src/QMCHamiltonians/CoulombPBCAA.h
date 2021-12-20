@@ -19,7 +19,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -136,6 +136,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 private:
   // AA table ID
   const int d_aa_ID;
+  // Timer for long range
+  NewTimer& evalLR_timer_;
+  // Timer for long range
+  NewTimer& evalSR_timer_;
 };
 
 } // namespace qmcplusplus

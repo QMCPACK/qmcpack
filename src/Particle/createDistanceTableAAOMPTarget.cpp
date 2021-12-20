@@ -15,7 +15,7 @@
 
 
 #include "Particle/createDistanceTable.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/SoaDistanceTableAAOMPTarget.h"
 
 namespace qmcplusplus
@@ -24,15 +24,15 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description)
+std::unique_ptr<DistanceTable> createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description)
 {
   typedef OHMMS_PRECISION RealType;
   enum
   {
     DIM = OHMMS_DIM
   };
-  int sc                = s.Lattice.SuperCellEnum;
-  DistanceTableData* dt = 0;
+  const int sc = s.Lattice.SuperCellEnum;
+  std::unique_ptr<DistanceTable> dt;
   std::ostringstream o;
   o << "  Distance table for similar particles (A-A):" << std::endl;
   o << "    source/target: " << s.getName() << std::endl;
@@ -43,19 +43,19 @@ DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& 
     if (s.Lattice.DiagonalOnly)
     {
       o << "    Distance computations use orthorhombic periodic cell in 3D." << std::endl;
-      dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, PPPO + SOA_OFFSET>(s);
+      dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, PPPO + SOA_OFFSET>>(s);
     }
     else
     {
       if (s.Lattice.WignerSeitzRadius > s.Lattice.SimulationCellRadius)
       {
         o << "    Distance computations use general periodic cell in 3D with corner image checks." << std::endl;
-        dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, PPPG + SOA_OFFSET>(s);
+        dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, PPPG + SOA_OFFSET>>(s);
       }
       else
       {
         o << "    Distance computations use general periodic cell in 3D without corner image checks." << std::endl;
-        dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, PPPS + SOA_OFFSET>(s);
+        dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, PPPS + SOA_OFFSET>>(s);
       }
     }
   }
@@ -64,31 +64,31 @@ DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& 
     if (s.Lattice.DiagonalOnly)
     {
       o << "    Distance computations use orthorhombic code for periodic cell in 2D." << std::endl;
-      dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, PPNO + SOA_OFFSET>(s);
+      dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, PPNO + SOA_OFFSET>>(s);
     }
     else
     {
       if (s.Lattice.WignerSeitzRadius > s.Lattice.SimulationCellRadius)
       {
         o << "    Distance computations use general periodic cell in 2D with corner image checks." << std::endl;
-        dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, PPNG + SOA_OFFSET>(s);
+        dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, PPNG + SOA_OFFSET>>(s);
       }
       else
       {
         o << "    Distance computations use general periodic cell in 2D without corner image checks." << std::endl;
-        dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, PPNS + SOA_OFFSET>(s);
+        dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, PPNS + SOA_OFFSET>>(s);
       }
     }
   }
   else if (sc == SUPERCELL_WIRE)
   {
     o << "    Distance computations use periodic cell in one dimension." << std::endl;
-    dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, SUPERCELL_WIRE + SOA_OFFSET>(s);
+    dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, SUPERCELL_WIRE + SOA_OFFSET>>(s);
   }
   else //open boundary condition
   {
     o << "    Distance computations use open boundary conditions in 3D." << std::endl;
-    dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, SUPERCELL_OPEN + SOA_OFFSET>(s);
+    dt = std::make_unique<SoaDistanceTableAAOMPTarget<RealType, DIM, SUPERCELL_OPEN + SOA_OFFSET>>(s);
   }
 
   description << o.str() << std::endl;

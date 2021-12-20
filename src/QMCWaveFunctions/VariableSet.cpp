@@ -13,6 +13,8 @@
 
 
 #include "VariableSet.h"
+#include "io/hdf/hdf_archive.h"
+#include "Host/sysutil.h"
 #include <map>
 #include <stdexcept>
 #include <iomanip>
@@ -284,5 +286,65 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
          << " " << setw(max_index_len) << Index[i] << std::endl;
   }
 }
+
+void VariableSet::saveAsHDF(const std::string& filename) const
+{
+  qmcplusplus::hdf_archive hout;
+  hout.create(filename);
+  std::vector<int> vp_file_version{1, 0, 0};
+  hout.write(vp_file_version, "version");
+
+  std::string timestamp(getDateAndTime("%Y-%m-%d %H:%M:%S %Z"));
+  hout.write(timestamp, "timestamp");
+
+  hid_t grp = hout.push("name_value_lists");
+
+  std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
+  std::vector<std::string> param_names;
+  for (auto& pair_it : NameAndValue)
+  {
+    param_names.push_back(pair_it.first);
+    param_values.push_back(pair_it.second);
+  }
+
+  hout.write(param_names, "parameter_names");
+  hout.write(param_values, "parameter_values");
+  hout.pop();
+}
+
+void VariableSet::readFromHDF(const std::string& filename)
+{
+  qmcplusplus::hdf_archive hin;
+  if (!hin.open(filename, H5F_ACC_RDONLY))
+  {
+    std::ostringstream err_msg;
+    err_msg << "Unable to open VP file: " << filename;
+    throw std::runtime_error(err_msg.str());
+  }
+
+  hid_t grp = hin.push("name_value_lists", false);
+  if (grp < 0)
+  {
+    std::ostringstream err_msg;
+    err_msg << "The group name_value_lists in not present in file: " << filename;
+    throw std::runtime_error(err_msg.str());
+  }
+
+  std::vector<qmcplusplus::QMCTraits::ValueType> param_values;
+  hin.read(param_values, "parameter_values");
+
+  std::vector<std::string> param_names;
+  hin.read(param_names, "parameter_names");
+
+  for (int i = 0; i < param_names.size(); i++)
+  {
+    std::string& vp_name = param_names[i];
+    // Find and set values by name.
+    // Values that are not present do not get added.
+    if (find(vp_name) != end())
+      (*this)[vp_name] = param_values[i];
+  }
+}
+
 
 } // namespace optimize

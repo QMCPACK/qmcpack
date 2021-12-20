@@ -45,7 +45,7 @@ namespace onebodydensitymatrices
       R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm  </parameter>
-  <parameter name="evaluator"    >  loop          </parameter>
+  <parameter name="evaluator"    >  matrix         </parameter>
   <parameter name="integrator"   >  uniform       </parameter>
   <parameter name="samples"      >  128           </parameter>
   <parameter name="scale"        >  0.8           </parameter>
@@ -56,7 +56,7 @@ namespace onebodydensitymatrices
       R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm </parameter>
-  <parameter name="evaluator"    >  loop          </parameter>
+  <parameter name="evaluator"    >  matrix        </parameter>
   <parameter name="integrator"   >  uniform_grid  </parameter>
   <parameter name="points"       >  22            </parameter>
   <parameter name="scale"        >  0.8           </parameter>

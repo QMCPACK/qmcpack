@@ -19,7 +19,7 @@
 #include "CPU/BLAS.hpp"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Numerics/DeterminantOperators.h"
 #include <set>
 

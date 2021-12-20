@@ -17,15 +17,17 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
+
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
 {
+class BackflowTransformation;
+
 /** class to handle determinants with backflow
  */
 class DiracDeterminantWithBackflow : public DiracDeterminantBase

@@ -5,9 +5,6 @@
 #include <cmath>
 #include "Configuration.h"
 #include "einspline/bspline_eval_d.h"
-#include "einspline/nubspline_eval_d.h"
-#include "einspline/nugrid.h"
-#include "einspline/nubspline_create.h"
 #include "QMCTools/QMCFiniteSize/FSUtilities.h"
 #include "Utilities/RandomGenerator.h"
 
@@ -115,7 +112,7 @@ void QMCFiniteSize::wfnPut(xmlNodePtr cur)
   pAttrib.put(cur);
   ParticleSet* qp = ptclPool.getParticleSet(target);
 
-  if(qp == nullptr)
+  if (qp == nullptr)
     throw std::runtime_error("target particle set named '" + target + "' not found");
 }
 
@@ -305,15 +302,17 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   return sum / RealType(ngrid);
 }
 
-NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
-                                              vector<RealType>& vals,
-                                              RealType lVal,
-                                              RealType rVal)
+UBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
+                                             vector<RealType>& vals,
+                                             RealType lVal,
+                                             RealType rVal)
 {
   //hack to interface to NUgrid stuff in double prec for MIXED build
   vector<FullPrecRealType> grid_fp(grid.begin(), grid.end());
-  auto grid1d =
-      std::unique_ptr<NUgrid, void (*)(NUgrid*)>{create_general_grid(grid_fp.data(), grid_fp.size()), destroy_grid};
+
+  Grid_t lingrid;
+  lingrid.set(grid_fp[0], grid_fp.back(), grid_fp.size());
+  Ugrid esgrid = lingrid.einspline_grid();
 
   BCtype_d xBC;
   xBC.lVal  = lVal;
@@ -322,14 +321,15 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
   xBC.rCode = DERIV1;
   //hack to interface to NUgrid stuff in double prec for MIXED build
   vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
-  return create_NUBspline_1d_d(grid1d.get(), xBC, vals_fp.data());
+  return create_UBspline_1d_d(esgrid, xBC, vals_fp.data());
 }
 
 //Integrate the spline using Simpson's 5/8 rule.  For Bsplines, this should be exact
 //provided your delta is smaller than the smallest bspline mesh spacing.
 // JPT 13/03/2018 - Fixed an intermittant segfault that occurred b/c
 //                  eval_NUB_spline_1d_d sometimes went out of bounds.
-QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N)
+// #3677 changed NUBspline to UBspline.
+QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(UBspline_1d_d* spline, RealType a, RealType b, IndexType N)
 {
   if (N % 2 != 0) // if N odd, warn that destruction is imminent
   {
@@ -339,20 +339,20 @@ QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, 
 
   RealType eps         = (b - a) / RealType(N);
   RealType sum         = 0.0;
-  FullPrecRealType tmp = 0.0; //hack to interface to NUBspline_1d_d
+  FullPrecRealType tmp = 0.0; //hack to interface to UBspline_1d_d
   RealType xi          = 0.0;
   for (int i = 1; i < N / 2; i++)
   {
     xi = a + (2 * i - 2) * eps;
-    eval_NUBspline_1d_d(spline, xi, &tmp);
+    eval_UBspline_1d_d(spline, xi, &tmp);
     sum += RealType(tmp);
 
     xi = a + (2 * i - 1) * eps;
-    eval_NUBspline_1d_d(spline, xi, &tmp);
+    eval_UBspline_1d_d(spline, xi, &tmp);
     sum += 4 * tmp;
 
     xi = a + (2 * i) * eps;
-    eval_NUBspline_1d_d(spline, xi, &tmp);
+    eval_UBspline_1d_d(spline, xi, &tmp);
     sum += tmp;
   }
 
@@ -476,26 +476,25 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   RealType kmax   = AA->get_kc();
   IndexType ngrid = 2 * Klist.kshell.size() - 1; //make a lager kmesh
 
-  vector<RealType> nonunigrid1d, k2vksk;
+  vector<RealType> unigrid1d, k2vksk;
   RealType dk = kmax / ngrid;
 
-  nonunigrid1d.push_back(0.0);
+  unigrid1d.push_back(0.0);
   k2vksk.push_back(0.0);
   for (int i = 1; i < ngrid; i++)
   {
     RealType kval = i * dk;
-    nonunigrid1d.push_back(kval);
+    unigrid1d.push_back(kval);
     RealType skavg = sphericalAvgSk(spline.get(), kval);
     RealType k2vk  = kval * kval * AA->evaluate_vlr_k(kval); //evaluation for arbitrary kshell for any LRHandler
     k2vksk.push_back(0.5 * k2vk * skavg);
   }
 
   k2vksk.push_back(0.0);
-  nonunigrid1d.push_back(kmax);
+  unigrid1d.push_back(kmax);
 
   auto integrand =
-      std::unique_ptr<NUBspline_1d_d, void (*)(void*)>{spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0),
-                                                                 destroy_Bspline};
+      std::unique_ptr<UBspline_1d_d, void (*)(void*)>{spline_clamped(unigrid1d, k2vksk, 0.0, 0.0), destroy_Bspline};
 
   //Integrate the spline and compute the thermodynamic limit.
   RealType integratedval = integrate_spline(integrand.get(), 0.0, kmax, 200);

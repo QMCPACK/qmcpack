@@ -290,7 +290,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   const int myTableIndex = elec.addTable(ions);
 
-  const auto& myTable = elec.getDistTable(myTableIndex);
+  const auto& myTable = elec.getDistTableAB(myTableIndex);
 
   // update all distance tables
   ions.update();
@@ -532,7 +532,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   const int myTableIndex = elec.addTable(ions);
 
-  const auto& myTable = elec.getDistTable(myTableIndex);
+  const auto& myTable = elec.getDistTableAB(myTableIndex);
 
   // update all distance tables
   ions.update();

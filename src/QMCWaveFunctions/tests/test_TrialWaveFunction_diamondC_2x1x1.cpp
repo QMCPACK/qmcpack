@@ -14,8 +14,9 @@
 
 #include <regex>
 #include "OhmmsData/Libxml2Doc.h"
-#include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
+#include "ParticleSet.h"
+#include "ParticleSetPool.h"
+#include "DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
@@ -508,10 +509,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   vp.createResource(vp_res);
   ResourceCollectionTeamLock<VirtualParticleSet> mw_vp_lock(vp_res, vp_list);
 
-  const auto& ei_table1 = elec_.getDistTable(ei_table_index);
+  const auto& ei_table1 = elec_.getDistTableAB(ei_table_index);
   // make virtual move of elec 0, reference ion 1
   NLPPJob<RealType> job1(1, 0, elec_.R[0], ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
-  const auto& ei_table2 = elec_clone.getDistTable(ei_table_index);
+  const auto& ei_table2 = elec_clone.getDistTableAB(ei_table_index);
   // make virtual move of elec 1, reference ion 3
   NLPPJob<RealType> job2(3, 1, elec_clone.R[1], ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
 

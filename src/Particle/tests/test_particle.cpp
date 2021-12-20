@@ -17,7 +17,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 
 #include <stdio.h>
@@ -87,7 +87,7 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
   const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTableAA(TableID);
   const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
@@ -118,7 +118,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTableAA(TableID);
   const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
@@ -133,7 +133,7 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   // PPP case
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true;
-  Lattice.R = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+  Lattice.R         = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
   Lattice.VacuumScale = 2.0;
   Lattice.reset();

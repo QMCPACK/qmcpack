@@ -6,7 +6,7 @@
 function(TEST_PYTHON_MODULE MODULE_NAME MODULE_PRESENT)
   message(VERBOSE "Checking import python module ${MODULE_NAME}")
   execute_process(
-    COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/test_import.py ${MODULE_NAME}
+    COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/test_import.py ${MODULE_NAME}
     OUTPUT_VARIABLE TMP_OUTPUT_VAR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(${MODULE_PRESENT}

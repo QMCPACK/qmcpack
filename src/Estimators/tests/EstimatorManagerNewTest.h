@@ -52,7 +52,7 @@ public:
   bool testMakeBlockAverages();
   void testReduceOperatorEstimators();
 
-  std::vector<QMCT::RealType>& get_operator_data() { return em.operator_ests_[0]->get_data_ref(); }
+  std::vector<QMCT::RealType>& get_operator_data() { return em.operator_ests_[0]->get_data(); }
   
   EstimatorManagerNew em;
 private:

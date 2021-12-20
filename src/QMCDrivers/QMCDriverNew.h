@@ -285,6 +285,7 @@ protected:
     NewTimer& movepbyp_timer;
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
+    NewTimer& estimators_timer;
     NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
@@ -295,6 +296,7 @@ protected:
           movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),
           hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
           collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium)),
+          estimators_timer(*timer_manager.createTimer(prefix + "Estimators", timer_level_medium)),
           resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
     {}
   };

@@ -29,7 +29,7 @@ namespace qmcplusplus
 namespace CUDA
 {
 /** helper function for SM-1 Fahy update
- * substract one in temp
+ * subtract one in temp
  * copy Ainv changed row to rcopy
  * save phi G and L as accept.
  */

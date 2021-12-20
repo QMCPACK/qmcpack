@@ -15,7 +15,7 @@
 
 #ifndef QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #define QMCPLUSPLUS_QMCDRIFTOPERATORS_H
-#include "type_traits/scalar_traits.h"
+#include "type_traits/ConvertToReal.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 namespace qmcplusplus
@@ -36,7 +36,7 @@ template<class Tt, class TG, class T, unsigned D>
 inline void getScaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>& drift)
 {
   //We convert the complex gradient to real and temporarily store in drift.
-  convert(qf, drift);
+  convertToReal(qf, drift);
   T vsq = dot(drift, drift);
   T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
   //Apply the umrigar scaled drift.
@@ -52,7 +52,7 @@ template<class Tt, class TG, class T, unsigned D>
 inline void getScaledDriftL2(Tt tau, const TinyVector<TG, D>& qf, const Tensor<T, D>& Dmat, TinyVector<T, D>& Kvec, TinyVector<T, D>& drift)
 {
   //We convert the complex gradient to real and temporarily store in drift.
-  convert(qf, drift);
+  convertToReal(qf, drift);
   //modify the bare drift in the presence of L2 potentials
   drift = dot(Dmat, drift) - Kvec;
   T vsq = dot(drift, drift);
@@ -70,7 +70,7 @@ template<class Tt, class TG, class T, unsigned D>
 inline void getUnscaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>& drift)
 {
   //We convert the complex gradient to real and temporarily store in drift.
-  convert(qf, drift);
+  convertToReal(qf, drift);
   drift *= tau;
 }
 
@@ -90,7 +90,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
   T norm = 0.0, norm_scaled = 0.0, tau2 = tau * tau;
   for (int iat = 0; iat < qf.size(); ++iat)
   {
-    convert(qf[iat], drift[iat]);
+    convertToReal(qf[iat], drift[iat]);
     T vsq = dot(drift[iat], drift[iat]);
     T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
     norm_scaled += vsq * sc * sc;
@@ -140,7 +140,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au,
     // !!!! assume timestep is scaled by mass
     T tau_over_mass = tau_au * massinv[iat];
     // save real part of wf log derivative in drift
-    convert(qf[iat], drift[iat]);
+    convertToReal(qf[iat], drift[iat]);
     T vsq = dot(drift[iat], drift[iat]);
     // calculate drift scalar "sc" of Umrigar, JCP 99, 2865 (1993); eq. (34) * tau
     // use naive drift if vsq may cause numerical instability in the denominator
@@ -193,7 +193,7 @@ inline void setScaledDrift(T tau,
                            ParticleAttrib<TinyVector<T, D>>& drift)
 {
   for (int iat = 0; iat < qf.size(); ++iat)
-    convert(qf[iat], drift[iat]);
+    convertToReal(qf[iat], drift[iat]);
 
   T s = getDriftScale(tau, drift);
   drift *= s;

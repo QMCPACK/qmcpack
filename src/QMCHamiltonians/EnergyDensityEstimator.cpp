@@ -15,7 +15,7 @@
 #include "EnergyDensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/string_utils.h"
 #include <string>
@@ -319,7 +319,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         }
     }
     //Accumulate energy density in spacegrids
-    const DistanceTableData& dtab(P.getDistTable(dtable_index));
+    const auto& dtab(P.getDistTableAB(dtable_index));
     fill(particles_outside.begin(), particles_outside.end(), true);
     for (int i = 0; i < spacegrids.size(); i++)
     {

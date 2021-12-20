@@ -144,6 +144,78 @@ struct h5data_proxy<std::string>
   }
 };
 
+/// Specialization for vector of strings
+template<>
+struct h5data_proxy<std::vector<std::string>>
+{
+  using ArrayType = std::vector<std::string>;
+  ArrayType& ref;
+
+  h5data_proxy<ArrayType>(ArrayType& a) : ref(a) {}
+
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    // See the section in the HDF user's manual on datatypes,
+    // particularly the subsection on strings.
+    // (e.g. http://davis.lbl.gov/Manuals/HDF5-1.8.7/UG/11_Datatypes.html)
+    // and stackoverflow
+    // https://stackoverflow.com/questions/6184817/hdf5-inserting-a-set-of-strings-in-a-dataset
+    hid_t datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(datatype, H5T_VARIABLE);
+    hsize_t dim = ref.size();
+
+    // Create vector of pointers to the actual string data
+    std::vector<char*> char_list;
+    for (int i = 0; i < ref.size(); i++)
+      char_list.push_back(ref[i].data());
+
+    hid_t h1   = H5Dopen(grp, aname.c_str());
+    herr_t ret = -1;
+    if (h1 < 0) // missing create one
+    {
+      hid_t dataspace = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset   = H5Dcreate(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT);
+      ret             = H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    else
+      ret = H5Dwrite(h1, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+
+    H5Dclose(h1);
+    return ret >= 0;
+  }
+
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    hid_t datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(datatype, H5T_VARIABLE);
+    hid_t dataset = H5Dopen(grp, aname.c_str());
+    std::vector<char*> char_list;
+    herr_t ret = -1;
+    if (dataset > -1)
+    {
+      hsize_t dim_out;
+      hid_t dataspace = H5Dget_space(dataset);
+      hid_t status    = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
+
+      char_list.resize(dim_out);
+      ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+
+      for (int i = 0; i < dim_out; i++)
+        ref.push_back(char_list[i]);
+
+      H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
+
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    H5Tclose(datatype);
+
+    return ret >= 0;
+  }
+};
+
 template<>
 struct h5data_proxy<std::ostringstream>
 {

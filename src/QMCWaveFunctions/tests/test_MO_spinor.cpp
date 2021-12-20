@@ -16,7 +16,7 @@
 #include "Message/Communicate.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus

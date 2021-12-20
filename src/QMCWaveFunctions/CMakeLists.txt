@@ -113,7 +113,6 @@ if(OHMMS_DIM MATCHES 3)
         ${FERMION_SRCS}
         EinsplineSetBuilderCommon.cpp
         EinsplineSetBuilderOld.cpp
-        MuffinTin.cpp
         AtomicOrbital.cpp
         EinsplineSetBuilderReadBands_ESHDF.cpp
         EinsplineSetBuilderESHDF.fft.cpp
@@ -163,6 +162,7 @@ set(FERMION_SRCS
     Fermion/MultiDiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.2.cpp
     Fermion/BackflowBuilder.cpp
+    Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
     Fermion/SlaterDetWithBackflow.cpp
     Fermion/MultiSlaterDeterminantWithBackflow.cpp

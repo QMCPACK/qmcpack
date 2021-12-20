@@ -53,8 +53,6 @@ public:
 template<typename T, typename T_FP>
 class DelayedUpdateCUDA
 {
-  /// define real type
-  using real_type = typename scalar_traits<T>::real_type;
   // Data staged during for delayed acceptRows
   Matrix<T, CUDAHostAllocator<T>> U;
   Matrix<T, CUDAHostAllocator<T>> Binv;

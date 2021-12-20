@@ -25,9 +25,11 @@
 
 namespace qmcplusplus
 {
-class DistanceTableData;
 class TrialWaveFunction;
-
+namespace testing
+{
+class OEBAccessor;
+}
 /** @ingroup Estimators
  * @brief An abstract class for gridded estimators
  *
@@ -38,20 +40,34 @@ public:
   using QMCT      = QMCTraits;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  /** Everything gets packed into RealType for now
-   *  \todo template and use whatever makes sense for the derived estimator this is just asking for bugs
-   */
-  using Data = UPtr<std::vector<QMCT::RealType>>;
+  using Data = std::vector<QMCT::RealType>;
 
-  /// locality for accumulation data. FIXME full documentation of this state machine.
+  /** locality for accumulation of estimator data.
+   *  This designates the memory scheme used for the estimator
+   *  The default is:
+   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
+   *  Memory Savings Schemes:
+   *  One:
+   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
+   *  One per crowd:
+   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
+   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
+   */
   DataLocality data_locality_;
 
-  ///name of this object
-  std::string myName;
+  ///name of this object -- only used for debugging and h5 output
+  std::string my_name_;
 
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
+  /** Shallow copy constructor!
+   *  This alows us to keep the default copy constructors for derived classes which
+   *  is quite useful to the spawnCrowdClone design.
+   *  Data is likely to be quite large and since the OperatorEstBase design is that the children 
+   *  reduce to the parent it is infact undesirable for them to copy the data the parent has.
+   *  Initialization of Data (i.e. call to resize) if any is the responsibility of the derived class.
+   */
   OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
   virtual ~OperatorEstBase() = default;
@@ -88,9 +104,7 @@ public:
 
   virtual void startBlock(int steps) = 0;
 
-  std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
-
-  Data& get_data() { return data_; };
+  std::vector<QMCT::RealType>& get_data() { return data_; }
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
@@ -100,7 +114,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-  virtual std::unique_ptr<OperatorEstBase> clone() const = 0;
+  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
@@ -123,17 +137,9 @@ protected:
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
-  /** create the typed data block for the Operator.
-   *
-   *  this is only slightly better than a byte buffer
-   *  it allows easy porting of the legacy implementations
-   *  Which wrote into a shared buffer per walker.
-   *  And it make's datalocality fairly easy but
-   *  more descriptive and safe data structures would be better
-   */
-  static Data createLocalData(size_t size, DataLocality data_locality);
-
   Data data_;
+
+  friend testing::OEBAccessor;
 };
 } // namespace qmcplusplus
 #endif

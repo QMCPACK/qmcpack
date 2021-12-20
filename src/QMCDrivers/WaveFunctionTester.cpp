@@ -1360,7 +1360,7 @@ void WaveFunctionTester::runRatioV()
 
   //cheating
   const ParticleSet& ions=W.DistTables[1]->origin();
-  DistanceTableData* dt_ie=W.DistTables[1];
+  DistanceTable* dt_ie=W.DistTables[1];
   double Rmax=2.0;
 
   ParticleSet::ParticlePos_t sphere(8);

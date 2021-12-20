@@ -18,7 +18,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
 
 #include <stdio.h>
@@ -97,7 +97,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   electrons.update();
 
   // get target particle set's distance table data
-  const auto& dtable = electrons.getDistTable(tid);
+  const auto& dtable = electrons.getDistTableAB(tid);
   REQUIRE(dtable.getName() == "ion0_e");
 
   REQUIRE(dtable.sources() == ions.getTotalNum());
@@ -195,7 +195,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  const auto& dtable = electrons.getDistTable(tid);
+  const auto& dtable = electrons.getDistTableAB(tid);
   REQUIRE(dtable.getName() == "ion0_e");
 
   REQUIRE(dtable.sources() == ions.getTotalNum());
@@ -290,7 +290,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  const auto& dtable = electrons.getDistTable(tid);
+  const auto& dtable = electrons.getDistTableAB(tid);
   REQUIRE(dtable.getName() == "ion0_e");
 
   // get the electron species set
@@ -430,7 +430,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   ions.update();
 
   // get target particle set's distance table data
-  const auto& ei_dtable = electrons.getDistTable(ei_tid);
+  const auto& ei_dtable = electrons.getDistTableAB(ei_tid);
   CHECK(ei_dtable.getName() == "ion0_e");
 
   CHECK(ei_dtable.sources() == ions.getTotalNum());
@@ -472,7 +472,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
 
   const int ee_tid = electrons.addTable(electrons);
   // get target particle set's distance table data
-  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
   electrons.update();
 
@@ -549,7 +549,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   ions.update();
   const int ee_tid = electrons.addTable(electrons);
   // get target particle set's distance table data
-  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
   electrons.update();
 
@@ -602,7 +602,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   ions.update();
   const int ee_tid = electrons.addTable(electrons, DTModes::NEED_TEMP_DATA_ON_HOST);
   // get target particle set's distance table data
-  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
   electrons.update();
 

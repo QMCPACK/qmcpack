@@ -31,25 +31,32 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
                                                const WaveFunctionFactory& wf_factory,
-                                               ParticleSet& pset_target,
-                                               const DataLocality dl)
-    : OperatorEstBase(dl),
+                                               ParticleSet& pset_target)
+    : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
       lattice_(lattice),
       species_(species),
-      wf_factory_(wf_factory),
-      very_temp_pset_(pset_target),
       timers_("OneBodyDensityMatrix")
 {
+  my_name_ = "OneBodyDensityMatrices";
   lattice_.reset();
-  if (input_.get_center_defined())
-    center_ = input_.get_center();
+
+  if (input_.get_corner_defined())
+  {
+    rcorner_ = input_.get_corner();
+    center_  = rcorner_ + input_.get_scale() * lattice_.Center;
+  }
   else
-    center_ = lattice_.Center;
+  {
+    if (input_.get_center_defined())
+      center_ = input_.get_center();
+    else
+      center_ = lattice_.Center;
+    rcorner_ = center_ - input_.get_scale() * lattice_.Center;
+  }
 
   volume_   = lattice_.Volume * std::exp(OHMMS_DIM * std::log(input_.get_scale()));
   periodic_ = lattice_.SuperCellEnum != SUPERCELL_OPEN;
-  rcorner_  = center_ - input_.get_scale() * lattice_.Center;
 
   // Here we discover sampling is derived (this may belong in input class)
   switch (input_.get_integrator())
@@ -146,25 +153,34 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   // with respect to what?
   if (!input_.get_normalized())
   {
-    normalize(pset_target);
+    normalizeBasis(pset_target);
   }
 
-  data_ = createLocalData(calcFullDataSize(basis_size_, species_.size()), data_locality_);
+  data_.resize(calcFullDataSize(basis_size_, species_.size()), 0.0);
 }
 
-OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm)
-    : OneBodyDensityMatrices(OneBodyDensityMatricesInput(obdm.input_),
-                             obdm.lattice_,
-                             obdm.species_,
-                             obdm.wf_factory_,
-                             obdm.very_temp_pset_)
-{}
-
-OneBodyDensityMatrices::~OneBodyDensityMatrices() {}
-
-std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::clone() const
+OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl)
+    : OneBodyDensityMatrices(obdm)
 {
-  return std::make_unique<OneBodyDensityMatrices>(*this);
+  data_locality_ = dl;
+}
+
+std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::spawnCrowdClone() const
+{
+  std::size_t data_size    = data_.size();
+  auto spawn_data_locality = data_locality_;
+
+  if (data_locality_ == DataLocality::rank)
+  {
+    // This is just a stub until a memory saving optimization is deemed necessary
+    spawn_data_locality = DataLocality::queue;
+    data_size           = 0;
+    throw std::runtime_error("There is no memory savings implementation for OneBodyDensityMatrices");
+  }
+
+  auto spawn = std::make_unique<OneBodyDensityMatrices>(*this, spawn_data_locality);
+  spawn->get_data().resize(data_size, 0.0);
+  return spawn;
 }
 
 size_t OneBodyDensityMatrices::calcFullDataSize(const size_t basis_size, const int nspecies)
@@ -182,6 +198,16 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
 {
   ScopedTimer local_timer(timers_.gen_samples_timer);
 
+  // Steps will always be 0 unless these are samples for warmup which is only for metropolis
+  // This is not a clear way to write this
+  // \todo rewrite to make algorithm more clears
+  bool save = false;
+  if (steps == 0)
+  {
+    save  = true;
+    steps = samples_;
+  }
+  
   switch (input_.get_integrator())
   {
   case Integrator::UNIFORM_GRID:
@@ -191,27 +217,18 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
     generateUniformSamples(rng);
     break;
   case Integrator::DENSITY: {
-    bool save = false;
-    if (steps == 0)
-    {
-      save  = true;
-      steps = samples_;
-    }
-
     generateDensitySamples(save, steps, rng, pset_target);
-    if (save)
-    {
-      if (sampling_ == Sampling::METROPOLIS)
-        samples_weights_ *= weight;
-      else
-      {
-        //I can't see how you would ever get here.
-        assert(false);
-        std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
-      }
-    }
-    break;
   }
+  }
+
+  if (save)
+  {
+    if (sampling_ == Sampling::METROPOLIS)
+      samples_weights_ *= weight;
+    else
+    {
+      std::fill(samples_weights_.begin(), samples_weights_.end(), weight);
+    }
   }
 
   // optional check
@@ -390,6 +407,7 @@ void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
 {
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
+    walkers_weight_ += walkers[iw].get().Weight;
     evaluateMatrix(psets[iw], wfns[iw], walkers[iw], rng);
   }
 }
@@ -438,10 +456,10 @@ void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
       for (int n = 0; n < basis_size_sq; ++n)
       {
         Value val = NDM(n);
-        (*data_)[ij] += real(val);
+        data_[ij] += real(val);
         ij++;
 #if defined(QMC_COMPLEX)
-        (*data_)[ij] += imag(val);
+        data_[ij] += imag(val);
         ij++;
 #endif
       }
@@ -544,7 +562,7 @@ void OneBodyDensityMatrices::warmupSampling(ParticleSet& pset_target, RAN_GEN& r
   }
 }
 
-inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
+inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
 {
   int ngrid = std::max(200, input_.get_points());
   int ngtot = pow(ngrid, OHMMS_DIM);
@@ -579,6 +597,26 @@ inline void OneBodyDensityMatrices::normalize(ParticleSet& pset_target)
     basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
 }
 
+void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
+{
+  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
+  std::vector<int> my_indexes(2, basis_size_);
+  if constexpr (IsComplex_t<Value>::value)
+  {
+    my_indexes.push_back(2);
+  }
+  int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
+
+  std::string nname = "number_matrix";
+  hid_t ngid        = H5Gcreate(sgid, nname.c_str(), 0);
+  for (int s = 0; s < species_.size(); ++s)
+  {
+    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
+    auto& oh = h5desc_.back();
+    oh->set_dimensions(my_indexes, 0);
+    oh->open(ngid);
+  }
+}
 
 template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
                                                                          ParticleSet& pset_target,

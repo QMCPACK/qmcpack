@@ -21,7 +21,7 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
   for (const auto& est : em.Estimators)
     scalar_estimators_.emplace_back(est->clone());
   for (const auto& upeb : em.operator_ests_)
-    operator_ests_.emplace_back(upeb->clone());
+    operator_ests_.emplace_back(upeb->spawnCrowdClone());
 }
 
 void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers,

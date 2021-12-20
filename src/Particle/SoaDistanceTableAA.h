@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_DTDIMPL_AA_H
 
 #include "Lattice/ParticleBConds3DSoa.h"
-#include "DistanceTableData.h"
+#include "DistanceTable.h"
 #include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
@@ -23,20 +23,14 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for dense case
  */
 template<typename T, unsigned D, int SC>
-struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableData
+struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
-  ///actual memory for dist and displacements_
+  /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
-
-  /// old distances
-  DistRow old_r_;
-
-  /// old displacements
-  DisplRow old_dr_;
 
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
-        DistanceTableData(target, target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        DistanceTableAA(target, DTModes::NEED_TEMP_DATA_ON_HOST),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
@@ -83,9 +77,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     temp_r_.resize(num_targets_);
     temp_dr_.resize(num_targets_);
   }
-
-  const DistRow& getOldDists() const override { return old_r_; }
-  const DisplRow& getOldDispls() const override { return old_dr_; }
 
   inline void evaluate(ParticleSet& P) override
   {

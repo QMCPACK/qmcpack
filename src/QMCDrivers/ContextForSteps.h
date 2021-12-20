@@ -22,8 +22,6 @@
 
 namespace qmcplusplus
 {
-class DistanceTableData;
-
 /** Thread local context for moving walkers
  *
  *  created once per driver per crowd

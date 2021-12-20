@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_COULOMBPOTENTIAL_H
 #include "ParticleSet.h"
 #include "WalkerSetRef.h"
-#include "DistanceTableData.h"
+#include "DistanceTable.h"
 #include "MCWalkerConfiguration.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
@@ -81,9 +81,9 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     {
       if (!copy)
         s.update();
-      value_ = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
+      value_ = evaluateAA(s.getDistTableAA(myTableIndex), s.Z.first_address());
       if (ComputeForces)
-        evaluateAAForces(s.getDistTable(myTableIndex), s.Z.first_address());
+        evaluateAAForces(s.getDistTableAA(myTableIndex), s.Z.first_address());
     }
   }
 
@@ -121,7 +121,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         Vb_sample = tm.checkout_real<1>(name_, Pb);
       }
       else if (!is_active)
-        evaluate_spAA(Pa.getDistTable(myTableIndex), Pa.Z.first_address());
+        evaluate_spAA(Pa.getDistTableAA(myTableIndex), Pa.Z.first_address());
     }
   }
 
@@ -144,7 +144,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
   /** evaluate AA-type interactions */
-  inline T evaluateAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
+  inline T evaluateAA(const DistanceTableAA& d, const ParticleScalar_t* restrict Z)
   {
     T res = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -164,7 +164,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 
   /** evaluate AA-type forces */
-  inline void evaluateAAForces(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
+  inline void evaluateAAForces(const DistanceTableAA& d, const ParticleScalar_t* restrict Z)
   {
     forces = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
@@ -182,7 +182,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 
   /** JNKIM: Need to check the precision */
-  inline T evaluateAB(const DistanceTableData& d,
+  inline T evaluateAB(const DistanceTableAB& d,
                       const ParticleScalar_t* restrict Za,
                       const ParticleScalar_t* restrict Zb)
   {
@@ -210,7 +210,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   /** evaluate AA-type interactions */
-  inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
+  inline T evaluate_spAA(const DistanceTableAA& d, const ParticleScalar_t* restrict Z)
   {
     T res = 0.0;
     T pairpot;
@@ -255,7 +255,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 
-  inline T evaluate_spAB(const DistanceTableData& d,
+  inline T evaluate_spAB(const DistanceTableAB& d,
                          const ParticleScalar_t* restrict Za,
                          const ParticleScalar_t* restrict Zb)
   {
@@ -327,7 +327,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   {
     if (is_AA)
     {
-      value_ = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
+      value_ = evaluateAA(s.getDistTableAA(myTableIndex), s.Z.first_address());
     }
   }
 
@@ -336,9 +336,9 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     if (is_active)
     {
       if (is_AA)
-        value_ = evaluateAA(P.getDistTable(myTableIndex), P.Z.first_address());
+        value_ = evaluateAA(P.getDistTableAA(myTableIndex), P.Z.first_address());
       else
-        value_ = evaluateAB(P.getDistTable(myTableIndex), Pa.Z.first_address(), P.Z.first_address());
+        value_ = evaluateAB(P.getDistTableAB(myTableIndex), Pa.Z.first_address(), P.Z.first_address());
     }
     return value_;
   }

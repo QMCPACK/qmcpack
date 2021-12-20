@@ -15,7 +15,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "LongRange/StructFact.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #include "Particle/ParticleSetPool.h"
 #include <stdio.h>

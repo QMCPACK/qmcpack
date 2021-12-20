@@ -16,6 +16,7 @@
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
+#include "OneBodyDensityMatrices.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -31,6 +32,7 @@
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 
@@ -254,7 +256,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
     for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      operator_data_sizes[iop] = operator_ests_[iop]->get_data()->size();
+      operator_data_sizes[iop] = operator_ests_[iop]->get_data().size();
     }
     // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
@@ -265,7 +267,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
     {
       auto& estimator      = *operator_ests_[iop];
-      auto& data           = estimator.get_data_ref();
+      auto& data           = estimator.get_data();
       size_t adjusted_size = data.size() + 1;
       operator_send_buffer.resize(adjusted_size, 0.0);
       operator_recv_buffer.resize(adjusted_size, 0.0);
@@ -328,7 +330,7 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second].get();
 }
 
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory, xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
@@ -390,6 +392,15 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         operator_ests_.emplace_back(
           std::make_unique<MomentumDistribution>(std::move(mdi), 
             pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl));
+      }
+      else if (est_type == "OneBodyDensityMatrices")
+      {
+        OneBodyDensityMatricesInput obdmi(cur);
+        // happens once insures golden particle set is not abused.
+        ParticleSet pset_target(pset);
+        operator_ests_.emplace_back(
+          std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), 
+                                                   pset.Lattice, pset.getSpeciesSet(), wf_factory, pset_target));
       }
       else
       {

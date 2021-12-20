@@ -61,7 +61,7 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const P
                                                                          ParticleSet::ParticleGradient_t& G,
                                                                          ParticleSet::ParticleLaplacian_t& L)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = 0;
   log_value_            = 0.0;
   RealType dist       = 0.0;
@@ -92,7 +92,7 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const P
  */
 PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -104,7 +104,7 @@ PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 
 GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return GradType();
@@ -117,7 +117,7 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 
 PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -143,7 +143,7 @@ void LatticeGaussianProduct::evaluateLogAndStore(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& dG,
                                                  ParticleSet::ParticleLaplacian_t& dL)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   int icent           = 0;

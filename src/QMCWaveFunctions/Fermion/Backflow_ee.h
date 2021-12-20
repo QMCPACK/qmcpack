@@ -232,7 +232,7 @@ public:
   {
     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAA(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -253,7 +253,7 @@ public:
     APP_ABORT("This shouldn't be called: Backflow_ee::evaluate(Bmat)");
     PosType du, d2u, temp;
     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
-    //    const auto& myTable = P.getDistTable(myTableIndex_);
+    //    const auto& myTable = P.getDistTableAA(myTableIndex_);
     //    for (int i = 0; i < myTable.sources(); i++)
     //    {
     //      for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -293,7 +293,7 @@ public:
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
     for (int ig = 0; ig < NumGroups; ++ig)
     {
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
@@ -347,7 +347,7 @@ public:
   {
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAA(myTableIndex_);
     //int maxI            = index.size();
     //int iat             = index[0];
     //for (int i = 1; i < maxI; i++)
@@ -365,7 +365,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
@@ -393,7 +393,7 @@ public:
   {
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
     //    RealType du, d2u;
-    //    const auto& myTable = P.getDistTable(myTableIndex_);
+    //    const auto& myTable = P.getDistTableAA(myTableIndex_);
     //    int maxI            = index.size();
     //    int iat             = index[0];
     //    for (int i = 1; i < maxI; i++)
@@ -429,7 +429,7 @@ public:
                            HessMatrix_t& Amat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
     for (int j = 0; j < iat; j++)
     {
       if (myTable.getTempDists()[j] > 0)
@@ -492,10 +492,10 @@ public:
   {
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
     //    RealType du, d2u;
-    //    const auto& myTable                                     = P.getDistTable(myTableIndex_);
+    //    const auto& myTable                                     = P.getDistTableAA(myTableIndex_);
     //    int maxI                                                = index.size();
     //    int iat                                                 = index[0];
-    //    const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
+    //    const std::vector<DistanceTable::TempDistType>& TMP = myTable.Temp;
     //    for (int i = 1; i < maxI; i++)
     //    {
     //      int j        = index[i];
@@ -539,8 +539,8 @@ public:
   {
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     //    RealType du, d2u;
-    //    const auto& myTable                                     = P.getDistTable(myTableIndex_);
-    //    const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
+    //    const auto& myTable                                     = P.getDistTableAA(myTableIndex_);
+    //    const std::vector<DistanceTable::TempDistType>& TMP = myTable.Temp;
     //    for (int j = 0; j < iat; j++)
     //    {
     //      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
@@ -610,7 +610,7 @@ public:
   {
     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
     //RealType du, d2u;
-    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //const auto& myTable = P.getDistTableAA(myTableIndex_);
     //for (int i = 0; i < myTable.sources(); i++)
     //{
     //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
@@ -638,7 +638,7 @@ public:
                                       HessArray_t& Xmat) override
   {
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable = P.getDistTableAA(myTableIndex_);
     for (int ig = 0; ig < NumGroups; ++ig)
     {
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)

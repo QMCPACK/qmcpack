@@ -33,7 +33,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
 {
   psi_ratios.resize(np);
 
-  myName = input_.get<std::string>("name");
+  my_name_ = input_.get<std::string>("name");
 
   //maximum k-value in the k-grid in cartesian coordinates
   auto kmax = input_.get<RealType>("kmax");
@@ -111,7 +111,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       }
     }
   }
-  app_log() << "\n  MomentumDistribution named " << myName << "\n";
+  app_log() << "\n  MomentumDistribution named " << my_name_ << "\n";
   if (sphere && !directional)
   {
     app_log() << "    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < " << sphere_kmax
@@ -173,30 +173,29 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
 
   // allocate data storage
   size_t data_size = nofK.size();
-  data_            = createLocalData(data_size, data_locality_);
+  data_.resize(data_size, 0.0);
 }
 
-std::unique_ptr<OperatorEstBase> MomentumDistribution::clone() const
+MomentumDistribution::MomentumDistribution(const MomentumDistribution& md, DataLocality dl): MomentumDistribution(md) {
+  data_locality_ = dl;
+}
+ 
+std::unique_ptr<OperatorEstBase> MomentumDistribution::spawnCrowdClone() const
 {
-  auto md = std::make_unique<MomentumDistribution>(*this);
-  if (md->data_locality_ == DataLocality::crowd)
-  {
-    app_log() << "MD::clone dl crowd\n";
-    size_t data_size = data_->size();
-    md->data_        = createLocalData(data_size, data_locality_);
-  }
-  else if (md->data_locality_ == DataLocality::rank)
-  {
-    app_log() << "MD::clone dl rank\n";
-    assert(data_locality_ == DataLocality::rank);
-    size_t data_size   = 10; // jtk fix
-    md->data_locality_ = DataLocality::queue;
-    md->data_          = createLocalData(data_size, data_locality_);
-  }
-  else
-    app_log() << "MD::clone dl other\n";
+  std::size_t data_size = data_.size();
+  auto spawn_data_locality = data_locality_;
 
-  return md;
+  if (data_locality_ == DataLocality::rank)
+  {
+    // This is just a stub until a memory saving optimization is deemed necessary
+    spawn_data_locality = DataLocality::queue;
+    data_size = 0;
+    throw std::runtime_error("There is no memory savings implementation for MomentumDistribution");
+  }
+
+  auto spawn = std::make_unique<MomentumDistribution>(*this, spawn_data_locality);
+  spawn->get_data().resize(data_size);
+  return spawn;
 }
 
 //MomentumDistribution::MomentumDistribution(const MomentumDistribution& md)
@@ -300,7 +299,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
 
     // accumulate data
     for (int ik = 0; ik < nofK.size(); ++ik)
-      (*data_)[ik] += weight * nofK[ik] * norm_nofK;
+      data_[ik] += weight * nofK[ik] * norm_nofK;
 
   }
 }

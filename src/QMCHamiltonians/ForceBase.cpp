@@ -16,7 +16,7 @@
 
 
 #include "ForceBase.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/MatrixOperators.h"
@@ -157,7 +157,7 @@ void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 BareForce::Return_t BareForce::evaluate(ParticleSet& P)
 {
   forces                                    = forces_IonIon;
-  const auto& d_ab                          = P.getDistTable(d_ei_ID);
+  const auto& d_ab                          = P.getDistTableAB(d_ei_ID);
   const ParticleSet::Scalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs

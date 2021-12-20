@@ -23,6 +23,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/FairDivide.h"
@@ -73,9 +74,11 @@ private:
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
+  // Then these too can be references.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
+  WaveFunctionFactory* wf_factory_;
   // At the moment these are "clones" but I think this design pattern smells.
   UPtrVector<ParticleSet> walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
@@ -104,6 +107,7 @@ public:
                WalkerConfigurations& mcwc,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
+               WaveFunctionFactory* wf_factory,
                QMCHamiltonian* hamiltonian_);
 
   ~MCPopulation();
@@ -188,7 +192,8 @@ public:
   TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
   // TODO: the fact this is needed is sad remove need for its existence.
   QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
-
+  WaveFunctionFactory& get_wf_factory() { return *wf_factory_; }
+  
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 

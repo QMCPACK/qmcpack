@@ -20,8 +20,10 @@
 #define QMCPLUSPLUS_ORBITALSETTRAITS_H
 
 #include "Configuration.h"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "VariableSet.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {
@@ -52,8 +54,8 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
   {
     DIM = OHMMS_DIM
   };
-  typedef typename scalar_traits<T>::real_type RealType;
-  typedef typename scalar_traits<T>::value_type ValueType;
+  using RealType = RealAlias<T>;
+  using ValueType = T;
   typedef int IndexType;
   typedef TinyVector<RealType, DIM> PosType;
   typedef TinyVector<ValueType, DIM> GradType;
