@@ -14,6 +14,7 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
+#include "io/InputNode.hpp"
 
 namespace qmcplusplus
 {
@@ -26,7 +27,7 @@ namespace qmcplusplus
  *  3. Hold the logic of calculating derived parameters.
  *
  */
-class SpinDensityInput
+class SpinDensityInput : public InputNode
 {
 public:
   using Real               = QMCTraits::RealType;
@@ -36,7 +37,8 @@ public:
   static constexpr int DIM = QMCTraits::DIM;
 
 public:
-  SpinDensityInput(){};
+  SpinDensityInput(){}
+  SpinDensityInput(xmlNodePtr node);
   void readXML(xmlNodePtr cur);
   Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }

@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_VALID_OBDM_INPUT_H
 
 #include <array>
+#include <string_view>
 
 namespace qmcplusplus
 {
@@ -30,7 +31,7 @@ namespace onebodydensitymatrices
 
 
   // clang-format: off
-  constexpr std::array<const char*, 3> valid_one_body_density_matrices_input_sections{
+  constexpr std::array<std::string_view, 3> valid_one_body_density_matrices_input_sections{
       R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm </parameter>

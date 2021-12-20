@@ -15,6 +15,9 @@
 #include "Configuration.h"
 #include "InputSection.h"
 
+// This should not imply linkage to io
+#include "io/InputNode.hpp"
+
 namespace qmcplusplus
 {
 namespace testing
@@ -24,7 +27,7 @@ class OneBodyDensityMatricesTests;
 }
 /** Native representation for DensityMatrices1B Estimator's inputs
  */
-class OneBodyDensityMatricesInput
+class OneBodyDensityMatricesInput : public InputNode
 {
 public:
   enum class Integrator

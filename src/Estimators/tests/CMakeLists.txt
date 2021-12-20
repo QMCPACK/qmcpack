@@ -31,6 +31,7 @@ set(SRCS
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
+    test_EstimatorManagerInput.cpp
     )
 
 # OneBodyDensityMatrices are not tested with legacy CUDA
@@ -46,11 +47,12 @@ endif()
   
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcio qmcestimators_unit utilities_for_test)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
     qmcutil
+    qmcio
     qmcestimators_unit
     qmcham_unit
     qmcwfs
