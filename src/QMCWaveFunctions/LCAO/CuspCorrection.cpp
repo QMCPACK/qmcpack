@@ -28,7 +28,6 @@ bool readCuspInfo(const std::string& cuspInfoFile,
                   Matrix<CuspCorrectionParameters>& info)
 {
   bool success = true;
-  std::string cname;
   int ncenter = info.rows();
   app_log() << "Reading cusp info from : " << cuspInfoFile << std::endl;
   Libxml2Document adoc;
@@ -43,7 +42,7 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   xmlNodePtr cur  = NULL, ctr;
   while (head != NULL)
   {
-    getNodeName(cname, head);
+    std::string cname(getNodeName(head));
     if (cname == "sposet")
     {
       std::string name;
@@ -71,7 +70,7 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   cur = cur->children;
   while (cur != NULL)
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == "center")
     {
       int num = -1;
@@ -85,7 +84,7 @@ bool readCuspInfo(const std::string& cuspInfoFile,
       ctr = cur->children;
       while (ctr != NULL)
       {
-        getNodeName(cname, ctr);
+        std::string cname(getNodeName(ctr));
         if (cname == "orbital")
         {
           int orb = -1;

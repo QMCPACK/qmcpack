@@ -133,7 +133,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
     if (cname == "basisset")
     {
       XMLAttrString basisset_name_input(element, "name");
-      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
+      std::string basisset_name(basisset_name_input.hasValue() ? basisset_name_input.getValue() : "LCAOBSet" );
       if (basisset_map_.find(basisset_name) != basisset_map_.end())
       {
         std::ostringstream err_msg;
@@ -851,8 +851,8 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   else
   {
     const XMLAttrString o(occ_ptr, "mode");
-    if (!o.empty())
-      occ_mode = o;
+    if (o.hasValue())
+      occ_mode = o.getValue();
   }
   //Do nothing if mode == ground
   if (occ_mode == "excited")

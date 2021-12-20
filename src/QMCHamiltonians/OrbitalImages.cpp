@@ -111,37 +111,37 @@ bool OrbitalImages::put(xmlNodePtr cur)
     if (ename == "parameter")
     {
       const XMLAttrString name(element, "name");
-      if (name == "sposets")
+      if (name.getValue() == "sposets")
         putContent(sposet_names, element);
-      else if (name == "batch_size")
+      else if (name.getValue() == "batch_size")
         putContent(batch_size, element);
-      else if (name == "grid")
+      else if (name.getValue() == "grid")
       {
         have_grid = true;
         putContent(grid, element);
       }
-      else if (name == "center_grid")
+      else if (name.getValue() == "center_grid")
         putContent(cg_str, element);
-      else if (name == "corner")
+      else if (name.getValue() == "corner")
       {
         have_corner = true;
         putContent(corner, element);
       }
-      else if (name == "center")
+      else if (name.getValue() == "center")
       {
         have_center = true;
         putContent(center, element);
       }
-      else if (name == "cell")
+      else if (name.getValue() == "cell")
       {
         have_cell = true;
         putContent(axes, element);
       }
-      else if (name == "value")
+      else if (name.getValue() == "value")
         putContent(valtypes, element);
-      else if (name == "derivatives")
+      else if (name.getValue() == "derivatives")
         putContent(der_str, element);
-      else if (name == "format")
+      else if (name.getValue() == "format")
         putContent(file_format, element);
       else
         other_elements.push_back(element);
@@ -163,7 +163,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     {
       const XMLAttrString name(element, "name");
       for (int i = 0; i < sposet_names.size(); ++i)
-        if (name == sposet_names[i])
+        if (name.getValue() == sposet_names[i])
           putContent((*sposet_indices)[i], element);
     }
   }

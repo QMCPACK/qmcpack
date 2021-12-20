@@ -69,7 +69,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
   std::string msd_algorithm;
@@ -89,7 +88,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == sposet_tag)
     {
       app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
@@ -130,7 +129,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   cur = curRoot->children;
   while (cur != NULL)
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == sd_tag)
     {
       app_summary() << std::endl;
@@ -145,7 +144,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       xmlNodePtr tcur   = cur->children;
       while (tcur != NULL)
       {
-        getNodeName(tname, tcur);
+        std::string tname(getNodeName(tcur));
         if (tname == det_tag || tname == rn_tag)
         {
           if (spin_group >= targetPtcl.groups())
@@ -532,8 +531,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   curTemp = curTemp->children;
   while (curTemp != NULL) //check the basis set
   {
-    std::string cname;
-    getNodeName(cname, curTemp);
+    std::string cname(getNodeName(curTemp));
     if (cname == "detlist")
       DetListNode = curTemp;
     curTemp = curTemp->next;
@@ -541,7 +539,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 
   bool success = true;
   XMLAttrString HDF5Path(DetListNode, "href");
-  if (HDF5Path != "")
+  if (HDF5Path.hasValue())
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
     success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
@@ -663,14 +661,13 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
   curTemp = curTemp->children;
   while (curTemp != NULL) //check the basis set
   {
-    std::string cname;
-    getNodeName(cname, curTemp);
+    std::string cname(getNodeName(curTemp));
     if (cname == "detlist")
       DetListNode = curTemp;
     curTemp = curTemp->next;
   }
   XMLAttrString HDF5Path(DetListNode, "href");
-  if (HDF5Path != "")
+  if (HDF5Path.hasValue())
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
     success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, multiSD.C, optimizeCI, nels);
@@ -814,11 +811,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
   xmlNodePtr curRoot = cur, DetListNode = nullptr;
-  std::string cname, cname0;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == "detlist")
     {
       DetListNode = cur;
@@ -897,7 +893,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     app_log() << "Reading CSFs." << std::endl;
     while (cur != NULL) //check the basis set
     {
-      getNodeName(cname, cur);
+      std::string cname(getNodeName(cur));
       if (cname == "csf")
       {
         RealType exctLvl, qc_ci = 0.0;
@@ -944,7 +940,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         xmlNodePtr csf = cur->children;
         while (csf != NULL)
         {
-          getNodeName(cname0, csf);
+          std::string cname0(getNodeName(csf));
           if (cname0 == "det")
           {
             std::vector<std::string> occs(nGroups);
@@ -1056,7 +1052,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     std::vector<std::unordered_map<std::string, int>> MyMaps(nGroups);
     while (cur != NULL) //check the basis set
     {
-      getNodeName(cname, cur);
+      std::string cname(getNodeName(cur));
       if (cname == "configuration" || cname == "ci")
       {
         RealType qc_ci = 0.0;
@@ -1180,11 +1176,11 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
   xmlNodePtr curRoot = cur, DetListNode = nullptr;
-  std::string cname, cname0, multidetH5path;
+  std::string multidetH5path;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == "detlist")
     {
       DetListNode = cur;

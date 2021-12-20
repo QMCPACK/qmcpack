@@ -47,8 +47,7 @@ TEST_CASE("parseString", "[xml]")
 
   REQUIRE((char*)root->name == string("simulation"));
 
-  string root_name;
-  getNodeName(root_name, root);
+  std::string root_name(getNodeName(root));
 
   REQUIRE(root_name == "simulation");
 }
@@ -71,7 +70,7 @@ aa \
   REQUIRE(node_string == " aa ");
 
   const XMLAttrString attr_string(root, "name");
-  REQUIRE(attr_string == "qmc");
+  REQUIRE(attr_string.getValue() == "qmc");
 }
 
 TEST_CASE("putContent", "[xml]")

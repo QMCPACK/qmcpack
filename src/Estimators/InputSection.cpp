@@ -45,12 +45,11 @@ void InputSection::readXML(xmlNodePtr cur)
     if (ename == "parameter")
     {
       XMLAttrString name(element, "name");
-      for (auto& c : name)
-        c = tolower(c);
+      name.setValue(lowerCase(name.getValue()));
       if (!is_parameter(name))
       {
         std::stringstream error;
-        error << "InputSection::readXML name " << name << " is not a parameter of " << section_name << "\n";
+        error << "InputSection::readXML name " << name.getValue() << " is not a parameter of " << section_name << "\n";
         throw UniformCommunicateError(error.str());
       }
       std::istringstream stream(XMLNodeString{element});
@@ -197,8 +196,7 @@ void InputSection::report() const
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name, const std::string& enum_value, const std::unordered_map<std::string, std::any>& enum_map)
 {
-  std::string enum_value_str(enum_name + "-" + enum_value);
-  tolower(enum_value_str);
+  std::string enum_value_str(lowerCase(enum_name + "-" + enum_value));
   try
   {
     return enum_map.at(enum_value_str);

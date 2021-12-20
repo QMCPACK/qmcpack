@@ -29,6 +29,7 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "Utilities/IteratorUtility.h"
+#include "Utilities/ModernStringUtils.hpp"
 #include "Message/Communicate.h"
 #include "hdf/hdf_archive.h"
 #include "Message/OpenMP.h"
@@ -1556,7 +1557,7 @@ public:
       bool use_scalar_defaults = scalar_defaults == "yes";
       bool use_array_defaults  = array_defaults == "yes";
       verbose                  = verbose_write == "yes";
-      tolower(format);
+      format = lowerCase(format);
       if (format == "hdf")
       {
         hdf_format = true;

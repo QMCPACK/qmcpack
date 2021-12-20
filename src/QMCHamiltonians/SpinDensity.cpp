@@ -89,32 +89,32 @@ bool SpinDensity::put(xmlNodePtr cur)
     if (ename == "parameter")
     {
       const XMLAttrString name(element, "name");
-      if (name == "dr")
+      if (name.getValue() == "dr")
       {
         have_dr = true;
         putContent(dr, element);
       }
-      else if (name == "grid")
+      else if (name.getValue() == "grid")
       {
         have_grid = true;
         putContent(grid, element);
       }
-      else if (name == "corner")
+      else if (name.getValue() == "corner")
       {
         have_corner = true;
         putContent(corner, element);
       }
-      else if (name == "center")
+      else if (name.getValue() == "center")
       {
         have_center = true;
         putContent(center, element);
       }
-      else if (name == "cell")
+      else if (name.getValue() == "cell")
       {
         have_cell = true;
         putContent(axes, element);
       }
-      else if (name == "test_moves")
+      else if (name.getValue() == "test_moves")
         putContent(test_moves, element);
     }
     element = element->next;

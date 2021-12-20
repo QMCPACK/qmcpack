@@ -39,32 +39,32 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
     if (ename == "parameter")
     {
       const XMLAttrString name(element, "name");
-      if (name == "dr")
+      if (name.getValue() == "dr")
       {
         have_dr_ = true;
         putContent(dr_, element);
       }
-      else if (name == "grid")
+      else if (name.getValue() == "grid")
       {
         have_grid_ = true;
         putContent(grid_, element);
       }
-      else if (name == "corner")
+      else if (name.getValue() == "corner")
       {
         have_corner_ = true;
         putContent(corner_, element);
       }
-      else if (name == "center")
+      else if (name.getValue() == "center")
       {
         have_center_ = true;
         putContent(center_, element);
       }
-      else if (name == "cell")
+      else if (name.getValue() == "cell")
       {
         have_cell_ = true;
         putContent(axes, element);
       }
-      else if (name == "test_moves")
+      else if (name.getValue() == "test_moves")
         putContent(test_moves, element);
     }
     element = element->next;

@@ -61,8 +61,8 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
   const XMLAttrString cutoff_str(cur, "cutoff");
-  if (!cutoff_str.empty())
-    RcutMax = std::stod(cutoff_str);
+  if (cutoff_str.hasValue())
+    RcutMax = std::stod(cutoff_str.getValue());
 
   return read_pp_file(fname);
 }

@@ -455,9 +455,9 @@ bool QMCMain::validateXML()
     {
       //file is provided
       const XMLAttrString include_name(cur, "href");
-      if (!include_name.empty())
+      if (include_name.hasValue())
       {
-        bool success = pushDocument(include_name);
+        bool success = pushDocument(include_name.getValue());
         if (success)
         {
           inputnode = processPWH(XmlDocStack.top()->getRoot());

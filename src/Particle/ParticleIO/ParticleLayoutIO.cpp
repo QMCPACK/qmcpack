@@ -24,6 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include "Utilities/ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
@@ -55,24 +56,24 @@ bool LatticeParser::put(xmlNodePtr cur)
     if (cname == "parameter")
     {
       const XMLAttrString aname(cur, "name");
-      if (aname == "scale")
+      if (aname.getValue() == "scale")
       {
         putContent(a0, cur);
       }
-      else if (aname == "lattice")
+      else if (aname.getValue() == "lattice")
       {
         const XMLAttrString units_prop(cur, "units");
-        if (!units_prop.empty() && units_prop != "bohr")
+        if (units_prop.hasValue() && units_prop.getValue() != "bohr")
         {
           APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
-                    << std::string(units_prop));
+                    << std::string(units_prop.getValue()));
         }
 
         putContent(lattice_in, cur);
         lattice_defined = true;
         //putContent(ref_.R,cur);
       }
-      else if (aname == "bconds")
+      else if (aname.getValue() == "bconds")
       {
         putContent(bconds, cur);
         bconds_defined = true;
@@ -100,18 +101,20 @@ bool LatticeParser::put(xmlNodePtr cur)
                 "LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic ones.");
         }
       }
-      else if (aname == "vacuum")
+      else if (aname.getValue() == "vacuum")
       {
         putContent(ref_.VacuumScale, cur);
       }
-      else if (aname == "LR_dim_cutoff")
+      else if (aname.getValue() == "LR_dim_cutoff")
       {
         putContent(ref_.LR_dim_cutoff, cur);
       }
-      else if (aname == "LR_handler")
+      else if (aname.getValue() == "LR_handler")
       {
+        std::string handler_type;
+        //This chops whitespace so the simple str == comparisons work
         putContent(handler_type, cur);
-        tolower(handler_type);
+        handler_type = lowerCase(handler_type);
         if (handler_type == "ewald")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
         else if (handler_type == "opt_breakup")
@@ -121,11 +124,11 @@ bool LatticeParser::put(xmlNodePtr cur)
         else
           APP_ABORT("\n  Long range breakup handler not recognized.\n");
       }
-      else if (aname == "LR_tol")
+      else if (aname.getValue() == "LR_tol")
       {
         putContent(ref_.LR_tol, cur);
       }
-      else if (aname == "rs")
+      else if (aname.getValue() == "rs")
       {
         lattice_defined = true;
         OhmmsAttributeSet rAttrib;
@@ -135,7 +138,7 @@ bool LatticeParser::put(xmlNodePtr cur)
         rAttrib.put(cur);
         putContent(rs, cur);
       }
-      else if (aname == "nparticles")
+      else if (aname.getValue() == "nparticles")
       {
         putContent(nptcl, cur);
       }

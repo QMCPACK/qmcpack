@@ -32,8 +32,8 @@ void WFOptDriverInput::readXML(xmlNodePtr xml_input)
     if (cname.find("optimize") < cname.size())
     {
       const XMLAttrString att(cur, "method");
-      if (!att.empty())
-        opt_method_ = att;
+      if (att.hasValue())
+        opt_method_ = att.getValue();
       opt_xml_node_ = cur;
     }
     cur = cur->next;

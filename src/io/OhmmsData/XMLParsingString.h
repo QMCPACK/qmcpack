@@ -19,10 +19,49 @@
 #define QMCPLUSPLUS_XMLSTRING_H
 
 #include <string>
+#include <string_view>
 #include <libxml/xmlmemory.h>
 #include <libxml/tree.h>
 
+// I think these should be in libxmldefs.h
+// but it includes XMLParsingString so these cast functions need to be here.
+
+/** xmlChar* to char* cast
+ *  certainly not typesafe but at this interface between libxml and c++
+ *  well it beats c style casts and might be more correct than a reinterpret.
+ *
+ *  This is fine with UTF-8 bytes going into a std::string.
+ */
+inline char* castXMLCharToChar(xmlChar* c)
+{
+  return static_cast<char*>(static_cast<void *>(c));
+}
+
+/** unsafe const xmlChar* to const char* cast
+ */
+inline const char* castXMLCharToChar(const xmlChar * c)
+{
+  return static_cast<const char*>(static_cast<const void *>(c));
+}
+
+/** unsafe char* to xmlChar* cast
+ */
+inline xmlChar* castCharToXMLChar(char* c)
+{
+  return static_cast<xmlChar*>(static_cast<void *>(c));
+}
+
+/** unsafe const char* to const xmlChar* cast
+ */
+inline const xmlChar* castCharToXMLChar(const char * c)
+{
+  return static_cast<const xmlChar*>(static_cast<const void *>(c));
+}
+
 /** convert xmlNode contents into a std::string
+ *  \todo this should just be a function that takes a cur
+ *  and returns a std::string.
+ *  setXMLNodeContent is OOP without reason.
  */
 class XMLNodeString : public std::string
 {
@@ -50,41 +89,60 @@ public:
   }
 };
 
-/** convert an xmlNode attribute into a std::string
+/** convert an xmlNode attribute into a name value pair.
+ * used to inherit from std::string but to no advantage
+ * and repeated confusion about whether comparisons to an attribute string were between
+ * name or value etc.
  * if parsing multiple attributes is needed, use OhmmsAttributeSet
  */
-class XMLAttrString : public std::string
+class XMLAttrString
 {
+  // ordering same as crazy value, name signature of constructor
+  std::string attribute_;
   const std::string attribute_name_;
-
 public:
   /// construct a string from an xmlNode
   XMLAttrString(const xmlNodePtr cur, const char* name)
       : attribute_name_(name)
   {
-    xmlChar* attr_char = xmlGetProp(cur, (const xmlChar*)name);
+    xmlChar* attr_char = xmlGetProp(cur, castCharToXMLChar(name));
     if(attr_char)
     {
-      assign((const char*)attr_char);
+      attribute_.assign(castXMLCharToChar(attr_char));
       xmlFree(attr_char);
     }
   }
-
+  
   /// expose base class constructors
-  XMLAttrString(const std::string& in, const std::string& name) : std::string(in), attribute_name_(name) { }
+  XMLAttrString(const std::string& in, const std::string& name) : attribute_(in), attribute_name_(name) { }
 
-  XMLAttrString(const char* in, const char* name) : std::string(in), attribute_name_(name) { }
+  XMLAttrString(const char* in, const char* name) : attribute_(in), attribute_name_(name) { }
 
+  /** i.e. does it have a value
+   */
+  auto hasValue() const { return ! attribute_.empty(); };
+  
   /// write a string to an xmlNode
   void createXMLAttribute(xmlNodePtr cur) const
   {
-    xmlNewProp(cur, (const xmlChar*)attribute_name_.c_str(), (const xmlChar*)this->c_str());
+    xmlNewProp(cur, castCharToXMLChar(attribute_name_.c_str()), castCharToXMLChar(attribute_.c_str()));
   }
 
   /// write a string to an xmlNode
   void setXMLAttribute(xmlNodePtr cur) const
   {
-    xmlSetProp(cur, (const xmlChar*)attribute_name_.c_str(), (const xmlChar*)this->c_str());
+    xmlSetProp(cur, castCharToXMLChar(attribute_name_.c_str()), castCharToXMLChar(attribute_.c_str()));
   }
+
+  /** retain surprising behavior where this inherently name value object 
+   *  can also operate as just a string of its value
+   *  \todo remove this its a footgun and makes for less readable code
+   */
+  operator const std::string&() { return attribute_; }
+
+  const std::string& getName() const { return attribute_name_; }
+  const std::string& getValue() const { return attribute_; }
+  void setValue(const std::string_view value) { attribute_.assign(value); } 
+  
 };
 #endif

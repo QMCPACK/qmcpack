@@ -112,8 +112,8 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
 
   std::string vFormat("V");
   const XMLAttrString v_str(cur, "format");
-  if (!v_str.empty())
-    vFormat = v_str;
+  if (v_str.hasValue())
+    vFormat = v_str.getValue();
 
   int vPowerCorrection = 1;
   if (vFormat == "r*V")

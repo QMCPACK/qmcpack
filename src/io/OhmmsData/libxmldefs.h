@@ -25,14 +25,11 @@
 #include <algorithm>
 #include <typeinfo>
 #include "XMLParsingString.h"
+#include "Utilities/ModernStringUtils.hpp"
 
-template<typename _CharT>
-inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
+inline std::string getNodeName(xmlNodePtr cur)
 {
-  cname = (const char*)cur->name;
-  for (int i = 0; i < cname.size(); i++)
-    cname[i] = tolower(cname[i]);
-  //std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
+  return qmcplusplus::lowerCase(castXMLCharToChar(cur->name));
 }
 
 /**\file libxmldefs.h

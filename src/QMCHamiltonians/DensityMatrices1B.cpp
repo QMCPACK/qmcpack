@@ -156,42 +156,42 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     if (ename == "parameter")
     {
       const XMLAttrString name(element, "name");
-      if (name == "basis")
+      if (name.getValue() == "basis")
         putContent(sposets, element);
-      else if (name == "energy_matrix")
+      else if (name.getValue() == "energy_matrix")
         putContent(emstr, element);
-      else if (name == "integrator")
+      else if (name.getValue() == "integrator")
         putContent(igstr, element);
-      else if (name == "evaluator")
+      else if (name.getValue() == "evaluator")
         putContent(evstr, element);
-      else if (name == "scale")
+      else if (name.getValue() == "scale")
         putContent(scale, element);
-      else if (name == "center")
+      else if (name.getValue() == "center")
       {
         putContent(center, element);
         center_defined = true;
       }
-      else if (name == "points")
+      else if (name.getValue() == "points")
         putContent(points, element);
-      else if (name == "samples")
+      else if (name.getValue() == "samples")
         putContent(samples, element);
-      else if (name == "warmup")
+      else if (name.getValue() == "warmup")
         putContent(warmup, element);
-      else if (name == "timestep")
+      else if (name.getValue() == "timestep")
         putContent(timestep, element);
-      else if (name == "use_drift")
+      else if (name.getValue() == "use_drift")
         putContent(udstr, element);
-      else if (name == "check_overlap")
+      else if (name.getValue() == "check_overlap")
         putContent(costr, element);
-      else if (name == "check_derivatives")
+      else if (name.getValue() == "check_derivatives")
         putContent(cdstr, element);
-      else if (name == "acceptance_ratio")
+      else if (name.getValue() == "acceptance_ratio")
         putContent(arstr, element);
-      else if (name == "rstats")
+      else if (name.getValue() == "rstats")
         putContent(wrstr, element);
-      else if (name == "normalized")
+      else if (name.getValue() == "normalized")
         putContent(nmstr, element);
-      else if (name == "volume_normed")
+      else if (name.getValue() == "volume_normed")
         putContent(vnstr, element);
     }
     element = element->next;

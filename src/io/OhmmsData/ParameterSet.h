@@ -18,7 +18,7 @@
 #include <map>
 #include <string>
 #include "OhmmsData/OhmmsParameter.h"
-
+#include "ModernStringUtils.hpp"
 /** class to handle a set of parameters
  *
  *This may become an inherited class from OhmmsElementBase.
@@ -51,23 +51,23 @@ struct ParameterSet : public OhmmsElementBase
    */
   inline bool put(xmlNodePtr cur) override
   {
+    using namespace qmcplusplus;
     if (cur == NULL)
       return true; //handle empty node
     cur            = cur->xmlChildrenNode;
     bool something = false;
     while (cur != NULL)
     {
-      std::string cname((const char*)(cur->name));
-      tolower(cname);
+      std::string cname(lowerCase(castXMLCharToChar(cur->name)));
       if (auto it_tag = m_param.find(cname); it_tag == m_param.end())
       {
         if (cname == myName)
         {
           XMLAttrString aname(cur, "name");
-          if (!aname.empty())
+          if (aname.hasValue())
           {
-            tolower(aname);
-            if (auto it = m_param.find(aname); it != m_param.end())
+            aname.setValue(lowerCase(aname.getValue()));
+            if (auto it = m_param.find(aname.getValue()); it != m_param.end())
             {
               something = true;
               it->second->put(cur);
@@ -99,8 +99,8 @@ struct ParameterSet : public OhmmsElementBase
                   std::vector<PDT>&& candidate_values = {},
                   TagStatus status                    = TagStatus::OPTIONAL)
   {
-    std::string aname(aname_in);
-    tolower(aname);
+    using namespace qmcplusplus;
+    std::string aname(lowerCase(aname_in));
     if (auto it = m_param.find(aname); it == m_param.end())
     {
       m_param[aname] = std::make_unique<OhmmsParameter<PDT>>(aparam, aname, std::move(candidate_values), status);
@@ -110,8 +110,8 @@ struct ParameterSet : public OhmmsElementBase
   template<class PDT>
   inline void setValue(const std::string& aname_in, PDT aval)
   {
-    std::string aname(aname_in);
-    tolower(aname);
+    using namespace qmcplusplus;
+    std::string aname(lowerCase(aname_in));
     if (auto it = m_param.find(aname); it != m_param.end())
     {
       (dynamic_cast<OhmmsParameter<PDT>&>(*it->second)).setValue(aval);

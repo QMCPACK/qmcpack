@@ -111,7 +111,7 @@ public:
   bool put(xmlNodePtr cur)
   {
     const XMLAttrString a(cur, "normalized");
-    if (a == "no")
+    if (a.getValue() == "no")
       Normalized = false;
     return true;
   }

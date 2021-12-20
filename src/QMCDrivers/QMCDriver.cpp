@@ -555,7 +555,7 @@ xmlNodePtr QMCDriver::getQMCNode()
     if (cname == "parameter")
     {
       const XMLAttrString name(cur, "name");
-      if (name == "current")
+      if (name.getValue() == "current")
         current_ptr = cur;
     }
     cur = cur->next;

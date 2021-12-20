@@ -82,8 +82,7 @@ public:
         OhmmsAttributeSet aAttrib;
         aAttrib.add(trace_name, "name");
         aAttrib.put(cur);
-        std::string cname;
-        getNodeName(cname, cur);
+        std::string cname(getNodeName(cur));
         std::string prefix(sposet->getName() + "_" + cname + "_" + trace_name);
         if (cname == "path")
         {

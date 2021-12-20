@@ -36,7 +36,7 @@ namespace qmcplusplus
  *  *  For tags, and keywords where we define explicitly define they are ASCII encoded and this is fine. 
  *  *  For other XML derived text this should never be used since we should assume that to be UTF-8 encoded.
  */
-inline std::string strToLower(const std::string_view s)
+inline std::string lowerCase(const std::string_view s)
 {
   std::string lower_str{s};
   std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(),

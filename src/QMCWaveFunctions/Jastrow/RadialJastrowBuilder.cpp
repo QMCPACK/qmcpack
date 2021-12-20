@@ -165,7 +165,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   using DiffJ2Type = typename JastrowTypeHelper<RadFuncType, Implementation>::DiffJ2Type;
 
   XMLAttrString input_name(cur, "name");
-  std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
+  std::string j2name = input_name.hasValue() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2  = std::make_unique<J2Type>(j2name, targetPtcl);
   auto dJ2 = std::make_unique<DiffJ2Type>(targetPtcl);
@@ -349,7 +349,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   using J1Type = typename std::conditional<SPIN, typename TH::J1SpinType, typename TH::J1Type>::type;
 
   XMLAttrString input_name(cur, "name");
-  std::string jname = input_name.empty() ? Jastfunction : input_name;
+  std::string jname = input_name.hasValue() ? Jastfunction : input_name;
 
   auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl);
 
@@ -362,8 +362,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   bool Opt(true);
   while (kids != NULL)
   {
-    std::string kidsname = (char*)kids->name;
-    tolower(kidsname);
+    std::string kidsname(lowerCase(castXMLCharToChar(kids->name)));
     if (kidsname == "correlation")
     {
       std::string speciesA;
@@ -520,10 +519,10 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
   aAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
   aAttrib.put(cur);
-  tolower(NameOpt);
-  tolower(TypeOpt);
-  tolower(Jastfunction);
-  tolower(SpinOpt);
+  NameOpt = lowerCase(NameOpt);
+  TypeOpt = lowerCase(TypeOpt);
+  Jastfunction = lowerCase(Jastfunction);
+  SpinOpt = lowerCase(SpinOpt);
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int chargeInd = species.addAttribute("charge");
