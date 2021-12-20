@@ -68,6 +68,17 @@ if(HAVE_PYSCF)
     endif()
   endif()
 endif()
+
+if(HAVE_GPAW)
+    include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+    set(gpaw_python_reqs numpy;h5py;ase;gpaw;Eshdf;Eshdf_gpaw)
+    check_python_reqs(gpaw_python_reqs gpaw4qmcpack_test add_tests)
+    if(add_tests)
+      message("Python dependencies met. Adding GPAW4QMCPACK tests")
+      add_subdirectory("gpaw")
+    endif()
+endif()
+
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

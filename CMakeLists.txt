@@ -1025,15 +1025,14 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 endif()
 
 #-------------------------------------------------------------------
-# Check if GPAW and ASE are available
+# Check if GPAW is available
 #-------------------------------------------------------------------
 if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(ase HAVE_ASE)
   test_python_module(gpaw HAVE_GPAW)
-  if(HAVE_ASE AND HAVE_GPAW)
-    message(STATUS "Successfully imported ASE and GPAW python modules.")
+  if(HAVE_GPAW)
+    message(STATUS "Successfully imported GPAW python modules.")
   else()
-    message(STATUS "Unable to import GPAW and ASE python modules. GPAW converter tests will not be run.")
+    message(STATUS "Unable to import GPAW python module. GPAW converter tests will not be run.")
   endif()
 endif()
 
