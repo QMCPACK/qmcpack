@@ -27,10 +27,8 @@ if versions.spglib_available:
         assert(os.path.exists(vmc_infile))
 
         files_bef = '''
-        vmc.avg.s000.SpinDensity_u+d+err.xsf  vmc.avg.s000.SpinDensity_u-d+err.xsf
-        vmc.avg.s000.SpinDensity_u+d-err.xsf  vmc.avg.s000.SpinDensity_u-d-err.xsf
-        vmc.avg.s000.SpinDensity_u+d.xsf      vmc.avg.s000.SpinDensity_u-d.xsf
-        vmc.err                               vmc.g000.twistnum_0.in.xml
+        vmc.avg.s000.SpinDensity_u+d+err.xsf  vmc.avg.s000.SpinDensity_u+d-err.xsf
+        vmc.avg.s000.SpinDensity_u+d.xsf      vmc.g000.twistnum_0.in.xml
         vmc.g000.s000.scalar.dat              vmc.g001.s000.scalar.dat
         vmc.g000.twistnum_0.in.g000.qmc       vmc.g001.twistnum_1.in.g001.qmc
         vmc.g001.twistnum_1.in.xml            vmc.g002.twistnum_2.in.xml
@@ -55,11 +53,9 @@ if versions.spglib_available:
         assert(os.path.exists(dmc_infile))
 
         files_bef = '''
-        dmc.avg.s001.SpinDensity_u+d+err.xsf  dmc.avg.s001.SpinDensity_u-d-err.xsf
-        dmc.avg.s001.SpinDensity_u+d-err.xsf  dmc.avg.s001.SpinDensity_u-d.xsf      
-        dmc.avg.s001.SpinDensity_u+d.xsf      dmc.err                               
-        dmc.avg.s001.SpinDensity_u-d+err.xsf  dmc.g000.s000.scalar.dat              
-        dmc.g000.s001.scalar.dat              dmc.g001.s001.scalar.dat       
+        dmc.avg.s001.SpinDensity_u+d+err.xsf  dmc.avg.s001.SpinDensity_u+d-err.xsf
+        dmc.avg.s001.SpinDensity_u+d.xsf      dmc.g001.s001.scalar.dat                               
+        dmc.g000.s000.scalar.dat              dmc.g000.s001.scalar.dat
         dmc.g000.twistnum_0.in.g000.qmc       dmc.g001.twistnum_1.in.g001.qmc
         dmc.g000.twistnum_0.in.xml            dmc.g001.twistnum_1.in.xml     
         dmc.g001.s000.scalar.dat              dmc.g002.s000.scalar.dat       
