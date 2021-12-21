@@ -110,38 +110,38 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
-      if (name.getValue() == "sposets")
+      const std::string name(getXMLAttributeValue(element, "name"));
+      if (name == "sposets")
         putContent(sposet_names, element);
-      else if (name.getValue() == "batch_size")
+      else if (name == "batch_size")
         putContent(batch_size, element);
-      else if (name.getValue() == "grid")
+      else if (name == "grid")
       {
         have_grid = true;
         putContent(grid, element);
       }
-      else if (name.getValue() == "center_grid")
+      else if (name == "center_grid")
         putContent(cg_str, element);
-      else if (name.getValue() == "corner")
+      else if (name == "corner")
       {
         have_corner = true;
         putContent(corner, element);
       }
-      else if (name.getValue() == "center")
+      else if (name == "center")
       {
         have_center = true;
         putContent(center, element);
       }
-      else if (name.getValue() == "cell")
+      else if (name == "cell")
       {
         have_cell = true;
         putContent(axes, element);
       }
-      else if (name.getValue() == "value")
+      else if (name == "value")
         putContent(valtypes, element);
-      else if (name.getValue() == "derivatives")
+      else if (name == "derivatives")
         putContent(der_str, element);
-      else if (name.getValue() == "format")
+      else if (name == "format")
         putContent(file_format, element);
       else
         other_elements.push_back(element);
@@ -161,9 +161,9 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       for (int i = 0; i < sposet_names.size(); ++i)
-        if (name.getValue() == sposet_names[i])
+        if (name == sposet_names[i])
           putContent((*sposet_indices)[i], element);
     }
   }

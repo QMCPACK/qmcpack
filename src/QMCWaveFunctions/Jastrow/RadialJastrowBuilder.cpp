@@ -164,8 +164,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   using J2Type     = typename JastrowTypeHelper<RadFuncType, Implementation>::J2Type;
   using DiffJ2Type = typename JastrowTypeHelper<RadFuncType, Implementation>::DiffJ2Type;
 
-  XMLAttrString input_name(cur, "name");
-  std::string j2name = input_name.hasValue() ? "J2_" + Jastfunction : input_name;
+  std::string input_name(getXMLAttributeValue(cur, "name"));
+  std::string j2name = !input_name.empty() ? input_name : "J2_" + Jastfunction;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2  = std::make_unique<J2Type>(j2name, targetPtcl);
   auto dJ2 = std::make_unique<DiffJ2Type>(targetPtcl);
@@ -348,8 +348,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   using TH     = JastrowTypeHelper<RadFuncType, Implementation>;
   using J1Type = typename std::conditional<SPIN, typename TH::J1SpinType, typename TH::J1Type>::type;
 
-  XMLAttrString input_name(cur, "name");
-  std::string jname = input_name.hasValue() ? Jastfunction : input_name;
+  std::string input_name(getXMLAttributeValue(cur, "name"));
+  std::string jname = !input_name.empty() ? input_name : Jastfunction;
 
   auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl);
 

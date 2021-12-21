@@ -88,33 +88,33 @@ bool SpinDensity::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
-      if (name.getValue() == "dr")
+      const std::string name(getXMLAttributeValue(element, "name"));
+      if (name == "dr")
       {
         have_dr = true;
         putContent(dr, element);
       }
-      else if (name.getValue() == "grid")
+      else if (name == "grid")
       {
         have_grid = true;
         putContent(grid, element);
       }
-      else if (name.getValue() == "corner")
+      else if (name == "corner")
       {
         have_corner = true;
         putContent(corner, element);
       }
-      else if (name.getValue() == "center")
+      else if (name == "center")
       {
         have_center = true;
         putContent(center, element);
       }
-      else if (name.getValue() == "cell")
+      else if (name == "cell")
       {
         have_cell = true;
         putContent(axes, element);
       }
-      else if (name.getValue() == "test_moves")
+      else if (name == "test_moves")
         putContent(test_moves, element);
     }
     element = element->next;

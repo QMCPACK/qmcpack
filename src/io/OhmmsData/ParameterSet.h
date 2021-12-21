@@ -63,11 +63,10 @@ struct ParameterSet : public OhmmsElementBase
       {
         if (cname == myName)
         {
-          XMLAttrString aname(cur, "name");
-          if (aname.hasValue())
+          std::string aname(lowerCase(getXMLAttributeValue(cur, "name")));
+          if (!aname.empty())
           {
-            aname.setValue(lowerCase(aname.getValue()));
-            if (auto it = m_param.find(aname.getValue()); it != m_param.end())
+            if (auto it = m_param.find(aname); it != m_param.end())
             {
               something = true;
               it->second->put(cur);

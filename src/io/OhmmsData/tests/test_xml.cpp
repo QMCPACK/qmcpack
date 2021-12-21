@@ -69,8 +69,8 @@ aa \
   const XMLNodeString node_string(root);
   REQUIRE(node_string == " aa ");
 
-  const XMLAttrString attr_string(root, "name");
-  REQUIRE(attr_string.getValue() == "qmc");
+  const std::string attr_string(getXMLAttributeValue(root, "name"));
+  REQUIRE(attr_string == "qmc");
 }
 
 TEST_CASE("putContent", "[xml]")

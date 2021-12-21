@@ -155,43 +155,43 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
-      if (name.getValue() == "basis")
+      const std::string name(getXMLAttributeValue(element, "name"));
+      if (name == "basis")
         putContent(sposets, element);
-      else if (name.getValue() == "energy_matrix")
+      else if (name == "energy_matrix")
         putContent(emstr, element);
-      else if (name.getValue() == "integrator")
+      else if (name == "integrator")
         putContent(igstr, element);
-      else if (name.getValue() == "evaluator")
+      else if (name == "evaluator")
         putContent(evstr, element);
-      else if (name.getValue() == "scale")
+      else if (name == "scale")
         putContent(scale, element);
-      else if (name.getValue() == "center")
+      else if (name == "center")
       {
         putContent(center, element);
         center_defined = true;
       }
-      else if (name.getValue() == "points")
+      else if (name == "points")
         putContent(points, element);
-      else if (name.getValue() == "samples")
+      else if (name == "samples")
         putContent(samples, element);
-      else if (name.getValue() == "warmup")
+      else if (name == "warmup")
         putContent(warmup, element);
-      else if (name.getValue() == "timestep")
+      else if (name == "timestep")
         putContent(timestep, element);
-      else if (name.getValue() == "use_drift")
+      else if (name == "use_drift")
         putContent(udstr, element);
-      else if (name.getValue() == "check_overlap")
+      else if (name == "check_overlap")
         putContent(costr, element);
-      else if (name.getValue() == "check_derivatives")
+      else if (name == "check_derivatives")
         putContent(cdstr, element);
-      else if (name.getValue() == "acceptance_ratio")
+      else if (name == "acceptance_ratio")
         putContent(arstr, element);
-      else if (name.getValue() == "rstats")
+      else if (name == "rstats")
         putContent(wrstr, element);
-      else if (name.getValue() == "normalized")
+      else if (name == "normalized")
         putContent(nmstr, element);
-      else if (name.getValue() == "volume_normed")
+      else if (name == "volume_normed")
         putContent(vnstr, element);
     }
     element = element->next;

@@ -615,8 +615,8 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "optimize")
     {
-      const XMLAttrString att(element, "method");
-      if (att.hasValue() && att.getValue() == "gradient_test")
+      const std::string att(getXMLAttributeValue(element, "method"));
+      if (!att.empty() && att == "gradient_test")
       {
         GradientTestInput test_grad_input;
         test_grad_input.readXML(element);
@@ -628,7 +628,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
       else
       {
         std::stringstream error_msg;
-        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att.getValue() << "\n";
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << "\n";
         throw UniformCommunicateError(error_msg.str());
       }
     }

@@ -129,8 +129,8 @@ std::unique_ptr<WaveFunctionComponent> eeI_JastrowBuilder::buildComponent(xmlNod
     tAttrib.add(ftype, "function");
     tAttrib.put(cur);
 
-    XMLAttrString input_name(cur, "name");
-    std::string jname = input_name.hasValue() ? input_name : "JeeI_" + ftype;
+    std::string input_name(getXMLAttributeValue(cur, "name"));
+    std::string jname = !input_name.empty() ? input_name : "JeeI_" + ftype;
     SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
     if (ftype == "polynomial")
     {

@@ -538,8 +538,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   }
 
   bool success = true;
-  XMLAttrString HDF5Path(DetListNode, "href");
-  if (HDF5Path.hasValue())
+  std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
+  if (!HDF5Path.empty())
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
     success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
@@ -666,8 +666,8 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
       DetListNode = curTemp;
     curTemp = curTemp->next;
   }
-  XMLAttrString HDF5Path(DetListNode, "href");
-  if (HDF5Path.hasValue())
+  std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
+  if (!HDF5Path.empty())
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
     success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, multiSD.C, optimizeCI, nels);

@@ -177,10 +177,10 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur   = cur;
-  m_title = XMLAttrString(cur, "id");
-  const XMLAttrString series_str(cur, "series");
-  if (series_str.hasValue())
-    m_series = std::stoi(series_str.getValue());
+  m_title = getXMLAttributeValue(cur, "id");
+  const std::string series_str(getXMLAttributeValue(cur, "series"));
+  if (!series_str.empty())
+    m_series = std::stoi(series_str);
 
   ParameterSet m_param;
   m_param.add(max_cpu_secs_, "max_seconds");

@@ -44,12 +44,11 @@ void InputSection::readXML(xmlNodePtr cur)
       c = tolower(c);
     if (ename == "parameter")
     {
-      XMLAttrString name(element, "name");
-      name.setValue(lowerCase(name.getValue()));
+      std::string name(lowerCase(getXMLAttributeValue(element, "name")));
       if (!is_parameter(name))
       {
         std::stringstream error;
-        error << "InputSection::readXML name " << name.getValue() << " is not a parameter of " << section_name << "\n";
+        error << "InputSection::readXML name " << name << " is not a parameter of " << section_name << "\n";
         throw UniformCommunicateError(error.str());
       }
       std::istringstream stream(XMLNodeString{element});

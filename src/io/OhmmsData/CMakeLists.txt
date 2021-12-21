@@ -9,7 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(IO_XML_SRC Libxml2Doc.cpp)
+set(IO_XML_SRC Libxml2Doc.cpp XMLParsingString.cpp)
 
 add_library(qmcio_xml ${IO_XML_SRC})
 

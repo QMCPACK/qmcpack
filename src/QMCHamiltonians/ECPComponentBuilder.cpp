@@ -60,9 +60,9 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
-  const XMLAttrString cutoff_str(cur, "cutoff");
-  if (cutoff_str.hasValue())
-    RcutMax = std::stod(cutoff_str.getValue());
+  const std::string cutoff_str(getXMLAttributeValue(cur, "cutoff"));
+  if (!cutoff_str.empty())
+    RcutMax = std::stod(cutoff_str);
 
   return read_pp_file(fname);
 }
@@ -172,8 +172,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "header")
     {
-      Zeff         = std::stoi(XMLAttrString{cur, "zval"});
-      AtomicNumber = std::stoi(XMLAttrString{cur, "atomic-number"});
+      Zeff         = std::stoi(getXMLAttributeValue(cur, "zval"));
+      AtomicNumber = std::stoi(getXMLAttributeValue(cur, "atomic-number"));
     }
     else if (cname == "grid")
     {

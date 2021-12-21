@@ -35,7 +35,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
     else if (cname == "vps")
     {
       //should be able to overwrite rmax
-      int l           = angMon[XMLAttrString{cur, "l"}];
+      int l           = angMon[getXMLAttributeValue(cur, "l")];
       Lmax            = std::max(l, Lmax);
       xmlNodePtr cur1 = cur->children;
       while (cur1 != NULL)
@@ -111,9 +111,9 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
     return; //something is wrong
 
   std::string vFormat("V");
-  const XMLAttrString v_str(cur, "format");
-  if (v_str.hasValue())
-    vFormat = v_str.getValue();
+  const std::string v_str(getXMLAttributeValue(cur, "format"));
+  if (!v_str.empty())
+    vFormat = v_str;
 
   int vPowerCorrection = 1;
   if (vFormat == "r*V")

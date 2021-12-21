@@ -61,9 +61,9 @@ std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::buildComponent(xmlNodeP
     std::string cname((const char*)(cur->name));
     if (cname == "basisset")
     {
-      const XMLAttrString a(cur, "ecut");
-      if (!a.hasValue())
-        myParam->Ecut = std::stod(a.getValue());
+      const std::string a(getXMLAttributeValue(cur, "ecut"));
+      if (!a.empty())
+        myParam->Ecut = std::stod(a);
     }
     else if (cname == "coefficients")
     {
@@ -479,13 +479,13 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 
 hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
-  const XMLAttrString a(cur, aname);
-  if (!a.hasValue())
+  const std::string a(getXMLAttributeValue(cur, aname));
+  if (a.empty())
     return -1;
-  hid_t h = H5Fopen(a.getValue().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t h = H5Fopen(a.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (h < 0)
   {
-    app_error() << " Cannot open " << a.getValue() << " file." << std::endl;
+    app_error() << " Cannot open " << a << " file." << std::endl;
     OHMMS::Controller->abort();
   }
   myParam->checkVersion(h);
