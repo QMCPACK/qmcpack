@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
+#include "QMCWaveFunctions/TWFPrototype.h"
 
 namespace qmcplusplus
 {
@@ -769,7 +770,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   REQUIRE(psi != nullptr);
   //end incantation
 
-//  TWFPrototype twf;
+  TWFPrototype twf;
 
 //  psi->initialize_TWF_Prototype(elec, twf);
   SPOSet::ValueVector_t values;
