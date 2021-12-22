@@ -19,7 +19,7 @@ set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(${UTEST_EXE} test_xml.cpp)
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../")
-target_link_libraries(${UTEST_EXE} catch_main qmcutil_basic qmcio_xml)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcio_xml)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.xml" ${UTEST_DIR})
 

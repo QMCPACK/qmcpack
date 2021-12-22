@@ -7,11 +7,6 @@
 #// File developed by: Peter Doak, , doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-# there is a provides a utilities target for qmcio that doesn't create a circular
-# dependence
-add_library(qmcutil_basic ModernStringUtils.cpp)
-target_include_directories(qmcutil_basic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-
 set(UTILITIES
     qmc_common.cpp
     RandomGenerator.cpp
@@ -25,20 +20,18 @@ set(UTILITIES
     unit_conversion.cpp
     ResourceCollection.cpp
     ProjectData.cpp
-    RandomNumberControl.cpp)
-add_library(qmcutil_integrated ${UTILITIES})
+    RandomNumberControl.cpp
+    ModernStringUtils.cpp)
+add_library(qmcutil ${UTILITIES})
 
 if(IS_GIT_PROJECT)
-  add_dependencies(qmcutil_integrated gitrev)
+  add_dependencies(qmcutil gitrev)
 endif()
 
-target_link_libraries(qmcutil_integrated PUBLIC message qmcio)
-target_link_libraries(qmcutil_integrated PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
+target_link_libraries(qmcutil PUBLIC message qmcio)
+target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
 
-add_library(qmcutil INTERFACE)
-target_include_directories(qmcutil INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcutil INTERFACE qmcutil_basic qmcutil_integrated)
-
+target_include_directories(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Put the fake RNG in a separate library so production code doesn't
 # accidentally link to it

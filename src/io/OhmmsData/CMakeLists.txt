@@ -17,7 +17,7 @@ add_library(qmcio_xml ${IO_XML_SRC})
 # headers used both in and out of the module include based on src/io being the root for
 # io header inclusion
 target_include_directories(qmcio_xml PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../")
-target_link_libraries(qmcio_xml PUBLIC qmcutil_basic containers LibXml2::LibXml2)
+target_link_libraries(qmcio_xml PUBLIC qmcutil containers LibXml2::LibXml2)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)
