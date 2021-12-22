@@ -160,10 +160,10 @@ def write_to_hdf(vp, fname_out, output_complex):
     size = len(vp.name_value_pairs)
 
     f = h5py.File(fname_out,"w")
-    f.create_dataset("timestamp",data=[vp.timestamp])
+    f.create_dataset("timestamp",data=np.array([vp.timestamp],dtype=object),dtype=h5py.string_dtype('ascii'))
     f.create_dataset("version",data=vp.version_as_array())
     g = f.create_group("name_value_lists")
-    g.create_dataset("parameter_names",data=names,dtype=h5py.string_dtype('ascii'))
+    g.create_dataset("parameter_names",data=np.array(names,dtype=object),dtype=h5py.string_dtype('ascii'))
     g.create_dataset("parameter_values",data=values)
 
 
