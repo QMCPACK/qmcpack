@@ -44,8 +44,6 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool bconds_defined  = false;
   int boxsum           = 0;
 
-  std::string handler_type("opt_breakup");
-
   app_summary() << std::endl;
   app_summary() << " Lattice" << std::endl;
   app_summary() << " -------" << std::endl;
@@ -111,7 +109,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if (aname == "LR_handler")
       {
-        std::string handler_type;
+        std::string handler_type("opt_breakup");
         //This chops whitespace so the simple str == comparisons work
         putContent(handler_type, cur);
         handler_type = lowerCase(handler_type);

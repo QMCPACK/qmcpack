@@ -79,6 +79,12 @@ inline const xmlChar* castCharToXMLChar(const char* c)
 
 std::string getNodeName(xmlNodePtr cur);
 
+/** replaces a's value with the first "element" in the "string"
+ *  returned by XMLNodeString{cur}.
+ *  but if that string is empty then then doesn't touch a.
+ *  See documentation of the interaction between operator>>
+ *  streams and the FormattedInputFunction requirement in the c++ standard.
+ */
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
