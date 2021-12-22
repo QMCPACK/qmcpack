@@ -133,7 +133,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
     if (cname == "basisset")
     {
       std::string basisset_name_input(getXMLAttributeValue(element, "name"));
-      std::string basisset_name(!basisset_name_input.empty() ? basisset_name_input : "LCAOBSet" );
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
       if (basisset_map_.find(basisset_name) != basisset_map_.end())
       {
         std::ostringstream err_msg;

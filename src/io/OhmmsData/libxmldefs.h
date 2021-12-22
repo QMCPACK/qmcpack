@@ -27,11 +27,6 @@
 #include "XMLParsingString.h"
 #include "Utilities/ModernStringUtils.hpp"
 
-inline std::string getNodeName(xmlNodePtr cur)
-{
-  return qmcplusplus::lowerCase(castXMLCharToChar(cur->name));
-}
-
 /**\file libxmldefs.h
  *\brief A collection of put/get functions to read from or write to a xmlNode defined in libxml2.
  *
@@ -58,6 +53,32 @@ inline std::string getNodeName(xmlNodePtr cur)
   };
  \endcode
  */
+
+/** xmlChar* to char* cast
+ *  certainly not typesafe but at this interface between libxml and c++
+ *  well it beats c style casts and might be more correct than a reinterpret.
+ *
+ *  This is fine with UTF-8 bytes going into a std::string.
+ */
+inline char* castXMLCharToChar(xmlChar* c) { return static_cast<char*>(static_cast<void*>(c)); }
+
+/** unsafe const xmlChar* to const char* cast
+ */
+inline const char* castXMLCharToChar(const xmlChar* c) { return static_cast<const char*>(static_cast<const void*>(c)); }
+
+/** unsafe char* to xmlChar* cast
+ */
+inline xmlChar* castCharToXMLChar(char* c) { return static_cast<xmlChar*>(static_cast<void*>(c)); }
+
+/** unsafe const char* to const xmlChar* cast
+ */
+inline const xmlChar* castCharToXMLChar(const char* c)
+{
+  return static_cast<const xmlChar*>(static_cast<const void*>(c));
+}
+
+std::string getNodeName(xmlNodePtr cur);
+
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
