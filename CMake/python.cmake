@@ -15,13 +15,13 @@ function(TEST_PYTHON_MODULE MODULE_NAME MODULE_PRESENT)
 endfunction()
 
 # Test python module prerequisites for a particular test script
-#   module_list - input - list of module names, for example "numpy;h5py"
+#   module_list - input - list of module names, for example "numpy;h5py" (including the quotation marks)
 #   test_name - input - name of test (used for missing module message)
 #                     - use empty string to silence output
 #   add_test - output - true if all modules are present, false otherwise
 function(CHECK_PYTHON_REQS module_list test_name add_test)
   if(NOT ${ARGC} EQUAL 3)
-    message("Expecting 3 arguments in CHECK_PYTHON_REQS. Was called with ${ARGC} arguments.")
+    message(FATAL_ERROR "Expecting 3 arguments in CHECK_PYTHON_REQS. Was called with ${ARGC} arguments.")
   endif()
   set(${add_test}
       true
