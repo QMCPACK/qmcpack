@@ -106,8 +106,6 @@ public:
   bool IsGrouped;
   ///true if the particles have the same mass
   bool SameMass;
-  ///threa id
-  Index_t ThreadID;
   ///true is a dynamic spin calculation
   bool is_spinor_;
   /** the index of the active particle during particle-by-particle moves
@@ -117,8 +115,6 @@ public:
    * This state flag is used for picking coordinates and distances for SPO evaluation.
    */
   Index_t activePtcl;
-  ///the group of the active particle during particle-by-particle moves
-  Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
@@ -129,9 +125,6 @@ public:
 
   ///the proposed spin of activePtcl during particle-by-particle moves
   Scalar_t activeSpinVal;
-
-  ///the proposed position in the Lattice unit
-  SingleParticlePos_t newRedPos;
 
   ///SpeciesSet of particles
   SpeciesSet mySpecies;

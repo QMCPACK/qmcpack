@@ -67,7 +67,6 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
     : quantum_domain(classical),
       IsGrouped(true),
       SameMass(true),
-      ThreadID(0),
       is_spinor_(false),
       activePtcl(-1),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
@@ -83,7 +82,6 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
 ParticleSet::ParticleSet(const ParticleSet& p)
     : IsGrouped(p.IsGrouped),
       SameMass(true),
-      ThreadID(0),
       is_spinor_(false),
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
@@ -473,7 +471,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
       is_valid = false;
     else
     {
-      newRedPos = Lattice.toUnit(activePos);
+      SingleParticlePos_t newRedPos = Lattice.toUnit(activePos);
       if (!Lattice.isValid(newRedPos))
         is_valid = false;
     }
