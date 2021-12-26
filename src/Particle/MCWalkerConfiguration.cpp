@@ -120,7 +120,7 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
  */
 void MCWalkerConfiguration::sample(iterator it, RealType tauinv)
 {
-  APP_ABORT("MCWalkerConfiguration::sample obsolete");
+  throw std::runtime_error("MCWalkerConfiguration::sample obsolete");
   //  makeGaussRandom(R);
   //  R *= tauinv;
   //  R += (*it)->R + (*it)->Drift;

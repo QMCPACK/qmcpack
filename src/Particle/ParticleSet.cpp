@@ -109,8 +109,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     addTable(p.DistTables[i]->get_origin(), p.DistTables[i]->getModes());
   if (p.structure_factor_)
   {
-    LRBox = p.LRBox;                             //copy LRBox
-    structure_factor_    = std::make_unique<StructFact>(*p.structure_factor_); //safe to use the copy constructor
+    LRBox             = p.LRBox;                                            //copy LRBox
+    structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_); //safe to use the copy constructor
     //R.InUnit=p.R.InUnit;
     //createSK();
     //structure_factor_->DoUpdate=p.structure_factor_->DoUpdate;
@@ -154,7 +154,7 @@ void ParticleSet::setQuantumDomain(quantum_domains qdomain)
   if (quantumDomainValid(qdomain))
     quantum_domain = qdomain;
   else
-    APP_ABORT("ParticleSet::setQuantumDomain\n  input quantum domain is not valid for particles");
+    throw std::runtime_error("ParticleSet::setQuantumDomain\n  input quantum domain is not valid for particles");
 }
 
 void ParticleSet::resetGroups()
@@ -165,7 +165,7 @@ void ParticleSet::resetGroups()
   // has the special name "empty".
   if (nspecies == 0 && getName() != "empty")
   {
-    APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
+    throw std::runtime_error("ParticleSet::resetGroups() Failed. No species exisits");
   }
   int natt = my_species_.numAttributes();
   int qind = my_species_.addAttribute("charge");
@@ -201,7 +201,7 @@ void ParticleSet::resetGroups()
     if (GroupID[iat] < nspecies)
       ng[GroupID[iat]]++;
     else
-      APP_ABORT("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
+      throw std::runtime_error("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
   }
   // safety check if any group of particles has size 0, instruct users to fix the input.
   for (int group_id = 0; group_id < nspecies; group_id++)
@@ -211,7 +211,7 @@ void ParticleSet::resetGroups()
       err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
               << "has group '" << my_species_.speciesName[group_id] << "' containing 0 particles. "
               << "Remove this group from input!" << std::endl;
-      APP_ABORT(err_msg.str());
+      throw std::runtime_error(err_msg.str());
     }
   SubPtcl.resize(nspecies + 1);
   SubPtcl[0] = 0;
@@ -353,7 +353,7 @@ bool ParticleSet::put(xmlNodePtr cur) { return true; }
 int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
 {
   if (myName == "none" || psrc.getName() == "none")
-    APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
+    throw std::runtime_error("ParticleSet::addTable needs proper names for both source and target particle sets.");
 
   int tid;
   std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
@@ -937,7 +937,7 @@ void ParticleSet::initPropertyList()
   // {
   //   app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
   //   app_error() << "NUMPROPERTIES " << WP::NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
-  //   APP_ABORT("ParticleSet::initPropertyList");
+  //   throw std::runtime_error("ParticleSet::initPropertyList");
   // }
 }
 

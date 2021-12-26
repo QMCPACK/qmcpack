@@ -77,7 +77,7 @@ MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
     mc = getParticleSet(pname);
   if (mc == 0)
   {
-    APP_ABORT("ParticleSePool::getWalkerSet missing " + pname);
+    throw std::runtime_error("ParticleSePool::getWalkerSet missing " + pname);
   }
   return dynamic_cast<MCWalkerConfiguration*>(mc);
 }
@@ -231,7 +231,7 @@ void ParticleSetPool::randomize()
   }
   randomize_nodes.clear();
   if (!success)
-    APP_ABORT("ParticleSePool::randomize failed to randomize some Particlesets!");
+    throw std::runtime_error("ParticleSePool::randomize failed to randomize some Particlesets!");
 }
 
 bool ParticleSetPool::get(std::ostream& os) const

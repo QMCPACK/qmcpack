@@ -92,8 +92,8 @@ void ParticleSet::turnOnPerParticleSK()
   if (structure_factor_)
     structure_factor_->turnOnStorePerParticle(*this);
   else
-    APP_ABORT(
-        "ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in structure_factor_ but structure_factor_ has not been created.");
+    throw std::runtime_error("ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in "
+                             "structure_factor_ but structure_factor_ has not been created.");
 }
 
 bool ParticleSet::getPerParticleSKState() const
