@@ -238,9 +238,9 @@ public:
   bool getPerParticleSKState() const;
 
   ///retrun the SpeciesSet of this particle set
-  inline SpeciesSet& getSpeciesSet() { return mySpecies; }
+  inline SpeciesSet& getSpeciesSet() { return my_species_; }
   ///retrun the const SpeciesSet of this particle set
-  inline const SpeciesSet& getSpeciesSet() const { return mySpecies; }
+  inline const SpeciesSet& getSpeciesSet() const { return my_species_; }
 
   ///return parent's name
   inline const std::string& parentName() const { return ParentName; }
@@ -258,28 +258,36 @@ public:
 
   void resetGroups();
 
-  inline bool isSameMass() const { return SameMass; }
-  inline bool isGrouped() const { return IsGrouped; }
-  // return true if spinor is on
+  inline bool isSameMass() const { return same_mass_; }
+  inline bool isGrouped() const { return is_grouped_; }
   inline bool isSpinor() const { return is_spinor_; }
   inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
 
   /// return active particle id
-  inline Index_t getActivePtcl() const { return activePtcl; }
-  inline const PosType& getActivePos() const { return activePos; }
-  inline Scalar_t getActiveSpinVal() const { return activeSpinVal; }
-  /** return the position of the active particle
-   *
-   * activePtcl=-1 is used to flag non-physical move
-   */
-  inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
-  inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
-  /** move the iat-th particle to activePos
+  inline Index_t getActivePtcl() const { return active_ptcl_; }
+  inline const PosType& getActivePos() const { return active_pos_; }
+  inline Scalar_t getActiveSpinVal() const { return active_spin_val_; }
+
+  /// return the active position if the particle is active or the return current position if not
+  inline const PosType& activeR(int iat) const
+  {
+    // When active_ptcl_ == iat, a move has been proposed.
+    return (active_ptcl_ == iat) ? active_pos_ : R[iat];
+  }
+
+  /// return the active spin value if the particle is active or return the current spin value if not
+  inline const Scalar_t& activeSpin(int iat) const
+  {
+    // When active_ptcl_ == iat, a move has been proposed.
+    return (active_ptcl_ == iat) ? active_spin_val_ : spins[iat];
+  }
+
+  /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ the displacement of the iat-th particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    *
-   * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
+   * Update active_ptcl_ index and active_pos_ position (R[iat]+displ) for a proposed move.
    * Evaluate the related distance table data DistanceTable::Temp.
    * If maybe_accept = false, certain operations for accepting moves will be skipped for optimal performance.
    */
@@ -292,18 +300,18 @@ public:
                           int iat,
                           const std::vector<SingleParticlePos_t>& displs);
 
-  /** move the iat-th particle to activePos
+  /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ random displacement of the iat-th particle
    * @return true, if the move is valid
    *
-   * Update activePtcl index and activePos position (R[iat]+displ) for a proposed move.
+   * Update active_ptcl_ index and active_pos_ position (R[iat]+displ) for a proposed move.
    * Evaluate the related distance table data DistanceTable::Temp.
    *
    * When a Lattice is defined, passing two checks makes a move valid.
    * outOfBound(displ): invalid move, if displ is larger than half, currently, of the box in any direction
-   * isValid(Lattice.toUnit(activePos)): invalid move, if activePos goes out of the Lattice in any direction marked with open BC.
-   * Note: activePos and distances tables are always evaluated no matter the move is valid or not.
+   * isValid(Lattice.toUnit(active_pos_)): invalid move, if active_pos_ goes out of the Lattice in any direction marked with open BC.
+   * Note: active_pos_ and distances tables are always evaluated no matter the move is valid or not.
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
   /// makeMoveAndCheck, but now includes an update to the spin variable
@@ -311,7 +319,7 @@ public:
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
-   * The state activePtcl remains -1 and rejectMove is not needed.
+   * The state active_ptcl_ remains -1 and rejectMove is not needed.
    * acceptMove can not be used.
    * See QMCHamiltonians::MomentumEstimator as an example
    */
@@ -427,13 +435,13 @@ public:
    */
   static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
-  /** update structure factor and unmark activePtcl
+  /** update structure factor and unmark active_ptcl_
    *@param skip SK update if skipSK is true
    *
    * The Coulomb interaction evaluation needs the structure factor.
    * For these reason, call donePbyP after the loop of single
    * electron moves before evaluating the Hamiltonian. Unmark
-   * activePtcl is more of a safety measure probably not needed.
+   * active_ptcl_ is more of a safety measure probably not needed.
    */
   void donePbyP(bool skipSK = false);
   /// batched version of donePbyP
@@ -499,7 +507,7 @@ public:
 
   /** get species name of particle i
    */
-  inline const std::string& species_from_index(int i) { return mySpecies.speciesName[GroupID[i]]; }
+  inline const std::string& species_from_index(int i) { return my_species_.speciesName[GroupID[i]]; }
 
   inline size_t getTotalNum() const { return TotalNum; }
 
@@ -650,25 +658,25 @@ public:
 
 protected:
   ///true if the particles are grouped
-  bool IsGrouped;
+  bool is_grouped_;
   ///true if the particles have the same mass
-  bool SameMass;
+  bool same_mass_;
   ///true is a dynamic spin calculation
   bool is_spinor_;
   /** the index of the active particle during particle-by-particle moves
    *
-   * when a single particle move is proposed, the particle id is assigned to activePtcl
-   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
+   * when a single particle move is proposed, the particle id is assigned to active_ptcl_
+   * No matter the move is accepted or rejected, active_ptcl_ is marked back to -1.
    * This state flag is used for picking coordinates and distances for SPO evaluation.
    */
-  Index_t activePtcl;
-  ///the proposed position of activePtcl during particle-by-particle moves
-  SingleParticlePos_t activePos;
-  ///the proposed spin of activePtcl during particle-by-particle moves
-  Scalar_t activeSpinVal;
+  Index_t active_ptcl_;
+  ///the proposed position of active_ptcl_ during particle-by-particle moves
+  SingleParticlePos_t active_pos_;
+  ///the proposed spin of active_ptcl_ during particle-by-particle moves
+  Scalar_t active_spin_val_;
 
   ///SpeciesSet of particles
-  SpeciesSet mySpecies;
+  SpeciesSet my_species_;
 
   /** map to handle distance tables
    *

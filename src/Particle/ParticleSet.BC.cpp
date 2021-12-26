@@ -69,20 +69,20 @@ void ParticleSet::createSK()
     }
 
     app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-    SK = std::make_unique<StructFact>(mySpecies.size(), TotalNum, LRBox, LRBox.LR_kc);
+    SK = std::make_unique<StructFact>(my_species_.size(), TotalNum, LRBox, LRBox.LR_kc);
   }
 
   //set the mass array
-  int beforemass = mySpecies.numAttributes();
-  int massind    = mySpecies.addAttribute("mass");
+  int beforemass = my_species_.numAttributes();
+  int massind    = my_species_.addAttribute("mass");
   if (beforemass == massind)
   {
     app_log() << "  ParticleSet::createSK setting mass of  " << getName() << " to 1.0" << std::endl;
-    for (int ig = 0; ig < mySpecies.getTotalNum(); ++ig)
-      mySpecies(massind, ig) = 1.0;
+    for (int ig = 0; ig < my_species_.getTotalNum(); ++ig)
+      my_species_(massind, ig) = 1.0;
   }
   for (int iat = 0; iat < GroupID.size(); iat++)
-    Mass[iat] = mySpecies(massind, GroupID[iat]);
+    Mass[iat] = my_species_(massind, GroupID[iat]);
 
   coordinates_->setAllParticlePos(R);
 }
