@@ -107,9 +107,6 @@ public:
   ///the direction reptile traveling
   Index_t direction;
 
-  ///Structure factor
-  std::unique_ptr<StructFact> SK;
-
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
   std::vector<ComplexType> Density_G;
@@ -228,6 +225,15 @@ public:
   /** create Structure Factor with PBCs
    */
   void createSK();
+
+  bool hasSK() const { return bool(SK); }
+  /** return Structure Factor
+   */
+  const StructFact& getSK() const
+  {
+    assert(SK);
+    return *SK;
+  };
 
   /** Turn on per particle storage in Structure Factor
    */
@@ -677,6 +683,9 @@ protected:
 
   ///SpeciesSet of particles
   SpeciesSet my_species_;
+
+  ///Structure factor
+  std::unique_ptr<StructFact> SK;
 
   /** map to handle distance tables
    *

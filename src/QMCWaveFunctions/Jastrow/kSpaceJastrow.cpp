@@ -632,7 +632,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   // eikr_new.resize(MaxK);
   // delta_eikr.resize(MaxK);
   // for(int iat=0; iat<NumPtcls; iat++)
-  //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+  //   copy(P.getSK().eikr[iat],P.getSK().eikr[iat]+MaxK,eikr[iat]);
   // buf.add(Rhok.first_address(), Rhok.last_address());
   // buf.add(U.first_address(), U.last_address());
   // buf.add(d2U.first_address(), d2U.last_address());
@@ -644,7 +644,7 @@ kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBuffer
 {
   log_value_ = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)
-  //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+  //   copy(P.getSK().eikr[iat],P.getSK().eikr[iat]+MaxK,eikr[iat]);
   // buf.put(Rhok.first_address(), Rhok.last_address());
   // buf.put(U.first_address(), U.last_address());
   // buf.put(d2U.first_address(), d2U.last_address());

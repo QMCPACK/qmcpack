@@ -54,7 +54,7 @@ bool StaticStructureFactor::put(xmlNodePtr cur)
 {
   using std::sqrt;
   reset();
-  const k2_t& k2_init = Pinit.SK->getKLists().ksq;
+  const k2_t& k2_init = Pinit.getSK().getKLists().ksq;
 
   std::string write_report = "no";
   OhmmsAttributeSet attrib;
@@ -113,7 +113,7 @@ void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& 
   h5desc.emplace_back("kpoints");
   auto& oh = h5desc.back();
   oh.open(sgid); // add to SkAll hdf group
-  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.SK->getKLists().kpts_cart), "value");
+  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSK().getKLists().kpts_cart), "value");
 
   std::vector<int> ng(2);
   ng[0] = 2;
@@ -131,8 +131,8 @@ void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& 
 StaticStructureFactor::Return_t StaticStructureFactor::evaluate(ParticleSet& P)
 {
   RealType w                     = t_walker_->Weight;
-  const Matrix<RealType>& rhok_r = P.SK->rhok_r;
-  const Matrix<RealType>& rhok_i = P.SK->rhok_i;
+  const Matrix<RealType>& rhok_r = P.getSK().rhok_r;
+  const Matrix<RealType>& rhok_i = P.getSK().rhok_i;
   int nkptot                     = rhok_r.cols();
   for (int s = 0; s < nspecies; ++s)
   {

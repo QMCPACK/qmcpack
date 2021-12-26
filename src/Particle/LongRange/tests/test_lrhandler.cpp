@@ -60,8 +60,8 @@ TEST_CASE("dummy", "[lrhandler]")
   //  the full Coulomb potential should be retained in kspace
   for (int ish = 0; ish < handler.MaxKshell; ish++)
   {
-    int ik           = ref.SK->getKLists().kshell[ish];
-    double k2        = ref.SK->getKLists().ksq[ik];
+    int ik           = ref.getSK().getKLists().kshell[ish];
+    double k2        = ref.getSK().getKLists().ksq[ik];
     double fk_expect = fk(k2);
     REQUIRE(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }
