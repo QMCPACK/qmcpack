@@ -324,19 +324,6 @@ void EinsplineSetBuilder::TileIons()
   for (int j = 0; j < IonPos.size(); ++j)
     IonPos[j] = FracPart(SourcePtcl->PrimitiveLattice.toUnit(IonPos[j]));
 
-  for (int i = 0; i < SourcePtcl->R.size(); ++i)
-  {
-    PosType u    = FracPart(SourcePtcl->PrimitiveLattice.toUnit(SourcePtcl->R[i]));
-    int j        = 0;
-    bool foundit = false;
-    while (!foundit && j < IonPos.size())
-    {
-      PosType d = u - IonPos[j++];
-      foundit   = (dot(d, d) < MatchingTol);
-    }
-    SourcePtcl->PCID[i] = j - 1;
-  }
-
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
   std::copy(SourcePtcl->R.begin(), SourcePtcl->R.end(), IonPos.begin());

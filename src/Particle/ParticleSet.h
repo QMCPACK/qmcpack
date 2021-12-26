@@ -74,15 +74,6 @@ public:
   ///Long-range box
   ParticleLayout_t LRBox;
 
-  ///unique, persistent ID for each particle
-  ParticleIndex_t ID;
-  ///index to the primitice cell with tiling
-  ParticleIndex_t PCID;
-  /** ID map that reflects species group
-   *
-   * IsGrouped=true, if ID==IndirectID
-   */
-  ParticleIndex_t IndirectID;
   ///Species ID
   ParticleIndex_t GroupID;
   ///Position
@@ -93,10 +84,6 @@ public:
   ParticleGradient_t G;
   ///laplacians of the particles
   ParticleLaplacian_t L;
-  ///differential gradients of the particles
-  ParticleGradient_t dG;
-  ///differential laplacians of the particles
-  ParticleLaplacian_t dL;
   ///mass of each particle
   ParticleScalar_t Mass;
   ///charge of each particle
@@ -482,16 +469,11 @@ public:
 
     R.resize(numPtcl);
     spins.resize(numPtcl);
-    ID.resize(numPtcl);
-    PCID.resize(numPtcl);
     GroupID.resize(numPtcl);
     G.resize(numPtcl);
-    dG.resize(numPtcl);
     L.resize(numPtcl);
-    dL.resize(numPtcl);
     Mass.resize(numPtcl);
     Z.resize(numPtcl);
-    IndirectID.resize(numPtcl);
 
     coordinates_->resize(numPtcl);
   }
@@ -502,16 +484,11 @@ public:
 
     R.clear();
     spins.clear();
-    ID.clear();
-    PCID.clear();
     GroupID.clear();
     G.clear();
-    dG.clear();
     L.clear();
-    dL.clear();
     Mass.clear();
     Z.clear();
-    IndirectID.clear();
 
     coordinates_->resize(0);
   }
@@ -524,7 +501,6 @@ public:
     R.InUnit         = ptclin.R.InUnit;
     R                = ptclin.R;
     spins            = ptclin.spins;
-    ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
     is_spinor_       = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
@@ -561,30 +537,21 @@ public:
     R.setObjName(ParticleTags::position_tag);
     spins.setTypeName(ParticleTags::scalartype_tag);
     spins.setObjName(ParticleTags::spins_tag);
-    ID.setTypeName(ParticleTags::indextype_tag);
-    ID.setObjName(ParticleTags::id_tag);
     GroupID.setTypeName(ParticleTags::indextype_tag);
     GroupID.setObjName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
     AttribList.add(spins);
-    AttribList.add(ID);
     AttribList.add(GroupID);
 
     G.setTypeName(ParticleTags::gradtype_tag);
     L.setTypeName(ParticleTags::laptype_tag);
-    dG.setTypeName(ParticleTags::gradtype_tag);
-    dL.setTypeName(ParticleTags::laptype_tag);
 
     G.setObjName("grad");
     L.setObjName("lap");
-    dG.setObjName("dgrad");
-    dL.setObjName("dlap");
 
     AttribList.add(G);
     AttribList.add(L);
-    AttribList.add(dG);
-    AttribList.add(dL);
 
     //more particle attributes
     Mass.setTypeName(ParticleTags::scalartype_tag);
@@ -594,14 +561,6 @@ public:
     Z.setTypeName(ParticleTags::scalartype_tag);
     Z.setObjName("charge");
     AttribList.add(Z);
-
-    PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-    PCID.setObjName("pcid");
-    AttribList.add(PCID);
-
-    IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
-    IndirectID.setObjName("id1");
-    AttribList.add(IndirectID);
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }

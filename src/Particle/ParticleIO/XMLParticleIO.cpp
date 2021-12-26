@@ -235,8 +235,6 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   {
     ntot = 0;
     nloc = 0;
-    for (int iat = 0; iat < ref_.getTotalNum(); iat++)
-      ref_.ID[iat] = iat;
   }
   if (ntot)
   {
@@ -248,10 +246,6 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     {
       ref_.create(ntot);
     }
-    //assign default ID
-    int nloci = nloc;
-    for (int iat = 0; iat < ntot; iat++, nloci++)
-      ref_.ID[iat] = nloci;
   }
   //TinyVector<int,OHMMS_DIM> uc_grid(1);
   SpeciesSet& tspecies(ref_.getSpeciesSet()); //SpeciesCollection::getSpecies();
@@ -302,9 +296,6 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-
-  //copy ID -> PCID
-  ref_.PCID = ref_.ID;
 
   expandSuperCell(ref_, TileMatrix);
   if (ref_.Lattice.SuperCellEnum)

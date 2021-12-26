@@ -220,16 +220,19 @@ void ParticleSet::resetGroups()
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
     my_species_(membersize, ig) = ng[ig];
-  //orgID=ID;
-  //orgGroupID=GroupID;
+  /** ID map that reflects species group
+   *
+   * IsGrouped=true, if ID==IndirectID
+   */
+  ParticleIndex_t IndirectID(R.size());
   int new_id = 0;
   for (int i = 0; i < nspecies; ++i)
     for (int iat = 0; iat < GroupID.size(); ++iat)
       if (GroupID[iat] == i)
-        IndirectID[new_id++] = ID[iat];
+        IndirectID[new_id++] = iat;
   is_grouped_ = true;
-  for (int iat = 0; iat < ID.size(); ++iat)
-    is_grouped_ &= (IndirectID[iat] == ID[iat]);
+  for (int iat = 0; iat < IndirectID.size(); ++iat)
+    is_grouped_ &= (IndirectID[iat] == iat);
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
