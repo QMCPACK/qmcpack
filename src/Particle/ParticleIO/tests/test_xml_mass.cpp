@@ -85,8 +85,8 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
   parse_ions.put(part2);
   REQUIRE(ions.getName() == "ion0");
 
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // test electrons
   SpeciesSet& tspecies(electrons.getSpeciesSet());

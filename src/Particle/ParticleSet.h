@@ -102,32 +102,10 @@ public:
   ///charge of each particle
   ParticleScalar_t Z;
 
-  ///true if the particles are grouped
-  bool IsGrouped;
-  ///true if the particles have the same mass
-  bool SameMass;
-  ///true is a dynamic spin calculation
-  bool is_spinor_;
-  /** the index of the active particle during particle-by-particle moves
-   *
-   * when a single particle move is proposed, the particle id is assigned to activePtcl
-   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
-   * This state flag is used for picking coordinates and distances for SPO evaluation.
-   */
-  Index_t activePtcl;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
-
-  ///the proposed position of activePtcl during particle-by-particle moves
-  SingleParticlePos_t activePos;
-
-  ///the proposed spin of activePtcl during particle-by-particle moves
-  Scalar_t activeSpinVal;
-
-  ///SpeciesSet of particles
-  SpeciesSet mySpecies;
 
   ///Structure factor
   std::unique_ptr<StructFact> SK;
@@ -278,10 +256,18 @@ public:
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
   inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
 
-  //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
-
   void resetGroups();
 
+  inline bool isSameMass() const { return SameMass; }
+  inline bool isGrouped() const { return IsGrouped; }
+  // return true if spinor is on
+  inline bool isSpinor() const { return is_spinor_; }
+  inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
+
+  /// return active particle id
+  inline Index_t getActivePtcl() const { return activePtcl; }
+  inline const PosType& getActivePos() const { return activePos; }
+  inline Scalar_t getActiveSpinVal() const { return activeSpinVal; }
   /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical move
@@ -663,6 +649,27 @@ public:
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
+  ///true if the particles are grouped
+  bool IsGrouped;
+  ///true if the particles have the same mass
+  bool SameMass;
+  ///true is a dynamic spin calculation
+  bool is_spinor_;
+  /** the index of the active particle during particle-by-particle moves
+   *
+   * when a single particle move is proposed, the particle id is assigned to activePtcl
+   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
+   * This state flag is used for picking coordinates and distances for SPO evaluation.
+   */
+  Index_t activePtcl;
+  ///the proposed position of activePtcl during particle-by-particle moves
+  SingleParticlePos_t activePos;
+  ///the proposed spin of activePtcl during particle-by-particle moves
+  Scalar_t activeSpinVal;
+
+  ///SpeciesSet of particles
+  SpeciesSet mySpecies;
+
   /** map to handle distance tables
    *
    * myDistTableMap[source-particle-tag]= locator in the distance table

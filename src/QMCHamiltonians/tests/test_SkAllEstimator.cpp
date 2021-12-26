@@ -129,7 +129,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // Get the (now assembled) elec ParticleSet, sanity check, report
   ParticleSet* elec = pset_builder.getParticleSet("e");
   elec->Lattice     = lattice; // copy in the new Lattice
-  REQUIRE(elec->SameMass);
+  REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
   // Move the particles manually onto B1 lattice
@@ -176,7 +176,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // is never used to evaluate the estimator in this test.
   ParticleSet* ion = pset_builder.getParticleSet("i");
   ion->Lattice     = lattice; // copy in the new Lattice
-  REQUIRE(ion->SameMass);
+  REQUIRE(ion->isSameMass());
   REQUIRE(ion->getName() == "i");
   ion->get(std::cout); // print particleset info to stdout
 

@@ -204,7 +204,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 
         std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
+                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().getActivePos() - drift; });
 
         std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
                        [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });

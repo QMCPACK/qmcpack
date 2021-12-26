@@ -330,7 +330,11 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second].get();
 }
 
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H,
+                              const ParticleSet& pset,
+                              const TrialWaveFunction& twf,
+                              const WaveFunctionFactory& wf_factory,
+                              xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
@@ -379,28 +383,27 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
         if (spdi.get_save_memory())
           dl = DataLocality::rank;
         if (spdi.get_cell().explicitly_defined)
-          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies, dl));
+          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
         else
           operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.mySpecies, dl));
+              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.getSpeciesSet(), dl));
       }
       else if (est_type == "MomentumDistribution")
       {
         MomentumDistributionInput mdi;
         mdi.readXML(cur);
         DataLocality dl = DataLocality::crowd;
-        operator_ests_.emplace_back(
-          std::make_unique<MomentumDistribution>(std::move(mdi), 
-            pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl));
+        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
+                                                                           pset.getTwist(), pset.Lattice, dl));
       }
       else if (est_type == "OneBodyDensityMatrices")
       {
         OneBodyDensityMatricesInput obdmi(cur);
         // happens once insures golden particle set is not abused.
         ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(
-          std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), 
-                                                   pset.Lattice, pset.getSpeciesSet(), wf_factory, pset_target));
+        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.Lattice,
+                                                                             pset.getSpeciesSet(), wf_factory,
+                                                                             pset_target));
       }
       else
       {
@@ -426,9 +429,9 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
   if (!extra_types.empty())
   {
     app_log() << "\nUnrecognized estimators in input:" << std::endl;
-    for (int i=0; i<extra_types.size(); i++)
+    for (int i = 0; i < extra_types.size(); i++)
     {
-      app_log() << "  type: "<<extra_types[i]<<"     name: "<<extra_names[i]<<std::endl;
+      app_log() << "  type: " << extra_types[i] << "     name: " << extra_names[i] << std::endl;
     }
     app_log() << std::endl;
     throw UniformCommunicateError("Unrecognized estimators encountered in input.  See log message for more details.");

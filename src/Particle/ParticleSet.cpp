@@ -65,11 +65,11 @@ static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj
 
 ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
     : quantum_domain(classical),
+      Properties(0, 0, 1, WP::MAXPROPERTIES),
       IsGrouped(true),
       SameMass(true),
       is_spinor_(false),
       activePtcl(-1),
-      Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
@@ -80,12 +80,12 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
-    : IsGrouped(p.IsGrouped),
+    : Properties(p.Properties),
+      IsGrouped(p.IsGrouped),
       SameMass(true),
       is_spinor_(false),
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
-      Properties(p.Properties),
       myTwist(0.0),
       ParentName(p.parentName()),
       coordinates_(p.coordinates_->makeClone())
