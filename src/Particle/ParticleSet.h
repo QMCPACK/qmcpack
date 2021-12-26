@@ -139,9 +139,6 @@ public:
    */
   Buffer_t Collectables;
 
-  ///clones of this object: used by the thread pool
-  std::vector<ParticleSet*> myClones;
-
   ///Property history vector
   std::vector<std::vector<FullPrecRealType>> PropertyHistory;
   std::vector<int> PHindex;
@@ -472,44 +469,6 @@ public:
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
   void randomizeFromSource(ParticleSet& src);
-
-  /** return the ip-th clone
-   * @param ip thread number
-   *
-   * Return itself if ip==0
-   */
-  inline ParticleSet* get_clone(int ip)
-  {
-    if (ip >= myClones.size())
-      return 0;
-    return (ip) ? myClones[ip] : this;
-  }
-
-  inline const ParticleSet* get_clone(int ip) const
-  {
-    if (ip >= myClones.size())
-      return 0;
-    return (ip) ? myClones[ip] : this;
-  }
-
-  inline int clones_size() const { return myClones.size(); }
-
-  /** update R of its own and its clones
-   * @param rnew new position array of N
-   */
-  template<typename PAT>
-  inline void update_clones(const PAT& rnew)
-  {
-    if (R.size() != rnew.size())
-      APP_ABORT("ParticleSet::updateR failed due to different sizes");
-    R = rnew;
-    for (int ip = 1; ip < myClones.size(); ++ip)
-      myClones[ip]->R = rnew;
-  }
-
-  /** reset internal data of clones including itself
-   */
-  void reset_clones();
 
   /** get species name of particle i
    */
