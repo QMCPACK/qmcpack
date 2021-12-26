@@ -21,7 +21,8 @@ endfunction()
 #   add_test - output - true if all modules are present, false otherwise
 function(CHECK_PYTHON_REQS module_list test_name add_test)
   if(NOT ${ARGC} EQUAL 3)
-    message(FATAL_ERROR "Expecting 3 arguments in CHECK_PYTHON_REQS. Was called with ${ARGC} arguments.")
+    message(FATAL_ERROR "Expecting 3 arguments in CHECK_PYTHON_REQS. Was called with ${ARGC} arguments. "
+                        "Most likely quotation marks are missing from the first argument.")
   endif()
   set(${add_test}
       true
