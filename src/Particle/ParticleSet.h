@@ -226,13 +226,13 @@ public:
    */
   void createSK();
 
-  bool hasSK() const { return bool(SK); }
+  bool hasSK() const { return bool(structure_factor_); }
   /** return Structure Factor
    */
   const StructFact& getSK() const
   {
-    assert(SK);
-    return *SK;
+    assert(structure_factor_);
+    return *structure_factor_;
   };
 
   /** Turn on per particle storage in Structure Factor
@@ -685,7 +685,7 @@ protected:
   SpeciesSet my_species_;
 
   ///Structure factor
-  std::unique_ptr<StructFact> SK;
+  std::unique_ptr<StructFact> structure_factor_;
 
   /** map to handle distance tables
    *

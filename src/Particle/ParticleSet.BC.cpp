@@ -28,8 +28,8 @@ namespace qmcplusplus
  */
 void ParticleSet::createSK()
 {
-  if (SK)
-    throw std::runtime_error("Report bug! SK has already been created. Unexpected call sequence.");
+  if (structure_factor_)
+    throw std::runtime_error("Report bug! structure_factor_ has already been created. Unexpected call sequence.");
 
   if (Lattice.explicitly_defined)
     convert2Cart(R); //make sure that R is in Cartesian coordinates
@@ -69,7 +69,7 @@ void ParticleSet::createSK()
     }
 
     app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-    SK = std::make_unique<StructFact>(my_species_.size(), TotalNum, LRBox, LRBox.LR_kc);
+    structure_factor_ = std::make_unique<StructFact>(my_species_.size(), TotalNum, LRBox, LRBox.LR_kc);
   }
 
   //set the mass array
@@ -89,18 +89,18 @@ void ParticleSet::createSK()
 
 void ParticleSet::turnOnPerParticleSK()
 {
-  if (SK)
-    SK->turnOnStorePerParticle(*this);
+  if (structure_factor_)
+    structure_factor_->turnOnStorePerParticle(*this);
   else
     APP_ABORT(
-        "ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
+        "ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in structure_factor_ but structure_factor_ has not been created.");
 }
 
 bool ParticleSet::getPerParticleSKState() const
 {
   bool isPerParticleOn = false;
-  if (SK)
-    isPerParticleOn = SK->isStorePerParticle();
+  if (structure_factor_)
+    isPerParticleOn = structure_factor_->isStorePerParticle();
   return isPerParticleOn;
 }
 
