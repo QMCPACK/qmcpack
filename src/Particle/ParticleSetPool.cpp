@@ -37,7 +37,7 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectB
 
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
     : MPIObjectBase(other.myComm),
-      SimulationCell(std::move(other.SimulationCell)),
+      simulation_cell_(std::move(other.simulation_cell_)),
       TileMatrix(other.TileMatrix),
       myPool(std::move(other.myPool))
 {
@@ -111,27 +111,27 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
   bool printcell = false;
-  if (!SimulationCell)
+  if (!simulation_cell_)
   {
     app_debug() << "  Creating global supercell " << std::endl;
-    SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
+    simulation_cell_ = std::make_unique<ParticleSet::ParticleLayout_t>();
     printcell      = true;
   }
   else
   {
     app_log() << "  Overwriting global supercell " << std::endl;
   }
-  LatticeParser a(*SimulationCell);
+  LatticeParser a(*simulation_cell_);
   bool lattice_defined = a.put(cur);
   if (printcell && lattice_defined)
   {
     if (outputManager.isHighActive())
     {
-      SimulationCell->print(app_log(), 2);
+      simulation_cell_->print(app_log(), 2);
     }
     else
     {
-      SimulationCell->print(app_summary(), 1);
+      simulation_cell_->print(app_summary(), 1);
     }
   }
   return lattice_defined;
@@ -147,8 +147,6 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
 bool ParticleSetPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "put");
-  //const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
-  //ParticleSet::ParticleLayout_t* sc=0;
   std::string id("e");
   std::string role("none");
   std::string randomR("no");
@@ -188,10 +186,10 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     //  pTemp = new MCWalkerConfiguration;
     //else
     //  pTemp = new ParticleSet;
-    if (SimulationCell)
+    if (simulation_cell_)
     {
       app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice = *SimulationCell;
+      pTemp->Lattice = *simulation_cell_;
     }
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);

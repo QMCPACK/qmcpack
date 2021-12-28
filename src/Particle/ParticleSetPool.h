@@ -58,7 +58,7 @@ public:
   /** initialize the supercell shared by all the particle sets
    *
    *  return value is never checked anywhere
-   *  side effect SimulationCell UPtr<ParticleLayout_t> is set
+   *  side effect simulation_cell_ UPtr<ParticleLayout_t> is set
    *  to particle layout created on heap.
    *  This is later directly assigned to pset member variable Lattice.
    */
@@ -97,13 +97,13 @@ public:
   Tensor<int, OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
 
 private:
-  /** global SimulationCell
+  /** global simulation cell
    *
-   * SimulationCell cannot not modified once it is initialized by
+   * simulation_cell_ cannot not modified once it is initialized by
    * - <simulationcell> element
    * - the first particleset created with ES-HDF
    */
-  std::unique_ptr<ParticleSet::ParticleLayout_t> SimulationCell;
+  std::unique_ptr<ParticleSet::ParticleLayout_t> simulation_cell_;
   /** tiling matrix
    */
   Tensor<int, OHMMS_DIM> TileMatrix;
