@@ -349,7 +349,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   }
   std::string tname = myParam->getTwistName();
   hid_t twist_grp_id;
-  if (H5Lexists(es_grp_id, tname.c_str(), H5P_DEFAULT) != true))
+  if (H5Lexists(es_grp_id, tname.c_str(), H5P_DEFAULT) != true)
     twist_grp_id = H5Gcreate2(es_grp_id, tname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   else
     twist_grp_id = H5Gopen2(es_grp_id, tname.c_str(), H5P_DEFAULT);
