@@ -31,20 +31,19 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
   using FileSpace::dims;
   using FileSpace::get_address;
   typedef Vector<T> data_type;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.size(); }
+  inline h5data_proxy(const data_type& a) { dims[0] = a.size(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.resize(dims[0]);
-    return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
+      ref.resize(dims[0]);
+    return h5d_read(grp, aname, get_address(ref.data()), xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref_.data()), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref.data()), xfer_plist);
   }
 };
 
@@ -56,21 +55,22 @@ struct h5data_proxy<Matrix<T>> : public h5_space_type<T, 2>
   using FileSpace::dims;
   using FileSpace::get_address;
   typedef Matrix<T> data_type;
-  data_type& ref_;
-  inline h5data_proxy(data_type& a) : ref_(a)
+  inline h5data_proxy(const data_type& a)
   {
-    dims[0] = ref_.rows();
-    dims[1] = ref_.cols();
+    dims[0] = a.rows();
+    dims[1] = a.cols();
   }
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.resize(dims[0], dims[1]);
-    return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
+      ref.resize(dims[0], dims[1]);
+    return h5d_read(grp, aname, get_address(ref.data()), xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref_.data()), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref.data()), xfer_plist);
   }
 };
 
@@ -82,21 +82,22 @@ struct h5data_proxy<Array<T, D>> : public h5_space_type<T, D>
   using FileSpace::dims;
   using FileSpace::get_address;
   typedef Array<T, D> data_type;
-  data_type& ref_;
-  inline h5data_proxy(data_type& a) : ref_(a)
+  inline h5data_proxy(const data_type& a)
   {
     for (int i = 0; i < D; ++i)
-      dims[i] = ref_.size(i);
+      dims[i] = a.size(i);
   }
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.resize(dims);
-    return h5d_read(grp, aname, get_address(ref_.data()), xfer_plist);
+      ref.resize(dims);
+    return h5d_read(grp, aname, get_address(ref.data()), xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref_.data()), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref.data()), xfer_plist);
   }
 };
 
