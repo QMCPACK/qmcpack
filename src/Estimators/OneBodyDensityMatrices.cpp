@@ -599,7 +599,7 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
 
 void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
 {
-  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
+  hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   std::vector<int> my_indexes(2, basis_size_);
   if constexpr (IsComplex_t<Value>::value)
   {
@@ -608,7 +608,7 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
   int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
 
   std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate(sgid, nname.c_str(), 0);
+  hid_t ngid        = H5Gcreate2(sgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   for (int s = 0; s < species_.size(); ++s)
   {
     h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));

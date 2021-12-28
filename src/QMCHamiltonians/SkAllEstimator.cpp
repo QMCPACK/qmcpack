@@ -273,7 +273,7 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   if (hdf5_out)
   {
     // Create HDF group in stat.h5 with SkAllEstimator's name
-    hid_t sgid = H5Gcreate(gid, name_.c_str(), 0);
+    hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     // Add k-point information
     h5desc.emplace_back("kpoints");

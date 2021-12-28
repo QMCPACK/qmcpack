@@ -105,8 +105,7 @@ struct HDFAttribIO<int> : public HDFAttribIOBase
   {
     if (replace)
     //herr_t status = H5Eset_auto(NULL, NULL);
-    //status = H5Gget_objinfo (grp, name, 0, NULL);
-    //if(status == 0)
+    //if(H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t h1  = H5Dopen(grp, name);
       hid_t ret = H5Dwrite(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
@@ -559,8 +558,7 @@ struct HDFAttribIO<Matrix<int>> : public HDFAttribIOBase
   {
     if (replace)
     //  herr_t status = H5Eset_auto(NULL, NULL);
-    //  status = H5Gget_objinfo (grp, name, 0, NULL);
-    //  if(status == 0)
+    //  if(H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t h1  = H5Dopen(grp, name);
       hid_t ret = H5Dwrite(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -602,8 +600,7 @@ struct HDFAttribIO<Matrix<double>> : public HDFAttribIOBase
   {
     if (replace)
     //  herr_t status = H5Eset_auto(NULL, NULL);
-    //  status = H5Gget_objinfo (grp, name, 0, NULL);
-    //  if(status == 0)
+    //  if(H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t h1  = H5Dopen(grp, name);
       hid_t ret = H5Dwrite(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
