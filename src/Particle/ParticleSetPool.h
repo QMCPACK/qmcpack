@@ -21,6 +21,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/MPIObjectBase.h"
+#include "SimulationCell.h"
 
 namespace qmcplusplus
 {
@@ -103,7 +104,7 @@ private:
    * - <simulationcell> element
    * - the first particleset created with ES-HDF
    */
-  std::unique_ptr<ParticleSet::ParticleLayout_t> simulation_cell_;
+  std::unique_ptr<SimulationCell> simulation_cell_;
   /** tiling matrix
    */
   Tensor<int, OHMMS_DIM> TileMatrix;

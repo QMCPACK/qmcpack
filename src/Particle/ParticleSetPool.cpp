@@ -114,25 +114,22 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
   if (!simulation_cell_)
   {
     app_debug() << "  Creating global supercell " << std::endl;
-    simulation_cell_ = std::make_unique<ParticleSet::ParticleLayout_t>();
+    simulation_cell_ = std::make_unique<SimulationCell>();
     printcell      = true;
   }
   else
   {
     app_log() << "  Overwriting global supercell " << std::endl;
   }
-  LatticeParser a(*simulation_cell_);
+  LatticeParser a(simulation_cell_->lattice_);
   bool lattice_defined = a.put(cur);
+  simulation_cell_->resetLRBox();
   if (printcell && lattice_defined)
   {
     if (outputManager.isHighActive())
-    {
-      simulation_cell_->print(app_log(), 2);
-    }
+      simulation_cell_->lattice_.print(app_log(), 2);
     else
-    {
-      simulation_cell_->print(app_summary(), 1);
-    }
+      simulation_cell_->lattice_.print(app_summary(), 1);
   }
   return lattice_defined;
 }
@@ -189,7 +186,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     if (simulation_cell_)
     {
       app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice = *simulation_cell_;
+      pTemp->Lattice = simulation_cell_->lattice_;
     }
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);
