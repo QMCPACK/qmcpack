@@ -256,14 +256,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   {
     std::string cname((const char*)(cur->name));
     if (cname.find("ell") < cname.size()) //accept UnitCell, unitcell, supercell
-    {
-      //if(cname == "UnitCell" || cname == "unitcell") {
-      LatticeParser lat(ref_.Lattice);
-      lat.put(cur);
-      //ParameterSet params;
-      //params.add(uc_grid,"uc_grid");
-      //params.put(cur);
-    }
+      throw std::runtime_error("Constructing cell inside particleset is illegal!");
     else if (cname == attrib_tag)
     {
       getPtclAttrib(cur, nat, nloc);
@@ -298,7 +291,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   }
 
   expandSuperCell(ref_, TileMatrix);
-  if (ref_.Lattice.SuperCellEnum)
+  if (ref_.getLattice().SuperCellEnum)
   {
     if (randomizeR == "yes")
     {
@@ -479,7 +472,7 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
   ref_.begin_node(fxml);
   fxml.setf(std::ios::scientific);
   fxml.precision(15);
-  LatticeXMLWriter latticeout(ref_.Lattice);
+  LatticeXMLWriter latticeout(ref_.getLattice());
   latticeout.get(fxml);
   for (int i = 0; i < SpeciesName.size(); i++)
   {
@@ -584,7 +577,7 @@ xmlNodePtr XMLSaveParticle::createNode(bool addlattice)
     SpeciesName = ref_.getSpeciesSet().speciesName;
   }
   //if(addlattice) {
-  //  ref_.Lattice.print(std::cout);
+  //  ref_.getLattice().print(std::cout);
   //}
   xmlNodePtr cur = xmlNewNode(NULL, (const xmlChar*)"particleset");
   xmlNewProp(cur, (const xmlChar*)"name", (const xmlChar*)ref_.getName().c_str());

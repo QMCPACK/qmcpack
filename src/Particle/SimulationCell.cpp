@@ -14,6 +14,15 @@
 
 namespace qmcplusplus
 {
+
+SimulationCell::SimulationCell() = default;
+
+SimulationCell::SimulationCell(const Lattice& lattice)
+    : lattice_(lattice)
+{
+  resetLRBox();
+}
+
 void SimulationCell::resetLRBox()
 {
   if (lattice_.SuperCellEnum != SUPERCELL_OPEN)

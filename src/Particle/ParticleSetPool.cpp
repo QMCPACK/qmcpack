@@ -179,15 +179,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS_OFFLOAD);
     else
       pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS);
-    //if(role == "MC")
-    //  pTemp = new MCWalkerConfiguration;
-    //else
-    //  pTemp = new ParticleSet;
-    if (simulation_cell_)
-    {
-      app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice = simulation_cell_->lattice_;
-    }
+
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);
     bool success = pread.put(cur);

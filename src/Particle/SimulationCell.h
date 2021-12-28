@@ -21,7 +21,11 @@ class ParticleSetPool;
 
 class SimulationCell
 {
+public:
   using Lattice = PtclOnLatticeTraits::ParticleLayout_t;
+
+  SimulationCell();
+  SimulationCell(const Lattice& lattice);
 
   const Lattice& getLattice() const { return lattice_; }
   const Lattice& getPrimLattice() const { return primative_lattice_; }

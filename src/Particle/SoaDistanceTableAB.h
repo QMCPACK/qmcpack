@@ -26,7 +26,7 @@ template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
-      : DTD_BConds<T, D, SC>(source.Lattice),
+      : DTD_BConds<T, D, SC>(source.getLattice()),
         DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::evaluate_") + target.getName() +
                                                        "_" + source.getName(),

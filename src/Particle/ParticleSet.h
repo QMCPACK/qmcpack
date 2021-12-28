@@ -69,11 +69,6 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///ParticleLayout
-  ParticleLayout_t Lattice, PrimitiveLattice;
-  ///Long-range box
-  ParticleLayout_t LRBox;
-
   ///Species ID
   ParticleIndex_t GroupID;
   ///Position
@@ -247,6 +242,11 @@ public:
   inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
+
+
+  const ParticleLayout_t& getLattice() const { return Lattice; }
+  auto& getPrimitiveLattice() { return PrimitiveLattice; }
+  const auto& getLRBox() const { return LRBox; }
 
   inline bool isSameMass() const { return same_mass_; }
   inline bool isGrouped() const { return is_grouped_; }
@@ -581,6 +581,11 @@ public:
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
+  ///ParticleLayout
+  ParticleLayout_t Lattice, PrimitiveLattice;
+  ///Long-range box
+  ParticleLayout_t LRBox;
+
   ///true if the particles are grouped
   bool is_grouped_;
   ///true if the particles have the same mass

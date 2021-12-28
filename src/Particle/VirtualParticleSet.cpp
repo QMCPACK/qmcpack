@@ -42,7 +42,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
   setName("virtual");
 
   //initialize local data structure
-  Lattice  = p.Lattice;
+  Lattice  = p.getLattice();
   TotalNum = nptcl;
   R.resize(nptcl);
   coordinates_->resize(nptcl);

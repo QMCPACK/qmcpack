@@ -19,6 +19,7 @@ namespace qmcplusplus
 #if OHMMS_DIM == 3
 void expandSuperCell(ParticleSet& ref_, Tensor<int, 3>& tmat)
 {
+/*
   typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
   typedef ParticleSet::Tensor_t Tensor_t;
   Tensor<int, 3> I(1, 0, 0, 0, 1, 0, 0, 0, 1);
@@ -41,8 +42,8 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int, 3>& tmat)
   }
   //convert2unit
   ref_.convert2Unit(ref_.R);
-  ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
-  ref_.Lattice.set(dot(tmat, PrimCell.R));
+  ParticleSet::ParticleLayout_t PrimCell(ref_.getLattice());
+  ref_.getLattice().set(dot(tmat, PrimCell.R));
   int natoms    = ref_.getTotalNum();
   int numCopies = std::abs(det(tmat));
   ParticleSet::ParticlePos_t primPos(ref_.R);
@@ -68,7 +69,7 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int, 3>& tmat)
               uPrim[i] -= std::floor(uPrim[i]);
             SingleParticlePos_t r = PrimCell.toCart(uPrim) + (double)i0 * PrimCell.a(0) + (double)i1 * PrimCell.a(1) +
                 (double)i2 * PrimCell.a(2);
-            SingleParticlePos_t uSuper = ref_.Lattice.toUnit(r);
+            SingleParticlePos_t uSuper = ref_.getLattice().toUnit(r);
             if ((uSuper[0] >= -1.0e-6) && (uSuper[0] < 0.9999) && (uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999) &&
                 (uSuper[2] >= -1.0e-6) && (uSuper[2] < 0.9999))
             {
@@ -83,8 +84,9 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int, 3>& tmat)
           }
   }
   app_log() << "  Simulationcell after tiling" << std::endl;
-  ref_.Lattice.print(app_log());
+  ref_.getLattice().print(app_log());
   app_log() << std::endl;
+*/
 }
 
 #elif OHMMS_DIM == 2
@@ -104,8 +106,8 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int, 2>& tmat)
     return;
   //convert2unit
   ref_.convert2Unit(ref_.R);
-  ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
-  ref_.Lattice.set(dot(tmat, PrimCell.R));
+  ParticleSet::ParticleLayout_t PrimCell(ref_.getLattice());
+  ref_.getLattice().set(dot(tmat, PrimCell.R));
   int natoms    = ref_.getTotalNum();
   int numCopies = std::abs(det(tmat));
   ParticleSet::ParticlePos_t primPos(ref_.R);
@@ -129,7 +131,7 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int, 2>& tmat)
           for (int i = 0; i < 2; i++)
             uPrim[i] -= std::floor(uPrim[i]);
           SingleParticlePos_t r      = PrimCell.toCart(uPrim) + (double)i0 * PrimCell.a(0) + (double)i1 * PrimCell.a(1);
-          SingleParticlePos_t uSuper = ref_.Lattice.toUnit(r);
+          SingleParticlePos_t uSuper = ref_.getLattice().toUnit(r);
           if ((uSuper[0] >= -1.0e-6) && (uSuper[0] < 0.9999) && (uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999))
           {
             char buff[500];

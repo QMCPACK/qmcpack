@@ -144,9 +144,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
     source.createSK();
 
     CHECK(Lattice.SuperCellEnum == SUPERCELL_BULK);
-    CHECK(source.LRBox.R(0, 0) == 1.0);
-    CHECK(source.LRBox.R(0, 1) == 2.0);
-    CHECK(source.LRBox.R(0, 2) == 3.0);
+    CHECK(source.getLRBox().R(0, 0) == 1.0);
+    CHECK(source.getLRBox().R(0, 1) == 2.0);
+    CHECK(source.getLRBox().R(0, 2) == 3.0);
   }
 
   // PPN case
@@ -159,9 +159,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
     source.createSK();
 
     CHECK(Lattice.SuperCellEnum == SUPERCELL_SLAB);
-    CHECK(source.LRBox.R(2, 0) == 0.0);
-    CHECK(source.LRBox.R(2, 1) == 0.0);
-    CHECK(source.LRBox.R(2, 2) == 2.0);
+    CHECK(source.getLRBox().R(2, 0) == 0.0);
+    CHECK(source.getLRBox().R(2, 1) == 0.0);
+    CHECK(source.getLRBox().R(2, 2) == 2.0);
   }
 
   // PNN case
@@ -174,15 +174,15 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
     source.createSK();
 
     CHECK(Lattice.SuperCellEnum == SUPERCELL_WIRE);
-    CHECK(source.LRBox.R(0, 0) == 1.0);
-    CHECK(source.LRBox.R(0, 1) == 2.0);
-    CHECK(source.LRBox.R(0, 2) == 3.0);
-    CHECK(source.LRBox.R(1, 0) == 0.0);
-    CHECK(source.LRBox.R(1, 1) == 2.0);
-    CHECK(source.LRBox.R(1, 2) == 0.0);
-    CHECK(source.LRBox.R(2, 0) == 0.0);
-    CHECK(source.LRBox.R(2, 1) == 0.0);
-    CHECK(source.LRBox.R(2, 2) == 2.0);
+    CHECK(source.getLRBox().R(0, 0) == 1.0);
+    CHECK(source.getLRBox().R(0, 1) == 2.0);
+    CHECK(source.getLRBox().R(0, 2) == 3.0);
+    CHECK(source.getLRBox().R(1, 0) == 0.0);
+    CHECK(source.getLRBox().R(1, 1) == 2.0);
+    CHECK(source.getLRBox().R(1, 2) == 0.0);
+    CHECK(source.getLRBox().R(2, 0) == 0.0);
+    CHECK(source.getLRBox().R(2, 1) == 0.0);
+    CHECK(source.getLRBox().R(2, 2) == 2.0);
   }
 }
 

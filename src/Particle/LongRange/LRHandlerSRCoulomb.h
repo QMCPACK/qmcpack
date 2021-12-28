@@ -57,7 +57,7 @@ public:
 
 
   //Constructor
-  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.LRBox)
+  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLRBox())
 
   {
     LRHandlerBase::ClassName = "LRHandlerSRCoulomb";
@@ -74,7 +74,7 @@ public:
    * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRHandlerSRCoulomb(const LRHandlerSRCoulomb& aLR, ParticleSet& ref)
-      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
+      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLRBox())
   {}
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -86,7 +86,7 @@ public:
 
   void initBreakup(ParticleSet& ref) override
   {
-    InitBreakup(ref.LRBox, 1);
+    InitBreakup(ref.getLRBox(), 1);
     //    fillYk(ref.getSK().getKLists());
     fillYkg(ref.getSK().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
@@ -98,7 +98,7 @@ public:
   {
     rs = rs_ext;
     myFunc.reset(ref, rs);
-    InitBreakup(ref.LRBox, 1);
+    InitBreakup(ref.getLRBox(), 1);
     //    fillYk(ref.getSK().getKLists());
     fillYkg(ref.getSK().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
@@ -271,7 +271,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout_t& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);
