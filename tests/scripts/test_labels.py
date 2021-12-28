@@ -579,11 +579,7 @@ except:
 
 # make a ctest list of the labels
 try:
-    ctest_labels = ''
-    for label in labels:
-        ctest_labels += label+';'
-    #end for
-    ctest_labels = ctest_labels.rstrip(';')
+    ctest_labels = ';'.join(labels)
 except:
     error()
 #end try

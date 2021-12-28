@@ -1617,10 +1617,10 @@ private:
   //Cholesky Tensor Lik[Q][nk][i][k][n]
   std::vector<shmSpMatrix> LQKikn;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKank;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKbnl;
 
   // Defines behavior over Q vector:

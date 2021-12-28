@@ -304,6 +304,8 @@ protected:
   bool checkParameters();
   void updateXmlNodes();
 
+  /// Flag on whether the variational parameter override is output to the new wavefunction
+  bool do_override_output;
 
   virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
 

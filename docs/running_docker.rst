@@ -55,7 +55,7 @@ Running Docker Containers
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
     
-    `-u` : For building we need write permissions, the current arguments will set your container user and group to match your host user and group (e.g. install additional packages, allocating shared volume permissions, ect.).
+    `-u` : For building we need write permissions, the current arguments will set your container user and group to match your host user and group (e.g. install additional packages, allocating shared volume permissions, etc.).
 
     `-v` : Replace `<QMCPACK Source Directory>` with the direct path to your QMCPACK directory, this maps it to our landing directory and gives docker access to the files
 

@@ -703,7 +703,7 @@ public:
     // calculate how many walkers can be done concurrently
     long Bytes = default_buffer_size_in_MB * 1024L * 1024L;
     // memory_needs = X, v, Tuw
-    Bytes -= size_t(memory_needs * sizeof(SPComplexType)); // substract other needs
+    Bytes -= size_t(memory_needs * sizeof(SPComplexType)); // subtract other needs
     Bytes /= size_t(nmo_ * nu * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     memory_needs += nwmax * nmo_ * nu;

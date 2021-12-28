@@ -297,7 +297,6 @@ struct Quadrature3D
     std::vector<PosType>& grid = xyz_m;
     std::vector<RealType>& w   = weight_m;
     SoaSphericalTensor<RealType> Ylm(lexact);
-    const RealType* restrict Ylm_v = Ylm[0];
     for (int l1 = 0; l1 <= lexact; l1++)
       for (int l2 = 0; l2 <= (lexact - l1); l2++)
         for (int m1 = -l1; m1 <= l1; m1++)
@@ -307,6 +306,7 @@ struct Quadrature3D
             for (int k = 0; k < grid.size(); k++)
             {
               Ylm.evaluateV(grid[k][0], grid[k][1], grid[k][2]);
+              const RealType* Ylm_v = Ylm[0];
               RealType v1 = Ylm_v[Ylm.index(l1, m1)];
               RealType v2 = Ylm_v[Ylm.index(l2, m2)];
               sum += 4.0 * M_PI * w[k] * v1 * v2;

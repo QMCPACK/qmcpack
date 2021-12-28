@@ -90,7 +90,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
   SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
 
-  { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space
+  { // using scope to control lifetime of StaticArrays, avoiding unnecessary buffer space
 
     Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
                                  buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -260,7 +260,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
 
-    // after the wait, vrecv ( and by extention vHS3D ) has the final vHS for the local walkers
+    // after the wait, vrecv ( and by extension vHS3D ) has the final vHS for the local walkers
     AFQMCTimers[vHS_comm_overhead_timer].get().start();
     MPI_Wait(&req_vrecv, &st);
     MPI_Wait(&req_vsend, &st);
@@ -631,7 +631,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
 
-    // after the wait, vrecv ( and by extention vHS3D ) has the final vHS for the local walkers
+    // after the wait, vrecv ( and by extension vHS3D ) has the final vHS for the local walkers
     AFQMCTimers[vHS_comm_overhead_timer].get().start();
 
     // store fields in walker

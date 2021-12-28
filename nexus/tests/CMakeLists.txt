@@ -13,7 +13,7 @@ if(ADD_TEST)
   foreach(TESTNAME ${TESTLIST})
     #message("Adding test ntest_nexus_${TESTNAME}")
     set(NTEST "${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test")
-    add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${NTEST} -R ${TESTNAME} --ctest
+    add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${NTEST} -R ${TESTNAME}\$ --ctest
                                                   --pythonpath=${PROJECT_SOURCE_DIR}/nexus/lib)
     set_property(
       TEST ntest_nexus_${TESTNAME}

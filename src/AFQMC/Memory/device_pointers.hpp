@@ -939,7 +939,7 @@ T* alloc_uninitialized_copy(Alloc& a, device_pointer<T> const Abeg, device_point
 
 /**************** destroy_n *****************/
 // NOTE: Not sure what to do here
-// should at least guard agains non-trivial types
+// should at least guard against non-trivial types
 template<typename T, typename Size>
 device_pointer<T> destroy_n(device_pointer<T> first, Size n)
 {
