@@ -142,7 +142,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())
   {
-    if (targetPtcl.is_spinor_)
+    if (targetPtcl.isSpinor())
     {
 #ifdef QMC_COMPLEX
       app_log() << "Einspline Spinor Set\n";
@@ -170,7 +170,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-    if (targetPtcl.is_spinor_)
+    if (targetPtcl.isSpinor())
 #ifdef QMC_COMPLEX
       bb = std::make_unique<LCAOSpinorBuilder>(targetPtcl, *ions, myComm, rootNode);
 #else

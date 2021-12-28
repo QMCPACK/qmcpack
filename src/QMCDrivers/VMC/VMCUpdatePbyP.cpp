@@ -85,7 +85,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           GradType grad_new;
           prob = std::norm(Psi.calcRatioGrad(W, iat, grad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr             = W.R[iat] - W.activePos - dr;
+          dr             = W.R[iat] - W.getActivePos() - dr;
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
           prob *= std::exp(logGb - logGf);

@@ -82,7 +82,7 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
   if (CoulombHandler == 0)
   {
 #if OHMMS_DIM == 3
-    if (ref.SK->SuperCellEnum == SUPERCELL_SLAB)
+    if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
       CoulombHandler = std::make_unique<EwaldHandler>(ref);

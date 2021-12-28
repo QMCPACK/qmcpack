@@ -89,8 +89,8 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
@@ -187,8 +187,8 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
@@ -282,8 +282,8 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
@@ -411,8 +411,8 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 }
 
 TEST_CASE("distance_pbc_z", "[distance_table][xml]")

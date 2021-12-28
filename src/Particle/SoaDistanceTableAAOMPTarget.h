@@ -252,7 +252,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
-    const auto activePtcl_local  = pset_leader.activePtcl;
+    const auto activePtcl_local  = pset_leader.getActivePtcl();
     const auto num_sources_local = num_targets_;
     const auto num_padded        = num_targets_padded_;
     auto* rsoa_dev_list_ptr      = rsoa_dev_list.data();

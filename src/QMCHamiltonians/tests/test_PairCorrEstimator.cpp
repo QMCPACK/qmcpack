@@ -97,7 +97,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   ParticleSet* elec = pset_builder.getParticleSet("e");
   elec->Lattice     = lattice; // copy in the new Lattice
 
-  REQUIRE(elec->SameMass);
+  REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
   // Move the particles manually onto B1 lattice

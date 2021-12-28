@@ -91,12 +91,12 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           ComplexType spingrad_new;
           prob = std::norm(Psi.calcRatioGradWithSpin(W, iat, grad_new, spingrad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr             = W.R[iat] - W.activePos - dr;
+          dr             = W.R[iat] - W.getActivePos() - dr;
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
 
           DriftModifier->getDrift(tauovermass / spinMass, spingrad_new, ds);
-          ds = W.spins[iat] - W.activeSpinVal - ds;
+          ds = W.spins[iat] - W.getActiveSpinVal() - ds;
           logGb += -spinMass * oneover2tau * ds * ds;
           logGf += mhalf * deltaS[iat] * deltaS[iat];
 
