@@ -52,7 +52,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
   data_locality_ = dl;
   if (input_.get_cell().explicitly_defined == true)
     throw std::runtime_error(
-        "SpinDensityNew should not be constructed with both a cell in its input and an lattice input arguement.");
+        "SpinDensityNew should not be constructed with both a cell in its input and an lattice input argument.");
   else if (lattice_.explicitly_defined == false)
     throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
 

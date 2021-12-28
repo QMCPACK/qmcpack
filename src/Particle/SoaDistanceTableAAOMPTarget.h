@@ -212,7 +212,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   /** evaluate the temporary pair relations when a move is proposed
    * this implementation is asynchronous and the synchronization is managed at ParticleSet.
-   * Transfering results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
+   * Transferring results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
    * If the temporary pair distance are consumed on the device directly, the device to host data transfer can be
    * skipped as an optimization.
    */
@@ -252,7 +252,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
-    const auto activePtcl_local  = pset_leader.activePtcl;
+    const auto activePtcl_local  = pset_leader.getActivePtcl();
     const auto num_sources_local = num_targets_;
     const auto num_padded        = num_targets_padded_;
     auto* rsoa_dev_list_ptr      = rsoa_dev_list.data();

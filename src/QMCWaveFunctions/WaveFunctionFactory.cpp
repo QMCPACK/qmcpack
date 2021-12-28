@@ -83,6 +83,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else
       attach2Node = true;
   }
+  std::string vp_file_to_load;
   cur          = cur->children;
   bool success = true;
   while (cur != NULL)
@@ -159,6 +160,13 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
       addNode(std::move(agpbuilder), cur);
     }
 #endif
+    else if (cname == "override_variational_parameters")
+    {
+      OhmmsAttributeSet attribs;
+      attribs.add(vp_file_to_load, "href");
+      attribs.put(cur);
+    }
+
     if (attach2Node)
       xmlAddChild(myNode, xmlCopyNode(cur, 1));
     cur = cur->next;
@@ -172,6 +180,13 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   targetPsi->checkInVariables(dummy);
   dummy.resetIndex();
   targetPsi->checkOutVariables(dummy);
+
+  if (!vp_file_to_load.empty())
+  {
+    app_log() << "  Reading variational parameters from " << vp_file_to_load << std::endl;
+    dummy.readFromHDF(vp_file_to_load);
+  }
+
   targetPsi->resetParameters(dummy);
   return success;
 }

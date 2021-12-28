@@ -18,20 +18,20 @@
 
 namespace qmc_hip
 {
-void hip_kernel_check(hipError_t sucess, std::string message)
+void hip_kernel_check(hipError_t success, std::string message)
 {
-  if (hipSuccess != sucess)
+  if (hipSuccess != success)
   {
     std::cerr << message << std::endl;
-    std::cerr << " hipGetErrorName: " << hipGetErrorName(sucess) << std::endl;
-    std::cerr << " hipGetErrorString: " << hipGetErrorString(sucess) << std::endl;
+    std::cerr << " hipGetErrorName: " << hipGetErrorName(success) << std::endl;
+    std::cerr << " hipGetErrorString: " << hipGetErrorString(success) << std::endl;
     std::cerr.flush();
     throw std::runtime_error(" Error code returned by hip. \n");
   }
 }
-void rocrand_check(rocrand_status sucess, std::string message)
+void rocrand_check(rocrand_status success, std::string message)
 {
-  if (ROCRAND_STATUS_SUCCESS != sucess)
+  if (ROCRAND_STATUS_SUCCESS != success)
   {
     std::cerr << message << std::endl;
     std::cerr.flush();

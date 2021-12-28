@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/TimerManager.h"
 #include "spline/einspline_engine.hpp"
 #ifdef QMC_CUDA
@@ -69,11 +68,7 @@ public:
   /// metric tensor to handle generic unitcell
   Tensor<RealType, OHMMS_DIM> GGt;
 
-  ///////////////////////////////////////////////
-  // Muffin-tin orbitals from LAPW calculation //
-  ///////////////////////////////////////////////
-  std::vector<MuffinTinClass> MuffinTins;
-  int NumValenceOrbs, NumCoreOrbs;
+  int NumValenceOrbs;
 
 public:
   UnitCellType GetLattice();
@@ -81,7 +76,7 @@ public:
   void resetSourceParticleSet(ParticleSet& ions);
   void setOrbitalSetSize(int norbs) override;
   inline std::string Type() { return "EinsplineSet"; }
-  EinsplineSet() : TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0) { className = "EinsplineSet"; }
+  EinsplineSet() : TwistNum(0), NumValenceOrbs(0) { className = "EinsplineSet"; }
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -264,10 +259,6 @@ protected:
   StorageGradVector_t StorageGradVector;
   StorageHessVector_t StorageHessVector;
   StorageGradHessVector_t StorageGradHessVector;
-  // Temporary storage used when blending functions
-  StorageValueVector_t BlendValueVector, BlendLaplVector;
-  StorageGradVector_t BlendGradVector;
-  StorageHessVector_t BlendHessVector;
 
   // True if we should unpack this orbital into two copies
   std::vector<bool> MakeTwoCopies;
@@ -335,22 +326,18 @@ public:
     MultiSpline       = einspline::create(dummy, xyz_g, xyz_bc, nv);
   }
 
-  inline void resizeStorage(int n, int nvals, int ncores = 0)
+  inline void resizeStorage(int n, int nvals)
   {
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
     StorageValueVector.resize(n);
-    BlendValueVector.resize(n);
     StorageLaplVector.resize(n);
-    BlendLaplVector.resize(n);
     StorageGradVector.resize(n);
-    BlendGradVector.resize(n);
     StorageHessVector.resize(n);
     StorageGradHessVector.resize(n);
     phase.resize(n);
     eikr.resize(n);
     NumValenceOrbs = nvals;
-    NumCoreOrbs    = ncores;
   }
 
 #if !defined(QMC_COMPLEX)
@@ -438,9 +425,7 @@ public:
 
   // Vectorized evaluation functions
 #if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::RealType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi) override;
@@ -462,9 +447,7 @@ public:
 
   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
 #else
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::ComplexType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
@@ -622,9 +605,7 @@ public:
 
   // Vectorized evaluation functions
 #if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::RealType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi) override;
@@ -635,9 +616,7 @@ public:
                 int row_stride) override;
   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
 #else
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::ComplexType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;

@@ -70,7 +70,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice)
   {
     myFunc.reset(ref);
-    fillFk(ref.SK->getKLists());
+    fillFk(ref.getSK().getKLists());
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -81,7 +81,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
   void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->getKLists());
+    fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -94,7 +94,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
       rs = std::pow(3.0 / 4.0 / M_PI * ref.Lattice.Volume / static_cast<mRealType>(ref.getTotalNum()), 1.0 / 3.0);
     myFunc.reset(ref, rs);
     InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->getKLists());
+    fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
 

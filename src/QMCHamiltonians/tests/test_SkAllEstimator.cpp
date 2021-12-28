@@ -129,7 +129,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // Get the (now assembled) elec ParticleSet, sanity check, report
   ParticleSet* elec = pset_builder.getParticleSet("e");
   elec->Lattice     = lattice; // copy in the new Lattice
-  REQUIRE(elec->SameMass);
+  REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
   // Move the particles manually onto B1 lattice
@@ -176,7 +176,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // is never used to evaluate the estimator in this test.
   ParticleSet* ion = pset_builder.getParticleSet("i");
   ion->Lattice     = lattice; // copy in the new Lattice
-  REQUIRE(ion->SameMass);
+  REQUIRE(ion->isSameMass());
   REQUIRE(ion->getName() == "i");
   ion->get(std::cout); // print particleset info to stdout
 
@@ -211,7 +211,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // In order to compare to analytic result, need the list
   // of k-vectors in cartesian coordinates.
   // Luckily, ParticleSet stores that in SK->getKLists().kpts_cart
-  int nkpts = elec->SK->getKLists().numk;
+  int nkpts = elec->getSK().getKLists().numk;
   std::cout << "\n";
   std::cout << "SkAll results:\n";
   std::cout << std::fixed;
@@ -232,7 +232,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   std::cout << std::setprecision(5);
   for (int k = 0; k < nkpts; k++)
   {
-    auto kvec      = elec->SK->getKLists().kpts_cart[k];
+    auto kvec      = elec->getSK().getKLists().kpts_cart[k];
     RealType kx    = kvec[0];
     RealType ky    = kvec[1];
     RealType kz    = kvec[2];
