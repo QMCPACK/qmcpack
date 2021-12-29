@@ -24,7 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Utilities/ModernStringUtils.hpp"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {

@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include "XMLParsingString.h"
-#include "Utilities/ModernStringUtils.hpp"
+#include "ModernStringUtils.hpp"
 
 /**\file libxmldefs.h
  *\brief A collection of put/get functions to read from or write to a xmlNode defined in libxml2.

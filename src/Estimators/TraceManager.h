@@ -29,7 +29,7 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "Utilities/IteratorUtility.h"
-#include "Utilities/ModernStringUtils.hpp"
+#include "ModernStringUtils.hpp"
 #include "Message/Communicate.h"
 #include "hdf/hdf_archive.h"
 #include "Message/OpenMP.h"

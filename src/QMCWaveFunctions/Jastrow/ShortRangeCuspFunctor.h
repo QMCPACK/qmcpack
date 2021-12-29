@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include "OhmmsPETE/TinyVector.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "Utilities/ModernStringUtils.hpp"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
