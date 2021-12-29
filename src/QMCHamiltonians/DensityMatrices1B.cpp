@@ -547,10 +547,10 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
 #endif
 
   std::string dname = name_;
-  hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
+  hid_t dgid        = H5Gcreate2(gid, dname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate(dgid, nname.c_str(), 0);
+  hid_t ngid        = H5Gcreate2(dgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   for (int s = 0; s < nspecies; ++s)
   {
     h5desc.emplace_back(species_name[s]);
@@ -562,7 +562,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   if (energy_mat)
   {
     std::string ename = "energy_matrix";
-    hid_t egid        = H5Gcreate(dgid, ename.c_str(), 0);
+    hid_t egid        = H5Gcreate2(dgid, ename.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     for (int s = 0; s < nspecies; ++s)
     {
       h5desc.emplace_back(species_name[s]);

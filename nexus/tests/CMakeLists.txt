@@ -2,8 +2,7 @@
 include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 include("${PROJECT_SOURCE_DIR}/CMake/python.cmake")
 
-set(NEXUS_PYTHON_REQS numpy)
-check_python_reqs(NEXUS_PYTHON_REQS "" ADD_TEST)
+check_python_reqs(numpy "nexus base" ADD_TEST)
 
 if(ADD_TEST)
   message("Adding Nexus tests")
