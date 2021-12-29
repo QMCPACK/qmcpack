@@ -23,6 +23,7 @@ namespace qmcplusplus
 {
 
 /** generic h5data_proxy<T> for scalar basic datatypes defined in hdf_dataspace.h
+ * Note if the dataset to be written has const specifier, T should not carry const.
  */
 template<typename T>
 struct h5data_proxy : public h5_space_type<T, 0>

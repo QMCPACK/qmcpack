@@ -30,7 +30,7 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
   using FileSpace = h5_space_type<T, 1>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  typedef Vector<T> data_type;
+  using data_type = Vector<T>;
 
   inline h5data_proxy(const data_type& a) { dims[0] = a.size(); }
 
@@ -54,7 +54,8 @@ struct h5data_proxy<Matrix<T>> : public h5_space_type<T, 2>
   using FileSpace = h5_space_type<T, 2>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  typedef Matrix<T> data_type;
+  using data_type = Matrix<T>;
+
   inline h5data_proxy(const data_type& a)
   {
     dims[0] = a.rows();
@@ -81,7 +82,8 @@ struct h5data_proxy<Array<T, D>> : public h5_space_type<T, D>
   using FileSpace = h5_space_type<T, D>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  typedef Array<T, D> data_type;
+  using data_type = Array<T, D>;
+
   inline h5data_proxy(const data_type& a)
   {
     for (int i = 0; i < D; ++i)
