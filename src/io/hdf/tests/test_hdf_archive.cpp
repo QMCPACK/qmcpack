@@ -62,7 +62,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   okay    = hd.writeEntry(f, "float");
   REQUIRE(okay);
 
-  double d = 4.5;
+  const double d = 4.5;
   okay     = hd.writeEntry(d, "double");
   REQUIRE(okay);
 
@@ -176,6 +176,10 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
   bool okay = hd.writeEntry(v, "vector_double");
   REQUIRE(okay);
 
+  const vector<double> v_const(v);
+  okay = hd.writeEntry(v_const, "vector_double_const");
+  REQUIRE(okay);
+
   hd.close();
 
   hdf_archive hd2;
@@ -186,9 +190,13 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
   okay = hd2.readEntry(v2, "vector_double");
   REQUIRE(v2.size() == 3);
   for (int i = 0; i < v.size(); i++)
-  {
-    REQUIRE(v[i] == v2[i]);
-  }
+    CHECK(v[i] == v2[i]);
+
+  vector<double> v2_for_const;
+  okay = hd2.readEntry(v2_for_const, "vector_double_const");
+  REQUIRE(v2_for_const.size() == 3);
+  for (int i = 0; i < v_const.size(); i++)
+    CHECK(v_const[i] == v2_for_const[i]);
 }
 
 TEST_CASE("hdf_archive_group", "[hdf]")

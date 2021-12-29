@@ -44,7 +44,9 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   }
 
   hd.write(allData, "matrix");
-  hd.write(allData_cplx, "matrix_cplx_float");
+
+  const auto& const_allData_cplx = allData_cplx;
+  hd.write(const_allData_cplx, "matrix_cplx_float");
   hd.close();
 
   hdf_archive hd2;
