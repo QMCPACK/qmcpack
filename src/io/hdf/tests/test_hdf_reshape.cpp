@@ -37,7 +37,7 @@ TEST_CASE("hdf_write_reshape_with_matrix", "[hdf]")
   v[4] = 1.1;
   v[5] = 1.2;
 
-  std::array<int, 2> shape{2,3};
+  std::array<int, 2> shape{2, 3};
   hd.writeSlabReshaped(v, shape, "matrix_from_vector");
 
   std::vector<std::complex<float>> v_cplx(6);

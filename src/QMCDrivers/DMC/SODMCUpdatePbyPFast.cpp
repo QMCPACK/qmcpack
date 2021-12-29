@@ -110,8 +110,8 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
           //Use the force of the particle iat
           DriftModifier->getDrift(tauovermass, grad_iat, dr);
           DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
-          dr                     = W.R[iat] - W.activePos - dr;
-          ds                     = W.spins[iat] - W.activeSpinVal - ds;
+          dr                     = W.R[iat] - W.getActivePos() - dr;
+          ds                     = W.spins[iat] - W.getActiveSpinVal() - ds;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           logGb += -spinMass * oneover2tau * ds * ds;
           RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);

@@ -259,12 +259,12 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   }
   //std::string tname=myParam->getTwistName();
   std::string tname = "kpoint_0";
-  //hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
-  //hid_t es_grp_id = H5Gopen(hfileID,"electrons/kpoint_0/spin_0/state_0");
-  hid_t es_grp_id = H5Gopen(hfileID, "electrons");
+  //hid_t es_grp_id = H5Gopen2(hfileID,myParam->eigTag.c_str(), H5P_DEFAULT);
+  //hid_t es_grp_id = H5Gopen2(hfileID,"electrons/kpoint_0/spin_0/state_0", H5P_DEFAULT);
+  hid_t es_grp_id = H5Gopen2(hfileID, "electrons", H5P_DEFAULT);
 
-  //hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
-  hid_t twist_grp_id = H5Gopen(es_grp_id, "kpoint_0");
+  //hid_t twist_grp_id = H5Gopen2(es_grp_id,tname.c_str(), H5P_DEFAULT);
+  hid_t twist_grp_id = H5Gopen2(es_grp_id, "kpoint_0", H5P_DEFAULT);
   //create a single-particle orbital set
   SPOSetType* psi = new SPOSetType;
   if (transform2grid)
@@ -288,7 +288,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
     {
       std::string bname(myParam->getBandName(occBand[ib], spinIndex));
       app_log() << "  Reading " << tname << "/" << bname << std::endl;
-      hid_t band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      hid_t band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
       hdfobj_coefs.read(band_grp_id, "psi_g");
       TempVecType coefs(coefs_DP.begin(), coefs_DP.end());
       psi->addVector(coefs, ib);
@@ -309,7 +309,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
     {
       std::string bname(myParam->getBandName(occBand[ib], spinIndex));
       app_log() << "  Reading " << tname << "/" << bname << std::endl;
-      hid_t band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      hid_t band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
       hdfobj_complex_coefs.read(band_grp_id, "psi_g");
       ComplexTempVecType complex_coefs(complex_coefs_DP.begin(), complex_coefs_DP.end());
       psi->addVector(complex_coefs, ib);
@@ -337,24 +337,22 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
   app_log() << " splineTag " << splineTag.str() << std::endl;
   hid_t es_grp_id;
-  status = H5Gget_objinfo(hfileID, splineTag.str().c_str(), 0, NULL);
-  if (status)
+  if (H5Lexists(hfileID, splineTag.str().c_str(), H5P_DEFAULT) != true)
   {
-    es_grp_id = H5Gcreate(hfileID, splineTag.str().c_str(), 0);
+    es_grp_id = H5Gcreate2(hfileID, splineTag.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     HDFAttribIO<PWBasis::GIndex_t> t(nG);
     t.write(es_grp_id, "grid");
   }
   else
   {
-    es_grp_id = H5Gopen(hfileID, splineTag.str().c_str());
+    es_grp_id = H5Gopen2(hfileID, splineTag.str().c_str(), H5P_DEFAULT);
   }
   std::string tname = myParam->getTwistName();
   hid_t twist_grp_id;
-  status = H5Gget_objinfo(es_grp_id, tname.c_str(), 0, NULL);
-  if (status)
-    twist_grp_id = H5Gcreate(es_grp_id, tname.c_str(), 0);
+  if (H5Lexists(es_grp_id, tname.c_str(), H5P_DEFAULT) != true)
+    twist_grp_id = H5Gcreate2(es_grp_id, tname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   else
-    twist_grp_id = H5Gopen(es_grp_id, tname.c_str());
+    twist_grp_id = H5Gopen2(es_grp_id, tname.c_str(), H5P_DEFAULT);
   TinyVector<double, OHMMS_DIM> TwistAngle_DP;
   TwistAngle_DP = TwistAngle;
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
@@ -370,28 +368,26 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   while (ib < myParam->numBands)
   {
     std::string bname(myParam->getBandName(ib));
-    status = H5Gget_objinfo(twist_grp_id, bname.c_str(), 0, NULL);
     hid_t band_grp_id, spin_grp_id = -1;
-    if (status)
+    if (H5Lexists(twist_grp_id, bname.c_str(), H5P_DEFAULT) != true)
     {
-      band_grp_id = H5Gcreate(twist_grp_id, bname.c_str(), 0);
+      band_grp_id = H5Gcreate2(twist_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
     else
     {
-      band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
     }
     hid_t parent_id = band_grp_id;
     if (myParam->hasSpin)
     {
       bname  = myParam->getSpinName(spinIndex);
-      status = H5Gget_objinfo(band_grp_id, bname.c_str(), 0, NULL);
-      if (status)
+      if (H5Lexists(band_grp_id, bname.c_str(), H5P_DEFAULT) != true)
       {
-        spin_grp_id = H5Gcreate(band_grp_id, bname.c_str(), 0);
+        spin_grp_id = H5Gcreate2(band_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       else
       {
-        spin_grp_id = H5Gopen(band_grp_id, bname.c_str());
+        spin_grp_id = H5Gopen2(band_grp_id, bname.c_str(), H5P_DEFAULT);
       }
       parent_id = spin_grp_id;
     }
@@ -443,28 +439,26 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   for (int ib = 0; ib < nb; ib++)
   {
     std::string bname(myParam->getBandName(ib));
-    status = H5Gget_objinfo(twist_grp_id, bname.c_str(), 0, NULL);
     hid_t band_grp_id, spin_grp_id = -1;
-    if (status)
+    if (H5Lexists(twist_grp_id, bname.c_str(), H5P_DEFAULT) != true)
     {
-      band_grp_id = H5Gcreate(twist_grp_id, bname.c_str(), 0);
+      band_grp_id = H5Gcreate2(twist_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
     else
     {
-      band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
     }
     hid_t parent_id = band_grp_id;
     if (myParam->hasSpin)
     {
       bname  = myParam->getSpinName(spinIndex);
-      status = H5Gget_objinfo(band_grp_id, bname.c_str(), 0, NULL);
-      if (status)
+      if (H5Lexists(band_grp_id, bname.c_str(), H5P_DEFAULT) != true)
       {
-        spin_grp_id = H5Gcreate(band_grp_id, bname.c_str(), 0);
+        spin_grp_id = H5Gcreate2(band_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       else
       {
-        spin_grp_id = H5Gopen(band_grp_id, bname.c_str());
+        spin_grp_id = H5Gopen2(band_grp_id, bname.c_str(), H5P_DEFAULT);
       }
       parent_id = spin_grp_id;
     }

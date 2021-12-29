@@ -95,8 +95,8 @@ void StressPBC::initBreakup(ParticleSet& P)
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& P)
 {
   SymTensor<RealType, OHMMS_DIM> res = 0.0;
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  const StructFact& RhoKA(PtclA.getSK());
+  const StructFact& RhoKB(P.getSK());
 
   for (int i = 0; i < NumSpeciesA; i++)
   {
@@ -161,7 +161,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
 {
   int NumSpecies = P.getSpeciesSet().TotalNum;
   SymTensor<RealType, OHMMS_DIM> stress_aa;
-  const StructFact& PtclRhoK(*(P.SK));
+  const StructFact& PtclRhoK(P.getSK());
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
   int MemberAttribIndx = P.getSpeciesSet().getAttribute("membersize");
 

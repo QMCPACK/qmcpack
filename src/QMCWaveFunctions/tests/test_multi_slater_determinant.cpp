@@ -386,12 +386,12 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.R[3] = {-1.488849594, 0.7470552741, 0.6659555498};
   elec_.R[4] = {-1.448485879, 0.7337274141, 0.02687190951};
 
-  elec_.spins[0]   = 4.882003828;
-  elec_.spins[1]   = 0.06469299507;
-  elec_.spins[2]   = 5.392168887;
-  elec_.spins[3]   = 5.33941214;
-  elec_.spins[4]   = 3.127416326;
-  elec_.is_spinor_ = true;
+  elec_.spins[0] = 4.882003828;
+  elec_.spins[1] = 0.06469299507;
+  elec_.spins[2] = 5.392168887;
+  elec_.spins[3] = 5.33941214;
+  elec_.spins[4] = 3.127416326;
+  elec_.setSpinor(true);
 
   SpeciesSet& tspecies     = elec_.getSpeciesSet();
   int upIdx                = tspecies.addSpecies("u");

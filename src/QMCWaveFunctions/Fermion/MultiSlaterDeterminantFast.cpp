@@ -141,7 +141,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(cons
   ScopedTimer local_timer(EvaluateTimer);
   for (size_t id = 0; id < Dets.size(); id++)
   {
-    if (P.is_spinor_)
+    if (P.isSpinor())
       Dets[id]->evaluateForWalkerMoveWithSpin(P);
     else
       Dets[id]->evaluateForWalkerMove(P);

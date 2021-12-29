@@ -27,7 +27,7 @@ std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(const DynamicCoordi
     return std::make_unique<RealSpacePositionsOMPTarget>();
 #endif
   else
-    APP_ABORT("DynamicCoordinatesBuilder::createDynamicCoordinates unknown DynamicCoordinateKind");
+    throw std::runtime_error("DynamicCoordinatesBuilder::createDynamicCoordinates unknown DynamicCoordinateKind");
   // dummy return
   return std::unique_ptr<RealSpacePositions>();
 }

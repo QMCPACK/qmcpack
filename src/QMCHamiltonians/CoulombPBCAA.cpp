@@ -213,7 +213,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   }
   {
     //LR
-    const StructFact& PtclRhoK(*(P.SK));
+    const StructFact& PtclRhoK(P.getSK());
     if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
     {
       APP_ABORT("CoulombPBCAA::evaluate_sp single particle traces have not been implemented for slab geometry");
@@ -321,7 +321,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 {
-  //  const StructFact& PtclRhoK(*(P.SK));
+  //  const StructFact& PtclRhoK(P.getSK());
   std::vector<TinyVector<RealType, DIM>> grad(P.getTotalNum());
   for (int spec2 = 0; spec2 < NumSpecies; spec2++)
   {
@@ -470,7 +470,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
 {
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
-  const StructFact& PtclRhoK(*(P.SK));
+  const StructFact& PtclRhoK(P.getSK());
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
   {
     const auto& d_aa(P.getDistTableAA(d_aa_ID));

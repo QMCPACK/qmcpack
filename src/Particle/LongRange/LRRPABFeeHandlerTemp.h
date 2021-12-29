@@ -71,7 +71,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice)
   {
     myFunc.reset(ref);
-    fillFk(ref.SK->getKLists());
+    fillFk(ref.getSK().getKLists());
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -82,7 +82,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
   void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->getKLists());
+    fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -92,7 +92,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     rs = rs_ext;
     myFunc.reset(ref, rs);
     InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->getKLists());
+    fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
 

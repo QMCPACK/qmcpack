@@ -40,9 +40,9 @@ void EwaldHandler3D::initBreakup(ParticleSet& ref)
   app_log() << "  Sigma=" << Sigma << std::endl;
   Volume     = ref.Lattice.Volume;
   PreFactors = 0.0;
-  fillFk(ref.SK->getKLists());
-  fillYkgstrain(ref.SK->getKLists());
-  filldFk_dk(ref.SK->getKLists());
+  fillFk(ref.getSK().getKLists());
+  fillYkgstrain(ref.getSK().getKLists());
+  filldFk_dk(ref.getSK().getKLists());
 }
 
 EwaldHandler3D::EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref)

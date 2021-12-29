@@ -229,7 +229,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         if (BFTrans)
           myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
-        bool spinor = targetPtcl.is_spinor_;
+        const bool spinor = targetPtcl.isSpinor();
         std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
         for (int grp = 0; grp < nGroups; grp++)
         {
@@ -321,9 +321,9 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 {
   ReportEngine PRE(ClassName, "putDeterminant(xmlNodePtr,int)");
 
-  SpeciesSet& myspecies = targetPtcl.mySpecies;
+  const SpeciesSet& target_species = targetPtcl.getSpeciesSet();
 
-  std::string spin_name = myspecies.speciesName[spin_group];
+  std::string spin_name = target_species.speciesName[spin_group];
   std::string sposet_name;
   std::string basisName("invalid");
   std::string detname("0"), refname("0");
@@ -374,8 +374,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     if (isdigit(spin_name[0]))
       spin_group_in = atoi(spin_name.c_str());
     else
-      spin_group_in = myspecies.findSpecies(spin_name);
-    if (spin_group_in < myspecies.size() && spin_group_in != spin_group)
+      spin_group_in = target_species.findSpecies(spin_name);
+    if (spin_group_in < target_species.size() && spin_group_in != spin_group)
     {
       spin_group = spin_group_in;
       app_log() << "  Overwrite group = " << spin_group << std::endl;

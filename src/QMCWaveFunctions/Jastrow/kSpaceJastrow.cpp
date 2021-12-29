@@ -480,7 +480,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, Gr
 {
   ComplexType eye(0.0, 1.0);
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  const PosType &rnew(P.activePos), &rold(P.R[iat]);
+  const PosType &rnew(P.getActivePos()), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i = 0; i < nOne; i++)
@@ -531,7 +531,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, Gr
 kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
 {
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  const PosType &rnew(P.activePos), &rold(P.R[iat]);
+  const PosType &rnew(P.getActivePos()), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i = 0; i < nOne; i++)
@@ -570,7 +570,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
 void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
 {
   RealType J1new(0.0);
-  const PosType& rnew(P.activePos);
+  const PosType& rnew(P.getActivePos());
   //     Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i = 0; i < nOne; i++)
@@ -632,7 +632,7 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   // eikr_new.resize(MaxK);
   // delta_eikr.resize(MaxK);
   // for(int iat=0; iat<NumPtcls; iat++)
-  //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+  //   copy(P.getSK().eikr[iat],P.getSK().eikr[iat]+MaxK,eikr[iat]);
   // buf.add(Rhok.first_address(), Rhok.last_address());
   // buf.add(U.first_address(), U.last_address());
   // buf.add(d2U.first_address(), d2U.last_address());
@@ -644,7 +644,7 @@ kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBuffer
 {
   log_value_ = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)
-  //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+  //   copy(P.getSK().eikr[iat],P.getSK().eikr[iat]+MaxK,eikr[iat]);
   // buf.put(Rhok.first_address(), Rhok.last_address());
   // buf.put(U.first_address(), U.last_address());
   // buf.put(d2U.first_address(), d2U.last_address());

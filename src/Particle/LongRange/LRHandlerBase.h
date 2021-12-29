@@ -142,7 +142,7 @@ struct LRHandlerBase
       mRealType u = 0;
       for (; ki < kshell[ks + 1]; ki++, rk2++)
       {
-        pComplexType eikr = P.SK->eikr(iat, ki);
+        pComplexType eikr = P.getSK().eikr(iat, ki);
         u += eikr.real() * (*rk2).real() + eikr.imag() * (*rk2).imag();
       }
       vk += Fk_symm[ks] * u;
@@ -159,8 +159,8 @@ struct LRHandlerBase
   {
     mRealType vk = 0.0;
 #if defined(USE_REAL_STRUCT_FACTOR)
-    const pRealType* restrict eikr_r = P.SK->eikr_r[iat];
-    const pRealType* restrict eikr_i = P.SK->eikr_i[iat];
+    const pRealType* restrict eikr_r = P.getSK().eikr_r[iat];
+    const pRealType* restrict eikr_i = P.getSK().eikr_i[iat];
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
       mRealType u = 0;
@@ -187,9 +187,9 @@ struct LRHandlerBase
                            std::vector<TinyVector<pRealType, OHMMS_DIM>>& grad1) const
   {
 #if !defined(USE_REAL_STRUCT_FACTOR)
-    const Matrix<pComplexType>& e2ikrA = A.SK->eikr;
-    const pComplexType* rhokB          = B.SK->rhok[specB];
-    const std::vector<PosType>& kpts   = A.SK->getKLists().kpts_cart;
+    const Matrix<pComplexType>& e2ikrA = A.getSK().eikr;
+    const pComplexType* rhokB          = B.getSK().rhok[specB];
+    const std::vector<PosType>& kpts   = A.getSK().getKLists().kpts_cart;
     for (int ki = 0; ki < Fk.size(); ki++)
     {
       PosType k = kpts[ki];
@@ -201,11 +201,11 @@ struct LRHandlerBase
     }
 #else
 
-    const Matrix<pRealType>& e2ikrA_r = A.SK->eikr_r;
-    const Matrix<pRealType>& e2ikrA_i = A.SK->eikr_i;
-    const pRealType* rhokB_r          = B.SK->rhok_r[specB];
-    const pRealType* rhokB_i          = B.SK->rhok_i[specB];
-    const std::vector<PosType>& kpts  = A.SK->getKLists().kpts_cart;
+    const Matrix<pRealType>& e2ikrA_r = A.getSK().eikr_r;
+    const Matrix<pRealType>& e2ikrA_i = A.getSK().eikr_i;
+    const pRealType* rhokB_r          = B.getSK().rhok_r[specB];
+    const pRealType* rhokB_i          = B.getSK().rhok_i[specB];
+    const std::vector<PosType>& kpts  = A.getSK().getKLists().kpts_cart;
     for (int ki = 0; ki < Fk.size(); ki++)
     {
       PosType k = kpts[ki];
@@ -306,7 +306,7 @@ struct DummyLRHandler : public LRHandlerBase
   {
     mRealType norm = 4.0 * M_PI / ref.Lattice.Volume;
     mRealType kcsq = LR_kc * LR_kc;
-    auto& KList(ref.SK->getKLists());
+    auto& KList(ref.getSK().getKLists());
     int maxshell = KList.kshell.size() - 1;
     const auto& kk(KList.ksq);
     int ksh = 0, ik = 0;
