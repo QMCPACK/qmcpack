@@ -63,7 +63,9 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
   tmat(1, 1) = 1;
   tmat(2, 2) = 1;
 
-  ParticleSet ions, electrons;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
+
   XMLParticleParser parse_ions(ions, tmat);
   xmlNodePtr part1 = xmlFirstElementChild(root);
   parse_ions.put(part1);
@@ -90,6 +92,7 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
   REQUIRE(electrons.R[1][2] == Approx(-0.0128914));
   REQUIRE(electrons.getName() == "e");
 }
+
 TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
 {
   const char* particles = "<tmp> \
@@ -123,7 +126,8 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
   tmat(1, 1) = 1;
   tmat(2, 2) = 1;
 
-  ParticleSet electrons;
+  const SimulationCell simulation_cell;
+  ParticleSet electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons, tmat);
   parse_electrons.put(part1);

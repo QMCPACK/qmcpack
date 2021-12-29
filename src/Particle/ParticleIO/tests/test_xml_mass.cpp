@@ -75,7 +75,8 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
   tmat(1, 1) = 1;
   tmat(2, 2) = 1;
 
-  ParticleSet ions, electrons;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons, tmat);
   parse_electrons.put(part1);

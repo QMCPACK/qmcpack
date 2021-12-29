@@ -28,7 +28,8 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c),
+    simulation_cell_(std::make_unique<SimulationCell>()), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
@@ -110,22 +111,13 @@ bool ParticleSetPool::putTileMatrix(xmlNodePtr cur)
 bool ParticleSetPool::putLattice(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
-  bool printcell = false;
-  if (!simulation_cell_)
-  {
-    app_debug() << "  Creating global supercell " << std::endl;
-    simulation_cell_ = std::make_unique<SimulationCell>();
-    printcell      = true;
-  }
-  else
-  {
-    app_log() << "  Overwriting global supercell " << std::endl;
-  }
+
   LatticeParser a(simulation_cell_->lattice_);
   bool lattice_defined = a.put(cur);
-  simulation_cell_->resetLRBox();
-  if (printcell && lattice_defined)
+  if (lattice_defined)
   {
+    app_log() << "  Overwriting global supercell " << std::endl;
+    simulation_cell_->resetLRBox();
     if (outputManager.isHighActive())
       simulation_cell_->lattice_.print(app_log(), 2);
     else
@@ -176,9 +168,9 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 
     // select OpenMP offload implementation in ParticleSet.
     if (useGPU == "yes")
-      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS_OFFLOAD);
+      pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS_OFFLOAD);
     else
-      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS);
+      pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);
 
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);

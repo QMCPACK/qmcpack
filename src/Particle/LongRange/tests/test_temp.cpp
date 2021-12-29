@@ -24,7 +24,7 @@ struct EslerCoulomb3D
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
   inline double operator()(double r, double rinv) const { return rinv; }
-  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.getLRBox().Volume; }
   inline double Xk(double k, double rc) const { return -norm / (k * k) * std::cos(k * rc); }
   inline double Fk(double k, double rc) const { return -Xk(k, rc); }
   inline double integrate_r2(double r) const { return 0.5 * r * r; }
@@ -47,8 +47,8 @@ TEST_CASE("temp3d", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;       // handler needs ref.SK.KLists
-  ref.Lattice = Lattice; // !!!! crucial for access to Volume
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
   ref.createSK();
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);
 

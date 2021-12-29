@@ -30,6 +30,7 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "SimulationCell.h"
 #include "DTModes.h"
 
 namespace qmcplusplus
@@ -130,7 +131,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
@@ -244,9 +245,10 @@ public:
   void resetGroups();
 
 
-  const ParticleLayout_t& getLattice() const { return Lattice; }
-  auto& getPrimitiveLattice() { return PrimitiveLattice; }
-  const auto& getLRBox() const { return LRBox; }
+  const auto& getSimulationCell() const { return simulation_cell_; }
+  const auto& getLattice() const { return simulation_cell_.getLattice(); }
+  auto& getPrimitiveLattice() const { return const_cast<ParticleLayout_t&>(simulation_cell_.getPrimLattice()); }
+  const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
   inline bool isGrouped() const { return is_grouped_; }
@@ -496,8 +498,6 @@ public:
   inline void assign(const ParticleSet& ptclin)
   {
     resize(ptclin.getTotalNum());
-    Lattice          = ptclin.Lattice;
-    PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit         = ptclin.R.InUnit;
     R                = ptclin.R;
     spins            = ptclin.spins;
@@ -581,10 +581,8 @@ public:
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
-  ///ParticleLayout
-  ParticleLayout_t Lattice, PrimitiveLattice;
-  ///Long-range box
-  ParticleLayout_t LRBox;
+  /// reference to global simulation cell
+  const SimulationCell& simulation_cell_;
 
   ///true if the particles are grouped
   bool is_grouped_;

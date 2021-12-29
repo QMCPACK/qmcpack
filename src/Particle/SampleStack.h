@@ -21,6 +21,7 @@
 #include <vector>
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
+#include "Particle/WalkerConfigurations.h"
 
 namespace qmcplusplus
 {

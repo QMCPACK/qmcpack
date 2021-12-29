@@ -29,8 +29,9 @@ namespace qmcplusplus
 {
 TEST_CASE("ParticleSet distance table management", "[particle]")
 {
-  ParticleSet ions;
-  ParticleSet elecs;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elecs(simulation_cell);
 
   ions.setName("ions");
   elecs.setName("electrons");
@@ -68,7 +69,8 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 {
-  ParticleSet source;
+  const SimulationCell simulation_cell;
+  ParticleSet source(simulation_cell);
 
   source.setName("electrons");
 
@@ -99,16 +101,16 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-  ParticleSet source;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
                                     0.00000000, 3.37316115);
   Lattice.reset();
 
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet source(simulation_cell);
+
   source.setName("electrons");
-  source.Lattice = Lattice;
 
   source.create(4);
   source.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
@@ -138,9 +140,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   Lattice.VacuumScale = 2.0;
   Lattice.reset();
   {
-    ParticleSet source;
+    const SimulationCell simulation_cell(Lattice);
+    ParticleSet source(simulation_cell);
     source.setName("electrons");
-    source.Lattice = Lattice;
     source.createSK();
 
     CHECK(Lattice.SuperCellEnum == SUPERCELL_BULK);
@@ -153,9 +155,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   Lattice.BoxBConds[2] = false;
   Lattice.reset();
   {
-    ParticleSet source;
+    const SimulationCell simulation_cell(Lattice);
+    ParticleSet source(simulation_cell);
     source.setName("electrons");
-    source.Lattice = Lattice;
     source.createSK();
 
     CHECK(Lattice.SuperCellEnum == SUPERCELL_SLAB);
@@ -168,9 +170,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   Lattice.BoxBConds[1] = false;
   Lattice.reset();
   {
-    ParticleSet source;
+    const SimulationCell simulation_cell(Lattice);
+    ParticleSet source(simulation_cell);
     source.setName("electrons");
-    source.Lattice = Lattice;
     source.createSK();
 
     CHECK(Lattice.SuperCellEnum == SUPERCELL_WIRE);

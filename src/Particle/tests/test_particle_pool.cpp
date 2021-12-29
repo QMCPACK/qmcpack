@@ -60,7 +60,8 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSet* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
 
-  auto ps2 = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto ps2 = std::make_unique<ParticleSet>(simulation_cell);
   ps2->setName("particle_set_2");
   pp.addParticleSet(std::move(ps2));
 
