@@ -62,7 +62,6 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   MCWalkerConfiguration W;
 
-
   W.setName("electrons");
 
   W.create(1);
@@ -91,7 +90,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
   W.setWalkerOffsets(walker_offset);
 
   c->setName("walker_test");
-  HDFWalkerOutput hout(W, "this string apparently does nothing", c);
+  HDFWalkerOutput hout(W.getTotalNum(), "this string apparently does nothing", c);
   hout.dump(W, 0);
 
   c->barrier();

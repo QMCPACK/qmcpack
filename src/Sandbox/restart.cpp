@@ -238,7 +238,7 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs[0], "restart", myComm);
+  HDFWalkerOutput wOut(elecs[0].getTotalNum(), "restart", myComm);
   myComm->barrier();
   h5clock.restart(); //start timer
   wOut.dump(elecs[0], 1);
@@ -323,7 +323,7 @@ int main(int argc, char** argv)
       if (!subComm->rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs[0], subComm);
-      HDFWalkerOutput subwOut(elecs[0], "XXXX", subComm);
+      HDFWalkerOutput subwOut(elecs[0].getTotalNum(), "XXXX", subComm);
       subwOut.dump(elecs[0], 1);
       if (!subComm->rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";

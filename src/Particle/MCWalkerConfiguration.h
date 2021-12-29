@@ -158,16 +158,6 @@ public:
 
   inline void setPolymer(MultiChain* chain) { Polymer = chain; }
 
-  template<typename ForwardIter>
-  inline void putConfigurations(ForwardIter target)
-  {
-    int ds = OHMMS_DIM * TotalNum;
-    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it, target += ds)
-    {
-      copy(get_first_address((*it)->R), get_last_address((*it)->R), target);
-    }
-  }
-
   void resetWalkerProperty(int ncopy = 1);
 
   inline bool updatePbyP() const { return ReadyForPbyP; }
@@ -183,12 +173,9 @@ public:
   void saveEnsemble(iterator first, iterator last);
   /// load a single sample from SampleStack
   void loadSample(ParticleSet& pset, size_t iw) const;
-  /** load SampleStack data to current walkers
-   */
+  /// load SampleStack data to the current list of walker configurations
   void loadEnsemble();
-  //void loadEnsemble(const Walker_t& wcopy);
-  /** load SampleStack from others
-    */
+  /// load the SampleStacks of others to the current list of walker configurations
   void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean = true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
@@ -196,7 +183,7 @@ public:
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
+  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, size_t num_ptcl, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
 

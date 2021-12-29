@@ -138,4 +138,13 @@ void WalkerConfigurations::reset()
   }
 }
 
+void WalkerConfigurations::putConfigurations(Walker_t::RealType* target) const
+{
+  for (const auto& walker : WalkerList)
+  {
+    std::copy(get_first_address(walker->R), get_last_address(walker->R), target);
+    target += get_last_address(walker->R) - get_first_address(walker->R);
+  }
+}
+
 } // namespace qmcplusplus
