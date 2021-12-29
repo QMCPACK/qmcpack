@@ -267,7 +267,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return;
   int nfile = wset.size();
-  HDFWalkerInputManager W_in(W, myComm);
+  HDFWalkerInputManager W_in(W, W.getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5FileRoot = W_in.getFileRoot();

@@ -17,14 +17,13 @@
 
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
+#include "WalkerConfigurations.h"
 #include <stack>
 
 class Communicate;
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
-
 struct HDFWalkerInput_0_4
 {
   struct IOInfo
@@ -45,8 +44,10 @@ struct HDFWalkerInput_0_4
     }
   };
 
-  //reference to target walker configuration
-  MCWalkerConfiguration& targetW;
+  /// reference to the list of walker configurations to be read from file
+  WalkerConfigurations& wc_list_;
+  /// number of particles
+  const size_t num_ptcls_;
   //pointer to the communicator
   Communicate* myComm;
   //current version this class supports
@@ -61,11 +62,12 @@ struct HDFWalkerInput_0_4
   std::stack<std::string> FileStack;
 
   /** constructor
-   * @param W target MCWalkerConfiguration
+   * @param wc_list target walker configurations
+   * @param num_ptcls the number of particles in each walker
    * @param c communicator
    * @param v version
    */
-  HDFWalkerInput_0_4(MCWalkerConfiguration& W, Communicate* c, const HDFVersion& v);
+  HDFWalkerInput_0_4(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate* c, const HDFVersion& v);
   ~HDFWalkerInput_0_4();
 
   /** read walkers
