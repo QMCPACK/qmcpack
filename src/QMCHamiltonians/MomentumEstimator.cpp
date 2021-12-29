@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-    : M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
+    : M(40), refPsi(psi), lattice_(elns.getLattice()), norm_nofK(1), hdf5_out(false)
 {
   update_mode_.set(COLLECTABLE, 1);
   psi_ratios.resize(elns.getTotalNum());
@@ -45,7 +45,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     for (int i = 0; i < OHMMS_DIM; ++i)
       newpos[i] = myRNG();
     //make it cartesian
-    vPos[s] = Lattice.toCart(newpos);
+    vPos[s] = lattice_.toCart(newpos);
     P.makeVirtualMoves(vPos[s]);
     refPsi.evaluateRatiosAlltoOne(P, psi_ratios);
     for (int i = 0; i < np; ++i)
@@ -170,11 +170,11 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   pAttrib.put(cur);
   hdf5_out = (hdf5_flag == "yes");
   // minimal length as 2 x WS radius.
-  RealType min_Length = elns.Lattice.WignerSeitzRadius_G * 4.0 * M_PI;
+  RealType min_Length = elns.getLattice().WignerSeitzRadius_G * 4.0 * M_PI;
   PosType vec_length;
   //length of reciprocal lattice vector
   for (int i = 0; i < OHMMS_DIM; i++)
-    vec_length[i] = 2.0 * M_PI * std::sqrt(dot(elns.Lattice.Gv[i], elns.Lattice.Gv[i]));
+    vec_length[i] = 2.0 * M_PI * std::sqrt(dot(elns.getLattice().Gv[i], elns.getLattice().Gv[i]));
 #if OHMMS_DIM == 3
   PosType kmaxs(0);
   kmaxs[0]           = kmax0;
@@ -187,7 +187,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   if (!sphere && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
-    kmax   = 2.0 * std::pow(6.0 * M_PI * M_PI * elns.getTotalNum() / elns.Lattice.Volume, 1.0 / 3);
+    kmax   = 2.0 * std::pow(6.0 * M_PI * M_PI * elns.getTotalNum() / elns.getLattice().Volume, 1.0 / 3);
     sphere = true;
   }
   sphere_kmax = kmax;
@@ -218,7 +218,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         ikpt[1] = j - twist[1];
         ikpt[2] = k - twist[2];
         //convert to Cartesian: note that 2Pi is multiplied
-        kpt               = Lattice.k_cart(ikpt);
+        kpt               = lattice_.k_cart(ikpt);
         bool not_recorded = true;
         // This collects the k-points within the parallelepiped (if enabled)
         if (directional && ikpt[0] * ikpt[0] <= kgrid_squared[0] && ikpt[1] * ikpt[1] <= kgrid_squared[1] &&
@@ -300,7 +300,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   if (!disk && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
-    kmax = 2.0 * std::pow(4.0 * pi * elns.getTotalNum() / elns.Lattice.Volume, 0.5);
+    kmax = 2.0 * std::pow(4.0 * pi * elns.getTotalNum() / elns.getLattice().Volume, 0.5);
     disk = true;
   }
   disk_kmax = kmax;
@@ -326,7 +326,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       ikpt[0] = i - twist[0];
       ikpt[1] = j - twist[1];
       //convert to Cartesian: note that 2Pi is multiplied
-      kpt               = Lattice.k_cart(ikpt);
+      kpt               = lattice_.k_cart(ikpt);
       bool not_recorded = true;
       if (directional && ikpt[0] * ikpt[0] <= kgrid_squared[0] && ikpt[1] * ikpt[1] <= kgrid_squared[1])
       {

@@ -74,8 +74,8 @@ void NonLocalECPotential_CUDA::setupCUDA(ParticleSet& elecs)
     for (int i = 0; i < OHMMS_DIM; i++)
       for (int j = 0; j < OHMMS_DIM; j++)
       {
-        LHost[OHMMS_DIM * i + j]    = (CUDA_PRECISION)elecs.Lattice.a(j)[i];
-        LinvHost[OHMMS_DIM * i + j] = (CUDA_PRECISION)elecs.Lattice.b(i)[j];
+        LHost[OHMMS_DIM * i + j]    = (CUDA_PRECISION)elecs.getLattice().a(j)[i];
+        LinvHost[OHMMS_DIM * i + j] = (CUDA_PRECISION)elecs.getLattice().b(i)[j];
       }
     L    = LHost;
     Linv = LinvHost;

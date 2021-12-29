@@ -91,7 +91,7 @@ public:
   PosType drift;
   int nindex;
   int eindex;
-  Lattice_t& Lattice;
+  const Lattice_t& lattice_;
   TrialWaveFunction& Psi;
   ParticleSet& Pq;
   const ParticleSet* Pc;

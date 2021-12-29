@@ -69,8 +69,8 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   max_disp_sq_ = input.get_max_disp_sq();
   if (max_disp_sq_ < 0)
   {
-    const CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>& lattice = population.get_golden_electrons()->Lattice;
-    max_disp_sq_                                              = lattice.LR_rc * lattice.LR_rc;
+    auto& lattice = population.get_golden_electrons()->getLattice();
+    max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
   }
 }
 

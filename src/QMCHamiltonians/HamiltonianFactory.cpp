@@ -72,7 +72,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
       psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
-  PBCType   = targetPtcl.Lattice.SuperCellEnum;
+  PBCType   = targetPtcl.getLattice().SuperCellEnum;
   ClassName = "HamiltonianFactory";
   myName    = hName;
   targetPtcl.set_quantum();

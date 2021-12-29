@@ -143,7 +143,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher,
   }
   //app_log() << "  QMCUpdateBase::resetRun m/tau=" << m_tauovermass << std::endl;
   if (m_r2max < 0)
-    m_r2max = W.Lattice.LR_rc * W.Lattice.LR_rc;
+    m_r2max = W.getLattice().LR_rc * W.getLattice().LR_rc;
   //app_log() << "  Setting the bound for the displacement std::max(r^2) = " <<  m_r2max << std::endl;
 }
 
