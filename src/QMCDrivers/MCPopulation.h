@@ -20,7 +20,6 @@
 #include "type_traits/TypeRequire.hpp"
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/ParticleAttrib.h"
-#include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
