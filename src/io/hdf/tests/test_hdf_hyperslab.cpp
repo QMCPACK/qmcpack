@@ -38,8 +38,8 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   {
     for (int j = 0; j < 4; j++)
     {
-      allData(i, j) = i + j * 0.1;
-      allData_cplx(i, j) = std::complex<float>(i,j * 0.1);
+      allData(i, j)      = i + j * 0.1;
+      allData_cplx(i, j) = std::complex<float>(i, j * 0.1);
     }
   }
 
@@ -149,7 +149,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   for (int i = 0; i < 3; i++)
   {
     REQUIRE(locob2.data()[i] == Approx(allData(i, 2)));
-    REQUIRE(locob2(i) == Approx(allData(i,2)));
+    REQUIRE(locob2(i) == Approx(allData(i, 2)));
   }
 
   readSpec[0] = 2;

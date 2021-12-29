@@ -72,9 +72,9 @@ struct hyperslab_proxy
     static_assert(std::is_unsigned<IT>::value, "only accept unsigned integer types like size_t");
     for (int i = 0; i < slab_rank; ++i)
     {
-      file_space.dims[i] = static_cast<hsize_t>(dims_in[i]);
+      file_space.dims[i]     = static_cast<hsize_t>(dims_in[i]);
       selected_space.dims[i] = static_cast<hsize_t>(selected_in[i]);
-      slab_offset[i] = static_cast<hsize_t>(offsets_in[i]);
+      slab_offset[i]         = static_cast<hsize_t>(offsets_in[i]);
     }
 
     /// element_type related dimensions always have offset 0
@@ -149,7 +149,6 @@ struct hyperslab_proxy
         selected_space.dims[dim] = file_space.dims[dim];
     }
   }
-
 };
 
 template<typename CT, unsigned RANK>
@@ -165,20 +164,22 @@ struct h5data_proxy<hyperslab_proxy<CT, RANK>>
     getDataShape<typename data_type::element_type>(grp, aname, sizes_file);
     ref.adaptShape(sizes_file);
     ref.checkUserRankSizes();
-    if(!ref.checkContainerCapacity())
+    if (!ref.checkContainerCapacity())
       container_traits<CT>::resize(ref.ref_, ref.selected_space.dims, ref.slab_rank);
     return h5d_read(grp, aname.c_str(), ref.file_space.rank, ref.file_space.dims, ref.selected_space.dims,
-                    ref.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref.ref_)),
+                    ref.slab_offset.data(),
+                    hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref.ref_)),
                     xfer_plist);
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     ref.checkUserRankSizes();
-    if(!ref.checkContainerCapacity())
+    if (!ref.checkContainerCapacity())
       throw std::runtime_error("Not large enough container capacity!\n");
     return h5d_write(grp, aname.c_str(), ref.file_space.rank, ref.file_space.dims, ref.selected_space.dims,
-                     ref.slab_offset.data(), hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref.ref_)),
+                     ref.slab_offset.data(),
+                     hyperslab_proxy<CT, RANK>::SpaceType::get_address(container_traits<CT>::getElementPtr(ref.ref_)),
                      xfer_plist);
   }
 };

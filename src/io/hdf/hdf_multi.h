@@ -290,9 +290,9 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
 template<typename T, unsigned RANK>
 struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_allocator<T>>, RANK>>
 {
-  using CT = boost::multi::array<T, 2, device::device_allocator<T>>;
+  using CT        = boost::multi::array<T, 2, device::device_allocator<T>>;
   using data_type = hyperslab_proxy<CT, RANK>;
-  
+
   h5data_proxy(const data_type& a) {}
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
@@ -329,7 +329,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_all
 template<typename T, unsigned RANK>
 struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>, RANK>>
 {
-  using CT = boost::multi::array_ref<T, 2, device::device_pointer<T>>;
+  using CT        = boost::multi::array_ref<T, 2, device::device_pointer<T>>;
   using data_type = hyperslab_proxy<CT, RANK>;
 
   h5data_proxy(const data_type& a) {}

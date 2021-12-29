@@ -45,7 +45,11 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
     return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref[0]), xfer_plist);
   }
 
-  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, const std::vector<hsize_t>& dvec, hid_t xfer_plist) const
+  inline bool write(const data_type& ref,
+                    hid_t grp,
+                    const std::string& aname,
+                    const std::vector<hsize_t>& dvec,
+                    hid_t xfer_plist) const
   {
     return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref[0]), xfer_plist);
   }

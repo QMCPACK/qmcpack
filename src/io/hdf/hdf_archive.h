@@ -27,7 +27,13 @@
 #include <stack>
 #include <bitset>
 #ifdef HAVE_MPI
-namespace boost { namespace mpi3 { class communicator; } }
+namespace boost
+{
+namespace mpi3
+{
+class communicator;
+}
+} // namespace boost
 #endif
 
 class Communicate;
@@ -217,10 +223,10 @@ public:
   void writeSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
-      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim]  = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
@@ -264,10 +270,10 @@ public:
   void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
-      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim]  = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
@@ -288,17 +294,17 @@ public:
   void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = 0;
       if (readSpec[dim] < 0)
       {
-        counts[dim] = 0;
+        counts[dim]  = 0;
         offsets[dim] = 0;
       }
       else
       {
-        counts[dim] = 1;
+        counts[dim]  = 1;
         offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
       }
     }

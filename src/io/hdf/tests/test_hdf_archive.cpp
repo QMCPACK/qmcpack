@@ -50,7 +50,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 {
   hdf_archive hd;
   hd.create("test_simple_data.hdf");
-  bool b = true;
+  bool b    = true;
   bool okay = hd.writeEntry(b, "bool");
   REQUIRE(okay);
 
@@ -63,7 +63,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   REQUIRE(okay);
 
   const double d = 4.5;
-  okay     = hd.writeEntry(d, "double");
+  okay           = hd.writeEntry(d, "double");
   REQUIRE(okay);
 
   std::complex<float> cf(2.3, 3.4);
@@ -88,7 +88,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   hdf_archive hd2;
   hd2.open("test_simple_data.hdf");
   bool b2 = false;
-  okay = hd2.readEntry(b2, "bool");
+  okay    = hd2.readEntry(b2, "bool");
   REQUIRE(okay);
   REQUIRE(b == b2);
 
