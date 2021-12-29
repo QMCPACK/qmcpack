@@ -85,11 +85,11 @@ void RPAJastrow::buildOrbital(const std::string& name,
   DropLongRange  = (useL == "no");
   DropShortRange = (useS == "no");
   RealType tlen =
-      std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
+      std::pow(3.0 / 4.0 / M_PI * targetPtcl.getLattice().Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
                1.0 / 3.0);
   if (Rs < 0)
   {
-    if (targetPtcl.Lattice.SuperCellEnum)
+    if (targetPtcl.getLattice().SuperCellEnum)
     {
       Rs = tlen;
     }
@@ -153,7 +153,7 @@ void RPAJastrow::makeLongRange()
   std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
   twoBodyCoefs.resize(myHandler->MaxKshell);
   //  need to cancel prefactor in kSpaceJastrow
-  RealType prefactorInv = -targetPtcl.Lattice.Volume;
+  RealType prefactorInv = -targetPtcl.getLattice().Volume;
   for (size_t is = 0; is < myHandler->MaxKshell; is++)
   {
     twoBodyCoefs[is] = prefactorInv * myHandler->Fk_symm[is];

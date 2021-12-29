@@ -313,7 +313,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     // the density is available, read it in and save it     //
     // in TargetPtcl.                                       //
     //////////////////////////////////////////////////////////
-    if (TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
+    if (TargetPtcl.getLattice().SuperCellEnum == SUPERCELL_BULK)
     {
       // FIXME:  add support for more than one spin density
       if (!TargetPtcl.Density_G.size())

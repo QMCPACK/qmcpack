@@ -101,9 +101,9 @@ bool EinsplineSetBuilder::CheckLattice()
     for (int j = 0; j < OHMMS_DIM; j++)
     {
       double max_abs =
-          std::max(std::abs(SuperLattice(i, j)), static_cast<double>(std::abs(TargetPtcl.Lattice.R(i, j))));
+          std::max(std::abs(SuperLattice(i, j)), static_cast<double>(std::abs(TargetPtcl.getLattice().R(i, j))));
       if (max_abs > MatchingTol)
-        diff = std::max(diff, std::abs(SuperLattice(i, j) - TargetPtcl.Lattice.R(i, j)) / max_abs);
+        diff = std::max(diff, std::abs(SuperLattice(i, j) - TargetPtcl.getLattice().R(i, j)) / max_abs);
     }
 
   if (diff > MatchingTol)
@@ -116,9 +116,9 @@ bool EinsplineSetBuilder::CheckLattice()
     o << " Lattice in ESHDF5 " << std::endl;
     o << SuperLattice << std::endl;
     o << " Lattice in xml" << std::endl;
-    o << TargetPtcl.Lattice.R << std::endl;
+    o << TargetPtcl.getLattice().R << std::endl;
     o << " Difference " << std::endl;
-    o << SuperLattice - TargetPtcl.Lattice.R << std::endl;
+    o << SuperLattice - TargetPtcl.getLattice().R << std::endl;
     o << " Max relative error = " << diff << std::endl;
     o << " Tolerance      = " << MatchingTol << std::endl;
     app_error() << o.str();
@@ -319,10 +319,10 @@ void EinsplineSetBuilder::TileIons()
   update_token(__FILE__, __LINE__, "TileIons");
 
   //set the primitive lattice
-  SourcePtcl->PrimitiveLattice.set(Lattice);
+  SourcePtcl->getPrimitiveLattice().set(Lattice);
 
   for (int j = 0; j < IonPos.size(); ++j)
-    IonPos[j] = FracPart(SourcePtcl->PrimitiveLattice.toUnit(IonPos[j]));
+    IonPos[j] = FracPart(SourcePtcl->getPrimitiveLattice().toUnit(IonPos[j]));
 
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
@@ -330,7 +330,7 @@ void EinsplineSetBuilder::TileIons()
   std::copy(SourcePtcl->GroupID.begin(), SourcePtcl->GroupID.end(), IonTypes.begin());
 
   //app_log() << "  Primitive Cell\n";
-  //SourcePtcl->PrimitiveLattice.print(app_log());
+  //SourcePtcl->getPrimitiveLattice().print(app_log());
   //app_log() << "  Super Cell\n";
   //SourcePtcl->Lattice.print(app_log());
 

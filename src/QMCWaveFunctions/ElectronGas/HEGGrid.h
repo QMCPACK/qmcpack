@@ -49,7 +49,7 @@ struct HEGGrid
   int NumKptsHalf;
   ///maxmim ksq
   T MaxKsq;
-  PL_t& Lattice;
+  const PL_t& Lattice;
   std::map<int, std::vector<PosType>> rs;
   std::vector<PosType> kpt;
   std::vector<T> mk2;
@@ -67,7 +67,7 @@ struct HEGGrid
   int nctmp{-1};
 
 
-  HEGGrid(PL_t& lat) : Lattice(lat) {}
+  HEGGrid(const PL_t& lat) : Lattice(lat) {}
 
 
   ~HEGGrid() = default;
