@@ -250,22 +250,34 @@ void MCWalkerConfiguration::loadEnsemble()
 
 bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others,
                                          HDFWalkerOutput& out,
-                                         size_t num_ptcl, 
                                          int np,
                                          int nBlock)
 {
-  MCWalkerConfiguration wtemp;
-  wtemp.resize(0, num_ptcl);
-  wtemp.loadEnsemble(others, false);
-  int w = wtemp.getActiveWalkers();
+  WalkerConfigurations wctemp;
+  for (auto* mcwc : others)
+  {
+    const auto& astack(mcwc->getSampleStack());
+    const size_t sample_size = std::min(mcwc->getMaxSamples(), mcwc->numSamples());
+    for (int j = 0; j < sample_size; ++j)
+    {
+      const auto& sample     = astack.getSample(j);
+      const size_t num_ptcls = sample.getNumPtcls();
+      auto awalker           = std::make_unique<Walker_t>(num_ptcls);
+      sample.convertToWalker(*awalker);
+      wctemp.push_back(std::move(awalker));
+    }
+  }
+  const int w = wctemp.getActiveWalkers();
   if (w == 0)
     return false;
+
+  // The following code assumes the same amount of active walkers on all the MPI ranks
   std::vector<int> nwoff(np + 1, 0);
   for (int ip = 0; ip < np; ++ip)
     nwoff[ip + 1] = nwoff[ip] + w;
-  wtemp.setGlobalNumWalkers(nwoff[np]);
-  wtemp.setWalkerOffsets(nwoff);
-  out.dump(wtemp, nBlock);
+  wctemp.setGlobalNumWalkers(nwoff[np]);
+  wctemp.setWalkerOffsets(nwoff);
+  out.dump(wctemp, nBlock);
   return true;
 }
 

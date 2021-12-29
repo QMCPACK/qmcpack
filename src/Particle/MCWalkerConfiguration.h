@@ -182,8 +182,10 @@ public:
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
+   *
+   * CAUTION: The current implementation assumes the same amount of active walkers on all the MPI ranks.
    */
-  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, size_t num_ptcl, int np, int nBlock);
+  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
 
