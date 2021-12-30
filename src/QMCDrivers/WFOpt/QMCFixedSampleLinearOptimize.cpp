@@ -514,10 +514,10 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
                                                  bool useGPU)
 {
   m_param.put(opt_xml);
-  tolower(targetExcitedStr);
+  targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
 
-  tolower(block_lmStr);
+  block_lmStr = lowerCase(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);

@@ -106,7 +106,7 @@ public:
     else
     {
       for (size_t id = 0; id < size; ++id)
-#if defined(MIXED_RECISION)
+#if defined(MIXED_PRECISION)
         CHECK(ref_in[id] == Approx(test_in[id]).epsilon(1e-4));
 #else
         CHECK(ref_in[id] == Approx(test_in[id]));

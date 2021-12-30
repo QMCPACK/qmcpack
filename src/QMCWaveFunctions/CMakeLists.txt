@@ -201,7 +201,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
 endif(QMC_CUDA OR ENABLE_CUDA)
 
 target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcwfs PUBLIC qmcparticle platform_runtime)
+target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime)
 target_link_libraries(qmcwfs PRIVATE einspline platform_LA Math::FFTW3)
 
 # do not merge with qmcwfs target unless all qmcwfs unit tests pass santitizers.

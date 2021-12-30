@@ -615,7 +615,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "optimize")
     {
-      const XMLAttrString att(element, "method");
+      const std::string att(getXMLAttributeValue(element, "method"));
       if (!att.empty() && att == "gradient_test")
       {
         GradientTestInput test_grad_input;
@@ -661,10 +661,10 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
                                                         bool useGPU)
 {
   m_param.put(opt_xml);
-  tolower(targetExcitedStr);
+  targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
 
-  tolower(block_lmStr);
+  block_lmStr = lowerCase(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
