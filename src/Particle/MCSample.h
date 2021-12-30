@@ -47,6 +47,8 @@ struct MCSample
     KE     = w.Properties(WP::LOCALENERGY) - PE;
   }
 
+  inline size_t getNumPtcls() const { return R.size(); }
+
   inline MCSample(int n)
   {
     R.resize(n);

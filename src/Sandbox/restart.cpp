@@ -238,7 +238,7 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs[0], "restart", myComm);
+  HDFWalkerOutput wOut(elecs[0].getTotalNum(), "restart", myComm);
   myComm->barrier();
   h5clock.restart(); //start timer
   wOut.dump(elecs[0], 1);
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
   xmlNodePtr restart_leaf = xmlFirstElementChild(root);
 
   HDFVersion in_version(0, 4);
-  HDFWalkerInput_0_4 wIn(elecs[0], myComm, in_version);
+  HDFWalkerInput_0_4 wIn(elecs[0], elecs[0].getTotalNum(), myComm, in_version);
   myComm->barrier();
   h5clock.restart(); //start timer
   wIn.put(restart_leaf);
@@ -317,13 +317,13 @@ int main(int argc, char** argv)
     if (subComm->getGroupID() == 0)
     {
       elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
-      HDFWalkerInput_0_4 subwIn(elecs[0], subComm, in_version);
+      HDFWalkerInput_0_4 subwIn(elecs[0], elecs[0].getTotalNum(), subComm, in_version);
       subwIn.put(restart_leaf);
       subComm->barrier();
       if (!subComm->rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs[0], subComm);
-      HDFWalkerOutput subwOut(elecs[0], "XXXX", subComm);
+      HDFWalkerOutput subwOut(elecs[0].getTotalNum(), "XXXX", subComm);
       subwOut.dump(elecs[0], 1);
       if (!subComm->rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";
