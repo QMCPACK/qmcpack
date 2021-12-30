@@ -13,6 +13,7 @@ target_include_directories(cxx_helpers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(UTILITIES
     qmc_common.cpp
     RandomGenerator.cpp
+    BoostRandom.cpp
     OhmmsObject.cpp
     SimpleParser.cpp
     Clock.cpp

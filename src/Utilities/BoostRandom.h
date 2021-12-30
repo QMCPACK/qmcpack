@@ -68,16 +68,7 @@ public:
    *
    * Initialize generator with the seed.
    */
-  void init(int i, int nstr, int iseed_in, uint_type offset = 1)
-  {
-    uint_type baseSeed = iseed_in;
-    myContext          = i;
-    nContexts          = nstr;
-    if (iseed_in <= 0)
-      baseSeed = make_seed(i, nstr);
-    baseOffset = offset;
-    uni.engine().seed(baseSeed);
-  }
+  void init(int i, int nstr, int iseed_in, uint_type offset = 1);
 
   ///get baseOffset
   inline int offset() const { return baseOffset; }
@@ -114,7 +105,7 @@ public:
       d[i] = uni();
   }
 
-  inline void generate_normal(T* restrict d, int n) { BoxMuller2::generate(*this, d, n); }
+  void generate_normal(T* restrict d, int n);
 
   //inline void bivariate(resul_type& g1, resul_type &g2) {
   //  resul_type v1, v2, r;
@@ -159,4 +150,7 @@ private:
   ///random number generator [0,1)
   uniform_generator_type uni;
 };
+
+extern template class BoostRandom<float, boost::mt19937>;
+extern template class BoostRandom<double, boost::mt19937>;
 #endif

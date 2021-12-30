@@ -35,42 +35,7 @@
 
 #include <stdint.h>
 
-struct BoxMuller2
-{
-  template<typename RNG>
-  static inline void generate(RNG& rng, double* restrict a, int n)
-  {
-    for (int i = 0; i + 1 < n; i += 2)
-    {
-      double temp1 = 1.0 - 0.9999999999 * rng(), temp2 = rng();
-      a[i]     = sqrt(-2.0 * log(temp1)) * cos(6.283185306 * temp2);
-      a[i + 1] = sqrt(-2.0 * log(temp1)) * sin(6.283185306 * temp2);
-    }
-    if (n % 2 == 1)
-    {
-      double temp1 = 1 - 0.9999999999 * rng(), temp2 = rng();
-      a[n - 1] = sqrt(-2.0 * log(temp1)) * cos(6.283185306 * temp2);
-    }
-  }
-
-  template<typename RNG>
-  static inline void generate(RNG& rng, float* restrict a, int n)
-  {
-    for (int i = 0; i + 1 < n; i += 2)
-    {
-      float temp1 = 1.0f - 0.9999999999f * rng(), temp2 = rng();
-      a[i]     = sqrtf(-2.0f * logf(temp1)) * cosf(6.283185306f * temp2);
-      a[i + 1] = sqrtf(-2.0f * logf(temp1)) * sinf(6.283185306f * temp2);
-    }
-    if (n % 2 == 1)
-    {
-      float temp1 = 1.0f - 0.9999999999f * rng(), temp2 = rng();
-      a[n - 1] = sqrtf(-2.0f * logf(temp1)) * cosf(6.283185306f * temp2);
-    }
-  }
-};
-
-inline uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 10474949 + (i + 1) * n + i; }
+uint32_t make_seed(int i, int n);
 
 // The definition of the fake RNG should always be available for unit testing
 #include "Utilities/FakeRandom.h"

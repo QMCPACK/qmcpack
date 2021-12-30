@@ -18,6 +18,8 @@
 //RandomGenerator_t
 //Random(CommCreate::get()->getNodeID(), CommCreate::get()->getNumNodes());
 
+uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 10474949 + (i + 1) * n + i; }
+
 qmcplusplus::RNGThreadSafe qmcplusplus::Random;
 
 // /**class GaussinRandomGenerator
