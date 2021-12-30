@@ -30,10 +30,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <cmath>
-#include <ctime>
-
-#include <stdint.h>
+#include <cstdint>
 
 uint32_t make_seed(int i, int n);
 
@@ -43,7 +40,6 @@ uint32_t make_seed(int i, int n);
 namespace qmcplusplus
 {
 typedef FakeRandom RandomGenerator_t;
-
 } // namespace qmcplusplus
 #else
 
@@ -66,29 +62,32 @@ using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
 
 namespace qmcplusplus
 {
-class RNGThreadSafe : public RandomGenerator_t
+template<class RNG>
+class RNGThreadSafe : public RNG
 {
 public:
-  inline RandomGenerator_t::result_type rand()
+  using result_type = typename RNG::result_type;
+
+  inline result_type rand()
   {
     result_type result;
 // This should be a named section but at least clang 9 doesn't seem to support
 // and warns of extra tokens.
 #pragma omp critical
     {
-      result = RandomGenerator_t::rand();
+      result = RNG::rand();
     }
     return result;
   }
 
   /** return a random number [0,1)
    */
-  inline RandomGenerator_t::result_type operator()()
+  inline result_type operator()()
   {
     result_type result;
 #pragma omp critical
     {
-      result = RandomGenerator_t::rand();
+      result = RNG::rand();
     }
     return result;
   }
@@ -100,12 +99,12 @@ public:
 #pragma omp critical
     {
       for (int i = 0; i < n; ++i)
-        d[i] = RandomGenerator_t::rand();
+        d[i] = RNG::rand();
     }
   }
 };
 
-extern RNGThreadSafe Random;
+extern RNGThreadSafe<RandomGenerator_t> Random;
 
 } // namespace qmcplusplus
 

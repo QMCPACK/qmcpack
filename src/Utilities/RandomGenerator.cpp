@@ -12,7 +12,11 @@
 
 
 #include "RandomGenerator.h"
+#include <ctime>
 
 uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 10474949 + (i + 1) * n + i; }
 
-qmcplusplus::RNGThreadSafe qmcplusplus::Random;
+namespace qmcplusplus
+{
+  RNGThreadSafe<RandomGenerator_t> Random;
+}

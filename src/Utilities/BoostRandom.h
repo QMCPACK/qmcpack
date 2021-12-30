@@ -18,7 +18,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <ctime>
 #include <sstream>
 #include <limits>
 #include <boost/config.hpp>

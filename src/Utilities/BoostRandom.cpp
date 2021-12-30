@@ -11,7 +11,7 @@
 
 
 #include "BoostRandom.h"
-
+#include <cmath>
 uint32_t make_seed(int i, int n);
 
 struct BoxMuller2

@@ -26,7 +26,7 @@
 #include "LongRange/StructFact.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 
 //#define PACK_DISTANCETABLES
 
