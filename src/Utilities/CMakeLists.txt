@@ -30,10 +30,9 @@ if(IS_GIT_PROJECT)
   add_dependencies(qmcutil gitrev)
 endif()
 
+target_include_directories(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcutil PUBLIC cxx_helpers message qmcio)
 target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
-
-target_include_directories(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Put the fake RNG in a separate library so production code doesn't
 # accidentally link to it
