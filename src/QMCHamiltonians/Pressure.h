@@ -15,7 +15,6 @@
 #ifndef QMCPLUSPLUS_BAREPRESSURE_H
 #define QMCPLUSPLUS_BAREPRESSURE_H
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
