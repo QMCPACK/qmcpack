@@ -150,6 +150,6 @@ private:
   uniform_generator_type uni;
 };
 
-extern template class BoostRandom<float, boost::mt19937>;
-extern template class BoostRandom<double, boost::mt19937>;
+extern template class BoostRandom<float>;
+extern template class BoostRandom<double>;
 #endif

@@ -64,5 +64,5 @@ void BoostRandom<T, RNG>::init(int i, int nstr, int iseed_in, uint_type offset)
 template<typename T, typename RNG>
 void BoostRandom<T, RNG>::generate_normal(T* restrict d, int n) { BoxMuller2::generate(*this, d, n); }
 
-template class BoostRandom<float, boost::mt19937>;
-template class BoostRandom<double, boost::mt19937>;
+template class BoostRandom<float>;
+template class BoostRandom<double>;

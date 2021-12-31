@@ -108,7 +108,6 @@ if(QMC_CUDA)
 endif(QMC_CUDA)
 
 use_fake_rng(qmcham_unit)
-target_link_libraries(qmcham_unit PUBLIC qmcfakerng)
 
 target_include_directories(qmcham PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(qmcham_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

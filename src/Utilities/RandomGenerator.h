@@ -31,34 +31,15 @@
 #include "config.h"
 #endif
 #include <cstdint>
-
-uint32_t make_seed(int i, int n);
-
 // The definition of the fake RNG should always be available for unit testing
 #include "Utilities/FakeRandom.h"
-#ifdef USE_FAKE_RNG
-namespace qmcplusplus
-{
-typedef FakeRandom RandomGenerator_t;
-} // namespace qmcplusplus
-#else
-
 #ifdef HAVE_LIBBOOST
-
 #include "Utilities/BoostRandom.h"
-namespace qmcplusplus
-{
-template<class T>
-using RandomGenerator   = BoostRandom<T>;
-using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
-} // namespace qmcplusplus
 #else
-
 #error -DHAVE_LIBBOOST is missing in the compile line. A cmake dependency fix is needed.
-
-#endif
 #endif
 
+uint32_t make_seed(int i, int n);
 
 namespace qmcplusplus
 {
@@ -68,44 +49,27 @@ class RNGThreadSafe : public RNG
 public:
   using result_type = typename RNG::result_type;
 
-  inline result_type rand()
-  {
-    result_type result;
-// This should be a named section but at least clang 9 doesn't seem to support
-// and warns of extra tokens.
-#pragma omp critical
-    {
-      result = RNG::rand();
-    }
-    return result;
-  }
+  result_type rand();
 
   /** return a random number [0,1)
    */
-  inline result_type operator()()
-  {
-    result_type result;
-#pragma omp critical
-    {
-      result = RNG::rand();
-    }
-    return result;
-  }
+  result_type operator()();
 
-  /** generate a series of random numbers */
-  template<typename T1>
-  inline void generate_uniform(T1* restrict d, int n)
-  {
-#pragma omp critical
-    {
-      for (int i = 0; i < n; ++i)
-        d[i] = RNG::rand();
-    }
-  }
 };
 
-extern RNGThreadSafe<RandomGenerator_t> Random;
+extern template class RNGThreadSafe<FakeRandom>;
+extern template class RNGThreadSafe<BoostRandom<float>>;
+extern template class RNGThreadSafe<BoostRandom<double>>;
 
-} // namespace qmcplusplus
+#ifdef USE_FAKE_RNG
+using RandomGenerator_t = FakeRandom;
+extern RNGThreadSafe<RandomGenerator_t> fake_random_global;
+#define Random fake_random_global
+#else
+using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
+extern RNGThreadSafe<RandomGenerator_t> boost_random_global;
+#define Random boost_random_global
+#endif
+}
 
 #endif

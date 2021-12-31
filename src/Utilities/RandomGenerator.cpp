@@ -18,5 +18,35 @@ uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 
 
 namespace qmcplusplus
 {
-  RNGThreadSafe<RandomGenerator_t> Random;
+
+template<class RNG>
+typename RNG::result_type RNGThreadSafe<RNG>::rand()
+{
+  result_type result;
+// This should be a named section but at least clang 9 doesn't seem to support
+// and warns of extra tokens.
+#pragma omp critical
+    {
+      result = RNG::rand();
+    }
+    return result;
+  }
+
+template<class RNG>
+typename RNG::result_type RNGThreadSafe<RNG>::operator()()
+  {
+    result_type result;
+#pragma omp critical
+    {
+      result = RNG::rand();
+    }
+    return result;
+  }
+
+  template class RNGThreadSafe<FakeRandom>;
+  template class RNGThreadSafe<BoostRandom<float>>;
+  template class RNGThreadSafe<BoostRandom<double>>;
+
+  RNGThreadSafe<BoostRandom<OHMMS_PRECISION_FULL>> boost_random_global;
+  RNGThreadSafe<FakeRandom> fake_random_global;
 }
