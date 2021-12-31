@@ -51,18 +51,21 @@ struct BoxMuller2
 
 template<typename T, typename RNG>
 void BoostRandom<T, RNG>::init(int i, int nstr, int iseed_in, uint_type offset)
-  {
-    uint_type baseSeed = iseed_in;
-    myContext          = i;
-    nContexts          = nstr;
-    if (iseed_in <= 0)
-      baseSeed = make_seed(i, nstr);
-    baseOffset = offset;
-    uni.engine().seed(baseSeed);
-  }
+{
+  uint_type baseSeed = iseed_in;
+  myContext          = i;
+  nContexts          = nstr;
+  if (iseed_in <= 0)
+    baseSeed = make_seed(i, nstr);
+  baseOffset = offset;
+  uni.engine().seed(baseSeed);
+}
 
 template<typename T, typename RNG>
-void BoostRandom<T, RNG>::generate_normal(T* restrict d, int n) { BoxMuller2::generate(*this, d, n); }
+void BoostRandom<T, RNG>::generate_normal(T* restrict d, int n)
+{
+  BoxMuller2::generate(*this, d, n);
+}
 
 template class BoostRandom<float>;
 template class BoostRandom<double>;

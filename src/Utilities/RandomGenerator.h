@@ -54,7 +54,6 @@ public:
   /** return a random number [0,1)
    */
   result_type operator()();
-
 };
 
 extern template class RNGThreadSafe<FakeRandom>;
@@ -70,6 +69,6 @@ using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
 extern RNGThreadSafe<RandomGenerator_t> boost_random_global;
 #define Random boost_random_global
 #endif
-}
+} // namespace qmcplusplus
 
 #endif

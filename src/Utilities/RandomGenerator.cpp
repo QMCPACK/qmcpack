@@ -26,27 +26,27 @@ typename RNG::result_type RNGThreadSafe<RNG>::rand()
 // This should be a named section but at least clang 9 doesn't seem to support
 // and warns of extra tokens.
 #pragma omp critical
-    {
-      result = RNG::rand();
-    }
-    return result;
+  {
+    result = RNG::rand();
   }
+  return result;
+}
 
 template<class RNG>
 typename RNG::result_type RNGThreadSafe<RNG>::operator()()
-  {
-    result_type result;
+{
+  result_type result;
 #pragma omp critical
-    {
-      result = RNG::rand();
-    }
-    return result;
+  {
+    result = RNG::rand();
   }
-
-  template class RNGThreadSafe<FakeRandom>;
-  template class RNGThreadSafe<BoostRandom<float>>;
-  template class RNGThreadSafe<BoostRandom<double>>;
-
-  RNGThreadSafe<BoostRandom<OHMMS_PRECISION_FULL>> boost_random_global;
-  RNGThreadSafe<FakeRandom> fake_random_global;
+  return result;
 }
+
+template class RNGThreadSafe<FakeRandom>;
+template class RNGThreadSafe<BoostRandom<float>>;
+template class RNGThreadSafe<BoostRandom<double>>;
+
+RNGThreadSafe<BoostRandom<OHMMS_PRECISION_FULL>> boost_random_global;
+RNGThreadSafe<FakeRandom> fake_random_global;
+} // namespace qmcplusplus
