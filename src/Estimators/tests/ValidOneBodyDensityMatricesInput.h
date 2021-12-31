@@ -29,11 +29,10 @@ namespace onebodydensitymatrices
     valid_obdm_input_grid
   };
 
-
   // clang-format: off
   constexpr std::array<std::string_view, 3> valid_one_body_density_matrices_input_sections{
-      R"(
-<estimator type="dm1b" name="DensityMatrices">
+      R"XML(
+<estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm </parameter>
   <parameter name="evaluator"    >  matrix        </parameter>
   <parameter name="integrator"   >  density       </parameter>
@@ -42,9 +41,9 @@ namespace onebodydensitymatrices
   <parameter name="center"       >  0.0 0.0 0.1   </parameter>
   <parameter name="use_drift"    >  yes           </parameter>
 </estimator>
-)",
-      R"(
-<estimator type="dm1b" name="DensityMatrices">
+)XML",
+      R"XML(
+<estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm  </parameter>
   <parameter name="evaluator"    >  matrix         </parameter>
   <parameter name="integrator"   >  uniform       </parameter>
@@ -53,9 +52,9 @@ namespace onebodydensitymatrices
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="use_drift"    >  yes           </parameter>
 </estimator>
-)",
-      R"(
-<estimator type="dm1b" name="DensityMatrices">
+)XML",
+      R"XML(
+<estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
   <parameter name="basis"        >  spo_ud spo_dm </parameter>
   <parameter name="evaluator"    >  matrix        </parameter>
   <parameter name="integrator"   >  uniform_grid  </parameter>
@@ -64,9 +63,8 @@ namespace onebodydensitymatrices
   <parameter name="timestep"     >  0.5           </parameter>
   <parameter name="use_drift"    >  no            </parameter>
 </estimator>
-)"
-
-      // clang-format: on
+)XML"
+  // clang-format: on
   };
 }
 

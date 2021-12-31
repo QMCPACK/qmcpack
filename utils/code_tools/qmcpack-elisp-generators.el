@@ -18,6 +18,8 @@
 ;;  other C++ code selected in a region.  It assumes QMCPACK it is reading code
 ;;  following QMCPACK coding conventions and should produce code following
 ;;  the same conventions.
+;;  It only makes getter and setters for member variables following the private
+;;  member naming convetions
 
 ;;  There is more copy pasting than there should be feel, free to refactor
 
@@ -72,11 +74,12 @@ The getter functions are written on starting on the line after the REGION."
               (setq indent (concat indent leading-indent)))
             (setq my-type (match-string 2))
             (setq my-var (match-string 4))
-            (setq getter-line (format "%s%s get_%s() const { return %s_; }\n" indent my-type my-var my-var))
+            (setq getter-line (format "%sconst %s& get_%s() const { return %s_; }\n" indent my-type my-var my-var))
             (setq getters (concat getters getter-line)))
           (goto-char (point-max))
           (insert "\n")
           (insert getters))))))
+
 
 (defun qmcp-add-setters()
   "For each C++ variable declaration in REGION write setter.

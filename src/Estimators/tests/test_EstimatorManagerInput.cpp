@@ -33,10 +33,7 @@ public:
    *  @{
    */
   /// The simplest insertion of a input class
-  void testAppendMinimal(EstimatorManagerInput& emi)
-  {
-    emi.appendEstimatorInput<OneBodyDensityMatricesInput>();
-  }
+  void testAppendMinimal(EstimatorManagerInput& emi) { emi.appendEstimatorInput<OneBodyDensityMatricesInput>(); }
   /// Actually from valid xml.
   template<class T>
   void testAppendFromXML(EstimatorManagerInput& emi, xmlNodePtr node)
@@ -45,8 +42,8 @@ public:
   }
   /** @} */
 };
-}
-  
+} // namespace testing
+
 TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
 {
   using namespace testing;
@@ -69,7 +66,31 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
   }
-  
-  
 }
+
+TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
+{
+  using namespace testing;
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using namespace testing::onebodydensitymatrices;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  EstimatorManagerInput emi(estimators_doc.getRoot());
+  std::cout << "\n";
 }
+
+} // namespace qmcplusplus

@@ -46,8 +46,6 @@ public:
   const PosType twist;
   ///lattice vector
   const LatticeType Lattice;
-  ///number of samples
-  const int M;
   ///normalization factor for n(k)
   const RealType norm_nofK;
   ///list of k-points in Cartesian Coordinates

@@ -41,9 +41,12 @@ class EstimatorManagerInput
 public:
   EstimatorManagerInput() = default;
   EstimatorManagerInput(xmlNodePtr cur);
-  void readXML(xmlNodePtr cur);
 
 protected:
+  /** read <Estimators> node
+   */
+  void readXML(xmlNodePtr cur);
+
   EstimatorInputs estimator_inputs;
   UPtrVector<InputNode> estimator_input_storage;
 
@@ -55,6 +58,7 @@ protected:
   }
 
   friend class testing::EstimatorManagerInputTests;
+
 };
 
 } // namespace qmcplusplus

@@ -13,10 +13,10 @@
 #ifndef QMCPLUSPLUS_TEMPLATE_TYPES_HPP
 #define QMCPLUSPLUS_TEMPLATE_TYPES_HPP
 
+#include <cassert>
 #include <vector>
 #include <functional>
 #include <memory>
-#include <cassert>
 #include "RefVectorWithLeader.h"
 
 namespace qmcplusplus
@@ -28,6 +28,10 @@ namespace qmcplusplus
  *  see: UPtrVector
  *  @{
  */
+
+template<typename T>
+using RefW = std::reference_wrapper<T>;
+
 template<typename T>
 using RefVector = std::vector<std::reference_wrapper<T>>;
 

@@ -17,20 +17,31 @@
 namespace qmcplusplus
 {
 
-EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur)
-{
-  readXML(cur);
-}
+EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
 
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
 {
+  const std::string error_tag{"EstimatorManager input:"};
   xmlNodePtr child = cur->xmlChildrenNode;
-  while(child != NULL)
+  while (child != NULL)
   {
+    std::string cname{lowerCase(castXMLCharToChar(child->name))};
+    if (cname == "estimator")
+    {
+      std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
+      std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
+      if (atype == "onebodydensitymatrices")
+        appendEstimatorInput<OneBodyDensityMatricesInput>(child);
+      else if (atype == "spindensity_new")
+        appendEstimatorInput<SpinDensityInput>(child);
+      else if (atype == "momentumdistribution")
+        appendEstimatorInput<MomentumDistributionInput>(child);
+    }
+    else
+      throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
+    child = child->next;
   }
 }
 
 
-}
-
-
+} // namespace qmcplusplus
