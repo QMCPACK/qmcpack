@@ -6,15 +6,31 @@
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
-// File refactored from: EstimatorManagerBase.h
+// File refactored from: EstimatorManagerNew.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "EstimatorManagerInput.cpp"
+#include "EstimatorManagerInput.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
-#include "SpinDensityNewInput.h"
+#include "SpinDensityInput.h"
 
-EstimatorManagerInput::
+namespace qmcplusplus
+{
 
+EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur)
+{
+  readXML(cur);
+}
+
+void EstimatorManagerInput::readXML(xmlNodePtr cur)
+{
+  xmlNodePtr child = cur->xmlChildrenNode;
+  while(child != NULL)
+  {
+  }
+}
+
+
+}
 
 

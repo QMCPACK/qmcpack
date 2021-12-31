@@ -6,47 +6,57 @@
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
-// File refactored from: QMCDriver.cpp
+// File refactored from: EstimatorManagerNew.h
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 #define QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 
-#include "Configuration.h"
-#include "InputSection.h"
+#include "type_traits/template_types.hpp"
+#include <functional>
+#include <vector>
+#include <variant>
+#include <libxml/tree.h>
+#include "io/InputNode.hpp"
 
 namespace qmcplusplus
 {
+
+class SpinDensityInput;
+class MomentumDistributionInput;
+class OneBodyDensityMatricesInput;
+
+using EstimatorInputs = std::vector<
+    std::variant<RefW<SpinDensityInput>, RefW<MomentumDistributionInput>, RefW<OneBodyDensityMatricesInput>>>;
+
+namespace testing
+{
+class EstimatorManagerInputTests;
+}
+
 /** Input representation for Driver base class runtime parameters
  */
 class EstimatorManagerInput
 {
 public:
-  class EstimatorMangerInputSection : public InputSection
+  EstimatorManagerInput() = default;
+  EstimatorManagerInput(xmlNodePtr cur);
+  void readXML(xmlNodePtr cur);
+
+protected:
+  EstimatorInputs estimator_inputs;
+  UPtrVector<InputNode> estimator_input_storage;
+
+  template<typename T, typename... Args>
+  void appendEstimatorInput(Args&&... args)
   {
-  public:
-    /** parse time definition of input parameters */
-    EstimatorManagerInputSection()
-    {
-      // clang-format off
-      section_name  = "OneBodyDensityMatrix";
-      attributes    = {"name", "type"};
-      parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
-                       "corner", "center", "points", "samples", "warmup", "timestep",
-                       "use_drift", "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
-                       "normalized", "volumed_normed"};
-      bools         = {"energy_matrix", "use_drift", "normalized", "volume_normed",
-                       "check_overlap", "check_derivatives", "rstats", "acceptance_ratio"};
-      enums         = {"integrator", "evaluator"};
-      strings       = {"name", "type"};
-      multi_strings = {"basis"};
-      integers      = {"points", "samples"};
-      reals         = {"scale", "timestep"};
-      positions     = {"center", "corner"};
-      required      = {"name", "basis"};
-      // I'd much rather see the default defined in simple native c++ as below
-      // clang-format on
-    }
-  };
+    estimator_input_storage.push_back(std::make_unique<T>(std::forward<T>(args)...));
+    estimator_inputs.push_back(static_cast<T&>(*estimator_input_storage.back()));
+  }
+
+  friend class testing::EstimatorManagerInputTests;
 };
-}
+
+} // namespace qmcplusplus
+
+#endif

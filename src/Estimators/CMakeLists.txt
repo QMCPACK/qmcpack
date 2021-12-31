@@ -17,6 +17,7 @@ set(QMCEST_SRC
     LocalEnergyEstimator.cpp
     RMCLocalEnergyEstimator.cpp
     EstimatorInput.cpp
+    EstimatorManagerInput.cpp
     SpinDensityInput.cpp
     EstimatorManagerBase.cpp
     EstimatorManagerNew.cpp
