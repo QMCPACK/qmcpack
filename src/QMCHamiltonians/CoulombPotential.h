@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_COULOMBPOTENTIAL_H
 #define QMCPLUSPLUS_COULOMBPOTENTIAL_H
 #include "ParticleSet.h"
-#include "WalkerSetRef.h"
 #include "DistanceTable.h"
 #include "MCWalkerConfiguration.h"
 #include "QMCHamiltonians/ForceBase.h"

@@ -10,9 +10,14 @@
 add_library(cxx_helpers ModernStringUtils.cpp)
 target_include_directories(cxx_helpers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
+set(QMC_RNG FakeRandom.cpp
+    RandomGenerator.cpp
+    BoostRandom.cpp)
+add_library(qmcrng ${QMC_RNG})
+target_link_libraries(qmcrng PUBLIC Boost::boost)
+
 set(UTILITIES
     qmc_common.cpp
-    RandomGenerator.cpp
     OhmmsObject.cpp
     SimpleParser.cpp
     Clock.cpp
@@ -31,13 +36,8 @@ if(IS_GIT_PROJECT)
 endif()
 
 target_include_directories(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcutil PUBLIC cxx_helpers message qmcio)
-target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
-
-# Put the fake RNG in a separate library so production code doesn't
-# accidentally link to it
-set(UNIT_TEST_UTILITIES FakeRandom.cpp)
-add_library(qmcfakerng ${UNIT_TEST_UTILITIES})
+target_link_libraries(qmcutil PUBLIC cxx_helpers message qmcio qmcrng)
+target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 ${QMC_UTIL_LIBS})
 
 subdirs(for_testing)
 

@@ -17,7 +17,7 @@
 
 #include "Particle/MCWalkerConfiguration.h"
 #include "ParticleBase/ParticleUtility.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Message/Communicate.h"
 #include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
