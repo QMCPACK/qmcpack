@@ -86,16 +86,6 @@ public:
    * @param comm communicator
    */
   static void write_rank_0(hdf_archive& hout, Communicate* comm);
-  /** read random state from a xml file
-   * @param fname file name
-   * @param comm communicator
-   */
-  static void read_old(const std::string& fname, Communicate* comm);
-  /** write random state to a xml file
-   * @param fname file name
-   * @param comm communicator
-   */
-  static void write_old(const std::string& fname, Communicate* comm);
 
 private:
   bool NeverBeenInitialized;
