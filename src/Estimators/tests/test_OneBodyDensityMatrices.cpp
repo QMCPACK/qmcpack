@@ -363,7 +363,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
     twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);
 
   StdRandom<double> rng;
-  rng.init(0, 1, 101);
+  rng.init(101);
 
   auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
     pset_target.update(true);
@@ -443,7 +443,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
                                    {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
 
     StdRandom<double> rng;
-    rng.init(0, 1, 101);
+    rng.init(101);
     MCPWalker walker;
     // Now we have to bring the pset, trial_wavefunction and walker to valid state.
     //pset.loadWalker(walker, false);

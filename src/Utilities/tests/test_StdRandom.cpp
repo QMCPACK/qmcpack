@@ -24,7 +24,7 @@ TEST_CASE("StdRandom save and load", "[utilities]")
   using DoubleRNG = StdRandom<double>;
   DoubleRNG rng;
 
-  rng.init(0, 1, 111);
+  rng.init(111);
 
   std::vector<double> rng_doubles(100,0.0);
   for(auto& elem : rng_doubles)
@@ -35,7 +35,7 @@ TEST_CASE("StdRandom save and load", "[utilities]")
   rng.save(state);
 
   DoubleRNG rng2;
-  rng2.init(1,2, 110);
+  rng2.init(110);
   rng2.load(state);
 
   CHECK(rng2() == rng());

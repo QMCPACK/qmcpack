@@ -72,7 +72,7 @@ void RandomNumberControl::make_seeds()
   Offset = iseed;
   std::vector<uint_type> mySeeds;
   RandomNumberControl::PrimeNumbers.get(Offset, nprocs * (omp_get_max_threads() + 2), mySeeds);
-  Random.init(pid, nprocs, mySeeds[pid], Offset + pid);
+  Random.init(mySeeds[pid]);
   //change children as well
   make_children();
 }
@@ -92,10 +92,7 @@ void RandomNumberControl::make_children()
   std::vector<uint_type> myprimes;
   PrimeNumbers.get(baseoffset, nthreads, myprimes);
   for (int ip = 0; ip < nthreads; ip++)
-  {
-    int offset = baseoffset + ip;
-    Children[ip]->init(rank, nprocs, myprimes[ip], offset);
-  }
+    Children[ip]->init(myprimes[ip]);
 }
 
 xmlNodePtr RandomNumberControl::initialize(xmlXPathContextPtr acontext)
@@ -191,7 +188,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
     std::vector<uint_type> mySeeds;
     //allocate twice of what is required
     PrimeNumbers.get(Offset, nprocs * (omp_get_max_threads() + 2), mySeeds);
-    Random.init(pid, nprocs, mySeeds[pid], Offset + pid);
+    Random.init(mySeeds[pid]);
     app_log() << "  Range of prime numbers to use as seeds over processors and threads = " << mySeeds[0] << "-"
               << mySeeds[nprocs * omp_get_max_threads()] << std::endl;
     app_log() << std::endl;

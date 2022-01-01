@@ -57,7 +57,7 @@ int main(int argc, char** argv)
       {
         outputManager.shutOff();
       }
-      Random.init(0, 1, -1);
+      Random.init(-1);
       std::cout.setf(std::ios::scientific, std::ios::floatfield);
       std::cout.setf(std::ios::right, std::ios::adjustfield);
       std::cout.precision(12);

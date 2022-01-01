@@ -27,6 +27,7 @@
 
 namespace qmcplusplus
 {
+
 template<typename T>
 class StdRandom
 {
@@ -34,17 +35,15 @@ public:
   using result_type = T;
   using Engine = std::mt19937;
   using uint_type   = Engine::result_type;
-  void init(int i, int nstr, int iseed_in, uint_type offset = 1)
+
+  StdRandom(uint_type iseed = 911) : engine(iseed) { }
+
+  void init(int iseed_in)
   {
     uint_type baseSeed = iseed_in;
-    myContext          = i;
-    nContexts          = nstr;
-    // if (iseed_in <= 0)
-    //   baseSeed = makeSeed(i, nstr);
     engine.seed(baseSeed);
   }
 
-  int offset() const { return baseOffset; }
   void seed(uint_type aseed) { engine.seed(aseed); }
 
   result_type rand() { return distribution(engine); }
@@ -74,18 +73,11 @@ public:
   std::string EngineName{"std::mt19937"};
 
 private:
+  ///random number generator [0,1)
   static constexpr double min = 0.0;
   static constexpr double max = 1.0;
   std::uniform_real_distribution<T> distribution{min, max};
   Engine engine;
-
-  ///context number
-  int myContext;
-  ///number of contexts
-  int nContexts;
-  ///offset of the random seed
-  int baseOffset;
-  ///random number generator [0,1)
 };
 
 } // namespace qmcplusplus
