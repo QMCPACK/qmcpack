@@ -630,7 +630,7 @@ template void OneBodyDensityMatrices::implAccumulate<RandomGenerator_t>(const Re
                                                                         const RefVector<ParticleSet>& psets,
                                                                         const RefVector<TrialWaveFunction>& wfns,
                                                                         RandomGenerator_t& rng);
-#if defined(USE_FAKE_RNG)
+#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
 template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
                                                                          ParticleSet& pset_target,
                                                                          StdRandom<double>& rng,

@@ -331,7 +331,7 @@ extern template void OneBodyDensityMatrices::implAccumulate<RandomGenerator_t>(c
                                                                                const RefVector<ParticleSet>& psets,
                                                                                const RefVector<TrialWaveFunction>& wfns,
                                                                                RandomGenerator_t& rng);
-#if defined(USE_FAKE_RNG)
+#if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
 extern template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
                                                                                 ParticleSet& pset_target,
                                                                                 StdRandom<double>& rng,
