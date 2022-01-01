@@ -44,9 +44,9 @@ typename RNG::result_type RNGThreadSafe<RNG>::operator()()
 }
 
 template class RNGThreadSafe<FakeRandom>;
-template class RNGThreadSafe<BoostRandom<float>>;
-template class RNGThreadSafe<BoostRandom<double>>;
+template class RNGThreadSafe<StdRandom<float>>;
+template class RNGThreadSafe<StdRandom<double>>;
 
-RNGThreadSafe<BoostRandom<OHMMS_PRECISION_FULL>> boost_random_global;
+RNGThreadSafe<StdRandom<OHMMS_PRECISION_FULL>> boost_random_global;
 RNGThreadSafe<FakeRandom> fake_random_global;
 } // namespace qmcplusplus

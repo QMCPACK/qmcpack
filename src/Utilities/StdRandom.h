@@ -47,6 +47,7 @@ public:
   int offset() const { return baseOffset; }
   void seed(uint_type aseed) { engine.seed(aseed); }
 
+  result_type rand() { return distribution(engine); }
   result_type operator()() { return distribution(engine); }
   void write(std::ostream& rout) const { rout << engine; }
   void read(std::istream& rin) { rin >> engine; }

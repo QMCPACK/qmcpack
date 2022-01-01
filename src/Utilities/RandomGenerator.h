@@ -34,7 +34,7 @@
 // The definition of the fake RNG should always be available for unit testing
 #include "Utilities/FakeRandom.h"
 #ifdef HAVE_LIBBOOST
-#include "Utilities/BoostRandom.h"
+#include "Utilities/StdRandom.h"
 #else
 #error -DHAVE_LIBBOOST is missing in the compile line. A cmake dependency fix is needed.
 #endif
@@ -57,15 +57,15 @@ public:
 };
 
 extern template class RNGThreadSafe<FakeRandom>;
-extern template class RNGThreadSafe<BoostRandom<float>>;
-extern template class RNGThreadSafe<BoostRandom<double>>;
+extern template class RNGThreadSafe<StdRandom<float>>;
+extern template class RNGThreadSafe<StdRandom<double>>;
 
 #ifdef USE_FAKE_RNG
 using RandomGenerator_t = FakeRandom;
 extern RNGThreadSafe<RandomGenerator_t> fake_random_global;
 #define Random fake_random_global
 #else
-using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
+using RandomGenerator_t = StdRandom<OHMMS_PRECISION_FULL>;
 extern RNGThreadSafe<RandomGenerator_t> boost_random_global;
 #define Random boost_random_global
 #endif
