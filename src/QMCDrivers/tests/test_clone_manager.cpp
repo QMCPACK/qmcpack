@@ -37,7 +37,7 @@ namespace qmcplusplus
 class FakeUpdate : public QMCUpdateBase
 {
 public:
-  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
       : QMCUpdateBase(w, psi, h, rg)
   {}
 

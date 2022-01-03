@@ -511,7 +511,7 @@ void QMCFiniteSize::calcPotentialCorrection()
   vsums.resize(NumSamples);
   vints.resize(NumSamples);
 
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 #pragma omp parallel for
   for (int i = 0; i < NumSamples; i++)
   {
@@ -546,7 +546,7 @@ void QMCFiniteSize::calcPotentialCorrection()
 
 void QMCFiniteSize::calcLeadingOrderCorrections()
 {
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   vector<RealType> bs(NumSamples);
 #pragma omp parallel for

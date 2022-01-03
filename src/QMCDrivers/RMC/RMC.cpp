@@ -212,7 +212,7 @@ void RMC::resetRun()
       estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
-      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif

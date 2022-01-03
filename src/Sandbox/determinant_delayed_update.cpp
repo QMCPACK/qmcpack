@@ -32,7 +32,7 @@ template<typename RNG, typename T>
 inline void generate(RNG& rng, T* restrict data, size_t n)
 {
   constexpr T shift(0.5);
-  rng.generate_uniform(data, n);
+  std::generate(data, data+n, rng);
   for (int i = 0; i < n; ++i)
     data[i] -= shift;
 }
@@ -119,7 +119,7 @@ int main(int argc, char** argv)
     const int teamID = ip / ncrews;
     const int crewID = ip % ncrews;
 
-    RandomGenerator<RealType> random_th(myPrimes[ip]);
+    RandomGenerator random_th(myPrimes[ip]);
 
     Matrix<ValueType> psiM(nels, nels), psiM_inv(nels, nels);
     Vector<ValueType> psiV(nels), invRow(nels);

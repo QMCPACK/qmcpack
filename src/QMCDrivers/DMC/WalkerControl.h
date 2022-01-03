@@ -51,7 +51,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
+  WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
@@ -141,7 +141,7 @@ private:
   };
 
   ///random number generator
-  RandomGenerator_t& rng_;
+  RandomGenerator& rng_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///minimum number of walkers

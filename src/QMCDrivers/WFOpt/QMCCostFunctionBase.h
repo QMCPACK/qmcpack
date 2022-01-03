@@ -149,7 +149,7 @@ public:
 
 #endif
 
-  void setRng(RefVector<RandomGenerator_t> r);
+  void setRng(RefVector<RandomGenerator> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
@@ -271,8 +271,8 @@ protected:
   std::string RootName;
 
   ///Random number generators
-  UPtrVector<RandomGenerator_t> RngSaved;
-  std::vector<RandomGenerator_t*> MoverRng;
+  UPtrVector<RandomGenerator> RngSaved;
+  std::vector<RandomGenerator*> MoverRng;
   std::string includeNonlocalH;
 
 

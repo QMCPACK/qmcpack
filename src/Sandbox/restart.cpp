@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   typedef ParticleSet::ParticleLayout_t LatticeType;
   typedef ParticleSet::TensorType TensorType;
   typedef ParticleSet::PosType PosType;
-  typedef RandomGenerator_t::uint_type uint_type;
+  typedef RandomGenerator::uint_type uint_type;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
 
   //use the global generator
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
   double t0 = 0.0, t1 = 0.0;
 
   RandomNumberControl::make_seeds();
-  std::vector<RandomGenerator_t> myRNG(NumThreads);
+  std::vector<RandomGenerator> myRNG(NumThreads);
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads);
 
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 
     //create generator within the thread
     myRNG[ip]                    = *RandomNumberControl::Children[ip];
-    RandomGenerator_t& random_th = myRNG[ip];
+    RandomGenerator& random_th = myRNG[ip];
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
       ud[1] = nels - ud[0];
       els.create(ud);
       els.R.InUnit = PosUnit::Lattice;
-      random_th.generate_uniform(&els.R[0][0], nels3);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
       els.convert2Cart(els.R); // convert to Cartiesian
       els.setCoordinates(els.R);
     }
@@ -193,7 +193,7 @@ int main(int argc, char** argv)
 #pragma omp parallel
   {
     int ip                       = omp_get_thread_num();
-    RandomGenerator_t& random_th = *RandomNumberControl::Children[ip];
+    RandomGenerator& random_th = *RandomNumberControl::Children[ip];
     std::vector<uint_type> vt(random_th.state_size(), 0);
     random_th.load(vt);
   }
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
 #pragma omp parallel reduction(+ : mismatch_count)
   {
     int ip                       = omp_get_thread_num();
-    RandomGenerator_t& random_th = myRNG[ip];
+    RandomGenerator& random_th = myRNG[ip];
     std::vector<uint_type> vt_orig(random_th.state_size());
     std::vector<uint_type> vt_load(random_th.state_size());
     random_th.save(vt_orig);

@@ -67,7 +67,7 @@ int main(int argc, char** argv)
     }
   }
 
-  RandomGenerator<RealType> random(MakeSeed(0, 1));
+  RandomGenerator random(MakeSeed(0, 1));
   constexpr RealType small = std::numeric_limits<RealType>::epsilon();
 
   constexpr RealType shift(0.5);

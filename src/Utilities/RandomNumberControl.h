@@ -35,10 +35,10 @@ namespace qmcplusplus
 class RandomNumberControl : public OhmmsElementBase
 {
 public:
-  typedef RandomGenerator_t::uint_type uint_type;
+  typedef RandomGenerator::uint_type uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<std::unique_ptr<RandomGenerator_t>> Children;
+  static std::vector<std::unique_ptr<RandomGenerator>> Children;
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");

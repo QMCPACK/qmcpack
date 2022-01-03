@@ -67,17 +67,17 @@ extern template class RNGThreadSafe<StdRandom<double>>;
 
 #if defined(USE_FAKE_RNG)
 // fake RNG redirection
-using RandomGenerator_t = FakeRandom;
-extern RNGThreadSafe<RandomGenerator_t> fake_random_global;
+using RandomGenerator = FakeRandom;
+extern RNGThreadSafe<RandomGenerator> fake_random_global;
 #define Random fake_random_global
 #else
 // real RNG redirection
 #if defined(QMC_RNG_BOOST)
-using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
+using RandomGenerator = BoostRandom<OHMMS_PRECISION_FULL>;
 #else
-using RandomGenerator_t = StdRandom<OHMMS_PRECISION_FULL>;
+using RandomGenerator = StdRandom<OHMMS_PRECISION_FULL>;
 #endif
-extern RNGThreadSafe<RandomGenerator_t> random_global;
+extern RNGThreadSafe<RandomGenerator> random_global;
 #define Random random_global
 #endif
 } // namespace qmcplusplus

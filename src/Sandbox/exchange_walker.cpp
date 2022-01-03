@@ -130,7 +130,7 @@ int main(int argc, char** argv)
     int ip = omp_get_thread_num();
 
     //create generator within the thread
-    RandomGenerator<RealType> random_th(myPrimes[world.rank()]);
+    RandomGenerator random_th(myPrimes[world.rank()]);
 
     tile_graphite(ions, tmat, scale);
     ions.setCoordinates(ions.R); //fill the SoA
