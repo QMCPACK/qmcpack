@@ -116,7 +116,7 @@ void RandomNumberControl::test()
     RandomGenerator& myrand(*Children[ip]);
     for (int i = 0; i < n; ++i)
     {
-      double r = myrand.rand();
+      double r = myrand();
       sum += r;
       sum2 += r * r;
     }

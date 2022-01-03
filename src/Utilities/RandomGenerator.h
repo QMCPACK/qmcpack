@@ -49,8 +49,6 @@ class RNGThreadSafe : public RNG
 public:
   using result_type = typename RNG::result_type;
 
-  result_type rand();
-
   /** return a random number [0,1)
    */
   result_type operator()();

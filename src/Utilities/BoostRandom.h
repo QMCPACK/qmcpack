@@ -69,10 +69,6 @@ public:
 
   /** return a random number [0,1)
    */
-  inline result_type rand() { return uni(); }
-
-  /** return a random number [0,1)
-   */
   inline result_type operator()() { return uni(); }
 
   inline size_t state_size() const { return uni.engine().state_size; }
