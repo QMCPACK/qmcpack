@@ -22,5 +22,4 @@ void BoostRandom<T, RNG>::init(int iseed_in)
   uni.engine().seed(baseSeed);
 }
 
-template class BoostRandom<float>;
 template class BoostRandom<double>;

@@ -58,10 +58,8 @@ public:
 
 extern template class RNGThreadSafe<FakeRandom>;
 #if defined(QMC_RNG_BOOST)
-extern template class RNGThreadSafe<BoostRandom<float>>;
 extern template class RNGThreadSafe<BoostRandom<double>>;
 #else
-extern template class RNGThreadSafe<StdRandom<float>>;
 extern template class RNGThreadSafe<StdRandom<double>>;
 #endif
 
