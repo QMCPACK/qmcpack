@@ -39,7 +39,7 @@ struct NonLocalPP
   NonLocalPP(const RandomGenerator<RealType>& rng) : myRNG(rng)
   {
     //use fixed seed
-    myRNG.init(0, 1, 11);
+    myRNG.init(11);
     weight_m.resize(12);
     sgridxyz_m.resize(12);
     const RealType w = RealType(1.0 / 12.0);

@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     }
   }
 
-  Random.init(0, 1, iseed);
+  Random.init(iseed);
 
   typedef QMCTraits::RealType RealType;
   typedef ParticleSet::ParticlePos_t ParticlePos_t;

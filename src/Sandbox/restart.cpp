@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   nwtot = std::abs(AverageWalkersPerNode + myComm->rank() % 5 - 2);
   FairDivideLow(nwtot, NumThreads, wPerNode);
 
-  //Random.init(0,1,iseed);
+  //Random.init(iseed);
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
 
   //turn off output

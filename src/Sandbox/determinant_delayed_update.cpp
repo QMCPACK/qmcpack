@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     }
   }
 
-  Random.init(0, 1, iseed);
+  Random.init(iseed);
 
   //turn off output
   if (omp_get_max_threads() > 1)
