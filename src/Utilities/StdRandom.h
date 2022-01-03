@@ -28,15 +28,41 @@
 namespace qmcplusplus
 {
 
+/** generating real type random numbers [min, max) in a uniform distribution.
+ * This is intended to match the behavior of random::uniform_real_distribution in the boost libraries
+ * Its behavor is different from std::uniform_real_distribution which uses std::generate_canonical
+ * to generate enough entropy according to the precision of T.
+ */
+template<typename T>
+class uniform_real_distribution_as_boost
+{
+public:
+  using result_type = T;
+  static_assert(std::is_floating_point<T>::value);
+
+  uniform_real_distribution_as_boost(T min = T(0.0), T max = T(1.0)) : min_(min), max_(max) {}
+  ///Generating functions.
+  template<typename RNG>
+  result_type operator()(RNG& eng)
+  {
+    return static_cast<result_type>(eng() - eng.min()) / (static_cast<result_type>(eng.max() - eng.min()) + 1) *
+        (max_ - min_) + min_;
+  }
+
+private:
+  T min_;
+  T max_;
+};
+
 template<typename T>
 class StdRandom
 {
 public:
   using result_type = T;
-  using Engine = std::mt19937;
+  using Engine      = std::mt19937;
   using uint_type   = Engine::result_type;
 
-  StdRandom(uint_type iseed = 911) : engine(iseed) { }
+  StdRandom(uint_type iseed = 911) : engine(iseed) {}
 
   void init(int iseed_in)
   {
@@ -74,9 +100,7 @@ public:
 
 private:
   ///random number generator [0,1)
-  static constexpr double min = 0.0;
-  static constexpr double max = 1.0;
-  std::uniform_real_distribution<T> distribution{min, max};
+  uniform_real_distribution_as_boost<T> distribution;
   Engine engine;
 };
 
