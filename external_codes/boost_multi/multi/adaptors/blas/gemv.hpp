@@ -51,19 +51,17 @@ auto gemv(A const& a, M const& m, V const& v, B const& b, W&& w) -> W&&{
 template<class Scalar, class It2D, class It1D, class Context>
 class gemv_iterator{
 	Scalar alpha_ = 1.;
-	It2D m_it_; 
+	It2D m_it_;
 	It1D v_first_;
 	Context ctxt_;
-public:
+
+ public:
 	using difference_type = typename std::iterator_traits<It2D>::difference_type;
 	using value_type = typename std::iterator_traits<It1D>::value_type;
 	using pointer = void;
 	using reference = void;
 	using iterator_category = std::random_access_iterator_tag;
-//	using iterator_category = std::output_iterator_tag;
-//	friend difference_type distance(gemv_iterator const& a, gemv_iterator const& b){assert(a.v_first_ == b.v_first_);
-//		return b.m_it_ - a.m_it_;
-//	}
+
 	friend auto operator-(gemv_iterator const& a, gemv_iterator const& b) -> difference_type{
 		assert(a.v_first_ == b.v_first_);
 		return a.m_it_ - b.m_it_;
@@ -93,19 +91,23 @@ class gemv_range{
 	It2D m_end_;
 	It1D v_first_;
 	Context ctxt_ = {};
-public:
+
+ public:
 	gemv_range(gemv_range&&) noexcept = default;
 	gemv_range(gemv_range const&) = delete;
 	~gemv_range() = default;
 	auto operator=(gemv_range const&) = delete;
 	auto operator=(gemv_range&&) = delete;
 
-	gemv_range(Scalar alpha, It2D m_first, It2D m_last, It1D v_first) 
+	gemv_range(Scalar alpha, It2D m_first, It2D m_last, It1D v_first)  // NOLINT(bugprone-easily-swappable-parameters)
 		: alpha_{alpha}, m_begin_{std::move(m_first)}, m_end_{std::move(m_last)}, v_first_{std::move(v_first)}{
 		assert(m_begin_.stride() == m_end_.stride());
 	}
-	gemv_range(Context&& ctxt, Scalar alpha, It2D m_first, It2D m_last, It1D v_first) 
-		: alpha_{alpha}, m_begin_{std::move(m_first)}, m_end_{std::move(m_last)}, v_first_{std::move(v_first)}, ctxt_{std::forward<Context>(ctxt)}{
+	gemv_range(Context&& ctxt, Scalar alpha, It2D m_first, It2D m_last, It1D v_first)  // NOLINT(bugprone-easily-swappable-parameters)
+	: alpha_{alpha}
+	, m_begin_{std::move(m_first)}, m_end_{std::move(m_last)}
+	, v_first_{std::move(v_first)}
+	, ctxt_{std::forward<Context>(ctxt)} {
 		assert(m_begin_.stride() == m_end_.stride());
 	}
 	using iterator = gemv_iterator<Scalar, It2D, It1D, Context>;

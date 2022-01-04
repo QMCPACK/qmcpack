@@ -111,11 +111,11 @@ BOOST_AUTO_TEST_CASE(fft_combinations, *boost::unit_test::tolerance(0.00001) ) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(fftw_4D_power_benchmark, *boost::unit_test::disabled() ) {
+BOOST_AUTO_TEST_CASE(fftw_4D_power_benchmark, *boost::unit_test::enabled() ) {
 	using complex = std::complex<double>;
 	namespace fftw = multi::fftw;
 
-	auto x = multi::array<complex, 4>::extensions_type({64, 128, 128, 128});
+	auto x = multi::array<complex, 4>::extensions_type({6, 12, 12, 12});
 	multi::array<complex, 4> in(x);
 	std::iota(in.data_elements(), in.data_elements() + in.num_elements(), 1.2);
 
