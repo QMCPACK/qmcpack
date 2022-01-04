@@ -136,7 +136,7 @@ bool VMC::run()
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = W.dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
@@ -180,7 +180,7 @@ void VMC::resetRun()
       Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip].get());
-      if (W.is_spinor_)
+      if (W.isSpinor())
       {
         spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])

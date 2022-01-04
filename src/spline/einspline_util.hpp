@@ -132,21 +132,19 @@ struct h5data_proxy<einspline_engine<ENGT>>
   using Base::get_address;
   typedef einspline_engine<ENGT> data_type;
 
-  data_type& ref_;
+  inline h5data_proxy(const data_type& a) { dim_traits<D + 1>::setdim(a, dims); }
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dim_traits<D + 1>::setdim(a, dims); }
-
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.spliner)
-      return h5d_read(grp, aname, get_address(ref_.spliner->coefs), xfer_plist);
+    if (ref.spliner)
+      return h5d_read(grp, aname, get_address(ref.spliner->coefs), xfer_plist);
     else
       return false;
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref_.spliner->coefs), xfer_plist);
+    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref.spliner->coefs), xfer_plist);
   }
 };
 

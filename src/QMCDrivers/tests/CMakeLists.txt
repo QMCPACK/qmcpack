@@ -47,7 +47,7 @@ else(QMC_CUDA)
 endif(QMC_CUDA)
 
 use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -89,7 +89,7 @@ if(NOT QMC_CUDA)
       test_WFOptDriverInput.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   use_fake_rng(${UTEST_EXE})
-  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
@@ -112,7 +112,7 @@ if(NOT QMC_CUDA)
     set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp)
     add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
     use_fake_rng(${UTEST_EXE})
-    target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+    target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
     if(USE_OBJECT_TARGET)
       target_link_libraries(
         ${UTEST_EXE}

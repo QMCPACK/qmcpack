@@ -66,7 +66,7 @@ public:
   {
     NumKShells = yk.size();
     Fk         = yk;
-    NumKVecs   = P.SK->getKLists().kshell[NumKShells + 1];
+    NumKVecs   = P.getSK().getKLists().kshell[NumKShells + 1];
     Rhok.resize(NumKVecs);
     if (Optimize)
       numParams = NumKShells;
@@ -259,14 +259,14 @@ public:
     APP_ABORT("Backflow_ee_kSpace::evaluate");
 #else
     //memcopy if necessary but this is not so critcal
-    copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
+    copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
-      accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const auto& Kcart(P.SK->getKLists().kpts_cart);
-    std::vector<int>& kshell(P.SK->getKLists().kshell);
+      accumulate_elements(P.getSK().rhok[spec1], P.getSK().rhok[spec1] + NumKVecs, Rhok.data());
+    const auto& Kcart(P.getSK().getKLists().kpts_cart);
+    std::vector<int>& kshell(P.getSK().getKLists().kshell);
     for (int iel = 0; iel < NumTargets; iel++)
     {
-      const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
+      const ComplexType* restrict eikr_ptr(P.getSK().eikr[iel]);
       const ComplexType* restrict rhok_ptr(Rhok.data());
       int ki = 0;
       for (int ks = 0; ks < NumKShells; ks++)
@@ -297,18 +297,18 @@ public:
     APP_ABORT("Backflow_ee_kSpace::evaluate");
 #else
     //memcopy if necessary but this is not so critcal
-    copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
+    copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
-      accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const auto& Kcart(P.SK->getKLists().kpts_cart);
-    std::vector<int>& kshell(P.SK->getKLists().kshell);
+      accumulate_elements(P.getSK().rhok[spec1], P.getSK().rhok[spec1] + NumKVecs, Rhok.data());
+    const auto& Kcart(P.getSK().getKLists().kpts_cart);
+    std::vector<int>& kshell(P.getSK().getKLists().kshell);
     GradType fact;
     HessType kakb;
     for (int iel = 0; iel < NumTargets; iel++)
     {
-      const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
+      const ComplexType* restrict eikr_ptr(P.getSK().eikr[iel]);
       const ComplexType* restrict rhok_ptr(Rhok.data());
-      const RealType* restrict ksq_ptr(P.SK->getKLists().ksq.data());
+      const RealType* restrict ksq_ptr(P.getSK().getKLists().ksq.data());
       int ki = 0;
       for (int ks = 0; ks < NumKShells; ks++, ksq_ptr++)
       {
@@ -331,13 +331,13 @@ public:
           // I can use symmetry to do only i<j, and then symmetrize
           for (int j = 0; j < iel; j++)
           {
-            ComplexType& eikrj = P.SK->eikr[j][ki];
+            ComplexType& eikrj = P.getSK().eikr[j][ki];
             Bmat_full(iel, j) += fact * ((*eikr_ptr).real() * (eikrj).imag() - (*eikr_ptr).imag() * (eikrj).real());
             Amat(iel, j) -= kakb * ((*eikr_ptr).real() * (eikrj).real() + (*eikr_ptr).imag() * (eikrj).imag());
           }
           for (int j = iel + 1; j < NumTargets; j++)
           {
-            ComplexType& eikrj = P.SK->eikr[j][ki];
+            ComplexType& eikrj = P.getSK().eikr[j][ki];
             Bmat_full(iel, j) += fact * ((*eikr_ptr).real() * (eikrj).imag() - (*eikr_ptr).imag() * (eikrj).real());
             Amat(iel, j) -= kakb * ((*eikr_ptr).real() * (eikrj).real() + (*eikr_ptr).imag() * (eikrj).imag());
           }

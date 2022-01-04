@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include "OhmmsPETE/TinyVector.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
@@ -445,7 +446,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       id_to_set = id;
 
     // if we are to optimize the variable, add it to the optimizable variable set
-    tolower(optimize);
+    optimize = lowerCase(optimize);
     if ( optimize == "yes" ) {
       if ( id == "string_not_set" )
         PRE.error("\"id\" must be set if we are going to optimize variable " + name, true);
@@ -497,9 +498,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       }
 
       // get the name of the child node
-      std::string cname((const char*)childPtr->name);
-      tolower(cname); // make it case insensitive
-
+      std::string cname(lowerCase(castXMLCharToChar(childPtr->name)));
       // read in a variable
       if (cname == "var")
       {
@@ -548,7 +547,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
           ID_B = id;
 
         // if the coefficients are to be optimized, add them to the variable set
-        tolower(optimize);
+        optimize = lowerCase(optimize);
         if ( optimize == "yes" ) {
           if ( id == "string_not_set" )
             PRE.error("\"id\" must be set if we are going to optimize B coefficients", true);

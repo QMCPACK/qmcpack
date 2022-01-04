@@ -335,8 +335,7 @@ qmc_run_and_check(
 
 # estimator tests
 include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-set(stat_python_reqs numpy;h5py)
-check_python_reqs(stat_python_reqs diamond-estimator add_estimator_tests)
+check_python_reqs("numpy;h5py" diamond-estimator add_estimator_tests)
 if(NOT QMC_CUDA)
   set(NMPI 4)
   set(NOMP 4)
@@ -1687,8 +1686,7 @@ if(NOT QMC_CUDA)
 
 
   # traces tests
-  set(traces_python_reqs numpy;h5py)
-  check_python_reqs(traces_python_reqs diamond-traces add_traces_tests)
+  check_python_reqs("numpy;h5py" diamond-traces add_traces_tests)
   if(add_traces_tests)
     if(QMC_MIXED_PRECISION)
       # traces with only scalars on

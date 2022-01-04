@@ -24,7 +24,7 @@
 
 namespace qmcplusplus
 {
-HDFWalkerInputManager::HDFWalkerInputManager(MCWalkerConfiguration& w, Communicate* c) : targetW(w), myComm(c) {}
+HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate* c) : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c) {}
 
 HDFWalkerInputManager::~HDFWalkerInputManager() {}
 
@@ -51,7 +51,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   bool success = false;
   if (in_version >= start_version)
   {
-    HDFWalkerInput_0_4 win(targetW, myComm, in_version);
+    HDFWalkerInput_0_4 win(wc_list_, num_ptcls_, myComm, in_version);
     success = win.put(cur);
     cfile   = win.FileName;
   }
@@ -68,6 +68,6 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur) { return false; }
 void HDFWalkerInputManager::rewind(const std::string& h5root, int blocks)
 {
   //   HDFWalkerInputCollect WO(h5root);
-  //   WO.rewind(targetW,blocks);
+  //   WO.rewind(wc_list_,blocks);
 }
 } // namespace qmcplusplus

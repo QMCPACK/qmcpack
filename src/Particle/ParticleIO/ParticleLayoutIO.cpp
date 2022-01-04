@@ -24,6 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
@@ -43,8 +44,6 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool bconds_defined  = false;
   int boxsum           = 0;
 
-  std::string handler_type("opt_breakup");
-
   app_summary() << std::endl;
   app_summary() << " Lattice" << std::endl;
   app_summary() << " -------" << std::endl;
@@ -54,18 +53,18 @@ bool LatticeParser::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "parameter")
     {
-      const XMLAttrString aname(cur, "name");
+      const std::string aname(getXMLAttributeValue(cur, "name"));
       if (aname == "scale")
       {
         putContent(a0, cur);
       }
       else if (aname == "lattice")
       {
-        const XMLAttrString units_prop(cur, "units");
+        const std::string units_prop(getXMLAttributeValue(cur, "units"));
         if (!units_prop.empty() && units_prop != "bohr")
         {
           APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
-                    << std::string(units_prop));
+                    << units_prop);
         }
 
         putContent(lattice_in, cur);
@@ -110,8 +109,10 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if (aname == "LR_handler")
       {
+        std::string handler_type("opt_breakup");
+        //This chops whitespace so the simple str == comparisons work
         putContent(handler_type, cur);
-        tolower(handler_type);
+        handler_type = lowerCase(handler_type);
         if (handler_type == "ewald")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
         else if (handler_type == "opt_breakup")

@@ -12,7 +12,6 @@
 #ifndef QMCPLUSPLUS_SPECIESKINETICENERGY_H
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
-#include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus

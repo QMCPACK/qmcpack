@@ -582,10 +582,10 @@ class Qmcpack(Simulation):
                         # einspline orbital ordering for excited state
                         excited = excited[:nelec]
                         # hand-crafted orbital order for excited state
-                        hc_excited = ground[:orb1]+ground[orb2-1]+ground[orb1+1:nelec]
+                        hc_excited = np.array(list(ground[:orb1-1])+[ground[orb2-1]]+list(ground[orb1:nelec]))
                             
                         etol = 1e-6
-                        if np.abs(hc_excited-excited).max() > tol:
+                        if np.abs(hc_excited-excited).max() > etol:
                             msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
                             msg += '         however, the second orbital \'{}\' is not occupied (see einspline file).\n'
                             msg += '         Please check your input.'

@@ -217,7 +217,7 @@ void SpinDensityNew::report(const std::string& pad)
 void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 {
   std::vector<size_t> my_indexes;
-  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
+  hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)

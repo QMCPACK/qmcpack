@@ -21,31 +21,27 @@ if(NOT ${QMCAPP_ERR} STREQUAL "")
   message("${QMCAPP_ERR}  skipping tests")
 endif()
 
-set(skinetic_python_reqs numpy;h5py)
-check_python_reqs(skinetic_python_reqs estimator-skinetic add_test)
+check_python_reqs("numpy;h5py" estimator-skinetic add_test)
 
 if(add_test)
   simple_run_and_check(estimator-skinetic "${qmcpack_SOURCE_DIR}/tests/estimator/skinetic" vmc.xml 1 16
                        skinetic_check.py)
 endif()
 
-set(latdev_python_reqs numpy;pandas;h5py)
-check_python_reqs(latdev_python_reqs estimator-latdev add_test)
+check_python_reqs("numpy;pandas;h5py" estimator-latdev add_test)
 
 if(add_test)
   simple_run_and_check(estimator-latdev "${qmcpack_SOURCE_DIR}/tests/estimator/latdev" vmc.xml 1 16 latdev_check.py)
 endif()
 
-set(latdev_free_python_reqs numpy;h5py)
-check_python_reqs(latdev_python_reqs estimator-latdev-free add_test)
+check_python_reqs("numpy;h5py" estimator-latdev-free add_test)
 
 if(add_test)
   simple_run_and_check(estimator-latdev-free "${qmcpack_SOURCE_DIR}/tests/estimator/latdev/free" two.xml 1 16
                        flatdev.py)
 endif()
 
-set(sofk_python_reqs numpy;pandas;h5py)
-check_python_reqs(sofk_python_reqs estimator-sofk add_test)
+check_python_reqs("numpy;pandas;h5py" estimator-sofk add_test)
 
 if(add_test)
   simple_run_and_check(

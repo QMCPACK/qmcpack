@@ -160,8 +160,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   }
   {
     //LR
-    const StructFact& RhoKA(*(PtclA.SK));
-    const StructFact& RhoKB(*(P.SK));
+    const StructFact& RhoKA(PtclA.getSK());
+    const StructFact& RhoKB(P.getSK());
     if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
     {
       APP_ABORT("CoulombPBCAB::evaluate_sp single particle traces have not been implemented for slab geometry");
@@ -322,8 +322,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
 {
   mRealType res = 0.0;
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  const StructFact& RhoKA(PtclA.getSK());
+  const StructFact& RhoKB(P.getSK());
   if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
   {
     const auto& d_ab(P.getDistTableAB(myTableIndex));
@@ -550,8 +550,8 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 
 CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
-  //  const StructFact& RhoKA(*(PtclA.SK));
-  //  const StructFact& RhoKB(*(P.SK));
+  //  const StructFact& RhoKA(PtclA.getSK());
+  //  const StructFact& RhoKB(P.getSK());
   std::vector<TinyVector<RealType, DIM>> grad(PtclA.getTotalNum());
   for (int j = 0; j < NumSpeciesB; j++)
   {

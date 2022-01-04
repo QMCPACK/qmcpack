@@ -106,7 +106,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
           FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
           //Use the force of the particle iat
           DriftModifier->getDrift(tauovermass, grad_iat, dr);
-          dr                     = W.R[iat] - W.activePos - dr;
+          dr                     = W.R[iat] - W.getActivePos() - dr;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
           bool is_accepted       = false;
