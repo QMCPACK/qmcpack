@@ -13,7 +13,7 @@ namespace multi = boost::multi;
 
 template<class T> void what(T&&) = delete;
 
-BOOST_AUTO_TEST_CASE(zero_dimensionality) {
+BOOST_AUTO_TEST_CASE(zero_dimensionality_part1) {
 	{
 		std::vector<double> v1 = {1., 2., 3.};
 
@@ -50,6 +50,9 @@ BOOST_AUTO_TEST_CASE(zero_dimensionality) {
 		a0 = multi::static_array<double, 0>{60.};
 		BOOST_REQUIRE( a0 == 60. );
 	}
+}
+
+BOOST_AUTO_TEST_CASE(zero_dimensionality_part2) {
 	 {
 		multi::array<std::complex<double>, 2> a({1, 2}, std::allocator<std::complex<double>>{});
 		BOOST_REQUIRE( size(a) == 1 );
@@ -62,7 +65,7 @@ BOOST_AUTO_TEST_CASE(zero_dimensionality) {
 
 		BOOST_REQUIRE( dd == d );
 
-		multi::array_ptr<double, 1> ap1(&d, 1);
+		multi::array_ptr<double, 1> ap1(&d, multi::extensions_t<1>{{0, 1}});
 		BOOST_REQUIRE( ap1->base() == &d );
 		BOOST_REQUIRE( (*ap1).base() == &d );
 
@@ -79,10 +82,10 @@ BOOST_AUTO_TEST_CASE(zero_dimensionality) {
 		double d3 = 3.;
 		BOOST_REQUIRE(( *multi::array_ptr<double, 0>(&d3, {}) == 3. ));
 
-		#if defined(__cpp_deduction_guides)
-		BOOST_REQUIRE(( *multi::array_ptr {&d3, multi::extensions_t<0>{}} == 3. ));
-		BOOST_REQUIRE((  multi::array_ptr {&d3, multi::extensions_t<0>{}} == multi::array_ptr<double, 0>(&d3, {}) ));
-		#endif
+//		#if defined(__cpp_deduction_guides)
+//		BOOST_REQUIRE(( *multi::array_ptr {&d3, multi::extensions_t<0>{}} == 3. ));
+//		BOOST_REQUIRE((  multi::array_ptr {&d3, multi::extensions_t<0>{}} == multi::array_ptr<double, 0>(&d3, {}) ));
+//		#endif
 	}
 }
 
