@@ -161,22 +161,25 @@ bool hdf_archive::is_group(const std::string& aname)
     return false;
   hid_t p = group_id.empty() ? file_id : group_id.top();
   p       = (aname[0] == '/') ? file_id : p;
-  hid_t g = H5Gopen2(p, aname.c_str(), H5P_DEFAULT);
-  if (g < 0)
+  if (H5Lexists(p, aname.c_str(), H5P_DEFAULT) <= 0)
     return false;
-  H5Gclose(g);
   return true;
 }
 
 hid_t hdf_archive::push(const std::string& gname, bool createit)
 {
+  hid_t g = is_closed;
   if (Mode[NOIO] || file_id == is_closed)
     return is_closed;
   hid_t p = group_id.empty() ? file_id : group_id.top();
-  hid_t g = H5Gopen2(p, gname.c_str(), H5P_DEFAULT);
-  if (g < 0 && createit)
+  if ( H5Lexists(p, gname.c_str(), H5P_DEFAULT) <= 0 && createit)
   {
     g = H5Gcreate2(p, gname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      
+  }
+  else 
+  {
+    g = H5Gopen2(p, gname.c_str(), H5P_DEFAULT);
   }
   if (g != is_closed)
     group_id.push(g);
