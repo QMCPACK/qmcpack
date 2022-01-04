@@ -20,4 +20,4 @@ silicon.calc = GPAW(xc='PBE',
         symmetry    = 'off'  
         )
 silicon.get_potential_energy()
-silicon.calc.write('Si.gpw',mode='all') # important to request mode='all'
+silicon.calc.write('restart.gpw',mode='all') # important to request mode='all'

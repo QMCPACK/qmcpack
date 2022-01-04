@@ -10,6 +10,8 @@
 ## File created by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla 
 #######################################################################################
 
+# This file converts GPAW orbitals for QMCPACK using ESHDF Python classes
+
 import argparse
 
 from Eshdf_gpaw import EshdfFilePwGpaw

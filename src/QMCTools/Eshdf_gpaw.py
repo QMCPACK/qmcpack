@@ -9,6 +9,8 @@
 ## File created by: Juha Tiihonen, tiihonen@iki.fi, University of Jyvaskyla 
 #######################################################################################
 
+# This file implements Eshdf bindings (Eshdf.py) for reading GPAW orbitals
+
 from numpy import array,pi,dot,real,imag,concatenate,unique,zeros
 from Eshdf import EshdfFilePw
 

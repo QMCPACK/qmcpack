@@ -14,7 +14,6 @@ from numpy import array
 # This file defines python classes to load/write data needed by the ESHDF file format.
 #
 # The main logic of the class structure is to inherit from Base -> Representation -> Application
-# The Representation class
 #
 # currently implemented:
 #
