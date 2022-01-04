@@ -169,6 +169,7 @@ set(FERMION_SRCS
     SPOSetBuilderFactory.cpp
     TrialWaveFunction.cpp
     TWFdispatcher.cpp
+    TWFPrototype.cpp
     WaveFunctionFactory.cpp)
 
 if(ENABLE_CUDA)
