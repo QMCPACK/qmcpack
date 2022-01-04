@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
+#include "ModernStringUtils.hpp"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
@@ -116,7 +117,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     aAttrib.put(rootNode);
 
   std::string type_in = type;
-  tolower(type);
+  type = lowerCase(type);
 
   //when name is missing, type becomes the input
   if (name.empty())
@@ -142,7 +143,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 #if OHMMS_DIM == 3
   else if (type.find("spline") < type.size())
   {
-    if (targetPtcl.is_spinor_)
+    if (targetPtcl.isSpinor())
     {
 #ifdef QMC_COMPLEX
       app_log() << "Einspline Spinor Set\n";
@@ -170,7 +171,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-    if (targetPtcl.is_spinor_)
+    if (targetPtcl.isSpinor())
 #ifdef QMC_COMPLEX
       bb = std::make_unique<LCAOSpinorBuilder>(targetPtcl, *ions, myComm, rootNode);
 #else

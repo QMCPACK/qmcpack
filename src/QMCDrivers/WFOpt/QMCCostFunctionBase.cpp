@@ -343,7 +343,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
   m_param.put(q);
 
-  tolower(targetExcitedStr);
+  targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
 
   if (output_override_str == "yes")
@@ -548,7 +548,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
@@ -560,7 +560,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
@@ -580,7 +580,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
@@ -595,7 +595,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)

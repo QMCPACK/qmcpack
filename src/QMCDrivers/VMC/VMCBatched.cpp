@@ -132,7 +132,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
           std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
                          [iat](const ParticleSet& elecs, const PosType& drift) {
-                           return elecs.R[iat] - elecs.activePos - drift;
+                           return elecs.R[iat] - elecs.getActivePos() - drift;
                          });
 
           std::transform(drifts.begin(), drifts.end(), log_gb.begin(),

@@ -18,6 +18,7 @@
 #include <stdexcept>
 
 #include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Pools/PooledData.h"
 

@@ -24,8 +24,9 @@
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Utilities/ProgressReportEngine.h"
+
 namespace qmcplusplus
 {
 /** set the property of a SpeciesSet

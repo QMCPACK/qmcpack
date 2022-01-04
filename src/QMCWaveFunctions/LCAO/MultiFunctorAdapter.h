@@ -110,7 +110,7 @@ public:
   bool openNumericalBasisH5(xmlNodePtr cur) { return true; }
   bool put(xmlNodePtr cur)
   {
-    const XMLAttrString a(cur, "normalized");
+    const std::string a(lowerCase(getXMLAttributeValue(cur, "normalized")));
     if (a == "no")
       Normalized = false;
     return true;

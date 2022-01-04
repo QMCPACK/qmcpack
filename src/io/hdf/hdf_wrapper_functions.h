@@ -69,7 +69,8 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
         if (sizes_in[dim] != TSpace.dims[dim_type])
           size_match = false;
       if (!size_match)
-        throw std::runtime_error("The lower dimensions (container element type) of " + aname + " dataset do not match the requested data type");
+        throw std::runtime_error("The lower dimensions (container element type) of " + aname +
+                                 " dataset do not match the requested data type");
       else
       {
         // save the sizes of each directions excluding dimensions contributed by the data type
@@ -99,7 +100,7 @@ inline bool checkShapeConsistency(hid_t grp, const std::string& aname, int rank,
   using TSpaceType = h5_space_type<T, 0>;
 
   std::vector<hsize_t> dims_in;
-  if(getDataShape<T>(grp, aname, dims_in))
+  if (getDataShape<T>(grp, aname, dims_in))
   {
     const int user_rank = rank - TSpaceType::added_rank();
     if (dims_in.size() != user_rank)

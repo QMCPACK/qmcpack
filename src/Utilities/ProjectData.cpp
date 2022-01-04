@@ -177,8 +177,8 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur   = cur;
-  m_title = XMLAttrString(cur, "id");
-  const XMLAttrString series_str(cur, "series");
+  m_title = getXMLAttributeValue(cur, "id");
+  const std::string series_str(getXMLAttributeValue(cur, "series"));
   if (!series_str.empty())
     m_series = std::stoi(series_str);
 

@@ -28,6 +28,7 @@ add_executable(
   test_project_data.cpp
   test_rng_control.cpp
   test_output_manager.cpp
+  test_ModernStringUtils.cpp
   test_StlPrettyPrint.cpp
   test_StdRandom.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcutil)

@@ -111,7 +111,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     const int num_species = ions.getSpeciesSet().getTotalNum();
     if (num_species == 1)
       return 1;
-    else if (num_species > 1 && !ions.IsGrouped)
+    else if (num_species > 1 && !ions.isGrouped())
       return 0;
     else
       return num_species;

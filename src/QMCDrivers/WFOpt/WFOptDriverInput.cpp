@@ -31,7 +31,7 @@ void WFOptDriverInput::readXML(xmlNodePtr xml_input)
     std::string cname((const char*)(cur->name));
     if (cname.find("optimize") < cname.size())
     {
-      const XMLAttrString att(cur, "method");
+      const std::string att(getXMLAttributeValue(cur, "method"));
       if (!att.empty())
         opt_method_ = att;
       opt_xml_node_ = cur;

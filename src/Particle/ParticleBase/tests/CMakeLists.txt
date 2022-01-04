@@ -17,7 +17,7 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 add_executable(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_attrib_ops.cpp)
 use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcparticle qmcfakerng)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil)
 endif()
