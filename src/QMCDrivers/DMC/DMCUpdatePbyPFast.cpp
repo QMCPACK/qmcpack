@@ -42,7 +42,7 @@ TimerNameList_t<DMCTimers> DMCTimerNames = {{DMC_buffer, "DMCUpdatePbyP::Buffer"
 DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                                                TrialWaveFunction& psi,
                                                                QMCHamiltonian& h,
-                                                               RandomGenerator_t& rg)
+                                                               RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);

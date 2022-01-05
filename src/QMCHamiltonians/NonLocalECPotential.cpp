@@ -484,7 +484,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
 int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;
-  RandomGenerator_t& RandomGen(*myRNG);
+  RandomGenerator& RandomGen(*myRNG);
   if (UseTMove == TMOVE_V0)
   {
     const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);

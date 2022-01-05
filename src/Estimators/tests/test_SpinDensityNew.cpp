@@ -77,7 +77,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
@@ -114,7 +114,7 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
@@ -222,7 +222,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
   auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
 

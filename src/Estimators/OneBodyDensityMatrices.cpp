@@ -207,7 +207,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
     save  = true;
     steps = samples_;
   }
-  
+
   switch (input_.get_integrator())
   {
   case Integrator::UNIFORM_GRID:
@@ -394,7 +394,7 @@ void OneBodyDensityMatrices::calcDensityDrift(const Position& r, Real& dens, Pos
 void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         const RefVector<ParticleSet>& psets,
                                         const RefVector<TrialWaveFunction>& wfns,
-                                        RandomGenerator_t& rng)
+                                        RandomGenerator& rng)
 {
   implAccumulate(walkers, psets, wfns, rng);
 }
@@ -618,26 +618,26 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
   }
 }
 
-template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
-                                                                         ParticleSet& pset_target,
-                                                                         RandomGenerator_t& rng,
-                                                                         int steps);
+template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
+                                                                       ParticleSet& pset_target,
+                                                                       RandomGenerator& rng,
+                                                                       int steps);
 template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
                                                                          ParticleSet& pset_target,
                                                                          StdRandom<double>& rng,
                                                                          int steps);
-template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator_t>(ParticleSet& pset_target,
-                                                                        TrialWaveFunction& psi_target,
-                                                                        const MCPWalker& walker,
-                                                                        RandomGenerator_t& rng);
+template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator>(ParticleSet& pset_target,
+                                                                      TrialWaveFunction& psi_target,
+                                                                      const MCPWalker& walker,
+                                                                      RandomGenerator& rng);
 template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
                                                                         TrialWaveFunction& psi_target,
                                                                         const MCPWalker& walker,
                                                                         StdRandom<double>& rng);
-template void OneBodyDensityMatrices::implAccumulate<RandomGenerator_t>(const RefVector<MCPWalker>& walkers,
-                                                                        const RefVector<ParticleSet>& psets,
-                                                                        const RefVector<TrialWaveFunction>& wfns,
-                                                                        RandomGenerator_t& rng);
+template void OneBodyDensityMatrices::implAccumulate<RandomGenerator>(const RefVector<MCPWalker>& walkers,
+                                                                      const RefVector<ParticleSet>& psets,
+                                                                      const RefVector<TrialWaveFunction>& wfns,
+                                                                      RandomGenerator& rng);
 template void OneBodyDensityMatrices::implAccumulate<StdRandom<double>>(const RefVector<MCPWalker>& walkers,
                                                                         const RefVector<ParticleSet>& psets,
                                                                         const RefVector<TrialWaveFunction>& wfns,

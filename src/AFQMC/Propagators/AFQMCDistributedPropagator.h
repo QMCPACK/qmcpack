@@ -56,7 +56,7 @@ public:
                              Wavefunction& wfn_,
                              stdCMatrix&& h1_,
                              CVector&& vmf_,
-                             RandomGenerator_t* r)
+                             RandomGenerator* r)
       : base(info, cur, tg_, wfn_, std::move(h1_), std::move(vmf_), r),
         core_comm(tg_.TG().split(tg_.getLocalTGRank(), tg_.TG().rank()))
   //            ,core_comm()

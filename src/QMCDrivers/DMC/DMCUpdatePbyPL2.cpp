@@ -36,7 +36,7 @@ using WP = WalkerProperties::Indexes;
 DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator_t& rg)
+                                 RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);
