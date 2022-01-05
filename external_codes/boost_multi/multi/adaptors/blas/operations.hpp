@@ -59,11 +59,11 @@ auto operator^(A&& a, Op op)
 
 using operators::H;
 
-template<class A, std::enable_if_t<std::decay_t<A>::rank_v == 1, int> =0> 
-auto C(A&& a) -> decltype(auto){return blas::conj(std::forward<A>(a));}
+template<class A, std::enable_if_t<std::decay_t<A>::rank_v == 1, int> =0>
+auto C(A&& a) -> decltype(auto){return blas::conj(std::forward<A>(a));}  // NOLINT(readability-identifier-naming) : conventional one-letter operation BLAS
 
-template<class A, std::enable_if_t<std::decay_t<A>::rank_v == 2, int> =0> 
-auto C(A&& a) -> decltype(auto){return hermitized(std::forward<A>(a));}
+template<class A, std::enable_if_t<std::decay_t<A>::rank_v == 2, int> =0>
+auto C(A&& a) -> decltype(auto){return hermitized(std::forward<A>(a));}  // NOLINT(readability-identifier-naming) : conventional one-letter operation BLAS
 
 namespace operators{
 
@@ -74,8 +74,8 @@ namespace operators{
 
 } // end namespace operators
 
-template<class A> auto T(A&& a) -> decltype(auto){return transposed(std::forward<A>(a));}
-template<class A> auto N(A&& a) -> decltype(auto){return identity  (std::forward<A>(a));}
+template<class A> auto T(A&& a) -> decltype(auto){return transposed(std::forward<A>(a));}  // NOLINT(readability-identifier-naming) : conventional one-letter operation BLAS
+template<class A> auto N(A&& a) -> decltype(auto){return identity  (std::forward<A>(a));}  // NOLINT(readability-identifier-naming) : conventional one-letter operation BLAS
 
 } // end namespace blas
 } // end namespace multi

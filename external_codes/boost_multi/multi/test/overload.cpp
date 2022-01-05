@@ -13,6 +13,9 @@ $CXX $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 
 namespace multi = boost::multi;
 
+auto what_is(multi::array<             double , 2> const& /*arr*/);
+auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/);
+
 auto what_is(multi::array<             double , 2> const& /*arr*/){return std::string{"real"}   ;}
 auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/){return std::string{"complex"};}
 

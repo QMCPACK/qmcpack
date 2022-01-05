@@ -13,7 +13,7 @@ namespace multi = boost::multi;
 int main() {
 	static_assert( sizeof(multi::array<char, 2>) < sizeof(multi::pmr::array<char, 2>) , "!");
 
-	char buffer[13] = "____________"; // a small buffer on the stack or an allocation
+	char buffer[13] = "____________";  // flawfinder: ignore , a small buffer on the stack or an allocation
 	std::pmr::monotonic_buffer_resource pool{
 		std::data(buffer), std::size(buffer), 
 		std::pmr::null_memory_resource()
@@ -25,15 +25,15 @@ int main() {
 	assert( A.get_allocator() == B.get_allocator() );
 	assert( buffer == std::string{"aaaabbbbbb__"} );
 
-	try{
+	try {
 		multi::pmr::array<char, 2> C({9, 9}, 'c', &pool); // there is no upstream resource so it throws
-	}catch(std::bad_alloc&){
+	} catch(std::bad_alloc&) {
 		assert( buffer == std::string{"aaaabbbbbb__"} );
 	}
-	
-	char buffer2[99];
+
+	std::array<char, 99> buffer2;
 	std::pmr::monotonic_buffer_resource pool2{
-		std::data(buffer), std::size(buffer), 
+		buffer.data(), buffer.size(),
 		std::pmr::null_memory_resource()
 	};
 	{
@@ -59,6 +59,4 @@ int main() {
 		assert(( D.get_allocator() == multi::pmr::array<char, 2>::allocator_type{&pool2} ));
 		assert( B.is_empty() );
 	}
-
 }
-

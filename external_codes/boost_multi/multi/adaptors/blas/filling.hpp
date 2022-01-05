@@ -30,16 +30,16 @@ inline auto operator-(filling side) -> filling{return flip(side);}
 inline auto operator+(filling side) -> filling{return side;}
 
 template<class A2D, std::enable_if_t<is_conjugated<A2D>{}, int> =0>
-auto detect_triangular_aux(A2D const& A, std::false_type /*false*/) -> filling{
+auto detect_triangular_aux(A2D const& A, std::false_type /*false*/) -> filling {
 	{
-		for(auto i = size(A); i != 0; --i){
+		for(auto i = size(A); i != 0; --i) {  // NOLINT(altera-id-dependent-backward-branch)
 			auto const asum_up = blas::asum(begin(A[i-1])+i, end(A[i-1]));
-			if(std::isnan(asum_up)){return filling::lower;}
-			if(asum_up !=0.       ){return filling::upper;}
+			if(std::isnan(asum_up)) {return filling::lower;}
+			if(asum_up !=0.       ) {return filling::upper;}
 
 			auto const asum_lo = blas::asum(begin(rotated(A)[i-1])+i, end(rotated(A)[i-1]));
-			if(std::isnan(asum_lo)){return filling::upper;}
-			if(asum_lo != 0.      ){return filling::lower;}
+			if(std::isnan(asum_lo)) {return filling::upper;}
+			if(asum_lo != 0.      ) {return filling::lower;}
 		}
 	}
 	return filling::lower;
