@@ -33,7 +33,7 @@ using WP = WalkerProperties::Indexes;
 CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
                                std::vector<TrialWaveFunction*>& psi,
                                std::vector<QMCHamiltonian*>& h,
-                               RandomGenerator_t& rg)
+                               RandomGenerator& rg)
     : CSUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;
@@ -120,7 +120,7 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 CSVMCUpdateAllWithDrift::CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,
                                                  std::vector<TrialWaveFunction*>& psi,
                                                  std::vector<QMCHamiltonian*>& h,
-                                                 RandomGenerator_t& rg)
+                                                 RandomGenerator& rg)
     : CSUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;

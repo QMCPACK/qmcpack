@@ -165,7 +165,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator_t& rng) override;
+                  RandomGenerator& rng) override;
 
   void startBlock(int steps) override;
 
@@ -185,7 +185,7 @@ private:
    */
   OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm) = default;
 
-  /** Unfortunate design RandomGenerator_t type aliasing and
+  /** Unfortunate design RandomGenerator type aliasing and
    *  virtual inheritance requires this for testing.
    */
   template<class RNG_GEN>
@@ -319,26 +319,26 @@ public:
   friend class testing::OneBodyDensityMatricesTests;
 };
 
-extern template void OneBodyDensityMatrices::generateSamples<RandomGenerator_t>(Real weight,
-                                                                                ParticleSet& pset_target,
-                                                                                RandomGenerator_t& rng,
-                                                                                int steps);
+extern template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
+                                                                              ParticleSet& pset_target,
+                                                                              RandomGenerator& rng,
+                                                                              int steps);
 extern template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
                                                                                 ParticleSet& pset_target,
                                                                                 StdRandom<double>& rng,
                                                                                 int steps);
-extern template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator_t>(ParticleSet& pset_target,
-                                                                               TrialWaveFunction& psi_target,
-                                                                               const MCPWalker& walker,
-                                                                               RandomGenerator_t& rng);
+extern template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator>(ParticleSet& pset_target,
+                                                                             TrialWaveFunction& psi_target,
+                                                                             const MCPWalker& walker,
+                                                                             RandomGenerator& rng);
 extern template void OneBodyDensityMatrices::evaluateMatrix<StdRandom<double>>(ParticleSet& pset_target,
                                                                                TrialWaveFunction& psi_target,
                                                                                const MCPWalker& walker,
                                                                                StdRandom<double>& rng);
-extern template void OneBodyDensityMatrices::implAccumulate<RandomGenerator_t>(const RefVector<MCPWalker>& walkers,
-                                                                               const RefVector<ParticleSet>& psets,
-                                                                               const RefVector<TrialWaveFunction>& wfns,
-                                                                               RandomGenerator_t& rng);
+extern template void OneBodyDensityMatrices::implAccumulate<RandomGenerator>(const RefVector<MCPWalker>& walkers,
+                                                                             const RefVector<ParticleSet>& psets,
+                                                                             const RefVector<TrialWaveFunction>& wfns,
+                                                                             RandomGenerator& rng);
 extern template void OneBodyDensityMatrices::implAccumulate<StdRandom<double>>(const RefVector<MCPWalker>& walkers,
                                                                                const RefVector<ParticleSet>& psets,
                                                                                const RefVector<TrialWaveFunction>& wfns,

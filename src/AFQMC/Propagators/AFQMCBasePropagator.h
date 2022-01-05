@@ -90,7 +90,7 @@ public:
                       Wavefunction& wfn_,
                       stdCMatrix&& h1_,
                       CVector&& vmf_,
-                      RandomGenerator_t* r)
+                      RandomGenerator* r)
       : AFQMCInfo(info),
         TG(tg_),
         buffer_manager(),
@@ -190,7 +190,7 @@ protected:
 
   CVector vMF;
 
-  RandomGenerator_t* rng;
+  RandomGenerator* rng;
 
   SlaterDetOperations* SDetOp;
 

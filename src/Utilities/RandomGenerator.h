@@ -61,12 +61,12 @@ extern template class RNGThreadSafe<BoostRandom<float>>;
 extern template class RNGThreadSafe<BoostRandom<double>>;
 
 #ifdef USE_FAKE_RNG
-using RandomGenerator_t = FakeRandom;
-extern RNGThreadSafe<RandomGenerator_t> fake_random_global;
+using RandomGenerator = FakeRandom;
+extern RNGThreadSafe<RandomGenerator> fake_random_global;
 #define Random fake_random_global
 #else
-using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
-extern RNGThreadSafe<RandomGenerator_t> boost_random_global;
+using RandomGenerator = BoostRandom<OHMMS_PRECISION_FULL>;
+extern RNGThreadSafe<RandomGenerator> boost_random_global;
 #define Random boost_random_global
 #endif
 } // namespace qmcplusplus
