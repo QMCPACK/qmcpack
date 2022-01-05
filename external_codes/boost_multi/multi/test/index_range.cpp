@@ -10,37 +10,58 @@
 #include <boost/hana/integral_constant.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
+#include <boost/serialization/nvp.hpp>
+
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+
+
 #include<numeric>  // for accumulate
 
 namespace hana = boost::hana;
 namespace multi = boost::multi;
 
-template<typename Integral, Integral const n>
-struct integral_constant : private hana::integral_constant<Integral, n>{
+template<typename Integral, Integral const N>
+struct integral_constant : private hana::integral_constant<Integral, N> {
 //	using hana::integral_constant<Integral, n>::integral_constant;
 	constexpr explicit operator Integral const&() const {
-		return hana::integral_constant<Integral, n>::value;
+		return hana::integral_constant<Integral, N>::value;
 	}
 	integral_constant() = default;
 	constexpr explicit integral_constant(Integral const& i) {
-		assert(i == n);
+		assert(i == N);
 	}
 	constexpr auto operator==(Integral const& o) const {return static_cast<Integral const&>(*this)==o;}
 	constexpr auto operator==(integral_constant const&/*other*/) {return std::true_type{};}
-	template<Integral n2, typename = std::enable_if_t<n2!=n> >
-	constexpr auto operator==(integral_constant<Integral, n2> const&/*other*/) {return std::false_type{};}
-	template<Integral n2>
-	friend constexpr auto operator+(integral_constant const&/*a*/, integral_constant<Integral, n2> const&/*b*/) {
-		return integral_constant<Integral, hana::integral_constant<Integral, n>::value + n2>{};
+	template<Integral N2, typename = std::enable_if_t<(N2 != N)> >
+	constexpr auto operator==(integral_constant<Integral, N2> const&/*other*/) {return std::false_type{};}
+	template<Integral N2>
+	friend constexpr auto operator+(integral_constant const&/*a*/, integral_constant<Integral, N2> const&/*b*/) {
+		return integral_constant<Integral, hana::integral_constant<Integral, N>::value + N2>{};
 	}
-	template<Integral n2>
-	friend constexpr auto operator-(integral_constant const&/*a*/, integral_constant<Integral, n2> const&/*b*/) {
-		return integral_constant<Integral, hana::integral_constant<Integral, n>::value - n2>{};
+	template<Integral N2>
+	friend constexpr auto operator-(integral_constant const&/*a*/, integral_constant<Integral, N2> const&/*b*/) {
+		return integral_constant<Integral, hana::integral_constant<Integral, N>::value - N2>{};
 	}
 //	constexpr auto operator=(Integral other) -> integral_constant&{assert(other == n); return *this;}
-	friend constexpr auto operator>=(Integral const& a, integral_constant const&/*self*/) {return a >= n;}
-	friend constexpr auto operator< (Integral const& a, integral_constant const&/*self*/) {return a <  n;}
+	friend constexpr auto operator>=(Integral const& a, integral_constant const&/*self*/) {return a >= N;}
+	friend constexpr auto operator< (Integral const& a, integral_constant const&/*self*/) {return a <  N;}
 };
+
+BOOST_AUTO_TEST_CASE(xml_serialization_index_range) {
+	std::stringstream ss;
+	multi::range<std::ptrdiff_t> const rg{5, 10};
+	{
+	    boost::archive::xml_oarchive oa(ss);
+		oa<< ::boost::serialization::make_nvp("rg", rg);
+	}
+	{
+		boost::archive::xml_iarchive ia(ss);
+		multi::range<std::ptrdiff_t> rg2;
+		ia>> ::boost::serialization::make_nvp("rg2", rg2);
+		BOOST_REQUIRE( rg == rg2 );
+	}
+}
 
 BOOST_AUTO_TEST_CASE(multi_range) {
 #if defined(__cpp_deduction_guides) and __cpp_deduction_guides

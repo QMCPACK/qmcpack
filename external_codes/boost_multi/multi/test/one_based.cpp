@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(one_based_1D) {
 
 	BOOST_REQUIRE( size(B) == 10 );
 	BOOST_REQUIRE( B != Af );
-	BOOST_REQUIRE( std::equal(begin(Af), end(Af), begin(B)) );
+	BOOST_REQUIRE( std::equal(begin(Af), end(Af), begin(B), end(B) ) );
 
 	BOOST_REQUIRE( Af.reindexed(0) == B );
 }
@@ -66,9 +66,9 @@ BOOST_AUTO_TEST_CASE(one_based_2D) {
 
 	BOOST_REQUIRE( size(B) == 10 );
 	BOOST_REQUIRE( B != Af );
-	BOOST_REQUIRE( std::equal(begin(Af.reindexed(0, 0)), end(Af.reindexed(0, 0)), begin(B)) );
-	BOOST_REQUIRE( std::equal(begin(Af), end(Af), begin(B.reindexed(1, 1))) );
-	BOOST_REQUIRE( std::equal(begin(Af), end(Af), begin(B.reindexed(0, 1))) );
+	BOOST_REQUIRE( std::equal(begin(Af.reindexed(0, 0)), end(Af.reindexed(0, 0)), begin(B), end(B)) );
+	BOOST_REQUIRE( std::equal(begin(Af), end(Af), begin(B.reindexed(1, 1)), end(B.reindexed(1, 1)) ) );
+	BOOST_REQUIRE( std::equal(begin(Af), end(Af), begin(B.reindexed(0, 1)), end(B.reindexed(0, 1)) ) );
 
 	BOOST_REQUIRE( Af.reindexed(0, 0) == B );
 
