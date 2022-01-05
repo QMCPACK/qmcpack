@@ -136,7 +136,9 @@ if __name__ == '__main__':
         quit()
     #end if
 
-    # Collect parameters from atomic_proj.xml
+    # Collect parameters from atomic_proj.xml.
+    # Note: if atomic_proj.xml was not generated from projwfc.x or if the <OVERLAPS> element is not present in atomic_proj.xml then
+    #       you should try re-running projwfc.x on a single core and single thread with "-ndiag 1" -- this can sometimes help
     nBands,nKpoints,kWeights,nAtomicWFC,nSpin,atomicProjections,atomicOverlaps,invAtomicOverlaps = collectValuesFromAtomicProj(pw_outdir+"/"+pw_prefix+".save/atomic_proj.xml")
 
     # Collect parameters from <prefix>.xml
