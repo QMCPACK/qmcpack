@@ -772,7 +772,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   TWFPrototype twf;
 
-//  psi->initialize_TWF_Prototype(elec, twf);
+  psi->initialize_TWF_Prototype(elec, twf);
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
   SPOSet::ValueVector_t d2psi;
@@ -837,7 +837,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   X.push_back(upmat);
   X.push_back(dnmat);
 
-//  twf.get_M(elec, matlist);
+  twf.get_M(elec, matlist);
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 

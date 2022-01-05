@@ -253,4 +253,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) co
   return myclone;
 }
 
+void SlaterDet::register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    Dets[i]->register_TWF_Prototype(P, twf);
+  }
+}
+
 } // namespace qmcplusplus

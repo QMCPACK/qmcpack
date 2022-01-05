@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+
 #include <map>
 
 namespace qmcplusplus
@@ -28,6 +29,7 @@ namespace qmcplusplus
 //     then change SlaterDet to SlaterDet<false>
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
+class TWFPrototype;
 
 class SlaterDet : public WaveFunctionComponent
 {
@@ -52,6 +54,8 @@ public:
   void resetParameters(const opt_variables_type& optVariables) override;
 
   void reportStatus(std::ostream& os) override;
+
+  void register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,

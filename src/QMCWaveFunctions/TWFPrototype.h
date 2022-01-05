@@ -37,7 +37,7 @@ public:
 
   TWFPrototype();
   void add_determinant(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void add_jastrow(WaveFunctionComponent* j) { J.push_back(j); };
+  //inline void add_jastrow(WaveFunctionComponent* j) { J.push_back(j); };
 
   void get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mmat);
   IndexType get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val);

@@ -50,7 +50,7 @@ struct NLjob
 class WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
-
+class TWFPrototype;
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
@@ -169,6 +169,11 @@ public:
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
+
+  /** Register the component with the TWFPrototype wrapper.  Pure virtual, so will throw
+   * an error at compile time
+   */
+  virtual void register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf);
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * \param[in] P  active ParticleSet

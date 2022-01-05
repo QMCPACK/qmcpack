@@ -1248,5 +1248,20 @@ RefVector<ParticleSet::ParticleLaplacian_t> TrialWaveFunction::extractLRefList(
   return l_list;
 }
 
+void TrialWaveFunction::initialize_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+{
+  for (int i = 0; i < Z.size(); ++i)
+  {
+    if (Z[i]->is_fermionic)
+    {
+      //OK, so this is a hack only for SlaterDeterminant objects.
+      //Needs a bit of logic and protection before this reaches production.
+      //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
+      //det->register_TWF_Prototype(P, twf);
+    }
+    else //Is Jastrow, so do nothing right now.
+    {}
+  }
+}
 
 } // namespace qmcplusplus

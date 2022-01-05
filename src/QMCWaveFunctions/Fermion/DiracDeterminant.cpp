@@ -21,6 +21,7 @@
 #include "CPU/SIMD/simd.hpp"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
+#include "QMCWaveFunctions/TWFPrototype.h"
 
 namespace qmcplusplus
 {
@@ -342,6 +343,12 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   // start with invRow labelled invalid
   invRow_id = -1;
   updateEng.initializeInv(psiM);
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+{
+  twf.add_determinant(P, P.getGroupID(FirstIndex), Phi.get());
 }
 
 /** return the ratio only for the  iat-th partcle move

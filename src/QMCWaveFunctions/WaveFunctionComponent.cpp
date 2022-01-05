@@ -226,4 +226,11 @@ void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
   evaluateRatios(VP, ratios);
 }
 
+void WaveFunctionComponent::register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+{
+  std::ostringstream o;
+  o << "WaveFunctionComponent::register_TWF_Prototype is not implemented by " << ClassName;
+  APP_ABORT(o.str()); 
+}
+
 } // namespace qmcplusplus
