@@ -344,7 +344,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.put(q);
 
   targetExcitedStr = lowerCase(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcited    = (targetExcitedStr == "yes");
 
   if (output_override_str == "yes")
     do_override_output = true;
@@ -534,13 +534,28 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
-    xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
     if (do_override_output)
     {
       std::ostringstream vp_filename;
       vp_filename << RootName << ".vp.h5";
-      xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
-      xmlAddChild(wf_root, vp_file_node);
+
+      xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//override_variational_parameters", acontext);
+      // Tag is present. Rewrite the href attribute.
+      if (result->nodesetval->nodeNr > 0)
+      {
+        for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
+        {
+          xmlNodePtr vp_file_node = result->nodesetval->nodeTab[iparam];
+          xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        }
+      }
+      else
+      {
+        // Create a new tag
+        xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
+        xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        xmlAddChild(wf_root, vp_file_node);
+      }
     }
 
     //check var
