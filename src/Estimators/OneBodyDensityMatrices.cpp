@@ -207,7 +207,7 @@ void OneBodyDensityMatrices::generateSamples(const Real weight, ParticleSet& pse
     save  = true;
     steps = samples_;
   }
-  
+
   switch (input_.get_integrator())
   {
   case Integrator::UNIFORM_GRID:
@@ -619,17 +619,17 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
 }
 
 template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
-                                                                         ParticleSet& pset_target,
-                                                                         RandomGenerator& rng,
-                                                                         int steps);
+                                                                       ParticleSet& pset_target,
+                                                                       RandomGenerator& rng,
+                                                                       int steps);
 template void OneBodyDensityMatrices::evaluateMatrix<RandomGenerator>(ParticleSet& pset_target,
-                                                                        TrialWaveFunction& psi_target,
-                                                                        const MCPWalker& walker,
-                                                                        RandomGenerator& rng);
+                                                                      TrialWaveFunction& psi_target,
+                                                                      const MCPWalker& walker,
+                                                                      RandomGenerator& rng);
 template void OneBodyDensityMatrices::implAccumulate<RandomGenerator>(const RefVector<MCPWalker>& walkers,
-                                                                        const RefVector<ParticleSet>& psets,
-                                                                        const RefVector<TrialWaveFunction>& wfns,
-                                                                        RandomGenerator& rng);
+                                                                      const RefVector<ParticleSet>& psets,
+                                                                      const RefVector<TrialWaveFunction>& wfns,
+                                                                      RandomGenerator& rng);
 #if defined(USE_FAKE_RNG) || defined(QMC_RNG_BOOST)
 template void OneBodyDensityMatrices::generateSamples<StdRandom<double>>(Real weight,
                                                                          ParticleSet& pset_target,
