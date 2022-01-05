@@ -58,6 +58,7 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -69,8 +70,8 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -134,6 +135,7 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -145,8 +147,8 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -240,6 +242,7 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -251,8 +254,8 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -410,6 +413,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -421,8 +425,8 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -566,6 +570,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -577,8 +582,8 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -664,6 +669,7 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -675,8 +681,8 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -754,6 +760,7 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -765,8 +772,8 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -834,6 +841,7 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -845,8 +853,8 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
     const T z0 = pos[2];
 
     const T* restrict px = R0;
-    const T* restrict py = R0 + padded_size;
-    const T* restrict pz = R0 + padded_size * 2;
+    const T* restrict py = R0 + r0_stride;
+    const T* restrict pz = R0 + r0_stride * 2;
 
     T* restrict dx = temp_dr;
     T* restrict dy = temp_dr + padded_size;
@@ -925,6 +933,7 @@ struct DTD_BConds<T, 3, PPPX + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
@@ -987,6 +996,7 @@ struct DTD_BConds<T, 3, PPNX + SOA_OFFSET>
 
   void computeDistancesOffload(const T pos[3],
                                const T* restrict R0,
+                               int r0_stride,
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,

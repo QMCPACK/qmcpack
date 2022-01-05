@@ -676,7 +676,7 @@ def test_read_write():
 
 
 
-if versions.pycifrw_available:
+if versions.pycifrw_available and versions.cif2cell_available:
     def test_read_cif():
         """
         Read La2CuO4 structure from a CIF file.

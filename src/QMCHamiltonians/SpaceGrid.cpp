@@ -823,7 +823,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
                          const Matrix<RealType>& values,
                          BufferType& buf,
                          std::vector<bool>& particles_outside,
-                         const DistanceTableData& dtab)
+                         const DistanceTableAB& dtab)
 {
   int p, v;
   int nparticles = values.size1();

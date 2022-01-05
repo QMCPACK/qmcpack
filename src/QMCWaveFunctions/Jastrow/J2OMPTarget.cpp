@@ -69,12 +69,23 @@ void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection,
   mw_allUat.resize(N_padded * (DIM + 2) * nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
-    size_t offset = N_padded * (DIM + 2) * iw;
-    auto& wfc     = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    // copy per walker Uat, dUat, d2Uat to shared buffer and attach buffer
+    auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+
+    Vector<valT, aligned_allocator<valT>> Uat_view(mw_allUat.data() + iw * N_padded, N);
+    Uat_view = wfc.Uat;
     wfc.Uat.free();
     wfc.Uat.attachReference(mw_allUat.data() + iw * N_padded, N);
+
+    VectorSoaContainer<valT, DIM, aligned_allocator<valT>> dUat_view(mw_allUat.data() + nw * N_padded +
+                                                                         iw * N_padded * DIM,
+                                                                     N, N_padded);
+    dUat_view = wfc.dUat;
     wfc.dUat.free();
     wfc.dUat.attachReference(N, N_padded, mw_allUat.data() + nw * N_padded + iw * N_padded * DIM);
+
+    Vector<valT, aligned_allocator<valT>> d2Uat_view(mw_allUat.data() + nw * N_padded * (DIM + 1) + iw * N_padded, N);
+    d2Uat_view = wfc.d2Uat;
     wfc.d2Uat.free();
     wfc.d2Uat.attachReference(mw_allUat.data() + nw * N_padded * (DIM + 1) + iw * N_padded, N);
   }
@@ -86,14 +97,31 @@ void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
                                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
-  collection.takebackResource(std::move(wfc_leader.mw_mem_));
-  for (size_t iw = 0; iw < wfc_list.size(); iw++)
+  const size_t nw  = wfc_list.size();
+  auto& mw_allUat  = wfc_leader.mw_mem_->mw_allUat;
+  for (size_t iw = 0; iw < nw; iw++)
   {
+    // detach buffer and copy per walker Uat, dUat, d2Uat from shared buffer
     auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+
+    Vector<valT, aligned_allocator<valT>> Uat_view(mw_allUat.data() + iw * N_padded, N);
     wfc.Uat.free();
+    wfc.Uat.resize(N);
+    wfc.Uat = Uat_view;
+
+    VectorSoaContainer<valT, DIM, aligned_allocator<valT>> dUat_view(mw_allUat.data() + nw * N_padded +
+                                                                         iw * N_padded * DIM,
+                                                                     N, N_padded);
     wfc.dUat.free();
+    wfc.dUat.resize(N);
+    wfc.dUat = dUat_view;
+
+    Vector<valT, aligned_allocator<valT>> d2Uat_view(mw_allUat.data() + nw * N_padded * (DIM + 1) + iw * N_padded, N);
     wfc.d2Uat.free();
+    wfc.d2Uat.resize(N);
+    wfc.d2Uat = d2Uat_view;
   }
+  collection.takebackResource(std::move(wfc_leader.mw_mem_));
 }
 
 template<typename FT>
@@ -160,7 +188,7 @@ template<typename FT>
 void J2OMPTarget<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   for (int k = 0; k < ratios.size(); ++k)
-    ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).getDistRow(k)));
+    ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
 }
 
 template<typename FT>
@@ -183,7 +211,7 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
   // need to access the spin group of refPtcl. vp_leader doesn't necessary be a member of the list.
   // for this reason, refPtcl must be access from [0].
   const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
-  const auto& dt_leader(vp_leader.getDistTable(wfc_leader.my_table_ID_));
+  const auto& dt_leader(vp_leader.getDistTableAB(wfc_leader.my_table_ID_));
 
   FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, wfc_leader.N, grp_ids.data(), nVPs, mw_refPctls.data(),
                    dt_leader.getMultiWalkerDataPtr(), dt_leader.getPerTargetPctlStrideSize(), mw_vals.data(),
@@ -420,7 +448,7 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, in
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
-  cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).getTempDists());
+  cur_Uat    = computeU(P, iat, P.getDistTableAA(my_table_ID_).getTempDists());
   return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
 }
 
@@ -434,7 +462,7 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   auto& p_leader        = p_list.getLeader();
-  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
 
   auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
@@ -459,7 +487,7 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
 template<typename FT>
 void J2OMPTarget<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table = P.getDistTableAA(my_table_ID_);
   const auto& dist    = d_table.getTempDists();
 
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -494,10 +522,10 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratioGrad(ParticleSet& P
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
-  computeU3(P, iat, P.getDistTable(my_table_ID_).getTempDists(), cur_u.data(), cur_du.data(), cur_d2u.data());
+  computeU3(P, iat, P.getDistTableAA(my_table_ID_).getTempDists(), cur_u.data(), cur_du.data(), cur_d2u.data());
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
-  grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).getTempDispls());
+  grad_iat += accumulateG(cur_du.data(), P.getDistTableAA(my_table_ID_).getTempDispls());
   return std::exp(static_cast<PsiValueType>(DiffVal));
 }
 
@@ -511,7 +539,7 @@ void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionCompone
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   auto& p_leader        = p_list.getLeader();
-  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
 
   auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
@@ -538,7 +566,7 @@ template<typename FT>
 void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // get the old u, du, d2u
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table = P.getDistTableAA(my_table_ID_);
   computeU3(P, iat, d_table.getOldDists(), old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
@@ -595,7 +623,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   auto& p_leader        = p_list.getLeader();
-  const auto& dt_leader = p_leader.getDistTable(my_table_ID_);
+  const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
 
   auto& mw_vgl = wfc_leader.mw_mem_->mw_vgl;
@@ -606,10 +634,10 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
   for (int iw = 0; iw < nw; iw++)
   {
     auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
-    wfc.log_value() += wfc.Uat[iat] - mw_vgl[iw][0];
+    wfc.log_value_ += wfc.Uat[iat] - mw_vgl[iw][0];
   }
 
-  /* this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates */
+  // this call may go asynchronous, then need to wait at mw_calcRatio mw_ratioGrad and mw_completeUpdates
   FT::mw_updateVGL(iat, isAccepted, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N,
                    grp_ids.data(), nw, mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_allUat.data(),
                    mw_cur_allu.data(), wfc_leader.mw_mem_->mw_update_buffer);
@@ -618,7 +646,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
 template<typename FT>
 void J2OMPTarget<FT>::recompute(const ParticleSet& P)
 {
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table = P.getDistTableAA(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
   {
     for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
@@ -674,7 +702,8 @@ void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionCompone
   assert(this == &wfc_leader);
 #pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    wfc_list[iw].recompute(p_list[iw]);
+    if (recompute[iw])
+      wfc_list[iw].recompute(p_list[iw]);
   wfc_leader.mw_mem_->mw_allUat.updateTo();
 }
 
@@ -738,8 +767,8 @@ void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCompon
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
-    auto& wfc    = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
-    wfc.log_value() = wfc.computeGL(G_list[iw], L_list[iw]);
+    auto& wfc      = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.log_value_ = wfc.computeGL(G_list[iw], L_list[iw]);
   }
 }
 
@@ -747,7 +776,7 @@ template<typename FT>
 void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   log_value_ = 0.0;
-  const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
+  const auto& d_ee(P.getDistTableAA(my_table_ID_));
   valT dudr, d2udr2;
 
   Tensor<valT, DIM> ident;

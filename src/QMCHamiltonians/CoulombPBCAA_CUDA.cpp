@@ -69,7 +69,7 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
 {
   if (is_active)
   {
-    StructFact& SK = *(P.SK);
+    const auto& SK = P.getSK();
     Numk           = SK.getKLists().numk;
     gpu::host_vector<CUDA_PRECISION_FULL> kpointsHost(OHMMS_DIM * Numk);
     for (int ik = 0; ik < Numk; ik++)
@@ -91,8 +91,8 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   {
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
-      LocalEnergy[iw] += Value;
+      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = value_;
+      LocalEnergy[iw] += value_;
     }
     return;
   }
@@ -136,7 +136,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int ik = 0; ik < Numk; ik++)
   {
     std::complex<double> rhok(0.0, 0.0);
-    PosType k = PtclRef.SK->KLists.kpts_cart[ik];
+    PosType k = PtclRef.getSK().KLists.kpts_cart[ik];
     for (int ir = 0; ir < N; ir++)
     {
       PosType r = walkers[0]->R[ir];
@@ -156,7 +156,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw] + myConst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = SumHost[iw] + myConst;
     LocalEnergy[iw] += SumHost[iw] + myConst;
   }
 }

@@ -65,7 +65,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
                                 ContextForSteps& step_context,
-                                bool recompute)
+                                bool recompute,
+                                bool accumulate_this_step)
 {
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
@@ -77,9 +78,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
+  timers.resource_timer.start();
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
   ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);
+  timers.resource_timer.stop();
 
   {
     ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
@@ -201,7 +204,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 
         std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
+                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().getActivePos() - drift; });
 
         std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
                        [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
@@ -240,6 +243,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   { // collect GL for KE.
     ScopedTimer buffer_local(timers.buffer_timer);
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
+    if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+      checkLogAndGL(crowd, "checkGL_after_moves");
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
@@ -247,8 +252,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
     std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
-        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
-    assert(QMCDriverNew::checkLogAndGL(crowd));
+        ham_dispatcher.flex_evaluateWithToperator(walker_hamiltonians, walker_twfs, walker_elecs));
 
     auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy, auto rr_acc,
                                    auto rr_prop) {
@@ -279,6 +283,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
   }
 
+  if (accumulate_this_step)
+  {
+    ScopedTimer est_timer(timers.estimators_timer);
+    crowd.accumulate(step_context.get_random_gen());
+  }
+
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
@@ -307,7 +317,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     if (moved_nonlocal_walkers.size())
     {
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
-      assert(QMCDriverNew::checkLogAndGL(crowd));
+      if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_TMOVE)
+        checkLogAndGL(crowd, "checkGL_after_tmove");
       ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }
   }
@@ -325,13 +336,16 @@ void DMCBatched::runDMCStep(int crowd_id,
   if (crowd.size() == 0)
     return;
 
-  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  auto& rng = context_for_steps[crowd_id]->get_random_gen();
+  crowd.setRNGForHamiltonian(rng);
 
-  int max_steps  = sft.qmcdrv_input.get_max_steps();
-  IndexType step = sft.step;
+  const int max_steps  = sft.qmcdrv_input.get_max_steps();
+  const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
+  const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == max_steps);
+  const bool accumulate_this_step = true;
+  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
+                 accumulate_this_step);
 }
 
 void DMCBatched::process(xmlNodePtr node)
@@ -389,9 +403,6 @@ bool DMCBatched::run()
   estimator_manager_->startDriverRun();
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
-
-  int sample = 0;
-
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
                                   myComm->rank() == 0);
@@ -435,17 +446,6 @@ bool DMCBatched::run()
       dmc_state.step = step;
       crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                  std::ref(crowds_));
-
-      // Accumulate on the whole population
-      // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
-      // \todo make task block
-      // probably something smart can be done to include reduction over crowds below
-      for (UPtr<Crowd>& crowd_ptr : crowds_)
-      {
-        Crowd& crowd_ref = *crowd_ptr;
-        if (crowd_ref.size() > 0)
-          crowd_ref.accumulate();
-      }
 
       {
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;

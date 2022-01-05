@@ -36,7 +36,7 @@ using WP = WalkerProperties::Indexes;
 DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator_t& rg)
+                                 RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);
@@ -175,7 +175,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           //Use the force of the particle iat
           DriftModifier->getDrift(tauovermass, grad_iat, drtmp);
           dr                     = drtmp; // upcast for mixed precision
-          dr                     = W.R[iat] - W.activePos - dr;
+          dr                     = W.R[iat] - W.getActivePos() - dr;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
           bool is_accepted       = false;

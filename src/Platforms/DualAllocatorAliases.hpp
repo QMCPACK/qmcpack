@@ -23,7 +23,7 @@
 
 #include "PinnedAllocator.h"
 
-#if defined(ENABLE_CUDA) && ! defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA) && !defined(ENABLE_OFFLOAD)
 #include "DualAllocator.hpp"
 namespace qmcplusplus
 {

@@ -37,8 +37,8 @@ StaticStructureFactor::StaticStructureFactor(ParticleSet& P) : Pinit(P)
 
 void StaticStructureFactor::reset()
 {
-  myName = "StaticStructureFactor";
-  UpdateMode.set(COLLECTABLE, 1);
+  name_ = "StaticStructureFactor";
+  update_mode_.set(COLLECTABLE, 1);
   ecut     = -1.0;
   nkpoints = -1;
 }
@@ -54,11 +54,11 @@ bool StaticStructureFactor::put(xmlNodePtr cur)
 {
   using std::sqrt;
   reset();
-  const k2_t& k2_init = Pinit.SK->getKLists().ksq;
+  const k2_t& k2_init = Pinit.getSK().getKLists().ksq;
 
   std::string write_report = "no";
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(name_, "name");
   //attrib.add(ecut,"ecut");
   attrib.add(write_report, "report");
   attrib.put(cur);
@@ -89,7 +89,7 @@ bool StaticStructureFactor::put(xmlNodePtr cur)
 void StaticStructureFactor::report(const std::string& pad)
 {
   app_log() << pad << "StaticStructureFactor report" << std::endl;
-  app_log() << pad << "  name     = " << myName << std::endl;
+  app_log() << pad << "  name     = " << name_ << std::endl;
   app_log() << pad << "  ecut     = " << ecut << std::endl;
   app_log() << pad << "  nkpoints = " << nkpoints << std::endl;
   app_log() << pad << "  nspecies = " << nspecies << std::endl;
@@ -101,7 +101,7 @@ void StaticStructureFactor::report(const std::string& pad)
 
 void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.current();
+  my_index_ = collectables.current();
   std::vector<RealType> tmp(nspecies * 2 * nkpoints); // real & imag parts
   collectables.add(tmp.begin(), tmp.end());
 }
@@ -109,11 +109,11 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 
 void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+  hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5desc.emplace_back("kpoints");
   auto& oh = h5desc.back();
   oh.open(sgid); // add to SkAll hdf group
-  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.SK->getKLists().kpts_cart), "value");
+  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSK().getKLists().kpts_cart), "value");
 
   std::vector<int> ng(2);
   ng[0] = 2;
@@ -122,7 +122,7 @@ void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& 
   {
     h5desc.emplace_back(species_name[s]);
     auto& ohSpeciesName = h5desc.back();
-    ohSpeciesName.set_dimensions(ng, myIndex + s * 2 * nkpoints);
+    ohSpeciesName.set_dimensions(ng, my_index_ + s * 2 * nkpoints);
     ohSpeciesName.open(sgid);
   }
 }
@@ -130,13 +130,13 @@ void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& 
 
 StaticStructureFactor::Return_t StaticStructureFactor::evaluate(ParticleSet& P)
 {
-  RealType w                     = tWalker->Weight;
-  const Matrix<RealType>& rhok_r = P.SK->rhok_r;
-  const Matrix<RealType>& rhok_i = P.SK->rhok_i;
+  RealType w                     = t_walker_->Weight;
+  const Matrix<RealType>& rhok_r = P.getSK().rhok_r;
+  const Matrix<RealType>& rhok_i = P.getSK().rhok_i;
   int nkptot                     = rhok_r.cols();
   for (int s = 0; s < nspecies; ++s)
   {
-    int kc = myIndex + s * 2 * nkpoints;
+    int kc = my_index_ + s * 2 * nkpoints;
     //int kstart  = s*nkptot;
     //for(int k=kstart;k<kstart+nkpoints;++k,++kc)
     //  P.Collectables[kc] += w*rhok_r(k);

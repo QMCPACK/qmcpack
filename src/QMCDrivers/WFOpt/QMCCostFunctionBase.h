@@ -132,22 +132,6 @@ public:
 
   void addCJParams(xmlXPathContextPtr acontext, const char* cname);
 
-  /** implement the virtual function
-   * @param x0 current parameters
-   * @param gr gradients or conjugate gradients
-   * @param dl return the displacelement to minimize the cost function
-   * @param val_proj projected cost
-   *
-   * If successful, any optimization object updates the parameters by x0 + dl*gr
-   * and proceeds with a new step.
-   */
-  bool lineoptimization(const std::vector<Return_rt>& x0,
-                        const std::vector<Return_rt>& gr,
-                        Return_rt val0,
-                        Return_rt& dl,
-                        Return_rt& val_proj,
-                        Return_rt& lambda_max) override;
-
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE
@@ -165,7 +149,7 @@ public:
 
 #endif
 
-  void setRng(std::vector<RandomGenerator_t*>& r);
+  void setRng(RefVector<RandomGenerator> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
@@ -287,7 +271,8 @@ protected:
   std::string RootName;
 
   ///Random number generators
-  std::vector<RandomGenerator_t*> RngSaved, MoverRng;
+  UPtrVector<RandomGenerator> RngSaved;
+  std::vector<RandomGenerator*> MoverRng;
   std::string includeNonlocalH;
 
 
@@ -319,6 +304,8 @@ protected:
   bool checkParameters();
   void updateXmlNodes();
 
+  /// Flag on whether the variational parameter override is output to the new wavefunction
+  bool do_override_output;
 
   virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
 

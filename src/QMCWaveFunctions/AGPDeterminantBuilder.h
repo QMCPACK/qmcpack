@@ -17,11 +17,13 @@
  */
 #ifndef QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
 #define QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
+
+#include "QMCWaveFunctions/AGPDeterminant.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+
 namespace qmcplusplus
 {
-class AGPDeterminant;
 
 /**@ingroup WFSBuilder
  * @brief An abstract class for wave function builders
@@ -38,7 +40,7 @@ protected:
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
   ///basiset Factory
-  SPOSetBuilderFactory* mySPOSetBuilderFactory;
+  std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
   ///AGPDeterminant
   std::unique_ptr<AGPDeterminant> agpDet;
   std::string funcOpt;

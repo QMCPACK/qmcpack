@@ -56,7 +56,7 @@ public:
                                    Wavefunction& wfn_,
                                    stdCMatrix&& h1_,
                                    CVector&& vmf_,
-                                   RandomGenerator_t* r)
+                                   RandomGenerator* r)
       : base(info, cur, tg_, wfn_, std::move(h1_), std::move(vmf_), r),
         bpX(iextensions<1u>{1}, shared_allocator<ComplexType>{TG.TG_local()}),
         req_Gsend(MPI_REQUEST_NULL),

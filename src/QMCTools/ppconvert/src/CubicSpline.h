@@ -112,8 +112,7 @@ public:
   }
 
   /// Trivial constructor
-  CubSpline()
-    : StartDeriv(0.)
+  CubSpline() : StartDeriv(0.), EndDeriv(0.)
   {
     UpToDate    = false;
     Initialized = false;

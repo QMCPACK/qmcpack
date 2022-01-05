@@ -85,10 +85,9 @@ struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
   inline void write(hid_t grp, const char* name) override
   {
     herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-    status        = H5Gget_objinfo(grp, name, 0, NULL);
     hsize_t str80 = H5Tcopy(H5T_C_S1);
     H5Tset_size(str80, ref.str().size());
-    if (status == 0)
+    if (H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t dataset = H5Dopen(grp, name);
       hid_t ret     = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.str().c_str());

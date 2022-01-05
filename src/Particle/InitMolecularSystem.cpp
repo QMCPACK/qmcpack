@@ -22,8 +22,8 @@
 #include "InitMolecularSystem.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/DistanceTable.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 
 namespace qmcplusplus
 {
@@ -126,7 +126,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   RealType rmin = cutoff;
   ParticleSet::SingleParticlePos_t cm;
 
-  const auto& dist = ions->getDistTable(d_ii_ID).getDistances();
+  const auto& dist = ions->getDistTableAA(d_ii_ID).getDistances();
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
   for (size_t iat = 0; iat < Centers; iat++)
   {

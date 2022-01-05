@@ -18,8 +18,8 @@ namespace cuda{
 	[[nodiscard]]
 #endif
 #endif
-	ptr<void> malloc(size_t bytes){return Cuda::malloc(bytes);}
-	void free(ptr<void> p){Cuda::free(p);}
+	inline auto malloc(size_t bytes) -> ptr<void>{return ptr<void>{Cuda::malloc(bytes)};}
+	inline void free(ptr<void> p){Cuda::free(p);}
 }
 
 }

@@ -15,6 +15,8 @@
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
+#include "MomentumDistribution.h"
+#include "OneBodyDensityMatrices.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -30,6 +32,7 @@
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 
@@ -253,7 +256,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
     for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      operator_data_sizes[iop] = operator_ests_[iop]->get_data()->size();
+      operator_data_sizes[iop] = operator_ests_[iop]->get_data().size();
     }
     // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
@@ -264,7 +267,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
     {
       auto& estimator      = *operator_ests_[iop];
-      auto& data           = estimator.get_data_ref();
+      auto& data           = estimator.get_data();
       size_t adjusted_size = data.size() + 1;
       operator_send_buffer.resize(adjusted_size, 0.0);
       operator_recv_buffer.resize(adjusted_size, 0.0);
@@ -327,18 +330,25 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second].get();
 }
 
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H,
+                              const ParticleSet& pset,
+                              const TrialWaveFunction& twf,
+                              const WaveFunctionFactory& wf_factory,
+                              xmlNodePtr cur)
 {
-  std::vector<std::string> extra;
+  std::vector<std::string> extra_types;
+  std::vector<std::string> extra_names;
   cur = cur->children;
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "estimator")
     {
+      std::string est_type("none");
       std::string est_name(MainEstimatorName);
       std::string use_hdf5("yes");
       OhmmsAttributeSet hAttrib;
+      hAttrib.add(est_type, "type");
       hAttrib.add(est_name, "name");
       hAttrib.add(use_hdf5, "hdf5");
       hAttrib.put(cur);
@@ -373,13 +383,33 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         if (spdi.get_save_memory())
           dl = DataLocality::rank;
         if (spdi.get_cell().explicitly_defined)
-          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies, dl));
+          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
         else
           operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.mySpecies, dl));
+              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.getSpeciesSet(), dl));
+      }
+      else if (est_type == "MomentumDistribution")
+      {
+        MomentumDistributionInput mdi;
+        mdi.readXML(cur);
+        DataLocality dl = DataLocality::crowd;
+        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
+                                                                           pset.getTwist(), pset.Lattice, dl));
+      }
+      else if (est_type == "OneBodyDensityMatrices")
+      {
+        OneBodyDensityMatricesInput obdmi(cur);
+        // happens once insures golden particle set is not abused.
+        ParticleSet pset_target(pset);
+        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.Lattice,
+                                                                             pset.getSpeciesSet(), wf_factory,
+                                                                             pset_target));
       }
       else
-        extra.push_back(est_name);
+      {
+        extra_types.push_back(est_type);
+        extra_names.push_back(est_name);
+      }
     }
     cur = cur->next;
   }
@@ -394,6 +424,17 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
   {
     app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
     Collectables = new CollectablesEstimator(H);
+  }
+  // Unrecognized estimators are not allowed
+  if (!extra_types.empty())
+  {
+    app_log() << "\nUnrecognized estimators in input:" << std::endl;
+    for (int i = 0; i < extra_types.size(); i++)
+    {
+      app_log() << "  type: " << extra_types[i] << "     name: " << extra_names[i] << std::endl;
+    }
+    app_log() << std::endl;
+    throw UniformCommunicateError("Unrecognized estimators encountered in input.  See log message for more details.");
   }
   return true;
 }

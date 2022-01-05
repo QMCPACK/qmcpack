@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2020 QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Peter Doak, , doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -12,16 +12,21 @@
 ####################################
 
 set(QMCEST_SRC
+    InputSection.cpp
     CSEnergyEstimator.cpp
     LocalEnergyEstimator.cpp
     RMCLocalEnergyEstimator.cpp
+    EstimatorInput.cpp
     SpinDensityInput.cpp
     EstimatorManagerBase.cpp
     EstimatorManagerNew.cpp
     EstimatorManagerCrowd.cpp
     CollectablesEstimator.cpp
     OperatorEstBase.cpp
-    SpinDensityNew.cpp)
+    SpinDensityNew.cpp
+    MomentumDistribution.cpp
+    OneBodyDensityMatricesInput.cpp
+    OneBodyDensityMatrices.cpp)
 
 ####################################
 # create libqmcestimators
@@ -41,12 +46,3 @@ target_link_libraries(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil
 target_link_libraries(qmcestimators_unit PUBLIC containers qmcham_unit qmcparticle qmcutil)
 
 add_subdirectory(tests)
-
-# TARGET_LINK_LIBRARIES(qmcest PUBLIC qmcham)
-# TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
-# TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
-# TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
-# IF(BUILD_LMYENGINE_INTERFACE)
-#   TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
-#   TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
-# ENDIF()

@@ -1840,9 +1840,6 @@ destroy_UBspline (Bspline *spline)
   free (spline);
 }
 
-void 
-destroy_NUBspline (Bspline *spline);
-
 void
 destroy_multi_UBspline (Bspline *spline);
 
@@ -1852,8 +1849,6 @@ destroy_Bspline (void *spline)
   Bspline *sp = (Bspline *)spline;
   if (sp->sp_code <= U3D) 
     destroy_UBspline (sp);
-  else if (sp->sp_code <= NU3D) 
-    destroy_NUBspline (sp);
   else if (sp->sp_code <= MULTI_U3D)
     destroy_multi_UBspline (sp);
   else

@@ -229,8 +229,8 @@ public:
   Return_t evaluate(ParticleSet& P) override;
 
   //optional standard interface
-  //void get_required_traces(TraceManager& tm);
-  //void setRandomGenerator(RandomGenerator_t* rng);
+  //void getRequiredTraces(TraceManager& tm);
+  //void setRandomGenerator(RandomGenerator* rng);
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override {}

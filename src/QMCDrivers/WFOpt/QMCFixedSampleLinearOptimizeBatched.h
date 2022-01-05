@@ -18,8 +18,12 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/NRCOptimization.h"
+#include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
@@ -37,8 +41,14 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
-                                            private NRCOptimization<QMCTraits::RealType>
+
+///forward declaration of a cost function
+class QMCCostFunctionBase;
+
+class GradientTest;
+
+
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
@@ -53,6 +63,10 @@ public:
   ///Destructor
   ~QMCFixedSampleLinearOptimizeBatched() override;
 
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
+
+  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
+
   ///Run the Optimization algorithm.
   bool run() override;
   ///preprocess xml node
@@ -60,9 +74,28 @@ public:
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl) override;
+  RealType costFunc(RealType dl);
+
+  ///common operation to start optimization
+  void start();
+
+#ifdef HAVE_LMY_ENGINE
+  using ValueType = QMCTraits::ValueType;
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                    DescentEngine& descentEngineObj,
+                    std::string MinMethod);
+#endif
+
+
+  ///common operation to finish optimization, used by the derived classes
+  void finish();
+
+  void generateSamples();
+
 
 private:
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -77,6 +110,13 @@ private:
                     const std::vector<RealType>& cv,
                     const std::vector<double>& sh,
                     const RealType ic) const;
+
+  //asymmetric generalized EV
+  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
+  //asymmetric EV
+  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
+  void getNonLinearRange(int& first, int& last);
+  RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
@@ -95,6 +135,11 @@ private:
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 #endif
+
+  // Perform test of gradients
+  bool test_run();
+
+  std::unique_ptr<GradientTest> testEngineObj;
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -129,17 +174,21 @@ private:
                           const int bi,
                           const bool gu);
 
-  int NumOfVMCWalkers;
+  // ------------------------------------
+  // Used by legacy linear method algos
+
+  std::vector<RealType> optdir, optparam;
+
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+
+  RealType param_tol;
+  //-------------------------------------
+
+
+  ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
-  RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
-  RealType w_beta;
-  /// number of previous steps to orthogonalize to.
-  int eigCG;
-  /// total number of cg steps per iterations
-  int TotalCGSteps;
+  RealType stabilizerScale, bigChange, exp0;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
@@ -204,6 +253,9 @@ private:
   //whether to use hybrid method
   bool doHybrid;
 
+  // Test parameter gradients
+  bool doGradientTest;
+
   // Output Hamiltonian and overlap matrices
   bool do_output_matrices_csv_;
 
@@ -218,6 +270,34 @@ private:
 
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
+
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
+  Timer t1;
+
+  ///xml node to be dumped
+  xmlNodePtr wfNode;
+  ///xml node for optimizer
+  xmlNodePtr optNode;
+
+  ParameterSet m_param;
+
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
+
+  ///vmc engine
+  std::unique_ptr<VMCBatched> vmcEngine;
+
+  VMCDriverInput vmcdriver_input_;
+  SampleStack& samples_;
+
+
+  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
+  // which still takes an MCWalkerConfiguration in the constructor.
+  MCWalkerConfiguration& W;
 };
 } // namespace qmcplusplus
 #endif

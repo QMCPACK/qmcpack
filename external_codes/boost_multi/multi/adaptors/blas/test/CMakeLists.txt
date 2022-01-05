@@ -13,33 +13,50 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 project(boost-multi-adaptors-blas-test VERSION 0.1 LANGUAGES CXX)
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
-find_package(BLAS REQUIRED)
-find_path(BLAS_INCLUDE_DIRS cblas.h
-  /usr/include
-  /usr/local/include
-  $ENV{BLAS_HOME}/include)
-
-link_libraries(${BLAS_LIBRARIES})
-include_directories(${TEST_EXE} PRIVATE ${BLAS_INCLUDE_DIRS})
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(ENABLE_CUDA OR DEFINED CXXCUDA)
-	enable_language(CUDA)
-	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe \"--diag_suppress=implicit_return_from_non_void_function\"")
+if((NOT CMAKE_CXX_COMPILER_ID STREQUAL "PGI") AND (NOT DART_COMPILER_NAME STREQUAL "nvcc"))
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+  link_libraries("-lboost_unit_test_framework")
+
+  find_package(BLAS REQUIRED)
+  find_path(BLAS_INCLUDE_DIRS cblas.h
+    /usr/include
+    /usr/local/include
+    $ENV{BLAS_HOME}/include)
+  include_directories(${TEST_EXE} PRIVATE ${BLAS_INCLUDE_DIRS})
+  link_libraries(${BLAS_LIBRARIES})
+else()
+  find_package(Boost REQUIRED) # cmake cannot detect this component with pgi compiler
+  link_libraries("-lboost_unit_test_framework")
+
+  link_libraries("-lblas") # cmake cannot detect BLAS with pgi/nvc++ but it ships with its own version
 endif()
 
-find_package(CUDA QUIET)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
+  add_definitions(-DRETURN_BY_STACK)
+endif()
 
-if (CUDA_FOUND)
-    message("CUDA found")
-    include_directories(${CUDA_INCLUDE_DIRS})
-else()
-    message("CUDA not found")
+if(ENABLE_CUDA OR DEFINED CXXCUDA)
+  enable_language(CUDA)
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe \"--diag_suppress=implicit_return_from_non_void_function\"")
+  find_package(CUDA QUIET)
+  if (CUDA_FOUND)
+      message("CUDA found")
+      include_directories(${CUDA_INCLUDE_DIRS})
+  else()
+      message("CUDA not found")
+  endif()
+
+  include(FindCUDA/select_compute_arch)
+  CUDA_DETECT_INSTALLED_GPUS(INSTALLED_GPU_CCS_1)
+  string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
+  string(REPLACE " " ";" INSTALLED_GPU_CCS_3 "${INSTALLED_GPU_CCS_2}")
+  string(REPLACE "." "" CUDA_ARCH_LIST "${INSTALLED_GPU_CCS_3}")
+  SET(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
+
 endif()
 
 enable_testing()
@@ -69,6 +86,7 @@ foreach(TEST_FILE ${TEST_SRCS})
   add_executable            (${TEST_EXE} ${TEST_FILE})
   if(ENABLE_CUDA OR DEFINED CXXCUDA)
     set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
+    set_property(TARGET ${TEST_EXE} PROPERTY "${CUDA_ARCH_LIST}")
     target_compile_options  (${TEST_EXE} PRIVATE -std=c++17)
   endif()
 #  target_compile_features   (${TEST_EXE} PUBLIC cxx_std_17) 
@@ -77,16 +95,17 @@ foreach(TEST_FILE ${TEST_SRCS})
   target_include_directories(${TEST_EXE} PRIVATE ${Boost_INCLUDE_DIRS})
   target_link_libraries     (${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
   target_link_directories   (${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-  if(NOT ENABLE_CUDA)
+  if(NOT ENABLE_CUDA AND (NOT DART_COMPILER_NAME STREQUAL "nvcc"))
     target_compile_options  (${TEST_EXE} PRIVATE
-       -Werror -Wall -Wextra -fno-common
+       -Werror -Wall
        $<$<CXX_COMPILER_ID:GNU>:
-          -Wpedantic -Wformat-truncation -fstack-usage>#-Wconversion
+                             -Wextra -Wpedantic -Wformat-truncation> #-Wconversion 
        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-          -Wpedantic -Wmove>
+                             -Wextra -Wpedantic -Wmove>
        $<$<CXX_COMPILER_ID:Intel>:
-                                        -wd161 -diag-disable=remark -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wno-return-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -Werror -diag-error:3846
-       >
+                             -Wextra                            -wd161 -diag-disable=remark -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wno-return-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -diag-error:3846>
+       $<$<CXX_COMPILER_ID:PGI>: #PGI 20  doesn't recognize the -Wextra option
+                                                         --diag_suppress=implicit_return_from_non_void_function>
        $<$<CXX_COMPILER_ID:MSVC>:
           /W4>)
   endif()

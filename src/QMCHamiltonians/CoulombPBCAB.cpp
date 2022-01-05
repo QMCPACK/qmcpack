@@ -15,7 +15,7 @@
 
 
 #include "CoulombPBCAB.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 
@@ -32,8 +32,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
-  set_energy_domain(potential);
-  two_body_quantum_domain(ions, elns);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, elns);
   if (ComputeForces)
     PtclA.turnOnPerParticleSK();
   initBreakup(elns);
@@ -62,30 +62,30 @@ void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 
 void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.add(myName.c_str());
+  my_index_ = plist.add(name_.c_str());
   if (ComputeForces)
     addObservablesF(plist);
 }
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-void CoulombPBCAB::contribute_particle_quantities() { request.contribute_array(myName); }
+void CoulombPBCAB::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
+void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
     Pion.turnOnPerParticleSK();
     Peln.turnOnPerParticleSK();
-    Ve_sample = tm.checkout_real<1>(myName, Peln);
-    Vi_sample = tm.checkout_real<1>(myName, Pion);
+    Ve_sample = tm.checkout_real<1>(name_, Peln);
+    Vi_sample = tm.checkout_real<1>(name_, Pion);
   }
 }
 
-void CoulombPBCAB::delete_particle_quantities()
+void CoulombPBCAB::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -99,16 +99,16 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
   if (ComputeForces)
   {
     forces = 0.0;
-    Value  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    value_ = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
   }
   else
 #if !defined(REMOVE_TRACEMANAGER)
-      if (streaming_particles)
-    Value = evaluate_sp(P);
+      if (streaming_particles_)
+    value_ = evaluate_sp(P);
   else
 #endif
-    Value = evalLR(P) + evalSR(P) + myConst;
-  return Value;
+    value_ = evalLR(P) + evalSR(P) + myConst;
+  return value_;
 }
 
 CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
@@ -120,13 +120,13 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
   if (ComputeForces)
   {
     forces = 0.0;
-    Value  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    value_ = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
     hf_terms -= forces;
     //And no Pulay contribution.
   }
   else
-    Value = evalLR(P) + evalSR(P) + myConst;
-  return Value;
+    value_ = evalLR(P) + evalSR(P) + myConst;
+  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -141,7 +141,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   Vi_samp                     = 0.0;
   {
     //SR
-    const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+    const auto& d_ab(P.getDistTableAB(myTableIndex));
     RealType z;
     //Loop over distinct eln-ion pairs
     for (size_t b = 0; b < NptclB; ++b)
@@ -160,8 +160,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   }
   {
     //LR
-    const StructFact& RhoKA(*(PtclA.SK));
-    const StructFact& RhoKB(*(P.SK));
+    const StructFact& RhoKA(PtclA.getSK());
+    const StructFact& RhoKB(P.getSK());
     if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
     {
       APP_ABORT("CoulombPBCAB::evaluate_sp single particle traces have not been implemented for slab geometry");
@@ -181,7 +181,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         for (int s = 0; s < NumSpeciesA; s++)
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Zspec[s] * q *
-              AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i], RhoKB.eikr_i[i]);
+              AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i],
+                           RhoKB.eikr_i[i]);
 #else
           v1 += Zspec[s] * q * AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
 #endif
@@ -195,7 +196,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         for (int s = 0; s < NumSpeciesB; s++)
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Qspec[s] * q *
-              AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i], RhoKA.eikr_i[i]);
+              AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
+                           RhoKA.eikr_i[i]);
 #else
           v1 += Qspec[s] * q * AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
 #endif
@@ -208,7 +210,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     Ve_samp(i) += Ve_const(i);
   for (int i = 0; i < Vi_samp.size(); ++i)
     Vi_samp(i) += Vi_const(i);
-  Value = Vsr + Vlr + Vc;
+  value_ = Vsr + Vlr + Vc;
 #if defined(TRACE_CHECK)
   RealType Vlrnow = evalLR(P);
   RealType Vsrnow = evalSR(P);
@@ -248,7 +250,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   }
 
 #endif
-  return Value;
+  return value_;
 }
 #endif
 
@@ -302,7 +304,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(const ParticleSet& Peln, bool re
 CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
 {
   constexpr mRealType czero(0);
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+  const auto& d_ab(P.getDistTableAB(myTableIndex));
   mRealType res = czero;
   //can be optimized but not important enough
   for (size_t b = 0; b < NptclB; ++b)
@@ -320,18 +322,19 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
 {
   mRealType res = 0.0;
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  const StructFact& RhoKA(PtclA.getSK());
+  const StructFact& RhoKB(P.getSK());
   if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
   {
-    const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+    const auto& d_ab(P.getDistTableAB(myTableIndex));
     for (int iat = 0; iat < NptclA; ++iat)
     {
       mRealType u = 0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
       const int slab_dir = OHMMS_DIM - 1;
       for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-        u += Qat[jat] * AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
+        u += Qat[jat] *
+            AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
 #endif
       res += Zat[iat] * u;
     }
@@ -547,8 +550,8 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 
 CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
-  //  const StructFact& RhoKA(*(PtclA.SK));
-  //  const StructFact& RhoKB(*(P.SK));
+  //  const StructFact& RhoKA(PtclA.getSK());
+  //  const StructFact& RhoKB(P.getSK());
   std::vector<TinyVector<RealType, DIM>> grad(PtclA.getTotalNum());
   for (int j = 0; j < NumSpeciesB; j++)
   {
@@ -564,7 +567,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
   constexpr mRealType czero(0);
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
+  const auto& d_ab(P.getDistTableAB(myTableIndex));
   mRealType res = czero;
   //Temporary variables for computing energy and forces.
   mRealType rV(0);

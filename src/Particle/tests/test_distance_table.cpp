@@ -18,7 +18,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
 
 #include <stdio.h>
@@ -89,15 +89,15 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
   electrons.update();
 
   // get target particle set's distance table data
-  const auto& dtable = electrons.getDistTable(tid);
+  const auto& dtable = electrons.getDistTableAB(tid);
   REQUIRE(dtable.getName() == "ion0_e");
 
   REQUIRE(dtable.sources() == ions.getTotalNum());
@@ -187,15 +187,15 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  const auto& dtable = electrons.getDistTable(tid);
+  const auto& dtable = electrons.getDistTableAB(tid);
   REQUIRE(dtable.getName() == "ion0_e");
 
   REQUIRE(dtable.sources() == ions.getTotalNum());
@@ -282,15 +282,15 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  const auto& dtable = electrons.getDistTable(tid);
+  const auto& dtable = electrons.getDistTableAB(tid);
   REQUIRE(dtable.getName() == "ion0_e");
 
   // get the electron species set
@@ -341,24 +341,19 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
      <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
   </simulationcell>\
   <particleset name=\"e\">\
-     <group name=\"u\" size=\"4\" mass=\"1.0\">\
+     <group name=\"u\" size=\"2\" mass=\"1.0\">\
         <parameter name=\"charge\"              >    -1                    </parameter>\
         <parameter name=\"mass\"                >    1.0                   </parameter>\
         <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
                  0.00000000        0.00000000        0.00000000\
                  3.00000000        0.00000000        0.00000000\
-                 0.00000000        3.00000000        0.00000000\
-                 3.00000000        3.00000000        0.00000000\
         </attrib>\
      </group>\
-     <group name=\"d\" size=\"4\" mass=\"1.0\">\
+     <group name=\"d\" size=\"1\" mass=\"1.0\">\
         <parameter name=\"charge\"              >    -1                    </parameter>\
         <parameter name=\"mass\"                >    1.0                   </parameter>\
         <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
                  0.00000000        0.00000000        3.00000000\
-                 3.00000000        0.00000000        3.00000000\
-                 0.00000000        3.00000000        3.00000000\
-                 3.00000000        3.00000000        3.00000000\
         </attrib>\
      </group>\
   </particleset>\
@@ -416,8 +411,8 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 }
 
 TEST_CASE("distance_pbc_z", "[distance_table][xml]")
@@ -435,7 +430,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   ions.update();
 
   // get target particle set's distance table data
-  const auto& ei_dtable = electrons.getDistTable(ei_tid);
+  const auto& ei_dtable = electrons.getDistTableAB(ei_tid);
   CHECK(ei_dtable.getName() == "ion0_e");
 
   CHECK(ei_dtable.sources() == ions.getTotalNum());
@@ -465,11 +460,6 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   electrons.makeMove(1, disp);
   electrons.acceptMove(1);
 
-  // move some more more
-  disp[2] = 12.0;
-  electrons.makeMove(3, disp);
-  electrons.acceptMove(3);
-
   idx = 0;
   for (int iat = 0; iat < num_src; iat++)
   {
@@ -482,7 +472,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
 
   const int ee_tid = electrons.addTable(electrons);
   // get target particle set's distance table data
-  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
   electrons.update();
 
@@ -559,7 +549,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   ions.update();
   const int ee_tid = electrons.addTable(electrons);
   // get target particle set's distance table data
-  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
   electrons.update();
 
@@ -612,7 +602,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   ions.update();
   const int ee_tid = electrons.addTable(electrons, DTModes::NEED_TEMP_DATA_ON_HOST);
   // get target particle set's distance table data
-  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
   electrons.update();
 

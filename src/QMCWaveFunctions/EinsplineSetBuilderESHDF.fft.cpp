@@ -14,7 +14,7 @@
 
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
@@ -177,7 +177,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     AtomicCentersInfo.resize(IonPos.size());
     for (int i = 0; i < IonPos.size(); i++)
       AtomicCentersInfo.ion_pos[i] = IonPos[i];
-    int Zind             = SourcePtcl->mySpecies.findAttribute("atomicnumber");
+    const auto& source_species = SourcePtcl->getSpeciesSet();
+    int Zind             = source_species.findAttribute("atomicnumber");
     const int table_id   = SourcePtcl->addTable(*SourcePtcl);
     const auto& ii_table = SourcePtcl->getDistTable(table_id);
     SourcePtcl->update(true);
@@ -191,13 +192,13 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
         if (Super2Prim[j] == i)
         {
           // set GroupID for each ion in primitive cell
-          if ((Zind < 0) || (SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) == IonTypes[i]))
+          if ((Zind < 0) || (source_species(Zind, SourcePtcl->GroupID[j]) == IonTypes[i]))
             AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
           else
           {
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j
                         << " atomic number not matching: " << IonTypes[i] << " vs "
-                        << SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) << std::endl;
+                        << source_species(Zind, SourcePtcl->GroupID[j]) << std::endl;
             if (!skipChecks)
               abort();
           }
@@ -213,25 +214,25 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
-    const int inner_cutoff_ind   = SourcePtcl->mySpecies.findAttribute("inner_cutoff");
-    const int cutoff_radius_ind  = SourcePtcl->mySpecies.findAttribute("cutoff_radius");
-    const int spline_radius_ind  = SourcePtcl->mySpecies.findAttribute("spline_radius");
-    const int spline_npoints_ind = SourcePtcl->mySpecies.findAttribute("spline_npoints");
-    const int lmax_ind           = SourcePtcl->mySpecies.findAttribute("lmax");
+    const int inner_cutoff_ind   = source_species.findAttribute("inner_cutoff");
+    const int cutoff_radius_ind  = source_species.findAttribute("cutoff_radius");
+    const int spline_radius_ind  = source_species.findAttribute("spline_radius");
+    const int spline_npoints_ind = source_species.findAttribute("spline_npoints");
+    const int lmax_ind           = source_species.findAttribute("lmax");
 
     for (int center_idx = 0; center_idx < AtomicCentersInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
       if (inner_cutoff_ind >= 0)
-        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
+        AtomicCentersInfo.inner_cutoff[center_idx] = source_species(inner_cutoff_ind, my_GroupID);
       if (cutoff_radius_ind >= 0)
-        AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
+        AtomicCentersInfo.cutoff[center_idx] = source_species(cutoff_radius_ind, my_GroupID);
       if (spline_radius_ind >= 0)
-        AtomicCentersInfo.spline_radius[center_idx] = SourcePtcl->mySpecies(spline_radius_ind, my_GroupID);
+        AtomicCentersInfo.spline_radius[center_idx] = source_species(spline_radius_ind, my_GroupID);
       if (spline_npoints_ind >= 0)
-        AtomicCentersInfo.spline_npoints[center_idx] = SourcePtcl->mySpecies(spline_npoints_ind, my_GroupID);
+        AtomicCentersInfo.spline_npoints[center_idx] = source_species(spline_npoints_ind, my_GroupID);
       if (lmax_ind >= 0)
-        AtomicCentersInfo.lmax[center_idx] = SourcePtcl->mySpecies(lmax_ind, my_GroupID);
+        AtomicCentersInfo.lmax[center_idx] = source_species(lmax_ind, my_GroupID);
     }
   }
   /////////////////////////////////////
@@ -468,6 +469,13 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
         maxOrbs++;
     }
   }
+
+  app_log() << SortBands.size() << " complex-valued orbitals supplied by h5 can be expanded up to " << maxOrbs
+            << " SPOs." << std::endl;
+  if (maxOrbs < numOrbs)
+    myComm->barrier_and_abort("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
+                              "more orbitals than what the h5 file supplies.");
+
   // Now sort the bands by energy
   if (sortBands == 2)
   {
@@ -644,7 +652,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     orbIndex++;
   }
   NumDistinctOrbitals = orbIndex;
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
+  app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
 }
 

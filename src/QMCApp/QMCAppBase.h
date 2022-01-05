@@ -17,8 +17,8 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "ProjectData.h"
+#include "RandomNumberControl.h"
 #include <stack>
 /**@defgroup qmcapp QMC Application Group
  * @brief Application-level classes to manage QMC simulations.

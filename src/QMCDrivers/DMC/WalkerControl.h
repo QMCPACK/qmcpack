@@ -51,7 +51,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
+  WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
@@ -100,8 +100,8 @@ private:
    *  for each adjustment in population to the context.
    *  \param[in] num_per_rank as if all walkers were copied out to multiplicity
    *  \param[out] fair_offset running population count at each partition boundary
-   *  \param[out] minus list of partition indexes one occurance for each walker removed
-   *  \param[out] plus list of partition indexes one occurance for each walker added
+   *  \param[out] minus list of partition indexes one occurrence for each walker removed
+   *  \param[out] plus list of partition indexes one occurrence for each walker added
    */
   static void determineNewWalkerPopulation(const std::vector<int>& num_per_rank,
                                            std::vector<int>& fair_offset,
@@ -141,7 +141,7 @@ private:
   };
 
   ///random number generator
-  RandomGenerator_t& rng_;
+  RandomGenerator& rng_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///minimum number of walkers
@@ -159,7 +159,7 @@ private:
   ///filename for dmc.dat
   std::string dmcFname;
   ///file to save energy histogram
-  std::ofstream* dmcStream;
+  std::unique_ptr<std::ofstream> dmcStream;
   ///context id
   const IndexType rank_num_;
   ///number of contexts

@@ -10,16 +10,16 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 set(SRC_DIR hamiltonian)
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
                  test_coulomb_pbcAA_ewald.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
+    test_NonLocalTOperator.cpp
     test_ecp.cpp
     test_hamiltonian_pool.cpp
     test_hamiltonian_factory.cpp
@@ -34,10 +34,8 @@ else()
   set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
 endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 foreach(fname Na2.structure.xml simple.txt)
   maybe_symlink(${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname})
@@ -59,9 +57,9 @@ foreach(CATEGORY coulomb force ham)
 
   target_link_libraries(${UTEST_EXE} catch_main qmcham)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omptarget)
+    target_link_libraries(${UTEST_EXE} qmcwfs qmcparticle qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()

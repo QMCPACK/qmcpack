@@ -17,7 +17,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -29,8 +29,7 @@ namespace qmcplusplus
 {
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
-MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
+MPC::MPC(ParticleSet& ptcl, double cutoff) : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
 {
   initBreakup();
 }
@@ -273,7 +272,9 @@ void MPC::init_spline()
   bc0.lCode = bc0.rCode = PERIODIC;
   bc1.lCode = bc1.rCode = PERIODIC;
   bc2.lCode = bc2.rCode = PERIODIC;
-  VlongSpline = std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()), destroy_Bspline);
+  VlongSpline =
+      std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()),
+                                     destroy_Bspline);
   //     grid0.num = PtclRef->Density_r.size(0);
   //     grid1.num = PtclRef->Density_r.size(1);
   //     grid2.num = PtclRef->Density_r.size(2);
@@ -325,8 +326,8 @@ std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction&
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
-  RealType SR                   = 0.0;
+  const auto& d_aa = P.getDistTableAA(d_aa_ID);
+  RealType SR      = 0.0;
   const RealType cone(1);
   for (size_t ipart = 0; ipart < NParticles; ipart++)
   {
@@ -359,8 +360,8 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
 MPC::Return_t MPC::evaluate(ParticleSet& P)
 {
   //if (FirstTime || P.tag() == PtclRef->tag())
-  Value = evalSR(P) + evalLR(P) + Vconst;
-  return Value;
+  value_ = evalSR(P) + evalLR(P) + Vconst;
+  return value_;
 }
 
 void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)

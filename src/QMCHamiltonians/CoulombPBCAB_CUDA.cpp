@@ -102,7 +102,7 @@ void CoulombPBCAB_CUDA::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 
 void CoulombPBCAB_CUDA::setupLongRangeGPU()
 {
-  StructFact& SK = *(ElecRef.SK);
+  const auto& SK = ElecRef.getSK();
   Numk           = SK.getKLists().numk;
   gpu::host_vector<CUDA_PRECISION_FULL> kpointsHost(OHMMS_DIM * Numk);
   for (int ik = 0; ik < Numk; ik++)
@@ -203,7 +203,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   //     RhokHost = RhokGPU;
   //     for (int ik=0; ik<Numk; ik++) {
   //       std::complex<double> rhok(0.0, 0.0);
-  //       PosType k = PtclRef.SK->KLists.kpts_cart[ik];
+  //       PosType k = PtclRef.getSK().KLists.kpts_cart[ik];
   //       for (int ir=0; ir<N; ir++) {
   //     	PosType r = walkers[0]->R[ir];
   //     	double s, c;
@@ -225,7 +225,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw] + myConst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = esum[iw] + myConst;
     LocalEnergy[iw] += esum[iw] + myConst;
   }
 }

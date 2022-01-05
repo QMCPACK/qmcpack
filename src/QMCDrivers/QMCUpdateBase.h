@@ -23,8 +23,9 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "GreenFunctionModifiers/DriftModifierBase.h"
+#include "SimpleFixedNodeBranch.h"
+#include "DriverDebugChecks.h"
 #include "Estimators/EstimatorManagerBase.h"
 
 namespace qmcplusplus
@@ -54,6 +55,9 @@ public:
   bool BadState;
   ///number of steps per measurement
   int nSubSteps;
+  /// determine additional checks for debugging purpose
+  DriverDebugChecks debug_checks_ = DriverDebugChecks::ALL_OFF;
+  std::string debug_checks_str_;
   ///MaxAge>0 indicates branch is done
   IndexType MaxAge;
   ///counter for number of moves accepted
@@ -74,13 +78,13 @@ public:
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
   ///Alt Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w,
                 TrialWaveFunction& psi,
                 TrialWaveFunction& guide,
                 QMCHamiltonian& h,
-                RandomGenerator_t& rg);
+                RandomGenerator& rg);
   ///destructor
   virtual ~QMCUpdateBase();
 
@@ -205,7 +209,7 @@ public:
   //       virtual void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
   //     , std::vector<MCWalkerConfiguration*>& wclone
   //     , std::vector<QMCHamiltonian*>& hclone
-  //     , std::vector<RandomGenerator_t*>& rng
+  //     , std::vector<RandomGenerator*>& rng
   //     , std::vector<RealType>& ratio_i_0){};
   int RMC_checkIndex(int N, int NMax)
   {
@@ -262,7 +266,7 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
   ///random number generator
-  RandomGenerator_t& RandomGen;
+  RandomGenerator& RandomGen;
   ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
   ///drift modifer, stateless reference to the one in QMCDriver
@@ -299,7 +303,7 @@ protected:
   QMCUpdateBase(const QMCUpdateBase&) = delete;
 
   /// check logpsi and grad and lap against values computed from scratch
-  static bool checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf);
+  static void checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, const std::string_view location);
 
 private:
   ///set default parameters

@@ -40,7 +40,7 @@ using WP = WalkerProperties::Indexes;
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
-                                               RandomGenerator_t& rg,
+                                               RandomGenerator& rg,
                                                std::vector<int> act,
                                                std::vector<int> tp)
     : QMCUpdateBase(w, psi, h, rg),
@@ -175,7 +175,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         RealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        dr               = W.R[iat] - W.activePos - dr;
+        dr               = W.R[iat] - W.getActivePos() - dr;
         RealType logGb   = -oneover2tau * dot(dr, dr);
         RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
         bool is_accepted = false;
@@ -303,7 +303,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         RealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        dr               = W.R[iat] - W.activePos - dr;
+        dr               = W.R[iat] - W.getActivePos() - dr;
         RealType logGb   = -oneover2tau * dot(dr, dr);
         RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
         bool is_accepted = false;

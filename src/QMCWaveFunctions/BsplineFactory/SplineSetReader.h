@@ -309,7 +309,7 @@ struct SplineSetReader : public BsplineReaderBase
         {
           std::ostringstream msg;
           msg << "SplineSetReader Failed to read band(s) from h5 file. "
-              << "Attemped dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
+              << "Attempted dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
           throw std::runtime_error(msg.str());
         }
         double total_norm = compute_norm(cG);
@@ -333,7 +333,7 @@ struct SplineSetReader : public BsplineReaderBase
     if (band_group_comm.isGroupLeader())
     {
       now.restart();
-      bspline->gather_tables(band_group_comm.GroupLeaderComm);
+      bspline->gather_tables(band_group_comm.getGroupLeaderComm());
       app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
     }
     now.restart();

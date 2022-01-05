@@ -22,8 +22,6 @@
 
 namespace qmcplusplus
 {
-class DistanceTableData;
-
 /** Thread local context for moving walkers
  *
  *  created once per driver per crowd
@@ -43,10 +41,10 @@ public:
   ContextForSteps(int num_walkers,
                   int num_particles,
                   std::vector<std::pair<int, int>> particle_group_indexes,
-                  RandomGenerator_t& random_gen);
+                  RandomGenerator& random_gen);
 
   int get_num_groups() const { return particle_group_indexes_.size(); }
-  RandomGenerator_t& get_random_gen() { return random_gen_; }
+  RandomGenerator& get_random_gen() { return random_gen_; }
 
   void nextDeltaRs(size_t num_rs)
   {
@@ -70,7 +68,7 @@ protected:
    */
   std::vector<std::pair<int, int>> particle_group_indexes_;
 
-  RandomGenerator_t& random_gen_;
+  RandomGenerator& random_gen_;
 };
 
 } // namespace qmcplusplus

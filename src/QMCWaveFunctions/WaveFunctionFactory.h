@@ -34,7 +34,7 @@ public:
 
   /** constructor
    * @param psiName name for both the factory and psi
-   * @param qp quantum particleset
+   * @param qp quantum particleset (aka target)
    * @param pset pool of particlesets
    * @param c  communicator
    * @param c  using tasking inside TWF
@@ -52,7 +52,6 @@ public:
   TrialWaveFunction* getTWF() const { return targetPsi.get(); }
   ///get SPOSet
   SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
-
 private:
   /** process xmlNode to populate targetPsi
    */
@@ -66,7 +65,7 @@ private:
    * @oaram cur xmlNode for b
    * @return true if successful
    */
-  bool addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur);
+  bool addNode(std::unique_ptr<WaveFunctionComponentBuilder> b, xmlNodePtr cur);
 
   ///many-body wavefunction object
   std::unique_ptr<TrialWaveFunction> targetPsi;

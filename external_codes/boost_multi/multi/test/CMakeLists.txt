@@ -15,7 +15,8 @@ endif()
 
 project(boost-multi-test VERSION 0.1 LANGUAGES CXX)
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED)# COMPONENTS unit_test_framework)
+link_libraries("-lboost_unit_test_framework")
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
 	set(CMAKE_CXX_STANDARD 14)
@@ -24,8 +25,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(ENABLE_CUDA OR DEFINED CXXCUDA)
-	enable_language(CUDA)
-	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+  enable_language(CUDA)
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+
+  include(FindCUDA/select_compute_arch)
+  CUDA_DETECT_INSTALLED_GPUS(INSTALLED_GPU_CCS_1)
+  string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
+  string(REPLACE " " ";" INSTALLED_GPU_CCS_3 "${INSTALLED_GPU_CCS_2}")
+  string(REPLACE "." "" CUDA_ARCH_LIST "${INSTALLED_GPU_CCS_3}")
+  SET(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
+
 endif()
 
 enable_testing()
@@ -37,6 +46,7 @@ foreach(TEST_FILE ${TEST_SRCS})
   SET(TEST_EXE "${TEST_FILE}.x")
   add_executable            (${TEST_EXE} ${TEST_FILE})
   if(ENABLE_CUDA OR DEFINED CXXCUDA)
+    set_property(TARGET ${TEST_EXE} PROPERTY "${CUDA_ARCH_LIST}")
     set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
   endif()
   target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS")
@@ -44,17 +54,19 @@ foreach(TEST_FILE ${TEST_SRCS})
   target_include_directories(${TEST_EXE} PRIVATE ${Boost_INCLUDE_DIRS})
   target_link_libraries     (${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
   target_link_directories   (${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-  if(NOT ENABLE_CUDA)
+  if(NOT ENABLE_CUDA AND (NOT DART_COMPILER_NAME STREQUAL "nvcc"))
     target_compile_options  (${TEST_EXE} PRIVATE
-      -Werror -Wall -Wextra -Wundef -fno-common -Wshadow #-Wfatal-errors
-      $<$<CXX_COMPILER_ID:GNU>:
-        -Wpedantic -Wdouble-promotion -Wconversion -Wformat-truncation -fstack-usage>
-      $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-        -Wpedantic -Wdouble-promotion -Wmove>
-      $<$<CXX_COMPILER_ID:Intel>:
-                    -wd161 -diag-disable=remark -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -Werror -diag-error:3846>
+       -Werror -Wall -Wshadow -Wsign-conversion -Wold-style-cast -Wcast-align -Wunused -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wconversion -Wnull-dereference -Wformat=2
+       $<$<CXX_COMPILER_ID:GNU>:
+                             -Wextra -Wpedantic -Wuninitialized -Wformat-truncation -Wdouble-promotion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op>
+       $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+                             -Wextra -Wpedantic -Wmove>
+       $<$<CXX_COMPILER_ID:Intel>:
+                             -Wextra                            -wd161 -diag-disable=remark -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wno-return-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -diag-error:3846>
+       $<$<CXX_COMPILER_ID:PGI>: #PGI 20  doesn't recognize the -Wextra option
+                                                         --diag_suppress=implicit_return_from_non_void_function>
        $<$<CXX_COMPILER_ID:MSVC>:
-          /W4>)
+          /WX /W4>)
   endif()
   add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
 endforeach()

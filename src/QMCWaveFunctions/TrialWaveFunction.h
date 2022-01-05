@@ -128,17 +128,42 @@ public:
   void startOptimization();
   /** set WaveFunctionComponent::IsOptimizing to flase */
   void stopOptimization();
-  /** check in an optimizable parameter
-   * * @param o a super set of optimizable variables
+
+  // Wavefunction Parameter Optimization
+  //
+  // The wavefunction consists of a set of components (derived from WaveFunctionComponent).
+  // Each of these components may or may not have variational parameters.
+  // In order to perform optimization:
+  //  1. Parameters are collected into a single list.
+  //  2. Optimization algorithm computes new values for those parameters.
+  //  3. Changed parameters are propagated back to each of the components.
+  //
+  // The collection of variables is of type VariableSet (opt_variables_type is a typedef).
+  // The variables local to each component are stored in WaveFunctionComponent::myVars, which
+  // is set to the local parameters when the component is set up.
+  // The call to checkInVariables collects all the local parameters into a global list (step 1).
+  // The resetIndex function on VariableSet then computes indices for this global list.
+  // The call to checkOutVariables sets up the mapping from global index to local index in each component's 'myVars'.
+  // Finally, the call to resetParameters progates the new values (step 3).
+  // The call to checkOutVariables is a prerequisite for resetParameters to set the local values successfully.
+
+  /** Check in an optimizable parameter
+   * * @param o aggregated list of optimizable variables
    *
-   * Update myOptIndex if o is found among the "active" paramemters.
+   * Gather all the optimizable parameters from wavefunction components into a single list
    */
   void checkInVariables(opt_variables_type& o);
-  /** check out optimizable variables
+
+  /** Check out optimizable variables
+   * Assign index mappings from global list (o) to local values in each component
    */
   void checkOutVariables(const opt_variables_type& o);
-  ///reset member data
+
+  /**  Set values of parameters in each component from the global list
+   */
   void resetParameters(const opt_variables_type& active);
+
+
   /** print out state of the trial wavefunction
    */
   void reportStatus(std::ostream& os);

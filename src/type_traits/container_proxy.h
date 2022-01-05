@@ -17,13 +17,37 @@
 
 #include <stdexcept>
 
-#include "type_traits/scalar_traits.h"
 #include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 
 namespace qmcplusplus
 {
+template<class T>
+struct scalar_traits
+{
+  enum
+  {
+    DIM = 1
+  };
+  typedef T real_type;
+  typedef T value_type;
+  static inline T* get_address(T* a) { return a; }
+};
+
+template<typename T>
+struct scalar_traits<std::complex<T>>
+{
+  enum
+  {
+    DIM = 2
+  };
+  typedef T real_type;
+  typedef std::complex<T> value_type;
+  static inline T* get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
+};
+
 template<typename T>
 struct container_proxy
 {

@@ -14,9 +14,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "NonLocalECPComponent.h"
-#include "QMCHamiltonians/NLPPJob.h"
+#include "NLPPJob.h"
+#include "NonLocalData.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -279,7 +281,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
   //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
-    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) <
+           100 * std::numeric_limits<RealType>::epsilon());
 
 
   for (int j = 0; j < nknot; j++)
@@ -316,7 +319,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradtmp_ *= psiratio[j];
 #if defined(QMC_COMPLEX)
       //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio[j]);
+      convertToReal(gradtmp_, gradpsiratio[j]);
 #else
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
@@ -416,7 +419,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
   //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
-    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < 100*std::numeric_limits<RealType>::epsilon());
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) <
+           100 * std::numeric_limits<RealType>::epsilon());
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;
@@ -467,7 +471,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradtmp_ *= psiratio[j];
 #if defined(QMC_COMPLEX)
       //And now we take the real part and save it.
-      convert(gradtmp_, gradpsiratio[j]);
+      convertToReal(gradtmp_, gradpsiratio[j]);
 #else
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
@@ -516,7 +520,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
       iongradtmp_ *= psiratio[j];
 #ifdef QMC_COMPLEX
-      convert(iongradtmp_, pulay_quad[j][jat]);
+      convertToReal(iongradtmp_, pulay_quad[j][jat]);
 #endif
       pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
@@ -593,7 +597,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 }
 
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -605,7 +609,7 @@ void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -642,8 +646,8 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
 }
 
 /// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
-template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator& myRNG);
 
 
 } // namespace qmcplusplus

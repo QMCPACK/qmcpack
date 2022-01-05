@@ -136,6 +136,7 @@
 import os
 import inspect
 import keyword
+import numpy as np
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
     ceil,mod,dot,abs,identity,floor,linalg,where,isclose
@@ -1974,7 +1975,7 @@ class ci(QIxml):
 #end class ci
 
 class csf(QIxml):
-    attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
+    attributes = ['id','exctlvl','coeff','coeff_real','coeff_imag','qchem_coeff','occ']
     elements   = ['det']
     attr_types = obj(occ=str)
 #end class csf
@@ -3865,6 +3866,13 @@ class QmcpackInput(SimulationInput,Names):
         #end if
     #end def incorporate_system
         
+    def get_electron_particle_set(self):
+
+        input = self.copy()
+        input.pluralize()
+        return input.get('particlesets').e
+
+    #end def get_electron_particle_set
 
     def return_system(self,structure_only=False):
         input = self.copy()
@@ -3985,6 +3993,13 @@ class QmcpackInput(SimulationInput,Names):
                     pos = dot(pos,axes)
                 #end if
                 center = axes.sum(0)/2
+            #end if
+
+            # pos must be a 2D array, shape (N,3)
+            # reshape single atom case, shape (3,) as shape (1,3)
+            pos = np.asarray(pos)
+            if len(pos.flatten())==3:
+                pos.shape = (1,3)
             #end if
 
             structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
@@ -4233,6 +4248,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
+            print(qhost)
             if qhost!=None:
                 qhost[quantity] = value
             else:
@@ -4468,7 +4484,7 @@ def generate_sposets(type           = None,
         QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
     #end if
     if sposets!=None:
-        for spo in spo:
+        for spo in sposets:
             spo.type = type
         #end for
     elif occupation=='slater_ground':
@@ -4718,6 +4734,102 @@ def generate_determinantset(up             = 'u',
 #end def generate_determinantset
 
 
+def check_excitation_type(excitation):
+
+    # Possible spin channels or spin states
+    exc_spins = obj(
+        up      = 1, # 'up'
+        down    = 2, # 'down'
+        singlet = 3, # 'singlet'
+        triplet = 4, # 'triplet'
+        )
+    # Possible orbital excitation types
+    exc_types = obj(
+        band    = 1, # '0 45 3 46'   # Type 1
+        energy  = 2, # '-215 +216'   # Type 2
+        kpoint  = 3, # 'L vb F cb'   # Type 3
+        lowest  = 4, # 'lowest'      # Type 4
+        )
+
+    exc_spin = None
+    exc_type = None
+
+    # Check that 'excitation' is correctly formated
+    format_failed = False
+    # Extract elements form excitation
+    if not isinstance(excitation,(tuple,list)) or len(excitation) != 2:
+        format_failed = True
+    else:
+        exc1,exc2 = excitation
+        if not isinstance(exc1,str) or not isinstance(exc2,str):
+            format_failed = True
+        #end if
+    #end if
+
+    # Check first element
+    if not format_failed:
+        if exc1.lower() not in ('up','down','singlet','triplet'):
+            format_failed = True
+        else:
+            exc_spin = exc_spins[exc1.lower()]
+        #end if
+    #end if
+
+    # Check second element
+    if not format_failed:
+        if any(substr in exc2.lower() for substr in ('vb','cb','lowest')):
+            if exc2.lower()=='lowest':
+                exc_type = exc_types.lowest
+            elif len(exc2.split())!=4:
+                format_failed = True
+            else:
+                exc_type = exc_types.kpoint
+            #end if
+        else:
+            tmp = None
+            try:
+                tmp = array(exc2.split(),dtype=int)
+            except:
+                format_failed = True
+            #end try
+            if not tmp is None:
+                if len(tmp)==4:
+                    # '0 45 3 46'
+                    if not tmp[0]>=0 or not tmp[1]>=0 or not tmp[2]>=0 or not tmp[3]>=0:
+                        format_failed = True
+                    #end if
+                    exc_type = exc_types.band
+                elif len(tmp)==2:
+                    # '-215 +216'
+                    if not tmp[0]<0 or not tmp[1]>0:
+                        format_failed = True
+                    #end if
+                    exc_type = exc_types.energy
+                else:
+                    format_failed = True
+                #end if
+            #end if
+        #end if
+    #end if
+    
+    if format_failed:
+
+        msg  = 'excitation must be a tuple or list with with two elements.\n'
+        msg += 'The first element must be either "up", "down", "singlet", or "triplet"\n'
+        msg += 'and the second element must be a band format (e.g. "0 45 3 46"),\n'
+        msg += 'energy format (e.g. "-215 +216"), kpoint format (e.g. "L vb F cb"),\n'
+        msg += 'or lowest format (e.g. "lowest").\n'
+        msg += 'You Provided: {0}'
+        msg = msg.format(excitation)
+
+        QmcpackInput.class_error(msg)
+
+    #end if
+
+    return exc_spin,exc_type,exc_spins,exc_types,exc1,exc2
+#end def check_excitation_type
+
+
 def generate_determinantset_old(type           = 'bspline',
                                 meshfactor     = 1.0,
                                 precision      = 'float',
@@ -4785,60 +4897,151 @@ def generate_determinantset_old(type           = 'bspline',
         dset.slaterdeterminant.delay_rank = delay_rank
     #end if
     if excitation is not None:
-        format_failed = False
-        if not isinstance(excitation,(tuple,list)):
-            QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
-        elif excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
-            format_failed = True
-        else:
-            #There are three types of input:
-            #1. excitation=['up','0 45 3 46'] 
-            #2. excitation=['up','-215 216']  
-            #3. excitation=['up', 'L vb F cb']
-            if len(excitation) == 2: #Type 1 or 2 
-                if 'cb' not in excitation[1] and 'vb' not in excitation[1]:
-                    try:
-                        tmp = array(excitation[1].split(),dtype=int)
-                    except:
-                        format_failed = True
-                    #end try
-                #end if
-            else:
-                format_failed = True
+
+        exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(excitation)
+
+        if exc_spin==exc_spins.up:
+            sdet = dset.get('updet')
+        elif exc_spin==exc_spins.down:
+            sdet = dset.get('downdet')
+        elif exc_spin in (exc_spins.singlet,exc_spins.triplet):
+
+            # Are there an equal number of up and down electrons?
+            # If no, then exit. Currently, singlet and triplet 
+            # excitations are assumed to have ms = 0.
+            if elns.down_electron.count != elns.up_electron.count:
+                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(elns.up_electron.count,elns.down_electron.count))
             #end if
+
+            coeff_sign = ''
+            if exc_spin==exc_spins.triplet:
+                coeff_sign = '-'
+            #end if
+
+            if down_spin:
+                sposet_list = [sposet(name            = 'spo_u',
+                                      spindataset     = 0,
+                                      size            = elns.up_electron.count+1,
+                                      occupation      = section(mode='ground'),
+                                      coefficient     = section(size=90,spindataset=0),
+                                      spos            = ''
+                                     ),
+                               sposet(name            = 'spo_d',
+                                      spindataset     = 1,
+                                      size            = elns.up_electron.count+1,
+                                      occupation      = section(mode='ground'),
+                                      coefficient     = section(spindataset=1),
+                                      spos            = ''
+                                     )]
+            else:
+                sposet_list = [sposet(name            = 'spo_ud',
+                                      spindataset     = 0,
+                                      size            = elns.up_electron.count+1,
+                                      occupation      = section(mode='ground'),
+                                      coefficient     = section(spindataset=0),
+                                      spos            = ''
+                                     )]
+            #end if
+
+            dset = determinantset(
+                type       = type,
+                meshfactor = meshfactor,
+                precision  = precision,
+                tilematrix = tilematrix,
+                twistnum   = twistnum,
+                href       = href,
+                source     = source,
+                sposets    = sposet_list,
+                multideterminant = multideterminant(
+                    optimize = 'no',
+                    spo_up='spo_u' if down_spin else 'spo_ud',
+                    spo_dn='spo_d' if down_spin else 'spo_ud',
+                    detlist = detlist(
+                        size = '1',
+                        type = 'CSF',
+                        nca  = '0',
+                        ncb  = '0',
+                        nea = elns.up_electron.count,
+                        neb = elns.down_electron.count,
+                        cutoff = '0.001',
+                        csf = csf(
+                            id          = 'CSF_0',
+                            exctLvl     = '1',
+                            coeff       = '1.0',
+                            coeff_real  = '1.0',
+                            qchem_coeff = '1.0',
+                            dets = collection(
+                                det(
+                                    id='csf_00',
+                                    coeff='0.70710678118654752440',
+                                    ),
+                                det(
+                                    id='csf_01',
+                                    coeff=coeff_sign+'0.70710678118654752440',
+                                    ),
+                                )
+                            )
+                        ),
+                    )
+                )
+            
+            if exc_type in (exc_types.energy,exc_types.lowest):
+
+                nup = elns.up_electron.count 
+                if exc_type==exc_types.lowest:
+                    exc_orbs = [nup,nup+1]
+                else:
+                    # assume excitation of form '-216 +217' or '-216 217'
+                    exc_orbs = array(exc2.split(),dtype=int)
+                    exc_orbs[0] *= -1
+                #end if
+
+                for sp in dset.sposets:
+                    sp.size=exc_orbs[1]
+                #end for
+
+                dset.multideterminant.detlist.nstates = exc_orbs[1]
+
+                dset.multideterminant.detlist.csf.occ = '2'*nup+'0'*(exc_orbs[1]-nup-1)+'1'
+                dset.multideterminant.detlist.csf.occ = dset.multideterminant.detlist.csf.occ[:exc_orbs[0]-1]+'1'+dset.multideterminant.detlist.csf.occ[exc_orbs[0]:]
+
+                dset.multideterminant.detlist.csf.dets[0].alpha = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
+                dset.multideterminant.detlist.csf.dets[0].beta = '1'*nup+'0'*(exc_orbs[1]-nup)
+
+                dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nup+'0'*(exc_orbs[1]-nup)
+                dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
+
+            elif exc_type == exc_types.kpoint: 
+                QmcpackInput.class_error('{} excitation is not yet available for kpoint type'.format(exc1))
+            else: 
+                QmcpackInput.class_error('{} excitation is not yet available for band type'.format(exc1))
+            #end if
+
+            return dset
+
         #end if
-        if format_failed:
-            #Should be modified
-            QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
-        #end if
-        
-        spin_channel,excitation = excitation
-        
-        if spin_channel=='up':
-            det = dset.get('updet')
-        elif spin_channel=='down':
-            det = dset.get('downdet')
-        #end if
-        occ = det.occupation
+
+        occ = sdet.occupation
         occ.pairs    = 1
         occ.mode     = 'excited'
-        occ.contents = '\n'+excitation+'\n'
+        occ.contents = '\n'+exc2+'\n'
         # add new input format
-        if 'cb' in excitation or 'vb' in excitation: #Type 3
+        if exc_type == exc_types.kpoint:
             # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
-            excitation = excitation.upper().split(' ')
+            excitation = exc2.upper().split(' ')
             if len(excitation) == 4:
                 k_1, band_1, k_2, band_2 = excitation
             else:
                 QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
             #end if
             
-            vb = int(det.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
+            vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
             for bnum, b in enumerate(bands):
-                if 'CB' in b:
+                b = b.lower()
+                if 'cb' in b:
                     if '-' in b:
                         b = b.split('-')
                         bands[bnum] = cb - int(b[1])
@@ -4848,7 +5051,7 @@ def generate_determinantset_old(type           = 'bspline',
                     else:
                         bands[bnum] = cb
                     #end if
-                elif 'VB' in b:
+                elif 'vb' in b:
                     if '-' in b:
                         b = b.split('-')
                         bands[bnum] = vb - int(b[1])
@@ -4865,7 +5068,7 @@ def generate_determinantset_old(type           = 'bspline',
             band_1, band_2 = bands
             
             # Convert k_1 k_2 to wavevector indexes
-            structure   = system.structure.folded_structure.copy()
+            structure = system.structure.get_smallest().copy()
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
             kpath_label = array(kpath['explicit_kpoints_labels'])
@@ -4902,9 +5105,18 @@ def generate_determinantset_old(type           = 'bspline',
             occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
             occ.format = 'band'
             
-        elif '-' in excitation or '+' in excitation: #Type 2
+        elif exc_type == exc_types.energy:
             # assume excitation of form '-216 +217'
             occ.format = 'energy'
+        elif exc_type == exc_types.lowest: # Type 4
+            occ.format = 'energy'
+            if exc_spin == exc_spins.up:
+                nel = elns.up_electron.count 
+            else:
+                nel = elns.down_electron.count 
+            #end if
+            excitation = '-{} +{}'.format(nel,nel+1) 
+            occ.contents = '\n'+excitation+'\n'
         else: #Type 1
             # assume excitation of form '6 36 6 37'
             occ.format   = 'band'
@@ -5239,6 +5451,9 @@ def generate_jastrows_alt(
 
     openbc = system.structure.is_open()
 
+    natoms = system.particles.count_ions()
+    nelec  = system.particles.count_electrons()
+
     jastrows = []
     J2 |= J3
     J1 |= J2
@@ -5248,6 +5463,9 @@ def generate_jastrows_alt(
     #end if
     rwigner = None
     if J1:
+        if natoms<1:
+            QmcpackInput.class_error('One-body Jastrow (J1) requested, but no atoms are present','generate_jastrows_alt')
+        #end if
         if J1_rcut is None:
             if openbc:
                 J1_rcut = J1_rcut_open
@@ -5265,6 +5483,9 @@ def generate_jastrows_alt(
         jastrows.append(J)
     #end if
     if J2:
+        if nelec<2:
+            QmcpackInput.class_error('Two-body Jastrow (J2) requested, but not enough electrons are present.\nElectrons required: 2 or more\nElectrons present: {}'.format(nelec),'generate_jastrows_alt')
+        #end if
         if J2_rcut is None:
             if openbc:
                 J2_rcut = J2_rcut_open
@@ -5282,6 +5503,9 @@ def generate_jastrows_alt(
         jastrows.append(J)
     #end if
     if J3:
+        if natoms<1 or nelec<2:
+            QmcpackInput.class_error('Three-body Jastrow (J3) requested, but not enough particles are present.\nAtoms required: 1 or more\nElectrons required: 2 or more\nAtoms present: {}\nElectrons present: {}'.format(natoms,nelec),'generate_jastrows_alt')
+        #end if
         if not openbc:
             if rwigner is None:
                 rwigner = system.structure.rwigner(1)
@@ -5377,7 +5601,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     corrs = []
     for i in range(len(elements)):
         element = elements[i]
-        if cusp is 'Z':
+        if cusp == 'Z':
             QmcpackInput.class_error('need to implement Z cusp','generate_jastrow1')
         else:
             lcusp  = cusp

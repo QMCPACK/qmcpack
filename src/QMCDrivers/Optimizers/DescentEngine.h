@@ -18,7 +18,7 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <libxml/tree.h>
 #include <vector>
 

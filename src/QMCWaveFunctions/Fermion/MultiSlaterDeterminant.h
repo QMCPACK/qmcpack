@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
 {
@@ -68,8 +67,7 @@ public:
 
   ///constructor
   MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                         std::unique_ptr<SPOSetProxyForMSD>&& upspo,
-                         std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
+                         std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos,
                          const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
@@ -79,9 +77,6 @@ public:
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
-
-  ///set BF pointers
-  virtual void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   virtual ValueType evaluate(const ParticleSet& P,
                              ParticleSet::ParticleGradient_t& G,

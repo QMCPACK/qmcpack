@@ -149,7 +149,7 @@ Naming
 The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
 single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
 exception is made for template parameters, which must be in all CAPS. Legacy code contains a great variety of hard to read code
-style, read this section and do not immitate existing code that violates it.
+style, read this section and do not imitate existing code that violates it.
 
 Namespace names
 ~~~~~~~~~~~~~~~
@@ -176,12 +176,12 @@ used to separate words.
 Class data members
 ~~~~~~~~~~~~~~~~~~
 
-Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``).
+Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``). The use of public member functions is discourage, rethink the need for it in the first place. Instead ``get`` and ``set`` functions are the preferred access method.
 
 (Member) function names
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Function names should start with a lowercase character and have a capital letter for each new word.
+Function names should start with a lowercase character and have a capital letter for each new word. The exception are the special cases for prefixed multiwalker (``mw_``) and flex (``flex_``) batched API functions. Coding convention should follow after those prefixes.
 
 Template Parameters
 ~~~~~~~~~~~~~~~~~~~
@@ -1696,7 +1696,7 @@ zeroed at the beginning of each step and accumulated upon call to
   unload, and collect. In the evaluate stage,
   ``QMCHamiltonian::Observables`` is populated by a list of
   ``OperatorBase``. In the load stage, ``QMCHamiltonian::Observables``
-  is transfered to ``Properties`` by ``QMCDriver``. In the unload stage,
+  is transferred to ``Properties`` by ``QMCDriver``. In the unload stage,
   ``Properties`` is copied to ``LocalEnergyEstimator::scalars``. In the
   collect stage, ``LocalEnergyEstimator::scalars`` is block-averaged to
   ``EstimatorManagerBase``

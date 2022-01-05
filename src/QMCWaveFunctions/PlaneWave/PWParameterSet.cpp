@@ -238,7 +238,7 @@ void PWParameterSet::writeParameters(hid_t gid)
 #else
   int iscomplex = 0;
 #endif
-  hid_t h1 = H5Gcreate(gid, "parameters", 0);
+  hid_t h1 = H5Gcreate2(gid, "parameters", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   HDFAttribIO<int> i1(iscomplex);
   i1.write(h1, "complex_coefficients");
   TinyVector<int, 2> v1(0, 10);

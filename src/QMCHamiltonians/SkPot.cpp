@@ -22,9 +22,9 @@ SkPot::SkPot(ParticleSet& source)
 {
   sourcePtcl = &source;
   NumSpecies = source.getSpeciesSet().getTotalNum();
-  NumK       = source.SK->getKLists().numk;
+  NumK       = source.getSK().getKLists().numk;
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell     = source.SK->getKLists().kshell;
+  Kshell     = source.getSK().getKLists().kshell;
   MaxKshell  = Kshell.size() - 1;
   RhokTot.resize(NumK);
   Fk.resize(NumK);
@@ -32,7 +32,7 @@ SkPot::SkPot(ParticleSet& source)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.SK->getKLists().ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.getSK().getKLists().ksq[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
 }
@@ -45,15 +45,15 @@ SkPot::Return_t SkPot::evaluate(ParticleSet& P)
   APP_ABORT("SkPot::evaluate(ParticleSet& P)");
 #else
   //sum over species
-  copy(P.SK->rhok[0], P.SK->rhok[0] + NumK, RhokTot.begin());
+  copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumK, RhokTot.begin());
   for (int i = 1; i < NumSpecies; ++i)
-    accumulate_elements(P.SK->rhok[i], P.SK->rhok[i] + NumK, RhokTot.begin());
+    accumulate_elements(P.getSK().rhok[i], P.getSK().rhok[i] + NumK, RhokTot.begin());
   Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
-  Value = 0.0;
+  value_ = 0.0;
   for (int i = 0; iit != iit_end; ++iit, ++i)
-    Value += Fk[i] * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
+    value_ += Fk[i] * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
 #endif
-  return Value;
+  return value_;
 }
 
 bool SkPot::put(xmlNodePtr cur)

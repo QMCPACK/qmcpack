@@ -19,7 +19,7 @@
 #include "Particle/HDFWalkerOutput.h"
 #include "hdf/HDFVersion.h"
 #include "Particle/HDFWalkerInput_0_4.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/FairDivide.h"
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   typedef ParticleSet::ParticleLayout_t LatticeType;
   typedef ParticleSet::TensorType TensorType;
   typedef ParticleSet::PosType PosType;
-  typedef RandomGenerator_t::uint_type uint_type;
+  typedef RandomGenerator::uint_type uint_type;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
 
   //use the global generator
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
   double t0 = 0.0, t1 = 0.0;
 
   RandomNumberControl::make_seeds();
-  std::vector<RandomGenerator_t> myRNG(NumThreads);
+  std::vector<RandomGenerator> myRNG(NumThreads);
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads);
 
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 
     //create generator within the thread
     myRNG[ip]                    = *RandomNumberControl::Children[ip];
-    RandomGenerator_t& random_th = myRNG[ip];
+    RandomGenerator& random_th = myRNG[ip];
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -193,7 +193,7 @@ int main(int argc, char** argv)
 #pragma omp parallel
   {
     int ip                       = omp_get_thread_num();
-    RandomGenerator_t& random_th = *RandomNumberControl::Children[ip];
+    RandomGenerator& random_th = *RandomNumberControl::Children[ip];
     std::vector<uint_type> vt(random_th.state_size(), 0);
     random_th.load(vt);
   }
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
 #pragma omp parallel reduction(+ : mismatch_count)
   {
     int ip                       = omp_get_thread_num();
-    RandomGenerator_t& random_th = myRNG[ip];
+    RandomGenerator& random_th = myRNG[ip];
     std::vector<uint_type> vt_orig(random_th.state_size());
     std::vector<uint_type> vt_load(random_th.state_size());
     random_th.save(vt_orig);
@@ -238,7 +238,7 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs[0], "restart", myComm);
+  HDFWalkerOutput wOut(elecs[0].getTotalNum(), "restart", myComm);
   myComm->barrier();
   h5clock.restart(); //start timer
   wOut.dump(elecs[0], 1);
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
   xmlNodePtr restart_leaf = xmlFirstElementChild(root);
 
   HDFVersion in_version(0, 4);
-  HDFWalkerInput_0_4 wIn(elecs[0], myComm, in_version);
+  HDFWalkerInput_0_4 wIn(elecs[0], elecs[0].getTotalNum(), myComm, in_version);
   myComm->barrier();
   h5clock.restart(); //start timer
   wIn.put(restart_leaf);
@@ -317,13 +317,13 @@ int main(int argc, char** argv)
     if (subComm->getGroupID() == 0)
     {
       elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
-      HDFWalkerInput_0_4 subwIn(elecs[0], subComm, in_version);
+      HDFWalkerInput_0_4 subwIn(elecs[0], elecs[0].getTotalNum(), subComm, in_version);
       subwIn.put(restart_leaf);
       subComm->barrier();
       if (!subComm->rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs[0], subComm);
-      HDFWalkerOutput subwOut(elecs[0], "XXXX", subComm);
+      HDFWalkerOutput subwOut(elecs[0].getTotalNum(), "XXXX", subComm);
       subwOut.dump(elecs[0], 1);
       if (!subComm->rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";

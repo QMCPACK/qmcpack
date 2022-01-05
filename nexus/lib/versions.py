@@ -81,6 +81,7 @@ raw_version_data = dict(
     #   3.7  https://www.python.org/dev/peps/pep-0537/
     #   3.8  https://www.python.org/dev/peps/pep-0569/
     #   3.9  https://www.python.org/dev/peps/pep-0596/
+    #   3.10 https://www.python.org/dev/peps/pep-0619/
     python3 = '''
         3.3.0  2012-09-29
         3.3.1  2013-04-06
@@ -107,6 +108,7 @@ raw_version_data = dict(
         3.7.4  2019-07-08
         3.8.0  2019-10-21
         3.9.0  2020-06-08
+        3.10.0 2021-10-04
         ''',
     # numpy releases
     #   https://github.com/numpy/numpy/releases
@@ -843,6 +845,7 @@ pydot_available      = False
 spglib_available     = False
 pycifrw_available    = False
 seekpath_available   = False
+cif2cell_available   = False
 
 numpy_supported      = False
 scipy_supported      = False
@@ -852,6 +855,7 @@ pydot_supported      = False
 spglib_supported     = False
 pycifrw_supported    = False
 seekpath_supported   = False
+cif2cell_supported   = False
 
 try: # versioning info is never worth failure
     versions = Versions()
@@ -864,6 +868,7 @@ try: # versioning info is never worth failure
     spglib_available     = versions.available('spglib')
     pycifrw_available    = versions.available('pycifrw')
     seekpath_available   = versions.available('seekpath')
+    cif2cell_available   = versions.available('cif2cell')
 
     numpy_supported      = versions.supported('numpy')
     scipy_supported      = versions.supported('scipy')
@@ -873,6 +878,7 @@ try: # versioning info is never worth failure
     spglib_supported     = versions.supported('spglib')
     pycifrw_supported    = versions.supported('pycifrw')
     seekpath_supported   = versions.supported('seekpath')
+    cif2cell_supported   = versions.supported('cif2cell')
 except:
     versions = None
 #end try

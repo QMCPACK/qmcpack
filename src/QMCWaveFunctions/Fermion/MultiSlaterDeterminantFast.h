@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "Platforms/PinnedAllocator.h"
 #include "OMPTarget/OMPallocator.hpp"
 
@@ -89,19 +88,6 @@ public:
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
-  void BackFlowStopper(const std::string& func_name) const
-  {
-    if (usingBF)
-      throw std::runtime_error(func_name + " not implemented!\n");
-  }
-  ///set BF pointers
-  void setBF(std::shared_ptr<BackflowTransformation> bf)
-  {
-    usingBF = true;
-    BFTrans = bf;
-    for (size_t id = 0; id < Dets.size(); id++)
-      Dets[id]->setBF(bf);
-  }
 
   LogValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,
@@ -201,10 +187,6 @@ public:
   // coefficient of csf expansion (smaller dimension)
   std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
-  // transformation
-  std::shared_ptr<BackflowTransformation> BFTrans;
-  bool usingBF;
-
   // temporary storage for evaluateDerivatives
   ParticleSet::ParticleGradient_t gmPG;
   std::vector<Matrix<RealType>> dpsia, dLa;
@@ -266,6 +248,15 @@ private:
   PsiValueType psi_ratio_to_ref_det_;
   /// new psi over new ref single det when one particle is moved
   PsiValueType new_psi_ratio_to_new_ref_det_;
+
+  void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi);
+
+  void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& optvars,
+                                                  std::vector<ValueType>& dlogpsi);
 };
 
 } // namespace qmcplusplus

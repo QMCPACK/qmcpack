@@ -168,8 +168,13 @@ public:
 	using value_type = typename Alloc::value_type;
 	using pointer = typename Alloc::pointer;
 	using const_pointer = typename Alloc::const_pointer;
+	using void_pointer = typename Alloc::void_pointer;
+	using const_void_pointer = typename Alloc::const_void_pointer;
 	using difference_type = typename Alloc::difference_type;
 	using size_type = typename Alloc::size_type;
+	using propagate_on_container_copy_assignment = std::false_type;
+	using propagate_on_container_move_assignment = std::false_type;
+	using propagate_on_container_swap 	         = std::false_type;
 	template<class T2>
 	using rebind_alloc = typename Alloc::template rebind<T2>;
 	template<class...As> static auto deallocate(allocator_type& a, As&&... as){return a.deallocate(std::forward<As>(as)...);}

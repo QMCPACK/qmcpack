@@ -290,7 +290,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   const int myTableIndex = elec.addTable(ions);
 
-  const auto& myTable = elec.getDistTable(myTableIndex);
+  const auto& myTable = elec.getDistTableAB(myTableIndex);
 
   // update all distance tables
   ions.update();
@@ -516,8 +516,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set));
-  dd->resize(nelec, norb);
+  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
 
   psi.addComponent(std::move(dd));
 
@@ -533,7 +532,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   const int myTableIndex = elec.addTable(ions);
 
-  const auto& myTable = elec.getDistTable(myTableIndex);
+  const auto& myTable = elec.getDistTableAB(myTableIndex);
 
   // update all distance tables
   ions.update();

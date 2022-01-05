@@ -74,7 +74,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   app_log() << "OrbitalImages::put" << std::endl;
 
   //set defaults
-  myName      = "OrbitalImages";
+  name_       = "OrbitalImages";
   derivatives = false;
   center_grid = false;
   corner      = 0.0;
@@ -84,7 +84,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
   std::string write_report = "yes";
   std::string ion_psname   = "ion0";
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(name_, "name");
   attrib.add(ion_psname, "ions");
   attrib.add(write_report, "report");
   attrib.put(cur);
@@ -110,7 +110,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "sposets")
         putContent(sposet_names, element);
       else if (name == "batch_size")
@@ -161,7 +161,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       for (int i = 0; i < sposet_names.size(); ++i)
         if (name == sposet_names[i])
           putContent((*sposet_indices)[i], element);

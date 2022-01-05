@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #endif
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "J2KECorrection.h"
@@ -40,7 +40,7 @@ struct J2OMPTargetMultiWalkerMem;
  * for spins up-up/down-down and up-down/down-up.
  *
  * Based on J2OMPTarget.h with these considerations
- * - DistanceTableData using SoA containers
+ * - DistanceTable using SoA containers
  * - support mixed precision: FT::real_type != OHMMS_PRECISION
  * - loops over the groups: elminated PairID
  * - support simd function
@@ -58,8 +58,8 @@ public:
   ///element position type
   using posT = TinyVector<valT, DIM>;
   ///use the same container
-  using DistRow  = DistanceTableData::DistRow;
-  using DisplRow = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTable::DistRow;
+  using DisplRow = DistanceTable::DisplRow;
 
 private:
   /** initialize storage Uat,dUat, d2Uat */

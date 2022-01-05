@@ -130,9 +130,9 @@ public:
 
   void resize_warrays(int n, int m, int l);
 
-  void randomize_grid(RandomGenerator_t& myRNG);
+  void randomize_grid(RandomGenerator& myRNG);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
 
   /** contribute local non-local move data
    * @param iel reference electron id.

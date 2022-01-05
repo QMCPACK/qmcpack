@@ -16,7 +16,7 @@
 #include "Message/Communicate.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
@@ -49,11 +49,11 @@ void test_lcao_spinor()
 
   elec_.setName("elec");
   elec_.create(1);
-  elec_.R[0][0]    = 0.1;
-  elec_.R[0][1]    = -0.3;
-  elec_.R[0][2]    = 1.7;
-  elec_.spins[0]   = 0.6;
-  elec_.is_spinor_ = true;
+  elec_.R[0][0]  = 0.1;
+  elec_.R[0][1]  = -0.3;
+  elec_.R[0][2]  = 1.7;
+  elec_.spins[0] = 0.6;
+  elec_.setSpinor(true);
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -84,13 +84,13 @@ void test_lcao_spinor()
 
   xmlNodePtr bnode = xmlFirstElementChild(root);
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
+  auto& bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
   SPOSet* spo = nullptr;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo = bb->createSPOSet(element);
+      spo = bb.createSPOSet(element);
   });
   REQUIRE(spo);
 
@@ -230,11 +230,11 @@ void test_lcao_spinor_excited()
 
   elec_.setName("elec");
   elec_.create(1);
-  elec_.R[0][0]    = 0.1;
-  elec_.R[0][1]    = -0.3;
-  elec_.R[0][2]    = 1.7;
-  elec_.spins[0]   = 0.6;
-  elec_.is_spinor_ = true;
+  elec_.R[0][0]  = 0.1;
+  elec_.R[0][1]  = -0.3;
+  elec_.R[0][2]  = 1.7;
+  elec_.spins[0] = 0.6;
+  elec_.setSpinor(true);
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -269,13 +269,13 @@ void test_lcao_spinor_excited()
 
   xmlNodePtr bnode = xmlFirstElementChild(root);
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
+  auto& bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
   SPOSet* spo = nullptr;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo = bb->createSPOSet(element);
+      spo = bb.createSPOSet(element);
   });
   REQUIRE(spo);
 

@@ -799,10 +799,8 @@ class Convert4qmc(Simulation):
         wfn_file,ptcl_file = self.list_output_files()
         if result_name=='orbitals':
             result.location = os.path.join(self.locdir,wfn_file)
-            if self.input.hdf5==True:
-                orbfile = self.get_prefix()+'.orbs.h5'
-                result.orbfile = os.path.join(self.locdir,orbfile)
-            #end if
+            orbfile = self.get_prefix()+'.orbs.h5'
+            result.orbfile = os.path.join(self.locdir,orbfile)
         elif result_name=='particles':
             result.location = os.path.join(self.locdir,ptcl_file)
         else:
@@ -841,7 +839,7 @@ class Convert4qmc(Simulation):
             self.input_code = 'pyscf'
             if result_name=='orbitals':
                 orbpath = os.path.relpath(result.h5_file,self.locdir)
-                input.pyscf = orbpath
+                input.orbitals = orbpath
             else:
                 implemented = False
             #end if
@@ -849,7 +847,7 @@ class Convert4qmc(Simulation):
             self.input_code = 'qp'
             if result_name=='orbitals':
                 orbpath = os.path.relpath(result.outfile,self.locdir)
-                input.qp = orbpath
+                input.orbitals = orbpath
             else:
                 implemented = False
             #end if

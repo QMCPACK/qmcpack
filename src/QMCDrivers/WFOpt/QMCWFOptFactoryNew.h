@@ -19,23 +19,14 @@ class Communicate;
 namespace qmcplusplus
 {
 class MCPopulation;
-class QMCOptimizeBatched;
 class WaveFunctionPool;
 class QMCHamiltonian;
 class TrialWaveFunction;
 class SampleStack;
 class MCWalkerConfiguration;
 class HamiltonianPool;
-class QMCOptimize;
 class QMCFixedSampleLinearOptimizeBatched;
 class ProjectData;
-
-QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
-                                       const ProjectData& project_data,
-                                       MCWalkerConfiguration& w,
-                                       MCPopulation&& pop,
-                                       SampleStack& samples,
-                                       Communicate* comm);
 
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               const ProjectData& project_data,

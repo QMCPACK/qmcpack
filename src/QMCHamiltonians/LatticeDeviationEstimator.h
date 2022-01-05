@@ -13,10 +13,9 @@
 #define QMCPLUSPLUS_LATTICEDEVIATION_H
 
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {

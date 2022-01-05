@@ -20,7 +20,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              TrialWaveFunction& Psi,
                                              QMCHamiltonian& H,
                                              std::vector<std::string>& H_KE_node_names,
-                                             RandomGenerator_t& Rng)
+                                             RandomGenerator& Rng)
     : e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
   P.createResource(driverwalker_resource_collection_.pset_res);
@@ -38,7 +38,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
   rng_ptr_list_.resize(crowd_size);
 
   // build a temporary H_KE for later calling makeClone
-  // need makeClone to setup internal myIndex of a new copy.
+  // need makeClone to setup internal my_index_ of a new copy.
   QMCHamiltonian H_KE;
   for (const std::string& node_name : H_KE_node_names)
     H_KE.addOperator(H.getHamiltonian(node_name)->makeClone(P, Psi), node_name);
@@ -54,11 +54,11 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
     h_ptr_list_[ib]  = H.makeClone(pCopy, psiCopy);
     h0_ptr_list_[ib] = H_KE.makeClone(pCopy, psiCopy);
 
-    rng_ptr_list_[ib] = std::make_unique<RandomGenerator_t>(Rng);
+    rng_ptr_list_[ib] = std::make_unique<RandomGenerator>(Rng);
     h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
     h0_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
 
-    rng_save_ptr_ = std::make_unique<RandomGenerator_t>(Rng);
+    rng_save_ptr_ = std::make_unique<RandomGenerator>(Rng);
   }
 }
 

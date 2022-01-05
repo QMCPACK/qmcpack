@@ -29,8 +29,8 @@ are given in the referenced sections.
 
 #. Run the cmake configure step and build with make
    (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
-   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
-   run.
+   tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
+   available when cmake is run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -289,7 +289,7 @@ the path to the source directory.
                           particularly for large electron counts.
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC. Pre-production quality for real-space.
-                          Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
     ENABLE_TIMERS         ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                           to avoid potential slowdown in tiny systems.
@@ -326,6 +326,7 @@ the path to the source directory.
   ::
 
     QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    RMG_BIN                Location of RMG binary (rmg-cpu)
     QMC_DATA               Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE            Add extra include paths
     QMC_EXTRA_LIBS         Add extra link libraries
@@ -416,13 +417,7 @@ to be reached. The following compilers have been verified:
   ::
 
     OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
-    OFFLOAD_ARCH for the target architecture if not using the compiler default.
-
-- IBM XL 16.1. Support NVIDIA GPUs.
-  
-  ::
-
-    -D ENABLE_OFFLOAD=ON
+    OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
 
 - AMD AOMP Clang 11.8. Support AMD GPUs.
   
@@ -436,11 +431,11 @@ to be reached. The following compilers have been verified:
   
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
 
-- HPE Cray 11. Support NVIDIA and AMD GPUs.
+- HPE Cray 11. It is derived from Clang and supports NVIDIA and AMD GPUs.
   
   ::
   
-    -D ENABLE_OFFLOAD=ON
+    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=nvptx64-nvidia-cuda -D OFFLOAD_ARCH=sm_80
 
 OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
 Some new CUDA functionality has been implemented to improve efficiency on NVIDIA GPUs in conjunction with the Offload code paths:
@@ -448,7 +443,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CMAKE_CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
@@ -1090,7 +1085,7 @@ of:
   not catch the most recent compiler-CUDA conflicts.
 
 * The Intel compiler must find a recent and compatible GCC
-  compiler in its path or one must be explicity set with the
+  compiler in its path or one must be explicitly set with the
   ``-gcc-name`` and ``-gxx-name`` flags in your ``compilers.yaml``.
 
 * Cross-compilation is non-intuitive. If the host OS and target OS are the same,
@@ -1134,7 +1129,7 @@ to add one:
 
   your-laptop> spack compiler add <path-to-compiler>
 
-The Intel ("classic") compiler and other commerical compilers may
+The Intel ("classic") compiler and other commercial compilers may
 require extra environment variables to work properly. If you have an
 module environment set-up by your system administrators, it is
 recommended that you set the module name in
@@ -1356,7 +1351,7 @@ parameter otherwise, it will default to ``cuda_arch=61``.
 
 Due to limitations in the Spack CUDA package, if your compiler and
 CUDA combination conflict, you will need to set a
-specific verison of CUDA that is compatible with your compiler on the
+specific version of CUDA that is compatible with your compiler on the
 command line. For example,
 
 ::
@@ -1366,7 +1361,7 @@ command line. For example,
 Loading QMCPACK into your environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you already have modules set-up in your enviroment, the Spack
+If you already have modules set-up in your environment, the Spack
 modules will be detected automatically. Otherwise, Spack will not
 automatically find the additional packages. A few additional steps are
 needed.  Please see the main Spack documentation for additional details: https://spack.readthedocs.io/en/latest/module_file_support.html.

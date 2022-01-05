@@ -22,7 +22,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
@@ -66,10 +66,10 @@ struct LocalECPotential : public OperatorBase
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  void delete_particle_quantities() override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;

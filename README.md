@@ -41,13 +41,13 @@ encouraged for highest performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 11.2.0, 9.1.0
-  * Clang/LLVM 12.0.1
+  * GCC 11.2.0, 9.2.0
+  * Clang/LLVM 13.0.0
   * Intel 19.1.1.217 configured to use C++ library from GCC 9.1.0 
   * NVIDIA HPC SDK 21.5 configured to use C++ library from GCC 9.1.0
 * Boost 1.77.0, 1.68.0
-* HDF5 1.12.1, 1.8.19
-* FFTW 3.3.9, 3.3.4
+* HDF5 1.12.1
+* FFTW 3.3.10, 3.3.8
 * CMake 3.21.1, 3.15.0
 * MPI
   * OpenMPI 4.1.1, 3.1.6
@@ -166,7 +166,7 @@ make -j 8
                          and use float and double for CUDA base and full precision.
      ENABLE_CUDA         ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                          Production quality for AFQMC. Pre-production quality for real-space.
-                         Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                         Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
      ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
      ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                          to avoid potential slowdown in tiny systems.
@@ -177,6 +177,7 @@ make -j 8
 
 ```
      QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
+     RMG_BIN             Location of RMG binary
      QMC_DATA            Specify data directory for QMCPACK performance and integration tests
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries

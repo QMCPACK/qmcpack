@@ -24,7 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
 #include <limits>
@@ -160,7 +160,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
 QMCDriver::~QMCDriver()
 {
-  delete_iter(Rng.begin(), Rng.end());
   if (DriftModifier)
     delete DriftModifier;
 }
@@ -227,7 +226,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W, RootName, myComm);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -268,7 +267,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return;
   int nfile = wset.size();
-  HDFWalkerInputManager W_in(W, myComm);
+  HDFWalkerInputManager W_in(W, W.getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5FileRoot = W_in.getFileRoot();
@@ -555,7 +554,7 @@ xmlNodePtr QMCDriver::getQMCNode()
     std::string cname((const char*)(cur->name));
     if (cname == "parameter")
     {
-      const XMLAttrString name(cur, "name");
+      const std::string name(getXMLAttributeValue(cur, "name"));
       if (name == "current")
         current_ptr = cur;
     }

@@ -14,7 +14,6 @@
 #ifndef QMCPLUSPLUS_SYMMETRYOPERATIONS_H
 #define QMCPLUSPLUS_SYMMETRYOPERATIONS_H
 
-#include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus

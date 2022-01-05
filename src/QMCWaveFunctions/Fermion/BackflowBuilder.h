@@ -14,28 +14,23 @@
 
 #ifndef QMCPLUSPLUS_BACKFLOW_BUILDER_H
 #define QMCPLUSPLUS_BACKFLOW_BUILDER_H
-//#include "Utilities/ProgressReportEngine.h"
-#include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/Backflow_ee.h"
-#include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
-#include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "LongRange/LRHandlerBase.h"
-#include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-#include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
-#include "LongRange/LRHandlerTemp.h"
-#include "LongRange/LRRPABFeeHandlerTemp.h"
-#include "Particle/ParticleSet.h"
-#include "Configuration.h"
+
 #include <map>
 #include <cmath>
+#include "Configuration.h"
+#include "Numerics/OneDimGridBase.h"
+#include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
+#include "LongRange/LRHandlerBase.h"
 
 namespace qmcplusplus
 {
+class BackflowTransformation;
+class Backflow_ee_kSpace;
+template<class T>
+struct BsplineFunctor;
+template<class FT>
+class Backflow_ee;
+
 class BackflowBuilder
 {
   using RealType     = BackflowFunctionBase::RealType;

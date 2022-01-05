@@ -335,8 +335,7 @@ qmc_run_and_check(
 
 # estimator tests
 include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-set(stat_python_reqs numpy;h5py)
-check_python_reqs(stat_python_reqs diamond-estimator add_estimator_tests)
+check_python_reqs("numpy;h5py" diamond-estimator add_estimator_tests)
 if(NOT QMC_CUDA)
   set(NMPI 4)
   set(NOMP 4)
@@ -462,6 +461,30 @@ if(add_estimator_tests)
   #   ${NMPI} ${NOMP}
   #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
   #   )
+
+  # This is the new 1RDM test, it passes with 16 sigma, which is better than the
+  # old test but we need to fix these in general.
+  simple_run_and_check(
+    short-diamondC_1x1x1_pp-vmcbatch-estimator-onebodydensitymatrices
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_onebodydensitymatrices_vmcbatch_short${IFEXT}.in.xml
+    ${NMPI}
+    ${NOMP}
+      check_stats.py
+      -s
+      0
+      -q
+      obdm
+      -e
+      20
+      -n
+      16
+      -c
+      8
+      -p
+      qmc_onebodydensitymatrices_short
+      -r
+      qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat)
 
   simple_run_and_check(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity
@@ -1456,6 +1479,24 @@ if(NOT QMC_CUDA)
     DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
   )
 
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_short_vmc_dmc_mwalkers
+    det_qmc_short_vmc_dmc_mwalkers_with_checks.in.xml
+    1
+    1
+    TRUE
+    0
+    DET_DIAMOND_VMC_MWALKERS1_SCALARS # VMC cycle 1
+    1
+    DET_DIAMOND_VMC_MWALKERS2_SCALARS # VMC cycle 2
+    2
+    DET_DIAMOND_DMC_MWALKERS1_SCALARS # DMC cycle 1
+    3
+    DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
+  )
+
   if((NOT QMC_MIXED_PRECISION)
      AND (NOT QMC_CUDA)
      AND (NOT QMC_COMPLEX))
@@ -1569,10 +1610,83 @@ if(NOT QMC_CUDA)
     DET_DIAMOND_DMC_TM3_SCALARS # DMC v3
   )
 
+   if(QMC_MIXED_PRECISION)
+    #v0
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "totenergy" "-10.34873615 0.00001861")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "kinetic" "9.94328567 0.00003064")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "potential" "-20.29202179 0.00000232")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "eeenergy" "-2.70623197 0.00000776")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "ionion" "-12.77567016 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "localecp" "-5.26283000 0.00001536")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "nonlocalecp" "0.45271034 0.00000689")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "mpc" "-2.43479306 0.00000857")
+    #v1
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "totenergy" "-10.43233880 0.00001861")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "kinetic" "10.62346547 0.00003064")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "potential" "-21.05580426 0.00000232")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "eeenergy" "-2.86219949 0.00000776")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "ionion" "-12.77567016 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "localecp" "-5.36456699 0.00001536")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "nonlocalecp" "-0.05336763 0.00000689")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "mpc" "-2.58506831 0.00000857")
+    #v3
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "totenergy" "-10.33153629 0.00001861")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "kinetic" "12.08374493 0.00003064")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "potential" "-22.41528126 0.00000232")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "eeenergy" "-2.76695506 0.00000776")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "ionion" "-12.77567016 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "localecp" "-6.70545316 0.00001536")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "nonlocalecp" "-0.16720288 0.00000689")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "mpc" "-2.50150320 0.00000857")
+   else()
+    #v0
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "totenergy" "-10.74439823 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "kinetic" "9.36905833 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "potential" "-20.11345656 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "eeenergy" "-2.55746488 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "ionion" "-12.77566743 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "localecp" "-5.08312451 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "nonlocalecp" "0.30280026 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM1_BATCH_SCALARS "mpc" "-2.31725901 0.000001")
+    #v1
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "totenergy" "-10.78723681 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "kinetic" "11.17582936 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "potential" "-21.96306617 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "eeenergy" "-2.55624212 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "ionion" "-12.77566743 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "localecp" "-6.99270835 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "nonlocalecp" "0.36155173 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM2_BATCH_SCALARS "mpc" "-2.31923312 0.000001")
+    #v3
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "totenergy" "-10.77336600 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "kinetic" "13.76804588 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "potential" "-24.54141188 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "eeenergy" "-2.69135508 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "ionion" "-12.77566743 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "localecp" "-9.09394903 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "nonlocalecp" "0.01955966 0.000001")
+    list(APPEND DET_DIAMOND_DMC_TM3_BATCH_SCALARS "mpc" "-2.46970571 0.000001")
+   endif()
+
+   qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmcbatch-tmoves_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_vmcbatch_dmcbatch_tm
+    det_qmc_vmcbatch_dmcbatch_tm.in.xml
+    1
+    1
+    TRUE
+    1
+    DET_DIAMOND_DMC_TM1_BATCH_SCALARS # DMC v0
+    2
+    DET_DIAMOND_DMC_TM2_BATCH_SCALARS # DMC v1
+    3
+    DET_DIAMOND_DMC_TM3_BATCH_SCALARS # DMC v3
+  )
+
 
   # traces tests
-  set(traces_python_reqs numpy;h5py)
-  check_python_reqs(traces_python_reqs diamond-traces add_traces_tests)
+  check_python_reqs("numpy;h5py" diamond-traces add_traces_tests)
   if(add_traces_tests)
     if(QMC_MIXED_PRECISION)
       # traces with only scalars on
@@ -2045,30 +2159,32 @@ else()
 endif()
 
 if(NOT QMC_CUDA)
-  list(APPEND DET_DIAMOND_PARAM uu_0 -1.010849732e-05 0.00001)
-  list(APPEND DET_DIAMOND_PARAM uu_1 1.221957505 0.00010)
-  list(APPEND DET_DIAMOND_PARAM ud_0 1.094114467e-07 0.00001)
-  list(APPEND DET_DIAMOND_PARAM ud_1 0.0001130922027 0.00001)
-  list(APPEND DET_DIAMOND_PARAM eC_2 0.0 0.00001)
-  list(APPEND DET_DIAMOND_PARAM eC_3 8.196343356 0.00001)
+  if(NOT QMC_MIXED_PRECISION)
+    list(APPEND DET_DIAMOND_PARAM uu_0 -1.010849732e-05 0.00001)
+    list(APPEND DET_DIAMOND_PARAM uu_1 1.221957505 0.00010)
+    list(APPEND DET_DIAMOND_PARAM ud_0 1.094114467e-07 0.00001)
+    list(APPEND DET_DIAMOND_PARAM ud_1 0.0001130922027 0.00001)
+    list(APPEND DET_DIAMOND_PARAM eC_2 0.0 0.00001)
+    list(APPEND DET_DIAMOND_PARAM eC_3 8.196343356 0.00001)
 
-  qmc_run_and_check_custom_scalar(
-    BASE_NAME
-    deterministic-diamondC_1x1x1_pp-param-grad
-    BASE_DIR
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    PREFIX
-    det_qmc_short_param_grad.param
-    INPUT_FILE
-    det_qmc_param_grad.xml
-    PROCS
-    1
-    THREADS
-    1
-    SERIES
-    0
-    EQUILIBRATION
-    0
-    SCALAR_VALUES
-    DET_DIAMOND_PARAM)
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      deterministic-diamondC_1x1x1_pp-param-grad
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      PREFIX
+      det_qmc_short_param_grad.param
+      INPUT_FILE
+      det_qmc_param_grad.xml
+      PROCS
+      1
+      THREADS
+      1
+      SERIES
+      0
+      EQUILIBRATION
+      0
+      SCALAR_VALUES
+      DET_DIAMOND_PARAM)
+  endif()
 endif()

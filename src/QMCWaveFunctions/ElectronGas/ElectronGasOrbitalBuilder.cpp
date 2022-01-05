@@ -59,11 +59,10 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     nc2 = nc;
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFNode(NULL);
-  std::string cname;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == backflow_tag)
     {
       // FIX FIX FIX !!!
@@ -73,8 +72,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     }
     cur = cur->next;
   }
-  typedef SlaterDet SlaterDeterminant_t;
-  HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
+  HEGGrid<RealType> egGrid(targetPtcl.Lattice);
   int nat = targetPtcl.getTotalNum();
   if (nc == 0)
     nc = nc2 = egGrid.getShellIndex(nat / 2);
@@ -107,52 +105,37 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     if (nup != ndn)
     {
       int nkpts2 = (ndn - 1) / 2;
-      HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
+      HEGGrid<RealType> egGrid2(targetPtcl.Lattice);
       egGrid2.createGrid(nc2, nkpts2);
     }
     psid = std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
   }
 
   //create a Slater determinant
-
   if (UseBackflow)
   {
     app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
-    //create up determinant
-    auto updet = std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psiu), nullptr, 0);
-    updet->set(0, nup);
     PtclPoolType dummy;
     BackflowBuilder bfbuilder(targetPtcl, dummy);
     auto BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
-    auto sdet    = std::make_unique<SlaterDetWithBackflow>(targetPtcl, nullptr);
-    sdet->add(std::move(updet), 0);
+    std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dets;
+    //create up determinant
+    dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(std::move(psiu), *BFTrans, 0, nup));
+    //create down determinant
     if (ndn > 0)
-    {
-      //create down determinant
-      auto downdet = std::make_unique<DiracDeterminantWithBackflow>(targetPtcl, std::move(psid), nullptr, nup);
-      downdet->set(nup, ndn);
-      sdet->add(std::move(downdet), 1);
-    }
-    if (BFTrans->isOptimizable())
-      sdet->Optimizable = true;
-    sdet->setBF(std::move(BFTrans));
+      dets.push_back(std::make_unique<DiracDeterminantWithBackflow>(std::move(psid), *BFTrans, nup, nup + ndn));
+    auto sdet = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dets), std::move(BFTrans));
     return sdet;
   }
   else
   {
+    std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
     //create up determinant
-    auto updet = std::make_unique<DiracDeterminant<>>(std::move(psiu));
-    updet->set(0, nup);
-    auto sdet = std::make_unique<SlaterDeterminant_t>(targetPtcl);
-    sdet->add(std::move(updet), 0);
+    dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psiu), 0, nup));
+    //create down determinant
     if (ndn > 0)
-    {
-      //create down determinant
-      auto downdet = std::make_unique<DiracDeterminant<>>(std::move(psid));
-      downdet->set(nup, ndn);
-      sdet->add(std::move(downdet), 1);
-    }
-    return sdet;
+      dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psid), nup, nup + ndn));
+    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
   }
 }
 

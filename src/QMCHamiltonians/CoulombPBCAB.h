@@ -23,7 +23,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 namespace qmcplusplus
 {
 /** @ingroup hamiltonian
@@ -134,10 +134,10 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  void delete_particle_quantities() override;
+  void deleteParticleQuantities() override;
 #endif
 
 

@@ -73,11 +73,11 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.put(cur);
   }
 
-  SourcePtcl = ParticleSets[sourceName];
-  if (SourcePtcl == 0)
-  {
-    APP_ABORT("Einspline needs the source particleset");
-  }
+  auto pit(ParticleSets.find(sourceName));
+  if (pit == ParticleSets.end())
+    myComm->barrier_and_abort("Einspline needs the source particleset");
+  else
+    SourcePtcl = pit->second;
 
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
@@ -109,15 +109,10 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
       oAttrib.add(particle_hole_pairs, "pairs");
       oAttrib.put(cur);
       if (occ_mode == "excited")
-      {
         putContent(Occ, cur);
-      }
       else if (occ_mode != "ground")
-      {
-        app_error() << "Only ground state occupation currently supported "
-                    << "in EinsplineSetBuilder.\n";
-        APP_ABORT("EinsplineSetBuilder::createSPOSet");
-      }
+        myComm->barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation currently "
+                                  "supported in EinsplineSetBuilder.");
     }
     cur = cur->next;
   }
@@ -164,11 +159,11 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   // safeguard for a removed feature
   if (truncate == "yes")
-    APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
+    myComm->barrier_and_abort("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
   std::string useGPU("no");
 #if !defined(QMC_COMPLEX)
-  if (UseRealOrbitals)
+  if (use_real_splines_)
   {
     if (MixedSplineReader == 0)
     {

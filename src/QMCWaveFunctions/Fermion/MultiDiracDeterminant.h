@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
@@ -85,8 +84,6 @@ public:
    * Note: ciConfigList should have been populated when calling this function
    */
   void set(int first, int nel, int ref_det_id);
-
-  void setBF(std::shared_ptr<BackflowTransformation>) {}
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
