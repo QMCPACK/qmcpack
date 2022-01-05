@@ -24,7 +24,7 @@ using WP = WalkerProperties::Indexes;
 SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w,
                                TrialWaveFunction& psi,
                                QMCHamiltonian& h,
-                               RandomGenerator_t& rg)
+                               RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;

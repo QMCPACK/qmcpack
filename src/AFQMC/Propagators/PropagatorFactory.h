@@ -54,7 +54,7 @@ public:
   }
 
   // returns a pointer to the base Propagator class associated with a given ID
-  Propagator& getPropagator(TaskGroup_& TG, const std::string& ID, Wavefunction& wfn, RandomGenerator_t* rng)
+  Propagator& getPropagator(TaskGroup_& TG, const std::string& ID, Wavefunction& wfn, RandomGenerator* rng)
   {
     auto xml = xmlBlocks.find(ID);
     if (xml == xmlBlocks.end())
@@ -94,7 +94,7 @@ protected:
   std::map<std::string, AFQMCInfo>& InfoMap;
 
   // generates a new Propagator and returns the pointer to the base class
-  Propagator buildPropagator(TaskGroup_& TG, xmlNodePtr cur, Wavefunction& wfn, RandomGenerator_t* rng)
+  Propagator buildPropagator(TaskGroup_& TG, xmlNodePtr cur, Wavefunction& wfn, RandomGenerator* rng)
   {
     std::string type("afqmc");
     OhmmsAttributeSet oAttrib;
@@ -116,7 +116,7 @@ protected:
     return Propagator{};
   }
 
-  Propagator buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cur, Wavefunction& wfn, RandomGenerator_t* r);
+  Propagator buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cur, Wavefunction& wfn, RandomGenerator* r);
 
   std::map<std::string, xmlNodePtr> xmlBlocks;
 

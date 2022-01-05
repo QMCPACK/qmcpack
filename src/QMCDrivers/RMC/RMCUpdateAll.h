@@ -34,7 +34,7 @@ public:
   RMCUpdateAllWithDrift(MCWalkerConfiguration& w,
                         TrialWaveFunction& psi,
                         QMCHamiltonian& h,
-                        RandomGenerator_t& rg,
+                        RandomGenerator& rg,
                         std::vector<int> act,
                         std::vector<int> tp);
   ~RMCUpdateAllWithDrift() override;
