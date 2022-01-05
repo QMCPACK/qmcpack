@@ -161,7 +161,7 @@ bool hdf_archive::is_group(const std::string& aname)
     return false;
   hid_t p = group_id.empty() ? file_id : group_id.top();
   p       = (aname[0] == '/') ? file_id : p;
-  if (H5Lexists(p, aname.c_str(), H5P_DEFAULT) <= 0)
+  if ( !(H5Lexists(p, aname.c_str(), H5P_DEFAULT) > 0))
     return false;
   return true;
 }
@@ -172,7 +172,7 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
   if (Mode[NOIO] || file_id == is_closed)
     return is_closed;
   hid_t p = group_id.empty() ? file_id : group_id.top();
-  if ( H5Lexists(p, gname.c_str(), H5P_DEFAULT) <= 0 && createit)
+  if ( !(H5Lexists(p, gname.c_str(), H5P_DEFAULT) > 0) && createit)
   {
     g = H5Gcreate2(p, gname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       
