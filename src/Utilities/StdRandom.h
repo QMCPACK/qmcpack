@@ -62,7 +62,18 @@ public:
   using Engine      = std::mt19937;
   using uint_type   = Engine::result_type;
 
-  StdRandom(uint_type iseed = 911) : engine(iseed) {}
+  StdRandom(uint_type iseed = 911) : engine(iseed)
+  {
+    // Although MT19937 needs only 624 numbers to hold the state, C++ standard libraries may choose different
+    // ways to represent the state. libc++ uses 624 numbers but libstdc++ uses 625 numbers. The additional
+    // number is an index to the 624 numbers. So we will just count and store the number.
+    std::vector<uint_type> state;
+    state.reserve(625); // the maggic number is chosen based on libstdc++ using 625 numbers while libc++ uses
+    std::stringstream otemp;
+    otemp << engine;
+    copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(), back_inserter(state));
+    stream_state_size = state.size();
+  }
 
   void init(int iseed_in)
   {
@@ -75,7 +86,7 @@ public:
   result_type operator()() { return distribution(engine); }
   void write(std::ostream& rout) const { rout << engine; }
   void read(std::istream& rin) { rin >> engine; }
-  size_t state_size() { return engine.state_size; }
+  size_t state_size() const { return stream_state_size; }
 
   void load(const std::vector<uint_type>& newstate)
   {
@@ -101,6 +112,8 @@ private:
   ///random number generator [0,1)
   uniform_real_distribution_as_boost<T> distribution;
   Engine engine;
+  /// the number count of streaming states. Must match read/write/load/save
+  std::size_t stream_state_size;
 };
 
 } // namespace qmcplusplus

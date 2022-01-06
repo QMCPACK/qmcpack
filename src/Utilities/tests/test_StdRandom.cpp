@@ -34,6 +34,8 @@ TEST_CASE("StdRandom save and load", "[utilities]")
 
   rng.save(state);
 
+  CHECK(state.size() == rng.state_size());
+
   DoubleRNG rng2;
   rng2.init(110);
   rng2.load(state);
