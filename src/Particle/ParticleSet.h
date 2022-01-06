@@ -303,6 +303,12 @@ public:
                           int iat,
                           const std::vector<SingleParticlePos_t>& displs);
 
+  /// batched version of makeMoveWithSpin
+  static void mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
+                                  int iat,
+                                  const std::vector<SingleParticlePos_t>& displs,
+                                  const std::vector<Scalar_t>& sdispls);
+
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ random displacement of the iat-th particle
