@@ -21,6 +21,7 @@ else()
   hip_add_library(platform_cuda_runtime ${CUDA_RT_SRCS})
   target_link_libraries(platform_cuda_runtime PUBLIC platform_rocm_runtime)
   hip_add_library(platform_cuda_LA ${CUDA_LA_SRCS})
+  target_link_libraries(platform_cuda_LA PRIVATE qmc_external_thrust)
   target_link_libraries(platform_cuda_LA PUBLIC platform_rocm_LA)
 endif()
 
