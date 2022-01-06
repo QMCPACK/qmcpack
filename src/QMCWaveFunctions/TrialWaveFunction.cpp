@@ -1258,6 +1258,7 @@ void TrialWaveFunction::initialize_TWF_Prototype(ParticleSet& P, TWFPrototype& t
       //Needs a bit of logic and protection before this reaches production.
       //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
       //det->register_TWF_Prototype(P, twf);
+      Z[i]->register_TWF_Prototype(P,twf);
     }
     else //Is Jastrow, so do nothing right now.
     {}
