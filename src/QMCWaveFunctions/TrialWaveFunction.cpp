@@ -128,7 +128,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
   G = P.G;
   L = P.L;
 
-  log_real_   = std::real(logpsi);
+  log_real_  = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return log_real_;
 }
@@ -154,7 +154,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
     lapl.resize(num_particles);
     grad           = czero;
     lapl           = czero;
-    twf.log_real_   = czero;
+    twf.log_real_  = czero;
     twf.PhaseValue = czero;
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
@@ -227,7 +227,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
     if (Z[i]->Optimizable)
       logpsi += Z[i]->evaluateLog(P, P.G, P.L);
   }
-  log_real_   = std::real(logpsi);
+  log_real_  = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
 
   //In case we need to recompute orbitals, initialize dummy vectors for G and L.
@@ -298,7 +298,7 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
     lapl.resize(num_particles);
     grad           = czero;
     lapl           = czero;
-    twf.log_real_   = czero;
+    twf.log_real_  = czero;
     twf.PhaseValue = czero;
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
@@ -357,7 +357,7 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
     lapl.resize(num_particles);
     grad           = czero;
     lapl           = czero;
-    twf.log_real_   = czero;
+    twf.log_real_  = czero;
     twf.PhaseValue = czero;
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
@@ -553,6 +553,38 @@ void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>
   }
 }
 
+void TrialWaveFunction::mw_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                            int iat,
+                                            std::vector<GradType>& grad_now,
+                                            std::vector<ComplexType>& spingrad_now)
+{
+  const int num_wf = wf_list.size();
+  grad_now.resize(num_wf);
+  spingrad_now.resize(num_wf);
+  std::fill(grad_now.begin(), grad_now.end(), GradType(0));
+  std::fill(spingrad_now.begin(), spingrad_now.end(), ComplexType(0));
+
+  auto& wf_leader = wf_list.getLeader();
+  ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
+  const int num_wfc             = wf_leader.Z.size();
+  auto& wavefunction_components = wf_leader.Z;
+
+  std::vector<GradType> grad_now_z(num_wf);
+  std::vector<ComplexType> spingrad_now_z(num_wf);
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    ScopedTimer localtimer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_component[i]->mw_evalGradWithSpin(wfc_list, p_list, iat, grad_now_z, spingrad_now_z);
+    for (int iw = 0; iw < wf_list.size(); iw++)
+    {
+      grad_now[iw] += grad_now_z[iw];
+      spingrad_now[iw] += spingrad_now_z[iw];
+    }
+  }
+}
+
 
 // Evaluates the gradient w.r.t. to the source of the Laplacian
 // w.r.t. to the electrons of the wave function.
@@ -732,7 +764,7 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
   }
   PhaseValue += PhaseDiff;
   PhaseDiff = 0.0;
-  log_real_  = 0;
+  log_real_ = 0;
   for (int i = 0; i < Z.size(); i++)
     log_real_ += std::real(Z[i]->get_log_value());
 }
@@ -751,7 +783,7 @@ void TrialWaveFunction::mw_accept_rejectMove(const RefVectorWithLeader<TrialWave
   for (int iw = 0; iw < wf_list.size(); iw++)
     if (isAccepted[iw])
     {
-      wf_list[iw].log_real_   = 0;
+      wf_list[iw].log_real_  = 0;
       wf_list[iw].PhaseValue = 0;
     }
 
@@ -811,7 +843,7 @@ TrialWaveFunction::LogValueType TrialWaveFunction::evaluateGL(ParticleSet& P, bo
   // remove when KineticEnergy use WF.G/L instead of P.G/L
   G          = P.G;
   L          = P.L;
-  log_real_   = std::real(logpsi);
+  log_real_  = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return logpsi;
 }
@@ -835,7 +867,7 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
     wfs.L.resize(num_particles);
     wfs.G          = czero;
     wfs.L          = czero;
-    wfs.log_real_   = czero;
+    wfs.log_real_  = czero;
     wfs.PhaseValue = czero;
   }
 
@@ -956,7 +988,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBu
   G = P.G;
   L = P.L;
 
-  log_real_   = std::real(logpsi);
+  log_real_  = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   //printGL(P.G,P.L);
   buf.put(PhaseValue);
@@ -1186,9 +1218,10 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
     Z[i]->createResource(collection);
 }
 
-void TrialWaveFunction::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list)
+void TrialWaveFunction::acquireResource(ResourceCollection& collection,
+                                        const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader = wf_list.getLeader();
+  auto& wf_leader               = wf_list.getLeader();
   auto& wavefunction_components = wf_leader.Z;
   const int num_wfc             = wf_leader.Z.size();
   for (int i = 0; i < num_wfc; ++i)
@@ -1198,9 +1231,10 @@ void TrialWaveFunction::acquireResource(ResourceCollection& collection, const Re
   }
 }
 
-void TrialWaveFunction::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<TrialWaveFunction>& wf_list)
+void TrialWaveFunction::releaseResource(ResourceCollection& collection,
+                                        const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader = wf_list.getLeader();
+  auto& wf_leader               = wf_list.getLeader();
   auto& wavefunction_components = wf_leader.Z;
   const int num_wfc             = wf_leader.Z.size();
   for (int i = 0; i < num_wfc; ++i)
