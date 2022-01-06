@@ -26,6 +26,7 @@ class PSdispatcher
 public:
   using Walker_t            = ParticleSet::Walker_t;
   using SingleParticlePos_t = ParticleSet::SingleParticlePos_t;
+  using Scalar_t            = ParticleSet::Scalar_t;
 
   PSdispatcher(bool use_batch);
 
