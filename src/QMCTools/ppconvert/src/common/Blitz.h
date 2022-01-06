@@ -72,7 +72,10 @@ struct Array : base_type{
 	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	sizes_type shape() const{return base_type::sizes();}
 	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
-	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
+	void resizeAndPreserve(sizes_type sizes){
+		// must do a reinterpret_cast due to failure with libc++ type automatic conversion
+		base_type::reextent(reinterpret_cast<typename base_type::extensions_type const&>(sizes));
+	}
 	template<class... Ints>
 	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
 	typename base_type::element_ptr       data()      {return base_type::data_elements();}
