@@ -539,22 +539,21 @@ void QMCCostFunctionBase::updateXmlNodes()
       std::ostringstream vp_filename;
       vp_filename << RootName << ".vp.h5";
 
-      xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//override_variational_parameters", acontext);
-      // Tag is present. Rewrite the href attribute.
-      if (result->nodesetval->nodeNr > 0)
+      OhmmsXPathObject vp_file_nodes("//override_variational_parameters", acontext);
+      if (vp_file_nodes.empty())
       {
-        for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
-        {
-          xmlNodePtr vp_file_node = result->nodesetval->nodeTab[iparam];
-          xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
-        }
-      }
-      else
-      {
-        // Create a new tag
+        // Element is not present. Create a new one.
         xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
         xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
         xmlAddChild(wf_root, vp_file_node);
+      }
+      else
+      {
+        // Element is present. Rewrite the href attribute.
+        for (int iparam = 0; iparam < vp_file_nodes.size(); iparam++)
+        {
+          xmlSetProp(vp_file_nodes[iparam], BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        }
       }
     }
 
