@@ -65,6 +65,13 @@ public:
                           std::vector<PsiValueType>& ratios,
                           std::vector<GradType>& grad_new) const;
 
+  void flex_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  int iat,
+                                  std::vector<PsiValueType>& ratios,
+                                  std::vector<GradType>& grad_new,
+                                  std::vector<ComplexType>& spingrad_new) const;
+
   void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               int iat,

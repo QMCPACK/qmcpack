@@ -127,6 +127,27 @@ void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFuncti
   }
 }
 
+void TWFdispatcher::flex_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               int iat,
+                                               std::vector<PsiValueType>& ratios,
+                                               std::vector<GradType>& grad_new,
+                                               std::vector<ComplexType>& spingrad_new) const
+{
+  assert(wf_list.size() == p_list.size());
+  if (use_batch_)
+    TrialWaveFunction::mw_calcRatioGradWithSpin(wf_list, p_list, iat, ratios, grad_new, spingrad_new);
+  else
+  {
+    const int num_wf = wf_list.size();
+    ratios.resize(num_wf);
+    grad_new.resize(num_wf);
+    spingrad_new.resize(num_wf);
+    for (size_t iw = 0; iw < num_wf; iw++)
+      ratios[iw] = wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
+  }
+}
+
 void TWFdispatcher::flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                            int iat,
