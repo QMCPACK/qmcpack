@@ -355,6 +355,17 @@ public:
                                std::vector<PsiValueType>& ratios,
                                std::vector<GradType>& grad_new);
 
+  /** batched version of ratioGradWithSpin
+   *
+   *  all vector sizes must match
+   */
+  static void mw_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                       int iat,
+                                       std::vector<PsiValueType>& ratios,
+                                       std::vector<GradType>& grad_new,
+                                       std::vector<ComplexType>& spingrad_new);
+
   /** Prepare internal data for updating WFC correspond to a particle group
    *  Particle groups usually correspond to determinants of different spins.
    *  This call can be used to handle precomputation for PbyP moves.
