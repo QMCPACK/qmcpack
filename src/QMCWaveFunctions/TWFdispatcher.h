@@ -28,7 +28,7 @@ public:
   using ComputeType  = TrialWaveFunction::ComputeType;
   using ValueType    = TrialWaveFunction::ValueType;
   using GradType     = TrialWaveFunction::GradType;
-  using ComplexType  = TrialWaveFunction::ComplexType;
+  using Complex      = TrialWaveFunction::ComplexType;
 
   TWFdispatcher(bool use_batch);
 
@@ -58,7 +58,7 @@ public:
                              const RefVectorWithLeader<ParticleSet>& p_list,
                              int iat,
                              std::vector<GradType>& grad_now,
-                             std::vector<ComplexType>& spingrad_now) const;
+                             std::vector<Complex>& spingrad_now) const;
 
   void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                           const RefVectorWithLeader<ParticleSet>& p_list,
@@ -71,7 +71,7 @@ public:
                                   int iat,
                                   std::vector<PsiValueType>& ratios,
                                   std::vector<GradType>& grad_new,
-                                  std::vector<ComplexType>& spingrad_new) const;
+                                  std::vector<Complex>& spingrad_new) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
