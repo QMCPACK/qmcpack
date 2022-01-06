@@ -62,15 +62,15 @@ public:
    *
    *  @param P. Particle set.
    *  @return log(Psi).
-   */ 
+   */
   RealType evaluateLog(ParticleSet& P);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //These are convenience functions/wrappers to SPOSet calls.  Idea being that observables just need      //
-  //to make calls to this object to build the auxiliary matrices required for fast derivative computation.//  
+  //to make calls to this object to build the auxiliary matrices required for fast derivative computation.//
   //On the other hand, it wouldn't be unreasonable to make the observables do the SPOSet calls themselves.//
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
   /** @brief Returns the non-rectangular slater matrices M_ij=phi_j(r_i) (N_particle x N_orbs) for each species group. 
    *
    *  @param P particle set.
@@ -85,7 +85,7 @@ public:
    *  @param iel particle ID.
    *  @param val Vector of phi_i(r_iel) for all i=0,Norbs.
    *  @return Void
-   */ 
+   */
   IndexType get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val);
 
   /** @brief Returns the ion derivative of all orbitals (relevant to given species/group) at a particular particle coordinate.
@@ -96,13 +96,13 @@ public:
    *  @param iat_source ion index w.r.t. which the ion derivative is taken
    *  @param dval Vector of d/dR_iat_source phi_i(r_iel) for all i=0,Norbs. First index is X derivative, second Y derivative, etc.
    *  @return Void
-   */ 
+   */
   IndexType get_igrad_row(const ParticleSet& P,
                           const ParticleSet& source,
                           IndexType iel,
                           IndexType iat_source,
                           std::vector<ValueVector_t>& dval);
-  
+
   /** @brief Returns value, gradient, and laplacian matrices for all orbitals and all particles, species by species. 
    *
    *  @param P particle set.
@@ -110,7 +110,7 @@ public:
    *  @param gmat electron gradient of slater matrix [G_ij]_a = d/dr_a,i phi_j(r_i).  a=x,y,z  
    *  @param lmat electron laplacian of slater matrix [L_ij] = \nabla^2_i phi_j(r_i).
    *  @return Void
-   */ 
+   */
   void get_egrad_elapl_M(const ParticleSet& P,
                          std::vector<ValueMatrix_t>& mvec,
                          std::vector<GradMatrix_t>& gmat,
@@ -123,7 +123,7 @@ public:
    *  @param iat ion ID w.r.t. which to take derivative.
    *  @param dmvec Slater matrix d/dR_{iat,a} M_ij=d/dR_{iat,a} phi_j(r_i) for each species group.  First index is a=x,y,z.
    *  @return Void
-   */ 
+   */
   void get_igrad_M(const ParticleSet& P,
                    const ParticleSet& source,
                    int iat,
@@ -137,23 +137,23 @@ public:
    *  @param dmvec Slater matrix d/dR_{iat,a} M_ij=d/dR_{iat,a} phi_j(r_i) for each species group.  First index is a=x,y,z.
    *  @param dmvec Slater matrix d/dR_{iat,a} L_ij=d/dR_{iat,a} \nabla^2_i phi_j(r_i) for each species group.  First index is a=x,y,z.
    *  @return Void
-   */ 
+   */
   void get_igrad_igradelapl_M(const ParticleSet& P,
                               const ParticleSet& source,
                               int iat,
                               std::vector<std::vector<ValueMatrix_t>>& dmvec,
                               std::vector<std::vector<ValueMatrix_t>>& dlmat);
 
-  
+
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
    *   state occupations.
    *
    *  @param A non-rectangular matrices of SPOSet derived quantities, evaluated on all orbitals and all particles.
    *  @param Aslice square matrices consistent with a ground state occupation.
    *  @return Void
-   */ 
+   */
   void get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
-  
+
   /** @brief Calculates derivative of observable via Tr[M^{-1} dB - X * dM ].  Consistent with ground state occupation.
    *
    *  @param Minv. inverse of slater matrices for ground state occupations. 
@@ -161,7 +161,7 @@ public:
    *  @param dM. Target derivative of M, and is consistent with ground state occupation.
    *  @param dB. Target derivative of B, and is consistent with ground state occupation.
    *  @return Void
-   */ 
+   */
   ValueType compute_gs_derivative(const std::vector<ValueMatrix_t>& Minv,
                                   const std::vector<ValueMatrix_t>& X,
                                   const std::vector<ValueMatrix_t>& dM,
@@ -176,7 +176,7 @@ public:
    *  @param M. List of slater matrices for each species.  These are square and consistent with some occupation.
    *  @param Minv. The species by species list of inverted matrices from M.
    *  @return Void.
-   */ 
+   */
   void invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
 
   /** @brief Helper function that inverts all slater matrices in our species list.
@@ -185,7 +185,7 @@ public:
    *  @param B. Observable auxiliary matrix for a given occupation.
    *  @param X. M^-1*B*M^-1 is stored in this list of matrices.
    *  @return Void. 
-   */ 
+   */
   void build_X(const std::vector<ValueMatrix_t>& Minv,
                const std::vector<ValueMatrix_t>& B,
                std::vector<ValueMatrix_t>& X);
@@ -194,7 +194,7 @@ public:
    *
    *  @param A. The list of matrices to be zeroed out.  After call, A is all zeros.
    *  @return Void.
-   */ 
+   */
   void wipe_matrix(std::vector<ValueMatrix_t>& A);
   /** @brief Returns Tr(A*B).  Actually, we assume a block diagonal structure, so this is 
    *    really Sum_i Tr(A_i*B_i), where i is the species index.
@@ -204,7 +204,7 @@ public:
    *  @return Value of Sum_i Tr(A_i*B_i).
    */
   ValueType trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B);
-  
+
 
 private:
   std::vector<IndexType> num_ptcls;
@@ -214,7 +214,7 @@ private:
   std::vector<ValueMatrix_t> psiM;
   std::vector<ValueMatrix_t> psiMinv;
   std::vector<WaveFunctionComponent*> J;
- 
+
   bool initialized;
 };
 
