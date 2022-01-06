@@ -28,6 +28,7 @@ public:
   using ComputeType  = TrialWaveFunction::ComputeType;
   using ValueType    = TrialWaveFunction::ValueType;
   using GradType     = TrialWaveFunction::GradType;
+  using ComplexType  = TrialWaveFunction::ComplexType;
 
   TWFdispatcher(bool use_batch);
 
