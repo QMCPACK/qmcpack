@@ -89,6 +89,25 @@ void TWFdispatcher::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& 
   }
 }
 
+void TWFdispatcher::flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          int iat,
+                                          std::vector<GradType>& grad_now,
+                                          std::vector<ComplexType>& spingrad_now) const
+{
+  assert(wf_list.size() == p_list.size());
+  if (use_batch_)
+    TrialWaveFunction::mw_evalGradWithSpin(wf_list, p_list, iat, grad_now, spingrad_now);
+  else
+  {
+    const int num_wf = wf_list.size();
+    grad_now.resize(num_wf);
+    spingrad_now.resize(num_wf);
+    for (size_t iw = 0; iw < num_wf; iw++)
+      grad_now[iw] = wf_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
+}
+
 void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                        int iat,

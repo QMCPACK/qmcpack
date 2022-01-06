@@ -17,7 +17,6 @@
 
 namespace qmcplusplus
 {
-
 /** Wrappers for dispatching to TrialWaveFunction single walker APIs or mw_ APIs.
  * This should be only used by QMC drivers.
  * member function names must match mw_ APIs in TrialWaveFunction
@@ -53,6 +52,12 @@ public:
                      const RefVectorWithLeader<ParticleSet>& p_list,
                      int iat,
                      std::vector<GradType>& grad_now) const;
+
+  void flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
+                             int iat,
+                             std::vector<GradType>& grad_now,
+                             std::vector<ComplexType>& spingrad_now) const;
 
   void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                           const RefVectorWithLeader<ParticleSet>& p_list,
