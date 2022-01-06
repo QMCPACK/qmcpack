@@ -47,11 +47,11 @@ void ma_blas_tests()
 {
   vector<double> v = {1., 2., 3.};
   {
-    array_ref<double, 1> V(v.data(), iextensions<1u>{v.size()});
+    array_ref<double, 1> V(v.data(), iextensions<1u>(v.size()));
     ma::scal(2., V);
     {
       vector<double> v2 = {2., 4., 6.};
-      array_ref<double, 1> V2(v2.data(), iextensions<1u>{v2.size()});
+      array_ref<double, 1> V2(v2.data(), iextensions<1u>(v2.size()));
       verify_approx(V, V2);
     }
   }
@@ -89,13 +89,13 @@ void ma_blas_tests()
     array_ref<double, 2> M(m.data(), {3, 4});
     REQUIRE(M[2][0] == 14.);
     vector<double> x = {1., 2., 3., 4.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
+    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
     vector<double> y = {4., 5., 6.};
-    array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
+    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
     ma::gemv<'T'>(1., M, X, 0., Y); // y := M x
 
     vector<double> y2 = {183., 88., 158.};
-    array_ref<double, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
+    array_ref<double, 1> Y2(y2.data(), iextensions<1u>(y2.size()));
     verify_approx(Y, Y2);
   }
   {
@@ -103,15 +103,15 @@ void ma_blas_tests()
     array_ref<double, 2> M(m.data(), {3, 4});
 
     vector<double> x = {1., 2.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
+    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
     vector<double> y = {4., 5.};
-    array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
+    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
 
     auto const& mm = M({0, 2}, {0, 2});
     ma::gemv<'T'>(1., M({0, 2}, {0, 2}), X, 0., Y); // y := M x
 
     vector<double> y2 = {57., 24.};
-    array_ref<double, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
+    array_ref<double, 1> Y2(y2.data(), iextensions<1u>(y2.size()));
     verify_approx(Y, Y2);
   }
   {
@@ -119,12 +119,12 @@ void ma_blas_tests()
     array_ref<double, 2> M(m.data(), {4, 3});
     REQUIRE(M[2][0] == 14.);
     vector<double> x = {1., 2., 3.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
+    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
     vector<double> y = {4., 5., 6., 7.};
-    array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
+    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
     ma::gemv<'T'>(1., M, X, 0., Y); // y := M x
     vector<double> y2 = {147., 60., 154., 25.};
-    array_ref<double, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
+    array_ref<double, 1> Y2(y2.data(), iextensions<1u>(y2.size()));
     verify_approx(Y, Y2);
   }
   {
@@ -132,12 +132,12 @@ void ma_blas_tests()
     array_ref<double, 2> M(m.data(), {3, 4});
     REQUIRE(M[2][0] == 14.);
     vector<double> x = {1., 2., 3.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
+    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
     vector<double> y = {4., 5., 6., 7.};
-    array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
+    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
     ma::gemv<'N'>(1., M, X, 0., Y); // y := M^T x
     vector<double> y2 = {59., 92., 162., 26.};
-    array_ref<double, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
+    array_ref<double, 1> Y2(y2.data(), iextensions<1u>(y2.size()));
     verify_approx(Y, Y2);
   }
   {

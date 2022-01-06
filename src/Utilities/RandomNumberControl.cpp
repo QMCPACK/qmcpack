@@ -38,9 +38,9 @@
 namespace qmcplusplus
 {
 ///initialize the static data members
-PrimeNumberSet<RandomGenerator_t::uint_type> RandomNumberControl::PrimeNumbers;
-std::vector<std::unique_ptr<RandomGenerator_t>> RandomNumberControl::Children;
-RandomGenerator_t::uint_type RandomNumberControl::Offset = 11u;
+PrimeNumberSet<RandomGenerator::uint_type> RandomNumberControl::PrimeNumbers;
+std::vector<std::unique_ptr<RandomGenerator>> RandomNumberControl::Children;
+RandomGenerator::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
 RandomNumberControl::RandomNumberControl(const char* aname)
@@ -93,7 +93,7 @@ void RandomNumberControl::make_children()
   int n        = nthreads - Children.size();
   while (n)
   {
-    Children.push_back(std::make_unique<RandomGenerator_t>());
+    Children.push_back(std::make_unique<RandomGenerator>());
     n--;
   }
   int rank       = OHMMS::Controller->rank();
@@ -126,7 +126,7 @@ void RandomNumberControl::test()
   {
     const int n = 1000000;
     double sum = 0.0, sum2 = 0.0;
-    RandomGenerator_t& myrand(*Children[ip]);
+    RandomGenerator& myrand(*Children[ip]);
     for (int i = 0; i < n; ++i)
     {
       double r = myrand.rand();

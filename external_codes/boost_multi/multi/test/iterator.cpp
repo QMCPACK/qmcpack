@@ -143,6 +143,8 @@ BOOST_AUTO_TEST_CASE(iterator_semantics) {
 	BOOST_REQUIRE( it3 == it );
 
 	multi::array<double, 3>::const_iterator cit;
+	static_assert( std::is_same<multi::array<double, 3>::iterator::element_ptr, double*>{}, "!");
+
 	cit = it3;
 	BOOST_REQUIRE( cit == it3 );
 

@@ -272,7 +272,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  RandomGenerator_t myrng;
+  RandomGenerator myrng;
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
@@ -440,7 +440,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  RandomGenerator_t myrng;
+  RandomGenerator myrng;
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
@@ -1163,7 +1163,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  RandomGenerator_t myrng;
+  RandomGenerator myrng;
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
   

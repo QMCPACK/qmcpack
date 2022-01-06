@@ -368,7 +368,7 @@ public:
    * TODO: add docs
    * @param rng 
    */
-  virtual void setRandomGenerator(RandomGenerator_t* rng);
+  virtual void setRandomGenerator(RandomGenerator* rng);
 
   /**
    * @brief TODO: add docs

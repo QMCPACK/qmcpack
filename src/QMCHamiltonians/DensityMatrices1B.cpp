@@ -508,7 +508,7 @@ void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 }
 
 
-void DensityMatrices1B::setRandomGenerator(RandomGenerator_t* rng) { uniform_random = rng; }
+void DensityMatrices1B::setRandomGenerator(RandomGenerator* rng) { uniform_random = rng; }
 
 
 void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -901,7 +901,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
 inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 {
   ScopedTimer t(timers[DM_gen_samples]);
-  RandomGenerator_t& rng = *uniform_random;
+  RandomGenerator& rng = *uniform_random;
   bool save              = false;
   if (steps == 0)
   {
@@ -957,7 +957,7 @@ inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 }
 
 
-inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator& rng)
 {
   PosType rp;
   PosType ushift = 0.0;
@@ -979,7 +979,7 @@ inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator_t& rng)
 }
 
 
-inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator& rng)
 {
   PosType rp;
   for (int s = 0; s < samples; ++s)
@@ -991,7 +991,7 @@ inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator_t& rng)
 }
 
 
-inline void DensityMatrices1B::generate_density_samples(bool save, int steps, RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_density_samples(bool save, int steps, RandomGenerator& rng)
 {
   RealType sqt = std::sqrt(timestep);
   RealType ot  = 1.0 / timestep;
