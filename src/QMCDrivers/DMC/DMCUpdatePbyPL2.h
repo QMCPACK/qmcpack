@@ -27,7 +27,7 @@ public:
   DMCUpdatePbyPL2(MCWalkerConfiguration& w,
                   TrialWaveFunction& psi,
                   QMCHamiltonian& h,
-                  RandomGenerator_t& rg);
+                  RandomGenerator& rg);
   ///destructor
   ~DMCUpdatePbyPL2() override;
 

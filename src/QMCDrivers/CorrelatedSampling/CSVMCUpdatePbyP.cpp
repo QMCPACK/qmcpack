@@ -30,7 +30,7 @@ using WP = WalkerProperties::Indexes;
 CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  std::vector<TrialWaveFunction*>& psi,
                                  std::vector<QMCHamiltonian*>& h,
-                                 RandomGenerator_t& rg)
+                                 RandomGenerator& rg)
     : CSUpdateBase(w, psi, h, rg)
 {}
 
@@ -150,7 +150,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
                                                            std::vector<TrialWaveFunction*>& psi,
                                                            std::vector<QMCHamiltonian*>& h,
-                                                           RandomGenerator_t& rg)
+                                                           RandomGenerator& rg)
     : CSUpdateBase(w, psi, h, rg){APP_ABORT("CSVMCUpdatePbyPWithDriftFast currently not working.  Please eliminate \
              drift option, or choose all electron moves instead.")}
 

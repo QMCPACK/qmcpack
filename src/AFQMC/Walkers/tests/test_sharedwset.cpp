@@ -114,7 +114,7 @@ void test_basic_walker_features(bool serial, std::string wtype)
     initA[i][i] = Type(0.22);
   for (int i = 0; i < NAEB; i++)
     initB[i][i] = Type(0.22);
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
@@ -417,7 +417,7 @@ void test_walker_io(std::string wtype)
     initA[i][i] = Type(0.22);
   for (int i = 0; i < NAEB; i++)
     initB[i][i] = Type(0.22);
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \

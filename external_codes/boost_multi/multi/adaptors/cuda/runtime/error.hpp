@@ -57,7 +57,7 @@ struct error_category : std::error_category{
 };
 
 inline std::error_code make_error_code(error err) noexcept{
-	return {int(err), error_category::instance()};
+	return {static_cast<int>(err), error_category::instance()};
 }
 
 }}}}

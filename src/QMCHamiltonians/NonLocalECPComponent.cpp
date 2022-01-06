@@ -597,7 +597,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 }
 
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -609,7 +609,7 @@ void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -646,8 +646,8 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
 }
 
 /// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
-template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator& myRNG);
 
 
 } // namespace qmcplusplus

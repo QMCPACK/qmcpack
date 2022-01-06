@@ -27,7 +27,7 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 /// Constructor
-VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg),
       buffer_timer_(*timer_manager.createTimer("VMCUpdatePbyP::Buffer", timer_level_medium)),
       movepbyp_timer_(*timer_manager.createTimer("VMCUpdatePbyP::MovePbyP", timer_level_medium)),

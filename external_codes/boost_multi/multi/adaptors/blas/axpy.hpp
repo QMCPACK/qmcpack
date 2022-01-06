@@ -50,12 +50,13 @@ auto axpy(Context&& ctxt, X1D const& x, Y1D&& y) -> Y1D&&{
 }
 
 template<class Context, class Scale, class ItX>
-class axpy_range{
+class axpy_range {
 	Context ctxt_;
 	Scale alpha_;
 	ItX x_begin_;
 	size_type count_;
-public:
+
+ public:
 	axpy_range(axpy_range const&) = delete;
 	axpy_range(axpy_range&&) noexcept = delete;
 	~axpy_range() = default;
@@ -63,21 +64,21 @@ public:
 	auto operator=(axpy_range&&) noexcept -> axpy_range& = delete;
 
 	axpy_range(Context ctxt, Scale alpha, ItX x_first, ItX x_last)
-		: ctxt_{ctxt}, alpha_{alpha}, x_begin_{x_first}, count_{x_last - x_first}{}
+	: ctxt_{ctxt}, alpha_{alpha}, x_begin_{x_first}, count_{x_last - x_first} {}
 
 	template<class Other>
-	friend auto operator+=(Other&& other, axpy_range const& self) -> Other&&{
+	friend auto operator+=(Other&& other, axpy_range const& self) -> Other&& {
 		assert(other.size() == self.count_); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : bug in clang-tidy https://reviews.llvm.org/D31130
 		blas::axpy_n(std::forward<Context>(self.ctxt_), +self.alpha_, self.x_begin_, self.count_, other.begin());
 		return std::forward<Other>(other);
 	}
 	template<class Other>
-	friend auto operator-=(Other&& other, axpy_range const& self) -> Other&&{
+	friend auto operator-=(Other&& other, axpy_range const& self) -> Other&& {
 		assert(other.size() == self.count_); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : bug in clang-tidy https://reviews.llvm.org/D31130
 		blas::axpy_n(std::forward<Context>(self.ctxt_), -self.alpha_, self.x_begin_, self.count_, other.begin());
 		return std::forward<Other>(other);
 	}
-	auto operator*=(Scale s)& -> axpy_range&{alpha_ *= s;}
+	auto operator*=(Scale s)& -> axpy_range&{alpha_ *= s; return *this;}
 };
 
 template<class Context, class Scale, class X, class=std::enable_if_t<is_context<Context>{}>>

@@ -122,7 +122,7 @@ void DMC::resetUpdateEngines()
 #ifdef USE_FAKE_RNG
       Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip].get());
 #endif
       if (W.isSpinor())

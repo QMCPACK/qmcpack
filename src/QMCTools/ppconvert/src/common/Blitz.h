@@ -120,7 +120,7 @@ struct Array<T, 1, base_type> : base_type{
 
 struct Range : boost::multi::index_range{
 	using boost::multi::index_range::index_range;
-	static auto all(){return boost::multi::all;}
+	static auto all(){return boost::multi::ALL;}
 };
 
 class nilArraySection{};

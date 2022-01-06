@@ -3,7 +3,11 @@ cmake_minimum_required(VERSION 3.11)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-project(boost-multi-adaptors-blas VERSION 0.1 LANGUAGES CXX)
+project(
+	boost-multi-adaptors-blas
+	VERSION 0.1
+	LANGUAGES CXX
+)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,4 +25,3 @@ link_libraries(${CUDA_CUFFT_LIBRARIES})
 include_directories(${CMAKE_BINARY_DIR})
 
 add_subdirectory(test)
-
