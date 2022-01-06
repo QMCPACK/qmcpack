@@ -1,21 +1,22 @@
-add_library(common EXCLUDE_FROM_ALL "")
+set(COMMON_SRCS
+    GKIntegration.cc
+    CoulombPot.cc
+    NLPP.cc
+    DFTAtom.cc
+    ScreenedPot.cc
+    Fitting.cc
+    RadialWF.cc
+    SplinePot.cc
+    CubicSplineCommon.cc
+    GeneralPot.cc
+    Potential.cc
+    IO.cc
+    MatrixOps.cc
+    Grid.cc
+    PotentialBase.cc
+    IOASCII.cc
+    Functionals.cc)
 
-target_sources(
-  common
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/GKIntegration.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/CoulombPot.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/NLPP.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/DFTAtom.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/ScreenedPot.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/Fitting.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/RadialWF.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/SplinePot.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/CubicSplineCommon.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/GeneralPot.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/Potential.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/IO.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/MatrixOps.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/Grid.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/PotentialBase.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/IOASCII.cc
-          ${CMAKE_CURRENT_SOURCE_DIR}/Functionals.cc)
+add_library(common EXCLUDE_FROM_ALL ${COMMON_SRCS})
+
+target_link_libraries(common PUBLIC qmc_external_multi)
