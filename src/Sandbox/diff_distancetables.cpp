@@ -15,6 +15,7 @@
  */
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "random.hpp"
@@ -73,7 +74,7 @@ int main(int argc, char** argv)
     }
   }
 
-  Random.init(0, 1, iseed);
+  Random.init(iseed);
 
   typedef QMCTraits::RealType RealType;
   typedef ParticleSet::ParticlePos_t ParticlePos_t;
@@ -85,7 +86,7 @@ int main(int argc, char** argv)
   double t0 = 0.0, t1 = 0.0;
   constexpr OHMMS_PRECISION scale(1);
 
-  RandomGenerator<RealType> random_th(11);
+  RandomGenerator random_th(11);
 
   ParticleSet ions, els;
 
@@ -108,7 +109,7 @@ int main(int argc, char** argv)
     ud[1] = nels - ud[0];
     els.create(ud);
     els.R.InUnit = PosUnit::Lattice;
-    random_th.generate_uniform(&els.R[0][0], nels3);
+    std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
     els.convert2Cart(els.R);   // convert to Cartiesian
     els.setCoordinates(els.R); //this needs to be handled internally
     els.setName("e");
@@ -146,7 +147,7 @@ int main(int argc, char** argv)
   RealType sqrttau = 0.2;
   for (int s = 0; s < nsteps; ++s)
   {
-    random_th.generate_normal(&delta[0][0], nels3);
+    assignGaussRand(&delta[0][0], nels3, random_th);
     for (int iel = 0; iel < nels; ++iel)
     {
       PosType dr      = sqrttau * delta[iel];
