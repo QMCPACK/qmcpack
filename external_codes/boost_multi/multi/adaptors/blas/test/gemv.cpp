@@ -25,7 +25,7 @@ namespace blas = multi::blas;
 template<class T> void what(T&&) = delete;
 
 template<class M, class VI, class VO>
-void MV(M const& m, VI const& x, VO&& y) {
+void MV(M const& m, VI const& x, VO&& y) {  // NOLINT(readability-identifier-naming) : conventional two-letter operation BLAS
 	std::transform(
 		begin(m), end(m), begin(y),
 		[&x](auto&& row){return std::inner_product(begin(row), end(row), begin(x), 0.);}

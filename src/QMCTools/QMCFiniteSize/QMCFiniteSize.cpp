@@ -519,7 +519,7 @@ void QMCFiniteSize::calcPotentialCorrection()
     for (int j = 0; j < SK_raw.size(); j++)
     {
       FullPrecRealType chi;
-      rng.generate_normal(&chi, 1);
+      chi = rng();
       newSK_raw[j] = SK_raw[j] + SKerr_raw[j] * chi;
     }
     vsums[i] = calcPotentialDiscrete(newSK_raw);
@@ -528,7 +528,7 @@ void QMCFiniteSize::calcPotentialCorrection()
     for (int j = 0; j < SK.size(); j++)
     {
       FullPrecRealType chi;
-      rng.generate_normal(&chi, 1);
+      chi = rng();
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
     vints[i] = calcPotentialInt(newSK);
@@ -556,7 +556,7 @@ void QMCFiniteSize::calcLeadingOrderCorrections()
     for (int j = 0; j < SK.size(); j++)
     {
       FullPrecRealType chi;
-      rng.generate_normal(&chi, 1);
+      chi = rng();
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
     UBspline_3d_d* spline = getSkSpline(newSK);

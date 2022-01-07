@@ -46,14 +46,40 @@ BOOST_AUTO_TEST_CASE(multi_constructors_1d) {
 		BOOST_REQUIRE( size(A)==10 );
 		BOOST_REQUIRE( A[5]== double{} );
 	}
-	 {
 	#if defined(__cpp_deduction_guides)
+	{
+		multi::array A(multi::extensions_t<1>{{0, 10}}, double{});
+		BOOST_REQUIRE( size(A)==10 );
+		BOOST_REQUIRE( A[5]== double{} );
+	}
+	{
+		multi::array A({{0, 10}}, double{});
+		BOOST_REQUIRE( size(A)==10 );
+		BOOST_REQUIRE( A[5]== double{} );
+	}
+	{
+		multi::array A({10}, double{});
+		BOOST_REQUIRE( size(A)==10 );
+		BOOST_REQUIRE( A[5]== double{} );
+	}
+	{
 		multi::array A(10, double{});
 		BOOST_REQUIRE( size(A)==10 );
 		BOOST_REQUIRE( A[5]== double{} );
-	#endif
 	}
+	#endif
 }
+
+BOOST_AUTO_TEST_CASE(multi_constructors_2d_ctad) {
+	#if defined(__cpp_deduction_guides)
+	{
+		multi::array A({10, 20}, double{});
+		BOOST_REQUIRE( size(A)==10 );
+		BOOST_REQUIRE( A[5][6] == double{} );
+	}
+	#endif
+}
+
 
 BOOST_AUTO_TEST_CASE(multi_constructors) {
 {//multi::array<double, 1> A({10}); assert(size(A)==1); // warning in clang

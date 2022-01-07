@@ -13,7 +13,7 @@
 #include "catch.hpp"
 
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/FakeRandom.h"
+#include "Utilities/BoostRandom.h"
 #include <stdio.h>
 #include <string>
 #include <vector>

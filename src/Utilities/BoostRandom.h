@@ -54,69 +54,22 @@ public:
   explicit BoostRandom(uint_type iseed = 911, const std::string& aname = "mt19937")
       : ClassName("boost"),
         EngineName(aname),
-        myContext(0),
-        nContexts(1),
-        baseOffset(0),
         uni(generator_type(iseed), boost::uniform_real<T>(0, 1))
   {}
 
   /** initialize the generator
-   * @param i thread index
-   * @param nstr number of threads
    * @param iseed_in input seed
    *
    * Initialize generator with the seed.
    */
-  void init(int i, int nstr, int iseed_in, uint_type offset = 1);
-
-  ///get baseOffset
-  inline int offset() const { return baseOffset; }
-  ///assign baseOffset
-  inline int& offset() { return baseOffset; }
+  void init(int iseed_in);
 
   ///assign seed
   inline void seed(uint_type aseed) { uni.engine().seed(aseed); }
 
-  uniform_generator_type& engine() { return uni; }
-  /////reset the seed
-  //inline void reset()
-  //{
-  //  uni.engine().seed(make_seed(myContext,nContexts,baseOffset));
-  //}
-
-  /** return a random number [0,1)
-   */
-  inline result_type rand() { return uni(); }
-
   /** return a random number [0,1)
    */
   inline result_type operator()() { return uni(); }
-
-  /** return a random integer
-   */
-  inline uint_type irand() { return uni.engine()() % std::numeric_limits<uint_type>::max(); }
-
-  /** generate a series of random numbers */
-  template<typename T1>
-  inline void generate_uniform(T1* restrict d, int n)
-  {
-    for (int i = 0; i < n; ++i)
-      d[i] = uni();
-  }
-
-  void generate_normal(T* restrict d, int n);
-
-  //inline void bivariate(resul_type& g1, resul_type &g2) {
-  //  resul_type v1, v2, r;
-  //  do {
-  //  v1 = 2.0e0*uni() - 1.0e0;
-  //  v2 = 2.0e0*uni() - 1.0e0;
-  //  r = v1*v1+v2*v2;
-  //  } while(r > 1.0e0);
-  //  resul_type fac = sqrt(-2.0e0*log(r)/r);
-  //  g1 = v1*fac;
-  //  g2 = v2*fac;
-  //}
 
   inline size_t state_size() const { return uni.engine().state_size; }
 
@@ -140,12 +93,6 @@ public:
   }
 
 private:
-  ///context number
-  int myContext;
-  ///number of contexts
-  int nContexts;
-  ///offset of the random seed
-  int baseOffset;
   ///random number generator [0,1)
   uniform_generator_type uni;
 };
