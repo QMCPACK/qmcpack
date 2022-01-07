@@ -105,22 +105,20 @@ if(ENABLE_CUDA)
 elseif(ENABLE_HIP)
   set_source_files_properties(${AFQMC_HIP_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
   hip_add_library(afqmc_hip_lib ${AFQMC_HIP_SRCS})
-  target_link_libraries(afqmc_hip_lib PUBLIC HIP::HIP ROCM::libraries Boost::boost)
-  target_include_directories(afqmc_hip_lib PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
+  target_link_libraries(afqmc_hip_lib PUBLIC HIP::HIP ROCM::libraries Boost::boost qmc_external_thrust)
   add_library(afqmc ${AFQMC_SRCS})
   target_link_libraries(afqmc PUBLIC afqmc_hip_lib)
 else(ENABLE_CUDA)
   add_library(afqmc ${AFQMC_SRCS})
 endif(ENABLE_CUDA)
 
-target_link_libraries(afqmc PUBLIC qmcutil)
+target_link_libraries(afqmc PUBLIC qmcutil qmc_external_multi)
 target_link_libraries(afqmc PRIVATE platform_LA Boost::boost)
 if(HAVE_MPI)
   target_compile_definitions(afqmc PRIVATE "USE_MPI")
 endif(HAVE_MPI)
 
 if(BUILD_UNIT_TESTS)
-  include_directories(${PROJECT_SOURCE_DIR}/external_codes/catch)
   set(AFQMC_UNIT_TEST_INPUT_NOSYM
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_rhf.dat

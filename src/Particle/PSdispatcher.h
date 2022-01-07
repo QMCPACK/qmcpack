@@ -26,6 +26,7 @@ class PSdispatcher
 public:
   using Walker_t            = ParticleSet::Walker_t;
   using SingleParticlePos_t = ParticleSet::SingleParticlePos_t;
+  using Scalar_t            = ParticleSet::Scalar_t;
 
   PSdispatcher(bool use_batch);
 
@@ -39,6 +40,11 @@ public:
   void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                      int iat,
                      const std::vector<SingleParticlePos_t>& displs) const;
+
+  void flex_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
+                             int iat,
+                             const std::vector<SingleParticlePos_t>& displs,
+                             const std::vector<Scalar_t>& sdispls) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               int iat,
