@@ -73,8 +73,9 @@ struct Array : base_type{
 	sizes_type shape() const{return base_type::sizes();}
 	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
 	void resizeAndPreserve(sizes_type sizes){
-		// must do a reinterpret_cast due to failure with libc++ type automatic conversion
-		base_type::reextent(reinterpret_cast<typename base_type::extensions_type const&>(sizes));
+		// explicit conversion due to failure with libc++ type automatic conversion
+		 	base_type::reextent(std::apply([](auto... ss){return typename base_type::extensions_type{static_cast<typename base_type::size_type>(ss)...};}, sizes));
+
 	}
 	template<class... Ints>
 	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
