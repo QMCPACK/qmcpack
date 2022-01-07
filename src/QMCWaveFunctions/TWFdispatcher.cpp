@@ -89,6 +89,25 @@ void TWFdispatcher::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& 
   }
 }
 
+void TWFdispatcher::flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          int iat,
+                                          std::vector<GradType>& grad_now,
+                                          std::vector<Complex>& spingrad_now) const
+{
+  assert(wf_list.size() == p_list.size());
+  if (use_batch_)
+    TrialWaveFunction::mw_evalGradWithSpin(wf_list, p_list, iat, grad_now, spingrad_now);
+  else
+  {
+    const int num_wf = wf_list.size();
+    grad_now.resize(num_wf);
+    spingrad_now.resize(num_wf);
+    for (size_t iw = 0; iw < num_wf; iw++)
+      grad_now[iw] = wf_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
+}
+
 void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                        int iat,
@@ -105,6 +124,27 @@ void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFuncti
     grad_new.resize(num_wf);
     for (size_t iw = 0; iw < num_wf; iw++)
       ratios[iw] = wf_list[iw].calcRatioGrad(p_list[iw], iat, grad_new[iw]);
+  }
+}
+
+void TWFdispatcher::flex_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               int iat,
+                                               std::vector<PsiValueType>& ratios,
+                                               std::vector<GradType>& grad_new,
+                                               std::vector<Complex>& spingrad_new) const
+{
+  assert(wf_list.size() == p_list.size());
+  if (use_batch_)
+    TrialWaveFunction::mw_calcRatioGradWithSpin(wf_list, p_list, iat, ratios, grad_new, spingrad_new);
+  else
+  {
+    const int num_wf = wf_list.size();
+    ratios.resize(num_wf);
+    grad_new.resize(num_wf);
+    spingrad_new.resize(num_wf);
+    for (size_t iw = 0; iw < num_wf; iw++)
+      ratios[iw] = wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
   }
 }
 

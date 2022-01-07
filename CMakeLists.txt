@@ -193,6 +193,7 @@ cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." 
 set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
+option(QMC_RNG_BOOST "Use random number generator from boost C++ libraries instead of C++ standard library" OFF)
 
 #--------------------------------------------------------------------
 # Sanitizer options
@@ -1071,6 +1072,7 @@ endif()
 message(STATUS "Ready to parse QMCPACK source tree")
 ######################################################################
 
+add_subdirectory(external_codes)
 add_subdirectory(src)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)

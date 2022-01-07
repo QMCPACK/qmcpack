@@ -152,7 +152,7 @@ struct DiracDet
   ///internal storage to perform inversion correctly
   Matrix<INVT> psiM; //matrix to be inverted
   ///random number generator for testing
-  RandomGenerator<T> myRandom;
+  RandomGenerator myRandom;
 
   //temporary workspace for inversion
   aligned_vector<int> pivot;
@@ -169,7 +169,7 @@ struct DiracDet
     psiMsave.resize(nels, nels);
   }
 
-  void initialize(RandomGenerator<T> RNG)
+  void initialize(RandomGenerator RNG)
   {
     int nels = psiM.rows();
     //get lwork and resize workspace
@@ -178,7 +178,7 @@ struct DiracDet
 
     myRandom = RNG;
     constexpr T shift(0.5);
-    RNG.generate_uniform(psiMsave.data(), nels * nels);
+    std::generate(psiMsave.begin(), psiMsave.end(), RNG);
     psiMsave -= shift;
 
     transpose(psiMsave.data(), psiM.data(), nels, nels);

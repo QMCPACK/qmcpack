@@ -23,7 +23,7 @@ namespace afqmc
 Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
                                                    xmlNodePtr cur,
                                                    Wavefunction& wfn,
-                                                   RandomGenerator_t* rng)
+                                                   RandomGenerator* rng)
 {
   // allocator for local memory
   using allocator = device_allocator<ComplexType>;

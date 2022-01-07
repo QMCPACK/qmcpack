@@ -19,6 +19,7 @@
 #include "Lattice/CrystalLattice.h"
 #include <map>
 #include <optional>
+#include <array>
 
 namespace qmcplusplus
 {

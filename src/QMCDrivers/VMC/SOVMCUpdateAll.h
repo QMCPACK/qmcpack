@@ -20,7 +20,7 @@ class SOVMCUpdateAll : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  SOVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
+  SOVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
 
   ~SOVMCUpdateAll() override;
 

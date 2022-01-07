@@ -36,7 +36,7 @@ public:
                         TrialWaveFunction& Psi,
                         QMCHamiltonian& H,
                         std::vector<std::string>& H_KE_node_names,
-                        RandomGenerator_t& Rng);
+                        RandomGenerator& Rng);
 
   /// Set the log_psi_* arrays to zero
   void zero_log_psi();
@@ -49,8 +49,8 @@ public:
   std::vector<Return_rt>& get_log_psi_fixed() { return log_psi_fixed_; }
   std::vector<Return_rt>& get_log_psi_opt() { return log_psi_opt_; }
 
-  UPtrVector<RandomGenerator_t>& get_rng_ptr_list() { return rng_ptr_list_; }
-  RandomGenerator_t& get_rng_save() { return *rng_save_ptr_; }
+  UPtrVector<RandomGenerator>& get_rng_ptr_list() { return rng_ptr_list_; }
+  RandomGenerator& get_rng_save() { return *rng_save_ptr_; }
 
   UPtrVector<TrialWaveFunction>& get_wf_ptr_list() { return wf_ptr_list_; }
 
@@ -72,13 +72,13 @@ private:
   UPtrVector<ParticleSet> p_ptr_list_;
   UPtrVector<QMCHamiltonian> h_ptr_list_;
   UPtrVector<QMCHamiltonian> h0_ptr_list_;
-  UPtrVector<RandomGenerator_t> rng_ptr_list_;
+  UPtrVector<RandomGenerator> rng_ptr_list_;
 
   // proivides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 
   // Saved RNG state to reset to before correlated sampling
-  std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
+  std::unique_ptr<RandomGenerator> rng_save_ptr_;
 
   // Crowd-local accumulator variables
   Return_rt e0_;

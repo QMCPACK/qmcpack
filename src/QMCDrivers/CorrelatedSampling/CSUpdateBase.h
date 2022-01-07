@@ -30,7 +30,7 @@ public:
   CSUpdateBase(MCWalkerConfiguration& w,
                std::vector<TrialWaveFunction*>& psi,
                std::vector<QMCHamiltonian*>& h,
-               RandomGenerator_t& rg);
+               RandomGenerator& rg);
 
   ~CSUpdateBase() override;
 
