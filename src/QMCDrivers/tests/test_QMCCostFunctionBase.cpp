@@ -23,16 +23,11 @@ public:
       : QMCCostFunctionBase(w, psi, h, c)
   {}
 
-  virtual ~QMCCostFunctionTest() {}
-
-  virtual void resetPsi(bool final_reset = false) override {}
-  virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override
-  {
-    return 0;
-  }
-  virtual void getConfigurations(const std::string& aroot) override {}
-  virtual void checkConfigurations() override {}
-  virtual Return_rt correlatedSampling(bool needGrad = true) override { return 0; }
+  void resetPsi(bool final_reset = false) override {}
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override { return 0; }
+  void getConfigurations(const std::string& aroot) override {}
+  void checkConfigurations() override {}
+  Return_rt correlatedSampling(bool needGrad = true) override { return 0; }
 
   void callUpdateXmlNodes()
   {
@@ -83,10 +78,9 @@ TEST_CASE("updateXmlNodes", "[drivers]")
   OhmmsXPathObject check_elem("//override_variational_parameters", acontext);
   REQUIRE(check_elem.size() == 1);
 
-  xmlChar* href = xmlGetProp(check_elem[0], BAD_CAST "href");
-  REQUIRE(href != nullptr);
-  REQUIRE((char*)(href) == std::string("tmp.vp.h5"));
-  xmlFree(href);
+  std::string href = getXMLAttributeValue(check_elem[0], "href");
+  REQUIRE(href == "tmp.vp.h5");
+
   xmlXPathFreeContext(acontext);
 }
 
@@ -119,10 +113,9 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
   OhmmsXPathObject check_elem("//override_variational_parameters", acontext);
   REQUIRE(check_elem.size() == 1);
 
-  xmlChar* href = xmlGetProp(check_elem[0], BAD_CAST "href");
-  REQUIRE(href != nullptr);
-  REQUIRE((char*)(href) == std::string("tmp2.vp.h5"));
-  xmlFree(href);
+  std::string href = getXMLAttributeValue(check_elem[0], "href");
+  REQUIRE(href == "tmp2.vp.h5");
+
   xmlXPathFreeContext(acontext);
 }
 
