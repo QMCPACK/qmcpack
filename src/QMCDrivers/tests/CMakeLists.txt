@@ -86,6 +86,7 @@ if(NOT QMC_CUDA)
       test_SimpleFixedNodeBranch.cpp
       test_SFNBranch.cpp
       test_QMCCostFunctionBatched.cpp
+      test_QMCCostFunctionBase.cpp
       test_WFOptDriverInput.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   use_fake_rng(${UTEST_EXE})
