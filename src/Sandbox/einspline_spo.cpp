@@ -15,6 +15,7 @@
  */
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "random.hpp"
 #include "mpi/collectives.h"
 #include "Sandbox/input.hpp"
@@ -93,7 +94,7 @@ int main(int argc, char** argv)
     }
   }
 
-  //Random.init(0,1,iseed);
+  //Random.init(iseed);
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
 
   //turn off output
@@ -154,7 +155,7 @@ int main(int argc, char** argv)
     const int crewID = ip % ncrews;
 
     //create generator within the thread
-    RandomGenerator<RealType> random_th(MakeSeed(teamID, np));
+    RandomGenerator random_th(MakeSeed(teamID, np));
 
     ParticleSet ions, els;
     const OHMMS_PRECISION scale = 1.0;
@@ -176,7 +177,7 @@ int main(int argc, char** argv)
       ud[1] = nels - ud[0];
       els.create(ud);
       els.R.InUnit = PosUnit::Lattice;
-      random_th.generate_uniform(&els.R[0][0], nels3);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
       els.convert2Cart(els.R); // convert to Cartiesian
     }
 
@@ -207,7 +208,7 @@ int main(int argc, char** argv)
     RealType accept  = 0.5;
 
     vector<RealType> ur(nels);
-    random_th.generate_uniform(ur.data(), nels);
+    std::generate(ur.begin(), ur.end(), random_th);
     const double zval = 1.0 * static_cast<double>(nels) / static_cast<double>(nions);
 
     //test random numbers
@@ -228,8 +229,8 @@ int main(int argc, char** argv)
     for (int mc = 0; mc < nsteps; ++mc)
     {
 #pragma omp barrier
-      random_th.generate_normal(&delta[0][0], nels3);
-      random_th.generate_uniform(ur.data(), nels);
+      assignGaussRand(&delta[0][0], nels3, random_th);
+      std::generate(ur.begin(), ur.end(), random_th);
 
 
       //VMC
@@ -248,7 +249,7 @@ int main(int argc, char** argv)
       }
 #pragma omp barrier
 
-      random_th.generate_uniform(ur.data(), nels);
+      std::generate(ur.begin(), ur.end(), random_th);
       ecp.randomize(rOnSphere); // pick random sphere
       for (int iat = 0, kat = 0; iat < nions; ++iat)
       {
