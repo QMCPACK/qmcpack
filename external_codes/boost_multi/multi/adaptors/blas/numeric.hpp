@@ -14,23 +14,23 @@
 namespace boost{
 namespace multi::blas{
 
-template<class T> struct Complex_{T real; T imag;};
+template<class T> struct complex_dummy{T real; T imag;};
 
 template<
 	class A, typename Complex = typename std::decay_t<A>::element, typename T=typename Complex::value_type,
 	class=std::enable_if_t<blas::numeric::is_complex_of<Complex, T>::value>
 >
 auto real(A&& a)
-->decltype(std::forward<A>(a).template reinterpret_array_cast<Complex_<T>>().template member_cast<T>(&Complex_<T>::real)){
-	return std::forward<A>(a).template reinterpret_array_cast<Complex_<T>>().template member_cast<T>(&Complex_<T>::real);}
+->decltype(std::forward<A>(a).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::real)){
+	return std::forward<A>(a).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::real);}
 
 template<
 	class A, class Complex = typename std::decay_t<A>::element_type, typename T=typename Complex::value_type,
 	class=std::enable_if_t<blas::numeric::is_complex_of<Complex, T>::value>
 >
 auto imag(A&& a)
-->decltype(std::forward<A>(a).template reinterpret_array_cast<Complex_<T>>().template member_cast<T>(&Complex_<T>::imag)){
-	return std::forward<A>(a).template reinterpret_array_cast<Complex_<T>>().template member_cast<T>(&Complex_<T>::imag);}
+->decltype(std::forward<A>(a).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::imag)){
+	return std::forward<A>(a).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::imag);}
 
 template<class ComplexArr, class ComplexElem = typename std::decay_t<ComplexArr>::element, typename RealElem = typename ComplexElem::value_type,
 	class=std::enable_if_t<blas::numeric::is_complex_of<ComplexElem, RealElem>::value>
@@ -161,10 +161,10 @@ public:
 
 //	involuter(involuter const& other) = default;
 
-	template<class Other, decltype(_implicit_cast<It>(typename Other::underlying_type{}))* = nullptr> 
+	template<class Other, decltype(multi::implicit_cast<It>(typename Other::underlying_type{}))* = nullptr>
 	// cppcheck-suppress noExplicitConstructor
 	constexpr/*implct*/involuter(Other const& o) : it_{o.it_}, f_{o.f_}{} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : inherit implicit conversion of underlying type
-	template<class Other, decltype(_explicit_cast<It>(typename Other::underlying_type{}))* = nullptr> 
+	template<class Other, decltype(explicit_cast<It>(typename Other::underlying_type{}))* = nullptr>
 	constexpr explicit involuter(Other const& o) : it_{o.it_}, f_{o.f_}{}
 
 	constexpr auto operator*() const {return reference{*it_, f_};}
@@ -172,9 +172,14 @@ public:
 	auto operator==(involuter const& o) const -> bool{return it_==o.it_;}
 	auto operator!=(involuter const& o) const -> bool{return it_!=o.it_;}
 
-	constexpr auto operator+=(typename involuter::difference_type n) -> involuter&{it_+=n; return *this;}
-	constexpr auto operator+(typename involuter::difference_type n) const{return involuter{it_+n, f_};}
+	constexpr auto operator+=(difference_type n) -> involuter&{it_+=n; return *this;}
+	constexpr auto operator-=(difference_type n) -> involuter&{it_-=n; return *this;}
+
+	constexpr auto operator+(difference_type n) const{return involuter{it_+n, f_};}
+	constexpr auto operator-(difference_type n) const{return involuter{it_-n, f_};}
+
 	auto operator-(involuter const& other) const{return it_ - other.it_;}
+
 	explicit operator bool() const{return it_;}
 	using underlying_type = It;
 	friend constexpr auto underlying(involuter const& self) -> underlying_type{return self.it_;}

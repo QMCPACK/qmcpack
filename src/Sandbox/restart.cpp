@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   nwtot = std::abs(AverageWalkersPerNode + myComm->rank() % 5 - 2);
   FairDivideLow(nwtot, NumThreads, wPerNode);
 
-  //Random.init(0,1,iseed);
+  //Random.init(iseed);
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
 
   //turn off output
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
       ud[1] = nels - ud[0];
       els.create(ud);
       els.R.InUnit = PosUnit::Lattice;
-      random_th.generate_uniform(&els.R[0][0], nels3);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
       els.convert2Cart(els.R); // convert to Cartiesian
       els.setCoordinates(els.R);
     }

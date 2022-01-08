@@ -195,4 +195,3 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_imag_part) {
 	blas::hermitized(B)[1][2] = 20. + 30.*I;
 	BOOST_REQUIRE( B[2][1] == 20. - 30.*I );
 }
-

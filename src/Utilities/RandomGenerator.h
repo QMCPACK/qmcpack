@@ -33,10 +33,10 @@
 #include <cstdint>
 // The definition of the fake RNG should always be available for unit testing
 #include "Utilities/FakeRandom.h"
-#ifdef HAVE_LIBBOOST
+#if defined(QMC_RNG_BOOST)
 #include "Utilities/BoostRandom.h"
 #else
-#error -DHAVE_LIBBOOST is missing in the compile line. A cmake dependency fix is needed.
+#include "Utilities/StdRandom.h"
 #endif
 
 uint32_t make_seed(int i, int n);
@@ -49,25 +49,32 @@ class RNGThreadSafe : public RNG
 public:
   using result_type = typename RNG::result_type;
 
-  result_type rand();
-
   /** return a random number [0,1)
    */
   result_type operator()();
 };
 
 extern template class RNGThreadSafe<FakeRandom>;
-extern template class RNGThreadSafe<BoostRandom<float>>;
+#if defined(QMC_RNG_BOOST)
 extern template class RNGThreadSafe<BoostRandom<double>>;
+#else
+extern template class RNGThreadSafe<StdRandom<double>>;
+#endif
 
-#ifdef USE_FAKE_RNG
+#if defined(USE_FAKE_RNG)
+// fake RNG redirection
 using RandomGenerator = FakeRandom;
 extern RNGThreadSafe<RandomGenerator> fake_random_global;
 #define Random fake_random_global
 #else
+// real RNG redirection
+#if defined(QMC_RNG_BOOST)
 using RandomGenerator = BoostRandom<OHMMS_PRECISION_FULL>;
-extern RNGThreadSafe<RandomGenerator> boost_random_global;
-#define Random boost_random_global
+#else
+using RandomGenerator = StdRandom<OHMMS_PRECISION_FULL>;
+#endif
+extern RNGThreadSafe<RandomGenerator> random_global;
+#define Random random_global
 #endif
 } // namespace qmcplusplus
 

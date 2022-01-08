@@ -20,33 +20,19 @@ namespace qmcplusplus
 {
 
 template<class RNG>
-typename RNG::result_type RNGThreadSafe<RNG>::rand()
-{
-  result_type result;
-// This should be a named section but at least clang 9 doesn't seem to support
-// and warns of extra tokens.
-#pragma omp critical
-  {
-    result = RNG::rand();
-  }
-  return result;
-}
-
-template<class RNG>
 typename RNG::result_type RNGThreadSafe<RNG>::operator()()
 {
   result_type result;
 #pragma omp critical
   {
-    result = RNG::rand();
+    result = RNG::operator()();
   }
   return result;
 }
 
 template class RNGThreadSafe<FakeRandom>;
-template class RNGThreadSafe<BoostRandom<float>>;
-template class RNGThreadSafe<BoostRandom<double>>;
+template class RNGThreadSafe<RandomGenerator>;
 
-RNGThreadSafe<BoostRandom<OHMMS_PRECISION_FULL>> boost_random_global;
 RNGThreadSafe<FakeRandom> fake_random_global;
+RNGThreadSafe<RandomGenerator> random_global;
 } // namespace qmcplusplus
