@@ -25,8 +25,6 @@
 #include "Message/CommOperators.h"
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
-//#include <boost/archive/binary_oarchive.hpp>
-
 namespace qmcplusplus
 {
 namespace testing

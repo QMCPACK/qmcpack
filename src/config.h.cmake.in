@@ -155,8 +155,5 @@
 /* Enable NVTX regions in CUDA code. */
 #cmakedefine USE_NVTX_API @USE_NVTX_API@
 
-/* Use random number generator from boost C++ libraries instead of C++ standard library */
-#cmakedefine QMC_RNG_BOOST @QMC_RNG_BOOST@
-
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

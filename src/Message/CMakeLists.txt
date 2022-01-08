@@ -16,7 +16,7 @@ add_library(message ${COMM_SRCS})
 target_link_libraries(message PUBLIC platform_host_runtime)
 
 if(HAVE_MPI)
-  target_link_libraries(message PUBLIC MPI::MPI_CXX Boost::boost qmc_external_mpi_wrapper)
+  target_link_libraries(message PUBLIC qmc_external_mpi_wrapper)
 endif()
 
 add_library(catch_main catch_main.cpp)
