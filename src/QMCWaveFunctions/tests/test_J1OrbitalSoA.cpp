@@ -21,8 +21,9 @@ namespace qmcplusplus
 TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -114,8 +115,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -216,8 +218,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 

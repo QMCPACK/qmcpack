@@ -28,11 +28,24 @@ namespace qmcplusplus
 {
 void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  // diamondC_2x1x1
+  ParticleSet::ParticleLayout_t lattice;
+  lattice.R(0, 0) = 6.7463223;
+  lattice.R(0, 1) = 6.7463223;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.37316115;
+  lattice.R(1, 2) = 3.37316115;
+  lattice.R(2, 0) = 3.37316115;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.37316115;
+
+  const SimulationCell simulation_cell(lattice);
+
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -60,17 +73,6 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   elec_.R[1][0] = 0.0;
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
-
-  // diamondC_2x1x1
-  elec_.Lattice.R(0, 0) = 6.7463223;
-  elec_.Lattice.R(0, 1) = 6.7463223;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

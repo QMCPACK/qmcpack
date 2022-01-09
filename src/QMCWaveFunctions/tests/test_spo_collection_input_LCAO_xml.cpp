@@ -28,10 +28,10 @@ namespace qmcplusplus
 {
 void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& elec(*elec_uptr);
   elec.setName("e");
   elec.create({1, 1});
@@ -44,7 +44,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions(*ions_uptr);
   ions.setName("ion0");
   ions.create(1);

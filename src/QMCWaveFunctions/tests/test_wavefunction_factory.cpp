@@ -23,7 +23,8 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  auto qp = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto qp = std::make_unique<ParticleSet>(simulation_cell);
   std::vector<int> agroup(2, 1);
   qp->setName("e");
   qp->create(agroup);

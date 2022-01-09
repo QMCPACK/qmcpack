@@ -31,7 +31,8 @@ void test_He(bool transform)
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
+    const SimulationCell simulation_cell;
+    ParticleSet elec(simulation_cell);
     std::vector<int> agroup(2);
     agroup[0] = 1;
     agroup[1] = 1;
@@ -46,7 +47,7 @@ void test_He(bool transform)
     tspecies(massIdx, upIdx)   = 1.0;
     tspecies(massIdx, downIdx) = 1.0;
 
-    ParticleSet ions;
+    ParticleSet ions(simulation_cell);
     ions.setName("ion0");
     ions.create(1);
     ions.R[0]            = 0.0;
@@ -143,8 +144,9 @@ void test_Ne(bool transform)
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
-    ;
+    const SimulationCell simulation_cell;
+    ParticleSet elec(simulation_cell);
+
     std::vector<int> agroup(2);
     agroup[0] = 1;
     agroup[1] = 1;
@@ -159,7 +161,7 @@ void test_Ne(bool transform)
     tspecies(massIdx, upIdx)   = 1.0;
     tspecies(massIdx, downIdx) = 1.0;
 
-    ParticleSet ions;
+    ParticleSet ions(simulation_cell);
     ions.setName("ion0");
     ions.create(1);
     ions.R[0][0]         = 0.0;
@@ -275,7 +277,8 @@ void test_HCN(bool transform)
     tmat(1, 1) = 1;
     tmat(2, 2) = 1;
 
-    ParticleSet ions;
+    const SimulationCell simulation_cell;
+    ParticleSet ions(simulation_cell);
     XMLParticleParser parse_ions(ions, tmat);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
@@ -285,7 +288,7 @@ void test_HCN(bool transform)
     REQUIRE(ions.R.size() == 3);
     ions.update();
 
-    ParticleSet elec;
+    ParticleSet elec(simulation_cell);
     XMLParticleParser parse_elec(elec, tmat);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);

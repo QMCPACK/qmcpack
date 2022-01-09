@@ -36,8 +36,35 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  ParticleSet::ParticleLayout_t lattice;
+  // initialize simulationcell for kvectors
+  const char* xmltext = "<tmp> \
+  <simulationcell>\
+     <parameter name=\"lattice\" units=\"bohr\">\
+              6.00000000        0.00000000        0.00000000\
+              0.00000000        6.00000000        0.00000000\
+              0.00000000        0.00000000        6.00000000\
+     </parameter>\
+     <parameter name=\"bconds\">\
+        p p p\
+     </parameter>\
+     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
+  </simulationcell>\
+</tmp> ";
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(xmltext);
+  REQUIRE(okay);
+
+  // read lattice
+  xmlNodePtr root  = doc.getRoot();
+  xmlNodePtr part1 = xmlFirstElementChild(root);
+
+  LatticeParser lp(lattice);
+  lp.put(part1);
+  lattice.print(app_log(), 0);
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
   ions_.create(2);
@@ -70,32 +97,6 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  // initialize simulationcell for kvectors
-  const char* xmltext = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> ";
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(xmltext);
-  REQUIRE(okay);
-
-  // read lattice
-  xmlNodePtr root  = doc.getRoot();
-  xmlNodePtr part1 = xmlFirstElementChild(root);
-  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
-  LatticeParser lp(*SimulationCell);
-  lp.put(part1);
-  SimulationCell->print(app_log(), 0);
-  elec_.Lattice = *SimulationCell;
   // initialize SK
   elec_.createSK();
 

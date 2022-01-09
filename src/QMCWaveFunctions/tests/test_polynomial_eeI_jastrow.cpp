@@ -43,11 +43,11 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
   ions_.create(2);

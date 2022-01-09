@@ -61,11 +61,11 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
 
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
   ions_.create(1);
@@ -130,8 +130,9 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 

@@ -30,11 +30,36 @@ namespace qmcplusplus
 {
 TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout_t lattice;
+  // monoO
+  /*
+  lattice.R(0,0) = 5.10509515;
+  lattice.R(0,1) = -3.23993545;
+  lattice.R(0,2) = 0.0;
+  lattice.R(1,0) = 5.10509515;
+  lattice.R(1,1) = 3.23993545;
+  lattice.R(1,2) = 0.0;
+  lattice.R(2,0) = -6.49690625;
+  lattice.R(2,1) = 0.0;
+  lattice.R(2,2) = 7.08268015;
+  */
+
+  // diamondC_1x1x1
+  lattice.R(0, 0) = 3.37316115;
+  lattice.R(0, 1) = 3.37316115;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.37316115;
+  lattice.R(1, 2) = 3.37316115;
+  lattice.R(2, 0) = 3.37316115;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.37316115;
+
+  const SimulationCell simulation_cell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -56,30 +81,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   elec_.R[1][0] = 0.0;
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
-
-  // monoO
-  /*
-  elec_.Lattice.R(0,0) = 5.10509515;
-  elec_.Lattice.R(0,1) = -3.23993545;
-  elec_.Lattice.R(0,2) = 0.0;
-  elec_.Lattice.R(1,0) = 5.10509515;
-  elec_.Lattice.R(1,1) = 3.23993545;
-  elec_.Lattice.R(1,2) = 0.0;
-  elec_.Lattice.R(2,0) = -6.49690625;
-  elec_.Lattice.R(2,1) = 0.0;
-  elec_.Lattice.R(2,2) = 7.08268015;
- */
-
-  // diamondC_1x1x1
-  elec_.Lattice.R(0, 0) = 3.37316115;
-  elec_.Lattice.R(0, 1) = 3.37316115;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -240,11 +241,23 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout_t lattice;
+  // diamondC_2x1x1
+  lattice.R(0, 0) = 6.7463223;
+  lattice.R(0, 1) = 6.7463223;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.37316115;
+  lattice.R(1, 2) = 3.37316115;
+  lattice.R(2, 0) = 3.37316115;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.37316115;
+
+  const SimulationCell simulation_cell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -272,17 +285,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.R[1][0] = 0.0;
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
-
-  // diamondC_2x1x1
-  elec_.Lattice.R(0, 0) = 6.7463223;
-  elec_.Lattice.R(0, 1) = 6.7463223;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -428,10 +430,16 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto elec = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout_t lattice;
+  lattice.R       = 0.0;
+  lattice.R(0, 0) = 1.0;
+  lattice.R(1, 1) = 1.0;
+  lattice.R(2, 2) = 1.0;
+
+  const SimulationCell simulation_cell(lattice);
+  auto elec = std::make_unique<ParticleSet>(simulation_cell);
 
   elec->setName("elec");
   std::vector<int> agroup(2);
@@ -444,11 +452,6 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   elec->R[1][0] = 0.0;
   elec->R[1][1] = 1.0;
   elec->R[1][2] = 0.0;
-
-  elec->Lattice.R       = 0.0;
-  elec->Lattice.R(0, 0) = 1.0;
-  elec->Lattice.R(1, 1) = 1.0;
-  elec->Lattice.R(2, 2) = 1.0;
 
   EinsplineSetBuilder::PtclPoolType ptcl_map;
   ptcl_map["e"] = elec.get();
