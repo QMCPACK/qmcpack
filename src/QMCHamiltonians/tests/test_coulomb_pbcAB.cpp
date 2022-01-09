@@ -30,14 +30,14 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(1.0);
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(1.0);
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);
@@ -51,12 +51,10 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice                      = Lattice;
   ions.createSK();
   ions.update();
 
 
-  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.5;
@@ -100,14 +98,14 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(2);
@@ -124,11 +122,9 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 2;
-  ions.Lattice                      = Lattice;
   ions.createSK();
   ions.update();
 
-  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;

@@ -91,6 +91,7 @@ void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
   elec.addTable(ions);
   elec.update();
 }
+
 //Takes a HamiltonianFactory and handles the XML I/O to get a QMCHamiltonian pointer.  For CN molecule with pseudopotentials.
 QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
 {
@@ -120,11 +121,11 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   create_CN_particlesets(elec, ions);
 
@@ -289,11 +290,11 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   create_CN_particlesets(elec, ions);
 
@@ -457,11 +458,11 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   create_CN_particlesets(elec, ions);
 
@@ -596,11 +597,11 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   create_CN_particlesets(elec, ions);
 
@@ -739,11 +740,12 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "========================================================================================\n";
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
-  Communicate* c;
-  c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   //Build a CN test molecule.
   create_CN_particlesets(elec, ions);

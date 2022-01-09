@@ -89,6 +89,9 @@ public:
    */
   inline PoolType& getPool() { return myPool; }
 
+  /// get simulation cell
+  const auto& getSimulationCell() const { return *simulation_cell_; }
+
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
   void randomize();

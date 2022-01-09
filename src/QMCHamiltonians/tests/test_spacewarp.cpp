@@ -48,7 +48,9 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   tmat(1, 1) = 1;
   tmat(2, 2) = 1;
 
-  ParticleSet ions;
+  const SimulationCell simulation_cell;
+
+  ParticleSet ions(simulation_cell);
   XMLParticleParser parse_ions(ions, tmat);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
@@ -58,7 +60,7 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   REQUIRE(ions.R.size() == 2);
   ions.update();
 
-  ParticleSet elec;
+  ParticleSet elec(simulation_cell);
   XMLParticleParser parse_elec(elec, tmat);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
