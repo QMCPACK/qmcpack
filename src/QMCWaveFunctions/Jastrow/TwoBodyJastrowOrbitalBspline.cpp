@@ -238,7 +238,7 @@ void TwoBodyJastrowOrbitalBspline<FT>::ratio(MCWalkerConfiguration& W,
     // 		      SumGPU.data(), walkers.size());
     if (UsePBC)
     {
-      bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
+      bool use_fast_image = W.getLattice().SimulationCellRadius >= spline.rMax;
       two_body_ratio_grad_PBC(W.RList_GPU.data(),
                               first,
                               last,
@@ -352,7 +352,7 @@ void TwoBodyJastrowOrbitalBspline<FT>::calcRatio(MCWalkerConfiguration& W,
     CudaSpline<CTS::RealType>& spline = *(GPUSplines[group * this->NumGroups + newGroup]);
     if (UsePBC)
     {
-      bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
+      bool use_fast_image = W.getLattice().SimulationCellRadius >= spline.rMax;
       two_body_ratio_grad_PBC(W.RList_GPU.data(),
                               first,
                               last,
@@ -430,7 +430,7 @@ void TwoBodyJastrowOrbitalBspline<FT>::NLratios(MCWalkerConfiguration& W,
                                                 std::vector<PosType>& quadPoints,
                                                 std::vector<ValueType>& psi_ratios)
 {
-  CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
+  CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers                 = W.WalkerList;
   int njobs                     = jobList.size();
   if (NL_JobListHost.size() < njobs)
@@ -517,7 +517,7 @@ void TwoBodyJastrowOrbitalBspline<FT>::calcGradient(MCWalkerConfiguration& W,
                                                     int k,
                                                     std::vector<GradType>& grad)
 {
-  CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
+  CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers                 = W.WalkerList;
   int newGroup                  = PtclRef.GroupID[iat];
   if (OneGradHost.size() < OHMMS_DIM * walkers.size())
@@ -593,7 +593,7 @@ void TwoBodyJastrowOrbitalBspline<FT>::addGradient(MCWalkerConfiguration& W, int
 template<class FT>
 void TwoBodyJastrowOrbitalBspline<FT>::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad, ValueMatrix_t& lapl)
 {
-  CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
+  CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers = W.WalkerList;
   int numGL = 4 * this->N * walkers.size();
   if (GradLaplGPU.size() < numGL)
@@ -736,7 +736,7 @@ void TwoBodyJastrowOrbitalBspline<FT>::evaluateDerivatives(
     TwoBodyJastrowOrbitalBspline<FT>::RealMatrix_t& d_logpsi,
     TwoBodyJastrowOrbitalBspline<FT>::RealMatrix_t& dlapl_over_psi)
 {
-  CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
+  CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers = W.WalkerList;
   int nw = walkers.size();
   for (int i = 0; i < UniqueSplines.size(); i++)

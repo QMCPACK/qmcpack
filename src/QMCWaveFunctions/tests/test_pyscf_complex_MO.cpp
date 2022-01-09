@@ -47,7 +47,21 @@ void test_C_diamond()
     tmat(1, 1) = 1;
     tmat(2, 2) = 1;
 
-    ParticleSet ions;
+    ParticleSet::ParticleLayout_t lattice;
+    // BCC H
+    lattice.R(0, 0) = 3.37316115;
+    lattice.R(0, 1) = 3.37316115;
+    lattice.R(0, 2) = 0.0;
+    lattice.R(1, 0) = 0.0;
+    lattice.R(1, 1) = 3.37316115;
+    lattice.R(1, 2) = 3.37316115;
+    lattice.R(2, 0) = 3.37316115;
+    lattice.R(2, 1) = 0.0;
+    lattice.R(2, 2) = 3.37316115;
+    lattice.reset();
+
+    const SimulationCell simulation_cell(lattice);
+    ParticleSet ions(simulation_cell);
     XMLParticleParser parse_ions(ions, tmat);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
@@ -57,7 +71,7 @@ void test_C_diamond()
     REQUIRE(ions.R.size() == 2);
     ions.update();
 
-    ParticleSet elec;
+    ParticleSet elec(simulation_cell);
     XMLParticleParser parse_elec(elec, tmat);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
@@ -67,18 +81,6 @@ void test_C_diamond()
     REQUIRE(elec.R.size() == 8);
 
     elec.R = 0.0;
-
-    // BCC H
-    elec.Lattice.R(0, 0) = 3.37316115;
-    elec.Lattice.R(0, 1) = 3.37316115;
-    elec.Lattice.R(0, 2) = 0.0;
-    elec.Lattice.R(1, 0) = 0.0;
-    elec.Lattice.R(1, 1) = 3.37316115;
-    elec.Lattice.R(1, 2) = 3.37316115;
-    elec.Lattice.R(2, 0) = 3.37316115;
-    elec.Lattice.R(2, 1) = 0.0;
-    elec.Lattice.R(2, 2) = 3.37316115;
-    elec.Lattice.reset();
 
     elec.addTable(ions);
     elec.update();

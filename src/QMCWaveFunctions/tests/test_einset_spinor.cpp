@@ -37,11 +37,23 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout_t lattice;
+  // O2 test example from pwscf non-collinear calculation.
+  lattice.R(0, 0) = 5.10509515;
+  lattice.R(0, 1) = -3.23993545;
+  lattice.R(0, 2) = 0.00000000;
+  lattice.R(1, 0) = 5.10509515;
+  lattice.R(1, 1) = 3.23993545;
+  lattice.R(1, 2) = 0.00000000;
+  lattice.R(2, 0) = -6.49690625;
+  lattice.R(2, 1) = 0.00000000;
+  lattice.R(2, 2) = 7.08268015;
+
+  const SimulationCell simulation_cell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -71,17 +83,6 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.spins[1] = 0.2;
   elec_.spins[2] = 0.4;
   elec_.setSpinor(true);
-
-  // O2 test example from pwscf non-collinear calculation.
-  elec_.Lattice.R(0, 0) = 5.10509515;
-  elec_.Lattice.R(0, 1) = -3.23993545;
-  elec_.Lattice.R(0, 2) = 0.00000000;
-  elec_.Lattice.R(1, 0) = 5.10509515;
-  elec_.Lattice.R(1, 1) = 3.23993545;
-  elec_.Lattice.R(1, 2) = 0.00000000;
-  elec_.Lattice.R(2, 0) = -6.49690625;
-  elec_.Lattice.R(2, 1) = 0.00000000;
-  elec_.Lattice.R(2, 2) = 7.08268015;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

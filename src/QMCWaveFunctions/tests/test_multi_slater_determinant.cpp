@@ -40,8 +40,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
                   int test_nlpp_algorithm_batched,
                   int test_batched_api)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
   auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -365,11 +364,11 @@ void test_Bi_msd(const std::string& spo_xml_string,
                  int check_spo_size,
                  int check_basisset_size)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 

@@ -49,13 +49,14 @@ public:
   int numSamples;
   int numParam;
   SampleStack samples;
+  const SimulationCell simulation_cell;
   MCWalkerConfiguration w;
   QMCHamiltonian h;
   TrialWaveFunction psi;
   QMCCostFunctionBatched costFn;
 
   LinearMethodTestSupport(int num_opt_crowds, int crowd_size, Communicate* comm)
-      : costFn(w, psi, h, samples, num_opt_crowds, crowd_size, comm)
+      : w(simulation_cell), costFn(w, psi, h, samples, num_opt_crowds, crowd_size, comm)
   {}
 
   std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }

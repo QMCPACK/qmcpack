@@ -100,6 +100,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       multih5file(""),
       WFS_name("wfj"),
       CodeName(""),
+      IonSystem(simulation_cell),
       gShell(0),
       gNumber(0),
       gBound(0),
@@ -164,6 +165,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       multih5file(""),
       WFS_name("wfj"),
       CodeName(""),
+      IonSystem(simulation_cell),
       gShell(0),
       gNumber(0),
       gBound(0),
@@ -343,7 +345,7 @@ void QMCGaussianParserBase::setOccupationNumbers()
 
 xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
 {
-  ParticleSet els;
+  ParticleSet els(simulation_cell);
   els.setName("e");
   if (!isSpinor)
   {

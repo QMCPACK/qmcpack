@@ -189,7 +189,7 @@ UBspline_3d_d* QMCFiniteSize::getSkSpline(vector<RealType> sk, RealType limit)
         v[0]         = i;
         v[1]         = j;
         v[2]         = k;
-        RealType ksq = P->Lattice.ksq(v);
+        RealType ksq = P->getLattice().ksq(v);
 
         if (ksq > kcutsq)
           sk[skindex] = limit;
@@ -231,37 +231,37 @@ void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatele
   disp[0]  = h;
   disp[1]  = 0;
   disp[2]  = 0;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sx);
 
   disp[0]  = 0;
   disp[1]  = h;
   disp[2]  = 0;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sy);
 
   disp[0]  = 0;
   disp[1]  = 0;
   disp[2]  = h;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sz);
 
   disp[0]  = h;
   disp[1]  = h;
   disp[2]  = 0;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sxy);
 
   disp[0]  = h;
   disp[1]  = 0;
   disp[2]  = h;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &sxz);
 
   disp[0]  = 0;
   disp[1]  = h;
   disp[2]  = h;
-  disp_lat = P->Lattice.k_unit(disp);
+  disp_lat = P->getLattice().k_unit(disp);
   eval_UBspline_3d_d(spline, disp_lat[0], disp_lat[1], disp_lat[2], &syz);
 
   symmatelem[0] = RealType(sx) / h2;
@@ -280,7 +280,7 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   IndexType ngrid = sphericalgrid.size();
   for (IndexType i = 0; i < ngrid; i++)
   {
-    kvec     = P->Lattice.k_unit(k * sphericalgrid[i]); // to reduced coordinates
+    kvec     = P->getLattice().k_unit(k * sphericalgrid[i]); // to reduced coordinates
     bool inx = true;
     bool iny = true;
     bool inz = true;
@@ -364,7 +364,7 @@ void QMCFiniteSize::initialize()
   //Initialize the long range breakup. Chosen in input xml
   initBreakup();
   Ne    = P->getTotalNum();
-  Vol   = P->Lattice.Volume;
+  Vol   = P->getLattice().Volume;
   rs    = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
   rho   = RealType(Ne) / Vol;
   Klist = P->getSK().getKLists();

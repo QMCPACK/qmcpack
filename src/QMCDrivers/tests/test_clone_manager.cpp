@@ -48,7 +48,8 @@ TEST_CASE("QMCUpdate", "[drivers]")
 {
   Communicate* c = OHMMS::Controller;
 
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration elec(simulation_cell);
   elec.setName("e");
   elec.create(1);
   elec.createWalkers(1);

@@ -359,7 +359,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   TwistAngle_DP = TwistAngle;
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.write(twist_grp_id, "twist_angle");
-  ParticleSet::ParticleLayout_t& lattice(targetPtcl.getLattice());
+  const ParticleSet::ParticleLayout_t& lattice(targetPtcl.getLattice());
   RealType dx = 1.0 / static_cast<RealType>(nG[0] - 1);
   RealType dy = 1.0 / static_cast<RealType>(nG[1] - 1);
   RealType dz = 1.0 / static_cast<RealType>(nG[2] - 1);
