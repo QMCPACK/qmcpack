@@ -58,14 +58,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
 
-  const SimulationCell simulation_cell(lattice);
-
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell, kind_selected);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell, kind_selected);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
@@ -73,6 +74,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   std::vector<int> ud(2);
   ud[0] = ud[1] = 2;
   elec_.create(ud);
@@ -91,10 +93,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
-
-  ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);

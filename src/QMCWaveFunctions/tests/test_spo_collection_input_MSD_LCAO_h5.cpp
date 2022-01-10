@@ -33,13 +33,14 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
 {
   Communicate* c = OHMMS::Controller;
 
-  const SimulationCell simulation_cell;
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1, 1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   ions_.R[1]           = {0.0, 0.0, 3.0139239693};
@@ -48,6 +49,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   int HIdx             = ispecies.addSpecies("H");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2, 2});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {0.1, 0.1, 1.1};
@@ -60,12 +62,6 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   int massIdx                = tspecies.addAttribute("mass");
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
@@ -209,13 +205,14 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
 {
   Communicate* c = OHMMS::Controller;
 
-  const SimulationCell simulation_cell;
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1, 1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   ions_.R[1]           = {0.0, 0.0, 3.0139239693};
@@ -224,6 +221,7 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
   int HIdx             = ispecies.addSpecies("H");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2, 2, 1});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {0.1, 0.1, 1.1};
@@ -243,12 +241,6 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
   tspecies(chargeIdx, upIdx)       = -1.0;
   tspecies(chargeIdx, downIdx)     = -1.0;
   tspecies(chargeIdx, positronIdx) = 1.0;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);

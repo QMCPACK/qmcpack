@@ -45,14 +45,15 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   lattice.R(2, 2) = 3.77945227;
   lattice.reset();
 
-  const SimulationCell simulation_cell(lattice);
-
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions(*ions_uptr);
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
@@ -68,6 +69,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.create(agroup);
 
   elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -86,12 +88,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.addTable(ions);
   elec.resetGroups();
   elec.update();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //BCC H
   const char* particles = "<tmp> \
@@ -188,14 +184,15 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   lattice.R(2, 2) = 0.0;
   lattice.reset();
 
-  const SimulationCell simulation_cell(lattice);
-
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions(*ions_uptr);
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
@@ -211,6 +208,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.create(agroup);
 
   elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -235,12 +233,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.addTable(ions);
   elec.resetGroups();
   elec.update();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \

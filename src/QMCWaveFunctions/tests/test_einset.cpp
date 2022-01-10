@@ -57,13 +57,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   lattice.R(2, 1) = 0.0;
   lattice.R(2, 2) = 3.37316115;
 
-  const SimulationCell simulation_cell(lattice);
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
@@ -74,6 +76,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(2);
   elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
@@ -86,12 +89,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
@@ -255,13 +252,15 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   lattice.R(2, 1) = 0.0;
   lattice.R(2, 2) = 3.37316115;
 
-  const SimulationCell simulation_cell(lattice);
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(4);
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
@@ -278,6 +277,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(2);
   elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
@@ -290,12 +290,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \

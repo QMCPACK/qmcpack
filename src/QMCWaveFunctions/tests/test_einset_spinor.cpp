@@ -51,13 +51,15 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   lattice.R(2, 1) = 0.00000000;
   lattice.R(2, 2) = 7.08268015;
 
-  const SimulationCell simulation_cell(lattice);
-  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
 
   ions_.R[0][0] = 0.00000000;
@@ -68,6 +70,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ions_.R[1][2] = -1.08659253;
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(3);
   elec_.R[0][0] = 0.1;
   elec_.R[0][1] = -0.3;
@@ -88,10 +91,6 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   elec_.update();
   ions_.update();

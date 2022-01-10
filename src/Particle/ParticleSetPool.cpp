@@ -85,17 +85,17 @@ MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
 
 void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
 {
-  PoolType::iterator pit(myPool.find(p->getName()));
+  const auto pit(myPool.find(p->getName()));
   if (pit == myPool.end())
   {
     auto& pname = p->getName();
     LOGMSG("  Adding " << pname << " ParticleSet to the pool")
+    if (&p->getSimulationCell() != simulation_cell_.get())
+      throw std::runtime_error("bug mandate");
     myPool[pname] = p.release();
   }
   else
-  {
-    WARNMSG("  " << p->getName() << " exists. Ignore addition")
-  }
+    throw std::runtime_error(p->getName() + " exists. Cannot be added again.");
 }
 
 bool ParticleSetPool::putTileMatrix(xmlNodePtr cur)

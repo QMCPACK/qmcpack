@@ -64,11 +64,16 @@ public:
    *  This is later directly assigned to pset member variable Lattice.
    */
   bool putLattice(xmlNodePtr cur);
+
   ///return true, if the pool is empty
   inline bool empty() const { return myPool.empty(); }
 
-  ///add a ParticleSet* to the pool with ownership transferred
+  /** add a ParticleSet* to the pool with its ownership transferred
+   * ParticleSet built outside the ParticleSetPool must be constructed with
+   * the simulation cell from this->simulation_cell_.
+   */
   void addParticleSet(std::unique_ptr<ParticleSet>&& p);
+
   /** get a named ParticleSet
    * @param pname name of the ParticleSet
    * @return a MCWalkerConfiguration object with pname
@@ -91,6 +96,9 @@ public:
 
   /// get simulation cell
   const auto& getSimulationCell() const { return *simulation_cell_; }
+
+  /// set simulation cell
+  void setSimulationCell(const SimulationCell& simulation_cell) { *simulation_cell_ = simulation_cell; }
 
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
