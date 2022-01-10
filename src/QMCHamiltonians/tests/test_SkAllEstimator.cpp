@@ -117,7 +117,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   ParticleSetPool pset_builder(c, "pset_builder");
 
   // First attach the Lattice defined above
-  pset_builder.putLattice(lat_xml_root);
+  pset_builder.readSimulationCellXML(lat_xml_root);
 
   // Now build the elec ParticleSet
   bool elec_pset_okay = doc.parseFromString(elec_pset_xml);

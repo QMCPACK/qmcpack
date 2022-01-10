@@ -130,7 +130,7 @@ bool QMCFiniteSize::processPWH(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "simulationcell")
     {
-      ptclPool.putLattice(cur);
+      ptclPool.readSimulationCellXML(cur);
     }
     else if (cname == "particleset")
     {

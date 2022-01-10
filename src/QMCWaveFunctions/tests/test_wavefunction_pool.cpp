@@ -69,7 +69,7 @@ void setupParticleSetPool(ParticleSetPool& pp)
   xmlNodePtr root     = doc.getRoot();
   xmlNodePtr sim_cell = xmlFirstElementChild(root);
   // Need to set up simulation cell lattice before reading particle sets
-  pp.putLattice(sim_cell);
+  pp.readSimulationCellXML(sim_cell);
 
   xmlNodePtr part_ion = xmlNextElementSibling(sim_cell);
   pp.put(part_ion);

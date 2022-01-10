@@ -63,7 +63,7 @@ public:
    *  to particle layout created on heap.
    *  This is later directly assigned to pset member variable Lattice.
    */
-  bool putLattice(xmlNodePtr cur);
+  bool readSimulationCellXML(xmlNodePtr cur);
 
   ///return true, if the pool is empty
   inline bool empty() const { return myPool.empty(); }
@@ -111,9 +111,9 @@ public:
 private:
   /** global simulation cell
    *
-   * simulation_cell_ cannot not modified once it is initialized by
-   * - <simulationcell> element
-   * - the first particleset created with ES-HDF
+   * updated by
+   * - readSimulationCellXML() parsing <simulationcell> element
+   * - setSimulationCell()
    */
   std::unique_ptr<SimulationCell> simulation_cell_;
   /** tiling matrix

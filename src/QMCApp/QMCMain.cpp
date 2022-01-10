@@ -534,7 +534,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     if (cname == "simulationcell")
     {
       inputnode = true;
-      ptclPool->putLattice(cur);
+      ptclPool->readSimulationCellXML(cur);
     }
     else if (cname == "particleset")
     {

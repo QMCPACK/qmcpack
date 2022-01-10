@@ -108,7 +108,7 @@ bool ParticleSetPool::putTileMatrix(xmlNodePtr cur)
   return true;
 }
 
-bool ParticleSetPool::putLattice(xmlNodePtr cur)
+bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
 

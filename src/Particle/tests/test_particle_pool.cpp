@@ -171,6 +171,6 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  pp.putLattice(root);
+  pp.readSimulationCellXML(root);
 }
 } // namespace qmcplusplus
