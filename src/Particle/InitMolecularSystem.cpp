@@ -23,7 +23,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTable.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 
 namespace qmcplusplus
 {

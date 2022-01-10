@@ -43,12 +43,11 @@ BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool) : cutOff(
 std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
   xmlNodePtr curRoot = cur;
-  std::string cname;
   auto BFTrans = std::make_unique<BackflowTransformation>(targetPtcl);
   cur          = curRoot->children;
   while (cur != NULL)
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == "transf" || cname == "transformation")
     {
       OhmmsAttributeSet spoAttrib;
@@ -130,10 +129,9 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
     //    new Backflow_eI_spin<BsplineFunctor<RealType>>(*ions, targetPtcl);
     //tbf1->numParams = 0;
     //xmlNodePtr cur1 = cur->children;
-    //std::string cname;
     //while (cur1 != NULL)
     //{
-    //  getNodeName(cname, cur1);
+    //  std::string cname (getNodeName(cur1));
     //  if (cname == "correlation")
     //  {
     //    RealType my_cusp = 0.0;
@@ -190,7 +188,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
     cur = curRoot->children;
     while (cur != NULL)
     {
-      getNodeName(cname, cur);
+      std::string cname(getNodeName(cur));
       if (cname == "correlation")
       {
         RealType my_cusp = 0.0;
@@ -204,11 +202,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
         if (unique == "yes") // look for <index> block, and map based on that
         {
           xmlNodePtr kids = cur;
-          std::string aname;
           kids = cur->children;
           while (kids != NULL)
           {
-            getNodeName(aname, kids);
+            std::string aname(getNodeName(kids));
             if (aname == "index")
             {
               std::vector<int> pos;
@@ -304,11 +301,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
   {
     app_log() << "Using BsplineFunctor type. \n";
     //         BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusp);
-    std::string cname;
     cur = curRoot->children;
     while (cur != NULL)
     {
-      getNodeName(cname, cur);
+      std::string cname(getNodeName(cur));
       if (cname == "correlation")
       {
         RealType cusp = 0;
@@ -440,11 +436,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addRPA(xmlNodePtr cur)
   std::unique_ptr<Backflow_ee<BsplineFunctor<RealType>>> tbf;
   Backflow_ee_kSpace* tbfks = 0;
   // now look for components
-  std::string cname;
   cur = cur->children;
   while (cur != NULL)
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == "correlation")
     {
       std::string type = "none";

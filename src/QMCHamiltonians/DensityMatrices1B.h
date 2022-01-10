@@ -152,7 +152,7 @@ public:
   PosType dpcur;
   RealType rhocur;
 
-  RandomGenerator_t* uniform_random;
+  RandomGenerator* uniform_random;
 
 
   //constructor/destructor
@@ -167,7 +167,7 @@ public:
 
   //optional standard interface
   void getRequiredTraces(TraceManager& tm) override;
-  void setRandomGenerator(RandomGenerator_t* rng) override;
+  void setRandomGenerator(RandomGenerator* rng) override;
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -198,9 +198,9 @@ public:
   //  sample generation
   void warmup_sampling();
   void generate_samples(RealType weight, int steps = 0);
-  void generate_uniform_grid(RandomGenerator_t& rng);
-  void generate_uniform_samples(RandomGenerator_t& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng);
+  void generate_uniform_grid(RandomGenerator& rng);
+  void generate_uniform_samples(RandomGenerator& rng);
+  void generate_density_samples(bool save, int steps, RandomGenerator& rng);
   void diffusion(RealType sqt, PosType& diff);
   void density_only(const PosType& r, RealType& dens);
   void density_drift(const PosType& r, RealType& dens, PosType& drift);

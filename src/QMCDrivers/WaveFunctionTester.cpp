@@ -17,7 +17,7 @@
 
 #include "Particle/MCWalkerConfiguration.h"
 #include "ParticleBase/ParticleUtility.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Message/Communicate.h"
 #include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -101,7 +101,7 @@ bool WaveFunctionTester::run()
 
   put(qmcNode);
 
-  auto Rng1 = std::make_unique<RandomGenerator_t>();
+  auto Rng1 = std::make_unique<RandomGenerator>();
   H.setRandomGenerator(Rng1.get());
   // Add to Rng so the object is eventually deleted
   Rng.emplace_back(std::move(Rng1));
@@ -1902,8 +1902,8 @@ void WaveFunctionTester::runDerivCloneTest()
 {
   app_log() << " ===== runDerivCloneTest =====\n";
   app_log() << " Testing derivatives clone" << std::endl;
-  auto Rng1      = std::make_unique<RandomGenerator_t>();
-  auto Rng2      = std::make_unique<RandomGenerator_t>();
+  auto Rng1      = std::make_unique<RandomGenerator>();
+  auto Rng2      = std::make_unique<RandomGenerator>();
   (*Rng1)        = (*Rng2);
   auto w_clone   = std::make_unique<MCWalkerConfiguration>(W);
   auto psi_clone = Psi.makeClone(*w_clone);

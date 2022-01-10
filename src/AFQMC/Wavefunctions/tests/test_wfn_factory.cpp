@@ -105,7 +105,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     //auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,1);
     auto TG   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
@@ -443,7 +443,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     auto TG    = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG, std::string("WfnTG"), ngroups, gTG.getTotalCores());
     int nwalk  = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
@@ -821,7 +821,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     //auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,1);
     //int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
 const char *wlk_xml_block =
 "<WalkerSet name=\"wset0\">  \

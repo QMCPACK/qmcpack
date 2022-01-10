@@ -230,7 +230,7 @@ public:
 
   //optional standard interface
   //void getRequiredTraces(TraceManager& tm);
-  //void setRandomGenerator(RandomGenerator_t* rng);
+  //void setRandomGenerator(RandomGenerator* rng);
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override {}

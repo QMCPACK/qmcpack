@@ -88,7 +88,7 @@ bool SpinDensity::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "dr")
       {
         have_dr = true;
@@ -192,7 +192,7 @@ void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectable
 
 void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t sgid = H5Gcreate(gid, name_.c_str(), 0);
+  hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)
@@ -238,7 +238,7 @@ SpinDensity::Return_t SpinDensity::evaluate(ParticleSet& P)
 void SpinDensity::test(int moves, ParticleSet& P)
 {
   app_log() << "  SpinDensity test" << std::endl;
-  RandomGenerator_t rng;
+  RandomGenerator rng;
   int particles = P.getTotalNum();
   int pmin      = std::numeric_limits<int>::max();
   int pmax      = std::numeric_limits<int>::min();

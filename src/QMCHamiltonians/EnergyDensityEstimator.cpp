@@ -480,7 +480,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 
 void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t g = H5Gcreate(gid, name_.c_str(), 0);
+  hid_t g = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5desc.emplace_back("variables");
   auto& oh = h5desc.back();
   oh.open(g);

@@ -155,7 +155,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "basis")
         putContent(sposets, element);
       else if (name == "energy_matrix")
@@ -507,7 +507,7 @@ void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 }
 
 
-void DensityMatrices1B::setRandomGenerator(RandomGenerator_t* rng) { uniform_random = rng; }
+void DensityMatrices1B::setRandomGenerator(RandomGenerator* rng) { uniform_random = rng; }
 
 
 void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -546,10 +546,10 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
 #endif
 
   std::string dname = name_;
-  hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
+  hid_t dgid        = H5Gcreate2(gid, dname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate(dgid, nname.c_str(), 0);
+  hid_t ngid        = H5Gcreate2(dgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   for (int s = 0; s < nspecies; ++s)
   {
     h5desc.emplace_back(species_name[s]);
@@ -561,7 +561,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   if (energy_mat)
   {
     std::string ename = "energy_matrix";
-    hid_t egid        = H5Gcreate(dgid, ename.c_str(), 0);
+    hid_t egid        = H5Gcreate2(dgid, ename.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     for (int s = 0; s < nspecies; ++s)
     {
       h5desc.emplace_back(species_name[s]);
@@ -900,7 +900,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
 inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 {
   ScopedTimer t(timers[DM_gen_samples]);
-  RandomGenerator_t& rng = *uniform_random;
+  RandomGenerator& rng = *uniform_random;
   bool save              = false;
   if (steps == 0)
   {
@@ -956,7 +956,7 @@ inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 }
 
 
-inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator& rng)
 {
   PosType rp;
   PosType ushift = 0.0;
@@ -978,7 +978,7 @@ inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator_t& rng)
 }
 
 
-inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator& rng)
 {
   PosType rp;
   for (int s = 0; s < samples; ++s)
@@ -990,7 +990,7 @@ inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator_t& rng)
 }
 
 
-inline void DensityMatrices1B::generate_density_samples(bool save, int steps, RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_density_samples(bool save, int steps, RandomGenerator& rng)
 {
   RealType sqt = std::sqrt(timestep);
   RealType ot  = 1.0 / timestep;

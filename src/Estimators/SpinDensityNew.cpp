@@ -115,7 +115,7 @@ void SpinDensityNew::startBlock(int steps)
 void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 const RefVector<ParticleSet>& psets,
                                 const RefVector<TrialWaveFunction>& wfns,
-                                RandomGenerator_t& rng)
+                                RandomGenerator& rng)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -217,7 +217,7 @@ void SpinDensityNew::report(const std::string& pad)
 void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 {
   std::vector<size_t> my_indexes;
-  hid_t sgid = H5Gcreate(gid, my_name_.c_str(), 0);
+  hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)

@@ -433,7 +433,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
     if (i % TG.TG_local().size() == TG.TG_local().rank())
       std::fill_n(G[i].origin(), G.size(1), ComplexType(0.0));
   TG.local_barrier();
-  auto Gsize = size_t(dm_size(not compact));
+  auto Gsize = dm_size(not compact);
   if (compact)
   {
     if (localGbuff.size() < 2 * Gsize) // 2 copies needed
@@ -451,7 +451,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   else
   {
     // always calculate compact and multiply by OrbMat at the end if full
-    auto Gsize_c     = size_t(dm_size(false));
+    auto Gsize_c     = dm_size(false);
     auto GAdims      = dm_dims(false, Alpha);
     auto GBdims      = dm_dims(false, Beta);
     auto GAdims_full = dm_dims(true, Alpha);
@@ -807,7 +807,7 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
   TG.local_barrier();
   double LogOverlapFactor(wset.getLogOverlapFactor());
-  auto Gsize = size_t(dm_size(not compact));
+  auto Gsize = dm_size(not compact);
   if (localGbuff.size() < Gsize)
     localGbuff.reextent(iextensions<1u>{Gsize});
 
@@ -1257,7 +1257,7 @@ void PHMSD::vMF(Vec&& v)
   using std::norm;
   assert(v.num_elements() == local_number_of_cholesky_vectors());
   std::fill_n(v.origin(), v.num_elements(), ComplexType(0));
-  auto Gsize = size_t(dm_size(false));
+  auto Gsize = dm_size(false);
   if (localGbuff.size() < Gsize)
     localGbuff.reextent(iextensions<1u>{Gsize});
 

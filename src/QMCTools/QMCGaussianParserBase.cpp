@@ -2470,8 +2470,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
       xmlAddChild(hamPtr, pairpot3);
     }
 
-    std::string tmp_codename = CodeName;
-    tolower(tmp_codename);
+    std::string tmp_codename(lowerCase(CodeName));
 
     if (tmp_codename == "rmg")
     {

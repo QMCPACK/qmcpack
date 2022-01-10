@@ -17,7 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCHamiltonian.h"
-#include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
@@ -935,7 +934,7 @@ void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
     auxH[i]->resetTargetParticleSet(P);
 }
 
-void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
+void QMCHamiltonian::setRandomGenerator(RandomGenerator* rng)
 {
   for (int i = 0; i < H.size(); i++)
     H[i]->setRandomGenerator(rng);

@@ -46,7 +46,7 @@ public:
       return true;
   }
 
-  WalkerSet& getWalkerSet(TaskGroup_& TG, const std::string& ID, RandomGenerator_t* rng)
+  WalkerSet& getWalkerSet(TaskGroup_& TG, const std::string& ID, RandomGenerator* rng)
   {
     auto xml = xmlBlocks.find(ID);
     if (xml == xmlBlocks.end())
@@ -86,7 +86,7 @@ protected:
   std::map<std::string, AFQMCInfo>& InfoMap;
 
   // generates a new WalkerSet and returns the pointer to the base class
-  WalkerSet buildHandler(TaskGroup_& TG, xmlNodePtr cur, RandomGenerator_t* rng)
+  WalkerSet buildHandler(TaskGroup_& TG, xmlNodePtr cur, RandomGenerator* rng)
   {
     std::string type("shared");
     std::string info("info0");

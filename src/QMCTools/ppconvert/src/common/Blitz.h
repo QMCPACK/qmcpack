@@ -72,7 +72,11 @@ struct Array : base_type{
 	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	sizes_type shape() const{return base_type::sizes();}
 	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
-	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
+	void resizeAndPreserve(sizes_type sizes){
+		// explicit conversion due to failure with libc++ type automatic conversion
+		 	base_type::reextent(std::apply([](auto... ss){return typename base_type::extensions_type{static_cast<typename base_type::size_type>(ss)...};}, sizes));
+
+	}
 	template<class... Ints>
 	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
 	typename base_type::element_ptr       data()      {return base_type::data_elements();}
@@ -120,7 +124,7 @@ struct Array<T, 1, base_type> : base_type{
 
 struct Range : boost::multi::index_range{
 	using boost::multi::index_range::index_range;
-	static auto all(){return boost::multi::all;}
+	static auto all(){return boost::multi::ALL;}
 };
 
 class nilArraySection{};

@@ -68,12 +68,12 @@ public:
    *  \param[in]     walkers         walkers in crowd
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
-   *  \param[inout]  rng             crowd scope RandomGenerator_t
+   *  \param[inout]  rng             crowd scope RandomGenerator
    */ 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator_t& rng);
+                  RandomGenerator& rng);
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
   RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }

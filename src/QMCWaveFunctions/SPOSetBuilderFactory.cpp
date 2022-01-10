@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
+#include "ModernStringUtils.hpp"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
@@ -116,7 +117,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     aAttrib.put(rootNode);
 
   std::string type_in = type;
-  tolower(type);
+  type = lowerCase(type);
 
   //when name is missing, type becomes the input
   if (name.empty())

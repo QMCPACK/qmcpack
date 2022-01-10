@@ -26,7 +26,7 @@ using WP = WalkerProperties::Indexes;
 DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w,
                                                      TrialWaveFunction& psi,
                                                      QMCHamiltonian& h,
-                                                     RandomGenerator_t& rg)
+                                                     RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;
@@ -138,7 +138,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
 DMCUpdateAllWithKill::DMCUpdateAllWithKill(MCWalkerConfiguration& w,
                                            TrialWaveFunction& psi,
                                            QMCHamiltonian& h,
-                                           RandomGenerator_t& rg)
+                                           RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;

@@ -87,7 +87,7 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
+void QMCCostFunctionBase::setRng(RefVector<RandomGenerator> r)
 {
   if (MoverRng.size() < r.size())
   {
@@ -97,7 +97,7 @@ void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
   for (int ip = 0; ip < r.size(); ++ip)
     MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = std::make_unique<RandomGenerator_t>(r[ip].get());
+    RngSaved[ip] = std::make_unique<RandomGenerator>(r[ip].get());
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
@@ -343,8 +343,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
   m_param.put(q);
 
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
 
   if (output_override_str == "yes")
     do_override_output = true;
@@ -534,13 +534,27 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
 
-    xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
     if (do_override_output)
     {
       std::ostringstream vp_filename;
       vp_filename << RootName << ".vp.h5";
-      xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
-      xmlAddChild(wf_root, vp_file_node);
+
+      OhmmsXPathObject vp_file_nodes("//override_variational_parameters", acontext);
+      if (vp_file_nodes.empty())
+      {
+        // Element is not present. Create a new one.
+        xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
+        xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        xmlAddChild(wf_root, vp_file_node);
+      }
+      else
+      {
+        // Element is present. Rewrite the href attribute.
+        for (int iparam = 0; iparam < vp_file_nodes.size(); iparam++)
+        {
+          xmlSetProp(vp_file_nodes[iparam], BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        }
+      }
     }
 
     //check var
@@ -548,7 +562,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
@@ -560,7 +574,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
@@ -580,7 +594,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
@@ -595,7 +609,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)

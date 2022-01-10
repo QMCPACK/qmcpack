@@ -34,7 +34,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
-                             RandomGenerator_t& rg)
+                             RandomGenerator& rg)
     : csoffset(0),
       Traces(0),
       W(w),
@@ -50,7 +50,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
 }
 
 /// Constructor.
-QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
     : csoffset(0),
       Traces(0),
       W(w),

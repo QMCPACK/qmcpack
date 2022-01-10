@@ -59,11 +59,10 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     nc2 = nc;
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFNode(NULL);
-  std::string cname;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname == backflow_tag)
     {
       // FIX FIX FIX !!!

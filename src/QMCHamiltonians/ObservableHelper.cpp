@@ -72,7 +72,7 @@ void ObservableHelper::set_dimensions(std::vector<int>& dims, int first)
 
 void ObservableHelper::open(hid_t grp_id)
 {
-  data_id      = H5Gcreate(grp_id, group_name.c_str(), 0);
+  data_id      = H5Gcreate2(grp_id, group_name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   hsize_t rank = mydims.size();
   if (rank)
   {

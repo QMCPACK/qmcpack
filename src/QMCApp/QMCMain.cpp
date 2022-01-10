@@ -454,7 +454,7 @@ bool QMCMain::validateXML()
     else if (cname == "include")
     {
       //file is provided
-      const XMLAttrString include_name(cur, "href");
+      const std::string include_name(getXMLAttributeValue(cur, "href"));
       if (!include_name.empty())
       {
         bool success = pushDocument(include_name);

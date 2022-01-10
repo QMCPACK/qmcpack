@@ -77,8 +77,10 @@ class involuter{
 	constexpr auto operator*() const {return reference{Involution{}, *it_};}
 	constexpr auto operator==(involuter const& o) const {return it_==o.it_;}
 	constexpr auto operator!=(involuter const& o) const {return it_!=o.it_;}
-	constexpr auto operator+=(typename involuter::difference_type n) -> involuter& {it_+=n; return *this;}
-	constexpr auto operator+(typename involuter::difference_type n) const {return involuter{it_+n};}
+	constexpr auto operator+=(difference_type n) -> involuter& {it_+=n; return *this;}
+	constexpr auto operator-=(difference_type n) -> involuter& {it_-=n; return *this;}
+	constexpr auto operator+(difference_type n) const {return involuter{it_+n};}
+	constexpr auto operator-(difference_type n) const {return involuter{it_-n};}
 	constexpr auto operator->() const {return pointer{&*it_};}
 };
 
@@ -205,7 +207,7 @@ BOOST_AUTO_TEST_CASE(transformed_array) {
 	}
 	 {
 	#if defined(__cpp_deduction_guides)
-		double Z[4][5] {
+		double Z[4][5] {  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : testing legacy types
 			{ 0,  1,  2,  3,  4},
 			{ 5,  6,  7,  8,  9},
 			{10, 11, 12, 13, 14},
@@ -219,10 +221,10 @@ BOOST_AUTO_TEST_CASE(transformed_array) {
 		{
 			using complex = std::complex<double>;
 			multi::array<complex, 2> d2D = {
-				{ {0., 3.}, {1., 9.}, { 2., 4.},  3.,  4.},
-				{  5.     , {6., 3.}, { 7., 5.},  8.,  9.},
-				{ {1., 4.}, {9., 1.},  12.     , 13., 14.},
-				{  15.    ,  16.    ,  17.     , 18., 19.}
+				{ {0., 3.}, { 1., 9.}, { 2., 4.},  3.,  4.},
+				{  5.     , { 6., 3.}, { 7., 5.},  8.,  9.},
+				{ {1., 4.}, { 9., 1.},  12.     , 13., 14.},
+				{  15.    ,  16.    ,   17.     , 18., 19.}
 			};
 
 			auto&& d2Dreal = d2D.reinterpret_array_cast<double>();

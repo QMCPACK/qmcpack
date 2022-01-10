@@ -235,8 +235,7 @@ if(NOT QMC_CUDA)
 
     # estimator tests
     include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-    set(stat_python_reqs numpy;h5py)
-    check_python_reqs(stat_python_reqs diamond-estimator add_tests)
+    check_python_reqs("numpy;h5py" diamond-estimator add_tests)
     if(add_tests)
       simple_run_and_check(
         short-LiH_pp-vmc_hf_sdj_estimator_spindensity

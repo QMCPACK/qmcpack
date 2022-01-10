@@ -7,7 +7,7 @@ g++-latest:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -20,7 +20,7 @@ g++-latest-std20:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -32,7 +32,7 @@ g++-current-debug:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -44,11 +44,11 @@ g++-current-asan:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
-    - CXXFLAGS="-fsanitize=address" cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - CXXFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer" cmake .. -DCMAKE_BUILD_TYPE=Debug
     - cmake --build . --verbose
     - ctest --output-on-failure
 
@@ -56,7 +56,7 @@ g++-current-codecov:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev curl gcovr lcov
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev curl gcovr lcov
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -78,7 +78,7 @@ g++-current-release:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -152,7 +152,7 @@ g++-openblas:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libopenblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libopenblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -164,7 +164,7 @@ memcheck:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX valgrind pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX valgrind pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -173,10 +173,12 @@ memcheck:
     - ctest --overwrite MemoryCheckCommandOptions="--leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=666" -T memcheck --output-on-failure
 
 clang++-9:
+  image: debian:stable
   stage: test
+  image: debian:stable
   script:
     - export CXX="clang++-9"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -185,10 +187,12 @@ clang++-9:
     - ctest --output-on-failure
 
 clang++-9-std17:
+  image: debian:stable
   stage: test
+  image: debian:stable
   script:
     - export CXX="clang++-9"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -197,16 +201,18 @@ clang++-9-std17:
     - ctest --output-on-failure
 
 clang++-9-asan:
+  image: debian:stable
   stage: test
+  image: debian:stable
   script:
     - export CXX="clang++-9"
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-9/bin/llvm-symbolizer
     - export CXXFLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 llvm-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev llvm
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 llvm-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev llvm
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
-    - cmake ..
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug
     - cmake --build . --verbose
     - export ASAN_OPTIONS="halt_on_error=1 detect_leaks=1"
     - ctest --output-on-failure
@@ -216,7 +222,7 @@ clang++:
   stage: test
   script:
     - export CXX="clang++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -228,12 +234,12 @@ clang++-tidy:
   stage: test
   script:
     - export CXX="clang++"
-    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet clang clang-tidy pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libblas-dev liblapack-dev libfftw3-dev
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet clang clang-tidy pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libblas-dev liblapack-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - clang-tidy --version
     - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy"
+    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*,-readability-magic-numbers,-modernize-use-nodiscard,-altera-struct-pack-align,-cert-err58-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-avoid-magic-numbers,-fuchsia-default-arguments-calls,-fuchsia-trailing-return,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-hicpp-vararg,-hicpp-no-array-decay,-llvm-header-guard,-llvmlibc-restrict-system-libc-headers,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-fuchsia-default-arguments-calls"
     - cmake --build . --verbose -- --quiet --no-print-directory
     - ctest --output-on-failure
 
@@ -241,7 +247,7 @@ g++-cpplint:
   stage: test
   script:
     - export CXX="g++"
-    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libblas-dev liblapack-dev libfftw3-dev python3-pip
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libblas-dev liblapack-dev libfftw3-dev python3-pip
     - pip install cpplint
     - ln --symbolic --force . ../multi
     - $CXX --version
@@ -255,7 +261,7 @@ clang++-std17:
   stage: test
   script:
     - export CXX="clang++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -267,7 +273,7 @@ clang++-11:
   stage: test
   script:
     - export CXX="clang++-11"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -281,7 +287,7 @@ clang++-11-gcc9:
   script:
     - export CXX="clang++-11"
     - apt-get update 
-    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet gcc-9 clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet gcc-9 clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX -v
     - mkdir build && cd build
@@ -293,7 +299,7 @@ clang++-11-std17:
   stage: test
   script:
     - export CXX="clang++-11"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -365,7 +371,7 @@ cuda-10.0:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet gcc-8 g++-8 pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet gcc-8 g++-8 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - g++-8 --version
@@ -380,7 +386,7 @@ cuda-11.0:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -393,7 +399,7 @@ cuda-11.1:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -406,7 +412,7 @@ cuda-11.0-std17:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -419,7 +425,7 @@ cuda-11.1-std17:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -432,7 +438,7 @@ cuda-11.2-std14:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -445,7 +451,7 @@ cuda-11.2-std17:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -458,7 +464,7 @@ cuda-11.3-std17:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -471,7 +477,7 @@ cuda-11.4-std17:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
       - ln --symbolic --force . ../multi
       - nvcc --version
       - mkdir build && cd build
@@ -479,19 +485,34 @@ cuda-11.4-std17:
       - cmake --build . --verbose
       - ctest --output-on-failure
 
+#cuda-11.5-std17:
+#    image: nvidia/cuda:11.5.0-devel
+#    stage: test
+#    script:
+#      - export DEBIAN_FRONTEND=noninteractive
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - nvcc --version
+#      - mkdir build && cd build
+#      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
+#      - cmake --build . --verbose
+#      - ctest --output-on-failure
+
 g++-cppcheck:
   stage: test
+  image: debian:stable
   script:
     - export CXX="g++"
-    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev liblapack-dev libfftw3-dev cppcheck
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev liblapack-dev libfftw3-dev cppcheck
     - ln --symbolic --force . ../multi
     - $CXX --version
     - cppcheck --version
-    - find . -name '*.hpp' -exec cppcheck --enable=all --inline-suppr --suppress=unmatchedSuppression --suppress=syntaxError --suppress=missingInclude --suppress=missingIncludeSystem --suppress=preprocessorErrorDirective --suppress=syntaxError --suppress=unusedFunction --suppress=arithOperationsOnVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=unmatchedSuppression:{} -D__align__ -DCUDARTAPI --language=c++ --std=c++17 --error-exitcode=666 {} \;
+    - find . -name '*.hpp' -exec cppcheck --enable=all --inline-suppr --suppress=unmatchedSuppression --suppress=syntaxError --suppress=missingInclude --suppress=missingIncludeSystem --suppress=preprocessorErrorDirective --suppress=syntaxError --suppress=unusedFunction --suppress=arithOperationsOnVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=unmatchedSuppression:{} -D__align__ -DCUDARTAPI --language=c++ --std=c++17 --error-exitcode=666 -UEXCLUDE_CPPCHECK --verbose --exception-handling {} \;
     - mkdir build && cd build
-    - cmake -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--inline-suppr;--suppress=missingIncludeSystem;--suppressions-list=${PWD}/../.cppcheck-suppressions;--language=c++;--std=c++17;--error-exitcode=666" ..
-    - cmake --build .
+    - cmake -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--inline-suppr;--suppress=missingIncludeSystem;--suppressions-list=${PWD}/../.cppcheck-suppressions;--language=c++;--std=c++17;--error-exitcode=666;-UEXCLUDE_CPPCHECK;--verbose;--exception-handling" ..
+    - cmake --build . --verbose
     - ctest --output-on-failure
+  allow_failure: true
 
 qmcpack-g++:
   stage: test
@@ -503,7 +524,9 @@ qmcpack-g++:
     - cd qmcpack
     - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
     - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH # e.g. https://gitlab.com/correaa/boost-multi.git
+    - echo $CI_REPOSITORY_URL
+    - echo $CI_COMMIT_BRANCH
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
     - cd ../qmcpack.noupdate
     - cd build
     - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
@@ -532,11 +555,34 @@ qmcpack-cuda-11.2-compileonly:
       - cd qmcpack
       - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
       - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-      - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH # e.g. https://gitlab.com/correaa/boost-multi.git
+      - echo $CI_REPOSITORY_URL
+      - echo $CI_COMMIT_BRANCH
+      - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
       - cd build
       - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 ..
       - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
       - ctest -R ppconvert --output-on-failure
+
+qmcpack-icpc-runner:
+  stage: test
+  tags:
+    - intel_compiler
+  script:
+    - . /opt/intel/oneapi/setvars.sh
+    - export CXX="icpc"
+    - $CXX --version
+    - cmake --version
+    - git clone https://github.com/QMCPACK/qmcpack.git
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - echo $CI_REPOSITORY_URL
+    - echo $CI_COMMIT_BRANCH
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git master
+    - cd build
+    - cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 ..
+    - make -j 16 ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
 
 inq-g++-latest:
   stage: test
@@ -568,7 +614,7 @@ inq-cuda-11.4-compileonly:
       - cd ../..
       - mkdir build && cd build
       - /usr/local/cuda/bin/nvcc -V
-      - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=7.0
+      - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70
       - make silicon
 
 g++-codecov-runner:
@@ -681,8 +727,8 @@ inq-nvcc-ompi:
     - cd ../..
     - mkdir build && cd build
     - /usr/local/cuda/bin/nvcc -V
-    - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --disable-debug --with-cuda-prefix=/usr/local/cuda
-    - make -j4
+    - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --disable-debug `#--with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70`
+    - make -j8
     - make -j4 install
     - ctest --output-on-failure --timeout 600
     - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..

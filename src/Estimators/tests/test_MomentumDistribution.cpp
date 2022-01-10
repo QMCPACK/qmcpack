@@ -182,7 +182,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   auto ref_wfns    = convertUPtrToRefVector(wfns);
 
   //   Setup RNG
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   //   Perform accumulate
   md.accumulate(ref_walkers, ref_psets, ref_wfns, rng);

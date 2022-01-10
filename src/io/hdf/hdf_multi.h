@@ -43,7 +43,7 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
   {
     using iextensions = typename boost::multi::iextensions<1u>;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref.reextent(iextensions{dims[0]});
+      ref.reextent(iextensions{static_cast<boost::multi::size_t>(dims[0])});
     return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 
@@ -163,7 +163,7 @@ struct h5data_proxy<boost::multi::array<T, 1, device::device_allocator<T>>> : pu
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref.reextent({dims[0]});
-    std::size_t sz    = ref.num_elements();
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -196,7 +196,7 @@ struct h5data_proxy<boost::multi::array<T, 2, device::device_allocator<T>>> : pu
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref.reextent({dims[0], dims[1]});
-    std::size_t sz    = ref.num_elements();
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -232,7 +232,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, device::device_pointer<T>>> : 
       }
       return false;
     }
-    std::size_t sz    = ref.num_elements();
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -272,7 +272,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
       }
       return false;
     }
-    std::size_t sz    = ref.num_elements();
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -300,7 +300,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_all
     if (ref.use_slab)
     {
       // later on specialize h5d_read for fancy pointers
-      std::size_t sz = ref.ref.num_elements();
+      auto sz = ref.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
                           ref.slab_offset.data(), buf.origin(), xfer_plist);
@@ -339,7 +339,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device
     if (ref.use_slab)
     {
       // later on specialize h5d_read for fancy pointers
-      std::size_t sz = ref.ref.num_elements();
+      auto sz = ref.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
                           ref.slab_offset.data(), buf.origin(), xfer_plist);

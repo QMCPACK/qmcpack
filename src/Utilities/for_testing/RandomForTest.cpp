@@ -19,7 +19,7 @@ namespace testing
 template<typename VT>
 RandomForTest<VT>::RandomForTest()
 {
-  rng.init(0, 1, 111);
+  rng.init(111);
 }
 
 template<typename VT>
