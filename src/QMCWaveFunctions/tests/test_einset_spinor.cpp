@@ -444,7 +444,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_2.R[2]     = elec_.R[0];
   elec_2.spins[0] = elec_.spins[1];
   elec_2.spins[1] = elec_.spins[2];
-  elec_2.spins[2] = elec_.spins[1];
+  elec_2.spins[2] = elec_.spins[0];
   RefVectorWithLeader<ParticleSet> p_list(elec_);
   p_list.push_back(elec_);
   p_list.push_back(elec_2);
