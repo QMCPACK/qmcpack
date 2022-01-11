@@ -18,6 +18,7 @@
 #include "OneBodyDensityMatricesInput.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
+#include "ValidMomentumDistributionInput.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
@@ -89,7 +90,17 @@ TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
   EstimatorManagerInput emi(estimators_doc.getRoot());
+
+  CHECK(emi.get_estimator_inputs().size() == 3);
   std::cout << "\n";
 }
 

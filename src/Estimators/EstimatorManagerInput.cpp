@@ -32,7 +32,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
       if (atype == "onebodydensitymatrices")
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
-      else if (atype == "spindensity_new")
+      else if (atype == "spindensity")
         appendEstimatorInput<SpinDensityInput>(child);
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);

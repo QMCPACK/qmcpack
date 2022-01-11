@@ -41,7 +41,7 @@ class EstimatorManagerInput
 public:
   EstimatorManagerInput() = default;
   EstimatorManagerInput(xmlNodePtr cur);
-
+  const EstimatorInputs& get_estimator_inputs() const { return estimator_inputs; };
 protected:
   /** read <Estimators> node
    */
