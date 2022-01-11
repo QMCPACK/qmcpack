@@ -12,7 +12,6 @@ endif()
 
 # Enable OpenMP
 if(QMC_OMP)
-  set(ENABLE_OPENMP 1)
   if(ENABLE_OFFLOAD)
     if (QMC_CUDA2HIP)
       set(OFFLOAD_TARGET_DEFAULT "amdgcn-amd-amdhsa")

@@ -23,7 +23,6 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64le")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O3")
 
   if(QMC_OMP)
-    set(ENABLE_OPENMP 1)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qsmp=omp")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qsmp=omp")
     if(ENABLE_OFFLOAD)

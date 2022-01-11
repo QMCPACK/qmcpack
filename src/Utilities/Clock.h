@@ -46,7 +46,7 @@ class CPUClock
 public:
   double operator()()
   {
-#if defined(ENABLE_OPENMP)
+#if defined(QMC_OMP)
     return omp_get_wtime();
 #else
     struct timeval tv;

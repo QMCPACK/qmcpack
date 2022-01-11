@@ -31,26 +31,28 @@ add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
-if(HAVE_MPI)
-  add_test(NAME check-affinity_runs COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-                                            $<TARGET_FILE:qmc-check-affinity>)
-else()
-  add_test(NAME check-affinity_runs COMMAND $<TARGET_FILE:qmc-check-affinity>)
+if(QMC_OMP)
+  if(HAVE_MPI)
+    add_test(NAME check-affinity_runs COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+                                              $<TARGET_FILE:qmc-check-affinity>)
+  else()
+    add_test(NAME check-affinity_runs COMMAND $<TARGET_FILE:qmc-check-affinity>)
+  endif()
+  set_tests_properties(
+    check-affinity_runs
+    PROPERTIES TIMEOUT
+               120
+               LABELS
+               "deterministic"
+               PASS_REGULAR_EXPRESSION
+               "OpenMP"
+               PROCESSORS
+               1
+               ENVIRONMENT
+               OMP_NUM_THREADS=3
+               PROCESSOR_AFFINITY
+               TRUE)
 endif()
-set_tests_properties(
-  check-affinity_runs
-  PROPERTIES TIMEOUT
-             120
-             LABELS
-             "deterministic"
-             PASS_REGULAR_EXPRESSION
-             "OpenMP"
-             PROCESSORS
-             1
-             ENVIRONMENT
-             OMP_NUM_THREADS=3
-             PROCESSOR_AFFINITY
-             TRUE)
 
 # Basic test for qmc-get-supercell. Cubic primitive vectors, request what should optimally be a 2x2x2 tiling
 if(HAVE_MPI)
