@@ -11,10 +11,8 @@ add_library(cxx_helpers ModernStringUtils.cpp)
 target_include_directories(cxx_helpers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(QMC_RNG FakeRandom.cpp
-    RandomGenerator.cpp
-    BoostRandom.cpp)
+    RandomGenerator.cpp)
 add_library(qmcrng ${QMC_RNG})
-target_link_libraries(qmcrng PUBLIC Boost::boost)
 
 set(UTILITIES
     qmc_common.cpp

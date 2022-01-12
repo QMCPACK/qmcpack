@@ -30,16 +30,16 @@ struct NonLocalPP
   using TensorType = Tensor<T, D>;
 
   /** random number generator */
-  RandomGenerator<RealType> myRNG;
+  RandomGenerator myRNG;
   /** weight ot each point on the sphere */
   std::vector<RealType> weight_m;
   /** positions on a sphere */
   std::vector<PosType> sgridxyz_m;
   /** default constructor with knots=12 */
-  NonLocalPP(const RandomGenerator<RealType>& rng) : myRNG(rng)
+  NonLocalPP(const RandomGenerator& rng) : myRNG(rng)
   {
     //use fixed seed
-    myRNG.init(0, 1, 11);
+    myRNG.init(11);
     weight_m.resize(12);
     sgridxyz_m.resize(12);
     const RealType w = RealType(1.0 / 12.0);

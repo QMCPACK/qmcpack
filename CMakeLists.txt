@@ -1071,6 +1071,7 @@ endif()
 message(STATUS "Ready to parse QMCPACK source tree")
 ######################################################################
 
+add_subdirectory(external_codes)
 add_subdirectory(src)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)
