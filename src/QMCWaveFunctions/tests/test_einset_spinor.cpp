@@ -483,10 +483,35 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(logdet_list[0].get()[iat][0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
     CHECK(logdet_list[0].get()[iat][1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
     CHECK(logdet_list[0].get()[iat][2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
+    CHECK(d2logdet_list[0].get()[iat][0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2logdet_list[0].get()[iat][1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2logdet_list[0].get()[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
+
     //walker 1, permuted from reference
     CHECK(logdet_list[1].get()[iat][0] == ComplexApprox(psiM_ref[(iat + 1) % 3][0]).epsilon(h));
     CHECK(logdet_list[1].get()[iat][1] == ComplexApprox(psiM_ref[(iat + 1) % 3][1]).epsilon(h));
     CHECK(logdet_list[1].get()[iat][2] == ComplexApprox(psiM_ref[(iat + 1) % 3][2]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][0][0] == ComplexApprox(dpsiM_ref[(iat+1) % 3][0][0]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][0][1] == ComplexApprox(dpsiM_ref[(iat+1) % 3][0][1]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][0][2] == ComplexApprox(dpsiM_ref[(iat+1) % 3][0][2]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][1][0] == ComplexApprox(dpsiM_ref[(iat+1) % 3][1][0]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][1][1] == ComplexApprox(dpsiM_ref[(iat+1) % 3][1][1]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][1][2] == ComplexApprox(dpsiM_ref[(iat+1) % 3][1][2]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][2][0] == ComplexApprox(dpsiM_ref[(iat+1) % 3][2][0]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][2][1] == ComplexApprox(dpsiM_ref[(iat+1) % 3][2][1]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][2][2] == ComplexApprox(dpsiM_ref[(iat+1) % 3][2][2]).epsilon(h));
+    CHECK(d2logdet_list[1].get()[iat][0] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][0]).epsilon(h2));
+    CHECK(d2logdet_list[1].get()[iat][1] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][1]).epsilon(h2));
+    CHECK(d2logdet_list[1].get()[iat][2] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][2]).epsilon(h2));
   }
 }
 
