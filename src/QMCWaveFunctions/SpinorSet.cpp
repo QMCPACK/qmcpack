@@ -265,7 +265,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
 
 #pragma omp parallel for
   for (int iw = 0; iw < nw; iw++)
-  {
     for (int iat = 0; iat < nelec; iat++)
     {
       ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
@@ -284,7 +283,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
             eis * up_d2logdet_list[iw].get()(iat, no) + emis * dn_d2logdet_list[iw].get()(iat, no);
       }
     }
-  }
 }
 
 void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
