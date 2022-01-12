@@ -199,8 +199,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
   up_spo_list.reserve(nw);
   dn_spo_list.reserve(nw);
-  up_spo_list.clear();
-  dn_spo_list.clear();
 
   std::vector<ValueMatrix_t> mw_up_logdet, mw_dn_logdet;
   std::vector<GradMatrix_t> mw_up_dlogdet, mw_dn_dlogdet;
@@ -211,12 +209,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   mw_dn_dlogdet.reserve(nw);
   mw_up_d2logdet.reserve(nw);
   mw_dn_d2logdet.reserve(nw);
-  mw_up_logdet.clear();
-  mw_dn_logdet.clear();
-  mw_up_dlogdet.clear();
-  mw_dn_dlogdet.clear();
-  mw_up_d2logdet.clear();
-  mw_dn_d2logdet.clear();
 
   RefVector<ValueMatrix_t> up_logdet_list, dn_logdet_list;
   RefVector<GradMatrix_t> up_dlogdet_list, dn_dlogdet_list;
@@ -227,12 +219,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   dn_dlogdet_list.reserve(nw);
   up_d2logdet_list.reserve(nw);
   dn_d2logdet_list.reserve(nw);
-  up_logdet_list.clear();
-  dn_logdet_list.clear();
-  up_dlogdet_list.clear();
-  dn_dlogdet_list.clear();
-  up_d2logdet_list.clear();
-  dn_d2logdet_list.clear();
 
   ValueMatrix_t tmp_val_mat(nelec, OrbitalSetSize);
   GradMatrix_t tmp_grad_mat(nelec, OrbitalSetSize);
