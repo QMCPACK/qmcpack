@@ -217,7 +217,7 @@ endif()
 #--------------------------------------------------------------------
 option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 if(INSTALL_NEXUS)
-  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)")
 endif()
 
 ######################################################################
