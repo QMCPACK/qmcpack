@@ -436,7 +436,14 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.rejectMove(iat);
   }
 
+
   // test batched interface
+  // first move elec_ back to original positions for reference
+  Rnew    = elec_.R - dR;
+  elec_.R = Rnew;
+  elec_.update();
+
+  //now create second walker, with permuted particle positions
   ParticleSet elec_2(elec_);
   // permute electrons
   elec_2.R[0]     = elec_.R[1];
@@ -454,8 +461,35 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
+  SPOSet::ValueMatrix_t psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
 
+  RefVector<SPOSet::ValueMatrix_t> logdet_list;
+  RefVector<SPOSet::GradMatrix_t> dlogdet_list;
+  RefVector<SPOSet::ValueMatrix_t> d2logdet_list;
+
+  logdet_list.push_back(psiM);
+  logdet_list.push_back(psiM_2);
+  dlogdet_list.push_back(dpsiM);
+  dlogdet_list.push_back(dpsiM_2);
+  d2logdet_list.push_back(d2psiM);
+  d2logdet_list.push_back(d2psiM_2);
+
+  spo->mw_evaluate_notranspose(spo_list, p_list, 0, 3, logdet_list, dlogdet_list, d2logdet_list);
+  for (unsigned int iat = 0; iat < 3; iat++)
+  {
+    //walker 0
+    CHECK(logdet_list[0].get()[iat][0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(logdet_list[0].get()[iat][1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(logdet_list[0].get()[iat][2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    //walker 1, permuted from reference
+    CHECK(logdet_list[1].get()[iat][0] == ComplexApprox(psiM_ref[(iat + 1) % 3][0]).epsilon(h));
+    CHECK(logdet_list[1].get()[iat][1] == ComplexApprox(psiM_ref[(iat + 1) % 3][1]).epsilon(h));
+    CHECK(logdet_list[1].get()[iat][2] == ComplexApprox(psiM_ref[(iat + 1) % 3][2]).epsilon(h));
+  }
 }
+
 #endif //QMC_COMPLEX
 
 
