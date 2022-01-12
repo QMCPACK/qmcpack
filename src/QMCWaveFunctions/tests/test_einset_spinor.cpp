@@ -463,6 +463,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
+  //update all walkers
+  elec_.mw_update(p_list);
+
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
