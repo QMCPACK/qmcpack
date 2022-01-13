@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -24,6 +24,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
+#include "EstimatorManagerInput.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -55,8 +56,10 @@ public:
   using FPRBuffer     = std::vector<FullPrecRealType>;
   using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  ///default constructor
+  ///testing constructor
   EstimatorManagerNew(Communicate* c);
+  ///default constructor
+  EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
@@ -137,6 +140,7 @@ public:
   auto& get_AverageCache() { return AverageCache; }
 
 private:
+  EstimatorManagerInput input_;
   /** reset the estimator
    */
   void reset();

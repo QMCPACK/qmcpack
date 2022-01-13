@@ -17,8 +17,8 @@
 namespace qmcplusplus
 {
 
-/** Interface to allow Input nodes to be type erased from the standship of memory ownership.
- *  Inputs can greatly vary in size so we don't want to try to do this with variant.
+/** Interface to allow Input nodes to be type erased for the purposes of ownership
+ *  Inputs can greatly vary in size so we don't want to just store them in a variant
  */
 struct InputNode {
   virtual ~InputNode() {};

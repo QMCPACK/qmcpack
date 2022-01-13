@@ -12,13 +12,19 @@
 #ifndef QMCPLUSPLUS_QMCDRIVERINPUT_H
 #define QMCPLUSPLUS_QMCDRIVERINPUT_H
 
+#include <variant>
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "InputTypes.hpp"
 #include "DriverDebugChecks.h"
+#include "io/InputNode.hpp"
+#include "Estimators/EstimatorManagerInput.h"
 
 namespace qmcplusplus
 {
+
+class EstimatorManagerInput;
+
 /** Input representation for Driver base class runtime parameters
  */
 class QMCDriverInput
@@ -96,7 +102,7 @@ protected:
 
   /** @}
    */
-
+  
 public:
   int get_store_config_period() const { return store_config_period_; }
   int get_recalculate_properties_period() const { return recalculate_properties_period_; }

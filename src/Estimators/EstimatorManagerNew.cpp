@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -38,9 +38,25 @@
 
 namespace qmcplusplus
 {
-//initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
-    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
+    : MainEstimatorName("LocalEnergy"),
+      RecordCount(0),
+      my_comm_(c),
+      Collectables(0),
+      max4ascii(8),
+      FieldWidth(20)
+{}
+
+
+//initialize the name of the primary estimator
+EstimatorManagerNew::EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi)
+    : input_(std::move(emi)),
+      MainEstimatorName("LocalEnergy"),
+      RecordCount(0),
+      my_comm_(c),
+      Collectables(0),
+      max4ascii(8),
+      FieldWidth(20)
 {}
 
 EstimatorManagerNew::~EstimatorManagerNew()
