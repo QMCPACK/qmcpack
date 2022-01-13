@@ -95,6 +95,14 @@ public:
                             GradMatrix_t& dlogdet,
                             ValueMatrix_t& d2logdet) override;
 
+  void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int first,
+                               int last,
+                               const RefVector<ValueMatrix_t>& logdet_list,
+                               const RefVector<GradMatrix_t>& dlogdet_list,
+                               const RefVector<ValueMatrix_t>& d2logdet_list) const override;
+
   void evaluate_notranspose_spin(const ParticleSet& P,
                                  int first,
                                  int last,
