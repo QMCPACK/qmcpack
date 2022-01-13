@@ -451,8 +451,8 @@ void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
 
   for (int iw = 0; iw < p_list.size(); iw++)
   {
-    p_list[iw].active_ptcl_ = iat;
-    p_list[iw].active_pos_  = p_list[iw].R[iat] + displs[iw];
+    p_list[iw].active_ptcl_     = iat;
+    p_list[iw].active_pos_      = p_list[iw].R[iat] + displs[iw];
     p_list[iw].active_spin_val_ = p_list[iw].spins[iat];
     new_positions.push_back(p_list[iw].active_pos_);
   }
