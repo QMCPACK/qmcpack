@@ -67,7 +67,7 @@ void SPOSet::evaluateVGL_spin(const ParticleSet& P,
                               ValueVector_t& d2psi,
                               ValueVector_t& dspin)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluateVGL_spin");
+  throw std::runtime_error("Need specialization of SPOSet::evaluateVGL_spin");
 }
 
 void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -123,7 +123,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
 
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
+  throw std::runtime_error("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
 
 void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
@@ -134,7 +134,7 @@ void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
                                        ValueMatrix_t& d2logdet,
                                        ValueMatrix_t& dspinlogdet)
 {
-  APP_ABORT("Need specialization of " + className +
+  throw std::runtime_error("Need specialization of " + className +
             "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
@@ -159,7 +159,7 @@ void SPOSet::evaluate_notranspose(const ParticleSet& P,
                                   GradMatrix_t& dlogdet,
                                   HessMatrix_t& grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
+  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
 }
 
 void SPOSet::evaluate_notranspose(const ParticleSet& P,
@@ -170,13 +170,13 @@ void SPOSet::evaluate_notranspose(const ParticleSet& P,
                                   HessMatrix_t& grad_grad_logdet,
                                   GGGMatrix_t& grad_grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
 }
 
 
 std::unique_ptr<SPOSet> SPOSet::makeClone() const
 {
-  APP_ABORT("Missing  SPOSet::makeClone for " + className);
+  throw std::runtime_error("Missing  SPOSet::makeClone for " + className);
   return std::unique_ptr<SPOSet>();
 }
 
@@ -194,7 +194,7 @@ void SPOSet::evaluateVGH(const ParticleSet& P,
                          GradVector_t& dpsi,
                          HessVector_t& grad_grad_psi)
 {
-  APP_ABORT("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
 void SPOSet::evaluateVGHGH(const ParticleSet& P,
@@ -204,7 +204,7 @@ void SPOSet::evaluateVGHGH(const ParticleSet& P,
                            HessVector_t& grad_grad_psi,
                            GGGVector_t& grad_grad_grad_psi)
 {
-  APP_ABORT("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
 
 void SPOSet::evaluateGradSource(const ParticleSet& P,
@@ -214,7 +214,7 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 int iat_src,
                                 GradMatrix_t& gradphi)
 {
-  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
+  throw std::runtime_error("SPOSetBase::evalGradSource is not implemented");
 }
 
 void SPOSet::evaluateGradSource(const ParticleSet& P,
@@ -226,19 +226,19 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 HessMatrix_t& grad_grad_phi,
                                 GradMatrix_t& grad_lapl_phi)
 {
-  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
+  throw std::runtime_error("SPOSetBase::evalGradSource is not implemented");
 }
 
 void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi)
 {
-  APP_ABORT("Need specialization of " + className + "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className + "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 
 #ifdef QMC_CUDA
 
 void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
 {
-  APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
+  throw std::runtime_error("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
 void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)

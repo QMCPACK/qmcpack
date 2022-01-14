@@ -79,7 +79,7 @@ void test_lcao_spinor()
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
-  CHECK(okay);
+  REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
 
@@ -93,7 +93,7 @@ void test_lcao_spinor()
     if (cname == "sposet")
       spo = bb.createSPOSet(element);
   });
-  CHECK(spo);
+  REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -385,7 +385,7 @@ void test_lcao_spinor_excited()
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
-  CHECK(okay);
+  REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
 
@@ -399,7 +399,7 @@ void test_lcao_spinor_excited()
     if (cname == "sposet")
       spo = bb.createSPOSet(element);
   });
-  CHECK(spo);
+  REQUIRE(spo);
 
   const int OrbitalSetSize = spo->getOrbitalSetSize();
   CHECK(OrbitalSetSize == 1);
