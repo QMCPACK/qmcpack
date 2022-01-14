@@ -494,26 +494,29 @@ public:
    */
   virtual RealType KECorrection();
 
-  /** Compute derivatives of the wavefunction with respect to the optimizable
-   *  parameters.
+  /** Compute the derivatives of both the log of the wavefunction and kinetic energy
+   * with respect to optimizable parameters.
    *  @param P particle set
    *  @param optvars optimizable parameters
-   *  @param dlogpsi array of derivatives of the log of the wavefunction
-   *  @param dhpsioverpsi array of derivatives of the Laplacian of the wavefunction divided by the wavefunction.
-   *          Note that this does not use the Laplacian of the log of the wavefunction, as in evaluateLog.
-   *          Also the factor of -1/2 from the kinetic energy must be included here.  The 1/m
-   *          factor is applied in TrialWaveFunction.
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
+   *         Add the contribution from this component.
+   *  @param dhpsioverpsi array of Hamiltonian derivatives.
+   *         Add the kinetic energy derivatives contribution from this component.
+   *         \f$ -\frac{1}{2}{\partial}_\alpha \tilde L - G \cdot {\partial}_\alpha \tilde G \f$.
+   *         \f$ \tilde L \f$ and \f$ \tilde G \f$ are from this WaveFunctionComponent.
+   *         \f$ G \f$ is from TrialWaveFunction. The 1/m factor is applied in TrialWaveFunction.
+   *         This is a bug when the particle set doesn't hold equal mass particles.
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi);
 
-  /** Compute derivatives of rhe wavefunction with respect to the optimizable
+  /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
    *  parameters
    *  @param P particle set
    *  @param optvars optimizable parameters
-   *  @param dlogpsi array of derivatives of the log of the wavefunction
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */

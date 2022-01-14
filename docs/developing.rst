@@ -2149,12 +2149,21 @@ An example of the second approach is
     }
   }
 
-Adding a wavefunction
+Wavefunction
 ---------------------
 
-The total wavefunction is stored in ``TrialWaveFunction`` as a product
-of all the components. Each component derives from
-``WaveFunctionComponent``. The code contains an example of a
+A full ``TrialWaveFunction`` is formulated as a product
+of all the components. Each component derives from ``WaveFunctionComponent``.
+
+.. math::
+     \psi = \prod_c {\tilde \psi_c}
+
+QMCPACK doesn't directly use the product form but mostly use the log of the wavefunction which
+fits the formulation of QMC algorithms very well. It also offers a numerical advantage on computers.
+The log value grows linearly instead of exponentioally with respect to the electron counts
+in a Slater-Jastrow wave function.
+
+The code contains an example of a
 wavefunction component for a Helium atom using a simple form and is
 described in :ref:`helium-wavefunction-example`
 
@@ -2169,14 +2178,18 @@ wavefunction. Expanded, the gradient and Laplacian are
   :label: eq264
 
    \begin{aligned}
-   G &=& \nabla \log(\psi) = \frac{\nabla \psi}{\psi} \\
-   L &=& {\nabla ^2} \log(\psi) = \frac{{\nabla ^2}\psi}{\psi} - \frac{\nabla \psi}{\psi} \cdot \frac{\nabla \psi}{\psi} \\
-                   &=& \frac{{\nabla ^2} \psi}{\psi} - G \cdot G\end{aligned}
+     {\bf G} & = \{ \nabla_i \ln(\psi) \} = \left\{ \sum_c \nabla_i \ln(\tilde \psi_c)\right\} , & {\bf \tilde G} & = \{ \nabla_i \ln(\tilde \psi) \} = \left\{ \frac{\nabla_i \tilde \psi}{\tilde \psi}\right\} \\
+     {\bf L} & = \{ \nabla^2_i \ln(\psi) \} = \left\{ \sum_c \nabla^2_i \ln(\tilde \psi_c) \right\}, & {\bf \tilde L}  & = \{ \nabla^2_i \ln(\tilde \psi) \} = \left\{\frac{{\nabla^2_i} \tilde \psi}{\tilde \psi} - {\tilde G_i} \cdot {\tilde G_i} \right\}
+   \end{aligned}
 
-However, the local energy formula needs :math:`\frac{{\nabla ^2} \psi}{\psi}`.
-The conversion from the Laplacian of the log of the wavefunction to the
-local energy value is performed in
-``QMCHamiltonians/BareKineticEnergy.h`` (i.e. :math:`L + G \cdot G`.)
+where :math:`i` is the electron index.
+In this separable form, each wavefunction component computes its :math:`{\bf \tilde G}` ``WaveFunctionComponent::G`` and :math:`{\bf \tilde L}` ``WaveFunctionComponent::L``. The sum over components are stored in ``TrialWaveFunction::G`` and ``TrialWaveFunction::L``.
+The :math:`\frac{{\nabla ^2} \psi}{\psi}` needed by kinetic part of the local energy can be computed as
+
+.. math::
+     \frac{\nabla^2 \psi}{\psi} = \sum_i ( {\bf L_i} + {\bf G}_i \cdot {\bf G}_i )
+
+see ``QMCHamiltonians/BareKineticEnergy.h``.
 
 Wavefunction evaluation
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -2305,14 +2318,24 @@ The ``checkInVariables``, ``checkOutVariables``, and ``resetParameters``
 functions manage the variational parameters. Optimizable variables also
 need to be registered when the XML is processed.
 
+
 Variational parameter derivatives are computed in the
-``evaluateDerivatives`` function. The first output value is an array
-with parameter derivatives of log of the wavefunction. The second output
-values is an array with parameter derivatives of the Laplacian divided
-by the wavefunction (and not the Laplacian of the log of the
-wavefunction) The kinetic energy term contains a :math:`-1/2m` factor.
-The :math:`1/m` factor is applied in ``TrialWaveFunction.cpp``, but the
-:math:`-1/2` is not and must be accounted for in this function.
+``evaluateDerivatives`` function. It computes the derivatives of both the log
+of the wavefunction and kinetic energy with respect to optimizable parameters
+and adds the results to the corresponding output arrays.
+
+The kinetic energy derivatives are computed as
+
+.. math::
+  \sum_i -\frac{1}{2 m_i}({\partial}_\alpha {\bf L}_i + 2 {\bf G}_i \cdot {\partial}_\alpha {\bf G}_i)
+
+with each ``WaveFunctionComponent`` contributing
+
+.. math::
+  -\frac{1}{2}{\partial}_\alpha \tilde L - G \cdot {\partial}_\alpha \tilde G
+
+Right now :math:`1/m` factor is applied in ``TrialWaveFunction``.
+This is a bug when the particle set doesn't hold equal mass particles.
 
 .. _helium-wavefunction-example:
 
