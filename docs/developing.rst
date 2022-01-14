@@ -882,8 +882,8 @@ of all the components. Each component derives from ``WaveFunctionComponent``.
 
 QMCPACK doesn't directly use the product form but mostly use the log of the wavefunction which
 fits the formulation of QMC algorithms very well. It also offers a numerical advantage on computers.
-The log value grows linearly instead of exponentioally with respect to the electron counts
-in a Slater-Jastrow wave function.
+The log value grows linearly instead of exponentioally, beyond the range of double precision,
+with respect to the electron counts in a Slater-Jastrow wave function.
 
 The code contains an example of a
 wavefunction component for a Helium atom using a simple form and is
@@ -909,7 +909,7 @@ In this separable form, each wavefunction component computes its :math:`{\bf \ti
 The :math:`\frac{{\nabla ^2} \psi}{\psi}` needed by kinetic part of the local energy can be computed as
 
 .. math::
-     \frac{\nabla^2 \psi}{\psi} = \sum_i ( {\bf L_i} + {\bf G}_i \cdot {\bf G}_i )
+     \frac{\nabla^2_i \psi}{\psi} = {\bf L_i} + {\bf G}_i \cdot {\bf G}_i
 
 see ``QMCHamiltonians/BareKineticEnergy.h``.
 
