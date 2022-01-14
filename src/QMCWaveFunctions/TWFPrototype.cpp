@@ -25,7 +25,7 @@ TWFPrototype::IndexType TWFPrototype::get_group_index(const IndexType gid)
 
   return IndexType(-1);
 }
-void TWFPrototype::add_determinant(const ParticleSet& P, const IndexType gid, SPOSet* spo)
+void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
   if (std::find(groups.begin(), groups.end(), gid) == groups.end())
   {

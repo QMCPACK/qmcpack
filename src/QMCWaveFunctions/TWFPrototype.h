@@ -44,7 +44,22 @@ public:
   using GradVector_t  = SPOSet::GradVector_t;
 
   TWFPrototype();
-  void add_determinant(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
+
+  
+  /** @brief Add a particle group.
+   *
+   *  Here, a "group" corresponds to a subset of particles which are antisymmetric with 
+   *  respect to eachother.  TWFPrototype ensures that there is a binding between the groupid
+   *  in ParticleSet and the SPOSet associated with that particle group.  This function stores
+   *  the ParticleSet groupid and SPOSet in a vector for lookup and communication with QMCPACK conventions, 
+   *  but is agnostic to the order of group registration or evaluation.  
+   *
+   *  @param[in] P.  ParticleSet
+   *  @param[in] groupid.  ParticleSet groupid to which SPOSet corresponds.
+   *  @param[in] spo.  Pointer to SPOSet.  
+   *  @return void.
+   */  
+  void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void add_jastrow(WaveFunctionComponent* j) { J.push_back(j); };
 
   //Whatever the group is labelled as in the particle set, sid corresponds to the group used to create determinant sid.
