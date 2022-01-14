@@ -55,10 +55,10 @@ if(BUILD_AFQMC)
   endif()
 endif()
 
-if(HAVE_PYSCF)
+if(HAS_PYSCF_PYTHON_MODULE)
   if(NOT QMC_COMPLEX)
     include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-    check_python_reqs("numpy;h5py;pyscf;PyscfToQmcpack;PyscfToQmcpack_Spline" pyscf_workflow add_tests)
+    check_python_reqs("numpy;h5py;PyscfToQmcpack;PyscfToQmcpack_Spline" pyscf_workflow add_tests)
 
     if(add_tests)
       message("Python dependencies met. Adding PySCF workflow tests")

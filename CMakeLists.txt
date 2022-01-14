@@ -1016,8 +1016,10 @@ include(python)
 # Check if PySCF is available
 #-------------------------------------------------------------------
 if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(pyscf HAVE_PYSCF)
-  if(NOT HAVE_PYSCF)
+  if(NOT DEFINED HAS_PYSCF_PYTHON_MODULE)
+    test_python_module(pyscf HAS_PYSCF_PYTHON_MODULE)
+  endif()
+  if(NOT ${HAS_PYSCF_PYTHON_MODULE})
     message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
   else()
     message(STATUS "Successfully imported PySCF python module.")
