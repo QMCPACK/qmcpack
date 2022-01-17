@@ -170,8 +170,7 @@ public:
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
 
-  /** Register the component with the TWFPrototype wrapper.  Pure virtual, so will throw
-   * an error at compile time
+  /** Register the component with the TWFPrototype wrapper.  
    */
   virtual void register_TWF_Prototype(ParticleSet& P, TWFPrototype& twf);
 
