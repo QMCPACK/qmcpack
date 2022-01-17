@@ -93,7 +93,7 @@ public:
 
   /** @brief Returns log(Psi).  Should be consistent with QMCPACK unwrapped TrialWavefunction.
    *
-   *  @param P. Particle set.
+   *  @param[in] P. Particle set.
    *  @return log(Psi).
    */
   RealType evaluateLog(ParticleSet& P);
@@ -106,28 +106,28 @@ public:
 
   /** @brief Returns the non-rectangular slater matrices M_ij=phi_j(r_i) (N_particle x N_orbs) for each species group. 
    *
-   *  @param P particle set.
-   *  @param mmat Output vector of slater matrices.  Each vector entry corresponds to a different particle group.
+   *  @param[in] P particle set.
+   *  @param[in,out] mmat Output vector of slater matrices.  Each vector entry corresponds to a different particle group.
    *  @return Void
    */
   void get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mmat);
 
   /** @brief Returns value of all orbitals (relevant to given species/group) at a particular particle coordinate.
    *
-   *  @param P particle set.
-   *  @param iel particle ID.
-   *  @param val Vector of phi_i(r_iel) for all i=0,Norbs.
+   *  @param[in] P particle set.
+   *  @param[in]**** iel particle ID.
+   *  @param[in,out] val Vector of phi_i(r_iel) for all i=0,Norbs.
    *  @return Void
    */
   IndexType get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val);
 
   /** @brief Returns the ion derivative of all orbitals (relevant to given species/group) at a particular particle coordinate.
    *
-   *  @param P particle set.
-   *  @param source ion particle set.
-   *  @param iel particle ID.
-   *  @param iat_source ion index w.r.t. which the ion derivative is taken
-   *  @param dval Vector of d/dR_iat_source phi_i(r_iel) for all i=0,Norbs. First index is X derivative, second Y derivative, etc.
+   *  @param[in] P particle set.
+   *  @param[in] source ion particle set.
+   *  @param[in] iel particle ID.
+   *  @param[in]m iat_source ion index w.r.t. which the ion derivative is taken
+   *  @param[in,out]  dval Vector of d/dR_iat_source phi_i(r_iel) for all i=0,Norbs. First index is X derivative, second Y derivative, etc.
    *  @return Void
    */
   IndexType get_igrad_row(const ParticleSet& P,
@@ -138,10 +138,10 @@ public:
 
   /** @brief Returns value, gradient, and laplacian matrices for all orbitals and all particles, species by species. 
    *
-   *  @param P particle set.
-   *  @param mvec Slater matrix M_ij=phi_j(r_i) for each species group.
-   *  @param gmat electron gradient of slater matrix [G_ij]_a = d/dr_a,i phi_j(r_i).  a=x,y,z  
-   *  @param lmat electron laplacian of slater matrix [L_ij] = \nabla^2_i phi_j(r_i).
+   *  @param[in] P particle set.
+   *  @param[in,out] mvec Slater matrix M_ij=phi_j(r_i) for each species group.
+   *  @param[in,out] gmat electron gradient of slater matrix [G_ij]_a = d/dr_a,i phi_j(r_i).  a=x,y,z  
+   *  @param[in,out] lmat electron laplacian of slater matrix [L_ij] = \nabla^2_i phi_j(r_i).
    *  @return Void
    */
   void get_egrad_elapl_M(const ParticleSet& P,
@@ -151,10 +151,10 @@ public:
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices.
    *
-   *  @param P particle set.
-   *  @param source ion particle set.
-   *  @param iat ion ID w.r.t. which to take derivative.
-   *  @param dmvec Slater matrix d/dR_{iat,a} M_ij=d/dR_{iat,a} phi_j(r_i) for each species group.  First index is a=x,y,z.
+   *  @param[in] P particle set.
+   *  @param[in] source ion particle set.
+   *  @param[in]*** iat ion ID w.r.t. which to take derivative.
+   *  @param[in,out] dmvec Slater matrix d/dR_{iat,a} M_ij=d/dR_{iat,a} phi_j(r_i) for each species group.  First index is a=x,y,z.
    *  @return Void
    */
   void get_igrad_M(const ParticleSet& P,
@@ -164,11 +164,13 @@ public:
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices and their laplacians..
    *
-   *  @param P particle set.
-   *  @param source ion particle set.
-   *  @param iat ion ID w.r.t. which to take derivative.
-   *  @param dmvec Slater matrix d/dR_{iat,a} M_ij=d/dR_{iat,a} phi_j(r_i) for each species group.  First index is a=x,y,z.
-   *  @param dmvec Slater matrix d/dR_{iat,a} L_ij=d/dR_{iat,a} \nabla^2_i phi_j(r_i) for each species group.  First index is a=x,y,z.
+   *  @param[in] P particle set.
+   *  @param[in] source ion particle set.
+   *  @param[in] iat ion ID w.r.t. which to take derivative.
+   *  @param[in,out] dmvec Slater matrix d/dR_{iat,a} M_ij=d/dR_{iat,a} phi_j(r_i) for each species group.  
+   *                 First index is a=x,y,z.
+   *  @param[in,out] dlmat Slater matrix d/dR_{iat,a} L_ij=d/dR_{iat,a} \nabla^2_i phi_j(r_i) for each species group.  
+   *                 First index is a=x,y,z.
    *  @return Void
    */
   void get_igrad_igradelapl_M(const ParticleSet& P,
@@ -181,19 +183,19 @@ public:
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
    *   state occupations.
    *
-   *  @param A non-rectangular matrices of SPOSet derived quantities, evaluated on all orbitals and all particles.
-   *  @param Aslice square matrices consistent with a ground state occupation.
+   *  @param[in] A non-rectangular matrices of SPOSet derived quantities, evaluated on all orbitals and all particles.
+   *  @param[in,out] Aslice square matrices consistent with a ground state occupation.
    *  @return Void
    */
   void get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
 
   /** @brief Calculates derivative of observable via Tr[M^{-1} dB - X * dM ].  Consistent with ground state occupation.
    *
-   *  @param Minv. inverse of slater matrices for ground state occupations. 
-   *  @param X.  X=M^-1 B M^-1.  B observable matrix, and is consistent with ground state occupation.
-   *  @param dM. Target derivative of M, and is consistent with ground state occupation.
-   *  @param dB. Target derivative of B, and is consistent with ground state occupation.
-   *  @return Void
+   *  @param[in] Minv. inverse of slater matrices for ground state occupations. 
+   *  @param[in] X.  X=M^-1 B M^-1.  B observable matrix, and is consistent with ground state occupation.
+   *  @param[in] dM. Target derivative of M, and is consistent with ground state occupation.
+   *  @param[in] dB. Target derivative of B, and is consistent with ground state occupation.
+   *  @return Derivative of O psi/psi = Tr[M^{-1} dB - X * dM ]
    */
   ValueType compute_gs_derivative(const std::vector<ValueMatrix_t>& Minv,
                                   const std::vector<ValueMatrix_t>& X,
@@ -206,17 +208,17 @@ public:
 
   /** @brief Helper function that inverts all slater matrices in our species list.
    *
-   *  @param M. List of slater matrices for each species.  These are square and consistent with some occupation.
-   *  @param Minv. The species by species list of inverted matrices from M.
+   *  @param[in] M. List of slater matrices for each species.  These are square and consistent with some occupation.
+   *  @param[in,out] Minv. The species by species list of inverted matrices from M.
    *  @return Void.
    */
   void invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
 
   /** @brief Helper function that inverts all slater matrices in our species list.
    *
-   *  @param Minv. List of slater matrix inverses M^-1 for a given occupation. 
-   *  @param B. Observable auxiliary matrix for a given occupation.
-   *  @param X. M^-1*B*M^-1 is stored in this list of matrices.
+   *  @param[in] Minv. List of slater matrix inverses M^-1 for a given occupation. 
+   *  @param[in] B. Observable auxiliary matrix for a given occupation.
+   *  @param[in,out] X. M^-1*B*M^-1 is stored in this list of matrices.
    *  @return Void. 
    */
   void build_X(const std::vector<ValueMatrix_t>& Minv,
@@ -225,15 +227,16 @@ public:
 
   /** @brief Goes through a list of matrices and zeros them out.  Does this in place.
    *
-   *  @param A. The list of matrices to be zeroed out.  After call, A is all zeros.
+   *  @param[in,out] A. The list of matrices to be zeroed out.  After call, A is all zeros.
    *  @return Void.
    */
   void wipe_matrix(std::vector<ValueMatrix_t>& A);
+
   /** @brief Returns Tr(A*B).  Actually, we assume a block diagonal structure, so this is 
    *    really Sum_i Tr(A_i*B_i), where i is the species index.
    * 
-   *  @param A.  Vector of matrices A.  
-   *  @param B.  Vector of matrices B.
+   *  @param[in] A.  Vector of matrices A.  
+   *  @param[in] B.  Vector of matrices B.
    *  @return Value of Sum_i Tr(A_i*B_i).
    */
   ValueType trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B);
