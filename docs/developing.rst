@@ -880,9 +880,9 @@ of all the components. Each component derives from ``WaveFunctionComponent``.
 .. math::
      \psi = \prod_c {\tilde \psi_c}
 
-QMCPACK doesn't directly use the product form but mostly use the log of the wavefunction which
-fits the formulation of QMC algorithms very well. It also offers a numerical advantage on computers.
-The log value grows linearly instead of exponentioally, beyond the range of double precision,
+QMCPACK doesn't directly use the product form but mostly uses the log of the wavefunction.
+It is a natural fit for QMC algorithms and offers a numerical advantage on computers.
+The log value grows linearly instead of exponentially, beyond the range of double precision,
 with respect to the electron counts in a Slater-Jastrow wave function.
 
 The code contains an example of a
