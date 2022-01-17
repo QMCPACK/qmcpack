@@ -60,7 +60,7 @@ public:
    *  @return void.
    */  
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void addJastrow(WaveFunctionComponent* j) { J.push_back(j); };
+  inline void addJastrow(WaveFunctionComponent* j) { jastrow_list.push_back(j); };
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
@@ -235,9 +235,8 @@ private:
   std::vector<IndexType> groups;
   std::vector<ValueMatrix_t> psiM;
   std::vector<ValueMatrix_t> psiMinv;
-  std::vector<WaveFunctionComponent*> J;
+  std::vector<WaveFunctionComponent*> jastrow_list;
 
-  bool initialized;
 };
 
 /**@}*/
