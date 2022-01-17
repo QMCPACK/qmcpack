@@ -253,7 +253,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) co
   return myclone;
 }
 
-void SlaterDet::registerTWFPrototype(ParticleSet& P, TWFPrototype& twf)
+void SlaterDet::registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const
 {
   for (int i = 0; i < Dets.size(); ++i)
   {

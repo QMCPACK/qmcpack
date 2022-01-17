@@ -346,7 +346,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::registerTWFPrototype(ParticleSet& P, TWFPrototype& twf)
+void DiracDeterminant<DU_TYPE>::registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const
 {
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }

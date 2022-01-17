@@ -172,7 +172,7 @@ public:
 
   /** Register the component with the TWFPrototype wrapper.  
    */
-  virtual void registerTWFPrototype(ParticleSet& P, TWFPrototype& twf);
+  virtual void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const;
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * \param[in] P  active ParticleSet

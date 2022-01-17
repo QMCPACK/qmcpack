@@ -55,7 +55,7 @@ public:
 
   void reportStatus(std::ostream& os) override;
 
-  void registerTWFPrototype(ParticleSet& P, TWFPrototype& twf) override;
+  void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,

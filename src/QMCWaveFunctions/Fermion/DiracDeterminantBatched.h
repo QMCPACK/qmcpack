@@ -29,6 +29,9 @@
 namespace qmcplusplus
 {
 
+//forward declaration
+class TWFPrototype;
+
 template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
@@ -209,6 +212,7 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
+  void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const override;
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set

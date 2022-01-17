@@ -1340,7 +1340,7 @@ RefVector<ParticleSet::ParticleLaplacian_t> TrialWaveFunction::extractLRefList(
   return l_list;
 }
 
-void TrialWaveFunction::initializeTWFPrototype(ParticleSet& P, TWFPrototype& twf)
+void TrialWaveFunction::initializeTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const
 {
   for (int i = 0; i < Z.size(); ++i)
   {

@@ -16,6 +16,7 @@
 #include "CPU/BLAS.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/MatrixOperators.h"
+#include "QMCWaveFunctions/TWFPrototype.h"
 #include "CPU/SIMD/simd.hpp"
 #include <cassert>
 
@@ -954,6 +955,12 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
                                                               std::vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
+
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const
+{  
+  twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }
 
 template<typename DET_ENGINE>

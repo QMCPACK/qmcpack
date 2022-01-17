@@ -85,7 +85,7 @@ public:
 
   inline void reportStatus(std::ostream& os) final {}
 
-  virtual void registerTWFPrototype(ParticleSet& P, TWFPrototype& twf) override
+  virtual void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const override
   {
     APP_ABORT("DiracDeterminantBase::registerTWFPrototype must be overridden\n");
   }

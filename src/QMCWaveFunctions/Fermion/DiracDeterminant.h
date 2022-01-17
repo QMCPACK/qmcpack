@@ -78,7 +78,7 @@ public:
 
   /** Finds the SPOSet associated with this determinant, and registers it with WFN wrapper
    */ 
-  void registerTWFPrototype(ParticleSet& P, TWFPrototype& twf) final;
+  void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const final;
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
