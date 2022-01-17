@@ -1340,7 +1340,7 @@ RefVector<ParticleSet::ParticleLaplacian_t> TrialWaveFunction::extractLRefList(
   return l_list;
 }
 
-void TrialWaveFunction::initialize_TWF_Prototype(ParticleSet& P, TWFPrototype& twf)
+void TrialWaveFunction::initializeTWFPrototype(ParticleSet& P, TWFPrototype& twf)
 {
   for (int i = 0; i < Z.size(); ++i)
   {
@@ -1349,8 +1349,8 @@ void TrialWaveFunction::initialize_TWF_Prototype(ParticleSet& P, TWFPrototype& t
       //OK, so this is a hack only for SlaterDeterminant objects.
       //Needs a bit of logic and protection before this reaches production.
       //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
-      //det->register_TWF_Prototype(P, twf);
-      Z[i]->register_TWF_Prototype(P,twf);
+      //det->registerTWFPrototype(P, twf);
+      Z[i]->registerTWFPrototype(P,twf);
     }
     else //Is Jastrow, so do nothing right now.
     {}

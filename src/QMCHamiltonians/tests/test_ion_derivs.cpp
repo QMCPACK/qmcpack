@@ -772,7 +772,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   TWFPrototype twf;
 
-  psi->initialize_TWF_Prototype(elec, twf);
+  psi->initializeTWFPrototype(elec, twf);
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
   SPOSet::ValueVector_t d2psi;
