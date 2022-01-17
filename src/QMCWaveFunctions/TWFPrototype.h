@@ -62,16 +62,34 @@ public:
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void add_jastrow(WaveFunctionComponent* j) { J.push_back(j); };
 
-  //Whatever the group is labelled as in the particle set, sid corresponds to the group used to create determinant sid.
-  //  so sid=4 returns the number of particles and orbitals used for det #4.  Assuming a multispecies determinantal wfn like
-  //  Prod_i Det(M_i).
-  inline IndexType num_orbitals(const IndexType sid) { return num_orbs[sid]; };
-  inline IndexType num_particles(const IndexType sid) { return num_ptcls[sid]; };
-  inline IndexType num_species() { return spos.size(); };
-  IndexType get_det_id(const IndexType speciesid);
-  //This takes a particle set group index, and returns the "determinant" this refers to.
-  IndexType get_group_index(const IndexType gid);
-  SPOSet* get_sposet(const IndexType sid) { return spos[sid]; };
+  /** @brief Takes particle set groupID and returns the TWF internal index for it.  
+   *
+   *  ParticleSet groups can be registered in whichever order.  However, the internal indexing 
+   *  of TWFPrototype keeps track on a first-come, first serve basis.  That is, if I register 
+   *  particle groups 3, 1, and 0 in that order, then the internal indexing goes like
+   *  0->3, 1->1, 2->0.  Thus, this function looks up where in the internal indexing scheme
+   *  ParticleSet gid is located.  This is necessary, since the matrix list data structures follow
+   *  the internal TWF indexing.  
+   *
+   *  @param[in] gid. ParticleSet group ID to look up.  
+   *  @return The corresponding internal groupID.  
+   */  
+  IndexType getTWFGroupIndex(const IndexType gid);
+
+  /** @ingroup Query functions
+   * @{
+   * @brief These are query functions to the internal state of various groups and SPOSet info.
+   *   All group indices will refer to the internal group indices.  Convert from ParticleSet to 
+   *   TWF group first!
+   *
+   *   Source of truth for orbital sizes will be the individual SPOSets.  Particle group sizes
+   *   will be ParticleSet in conjunction with groupID maps.  
+   */
+  inline IndexType numGroups() { return spos.size(); };
+  SPOSet* getSPOSet(const IndexType sid) { return spos[sid]; };
+  inline IndexType numOrbitals(const IndexType sid) { return spos[sid]->size(); };
+  inline IndexType numParticles(const IndexType sid) { return num_ptcls[sid]; }; 
+  /** @} */
 
   /** @brief Returns log(Psi).  Should be consistent with QMCPACK unwrapped TrialWavefunction.
    *

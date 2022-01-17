@@ -16,15 +16,18 @@ namespace qmcplusplus
 {
 TWFPrototype::TWFPrototype() : initialized(false) { std::cout << "TWFPrototype Constructed\n"; }
 
-TWFPrototype::IndexType TWFPrototype::get_group_index(const IndexType gid)
+TWFPrototype::IndexType TWFPrototype::getTWFGroupIndex(const IndexType gid)
 {
-  IndexType ndets = groups.size();
-  for (IndexType i = 0; i < ndets; i++)
+  IndexType return_group_index(-1);
+  for (IndexType i = 0; i < groups.size(); i++)
     if (gid == groups[i])
-      return i;
+      return_group_index=i;
+  
+  assert(return_group_index != -1);
 
-  return IndexType(-1);
+  return return_group_index;
 }
+
 void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
   if (std::find(groups.begin(), groups.end(), gid) == groups.end())
@@ -38,19 +41,6 @@ void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* s
     num_ptcls.push_back(last - first);
   }
   initialized = true;
-}
-
-TWFPrototype::IndexType TWFPrototype::get_det_id(const IndexType species_id)
-{
-  IndexType detIndex = -1;
-  for (IndexType i = 0; i < groups.size(); i++)
-  {
-    if (species_id == groups[i])
-      detIndex = i;
-  }
-  assert(detIndex != -1);
-
-  return detIndex;
 }
 
 void TWFPrototype::get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
@@ -181,11 +171,11 @@ TWFPrototype::ValueType TWFPrototype::compute_gs_derivative(const std::vector<Va
                                                             const std::vector<ValueMatrix_t>& dM,
                                                             const std::vector<ValueMatrix_t>& dB)
 {
-  IndexType nspecies = num_species();
+  IndexType nspecies = numGroups();
   ValueType dval     = 0.0;
   for (int id = 0; id < nspecies; id++)
   {
-    int ptclnum       = num_particles(id);
+    int ptclnum       = numParticles(id);
     ValueType dval_id = 0.0;
     for (int i = 0; i < ptclnum; i++)
       for (int j = 0; j < ptclnum; j++)
@@ -200,7 +190,7 @@ TWFPrototype::ValueType TWFPrototype::compute_gs_derivative(const std::vector<Va
 
 void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
 {
-  IndexType nspecies = num_species();
+  IndexType nspecies = numGroups();
   for (IndexType id = 0; id < nspecies; id++)
   {
     assert(M[id].cols() == M[id].rows());
@@ -213,11 +203,11 @@ void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv,
                            const std::vector<ValueMatrix_t>& B,
                            std::vector<ValueMatrix_t>& X)
 {
-  IndexType nspecies = num_species();
+  IndexType nspecies = numGroups();
 
   for (IndexType id = 0; id < nspecies; id++)
   {
-    int ptclnum = num_particles(id);
+    int ptclnum = numParticles(id);
     ValueMatrix_t tmpmat;
     X[id].resize(ptclnum, ptclnum);
     tmpmat.resize(ptclnum, ptclnum);
@@ -240,7 +230,7 @@ void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv,
 
 void TWFPrototype::wipe_matrix(std::vector<ValueMatrix_t>& A)
 {
-  IndexType nspecies = num_species();
+  IndexType nspecies = numGroups();
 
   for (IndexType id = 0; id < nspecies; id++)
   {
@@ -250,12 +240,12 @@ void TWFPrototype::wipe_matrix(std::vector<ValueMatrix_t>& A)
 
 TWFPrototype::ValueType TWFPrototype::trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B)
 {
-  IndexType nspecies = num_species();
+  IndexType nspecies = numGroups();
   ValueType val      = 0.0;
   //Now to compute the kinetic energy
   for (IndexType id = 0; id < nspecies; id++)
   {
-    int ptclnum      = num_particles(id);
+    int ptclnum      = numParticles(id);
     ValueType val_id = 0.0;
     assert(A[id].cols() == B[id].rows() && A[id].rows() == B[id].cols());
     for (int i = 0; i < A[id].rows(); i++)
@@ -271,11 +261,11 @@ TWFPrototype::ValueType TWFPrototype::trAB(const std::vector<ValueMatrix_t>& A, 
 
 void TWFPrototype::get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
 {
-  IndexType nspecies = num_species();
+  IndexType nspecies = numGroups();
   Aslice.resize(nspecies);
   for (IndexType id = 0; id < nspecies; id++)
   {
-    IndexType ptclnum = num_particles(id);
+    IndexType ptclnum = numParticles(id);
     Aslice[id].resize(ptclnum, ptclnum);
     for (IndexType i = 0; i < ptclnum; i++)
       for (IndexType j = 0; j < ptclnum; j++)
@@ -295,7 +285,7 @@ TWFPrototype::IndexType TWFPrototype::get_igrad_row(const ParticleSet& P,
 TWFPrototype::IndexType TWFPrototype::get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val)
 {
   IndexType gid      = P.getGroupID(iel);
-  IndexType detIndex = get_det_id(gid);
+  IndexType detIndex = getTWFGroupIndex(gid);
 
   GradVector_t tempg;
   ValueVector_t templ;
