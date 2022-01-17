@@ -360,7 +360,7 @@ public:
                                     std::vector<ComplexType>& spingrad_new) const
   {
     mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
-  };
+  }
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet

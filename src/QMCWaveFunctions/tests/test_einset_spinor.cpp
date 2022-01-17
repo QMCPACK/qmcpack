@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -18,6 +19,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "Utilities/ResourceCollection.h"
 
 #include <stdio.h>
 #include <string>
@@ -435,7 +437,184 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     elec_.rejectMove(iat);
   }
+
+
+  // test batched interface
+  // first move elec_ back to original positions for reference
+  Rnew    = elec_.R - dR;
+  elec_.R = Rnew;
+  elec_.update();
+
+  //now create second walker, with permuted particle positions
+  ParticleSet elec_2(elec_);
+  // permute electrons
+  elec_2.R[0]     = elec_.R[1];
+  elec_2.R[1]     = elec_.R[2];
+  elec_2.R[2]     = elec_.R[0];
+  elec_2.spins[0] = elec_.spins[1];
+  elec_2.spins[1] = elec_.spins[2];
+  elec_2.spins[2] = elec_.spins[0];
+
+  ResourceCollection pset_res("test_pset_res");
+  elec_.createResource(pset_res);
+
+  RefVectorWithLeader<ParticleSet> p_list(elec_);
+  p_list.push_back(elec_);
+  p_list.push_back(elec_2);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+
+  //update all walkers
+  elec_.mw_update(p_list);
+
+  std::unique_ptr<SPOSet> spo_2(spo->makeClone());
+  RefVectorWithLeader<SPOSet> spo_list(*spo);
+  spo_list.push_back(*spo);
+  spo_list.push_back(*spo_2);
+
+  SPOSet::ValueMatrix_t psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+
+  RefVector<SPOSet::ValueMatrix_t> logdet_list;
+  RefVector<SPOSet::GradMatrix_t> dlogdet_list;
+  RefVector<SPOSet::ValueMatrix_t> d2logdet_list;
+
+  logdet_list.push_back(psiM);
+  logdet_list.push_back(psiM_2);
+  dlogdet_list.push_back(dpsiM);
+  dlogdet_list.push_back(dpsiM_2);
+  d2logdet_list.push_back(d2psiM);
+  d2logdet_list.push_back(d2psiM_2);
+
+  spo->mw_evaluate_notranspose(spo_list, p_list, 0, 3, logdet_list, dlogdet_list, d2logdet_list);
+  for (unsigned int iat = 0; iat < 3; iat++)
+  {
+    //walker 0
+    CHECK(logdet_list[0].get()[iat][0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(logdet_list[0].get()[iat][1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(logdet_list[0].get()[iat][2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dlogdet_list[0].get()[iat][2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
+    CHECK(d2logdet_list[0].get()[iat][0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2logdet_list[0].get()[iat][1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2logdet_list[0].get()[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
+
+    //walker 1, permuted from reference
+    CHECK(logdet_list[1].get()[iat][0] == ComplexApprox(psiM_ref[(iat + 1) % 3][0]).epsilon(h));
+    CHECK(logdet_list[1].get()[iat][1] == ComplexApprox(psiM_ref[(iat + 1) % 3][1]).epsilon(h));
+    CHECK(logdet_list[1].get()[iat][2] == ComplexApprox(psiM_ref[(iat + 1) % 3][2]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][0][0] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][0][0]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][0][1] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][0][1]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][0][2] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][0][2]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][1][0] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][1][0]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][1][1] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][1][1]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][1][2] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][1][2]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][2][0] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][2][0]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][2][1] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][2][1]).epsilon(h));
+    CHECK(dlogdet_list[1].get()[iat][2][2] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][2][2]).epsilon(h));
+    CHECK(d2logdet_list[1].get()[iat][0] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][0]).epsilon(h2));
+    CHECK(d2logdet_list[1].get()[iat][1] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][1]).epsilon(h2));
+    CHECK(d2logdet_list[1].get()[iat][2] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][2]).epsilon(h2));
+  }
+
+  //first, lets displace all the electrons in each walker.
+  for (int iat = 0; iat < 3; iat++)
+  {
+    std::vector<ParticleSet::SingleParticlePos_t> displs = {dR[iat], dR[iat]};
+    elec_.mw_makeMove(p_list, iat, displs);
+    std::vector<bool> accept = {true, true};
+    elec_.mw_accept_rejectMove(p_list, iat, accept);
+  }
+  elec_.mw_update(p_list);
+
+  SPOSet::ValueVector_t psi_work_2(OrbitalSetSize);
+  SPOSet::GradVector_t dpsi_work_2(OrbitalSetSize);
+  SPOSet::ValueVector_t d2psi_work_2(OrbitalSetSize);
+  SPOSet::ValueVector_t dspsi_work_2(OrbitalSetSize);
+
+  RefVector<SPOSet::ValueVector_t> psi_v_list   = {psi_work, psi_work_2};
+  RefVector<SPOSet::GradVector_t> dpsi_v_list   = {dpsi_work, dpsi_work_2};
+  RefVector<SPOSet::ValueVector_t> d2psi_v_list = {d2psi_work, d2psi_work_2};
+  RefVector<SPOSet::ValueVector_t> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  //check mw_evaluateVGLWithSpin
+  for (int iat = 0; iat < 3; iat++)
+  {
+    //reset values to zero, updates the ref vectors to zero as well
+    psi_work     = 0.0;
+    dpsi_work    = 0.0;
+    d2psi_work   = 0.0;
+    dspsi_work   = 0.0;
+    psi_work_2   = 0.0;
+    dpsi_work_2  = 0.0;
+    d2psi_work_2 = 0.0;
+    dspsi_work_2 = 0.0;
+
+    std::vector<ParticleSet::SingleParticlePos_t> displs = {-dR[iat], -dR[iat]};
+    elec_.mw_makeMove(p_list, iat, displs);
+    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
+    //walker 0
+    CHECK(psi_v_list[0].get()[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
+    CHECK(psi_v_list[0].get()[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
+    CHECK(psi_v_list[0].get()[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+
+    CHECK(dpsi_v_list[0].get()[0][0] == ComplexApprox(dpsiM_ref[iat][0][0]).epsilon(h));
+    CHECK(dpsi_v_list[0].get()[0][1] == ComplexApprox(dpsiM_ref[iat][0][1]).epsilon(h));
+    CHECK(dpsi_v_list[0].get()[0][2] == ComplexApprox(dpsiM_ref[iat][0][2]).epsilon(h));
+
+    CHECK(dpsi_v_list[0].get()[1][0] == ComplexApprox(dpsiM_ref[iat][1][0]).epsilon(h));
+    CHECK(dpsi_v_list[0].get()[1][1] == ComplexApprox(dpsiM_ref[iat][1][1]).epsilon(h));
+    CHECK(dpsi_v_list[0].get()[1][2] == ComplexApprox(dpsiM_ref[iat][1][2]).epsilon(h));
+
+    CHECK(dpsi_v_list[0].get()[2][0] == ComplexApprox(dpsiM_ref[iat][2][0]).epsilon(h));
+    CHECK(dpsi_v_list[0].get()[2][1] == ComplexApprox(dpsiM_ref[iat][2][1]).epsilon(h));
+    CHECK(dpsi_v_list[0].get()[2][2] == ComplexApprox(dpsiM_ref[iat][2][2]).epsilon(h));
+
+    CHECK(d2psi_v_list[0].get()[0] == ComplexApprox(d2psiM_ref[iat][0]).epsilon(h2));
+    CHECK(d2psi_v_list[0].get()[1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
+    CHECK(d2psi_v_list[0].get()[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
+
+    CHECK(dspsi_v_list[0].get()[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
+    CHECK(dspsi_v_list[0].get()[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
+    CHECK(dspsi_v_list[0].get()[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
+
+    //walker 1, permuted from reference
+    CHECK(psi_v_list[1].get()[0] == ComplexApprox(psiM_ref[(iat + 1) % 3][0]).epsilon(h));
+    CHECK(psi_v_list[1].get()[1] == ComplexApprox(psiM_ref[(iat + 1) % 3][1]).epsilon(h));
+    CHECK(psi_v_list[1].get()[2] == ComplexApprox(psiM_ref[(iat + 1) % 3][2]).epsilon(h));
+
+    CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][0][0]).epsilon(h));
+    CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][0][1]).epsilon(h));
+    CHECK(dpsi_v_list[1].get()[0][2] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][0][2]).epsilon(h));
+
+    CHECK(dpsi_v_list[1].get()[1][0] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][1][0]).epsilon(h));
+    CHECK(dpsi_v_list[1].get()[1][1] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][1][1]).epsilon(h));
+    CHECK(dpsi_v_list[1].get()[1][2] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][1][2]).epsilon(h));
+
+    CHECK(dpsi_v_list[1].get()[2][0] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][2][0]).epsilon(h));
+    CHECK(dpsi_v_list[1].get()[2][1] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][2][1]).epsilon(h));
+    CHECK(dpsi_v_list[1].get()[2][2] == ComplexApprox(dpsiM_ref[(iat + 1) % 3][2][2]).epsilon(h));
+
+    CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][0]).epsilon(h2));
+    CHECK(d2psi_v_list[1].get()[1] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][1]).epsilon(h2));
+    CHECK(d2psi_v_list[1].get()[2] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][2]).epsilon(h2));
+
+    CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][0]).epsilon(h));
+    CHECK(dspsi_v_list[1].get()[1] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][1]).epsilon(h));
+    CHECK(dspsi_v_list[1].get()[2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
+
+    std::vector<bool> accept = {false, false};
+    elec_.mw_accept_rejectMove(p_list, iat, accept);
+  }
 }
+
 #endif //QMC_COMPLEX
 
 
