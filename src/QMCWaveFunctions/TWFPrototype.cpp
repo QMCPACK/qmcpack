@@ -43,7 +43,7 @@ void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* s
   initialized = true;
 }
 
-void TWFPrototype::get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
+void TWFPrototype::getM(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
 {
   IndexType ndets  = spos.size();
   IndexType norbs  = 0;
@@ -67,7 +67,7 @@ void TWFPrototype::get_M(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
   }
 }
 
-void TWFPrototype::get_egrad_elapl_M(const ParticleSet& P,
+void TWFPrototype::getEGradELaplM(const ParticleSet& P,
                                      std::vector<ValueMatrix_t>& mvec,
                                      std::vector<GradMatrix_t>& gmat,
                                      std::vector<ValueMatrix_t>& lmat)
@@ -92,9 +92,9 @@ void TWFPrototype::get_egrad_elapl_M(const ParticleSet& P,
   }
 }
 
-void TWFPrototype::get_igrad_M(const ParticleSet& P,
+void TWFPrototype::getIonGradM(const ParticleSet& P,
                                const ParticleSet& source,
-                               int iat,
+                               const int iat,
                                std::vector<std::vector<ValueMatrix_t>>& dmvec)
 {
   IndexType ndets  = dmvec[0].size();
@@ -126,7 +126,7 @@ void TWFPrototype::get_igrad_M(const ParticleSet& P,
   }
 }
 
-void TWFPrototype::get_igrad_igradelapl_M(const ParticleSet& P,
+void TWFPrototype::getIonGradIonGradELaplM(const ParticleSet& P,
                                           const ParticleSet& source,
                                           int iat,
                                           std::vector<std::vector<ValueMatrix_t>>& dmvec,
@@ -166,7 +166,7 @@ void TWFPrototype::get_igrad_igradelapl_M(const ParticleSet& P,
   }
 }
 
-TWFPrototype::ValueType TWFPrototype::compute_gs_derivative(const std::vector<ValueMatrix_t>& Minv,
+TWFPrototype::ValueType TWFPrototype::computeGSDerivative(const std::vector<ValueMatrix_t>& Minv,
                                                             const std::vector<ValueMatrix_t>& X,
                                                             const std::vector<ValueMatrix_t>& dM,
                                                             const std::vector<ValueMatrix_t>& dB)
@@ -188,7 +188,7 @@ TWFPrototype::ValueType TWFPrototype::compute_gs_derivative(const std::vector<Va
   return dval;
 }
 
-void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
+void TWFPrototype::invertMatrix(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
 {
   IndexType nspecies = numGroups();
   for (IndexType id = 0; id < nspecies; id++)
@@ -199,7 +199,7 @@ void TWFPrototype::invert_M(const std::vector<ValueMatrix_t>& M, std::vector<Val
   }
 }
 
-void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv,
+void TWFPrototype::buildX(const std::vector<ValueMatrix_t>& Minv,
                            const std::vector<ValueMatrix_t>& B,
                            std::vector<ValueMatrix_t>& X)
 {
@@ -228,7 +228,7 @@ void TWFPrototype::build_X(const std::vector<ValueMatrix_t>& Minv,
   }
 }
 
-void TWFPrototype::wipe_matrix(std::vector<ValueMatrix_t>& A)
+void TWFPrototype::wipeMatrix(std::vector<ValueMatrix_t>& A)
 {
   IndexType nspecies = numGroups();
 
@@ -259,7 +259,7 @@ TWFPrototype::ValueType TWFPrototype::trAB(const std::vector<ValueMatrix_t>& A, 
   return val;
 }
 
-void TWFPrototype::get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
+void TWFPrototype::getGSMatrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
 {
   IndexType nspecies = numGroups();
   Aslice.resize(nspecies);
@@ -273,16 +273,8 @@ void TWFPrototype::get_gs_matrix(const std::vector<ValueMatrix_t>& A, std::vecto
   }
 }
 
-TWFPrototype::IndexType TWFPrototype::get_igrad_row(const ParticleSet& P,
-                                                    const ParticleSet& source,
-                                                    IndexType iel,
-                                                    IndexType iat_source,
-                                                    std::vector<ValueVector_t>& dval)
-{
-  return -1;
-}
 
-TWFPrototype::IndexType TWFPrototype::get_M_row(const ParticleSet& P, IndexType iel, ValueVector_t& val)
+TWFPrototype::IndexType TWFPrototype::getRowM(const ParticleSet& P, const IndexType iel, ValueVector_t& val)
 {
   IndexType gid      = P.getGroupID(iel);
   IndexType detIndex = getTWFGroupIndex(gid);
