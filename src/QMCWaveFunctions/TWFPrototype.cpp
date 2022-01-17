@@ -14,13 +14,12 @@
 #include <iostream>
 namespace qmcplusplus
 {
-TWFPrototype::TWFPrototype() : initialized(false) { std::cout << "TWFPrototype Constructed\n"; }
 
 TWFPrototype::IndexType TWFPrototype::getTWFGroupIndex(const IndexType gid)
 {
   IndexType return_group_index(-1);
-  for (IndexType i = 0; i < groups.size(); i++)
-    if (gid == groups[i])
+  for (IndexType i = 0; i < groups_.size(); i++)
+    if (gid == groups_[i])
       return_group_index=i;
   
   assert(return_group_index != -1);
@@ -30,22 +29,19 @@ TWFPrototype::IndexType TWFPrototype::getTWFGroupIndex(const IndexType gid)
 
 void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
-  if (std::find(groups.begin(), groups.end(), gid) == groups.end())
+  if (std::find(groups_.begin(), groups_.end(), gid) == groups_.end())
   {
-    groups.push_back(gid);
-    spos.push_back(spo);
+    groups_.push_back(gid);
+    spos_.push_back(spo);
     IndexType first = P.first(gid);
     IndexType last  = P.last(gid);
     IndexType norbs = spo->getOrbitalSetSize();
-    num_orbs.push_back(norbs);
-    num_ptcls.push_back(last - first);
   }
-  initialized = true;
 }
 
 void TWFPrototype::getM(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
 {
-  IndexType ndets  = spos.size();
+  IndexType ndets  = spos_.size();
   IndexType norbs  = 0;
   IndexType nptcls = 0;
   IndexType gid    = 0;
@@ -53,17 +49,17 @@ void TWFPrototype::getM(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
   IndexType last   = 0;
   for (IndexType i = 0; i < ndets; i++)
   {
-    gid     = groups[i];
+    gid     = groups_[i];
     first   = P.first(i);
     last    = P.last(i);
     nptcls  = last - first;
-    norbs   = spos[i]->getOrbitalSetSize();
+    norbs   = spos_[i]->getOrbitalSetSize();
     mvec[i] = 0;
     GradMatrix_t tmpgmat;
     ValueMatrix_t tmplmat;
     tmpgmat.resize(nptcls, norbs);
     tmplmat.resize(nptcls, norbs);
-    spos[i]->evaluate_notranspose(P, first, last, mvec[i], tmpgmat, tmplmat);
+    spos_[i]->evaluate_notranspose(P, first, last, mvec[i], tmpgmat, tmplmat);
   }
 }
 
@@ -80,15 +76,15 @@ void TWFPrototype::getEGradELaplM(const ParticleSet& P,
   IndexType last   = 0;
   for (IndexType i = 0; i < ndets; i++)
   {
-    gid     = groups[i];
+    gid     = groups_[i];
     first   = P.first(i);
     last    = P.last(i);
     nptcls  = last - first;
-    norbs   = spos[i]->getOrbitalSetSize();
+    norbs   = spos_[i]->getOrbitalSetSize();
     mvec[i] = 0;
     gmat[i] = 0;
     lmat[i] = 0;
-    spos[i]->evaluate_notranspose(P, first, last, mvec[i], gmat[i], lmat[i]);
+    spos_[i]->evaluate_notranspose(P, first, last, mvec[i], gmat[i], lmat[i]);
   }
 }
 
@@ -105,17 +101,17 @@ void TWFPrototype::getIonGradM(const ParticleSet& P,
   IndexType last   = 0;
   for (IndexType i = 0; i < ndets; i++)
   {
-    gid    = groups[i];
+    gid    = groups_[i];
     first  = P.first(i);
     last   = P.last(i);
     nptcls = last - first;
-    norbs  = spos[i]->getOrbitalSetSize();
+    norbs  = spos_[i]->getOrbitalSetSize();
 
     GradMatrix_t grad_phi;
 
     grad_phi.resize(nptcls, norbs);
 
-    spos[i]->evaluateGradSource(P, first, last, source, iat, grad_phi);
+    spos_[i]->evaluateGradSource(P, first, last, source, iat, grad_phi);
 
     for (IndexType idim = 0; idim < OHMMS_DIM; idim++)
       for (IndexType iptcl = 0; iptcl < nptcls; iptcl++)
@@ -140,11 +136,11 @@ void TWFPrototype::getIonGradIonGradELaplM(const ParticleSet& P,
   IndexType last   = 0;
   for (IndexType i = 0; i < ndets; i++)
   {
-    gid    = groups[i];
+    gid    = groups_[i];
     first  = P.first(i);
     last   = P.last(i);
     nptcls = last - first;
-    norbs  = spos[i]->getOrbitalSetSize();
+    norbs  = spos_[i]->getOrbitalSetSize();
 
     GradMatrix_t grad_phi;
     HessMatrix_t grad_grad_phi;
@@ -154,7 +150,7 @@ void TWFPrototype::getIonGradIonGradELaplM(const ParticleSet& P,
     grad_grad_phi.resize(nptcls, norbs);
     grad_lapl_phi.resize(nptcls, norbs);
 
-    spos[i]->evaluateGradSource(P, first, last, source, iat, grad_phi, grad_grad_phi, grad_lapl_phi);
+    spos_[i]->evaluateGradSource(P, first, last, source, iat, grad_phi, grad_grad_phi, grad_lapl_phi);
 
     for (IndexType idim = 0; idim < OHMMS_DIM; idim++)
       for (IndexType iptcl = 0; iptcl < nptcls; iptcl++)
@@ -171,11 +167,11 @@ TWFPrototype::ValueType TWFPrototype::computeGSDerivative(const std::vector<Valu
                                                             const std::vector<ValueMatrix_t>& dM,
                                                             const std::vector<ValueMatrix_t>& dB)
 {
-  IndexType nspecies = numGroups();
+  IndexType nspecies = Minv.size();
   ValueType dval     = 0.0;
   for (int id = 0; id < nspecies; id++)
   {
-    int ptclnum       = numParticles(id);
+    int ptclnum       = Minv[id].rows();
     ValueType dval_id = 0.0;
     for (int i = 0; i < ptclnum; i++)
       for (int j = 0; j < ptclnum; j++)
@@ -190,7 +186,7 @@ TWFPrototype::ValueType TWFPrototype::computeGSDerivative(const std::vector<Valu
 
 void TWFPrototype::invertMatrix(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
 {
-  IndexType nspecies = numGroups();
+  IndexType nspecies = M.size();
   for (IndexType id = 0; id < nspecies; id++)
   {
     assert(M[id].cols() == M[id].rows());
@@ -203,11 +199,12 @@ void TWFPrototype::buildX(const std::vector<ValueMatrix_t>& Minv,
                            const std::vector<ValueMatrix_t>& B,
                            std::vector<ValueMatrix_t>& X)
 {
-  IndexType nspecies = numGroups();
+  IndexType nspecies = Minv.size();
 
   for (IndexType id = 0; id < nspecies; id++)
   {
-    int ptclnum = numParticles(id);
+    int ptclnum = Minv[id].rows();
+    assert(Minv[id].rows()==Minv[id].cols());
     ValueMatrix_t tmpmat;
     X[id].resize(ptclnum, ptclnum);
     tmpmat.resize(ptclnum, ptclnum);
@@ -230,9 +227,8 @@ void TWFPrototype::buildX(const std::vector<ValueMatrix_t>& Minv,
 
 void TWFPrototype::wipeMatrix(std::vector<ValueMatrix_t>& A)
 {
-  IndexType nspecies = numGroups();
 
-  for (IndexType id = 0; id < nspecies; id++)
+  for (IndexType id = 0; id < A.size(); id++)
   {
     A[id] = 0.0;
   }
@@ -240,12 +236,13 @@ void TWFPrototype::wipeMatrix(std::vector<ValueMatrix_t>& A)
 
 TWFPrototype::ValueType TWFPrototype::trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B)
 {
-  IndexType nspecies = numGroups();
+  IndexType nspecies = A.size();
+  assert(A.size() == B.size());
   ValueType val      = 0.0;
   //Now to compute the kinetic energy
   for (IndexType id = 0; id < nspecies; id++)
   {
-    int ptclnum      = numParticles(id);
+    int ptclnum      = A[id].rows();
     ValueType val_id = 0.0;
     assert(A[id].cols() == B[id].rows() && A[id].rows() == B[id].cols());
     for (int i = 0; i < A[id].rows(); i++)
@@ -261,11 +258,11 @@ TWFPrototype::ValueType TWFPrototype::trAB(const std::vector<ValueMatrix_t>& A, 
 
 void TWFPrototype::getGSMatrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
 {
-  IndexType nspecies = numGroups();
+  IndexType nspecies = A.size();
   Aslice.resize(nspecies);
   for (IndexType id = 0; id < nspecies; id++)
   {
-    IndexType ptclnum = numParticles(id);
+    IndexType ptclnum = A[id].rows();
     Aslice[id].resize(ptclnum, ptclnum);
     for (IndexType i = 0; i < ptclnum; i++)
       for (IndexType j = 0; j < ptclnum; j++)
@@ -277,19 +274,19 @@ void TWFPrototype::getGSMatrix(const std::vector<ValueMatrix_t>& A, std::vector<
 TWFPrototype::IndexType TWFPrototype::getRowM(const ParticleSet& P, const IndexType iel, ValueVector_t& val)
 {
   IndexType gid      = P.getGroupID(iel);
-  IndexType detIndex = getTWFGroupIndex(gid);
+  IndexType sid = getTWFGroupIndex(gid);
 
   GradVector_t tempg;
   ValueVector_t templ;
 
-  IndexType norbs = spos[detIndex]->getOrbitalSetSize();
+  IndexType norbs = spos_[sid]->getOrbitalSetSize();
 
   tempg.resize(norbs);
   templ.resize(norbs);
 
-  spos[detIndex]->evaluateVGL(P, iel, val, tempg, templ);
+  spos_[sid]->evaluateVGL(P, iel, val, tempg, templ);
 
-  return detIndex;
+  return sid;
 }
 
 

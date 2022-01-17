@@ -10,9 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file TWFPrototype.h
- *@brief Declaration of TWFPrototype
- */
 #ifndef QMCPLUSPLUS_TWFPROTOTYPE_H
 #define QMCPLUSPLUS_TWFPROTOTYPE_H
 
@@ -43,8 +40,6 @@ public:
   using ValueVector_t = SPOSet::ValueVector_t;
   using GradVector_t  = SPOSet::GradVector_t;
 
-  TWFPrototype();
-
   
   /** @brief Add a particle group.
    *
@@ -60,7 +55,7 @@ public:
    *  @return void.
    */  
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void addJastrow(WaveFunctionComponent* j) { jastrow_list.push_back(j); };
+  inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
@@ -85,10 +80,9 @@ public:
    *   Source of truth for orbital sizes will be the individual SPOSets.  Particle group sizes
    *   will be ParticleSet in conjunction with groupID maps.  
    */
-  inline IndexType numGroups() { return spos.size(); };
-  SPOSet* getSPOSet(const IndexType sid) { return spos[sid]; };
-  inline IndexType numOrbitals(const IndexType sid) { return spos[sid]->size(); };
-  inline IndexType numParticles(const IndexType sid) { return num_ptcls[sid]; }; 
+  inline IndexType numGroups() { return spos_.size(); };
+  SPOSet* getSPOSet(const IndexType sid) { return spos_[sid]; };
+  inline IndexType numOrbitals(const IndexType sid) { return spos_[sid]->size(); };
   /** @} */
 
   /** @brief Returns log(Psi).  Should be consistent with QMCPACK unwrapped TrialWavefunction.
@@ -229,13 +223,11 @@ public:
 
 
 private:
-  std::vector<IndexType> num_ptcls;
-  std::vector<IndexType> num_orbs;
-  std::vector<SPOSet*> spos;
-  std::vector<IndexType> groups;
-  std::vector<ValueMatrix_t> psiM;
-  std::vector<ValueMatrix_t> psiMinv;
-  std::vector<WaveFunctionComponent*> jastrow_list;
+  std::vector<SPOSet*> spos_;
+  std::vector<IndexType> groups_;
+  std::vector<ValueMatrix_t> psi_M_;
+  std::vector<ValueMatrix_t> psi_M_inv_;
+  std::vector<WaveFunctionComponent*> jastrow_list_;
 
 };
 
