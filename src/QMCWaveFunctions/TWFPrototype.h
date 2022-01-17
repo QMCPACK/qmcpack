@@ -85,13 +85,6 @@ public:
   inline IndexType numOrbitals(const IndexType sid) { return spos_[sid]->size(); };
   /** @} */
 
-  /** @brief Returns log(Psi).  Should be consistent with QMCPACK unwrapped TrialWavefunction.
-   *
-   *  @param[in] P. Particle set.
-   *  @return log(Psi).
-   */
-  RealType evaluateLog(ParticleSet& P);
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //These are convenience functions/wrappers to SPOSet calls.  Idea being that observables just need      //
   //to make calls to this object to build the auxiliary matrices required for fast derivative computation.//

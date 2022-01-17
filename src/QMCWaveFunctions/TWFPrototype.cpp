@@ -290,6 +290,4 @@ TWFPrototype::IndexType TWFPrototype::getRowM(const ParticleSet& P, const IndexT
 }
 
 
-TWFPrototype::RealType TWFPrototype::evaluateLog(ParticleSet& P) { return 0; }
-
 } // namespace qmcplusplus
