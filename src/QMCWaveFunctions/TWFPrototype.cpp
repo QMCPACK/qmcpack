@@ -33,9 +33,6 @@ void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* s
   {
     groups_.push_back(gid);
     spos_.push_back(spo);
-    IndexType first = P.first(gid);
-    IndexType last  = P.last(gid);
-    IndexType norbs = spo->getOrbitalSetSize();
   }
 }
 
@@ -44,17 +41,11 @@ void TWFPrototype::getM(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
   IndexType ngroups  = spos_.size();
   for (IndexType i = 0; i < ngroups; i++)
   {
-    IndexType norbs  = 0;
-    IndexType nptcls = 0;
-    IndexType gid    = 0;
-    IndexType first  = 0;
-    IndexType last   = 0;
-    gid     = groups_[i];
-    first   = P.first(i);
-    last    = P.last(i);
-    nptcls  = last - first;
-    norbs   = spos_[i]->getOrbitalSetSize();
-    mvec[i] = 0;
+    const IndexType gid    = groups_[i];
+    const IndexType first  = P.first(i);
+    const IndexType last   = P.last(i);
+    const IndexType nptcls = last - first;
+    const IndexType norbs  = spos_[i]->getOrbitalSetSize();
     GradMatrix_t tmpgmat;
     ValueMatrix_t tmplmat;
     tmpgmat.resize(nptcls, norbs);
@@ -71,19 +62,11 @@ void TWFPrototype::getEGradELaplM(const ParticleSet& P,
   IndexType ngroups  = mvec.size();
   for (IndexType i = 0; i < ngroups; i++)
   {
-    IndexType norbs  = 0;
-    IndexType nptcls = 0;
-    IndexType gid    = 0;
-    IndexType first  = 0;
-    IndexType last   = 0;
-    gid     = groups_[i];
-    first   = P.first(i);
-    last    = P.last(i);
-    nptcls  = last - first;
-    norbs   = spos_[i]->getOrbitalSetSize();
-    mvec[i] = 0;
-    gmat[i] = 0;
-    lmat[i] = 0;
+    const IndexType gid    = groups_[i];
+    const IndexType first  = P.first(i);
+    const IndexType last   = P.last(i);
+    const IndexType nptcls = last - first;
+    const IndexType norbs  = spos_[i]->getOrbitalSetSize();
     spos_[i]->evaluate_notranspose(P, first, last, mvec[i], gmat[i], lmat[i]);
   }
 }
@@ -96,16 +79,11 @@ void TWFPrototype::getIonGradM(const ParticleSet& P,
   IndexType ngroups  = dmvec[0].size();
   for (IndexType i = 0; i < ngroups; i++)
   {
-    IndexType norbs  = 0;
-    IndexType nptcls = 0;
-    IndexType gid    = 0;
-    IndexType first  = 0;
-    IndexType last   = 0;
-    gid    = groups_[i];
-    first  = P.first(i);
-    last   = P.last(i);
-    nptcls = last - first;
-    norbs  = spos_[i]->getOrbitalSetSize();
+    const IndexType gid    = groups_[i];
+    const IndexType first  = P.first(i);
+    const IndexType last   = P.last(i);
+    const IndexType nptcls = last - first;
+    const IndexType norbs  = spos_[i]->getOrbitalSetSize();
 
     GradMatrix_t grad_phi;
 
@@ -131,16 +109,11 @@ void TWFPrototype::getIonGradIonGradELaplM(const ParticleSet& P,
   IndexType ngroups  = dmvec[0].size();
   for (IndexType i = 0; i < ngroups; i++)
   {
-    IndexType norbs  = 0;
-    IndexType nptcls = 0;
-    IndexType gid    = 0;
-    IndexType first  = 0;
-    IndexType last   = 0;
-    gid    = groups_[i];
-    first  = P.first(i);
-    last   = P.last(i);
-    nptcls = last - first;
-    norbs  = spos_[i]->getOrbitalSetSize();
+    const IndexType gid    = groups_[i];
+    const IndexType first  = P.first(i);
+    const IndexType last   = P.last(i);
+    const IndexType nptcls = last - first;
+    const IndexType norbs  = spos_[i]->getOrbitalSetSize();
 
     GradMatrix_t grad_phi;
     HessMatrix_t grad_grad_phi;
