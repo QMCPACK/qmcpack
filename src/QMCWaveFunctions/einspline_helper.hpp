@@ -19,7 +19,6 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsArray.h"
-#include "mpi/collectives.h"
 #include "CPU/SIMD/simd.hpp"
 #include "CPU/BLAS.hpp"
 #include "CPU/math.hpp"
@@ -59,63 +58,6 @@ inline void unpack4fftw(const Vector<std::complex<T>>& cG,
         cG[iG];
   }
 }
-
-/** fix phase
-   * @param in input complex data
-   * @param out output real data
-   * @param twist vector to correct phase
-   */
-template<typename T, typename T1, typename T2>
-inline void fix_phase_c2r(const Array<std::complex<T>, 3>& in, Array<T1, 3>& out, const TinyVector<T2, 3>& twist)
-{
-  const T1 two_pi = -2.0 * M_PI;
-  const int nx    = in.size(0);
-  const int ny    = in.size(1);
-  const int nz    = in.size(2);
-  T1 nx_i         = static_cast<T1>(twist[0]) / static_cast<T1>(nx);
-  T1 ny_i         = static_cast<T1>(twist[1]) / static_cast<T1>(ny);
-  T1 nz_i         = static_cast<T1>(twist[2]) / static_cast<T1>(nz);
-
-#pragma omp parallel for firstprivate(nx_i, ny_i, nz_i)
-  for (int ix = 0; ix < nx; ix++)
-  {
-    T1 s, c;
-    const std::complex<T>* restrict in_ptr = in.data() + ix * ny * nz;
-    T1* restrict out_ptr                   = out.data() + ix * ny * nz;
-
-    T1 rux = static_cast<T1>(ix) * nx_i;
-    for (int iy = 0; iy < ny; iy++)
-    {
-      T1 ruy = static_cast<T1>(iy) * ny_i;
-      for (int iz = 0; iz < nz; iz++)
-      {
-        T1 ruz = static_cast<T1>(iz) * nz_i;
-        qmcplusplus::sincos(two_pi * (rux + ruy + ruz), &s, &c);
-        *out_ptr = static_cast<T1>(c * in_ptr->real() - s * in_ptr->imag());
-        ++out_ptr;
-        ++in_ptr;
-      }
-    }
-  }
-  //#pragma omp parallel for
-  //          for (int ix=0; ix<nx; ix++) {
-  //            PosType ru;
-  //            ru[0] = (RealType)ix / (RealType)nx;
-  //            for (int iy=0; iy<ny; iy++) {
-  //              ru[1] = (RealType)iy / (RealType)ny;
-  //              for (int iz=0; iz<nz; iz++) {
-  //                ru[2] = (RealType)iz / (RealType)nz;
-  //                double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
-  //                double s, c;
-  //                qmcplusplus::sincos(phi, &s, &c);
-  //                std::complex<double> phase(c,s);
-  //                std::complex<double> z = phase*rawData(ix,iy,iz);
-  //                splineData(ix,iy,iz) = z.real();
-  //              }
-  //            }
-  //          }
-}
-
 
 /** rotate the state after 3dfft
    *
@@ -377,103 +319,6 @@ inline void fix_phase_rotate(const Array<std::complex<T>, 3>& e2pi, Array<std::c
         out_ptr[iyz] = phase_r * in_ptr[iyz].real() - phase_i * in_ptr[iyz].imag();
     }
   }
-}
-
-template<typename T>
-inline void fix_phase_rotate(const Array<std::complex<T>, 3>& e2pi,
-                             const Array<std::complex<T>, 3>& in,
-                             Array<std::complex<T>, 3>& out)
-{
-  T rNorm = 0.0, iNorm = 0.0, riNorm = 0.0;
-
-  simd::accumulate_phases(e2pi.size(), e2pi.data(), in.data(), rNorm, iNorm, riNorm);
-
-  T x   = (rNorm - iNorm) / riNorm;
-  x     = 1.0 / std::sqrt(x * x + 4.0);
-  T phs = (x > 0.5) ? std::sqrt(0.5 + x) : std::sqrt(0.5 - x);
-  std::complex<T> phase_c(phs * phs / (rNorm + iNorm), (1.0 - phs * phs) / (rNorm + iNorm));
-
-  BLAS::axpy(in.size(), phase_c, in.data(), out.data());
-}
-
-
-inline bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
-{
-  update_token(__FILE__, __LINE__, "bcastSortBands");
-
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
-
-  TinyVector<int, 4> nbands(int(SortBands.size()), n, NumValenceOrbs, NumCoreOrbs);
-  mpi::bcast(*myComm, nbands);
-
-  //buffer to serialize BandInfo
-  PooledData<OHMMS_PRECISION_FULL> misc(nbands[0] * 5);
-  bool isCore = false;
-  n = NumDistinctOrbitals = nbands[1];
-  NumValenceOrbs          = nbands[2];
-  NumCoreOrbs             = nbands[3];
-
-  if (root)
-  {
-    misc.rewind();
-    //misc.put(NumValenceOrbs);
-    //misc.put(NumCoreOrbs);
-    for (int i = 0; i < n; ++i)
-    {
-      misc.put(SortBands[i].TwistIndex);
-      misc.put(SortBands[i].BandIndex);
-      misc.put(SortBands[i].Energy);
-      misc.put(SortBands[i].MakeTwoCopies);
-      misc.put(SortBands[i].IsCoreState);
-
-      isCore |= SortBands[i].IsCoreState;
-    }
-
-    for (int i = n; i < SortBands.size(); ++i)
-    {
-      misc.put(SortBands[i].TwistIndex);
-      misc.put(SortBands[i].BandIndex);
-      misc.put(SortBands[i].Energy);
-      misc.put(SortBands[i].MakeTwoCopies);
-      misc.put(SortBands[i].IsCoreState);
-    }
-  }
-  myComm->bcast(misc);
-
-  if (!root)
-  {
-    SortBands.resize(nbands[0]);
-    misc.rewind();
-    //misc.get(NumValenceOrbs);
-    //misc.get(NumCoreOrbs);
-    for (int i = 0; i < n; ++i)
-    {
-      misc.get(SortBands[i].TwistIndex);
-      misc.get(SortBands[i].BandIndex);
-      misc.get(SortBands[i].Energy);
-      misc.get(SortBands[i].MakeTwoCopies);
-      misc.get(SortBands[i].IsCoreState);
-
-      isCore |= SortBands[i].IsCoreState;
-    }
-    for (int i = n; i < SortBands.size(); ++i)
-    {
-      misc.get(SortBands[i].TwistIndex);
-      misc.get(SortBands[i].BandIndex);
-      misc.get(SortBands[i].Energy);
-      misc.get(SortBands[i].MakeTwoCopies);
-      misc.get(SortBands[i].IsCoreState);
-    }
-  }
-
-  //char fname[64];
-  //sprintf(fname,"debug.%d",myComm->rank());
-  //ofstream fout(fname);
-  //fout.setf(std::ios::scientific, std::ios::floatfield);
-  //fout.precision(12);
-  //for(int i=0; i<misc.size();++i)
-  //  fout << misc[i] << std::endl;
-  return isCore;
 }
 
 } // namespace qmcplusplus

@@ -880,4 +880,83 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
   app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
 }
 
+bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
+{
+  update_token(__FILE__, __LINE__, "bcastSortBands");
+
+  std::vector<BandInfo>& SortBands(*FullBands[spin]);
+
+  TinyVector<int, 4> nbands(int(SortBands.size()), n, NumValenceOrbs, NumCoreOrbs);
+  mpi::bcast(*myComm, nbands);
+
+  //buffer to serialize BandInfo
+  PooledData<OHMMS_PRECISION_FULL> misc(nbands[0] * 5);
+  bool isCore = false;
+  n = NumDistinctOrbitals = nbands[1];
+  NumValenceOrbs          = nbands[2];
+  NumCoreOrbs             = nbands[3];
+
+  if (root)
+  {
+    misc.rewind();
+    //misc.put(NumValenceOrbs);
+    //misc.put(NumCoreOrbs);
+    for (int i = 0; i < n; ++i)
+    {
+      misc.put(SortBands[i].TwistIndex);
+      misc.put(SortBands[i].BandIndex);
+      misc.put(SortBands[i].Energy);
+      misc.put(SortBands[i].MakeTwoCopies);
+      misc.put(SortBands[i].IsCoreState);
+
+      isCore |= SortBands[i].IsCoreState;
+    }
+
+    for (int i = n; i < SortBands.size(); ++i)
+    {
+      misc.put(SortBands[i].TwistIndex);
+      misc.put(SortBands[i].BandIndex);
+      misc.put(SortBands[i].Energy);
+      misc.put(SortBands[i].MakeTwoCopies);
+      misc.put(SortBands[i].IsCoreState);
+    }
+  }
+  myComm->bcast(misc);
+
+  if (!root)
+  {
+    SortBands.resize(nbands[0]);
+    misc.rewind();
+    //misc.get(NumValenceOrbs);
+    //misc.get(NumCoreOrbs);
+    for (int i = 0; i < n; ++i)
+    {
+      misc.get(SortBands[i].TwistIndex);
+      misc.get(SortBands[i].BandIndex);
+      misc.get(SortBands[i].Energy);
+      misc.get(SortBands[i].MakeTwoCopies);
+      misc.get(SortBands[i].IsCoreState);
+
+      isCore |= SortBands[i].IsCoreState;
+    }
+    for (int i = n; i < SortBands.size(); ++i)
+    {
+      misc.get(SortBands[i].TwistIndex);
+      misc.get(SortBands[i].BandIndex);
+      misc.get(SortBands[i].Energy);
+      misc.get(SortBands[i].MakeTwoCopies);
+      misc.get(SortBands[i].IsCoreState);
+    }
+  }
+
+  //char fname[64];
+  //sprintf(fname,"debug.%d",myComm->rank());
+  //ofstream fout(fname);
+  //fout.setf(std::ios::scientific, std::ios::floatfield);
+  //fout.precision(12);
+  //for(int i=0; i<misc.size();++i)
+  //  fout << misc[i] << std::endl;
+  return isCore;
+}
+
 } // namespace qmcplusplus
