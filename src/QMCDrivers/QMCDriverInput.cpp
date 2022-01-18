@@ -66,6 +66,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute");
   parameter_set.add(drift_modifier_, "drift_modifier");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
+  parameter_set.add(spin_mass_, "spin_mass");
   parameter_set.add(max_disp_sq_, "maxDisplSq");
   parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});

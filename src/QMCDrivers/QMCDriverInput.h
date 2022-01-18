@@ -93,6 +93,9 @@ protected:
   std::string drift_modifier_{"UNR"};
   RealType drift_modifier_unr_a_ = 1.0;
 
+  // for spin moves
+  RealType spin_mass_ = 1.0;
+
   /** @}
    */
 
@@ -129,6 +132,8 @@ public:
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
+
+  RealType get_spin_mass() const { return spin_mass_; }
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
