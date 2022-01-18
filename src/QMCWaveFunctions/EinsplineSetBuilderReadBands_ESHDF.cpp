@@ -24,7 +24,6 @@ namespace qmcplusplus
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {
-  update_token(__FILE__, __LINE__, "ReadGvectors_ESHDF");
   bool root = myComm->rank() == 0;
   //this is always ugly
   MeshSize    = 0;
