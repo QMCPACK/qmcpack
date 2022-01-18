@@ -140,6 +140,14 @@ private:
                              bool recompute,
                              bool accumulate_this_step);
 
+  static void advanceWalkersWithSpin(const StateForThread& sft,
+                                     Crowd& crowd,
+                                     DriverTimers& timers,
+                                     DMCTimers& dmc_timers,
+                                     ContextForSteps& move_context,
+                                     bool recompute,
+                                     bool accumulate_this_step);
+
   friend class qmcplusplus::testing::DMCBatchedTest;
 };
 
