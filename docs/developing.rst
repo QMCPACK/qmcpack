@@ -872,7 +872,7 @@ An example of the second approach is
   }
 
 Wavefunction
----------------------
+------------
 
 A full ``TrialWaveFunction`` is formulated as a product
 of all the components. Each component derives from ``WaveFunctionComponent``.
