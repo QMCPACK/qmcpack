@@ -9,8 +9,13 @@
 // File refactored from: EstimatorManagerNew.h
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** \file
+ *  declares the list  supported estimator input types and declares the input type for 
+ *  EstimatorManagerNew.
+ */
 #ifndef QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 #define QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
+
 
 #include "type_traits/template_types.hpp"
 #include <functional>
@@ -26,15 +31,23 @@ class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
 
+/** These are the estimator input types EstimatorManagerInput delegates to.
+ *  We of course know all the estimator types at compile time and it is useful to have type safety for their usage.
+ */
 using EstimatorInputs = std::vector<
     std::variant<RefW<SpinDensityInput>, RefW<MomentumDistributionInput>, RefW<OneBodyDensityMatricesInput>>>;
 
 namespace testing
 {
+/** class to allow private method testing in unit tests
+ */
 class EstimatorManagerInputTests;
 }
 
-/** Input representation for Driver base class runtime parameters
+/** Input type for EstimatorManagerNew
+ *  Parses Estimators level of input and and delegates child estimator nodes
+ *  to appropriate estimator input class
+ *  Will later provide access to estimator input instances for esimator construction.
  */
 class EstimatorManagerInput
 {
@@ -43,12 +56,14 @@ public:
   EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
   EstimatorManagerInput(xmlNodePtr cur);
   const EstimatorInputs& get_estimator_inputs() const { return estimator_inputs; };
-protected:
+private:
   /** read <Estimators> node
    */
   void readXML(xmlNodePtr cur);
 
+  /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs;
+  /// this is a type erased ownership vector for the estimator inputs
   UPtrVector<InputNode> estimator_input_storage;
 
   template<typename T, typename... Args>
@@ -59,7 +74,6 @@ protected:
   }
 
   friend class testing::EstimatorManagerInputTests;
-
 };
 
 } // namespace qmcplusplus
