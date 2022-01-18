@@ -859,10 +859,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   std::vector<std::vector<ValueMatrix_t>> dB_gs;
   std::vector<std::vector<ValueMatrix_t>> dM_gs;
   std::vector<ValueMatrix_t> tmp_gs;
-//  twf.getGSMatrix(B, B_gs);
-//  twf.getGSMatrix(matlist, M_gs);
-//  twf.invertMatrix(M_gs, minv);
-//  twf.buildX(minv, B_gs, X);
+  twf.getGSMatrix(B, B_gs);
+  twf.getGSMatrix(matlist, M_gs);
+  twf.invertMatrix(M_gs, minv);
+  twf.buildX(minv, B_gs, X);
   for (int id = 0; id < matlist.size(); id++)
   {
 //    int ptclnum = twf.numParticles(id);
@@ -891,18 +891,18 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipeMatrix(dB[idim]);
-//      twf.wipeMatrix(dM[idim]);
+      twf.wipeMatrix(dB[idim]);
+      twf.wipeMatrix(dM[idim]);
     }
 
-//    twf.getIonGradM(elec, ions, ionid, dM);
+    twf.getIonGradM(elec, ions, ionid, dM);
 //    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.getGSMatrix(dB[idim], dB_gs[idim]);
-//      twf.getGSMatrix(dM[idim], dM_gs[idim]);
-//      fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      twf.getGSMatrix(dB[idim], dB_gs[idim]);
+      twf.getGSMatrix(dM[idim], dM_gs[idim]);
+      fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fkin_complex[ionid], fkin[ionid]);
   }
@@ -910,7 +910,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   ValueType keval = 0.0;
   RealType keobs  = 0.0;
-//  keval           = twf.trAB(minv, B_gs);
+  keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
 //  CHECK(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
