@@ -61,7 +61,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& pse
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       TileMatrix(i, j) = 0;
-  MyToken = 0;
 
   //invalidate states by the basis class
   states.clear();
@@ -94,8 +93,6 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
 
 bool EinsplineSetBuilder::CheckLattice()
 {
-  update_token(__FILE__, __LINE__, "CheckLattice");
-
   double diff = 0.0;
   for (int i = 0; i < OHMMS_DIM; i++)
     for (int j = 0; j < OHMMS_DIM; j++)
@@ -316,8 +313,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
 
 void EinsplineSetBuilder::TileIons()
 {
-  update_token(__FILE__, __LINE__, "TileIons");
-
   //set the primitive lattice
   SourcePtcl->PrimitiveLattice.set(Lattice);
 
@@ -659,7 +654,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
 void
 EinsplineSetBuilder::AnalyzeTwists()
 {
-  update_token(__FILE__,__LINE__,"AnalyzeTwists");
   PosType minTwist(TwistAngles[0]), maxTwist(TwistAngles[0]);
   for (int ti=0; ti<NumTwists; ti++)
     for (int i=0; i<3; i++)
@@ -772,7 +766,6 @@ EinsplineSetBuilder::AnalyzeTwists()
 
 void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks)
 {
-  update_token(__FILE__, __LINE__, "OccupyBands");
   if (myComm->rank() != 0)
     return;
   if (spin >= NumSpins && !skipChecks)

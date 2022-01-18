@@ -24,7 +24,6 @@ namespace qmcplusplus
 #if 0
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"ReadBands_ESHDF:complex");
   ReportEngine PRE("EinsplineSetBuilder","ReadBands_ESHDF(EinsplineSetExtended<std::complex<double > >*");
   Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
   double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
@@ -299,7 +298,6 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<std::co
 
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"ReadBands_ESHDF:double");
   ReportEngine PRE("EinsplineSetBuilder","ReadBands_ESHDF(EinsplineSetExtended<double>*");
   std::vector<AtomicOrbital<double> > realOrbs(AtomicOrbitals.size());
   for (int iat=0; iat<realOrbs.size(); iat++)
@@ -668,7 +666,6 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {
-  update_token(__FILE__, __LINE__, "ReadGvectors_ESHDF");
   bool root = myComm->rank() == 0;
   //this is always ugly
   MeshSize    = 0;

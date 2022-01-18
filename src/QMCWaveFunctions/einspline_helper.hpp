@@ -399,8 +399,6 @@ inline void fix_phase_rotate(const Array<std::complex<T>, 3>& e2pi,
 
 inline bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
 {
-  update_token(__FILE__, __LINE__, "bcastSortBands");
-
   std::vector<BandInfo>& SortBands(*FullBands[spin]);
 
   TinyVector<int, 4> nbands(int(SortBands.size()), n, NumValenceOrbs, NumCoreOrbs);
