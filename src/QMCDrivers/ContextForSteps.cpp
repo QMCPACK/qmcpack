@@ -30,6 +30,7 @@ ContextForSteps::ContextForSteps(int num_walkers,
   };
 
   walker_deltas_.resize(num_walkers * num_particles);
+  walker_deltas_spins_.resize(num_walkers * num_particles);
 }
 
 } // namespace qmcplusplus

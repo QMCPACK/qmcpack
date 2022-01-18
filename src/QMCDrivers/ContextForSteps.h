@@ -37,6 +37,7 @@ public:
   using PosType           = QMCTraits::PosType;
   using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType          = QMCTraits::RealType;
+  using ScalarType        = PtclOnLatticeTraits::Scalar_t;
 
   ContextForSteps(int num_walkers,
                   int num_particles,
@@ -53,14 +54,23 @@ public:
     makeGaussRandomWithEngine(walker_deltas_, random_gen_);
   }
 
+  void nextDeltaSpins(size_t num_ss)
+  {
+    walker_deltas_spins_.resize(num_ss);
+    makeGaussRandomWithEngine(walker_deltas_spins_, random_gen_);
+  }
+
   std::vector<PosType>& get_walker_deltas() { return walker_deltas_; }
+  std::vector<ScalarType>& get_walker_deltas_spins() { return walker_deltas_spins_; }
   auto deltaRsBegin() { return walker_deltas_.begin(); };
+  auto deltaSpinsBegin() { return walker_deltas_spins_.begin(); };
 
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
 
 protected:
   std::vector<PosType> walker_deltas_;
+  std::vector<ScalarType> walker_deltas_spins_;
 
   /** indexes of start and stop of each particle group;
    *

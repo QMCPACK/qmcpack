@@ -40,6 +40,10 @@ public:
 
   virtual void getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>&) const = 0;
 
+  virtual void getDrifts(RealType tau,
+                         const std::vector<ComplexType>& qf,
+                         std::vector<ParticleSet::Scalar_t>& drift) const = 0;
+
   virtual bool parseXML(xmlNodePtr cur) { return true; }
 
   virtual ~DriftModifierBase() {}

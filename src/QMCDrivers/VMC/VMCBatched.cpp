@@ -248,9 +248,12 @@ void VMCBatched::advanceWalkersWithSpin(const StateForThread& sft,
   const bool use_drift = sft.vmcdrv_input.get_use_drift();
   std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
   std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
+  std::vector<TrialWaveFunction::ComplexType> spingrads_now(num_walkers);
+  std::vector<TrialWaveFunction::ComplexType> spingrads_new(num_walkers);
   std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
 
   std::vector<PosType> drifts(num_walkers);
+  std::vector<ParticleSet::Scalar_t> spindrifts(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);
   std::vector<RealType> prob(num_walkers);
@@ -264,13 +267,17 @@ void VMCBatched::advanceWalkersWithSpin(const StateForThread& sft,
   {
     //This generates an entire steps worth of deltas.
     step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
+    step_context.nextDeltaSpins(num_walkers * sft.population.get_num_particles());
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
     {
-      RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
-      RealType oneover2tau = 0.5 / (tauovermass);
-      RealType sqrttau     = std::sqrt(tauovermass);
+      RealType tauovermass     = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
+      RealType spintauovermass = tauovermass / sft.qmcdrv_input.get_spin_mass();
+      RealType oneover2tau     = 0.5 / (tauovermass);
+      RealType oneover2spintau = 0.5 / spintauovermass;
+      RealType sqrttau         = std::sqrt(tauovermass);
+      RealType sqrtspintau     = std::sqrt(spintauovermass);
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
@@ -280,43 +287,67 @@ void VMCBatched::advanceWalkersWithSpin(const StateForThread& sft,
       {
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
         // fastest in walkers then particles
-        auto delta_r_start = step_context.deltaRsBegin() + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
+        auto delta_r_start    = step_context.deltaRsBegin() + iat * num_walkers;
+        auto delta_r_end      = delta_r_start + num_walkers;
+        auto delta_spin_start = step_context.deltaSpinsBegin() + iat * num_walkers;
+        auto delta_spin_end   = delta_spin_start + num_walkers;
 
         if (use_drift)
         {
-          twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+          twf_dispatcher.flex_evalGradWithSpin(walker_twfs, walker_elecs, iat, grads_now, spingrads_now);
           sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
+          sft.drift_modifier.getDrifts(spintauovermass, spingrads_now, spindrifts);
 
           std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
                          [sqrttau](const PosType& drift, const PosType& delta_r) {
                            return drift + (sqrttau * delta_r);
+                         });
+          std::transform(spindrifts.begin(), spindrifts.end(), delta_spin_start, spindrifts.begin(),
+                         [sqrtspintau](const ParticleSet::Scalar_t& spindrift,
+                                       const ParticleSet::Scalar_t& delta_spin) {
+                           return spindrift + (sqrtspintau * delta_spin);
                          });
         }
         else
         {
           std::transform(delta_r_start, delta_r_end, drifts.begin(),
                          [sqrttau](const PosType& delta_r) { return sqrttau * delta_r; });
+          std::transform(delta_spin_start, delta_spin_end, spindrifts.begin(),
+                         [sqrtspintau](const ParticleSet::Scalar_t& delta_spin) { return sqrtspintau * delta_spin; });
         }
 
-        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+        ps_dispatcher.flex_makeMoveWithSpin(walker_elecs, iat, drifts, spindrifts);
 
         // This is inelegant
         if (use_drift)
         {
           twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
+          twf_dispatcher.flex_calcRatioGradWithSpin(walker_twfs, walker_elecs, iat, ratios, grads_new, spingrads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
+          std::transform(delta_spin_start, delta_spin_end, log_gf.begin(), log_gf.begin(),
+                         [](const ParticleSet::Scalar_t& delta_spin, const RealType& lgf) {
+                           return lgf + mhalf * delta_spin * delta_spin;
+                         });
 
           sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
+          sft.drift_modifier.getDrifts(spintauovermass, spingrads_new, spindrifts);
 
           std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
                          [iat](const ParticleSet& elecs, const PosType& drift) {
                            return elecs.R[iat] - elecs.getActivePos() - drift;
                          });
+          std::transform(crowd.beginElectrons(), crowd.endElectrons(), spindrifts.begin(), spindrifts.begin(),
+                         [iat](const ParticleSet& elecs, const ParticleSet::Scalar_t& spindrift) {
+                           return elecs.spins[iat] - elecs.getActiveSpinVal() - spindrift;
+                         });
 
           std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
                          [oneover2tau](const PosType& drift) { return -oneover2tau * dot(drift, drift); });
+          std::transform(spindrifts.begin(), spindrifts.end(), log_gb.begin(), log_gb.begin(),
+                         [oneover2spintau](const ParticleSet::Scalar_t& spindrift, const RealType& lgb) {
+                           return lgb - oneover2spintau * spindrift * spindrift;
+                         });
         }
         else
         {
@@ -393,7 +424,7 @@ void VMCBatched::advanceWalkersWithSpin(const StateForThread& sft,
   }
   // TODO:
   //  check if all moves failed
-}
+} // namespace qmcplusplus
 
 /** Thread body for VMC step
  *
