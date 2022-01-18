@@ -41,14 +41,14 @@ void TWFPrototype::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* s
 
 void TWFPrototype::getM(const ParticleSet& P, std::vector<ValueMatrix_t>& mvec)
 {
-  IndexType ndets  = spos_.size();
-  IndexType norbs  = 0;
-  IndexType nptcls = 0;
-  IndexType gid    = 0;
-  IndexType first  = 0;
-  IndexType last   = 0;
-  for (IndexType i = 0; i < ndets; i++)
+  IndexType ngroups  = spos_.size();
+  for (IndexType i = 0; i < ngroups; i++)
   {
+    IndexType norbs  = 0;
+    IndexType nptcls = 0;
+    IndexType gid    = 0;
+    IndexType first  = 0;
+    IndexType last   = 0;
     gid     = groups_[i];
     first   = P.first(i);
     last    = P.last(i);
@@ -68,14 +68,14 @@ void TWFPrototype::getEGradELaplM(const ParticleSet& P,
                                      std::vector<GradMatrix_t>& gmat,
                                      std::vector<ValueMatrix_t>& lmat)
 {
-  IndexType ndets  = mvec.size();
-  IndexType norbs  = 0;
-  IndexType nptcls = 0;
-  IndexType gid    = 0;
-  IndexType first  = 0;
-  IndexType last   = 0;
-  for (IndexType i = 0; i < ndets; i++)
+  IndexType ngroups  = mvec.size();
+  for (IndexType i = 0; i < ngroups; i++)
   {
+    IndexType norbs  = 0;
+    IndexType nptcls = 0;
+    IndexType gid    = 0;
+    IndexType first  = 0;
+    IndexType last   = 0;
     gid     = groups_[i];
     first   = P.first(i);
     last    = P.last(i);
@@ -93,14 +93,14 @@ void TWFPrototype::getIonGradM(const ParticleSet& P,
                                const int iat,
                                std::vector<std::vector<ValueMatrix_t>>& dmvec)
 {
-  IndexType ndets  = dmvec[0].size();
-  IndexType norbs  = 0;
-  IndexType nptcls = 0;
-  IndexType gid    = 0;
-  IndexType first  = 0;
-  IndexType last   = 0;
-  for (IndexType i = 0; i < ndets; i++)
+  IndexType ngroups  = dmvec[0].size();
+  for (IndexType i = 0; i < ngroups; i++)
   {
+    IndexType norbs  = 0;
+    IndexType nptcls = 0;
+    IndexType gid    = 0;
+    IndexType first  = 0;
+    IndexType last   = 0;
     gid    = groups_[i];
     first  = P.first(i);
     last   = P.last(i);
@@ -128,14 +128,14 @@ void TWFPrototype::getIonGradIonGradELaplM(const ParticleSet& P,
                                           std::vector<std::vector<ValueMatrix_t>>& dmvec,
                                           std::vector<std::vector<ValueMatrix_t>>& dlmat)
 {
-  IndexType ndets  = dmvec[0].size();
-  IndexType norbs  = 0;
-  IndexType nptcls = 0;
-  IndexType gid    = 0;
-  IndexType first  = 0;
-  IndexType last   = 0;
-  for (IndexType i = 0; i < ndets; i++)
+  IndexType ngroups  = dmvec[0].size();
+  for (IndexType i = 0; i < ngroups; i++)
   {
+    IndexType norbs  = 0;
+    IndexType nptcls = 0;
+    IndexType gid    = 0;
+    IndexType first  = 0;
+    IndexType last   = 0;
     gid    = groups_[i];
     first  = P.first(i);
     last   = P.last(i);
