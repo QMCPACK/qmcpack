@@ -30,7 +30,6 @@ namespace qmcplusplus
 {
 bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
-  update_token(__FILE__, __LINE__, "ReadOrbitalInfo");
   // Handle failed file open gracefully by temporarily replacing error handler
   H5E_auto2_t old_efunc;
   void* old_efunc_data;
@@ -258,7 +257,6 @@ void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"ReadBands:complex");
   bool root = myComm->rank()==0;
   //bcastwith other stuff
   myComm->bcast(NumDistinctOrbitals);
@@ -508,7 +506,6 @@ void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<double>* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"ReadBands:double");
   std::vector<BandInfo>& SortBands(*FullBands[spin]);
   bool root = myComm->rank()==0;
   // bcast other stuff
