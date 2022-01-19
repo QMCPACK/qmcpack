@@ -61,7 +61,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& pse
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       TileMatrix(i, j) = 0;
-  MyToken = 0;
 
   //invalidate states by the basis class
   states.clear();
@@ -94,8 +93,6 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
 
 bool EinsplineSetBuilder::CheckLattice()
 {
-  update_token(__FILE__, __LINE__, "CheckLattice");
-
   double diff = 0.0;
   for (int i = 0; i < OHMMS_DIM; i++)
     for (int j = 0; j < OHMMS_DIM; j++)
@@ -316,8 +313,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
 
 void EinsplineSetBuilder::TileIons()
 {
-  update_token(__FILE__, __LINE__, "TileIons");
-
   //set the primitive lattice
   SourcePtcl->getPrimitiveLattice().set(Lattice);
 
@@ -646,7 +641,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
 void
 EinsplineSetBuilder::AnalyzeTwists()
 {
-  update_token(__FILE__,__LINE__,"AnalyzeTwists");
   PosType minTwist(TwistAngles[0]), maxTwist(TwistAngles[0]);
   for (int ti=0; ti<NumTwists; ti++)
     for (int i=0; i<3; i++)
@@ -759,7 +753,6 @@ EinsplineSetBuilder::AnalyzeTwists()
 
 void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks)
 {
-  update_token(__FILE__, __LINE__, "OccupyBands");
   if (myComm->rank() != 0)
     return;
   if (spin >= NumSpins && !skipChecks)
@@ -865,6 +858,83 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
   NumDistinctOrbitals = orbIndex;
   app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
+}
+
+bool EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
+{
+  std::vector<BandInfo>& SortBands(*FullBands[spin]);
+
+  TinyVector<int, 4> nbands(int(SortBands.size()), n, NumValenceOrbs, NumCoreOrbs);
+  mpi::bcast(*myComm, nbands);
+
+  //buffer to serialize BandInfo
+  PooledData<OHMMS_PRECISION_FULL> misc(nbands[0] * 5);
+  bool isCore = false;
+  n = NumDistinctOrbitals = nbands[1];
+  NumValenceOrbs          = nbands[2];
+  NumCoreOrbs             = nbands[3];
+
+  if (root)
+  {
+    misc.rewind();
+    //misc.put(NumValenceOrbs);
+    //misc.put(NumCoreOrbs);
+    for (int i = 0; i < n; ++i)
+    {
+      misc.put(SortBands[i].TwistIndex);
+      misc.put(SortBands[i].BandIndex);
+      misc.put(SortBands[i].Energy);
+      misc.put(SortBands[i].MakeTwoCopies);
+      misc.put(SortBands[i].IsCoreState);
+
+      isCore |= SortBands[i].IsCoreState;
+    }
+
+    for (int i = n; i < SortBands.size(); ++i)
+    {
+      misc.put(SortBands[i].TwistIndex);
+      misc.put(SortBands[i].BandIndex);
+      misc.put(SortBands[i].Energy);
+      misc.put(SortBands[i].MakeTwoCopies);
+      misc.put(SortBands[i].IsCoreState);
+    }
+  }
+  myComm->bcast(misc);
+
+  if (!root)
+  {
+    SortBands.resize(nbands[0]);
+    misc.rewind();
+    //misc.get(NumValenceOrbs);
+    //misc.get(NumCoreOrbs);
+    for (int i = 0; i < n; ++i)
+    {
+      misc.get(SortBands[i].TwistIndex);
+      misc.get(SortBands[i].BandIndex);
+      misc.get(SortBands[i].Energy);
+      misc.get(SortBands[i].MakeTwoCopies);
+      misc.get(SortBands[i].IsCoreState);
+
+      isCore |= SortBands[i].IsCoreState;
+    }
+    for (int i = n; i < SortBands.size(); ++i)
+    {
+      misc.get(SortBands[i].TwistIndex);
+      misc.get(SortBands[i].BandIndex);
+      misc.get(SortBands[i].Energy);
+      misc.get(SortBands[i].MakeTwoCopies);
+      misc.get(SortBands[i].IsCoreState);
+    }
+  }
+
+  //char fname[64];
+  //sprintf(fname,"debug.%d",myComm->rank());
+  //ofstream fout(fname);
+  //fout.setf(std::ios::scientific, std::ios::floatfield);
+  //fout.precision(12);
+  //for(int i=0; i<misc.size();++i)
+  //  fout << misc[i] << std::endl;
+  return isCore;
 }
 
 } // namespace qmcplusplus

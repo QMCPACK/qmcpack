@@ -20,6 +20,7 @@ jobs:
       matrix:
         jobname:
           [
+            GCC9-NoMPI-Debug-Real,
             GCC9-MPI-Gcov-Real,
             GCC9-MPI-Gcov-Complex,
             GCC11-NoMPI-Werror-Real,
@@ -30,6 +31,11 @@ jobs:
             Clang12-NoMPI-Offload-Real,
           ]
         include:
+          - jobname: GCC9-NoMPI-Debug-Real
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              options: -u 1001
+
           - jobname: GCC9-MPI-Gcov-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
