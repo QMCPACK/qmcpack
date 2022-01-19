@@ -129,20 +129,12 @@ bool QMCFiniteSize::processPWH(xmlNodePtr cur)
   {
     std::string cname((const char*)cur->name);
     if (cname == "simulationcell")
-    {
       ptclPool.readSimulationCellXML(cur);
-    }
     else if (cname == "particleset")
-    {
-      ptclPool.putTileMatrix(cur_root);
       ptclPool.put(cur);
-    }
     else if (cname == "wavefunction")
-    {
       wfnPut(cur);
-    }
-    else
-    {}
+
     cur = cur->next;
   }
   return inputnode;

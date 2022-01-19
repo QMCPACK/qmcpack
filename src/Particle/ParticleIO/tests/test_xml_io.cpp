@@ -58,15 +58,10 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 
   xmlNodePtr root = doc.getRoot();
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   xmlNodePtr part1 = xmlFirstElementChild(root);
   parse_ions.put(part1);
 
@@ -77,7 +72,7 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
   REQUIRE(ions.R[0][2] == Approx(0.3));
   REQUIRE(ions.getName() == "ion0");
 
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
   parse_electrons.put(part2);
 
@@ -121,15 +116,10 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
 
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   const SimulationCell simulation_cell;
   ParticleSet electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   parse_electrons.put(part1);
 
   REQUIRE(electrons.groups() == 1);

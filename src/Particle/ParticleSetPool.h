@@ -53,9 +53,6 @@ public:
 
   void output_particleset_info(Libxml2Document& doc, xmlNodePtr root);
 
-  ///assign TileMatrix
-  bool putTileMatrix(xmlNodePtr cur);
-
   /** initialize the supercell shared by all the particle sets
    *
    *  return value is never checked anywhere
@@ -104,10 +101,6 @@ public:
    */
   void randomize();
 
-  /**  Access to TileMatrix for testing
-   */
-  Tensor<int, OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
-
 private:
   /** global simulation cell
    *
@@ -116,9 +109,6 @@ private:
    * - setSimulationCell()
    */
   std::unique_ptr<SimulationCell> simulation_cell_;
-  /** tiling matrix
-   */
-  Tensor<int, OHMMS_DIM> TileMatrix;
   /** List of ParticleSet owned
    *
    * Each ParticleSet has to have a unique name which is used as a key for the map.

@@ -76,15 +76,10 @@ void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat;
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   parse_ions.put(part1);
 
-  XMLParticleParser parse_electrons(elec, tmat);
+  XMLParticleParser parse_electrons(elec);
   parse_electrons.put(part2);
 
   elec.addTable(elec);

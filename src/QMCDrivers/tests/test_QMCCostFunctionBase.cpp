@@ -52,7 +52,8 @@ public:
 
 TEST_CASE("updateXmlNodes", "[drivers]")
 {
-  MCWalkerConfiguration w;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration w(simulation_cell);
   QMCHamiltonian h;
   TrialWaveFunction psi;
 
@@ -86,7 +87,8 @@ TEST_CASE("updateXmlNodes", "[drivers]")
 
 TEST_CASE("updateXmlNodes with existing element", "[drivers]")
 {
-  MCWalkerConfiguration w;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration w(simulation_cell);
   QMCHamiltonian h;
   TrialWaveFunction psi;
 

@@ -73,19 +73,14 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   // read particle set
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   parse_electrons.put(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   parse_ions.put(part2);
 
   REQUIRE(electrons.getName() == "e");
@@ -172,19 +167,14 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   // read particle set
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   parse_electrons.put(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   parse_ions.put(part2);
 
   REQUIRE(electrons.getName() == "e");
@@ -268,19 +258,14 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   // read particle set
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   parse_electrons.put(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   parse_ions.put(part2);
 
   REQUIRE(electrons.getName() == "e");
@@ -412,15 +397,10 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
   // read particle set
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   parse_electrons.put(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   parse_ions.put(part2);
 
   REQUIRE(electrons.getName() == "e");

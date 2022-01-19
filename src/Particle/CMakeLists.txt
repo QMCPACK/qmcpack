@@ -48,7 +48,6 @@ set(PARTICLEIO
     ParticleTags.cpp
     ParticleIO/ParticleLayoutIO.cpp
     ParticleIO/XMLParticleIO.cpp
-    ParticleIO/ParticleIOUtility.cpp
     HDFWalkerOutput.cpp
     HDFWalkerInput_0_4.cpp)
 

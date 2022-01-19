@@ -29,9 +29,8 @@
 namespace qmcplusplus
 {
 ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c),
-    simulation_cell_(std::make_unique<SimulationCell>()), TileMatrix(0)
+    simulation_cell_(std::make_unique<SimulationCell>())
 {
-  TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
@@ -39,7 +38,6 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectB
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
     : MPIObjectBase(other.myComm),
       simulation_cell_(std::move(other.simulation_cell_)),
-      TileMatrix(other.TileMatrix),
       myPool(std::move(other.myPool))
 {
   ClassName = other.ClassName;
@@ -96,16 +94,6 @@ void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
   }
   else
     throw std::runtime_error(p->getName() + " exists. Cannot be added again.");
-}
-
-bool ParticleSetPool::putTileMatrix(xmlNodePtr cur)
-{
-  TileMatrix = 0;
-  TileMatrix.diagonal(1);
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(TileMatrix, "tilematrix");
-  pAttrib.put(cur);
-  return true;
 }
 
 bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
@@ -173,7 +161,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);
 
     myPool[id] = pTemp;
-    XMLParticleParser pread(*pTemp, TileMatrix);
+    XMLParticleParser pread(*pTemp);
     bool success = pread.put(cur);
     //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())

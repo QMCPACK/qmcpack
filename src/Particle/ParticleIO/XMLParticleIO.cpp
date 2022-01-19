@@ -23,7 +23,6 @@
 #include "OhmmsData/ParameterSet.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "XMLParticleIO.h"
-#include "ParticleIO/ParticleIOUtility.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Utilities/ProgressReportEngine.h"
 
@@ -77,8 +76,8 @@ void setSpeciesProperty(SpeciesSet& tspecies, int sid, xmlNodePtr cur)
 }
 
 
-XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int, OHMMS_DIM>& tmat, bool donotresize)
-    : AssignmentOnly(donotresize), ref_(aptcl), TileMatrix(tmat)
+XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize)
+    : AssignmentOnly(donotresize), ref_(aptcl)
 {
   //add ref particle attributes
   ref_.createAttributeList(ref_AttribList);
@@ -291,7 +290,6 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
     cur = cur->next;
   }
 
-  expandSuperCell(ref_, TileMatrix);
   if (ref_.getLattice().SuperCellEnum)
   {
     if (randomizeR == "yes")

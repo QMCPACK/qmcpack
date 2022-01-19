@@ -128,35 +128,6 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 #endif
 }
 
-TEST_CASE("ParticleSetPool putTileMatrix", "[qmcapp]")
-{
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  ParticleSetPool pp(c);
-
-  const char* tile_matrix = "<tmp tilematrix='1 0 0 1 1 0 2 1 1'/>";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(tile_matrix);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-  pp.putTileMatrix(root);
-
-  REQUIRE(pp.getTileMatrix()[0] == 1);
-  REQUIRE(pp.getTileMatrix()[1] == 0);
-  REQUIRE(pp.getTileMatrix()[2] == 0);
-
-  REQUIRE(pp.getTileMatrix()[3] == 1);
-  REQUIRE(pp.getTileMatrix()[4] == 1);
-  REQUIRE(pp.getTileMatrix()[5] == 0);
-
-  REQUIRE(pp.getTileMatrix()[6] == 2);
-  REQUIRE(pp.getTileMatrix()[7] == 1);
-  REQUIRE(pp.getTileMatrix()[8] == 1);
-}
-
 TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 {
   Communicate* c;

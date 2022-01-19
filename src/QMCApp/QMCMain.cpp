@@ -539,7 +539,6 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     else if (cname == "particleset")
     {
       inputnode = true;
-      ptclPool->putTileMatrix(cur_root);
       ptclPool->put(cur);
     }
     else if (cname == "wavefunction")

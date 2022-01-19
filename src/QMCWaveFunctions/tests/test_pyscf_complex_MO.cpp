@@ -42,10 +42,6 @@ void test_C_diamond()
     bool okay = doc.parse("C_diamond-twist-third.structure.xml");
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
-    Tensor<int, 3> tmat;
-    tmat(0, 0) = 1;
-    tmat(1, 1) = 1;
-    tmat(2, 2) = 1;
 
     ParticleSet::ParticleLayout_t lattice;
     // BCC H
@@ -62,7 +58,7 @@ void test_C_diamond()
 
     const SimulationCell simulation_cell(lattice);
     ParticleSet ions(simulation_cell);
-    XMLParticleParser parse_ions(ions, tmat);
+    XMLParticleParser parse_ions(ions);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
     parse_ions.put(particleset_ion[0]);
@@ -72,7 +68,7 @@ void test_C_diamond()
     ions.update();
 
     ParticleSet elec(simulation_cell);
-    XMLParticleParser parse_elec(elec, tmat);
+    XMLParticleParser parse_elec(elec);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
     parse_elec.put(particleset_elec[0]);
