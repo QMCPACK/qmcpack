@@ -2,24 +2,19 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
-
 #include "EstimatorManagerInput.h"
+#include "test_EstimatorManagerInput.h"
 #include "SpinDensityInput.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
-#include "ValidOneBodyDensityMatricesInput.h"
-#include "ValidSpinDensityInput.h"
-#include "ValidMomentumDistributionInput.h"
-#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -43,6 +38,37 @@ public:
   }
   /** @} */
 };
+
+Libxml2Document createEstimatorManagerNewInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using namespace testing::onebodydensitymatrices;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  return estimators_doc;
+}
+
 } // namespace testing
 
 TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
@@ -72,36 +98,22 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
 TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
 {
   using namespace testing;
-  const int max_node_recurse = 3;
-  Libxml2Document estimators_doc;
-  estimators_doc.newDoc("Estimators");
-  {
-    using namespace testing::onebodydensitymatrices;
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
   CHECK(emi.get_estimator_inputs().size() == 3);
-  std::cout << "\n";
+
+  // CHECK EMI throws if unparsable estimators are in input.
+  Libxml2Document doc;
+  std::string bad_estimator = R"XML(
+<estimator type="NeutrinoDensity" name="bad_estimator"/>
+)XML";
+  bool okay                 = doc.parseFromString(bad_estimator);
+  REQUIRE(okay);
+  xmlNodePtr node      = doc.getRoot();
+  int max_node_recurse = 1;
+  estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  CHECK_THROWS_AS(EstimatorManagerInput(estimators_doc.getRoot()), UniformCommunicateError);
 }
 
 } // namespace qmcplusplus

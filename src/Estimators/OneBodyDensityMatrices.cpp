@@ -27,7 +27,7 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
-OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
+OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatricesInput& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
                                                const WaveFunctionFactory& wf_factory,

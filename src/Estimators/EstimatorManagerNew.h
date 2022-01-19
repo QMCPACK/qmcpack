@@ -142,10 +142,13 @@ public:
 private:
   EstimatorManagerInput input_;
 
-  /** construct estimator from input object
+  /** Construct estimator from input object
+   *  function F is given an Input class cast back to its actual type and
+   *  args.
+   *  Function F contains any logic specific to instantiating a particular estimator
    */
   template<typename T, typename F, typename... Args>
-  void constructEstimator(EstimatorInput& input, F&& f, Args&&... args);
+  bool tryConstructEstimator(EstimatorInput& input, F&& f, Args&&... args);
   
   /** reset the estimator
    */

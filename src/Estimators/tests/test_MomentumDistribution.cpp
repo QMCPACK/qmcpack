@@ -82,7 +82,7 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   DataLocality dl        = DataLocality::crowd;
 
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  MomentumDistribution md(mdi, pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
 
   CHECK(md.twist[0] == Approx(0.0));
   CHECK(md.twist[1] == Approx(0.0));
@@ -137,7 +137,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
                                     {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
 
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  MomentumDistribution md(mdi, pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
 
   // Test accumulate
 

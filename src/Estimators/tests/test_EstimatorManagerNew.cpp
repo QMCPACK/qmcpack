@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -15,6 +15,13 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Estimators/EstimatorManagerInput.h"
+#include "SpinDensityInput.h"
+#include "MomentumDistributionInput.h"
+#include "OneBodyDensityMatricesInput.h"
+#include "test_EstimatorManagerInput.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/tests/EstimatorManagerNewTest.h"
@@ -27,20 +34,39 @@ namespace qmcplusplus
 
 TEST_CASE("EstimatorManagerNew", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
 
-  testing::EstimatorManagerNewTest embt(c, 1);
+  testing::EstimatorManagerNewTest embt(comm, 1);
 
   REQUIRE(embt.em.size() == 0);
 
   REQUIRE(embt.testAddGetEstimator());
 }
 
+// TEST_CASE("EstimatorManagerNew::ConstructFromEstimatorManagerInput", "[estimators]")
+// {
+//   Communicate* comm = OHMMS::Controller;
+//   using namespace testing;
+//   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+//   EstimatorManagerInput emi(estimators_doc.getRoot());
+
+//   MinimalParticlePool mpp;
+//   ParticleSetPool particle_pool = mpp(comm);
+//   MinimalWaveFunctionPool wfp;
+//   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+//   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+//   auto& pset_target = *(particle_pool.getParticleSet("e"));
+//   auto& species_set = pset_target.getSpeciesSet();
+//   auto& wf_factory  = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+
+//   EstimatorManagerNew emn(comm, std::move(emi), pset_target, *(wavefunction_pool.getPrimary()), wf_factory);
+// }
+
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
 
-  testing::EstimatorManagerNewTest embt(c, 1);
+  testing::EstimatorManagerNewTest embt(comm, 1);
   // by design we have done no averaging here
   // the division by total weight happens only when a block is over and the
   // accumulated data has been reduced down.  So here there should just be simple sums.
@@ -61,9 +87,9 @@ TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::collectOperatorEstimators", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
 
-  testing::EstimatorManagerNewTest embt(c, 1);
+  testing::EstimatorManagerNewTest embt(comm, 1);
   // by design we have done no averaging here
   // the division by total weight happens only when a block is over and the
   // accumulated data has been reduced down.  So here there should just be simple sums.

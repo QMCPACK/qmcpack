@@ -23,6 +23,6 @@ void checkCenterCorner(InputSection& input_section, const std::string& error_tag
   if (input_section.has("center") && input_section.has("corner"))
     throw UniformCommunicateError(error_tag + " cannot defined both center and corner.");
 }
-  
+
 }
 } // namespace qmcplusplus

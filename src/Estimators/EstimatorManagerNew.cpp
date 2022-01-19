@@ -34,6 +34,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "Estimators/SpinDensityInput.h"
+#include "Estimators/OneBodyDensityMatrices.h"
 
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
@@ -45,21 +46,37 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
 {}
 
 template<class T, class R>
-constexpr bool has(const R& this_one){ return std::holds_alternative<std::reference_wrapper<T>>(this_one); }
+constexpr bool has(const R& this_one)
+{
+  return std::holds_alternative<std::reference_wrapper<T>>(this_one);
+}
 
-template<class T, class R>
-auto& getInput(const R& this_one){ return std::holds_alternative<std::reference_wrapper<T>>(this_one); }
+// template<class T, class R>
+// auto& getInput(const R& this_one)
+// {
+//   return std::holds_alternative<std::reference_wrapper<T>>(this_one);
+// }
 
 template<class T, typename F, typename... Args>
-void EstimatorManagerNew::constructEstimator(EstimatorInput& input, F&& f, Args&&... args) {
+bool EstimatorManagerNew::tryConstructEstimator(EstimatorInput& input, F&& f, Args&&... args)
+{
   using EstInputType = T;
-  if(has<EstInputType>(input))
+  if (has<EstInputType>(input))
+  {
     operator_ests_.emplace_back(f(std::get<RefW<EstInputType>>(input).get(), std::forward<Args>(args)...));
+    return true;
+  }
+  else
+    return false;
 }
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory)
-    : input_(std::move(emi)),
+EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
+                                         EstimatorManagerInput&& emi,
+                                         const ParticleSet& pset,
+                                         const TrialWaveFunction& twf,
+                                         const WaveFunctionFactory& wf_factory)
+  : input_(std::move(emi)),
       MainEstimatorName("LocalEnergy"),
       RecordCount(0),
       my_comm_(c),
@@ -67,19 +84,41 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c, EstimatorManagerInput&&
       max4ascii(8),
       FieldWidth(20)
 {
+  // These lambdas are the code needed to construct estimators from the there input class and other objects
+  // the EstimatorManager has knowledge of at construction. They return the unique pointers owned by
+  // EstimatorManagerNew::operator_ests_
+  // If an esimator constructor signature matches a previous estimator it could use the same body.
+  auto makeSpinDensity = [&](auto& est_in, auto& lattice, auto& species_set) -> UPtr<OperatorEstBase> {
+    DataLocality dl = DataLocality::crowd;
+    if (est_in.get_save_memory())
+      dl = DataLocality::rank;
+    if (est_in.get_cell().explicitly_defined)
+      return std::make_unique<typename std::remove_reference_t<decltype(est_in)>::Consumer>(est_in, species_set, dl);
+    else
+      return std::make_unique<typename std::remove_reference_t<decltype(est_in)>::Consumer>(est_in, lattice,
+                                                                                            species_set, dl);
+  };
+
+  auto makeOBDM = [&](auto& est_in, auto& lattice, auto& species_set, const auto& wf_factory) -> UPtr<OperatorEstBase> {
+    ParticleSet pset_target(pset);
+    return std::make_unique<OneBodyDensityMatrices>(est_in, lattice, species_set, wf_factory, pset_target);
+  };
+
+  auto makeMomentumDistribution = [&](auto& est_in, auto total_number, auto twist,
+                                     auto& lattice) -> UPtr<OperatorEstBase> {
+    return std::make_unique<MomentumDistribution>(est_in, total_number, twist, lattice, DataLocality::crowd);
+  };
+
   for (auto& est_input : input_.get_estimator_inputs())
   {
-    {
-      constructEstimator<SpinDensityInput>(est_input, [&](auto& est_in, auto& lattice, auto& species_set)->UPtr<OperatorEstBase>{
-          DataLocality dl = DataLocality::crowd;
-          if (est_in.get_save_memory())
-            dl = DataLocality::rank;
-          if (est_in.get_cell().explicitly_defined)
-            return std::make_unique<SpinDensityInput::Consumer>(est_in, species_set, dl);
-          else
-            return std::make_unique<SpinDensityInput::Consumer>(est_in, lattice, species_set, dl);},
-          pset.Lattice, pset.getSpeciesSet());
-    }
+    if (tryConstructEstimator<SpinDensityInput>(est_input, makeSpinDensity, pset.Lattice, pset.getSpeciesSet()))
+      continue;
+    else if (tryConstructEstimator<OneBodyDensityMatricesInput>(est_input, makeOBDM, pset.Lattice, pset.getSpeciesSet(),
+                                                                wf_factory))
+      continue;
+    else if (tryConstructEstimator<MomentumDistributionInput>(est_input, makeMomentumDistribution, pset.getTotalNum(),
+                                                         pset.getTwist(), pset.Lattice))
+      continue;
   }
 }
 

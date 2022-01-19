@@ -35,6 +35,9 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<SpinDensityInput>(child);
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);
+      else
+        throw UniformCommunicateError(error_tag + "unparsable child node, name: " + aname + " type: " + atype +
+                                      " in Estimators input.");
     }
     else
       throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
