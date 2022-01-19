@@ -29,7 +29,7 @@ namespace qmcplusplus
 //     then change SlaterDet to SlaterDet<false>
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
-class TWFPrototype;
+class TWFFastDerivWrapper;
 
 class SlaterDet : public WaveFunctionComponent
 {
@@ -55,7 +55,7 @@ public:
 
   void reportStatus(std::ostream& os) override;
 
-  void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const override;
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,

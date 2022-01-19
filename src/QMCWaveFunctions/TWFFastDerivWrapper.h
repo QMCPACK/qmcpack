@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_TWFPROTOTYPE_H
-#define QMCPLUSPLUS_TWFPROTOTYPE_H
+#ifndef QMCPLUSPLUS_TWFFASTDERIVWRAPPER_H
+#define QMCPLUSPLUS_TWFFASTDERIVWRAPPER_H
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
@@ -20,14 +20,14 @@
 namespace qmcplusplus
 {
 /**
- *  TWFPrototype is a wrapper class for TrialWavefunction that provides separate and low level access to the Jastrow and 
+ *  TWFFastDerivWrapper is a wrapper class for TrialWavefunction that provides separate and low level access to the Jastrow and 
  *  SPOSet objects.  This is so that observables can be recast in matrix form and their derivatives taken efficiently. 
  *  Currently this is hard coded for ground state slater jastrow wave functions, but generalization to
  *  arbitrary occupations and multideterminants are straightforward and will come online as the code is tested and validated. 
  *
  *  Please see : J. Chem. Phys. 144, 194105 (2016) https://doi.org/10.1063/1.4948778 for implementation details and formalism.
  */
-class TWFPrototype
+class TWFFastDerivWrapper
 {
 public:
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
@@ -44,7 +44,7 @@ public:
   /** @brief Add a particle group.
    *
    *  Here, a "group" corresponds to a subset of particles which are antisymmetric with 
-   *  respect to eachother.  TWFPrototype ensures that there is a binding between the groupid
+   *  respect to eachother.  TWFFastDerivWrapper ensures that there is a binding between the groupid
    *  in ParticleSet and the SPOSet associated with that particle group.  This function stores
    *  the ParticleSet groupid and SPOSet in a vector for lookup and communication with QMCPACK conventions, 
    *  but is agnostic to the order of group registration or evaluation.  
@@ -60,7 +60,7 @@ public:
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
    *  ParticleSet groups can be registered in whichever order.  However, the internal indexing 
-   *  of TWFPrototype keeps track on a first-come, first serve basis.  That is, if I register 
+   *  of TWFFastDerivWrapper keeps track on a first-come, first serve basis.  That is, if I register 
    *  particle groups 3, 1, and 0 in that order, then the internal indexing goes like
    *  0->3, 1->1, 2->0.  Thus, this function looks up where in the internal indexing scheme
    *  ParticleSet gid is located.  This is necessary, since the matrix list data structures follow

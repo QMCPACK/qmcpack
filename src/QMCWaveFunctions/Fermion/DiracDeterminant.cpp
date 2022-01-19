@@ -21,7 +21,7 @@
 #include "CPU/SIMD/simd.hpp"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
-#include "QMCWaveFunctions/TWFPrototype.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -346,7 +346,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const
+void DiracDeterminant<DU_TYPE>::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
 {
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }

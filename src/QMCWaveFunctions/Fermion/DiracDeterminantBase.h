@@ -85,9 +85,9 @@ public:
 
   inline void reportStatus(std::ostream& os) final {}
 
-  virtual void registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const override
+  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
-    APP_ABORT("DiracDeterminantBase::registerTWFPrototype must be overridden\n");
+    APP_ABORT("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
   }
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;

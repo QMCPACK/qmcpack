@@ -29,7 +29,7 @@
 #include "Utilities/TimerManager.h"
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"
-#include "QMCWaveFunctions/TWFPrototype.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -171,7 +171,7 @@ public:
 
   /** Initialize a TWF wrapper for fast derivative evaluation
    */
-  void initializeTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const;
+  void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -544,7 +544,7 @@ private:
   std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
   /// For now, TrialWaveFunction will own the wrapper.
-  TWFPrototype twf_prototype;
+  TWFFastDerivWrapper twf_prototype;
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level

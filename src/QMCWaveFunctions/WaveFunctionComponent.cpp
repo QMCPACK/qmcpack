@@ -226,10 +226,10 @@ void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
   evaluateRatios(VP, ratios);
 }
 
-void WaveFunctionComponent::registerTWFPrototype(const ParticleSet& P, TWFPrototype& twf) const
+void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
 {
   std::ostringstream o;
-  o << "WaveFunctionComponent::registerTWFPrototype is not implemented by " << ClassName;
+  o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
   APP_ABORT(o.str()); 
 }
 
