@@ -18,12 +18,13 @@
 #include "config.h"
 #endif
 
-#if defined(QMC_OMP)
+#ifdef _OPENMP
 #include <omp.h>
 #else
-#include "formic/utils/openmp.h"
-
-typedef int omp_int_t;
+using omp_int_t = int;
+inline omp_int_t omp_get_thread_num() { return 0; }
+inline omp_int_t omp_get_max_threads() { return 1; }
+inline omp_int_t omp_get_num_threads() { return 1; }
 inline omp_int_t omp_get_level() { return 0; }
 inline omp_int_t omp_get_ancestor_thread_num(int level) { return 0; }
 inline void omp_set_num_threads(int num_threads) {}

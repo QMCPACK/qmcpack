@@ -17,7 +17,7 @@
  */
 #include "NewTimer.h"
 #include <iostream>
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "config.h"
 #include "TimerManager.h"
 
@@ -75,7 +75,7 @@ void TimerType<CLOCK>::start()
       start_time = CLOCK()();
     }
 #else
-    start_time = CLOCK()();
+    start_time     = CLOCK()();
 #endif
   }
 }

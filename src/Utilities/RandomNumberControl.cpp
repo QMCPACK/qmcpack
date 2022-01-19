@@ -15,7 +15,7 @@
 
 
 #include <Configuration.h>
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "OhmmsData/AttributeSet.h"
 #include "RandomNumberControl.h"
 #include "Utilities/Timer.h"

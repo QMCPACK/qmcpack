@@ -73,7 +73,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   // What else should we expect after process
 }
 
-#ifdef QMC_OMP
+#ifdef _OPENMP
 TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
 {
   using namespace testing;

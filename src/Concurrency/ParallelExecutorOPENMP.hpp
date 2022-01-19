@@ -22,7 +22,7 @@
 
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Platforms/Host/OutputManager.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
