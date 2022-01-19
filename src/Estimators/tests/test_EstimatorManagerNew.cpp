@@ -43,24 +43,24 @@ TEST_CASE("EstimatorManagerNew", "[estimators]")
   REQUIRE(embt.testAddGetEstimator());
 }
 
-// TEST_CASE("EstimatorManagerNew::ConstructFromEstimatorManagerInput", "[estimators]")
-// {
-//   Communicate* comm = OHMMS::Controller;
-//   using namespace testing;
-//   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
-//   EstimatorManagerInput emi(estimators_doc.getRoot());
+TEST_CASE("EstimatorManagerNew::ConstructFromEstimatorManagerInput", "[estimators]")
+{
+  Communicate* comm = OHMMS::Controller;
+  using namespace testing;
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi(estimators_doc.getRoot());
 
-//   MinimalParticlePool mpp;
-//   ParticleSetPool particle_pool = mpp(comm);
-//   MinimalWaveFunctionPool wfp;
-//   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
-//   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-//   auto& pset_target = *(particle_pool.getParticleSet("e"));
-//   auto& species_set = pset_target.getSpeciesSet();
-//   auto& wf_factory  = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& species_set = pset_target.getSpeciesSet();
+  auto& wf_factory  = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
 
-//   EstimatorManagerNew emn(comm, std::move(emi), pset_target, *(wavefunction_pool.getPrimary()), wf_factory);
-// }
+  EstimatorManagerNew emn(comm, std::move(emi), pset_target, *(wavefunction_pool.getPrimary()), wf_factory);
+}
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 {
