@@ -25,11 +25,16 @@ namespace testing
 template<typename T>
 class OneBodyDensityMatricesTests;
 }
+
+class OneBodyDensityMatrices;
+  
 /** Native representation for DensityMatrices1B Estimator's inputs
  */
 class OneBodyDensityMatricesInput : public InputNode
 {
 public:
+  using Consumer = OneBodyDensityMatrices;
+  
   enum class Integrator
   {
     UNIFORM_GRID,

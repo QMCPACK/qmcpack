@@ -12,6 +12,7 @@
 #include <functional>
 #include <numeric>
 #include <algorithm>
+#include <variant>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
@@ -32,6 +33,7 @@
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+#include "Estimators/SpinDensityInput.h"
 
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
@@ -39,17 +41,24 @@
 namespace qmcplusplus
 {
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
-    : MainEstimatorName("LocalEnergy"),
-      RecordCount(0),
-      my_comm_(c),
-      Collectables(0),
-      max4ascii(8),
-      FieldWidth(20)
+    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
 {}
 
+template<class T, class R>
+constexpr bool has(const R& this_one){ return std::holds_alternative<std::reference_wrapper<T>>(this_one); }
+
+template<class T, class R>
+auto& getInput(const R& this_one){ return std::holds_alternative<std::reference_wrapper<T>>(this_one); }
+
+template<class T, typename F, typename... Args>
+void EstimatorManagerNew::constructEstimator(EstimatorInput& input, F&& f, Args&&... args) {
+  using EstInputType = T;
+  if(has<EstInputType>(input))
+    operator_ests_.emplace_back(f(std::get<RefW<EstInputType>>(input).get(), std::forward<Args>(args)...));
+}
 
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi)
+EstimatorManagerNew::EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory)
     : input_(std::move(emi)),
       MainEstimatorName("LocalEnergy"),
       RecordCount(0),
@@ -57,7 +66,22 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c, EstimatorManagerInput&&
       Collectables(0),
       max4ascii(8),
       FieldWidth(20)
-{}
+{
+  for (auto& est_input : input_.get_estimator_inputs())
+  {
+    {
+      constructEstimator<SpinDensityInput>(est_input, [&](auto& est_in, auto& lattice, auto& species_set)->UPtr<OperatorEstBase>{
+          DataLocality dl = DataLocality::crowd;
+          if (est_in.get_save_memory())
+            dl = DataLocality::rank;
+          if (est_in.get_cell().explicitly_defined)
+            return std::make_unique<SpinDensityInput::Consumer>(est_in, species_set, dl);
+          else
+            return std::make_unique<SpinDensityInput::Consumer>(est_in, lattice, species_set, dl);},
+          pset.Lattice, pset.getSpeciesSet());
+    }
+  }
+}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {

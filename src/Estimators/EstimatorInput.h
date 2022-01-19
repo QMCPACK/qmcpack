@@ -16,6 +16,8 @@
 #include "Configuration.h"
 #include "InputSection.h"
 
+#define LAMBDA_setIfInInput [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); }
+
 namespace qmcplusplus
 {
 

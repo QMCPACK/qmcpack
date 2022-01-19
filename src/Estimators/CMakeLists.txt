@@ -18,6 +18,7 @@ set(QMCEST_SRC
     RMCLocalEnergyEstimator.cpp
     EstimatorInput.cpp
     EstimatorManagerInput.cpp
+    ScalarEstimatorInputs.cpp
     SpinDensityInput.cpp
     MomentumDistributionInput.cpp
     EstimatorManagerBase.cpp

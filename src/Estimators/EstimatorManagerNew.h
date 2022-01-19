@@ -59,7 +59,7 @@ public:
   ///testing constructor
   EstimatorManagerNew(Communicate* c);
   ///default constructor
-  EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi);
+  EstimatorManagerNew(Communicate* c, EstimatorManagerInput&& emi, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
@@ -141,6 +141,12 @@ public:
 
 private:
   EstimatorManagerInput input_;
+
+  /** construct estimator from input object
+   */
+  template<typename T, typename F, typename... Args>
+  void constructEstimator(EstimatorInput& input, F&& f, Args&&... args);
+  
   /** reset the estimator
    */
   void reset();

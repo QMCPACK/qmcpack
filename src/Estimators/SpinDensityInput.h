@@ -18,6 +18,9 @@
 
 namespace qmcplusplus
 {
+
+class SpinDensityNew;
+
 /** Native representation for Spin Density Estimators inputs
  *
  *  This class servers three purposes all related to properly handling
@@ -34,6 +37,7 @@ public:
   using POLT               = PtclOnLatticeTraits;
   using Lattice            = POLT::ParticleLayout;
   using PosType            = QMCTraits::PosType;
+  using Consumer = SpinDensityNew;
   static constexpr int DIM = QMCTraits::DIM;
 
 public:

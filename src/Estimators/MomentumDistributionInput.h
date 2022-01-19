@@ -17,12 +17,14 @@
 namespace qmcplusplus
 {
 
+class MomentumDistribution;
 
 /** Native representation for Momentum Distribution Estimators inputs
  */
 class MomentumDistributionInput : public InputNode
 {
 public:
+  using Consumer = MomentumDistribution;
   using Real = QMCTraits::RealType;
 
   class MomentumDistributionInputSection : public InputSection

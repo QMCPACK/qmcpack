@@ -31,11 +31,12 @@ class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
 
+using EstimatorInput = std::variant<RefW<SpinDensityInput>, RefW<MomentumDistributionInput>, RefW<OneBodyDensityMatricesInput>>;
+
 /** These are the estimator input types EstimatorManagerInput delegates to.
  *  We of course know all the estimator types at compile time and it is useful to have type safety for their usage.
  */
-using EstimatorInputs = std::vector<
-    std::variant<RefW<SpinDensityInput>, RefW<MomentumDistributionInput>, RefW<OneBodyDensityMatricesInput>>>;
+using EstimatorInputs = std::vector<EstimatorInput>;
 
 namespace testing
 {
@@ -55,7 +56,7 @@ public:
   EstimatorManagerInput() = default;
   EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
   EstimatorManagerInput(xmlNodePtr cur);
-  const EstimatorInputs& get_estimator_inputs() const { return estimator_inputs; };
+  EstimatorInputs& get_estimator_inputs() { return estimator_inputs; };
 private:
   /** read <Estimators> node
    */
