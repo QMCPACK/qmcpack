@@ -16,33 +16,45 @@ namespace qmcplusplus
 {
 inline int count_electrons(const ParticleSet& ions) { return ions.getTotalNum() * 4; }
 
+inline auto create_prim_lattice()
+{
+  Lattice::Tensor_t graphite_cell = {4.65099, 0.0, 0.0, -2.3255, 4.02788, 0.0, 0.0, 0.0, 12.67609393};
+  ParticleSet::ParticleLayout_t prim_lat;
+  // set PBC in x,y,z directions
+  prim_lat.BoxBConds = 1;
+  // set the lattice
+  prim_lat.set(graphite_cell);
+  return prim_lat;
+}
+
 /** expand 4-atom graphite 
    * @param ions particle set
    * @param tmat tiling matrix
-   * @param scale scaling factor
    */
-template<typename T>
-Tensor<T, 3> tile_cell(ParticleSet& ions, Tensor<int, 3>& tmat, T scale)
+void tile_cell(ParticleSet& ions, Tensor<int, 3>& tmat)
 {
-  Tensor<T, 3> graphite  = {4.65099, 0.0, 0.0, -2.3255, 4.02788, 0.0, 0.0, 0.0, 12.67609393};
-  ions.Lattice.BoxBConds = 1;
-  ions.Lattice.set(graphite);
-  ions.create(4);
-  ions.R.InUnit = PosUnit::Cartesian;
-  ions.R[0]     = {0.0, 0.0, 0.0};
-  ions.R[1]     = {0.0, 2.68525, 0.0};
-  ions.R[2]     = {0.0, 0.0, 6.33805};
-  ions.R[3]     = {2.3255, 1.34263, 6.33805};
+  auto prim_lat(create_prim_lattice());
+  // create Ni and O by group
+  std::vector<int> graphite_group{4};
+  ParticleSet prim_ions(prim_lat);
+  // create particles by groups
+  prim_ions.create(graphite_group);
+  // using lattice coordinates
+  prim_ions.R.InUnit = PosUnit::Lattice;
 
-  SpeciesSet& species(ions.getSpeciesSet());
+  prim_ions.create(4);
+  prim_ions.R[0] = {0.0, 0.0, 0.0};
+  prim_ions.R[1] = {0.0, 2.68525, 0.0};
+  prim_ions.R[2] = {0.0, 0.0, 6.33805};
+  prim_ions.R[3] = {2.3255, 1.34263, 6.33805};
+  prim_ions.convert2Unit(prim_ions.R);
+
+  SpeciesSet& species(prim_ions.getSpeciesSet());
   int icharge = species.addAttribute("charge"); //charge_tag);
   species.addSpecies("C");
 
-  expandSuperCell(ions, tmat);
-
-  ions.resetGroups();
-
-  return graphite;
+  ions.getSpeciesSet() = prim_ions.getSpeciesSet();
+  expandSuperCell(prim_ions, tmat, ions);
 }
 
 template<typename PT>

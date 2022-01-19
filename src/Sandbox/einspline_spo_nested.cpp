@@ -102,20 +102,19 @@ int main(int argc, char** argv)
   spo_type spo_main;
   int nTiles = 1;
 
+  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
   {
-    Tensor<OHMMS_PRECISION, 3> lattice_b;
-    ParticleSet ions;
-    OHMMS_PRECISION scale = 1.0;
-    lattice_b             = tile_cell(ions, tmat, scale);
-    const int nions       = ions.getTotalNum();
-    const int nels        = count_electrons(ions) / 2;
-    tileSize              = (tileSize > 0) ? tileSize : nels;
-    nTiles                = nels / tileSize;
+    ParticleSet ions(super_lattice);
+    tile_cell(ions, tmat);
+    const int nions = ions.getTotalNum();
+    const int nels  = count_electrons(ions) / 2;
+    tileSize        = (tileSize > 0) ? tileSize : nels;
+    nTiles          = nels / tileSize;
     if (ionode)
       cout << "\nNumber of orbitals/splines = " << nels << " and Tile size = " << tileSize
            << " and Number of tiles = " << nTiles << " and Iterations = " << nsteps << endl;
     spo_main.set(nx, ny, nz, nels, nTiles);
-    spo_main.Lattice.set(lattice_b);
+    spo_main.Lattice.set(super_lattice.R);
   }
 
   double tInit = 0.0;
@@ -135,9 +134,8 @@ int main(int argc, char** argv)
     //create generator within the thread
     RandomGenerator random_th(MakeSeed(ip, np));
 
-    ParticleSet ions, els;
-    const OHMMS_PRECISION scale = 1.0;
-    tile_cell(ions, tmat, scale);
+    ParticleSet ions(super_lattice), els(super_lattice);
+    tile_cell(ions, tmat);
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -150,8 +148,6 @@ int main(int argc, char** argv)
     }
 
     { //create up/down electrons
-      els.Lattice.BoxBConds = 1;
-      els.Lattice           = ions.Lattice;
       vector<int> ud(2);
       ud[0] = nels / 2;
       ud[1] = nels - ud[0];
