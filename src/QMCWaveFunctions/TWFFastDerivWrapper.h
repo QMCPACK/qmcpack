@@ -160,7 +160,7 @@ public:
    *  @param[in,out] Aslice square matrices consistent with a ground state occupation.
    *  @return Void
    */
-  void getGSMatrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
+  void getGSMatrices(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
 
   /** @brief Calculates derivative of observable via Tr[M^{-1} dB - X * dM ].  Consistent with ground state occupation.
    *
@@ -185,9 +185,9 @@ public:
    *  @param[in,out] Minv. The species by species list of inverted matrices from M.
    *  @return Void.
    */
-  void invertMatrix(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
+  void invertMatrices(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
 
-  /** @brief Helper function that inverts all slater matrices in our species list.
+  /** @brief Build the auxiliary X=M^-1 B M^-1 matrix.
    *
    *  @param[in] Minv. List of slater matrix inverses M^-1 for a given occupation. 
    *  @param[in] B. Observable auxiliary matrix for a given occupation.
@@ -203,7 +203,7 @@ public:
    *  @param[in,out] A. The list of matrices to be zeroed out.  After call, A is all zeros.
    *  @return Void.
    */
-  void wipeMatrix(std::vector<ValueMatrix_t>& A);
+  void wipeMatrices(std::vector<ValueMatrix_t>& A);
 
   /** @brief Returns Tr(A*B).  Actually, we assume a block diagonal structure, so this is 
    *    really Sum_i Tr(A_i*B_i), where i is the species index.

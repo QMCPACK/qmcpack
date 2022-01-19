@@ -859,9 +859,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   std::vector<std::vector<ValueMatrix_t>> dB_gs;
   std::vector<std::vector<ValueMatrix_t>> dM_gs;
   std::vector<ValueMatrix_t> tmp_gs;
-  twf.getGSMatrix(B, B_gs);
-  twf.getGSMatrix(matlist, M_gs);
-  twf.invertMatrix(M_gs, minv);
+  twf.getGSMatrices(B, B_gs);
+  twf.getGSMatrices(matlist, M_gs);
+  twf.invertMatrices(M_gs, minv);
   twf.buildX(minv, B_gs, X);
   for (int id = 0; id < matlist.size(); id++)
   {
@@ -891,8 +891,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      twf.wipeMatrix(dB[idim]);
-      twf.wipeMatrix(dM[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
     }
 
     twf.getIonGradM(elec, ions, ionid, dM);
@@ -900,8 +900,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      twf.getGSMatrix(dB[idim], dB_gs[idim]);
-      twf.getGSMatrix(dM[idim], dM_gs[idim]);
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
       fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fkin_complex[ionid], fkin[ionid]);
@@ -937,11 +937,11 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
-//  twf.wipeMatrix(B);
-//  twf.wipeMatrix(B_gs);
-//  twf.wipeMatrix(X);
+//  twf.wipeMatrices(B);
+//  twf.wipeMatrices(B_gs);
+//  twf.wipeMatrices(X);
 //  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
-//  twf.getGSMatrix(B, B_gs);
+//  twf.getGSMatrices(B, B_gs);
 //  twf.buildX(minv, B_gs, X);
 
   ValueType nlpp    = 0.0;
@@ -959,8 +959,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipeMatrix(dB[idim]);
-//      twf.wipeMatrix(dM[idim]);
+//      twf.wipeMatrices(dB[idim]);
+//      twf.wipeMatrices(dM[idim]);
     }
 
 //    twf.getIonGradM(elec, ions, ionid, dM);
@@ -968,8 +968,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.getGSMatrix(dB[idim], dB_gs[idim]);
-//      twf.getGSMatrix(dM[idim], dM_gs[idim]);
+//      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+//      twf.getGSMatrices(dM[idim], dM_gs[idim]);
 //      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);

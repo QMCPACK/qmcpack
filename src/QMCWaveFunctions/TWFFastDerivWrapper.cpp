@@ -157,7 +157,7 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const st
   return dval;
 }
 
-void TWFFastDerivWrapper::invertMatrix(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
+void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv)
 {
   IndexType nspecies = M.size();
   for (IndexType id = 0; id < nspecies; id++)
@@ -198,7 +198,7 @@ void TWFFastDerivWrapper::buildX(const std::vector<ValueMatrix_t>& Minv,
   }
 }
 
-void TWFFastDerivWrapper::wipeMatrix(std::vector<ValueMatrix_t>& A)
+void TWFFastDerivWrapper::wipeMatrices(std::vector<ValueMatrix_t>& A)
 {
 
   for (IndexType id = 0; id < A.size(); id++)
@@ -229,7 +229,7 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::trAB(const std::vector<Value
   return val;
 }
 
-void TWFFastDerivWrapper::getGSMatrix(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
+void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice)
 {
   IndexType nspecies = A.size();
   Aslice.resize(nspecies);
