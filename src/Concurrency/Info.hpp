@@ -17,9 +17,7 @@
  *  @brief Abstraction of information on executor environments
  */
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include "OpenMP.h"
 
 #ifdef QMC_EXP_THREADING
 #include <thread>
@@ -45,11 +43,7 @@ unsigned int maxCapacity();
 template<>
 inline unsigned int maxCapacity<Executor::OPENMP>()
 {
-#ifdef _OPENMP
   return omp_get_max_threads();
-#else
-  return 1;
-#endif
 }
 
 template<Executor TT = Executor::OPENMP>
@@ -58,11 +52,7 @@ unsigned int getWorkerId();
 template<>
 inline unsigned int getWorkerId<Executor::OPENMP>()
 {
-#ifdef _OPENMP
   return omp_get_thread_num();
-#else
-  return 0;
-#endif
 }
 
 #ifdef QMC_EXP_THREADING

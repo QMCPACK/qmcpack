@@ -27,6 +27,7 @@ inline omp_int_t omp_get_max_threads() { return 1; }
 inline omp_int_t omp_get_num_threads() { return 1; }
 inline omp_int_t omp_get_level() { return 0; }
 inline omp_int_t omp_get_ancestor_thread_num(int level) { return 0; }
+inline omp_int_t omp_get_max_active_levels() { return 1; }
 inline void omp_set_num_threads(int num_threads) {}
 #endif
 
