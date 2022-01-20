@@ -77,9 +77,9 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
         APP_ABORT("electron species " + illegal_eSpecies + " requested for Jastrow " + jname +
                   " does not exist in ParticleSet " + targetPtcl.getName());
       functor->put(kids);
-      if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
+      if (sourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN)
       {
-        const RealType WSRadius = sourcePtcl->Lattice.WignerSeitzRadius;
+        const RealType WSRadius = sourcePtcl->getLattice().WignerSeitzRadius;
         if (functor->cutoff_radius > WSRadius)
         {
           if (functor->cutoff_radius - WSRadius > 1e-4)

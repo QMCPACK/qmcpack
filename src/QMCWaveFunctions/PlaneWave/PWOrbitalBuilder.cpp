@@ -192,7 +192,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   //return the ecut to be used by the basis set
   RealType real_ecut = myParam->getEcut(ecut);
   //create at least one basis set but do resize the containers
-  int nh5gvecs = myBasisSet->readbasis(hfileID, real_ecut, targetPtcl.Lattice, myParam->pwTag, myParam->pwMultTag);
+  int nh5gvecs = myBasisSet->readbasis(hfileID, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag);
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  twist angle = " << TwistAngle << std::endl;
   app_log() << "  num_bands = " << nbands << std::endl;
@@ -357,7 +357,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   TwistAngle_DP = TwistAngle;
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.write(twist_grp_id, "twist_angle");
-  ParticleSet::ParticleLayout_t& lattice(targetPtcl.Lattice);
+  const ParticleSet::ParticleLayout_t& lattice(targetPtcl.getLattice());
   RealType dx = 1.0 / static_cast<RealType>(nG[0] - 1);
   RealType dy = 1.0 / static_cast<RealType>(nG[1] - 1);
   RealType dz = 1.0 / static_cast<RealType>(nG[2] - 1);
@@ -417,7 +417,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   int nb = myParam->numBands;
   for (int ib = 0; ib < nb; ib++)
     inData.push_back(new StorageType(nG[0], nG[1], nG[2]));
-  PosType tAngle = targetPtcl.Lattice.k_cart(TwistAngle);
+  PosType tAngle = targetPtcl.getLattice().k_cart(TwistAngle);
   PWOrbitalSet::ValueVector_t phi(nb);
   for (int ig = 0; ig < nG[0]; ig++)
   {

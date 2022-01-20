@@ -42,8 +42,8 @@ void MPC_CUDA::initBreakup()
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
     {
-      LHost[3 * i + j]    = PtclRef->Lattice.a(j)[i];
-      LinvHost[3 * i + j] = PtclRef->Lattice.b(i)[j];
+      LHost[3 * i + j]    = PtclRef->getLattice().a(j)[i];
+      LinvHost[3 * i + j] = PtclRef->getLattice().b(i)[j];
     }
   L    = LHost;
   Linv = LinvHost;

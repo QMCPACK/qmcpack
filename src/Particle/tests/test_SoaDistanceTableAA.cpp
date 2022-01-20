@@ -22,7 +22,8 @@ namespace qmcplusplus
 {
 TEST_CASE("SoaDistanceTableAA compute_size", "[distance_table]")
 {
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
 
   elec.setName("e");
   elec.create({6, 4});

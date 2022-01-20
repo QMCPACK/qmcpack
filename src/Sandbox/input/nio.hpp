@@ -14,68 +14,70 @@ namespace qmcplusplus
 {
 inline int count_electrons(const ParticleSet& ions) { return ions.getTotalNum() * 12; }
 
-template<typename T>
-Tensor<T, 3> tile_cell(ParticleSet& ions, Tensor<int, 3>& tmat, T scale)
+inline auto create_prim_lattice()
 {
-  Tensor<T, 3> nio_cell = {7.8811, 7.8811, 0.0, -7.8811, 7.8811, 0.0, 0.0, 0.0, 15.7622};
+  Lattice::Tensor_t nio_cell = {7.8811, 7.8811, 0.0, -7.8811, 7.8811, 0.0, 0.0, 0.0, 15.7622};
+  ParticleSet::ParticleLayout_t prim_lat;
   // set PBC in x,y,z directions
-  ions.Lattice.BoxBConds = 1;
+  prim_lat.BoxBConds = 1;
   // set the lattice
-  ions.Lattice.set(nio_cell); // CrystalLattice.h:321
+  prim_lat.set(nio_cell);
+  return prim_lat;
+}
+
+void tile_cell(ParticleSet& ions, const Tensor<int, 3>& tmat)
+{
+  auto prim_lat(create_prim_lattice());
   // create Ni and O by group
-  std::vector<int> nio_group(2);
-  nio_group[0] = nio_group[1] = 16;
-  ions.create(32); // ParticleSet.h:176 "number of particles per group"
+  std::vector<int> nio_group{16, 16};
+  ParticleSet prim_ions(prim_lat);
+  // create particles by groups
+  prim_ions.create(nio_group);
   // using lattice coordinates
-  ions.R.InUnit = PosUnit::Lattice;
+  prim_ions.R.InUnit = PosUnit::Lattice;
 
-  ions.R[0]  = {0.5, 0.0, 0.25}; // O
-  ions.R[1]  = {0.0, 0.0, 0.75};
-  ions.R[2]  = {0.25, 0.25, 0.5};
-  ions.R[3]  = {0.5, 0.5, 0.25};
-  ions.R[4]  = {0.75, 0.25, 0.0};
-  ions.R[5]  = {0.0, 0.5, 0.75};
-  ions.R[6]  = {0.25, 0.75, 0.5};
-  ions.R[7]  = {0.75, 0.75, 0.0};
-  ions.R[8]  = {0.0, 0.0, 0.25};
-  ions.R[9]  = {0.25, 0.25, 0.0};
-  ions.R[10] = {0.5, 0.0, 0.75};
-  ions.R[11] = {0.75, 0.25, 0.5};
-  ions.R[12] = {0.0, 0.5, 0.25};
-  ions.R[13] = {0.25, 0.75, 0.0};
-  ions.R[14] = {0.5, 0.5, 0.75};
-  ions.R[15] = {0.75, 0.75, 0.5};
-  ions.R[16] = {
-      0.0,
-      0.0,
-      0.0,
-  }; // Ni
-  ions.R[17] = {0.0, 0.5, 0.0};
-  ions.R[18] = {0.25, 0.25, 0.75};
-  ions.R[19] = {0.5, 0.0, 0.5};
-  ions.R[20] = {0.5, 0.5, 0.5};
-  ions.R[21] = {0.75, 0.25, 0.25};
-  ions.R[22] = {0.25, 0.75, 0.75};
-  ions.R[23] = {0.75, 0.75, 0.25};
-  ions.R[24] = {0.5, 0.0, 0.0};
-  ions.R[25] = {0.0, 0.0, 0.5};
-  ions.R[26] = {0.25, 0.25, 0.25};
-  ions.R[27] = {0.5, 0.5, 0.0};
-  ions.R[28] = {0.75, 0.25, 0.75};
-  ions.R[29] = {0.0, 0.5, 0.5};
-  ions.R[30] = {0.25, 0.75, 0.25};
-  ions.R[31] = {0.75, 0.75, 0.75};
+  // O
+  prim_ions.R[0]  = {0.5, 0.0, 0.25};
+  prim_ions.R[1]  = {0.0, 0.0, 0.75};
+  prim_ions.R[2]  = {0.25, 0.25, 0.5};
+  prim_ions.R[3]  = {0.5, 0.5, 0.25};
+  prim_ions.R[4]  = {0.75, 0.25, 0.0};
+  prim_ions.R[5]  = {0.0, 0.5, 0.75};
+  prim_ions.R[6]  = {0.25, 0.75, 0.5};
+  prim_ions.R[7]  = {0.75, 0.75, 0.0};
+  prim_ions.R[8]  = {0.0, 0.0, 0.25};
+  prim_ions.R[9]  = {0.25, 0.25, 0.0};
+  prim_ions.R[10] = {0.5, 0.0, 0.75};
+  prim_ions.R[11] = {0.75, 0.25, 0.5};
+  prim_ions.R[12] = {0.0, 0.5, 0.25};
+  prim_ions.R[13] = {0.25, 0.75, 0.0};
+  prim_ions.R[14] = {0.5, 0.5, 0.75};
+  prim_ions.R[15] = {0.75, 0.75, 0.5};
+  // Ni
+  prim_ions.R[16] = {0.0, 0.0, 0.0};
+  prim_ions.R[17] = {0.0, 0.5, 0.0};
+  prim_ions.R[18] = {0.25, 0.25, 0.75};
+  prim_ions.R[19] = {0.5, 0.0, 0.5};
+  prim_ions.R[20] = {0.5, 0.5, 0.5};
+  prim_ions.R[21] = {0.75, 0.25, 0.25};
+  prim_ions.R[22] = {0.25, 0.75, 0.75};
+  prim_ions.R[23] = {0.75, 0.75, 0.25};
+  prim_ions.R[24] = {0.5, 0.0, 0.0};
+  prim_ions.R[25] = {0.0, 0.0, 0.5};
+  prim_ions.R[26] = {0.25, 0.25, 0.25};
+  prim_ions.R[27] = {0.5, 0.5, 0.0};
+  prim_ions.R[28] = {0.75, 0.25, 0.75};
+  prim_ions.R[29] = {0.0, 0.5, 0.5};
+  prim_ions.R[30] = {0.25, 0.75, 0.25};
+  prim_ions.R[31] = {0.75, 0.75, 0.75};
 
-  SpeciesSet& species(ions.getSpeciesSet());
+  SpeciesSet& species(prim_ions.getSpeciesSet());
   int icharge = species.addAttribute("charge"); // charge_tag);
   species.addSpecies("O");
   species.addSpecies("Ni");
 
-  expandSuperCell(ions, tmat);
-
-  ions.resetGroups();
-
-  return nio_cell;
+  ions.getSpeciesSet() = prim_ions.getSpeciesSet();
+  expandSuperCell(prim_ions, tmat, ions);
 }
 
 template<typename J2Type>

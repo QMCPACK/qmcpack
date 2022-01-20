@@ -28,12 +28,16 @@ namespace qmcplusplus
 {
 void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& elec(*elec_uptr);
+  ParticleSet& ions(*ions_uptr);
+
   elec.setName("e");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec.create({1, 1});
   elec.R[0] = 0.0;
 
@@ -44,9 +48,8 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  ParticleSet& ions(*ions_uptr);
   ions.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions.create(1);
   ions.R[0]            = 0.0;
   SpeciesSet& ispecies = ions.getSpeciesSet();
@@ -55,10 +58,6 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   elec.addTable(ions);
   elec.update();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);

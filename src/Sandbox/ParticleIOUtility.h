@@ -15,13 +15,17 @@
 #ifndef OHMMS_PARTICLE_INPUTOUTPUT_UTILITY_H
 #define OHMMS_PARTICLE_INPUTOUTPUT_UTILITY_H
 
-#include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
-/** expand a particleset including lattice */
-void expandSuperCell(ParticleSet& ref, Tensor<int, OHMMS_DIM>& tmat);
+
+using Lattice = ParticleSet::ParticleLayout_t;
+
+/** create super lattice */
+Lattice createSuperLattice(const Lattice& in, const Tensor<int, OHMMS_DIM>& tmat);
+/** expand a particleset */
+void expandSuperCell(const ParticleSet& in, const Tensor<int, OHMMS_DIM>& tmat, ParticleSet& out);
 
 } // namespace qmcplusplus
 #endif

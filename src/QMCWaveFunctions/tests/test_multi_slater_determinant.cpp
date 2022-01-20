@@ -40,15 +40,16 @@ void test_LiH_msd(const std::string& spo_xml_string,
                   int test_nlpp_algorithm_batched,
                   int test_batched_api)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1, 1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   ions_.R[1]           = {0.0, 0.0, 3.0139239693};
@@ -57,6 +58,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   int HIdx             = ispecies.addSpecies("H");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2, 2});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {0.1, 0.1, 1.1};
@@ -71,12 +73,6 @@ void test_LiH_msd(const std::string& spo_xml_string,
   tspecies(massIdx, downIdx) = 1.0;
   // Necessary to set mass
   elec_.resetGroups();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
@@ -364,21 +360,23 @@ void test_Bi_msd(const std::string& spo_xml_string,
                  int check_spo_size,
                  int check_basisset_size)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(std::vector<int>{1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int LiIdx            = ispecies.addSpecies("Bi");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(std::vector<int>{5});
   elec_.R[0] = {1.592992772, -2.241313928, -0.7315193518};
   elec_.R[1] = {0.07621077199, 0.8497557547, 1.604678718};
@@ -399,12 +397,6 @@ void test_Bi_msd(const std::string& spo_xml_string,
   tspecies(massIdx, upIdx) = 1.0;
   // Necessary to set mass
   elec_.resetGroups();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);

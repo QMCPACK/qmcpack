@@ -271,7 +271,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
-    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.Lattice, species_set, wf_factory, pset_target);
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
 
     OneBodyDensityMatricesTests<double> obdmt;
     //Get control over which rng is used.
@@ -314,7 +314,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
 
-  OneBodyDensityMatrices original(std::move(obdmi), pset_target.Lattice, species_set, wf_factory, pset_target);
+  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
   auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
@@ -346,7 +346,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& pset_source = *(particle_pool.getParticleSet("ion"));
   auto& species_set = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.Lattice, species_set, wf_factory, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
 
   std::vector<MCPWalker> walkers;
   int nwalkers = 3;
@@ -448,7 +448,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();
-    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.Lattice, species_set, wf_factory, pset_target);
+    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
     auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.

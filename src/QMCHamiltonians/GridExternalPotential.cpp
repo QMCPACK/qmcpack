@@ -115,7 +115,7 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
     for (int i = 0; i < P.getTotalNum(); ++i)
     {
       PosType r = P.R[i];
-      P.Lattice.applyMinimumImage(r);
+      P.getLattice().applyMinimumImage(r);
       double val = 0.0;
       eval_UBspline_3d_d(spline_data.get(), r[0], r[1], r[2], &val);
 

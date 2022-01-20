@@ -30,15 +30,16 @@ void test_lcao_spinor()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(1);
 
   ions_.R[0][0]        = 0.00000000;
@@ -49,6 +50,7 @@ void test_lcao_spinor()
   ions_.update();
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(1);
   elec_.R[0][0]  = 0.1;
   elec_.R[0][1]  = -0.3;
@@ -64,10 +66,6 @@ void test_lcao_spinor()
 
   elec_.addTable(ions_);
   elec_.update();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
@@ -332,15 +330,16 @@ void test_lcao_spinor_excited()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(1);
 
   ions_.R[0][0]        = 0.00000000;
@@ -351,6 +350,7 @@ void test_lcao_spinor_excited()
   ions_.update();
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(1);
   elec_.R[0][0]  = 0.1;
   elec_.R[0][1]  = -0.3;
@@ -366,10 +366,6 @@ void test_lcao_spinor_excited()
 
   elec_.addTable(ions_);
   elec_.update();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \

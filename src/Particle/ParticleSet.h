@@ -30,6 +30,7 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "SimulationCell.h"
 #include "DTModes.h"
 
 namespace qmcplusplus
@@ -69,20 +70,6 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///ParticleLayout
-  ParticleLayout_t Lattice, PrimitiveLattice;
-  ///Long-range box
-  ParticleLayout_t LRBox;
-
-  ///unique, persistent ID for each particle
-  ParticleIndex_t ID;
-  ///index to the primitice cell with tiling
-  ParticleIndex_t PCID;
-  /** ID map that reflects species group
-   *
-   * IsGrouped=true, if ID==IndirectID
-   */
-  ParticleIndex_t IndirectID;
   ///Species ID
   ParticleIndex_t GroupID;
   ///Position
@@ -93,10 +80,6 @@ public:
   ParticleGradient_t G;
   ///laplacians of the particles
   ParticleLaplacian_t L;
-  ///differential gradients of the particles
-  ParticleGradient_t dG;
-  ///differential laplacians of the particles
-  ParticleLaplacian_t dL;
   ///mass of each particle
   ParticleScalar_t Mass;
   ///charge of each particle
@@ -148,7 +131,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
@@ -260,6 +243,12 @@ public:
   inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
+
+
+  const auto& getSimulationCell() const { return simulation_cell_; }
+  const auto& getLattice() const { return simulation_cell_.getLattice(); }
+  auto& getPrimitiveLattice() const { return const_cast<ParticleLayout_t&>(simulation_cell_.getPrimLattice()); }
+  const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
   inline bool isGrouped() const { return is_grouped_; }
@@ -488,16 +477,11 @@ public:
 
     R.resize(numPtcl);
     spins.resize(numPtcl);
-    ID.resize(numPtcl);
-    PCID.resize(numPtcl);
     GroupID.resize(numPtcl);
     G.resize(numPtcl);
-    dG.resize(numPtcl);
     L.resize(numPtcl);
-    dL.resize(numPtcl);
     Mass.resize(numPtcl);
     Z.resize(numPtcl);
-    IndirectID.resize(numPtcl);
 
     coordinates_->resize(numPtcl);
   }
@@ -508,16 +492,11 @@ public:
 
     R.clear();
     spins.clear();
-    ID.clear();
-    PCID.clear();
     GroupID.clear();
     G.clear();
-    dG.clear();
     L.clear();
-    dL.clear();
     Mass.clear();
     Z.clear();
-    IndirectID.clear();
 
     coordinates_->resize(0);
   }
@@ -525,12 +504,9 @@ public:
   inline void assign(const ParticleSet& ptclin)
   {
     resize(ptclin.getTotalNum());
-    Lattice          = ptclin.Lattice;
-    PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit         = ptclin.R.InUnit;
     R                = ptclin.R;
     spins            = ptclin.spins;
-    ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
     is_spinor_       = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
@@ -567,30 +543,21 @@ public:
     R.setObjName(ParticleTags::position_tag);
     spins.setTypeName(ParticleTags::scalartype_tag);
     spins.setObjName(ParticleTags::spins_tag);
-    ID.setTypeName(ParticleTags::indextype_tag);
-    ID.setObjName(ParticleTags::id_tag);
     GroupID.setTypeName(ParticleTags::indextype_tag);
     GroupID.setObjName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
     AttribList.add(spins);
-    AttribList.add(ID);
     AttribList.add(GroupID);
 
     G.setTypeName(ParticleTags::gradtype_tag);
     L.setTypeName(ParticleTags::laptype_tag);
-    dG.setTypeName(ParticleTags::gradtype_tag);
-    dL.setTypeName(ParticleTags::laptype_tag);
 
     G.setObjName("grad");
     L.setObjName("lap");
-    dG.setObjName("dgrad");
-    dL.setObjName("dlap");
 
     AttribList.add(G);
     AttribList.add(L);
-    AttribList.add(dG);
-    AttribList.add(dL);
 
     //more particle attributes
     Mass.setTypeName(ParticleTags::scalartype_tag);
@@ -600,14 +567,6 @@ public:
     Z.setTypeName(ParticleTags::scalartype_tag);
     Z.setObjName("charge");
     AttribList.add(Z);
-
-    PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-    PCID.setObjName("pcid");
-    AttribList.add(PCID);
-
-    IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
-    IndirectID.setObjName("id1");
-    AttribList.add(IndirectID);
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
@@ -628,6 +587,9 @@ public:
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
+  /// reference to global simulation cell
+  const SimulationCell& simulation_cell_;
+
   ///true if the particles are grouped
   bool is_grouped_;
   ///true if the particles have the same mass

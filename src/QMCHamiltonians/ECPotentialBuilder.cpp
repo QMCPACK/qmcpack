@@ -98,12 +98,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
 
   ///create LocalECPotential
-  bool usePBC = !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
+  bool usePBC = !(IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
 
 
   if (hasLocalPot)
   {
-    if (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
+    if (IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
 #ifdef QMC_CUDA
       std::unique_ptr<LocalECPotential_CUDA> apot = std::make_unique<LocalECPotential_CUDA>(IonConfig, targetPtcl);

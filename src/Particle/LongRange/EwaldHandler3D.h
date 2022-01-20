@@ -43,7 +43,7 @@ public:
   EwaldHandler3D(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in)
   {
     LRHandlerBase::ClassName = "EwaldHandler3D";
-    Sigma = LR_kc = ref.Lattice.LR_kc;
+    Sigma = LR_kc = ref.getLattice().LR_kc;
   }
 
   /** "copy" constructor

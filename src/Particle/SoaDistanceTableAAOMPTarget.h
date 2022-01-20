@@ -60,7 +60,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   std::unique_ptr<DTAAMultiWalkerMem> mw_mem_;
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
-      : DTD_BConds<T, D, SC>(target.Lattice),
+      : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)

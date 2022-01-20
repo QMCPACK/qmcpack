@@ -386,7 +386,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
           operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
         else
           operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.getSpeciesSet(), dl));
+              std::make_unique<SpinDensityNew>(std::move(spdi), pset.getLattice(), pset.getSpeciesSet(), dl));
       }
       else if (est_type == "MomentumDistribution")
       {
@@ -394,14 +394,14 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         mdi.readXML(cur);
         DataLocality dl = DataLocality::crowd;
         operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
-                                                                           pset.getTwist(), pset.Lattice, dl));
+                                                                           pset.getTwist(), pset.getLattice(), dl));
       }
       else if (est_type == "OneBodyDensityMatrices")
       {
         OneBodyDensityMatricesInput obdmi(cur);
         // happens once insures golden particle set is not abused.
         ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.Lattice,
+        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
                                                                              pset.getSpeciesSet(), wf_factory,
                                                                              pset_target));
       }

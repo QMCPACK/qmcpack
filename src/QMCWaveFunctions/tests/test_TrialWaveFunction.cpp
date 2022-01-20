@@ -44,12 +44,29 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #else
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
 #endif
-  auto ions_uptr = std::make_unique<ParticleSet>(kind_selected);
-  auto elec_uptr = std::make_unique<ParticleSet>(kind_selected);
+  // diamondC_1x1x1
+  ParticleSet::ParticleLayout_t lattice;
+  lattice.R(0, 0)   = 3.37316115;
+  lattice.R(0, 1)   = 3.37316115;
+  lattice.R(0, 2)   = 0.0;
+  lattice.R(1, 0)   = 0.0;
+  lattice.R(1, 1)   = 3.37316115;
+  lattice.R(1, 2)   = 3.37316115;
+  lattice.R(2, 0)   = 3.37316115;
+  lattice.R(2, 1)   = 0.0;
+  lattice.R(2, 2)   = 3.37316115;
+  lattice.BoxBConds = {1, 1, 1};
+  lattice.reset();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
@@ -57,6 +74,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   std::vector<int> ud(2);
   ud[0] = ud[1] = 2;
   elec_.create(ud);
@@ -64,19 +82,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.R[1] = {0.0, 1.0, 1.0};
   elec_.R[2] = {1.0, 1.0, 0.0};
   elec_.R[3] = {1.0, 0.0, 1.0};
-
-  // diamondC_1x1x1
-  elec_.Lattice.R(0, 0)   = 3.37316115;
-  elec_.Lattice.R(0, 1)   = 3.37316115;
-  elec_.Lattice.R(0, 2)   = 0.0;
-  elec_.Lattice.R(1, 0)   = 0.0;
-  elec_.Lattice.R(1, 1)   = 3.37316115;
-  elec_.Lattice.R(1, 2)   = 3.37316115;
-  elec_.Lattice.R(2, 0)   = 3.37316115;
-  elec_.Lattice.R(2, 1)   = 0.0;
-  elec_.Lattice.R(2, 2)   = 3.37316115;
-  elec_.Lattice.BoxBConds = {1, 1, 1};
-  elec_.Lattice.reset();
 
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
@@ -88,10 +93,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
-
-  ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);

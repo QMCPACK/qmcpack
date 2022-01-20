@@ -48,13 +48,13 @@ struct LRRPAHandlerTemp : public LRHandlerBase
   Func myFunc;
 
   //Constructor
-  LRRPAHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.Lattice)
+  LRRPAHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLattice())
   {
     LRHandlerBase::ClassName = "LRRPAHandlerTemp";
     myFunc.reset(ref);
   }
 
-  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
+  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.getLattice())
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -67,7 +67,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
        * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRRPAHandlerTemp(const LRRPAHandlerTemp& aLR, ParticleSet& ref)
-      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice)
+      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLattice())
   {
     myFunc.reset(ref);
     fillFk(ref.getSK().getKLists());
@@ -80,20 +80,20 @@ struct LRRPAHandlerTemp : public LRHandlerBase
 
   void initBreakup(ParticleSet& ref) override
   {
-    InitBreakup(ref.Lattice, 1);
+    InitBreakup(ref.getLattice(), 1);
     fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
 
   void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
-    //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
+    //ref.getLattice().Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     if (rs_ext > 0)
       rs = rs_ext;
     else
-      rs = std::pow(3.0 / 4.0 / M_PI * ref.Lattice.Volume / static_cast<mRealType>(ref.getTotalNum()), 1.0 / 3.0);
+      rs = std::pow(3.0 / 4.0 / M_PI * ref.getLattice().Volume / static_cast<mRealType>(ref.getTotalNum()), 1.0 / 3.0);
     myFunc.reset(ref, rs);
-    InitBreakup(ref.Lattice, 1);
+    InitBreakup(ref.getLattice(), 1);
     fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
@@ -187,7 +187,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout_t& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);

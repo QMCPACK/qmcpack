@@ -16,9 +16,9 @@ namespace qmcplusplus
 {
 void EwaldHandler3D::initBreakup(ParticleSet& ref)
 {
-  SuperCellEnum = ref.Lattice.SuperCellEnum;
-  LR_rc         = ref.Lattice.LR_rc;
-  LR_kc         = ref.Lattice.LR_kc;
+  SuperCellEnum = ref.getLattice().SuperCellEnum;
+  LR_rc         = ref.getLattice().LR_rc;
+  LR_kc         = ref.getLattice().LR_kc;
 
   //  Sigma=3.5;
   //We provide two means of choosing sigma here...
@@ -33,12 +33,12 @@ void EwaldHandler3D::initBreakup(ParticleSet& ref)
   //  }
   //
   //  app_log() << "   EwaldHandler3D Sigma/LR_rc = " << Sigma ;
-  //  Sigma/=ref.Lattice.LR_rc;
+  //  Sigma/=ref.getLattice().LR_rc;
 
   //This heuristic for choosing Sigma is from the 1992 Natoli Ceperley Optimized Breakup Paper.
   Sigma = std::sqrt(LR_kc / (2.0 * LR_rc));
   app_log() << "  Sigma=" << Sigma << std::endl;
-  Volume     = ref.Lattice.Volume;
+  Volume     = ref.getLattice().Volume;
   PreFactors = 0.0;
   fillFk(ref.getSK().getKLists());
   fillYkgstrain(ref.getSK().getKLists());

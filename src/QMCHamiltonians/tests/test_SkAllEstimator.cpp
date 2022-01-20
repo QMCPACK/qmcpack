@@ -56,6 +56,11 @@ TEST_CASE("SkAll", "[hamiltonian]")
   */
   // Lattice block
   const char* lat_xml = "<simulationcell>                                         \
+                        <parameter name=\"lattice\" units=\"bohr\"> \
+                          2.0 0.0 0.0 \
+                          0.0 2.0 0.0 \
+                          0.0 0.0 2.0 \
+                        </parameter> \
                          <parameter name=\"bconds\">                            \
                            p p p                                                \
                          </parameter>                                           \
@@ -101,12 +106,6 @@ TEST_CASE("SkAll", "[hamiltonian]")
                              source=\"i\" target=\"e\" hdf5=\"yes\"             \
                            />";
 
-  // Build a Lattice
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  lattice.BoxBConds = true; // periodic
-  lattice.R.diagonal(2.0);
-  lattice.reset();
-
   // Read in xml, add to pset_builder below
   bool lat_okay = doc.parseFromString(lat_xml);
   REQUIRE(lat_okay);
@@ -118,7 +117,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   ParticleSetPool pset_builder(c, "pset_builder");
 
   // First attach the Lattice defined above
-  pset_builder.putLattice(lat_xml_root);
+  pset_builder.readSimulationCellXML(lat_xml_root);
 
   // Now build the elec ParticleSet
   bool elec_pset_okay = doc.parseFromString(elec_pset_xml);
@@ -128,7 +127,6 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
   // Get the (now assembled) elec ParticleSet, sanity check, report
   ParticleSet* elec = pset_builder.getParticleSet("e");
-  elec->Lattice     = lattice; // copy in the new Lattice
   REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
@@ -175,7 +173,6 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // It seems that we need this only to construct skall, but it
   // is never used to evaluate the estimator in this test.
   ParticleSet* ion = pset_builder.getParticleSet("i");
-  ion->Lattice     = lattice; // copy in the new Lattice
   REQUIRE(ion->isSameMass());
   REQUIRE(ion->getName() == "i");
   ion->get(std::cout); // print particleset info to stdout

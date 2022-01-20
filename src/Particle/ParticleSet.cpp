@@ -63,9 +63,10 @@ static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj
           {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
 }
 
-ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
+ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind)
     : quantum_domain(classical),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
+      simulation_cell_(simulation_cell),
       is_grouped_(true),
       same_mass_(true),
       is_spinor_(false),
@@ -81,6 +82,7 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
+      simulation_cell_(p.simulation_cell_),
       is_grouped_(p.is_grouped_),
       same_mass_(true),
       is_spinor_(false),
@@ -107,14 +109,9 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
     addTable(p.DistTables[i]->get_origin(), p.DistTables[i]->getModes());
+
   if (p.structure_factor_)
-  {
-    LRBox             = p.LRBox;                                            //copy LRBox
-    structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_); //safe to use the copy constructor
-    //R.InUnit=p.R.InUnit;
-    //createSK();
-    //structure_factor_->DoUpdate=p.structure_factor_->DoUpdate;
-  }
+    structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_);
   setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
   myTwist = p.myTwist;
 
@@ -220,16 +217,19 @@ void ParticleSet::resetGroups()
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
     my_species_(membersize, ig) = ng[ig];
-  //orgID=ID;
-  //orgGroupID=GroupID;
+  /** ID map that reflects species group
+   *
+   * IsGrouped=true, if ID==IndirectID
+   */
+  ParticleIndex_t IndirectID(R.size());
   int new_id = 0;
   for (int i = 0; i < nspecies; ++i)
     for (int iat = 0; iat < GroupID.size(); ++iat)
       if (GroupID[iat] == i)
-        IndirectID[new_id++] = ID[iat];
+        IndirectID[new_id++] = iat;
   is_grouped_ = true;
-  for (int iat = 0; iat < ID.size(); ++iat)
-    is_grouped_ &= (IndirectID[iat] == ID[iat]);
+  for (int iat = 0; iat < IndirectID.size(); ++iat)
+    is_grouped_ &= (IndirectID[iat] == iat);
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
@@ -477,6 +477,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   active_pos_      = R[iat] + displ;
   active_spin_val_ = spins[iat];
   bool is_valid    = true;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
@@ -550,6 +551,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
   active_ptcl_ = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
@@ -582,6 +584,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
                                        const std::vector<RealType>& dt)
 {
   active_ptcl_ = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
@@ -622,6 +625,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                                 RealType dt)
 {
   active_ptcl_ = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
@@ -655,6 +659,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                                 const std::vector<RealType>& dt)
 {
   active_ptcl_ = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)

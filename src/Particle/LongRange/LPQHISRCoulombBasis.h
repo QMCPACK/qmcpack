@@ -49,7 +49,7 @@ private:
 
 
 public:
-  LPQHISRCoulombBasis(const LPQHISRCoulombBasis& b, ParticleLayout_t& ref)
+  LPQHISRCoulombBasis(const LPQHISRCoulombBasis& b, const ParticleLayout_t& ref)
       : LRBasis(ref),
         NumKnots(b.NumKnots),
         delta(b.delta),
@@ -192,7 +192,7 @@ public:
   mRealType dc_dk(int n, mRealType k) const override;
 
   //Constructor...fill S matrix...call correct base-class constructor
-  LPQHISRCoulombBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
+  LPQHISRCoulombBasis(const ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {
     S.resize(3, 6);
     S(0, 0) = 1.0;

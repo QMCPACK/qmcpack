@@ -37,12 +37,11 @@ struct VPMultiWalkerMem : public Resource
   Resource* makeClone() const override { return new VPMultiWalkerMem(*this); }
 };
 
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(p)
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : ParticleSet(p.getSimulationCell()), refPS(p)
 {
   setName("virtual");
 
   //initialize local data structure
-  Lattice  = p.Lattice;
   TotalNum = nptcl;
   R.resize(nptcl);
   coordinates_->resize(nptcl);

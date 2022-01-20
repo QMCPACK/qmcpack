@@ -43,7 +43,7 @@ private:
   inline mRealType Dminus(int i, mRealType k, int n) const;
 
 public:
-  LPQHIBasis(const LPQHIBasis& b, ParticleLayout_t& ref)
+  LPQHIBasis(const LPQHIBasis& b, const ParticleLayout_t& ref)
       : LRBasis(ref),
         NumKnots(b.NumKnots),
         delta(b.delta),
@@ -141,7 +141,7 @@ public:
   mRealType c(int n, mRealType k) const override;
 
   //Constructor...fill S matrix...call correct base-class constructor
-  LPQHIBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
+  LPQHIBasis(const ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {
     S.resize(3, 6);
     S(0, 0) = 1.0;

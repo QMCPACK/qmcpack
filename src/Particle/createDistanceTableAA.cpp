@@ -31,7 +31,7 @@ std::unique_ptr<DistanceTable> createDistanceTableAA(ParticleSet& s, std::ostrea
   {
     DIM = OHMMS_DIM
   };
-  const int sc = s.Lattice.SuperCellEnum;
+  const int sc = s.getLattice().SuperCellEnum;
   std::unique_ptr<DistanceTable> dt;
   std::ostringstream o;
   o << "  Distance table for similar particles (A-A):" << std::endl;
@@ -40,14 +40,14 @@ std::unique_ptr<DistanceTable> createDistanceTableAA(ParticleSet& s, std::ostrea
 
   if (sc == SUPERCELL_BULK)
   {
-    if (s.Lattice.DiagonalOnly)
+    if (s.getLattice().DiagonalOnly)
     {
       o << "    Distance computations use orthorhombic periodic cell in 3D." << std::endl;
       dt = std::make_unique<SoaDistanceTableAA<RealType, DIM, PPPO + SOA_OFFSET>>(s);
     }
     else
     {
-      if (s.Lattice.WignerSeitzRadius > s.Lattice.SimulationCellRadius)
+      if (s.getLattice().WignerSeitzRadius > s.getLattice().SimulationCellRadius)
       {
         o << "    Distance computations use general periodic cell in 3D with corner image checks." << std::endl;
         dt = std::make_unique<SoaDistanceTableAA<RealType, DIM, PPPG + SOA_OFFSET>>(s);
@@ -61,14 +61,14 @@ std::unique_ptr<DistanceTable> createDistanceTableAA(ParticleSet& s, std::ostrea
   }
   else if (sc == SUPERCELL_SLAB)
   {
-    if (s.Lattice.DiagonalOnly)
+    if (s.getLattice().DiagonalOnly)
     {
       o << "    Distance computations use orthorhombic code for periodic cell in 2D." << std::endl;
       dt = std::make_unique<SoaDistanceTableAA<RealType, DIM, PPNO + SOA_OFFSET>>(s);
     }
     else
     {
-      if (s.Lattice.WignerSeitzRadius > s.Lattice.SimulationCellRadius)
+      if (s.getLattice().WignerSeitzRadius > s.getLattice().SimulationCellRadius)
       {
         o << "    Distance computations use general periodic cell in 2D with corner image checks." << std::endl;
         dt = std::make_unique<SoaDistanceTableAA<RealType, DIM, PPNG + SOA_OFFSET>>(s);

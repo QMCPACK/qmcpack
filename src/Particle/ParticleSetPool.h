@@ -21,6 +21,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/MPIObjectBase.h"
+#include "SimulationCell.h"
 
 namespace qmcplusplus
 {
@@ -52,22 +53,24 @@ public:
 
   void output_particleset_info(Libxml2Document& doc, xmlNodePtr root);
 
-  ///assign TileMatrix
-  bool putTileMatrix(xmlNodePtr cur);
-
   /** initialize the supercell shared by all the particle sets
    *
    *  return value is never checked anywhere
-   *  side effect SimulationCell UPtr<ParticleLayout_t> is set
+   *  side effect simulation_cell_ UPtr<ParticleLayout_t> is set
    *  to particle layout created on heap.
    *  This is later directly assigned to pset member variable Lattice.
    */
-  bool putLattice(xmlNodePtr cur);
+  bool readSimulationCellXML(xmlNodePtr cur);
+
   ///return true, if the pool is empty
   inline bool empty() const { return myPool.empty(); }
 
-  ///add a ParticleSet* to the pool with ownership transferred
+  /** add a ParticleSet* to the pool with its ownership transferred
+   * ParticleSet built outside the ParticleSetPool must be constructed with
+   * the simulation cell from this->simulation_cell_.
+   */
   void addParticleSet(std::unique_ptr<ParticleSet>&& p);
+
   /** get a named ParticleSet
    * @param pname name of the ParticleSet
    * @return a MCWalkerConfiguration object with pname
@@ -88,25 +91,24 @@ public:
    */
   inline PoolType& getPool() { return myPool; }
 
+  /// get simulation cell
+  const auto& getSimulationCell() const { return *simulation_cell_; }
+
+  /// set simulation cell
+  void setSimulationCell(const SimulationCell& simulation_cell) { *simulation_cell_ = simulation_cell; }
+
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
   void randomize();
 
-  /**  Access to TileMatrix for testing
-   */
-  Tensor<int, OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
-
 private:
-  /** global SimulationCell
+  /** global simulation cell
    *
-   * SimulationCell cannot not modified once it is initialized by
-   * - <simulationcell> element
-   * - the first particleset created with ES-HDF
+   * updated by
+   * - readSimulationCellXML() parsing <simulationcell> element
+   * - setSimulationCell()
    */
-  std::unique_ptr<ParticleSet::ParticleLayout_t> SimulationCell;
-  /** tiling matrix
-   */
-  Tensor<int, OHMMS_DIM> TileMatrix;
+  std::unique_ptr<SimulationCell> simulation_cell_;
   /** List of ParticleSet owned
    *
    * Each ParticleSet has to have a unique name which is used as a key for the map.
