@@ -321,7 +321,6 @@ void VMCBatched::advanceWalkersWithSpin(const StateForThread& sft,
         // This is inelegant
         if (use_drift)
         {
-          twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
           twf_dispatcher.flex_calcRatioGradWithSpin(walker_twfs, walker_elecs, iat, ratios, grads_new, spingrads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
