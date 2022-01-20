@@ -35,15 +35,14 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::evaluate_") + target.getName() +
-                                                       "_" + target.getName(),
-                                                   timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::move_") + target.getName() + "_" +
-                                                   target.getName(),
+        evaluate_timer_(
+            *timer_manager.createTimer(std::string("DTAA::evaluate_") + target.getName() + "_" + target.getName(),
+                                       timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("DTAA::move_") + target.getName() + "_" + target.getName(),
                                                timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAA::update_") + target.getName() + "_" +
-                                                     target.getName(),
-                                                 timer_level_fine))
+        update_timer_(
+            *timer_manager.createTimer(std::string("DTAA::update_") + target.getName() + "_" + target.getName(),
+                                       timer_level_fine))
   {
     resize();
   }

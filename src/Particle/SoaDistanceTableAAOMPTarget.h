@@ -66,14 +66,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
-        offload_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
-                                                   timer_level_fine)),
-        move_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + name_, timer_level_fine)),
-        update_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") + name_, timer_level_fine))
+        offload_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::offload_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::evaluate_") + name_, timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
