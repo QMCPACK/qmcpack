@@ -46,7 +46,7 @@ function(add_test_target_in_output_location TARGET_NAME_TO_TEST EXE_DIR_RELATIVE
     set(BASE_NAME ${TARGET_NAME_TO_TEST})
   endif()
 
-  set(TESTNAME build_output_${TARGET_NAME_TO_TEST})
+  set(TESTNAME build_output_${TARGET_NAME_TO_TEST}_exists)
   add_test(NAME ${TESTNAME} COMMAND ls ${qmcpack_BINARY_DIR}/bin/${BASE_NAME})
 
   set_property(
