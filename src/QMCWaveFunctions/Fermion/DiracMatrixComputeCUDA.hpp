@@ -20,7 +20,7 @@
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/complex_help.hpp"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 #include "ResourceCollection.h"
 

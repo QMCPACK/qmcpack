@@ -119,6 +119,14 @@ function(
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   set(QMC_APP $<TARGET_FILE:qmcpack>)
   set(TEST_ADDED_TEMP FALSE)
+
+  if(NOT QMC_OMP)
+    if(${THREADS} GREATER 1)
+      message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
+      return()
+    endif()
+  endif()
+
   if(HAVE_MPI)
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
       message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "SplineC2R.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -239,10 +239,10 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
     const ST lap_i   = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
     const size_t psiIndex = first_spo + jr;
-    psi[psiIndex]       = c * val_r - s * val_i;
-    psi[psiIndex + 1]   = c * val_i + s * val_r;
-    d2psi[psiIndex]     = c * lap_r - s * lap_i;
-    d2psi[psiIndex + 1] = c * lap_i + s * lap_r;
+    psi[psiIndex]         = c * val_r - s * val_i;
+    psi[psiIndex + 1]     = c * val_i + s * val_r;
+    d2psi[psiIndex]       = c * lap_r - s * lap_i;
+    d2psi[psiIndex + 1]   = c * lap_i + s * lap_r;
     dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
     dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
     dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
@@ -286,9 +286,9 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-    dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+    dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
+    dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
+    dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
     const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
     const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
@@ -408,9 +408,9 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
     const ST gZ_i         = dZ_i - val_r * kZ;
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-    dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+    dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
+    dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
+    dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
     const ST lap_r  = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i  = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);

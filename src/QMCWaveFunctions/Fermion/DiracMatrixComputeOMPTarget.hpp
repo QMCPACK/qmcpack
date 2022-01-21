@@ -20,7 +20,7 @@
 #include "DiracMatrix.h"
 #include "type_traits/complex_help.hpp"
 #include "type_traits/template_types.hpp"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 #include "ResourceCollection.h"
 
@@ -104,7 +104,7 @@ private:
     VALUE_FP tmp;
     FullPrecReal lw;
     Xgetri(lda, psi_M.data(), lda, pivots_.data(), &tmp, lwork_);
-    lw = std::real(tmp);
+    lw     = std::real(tmp);
     lwork_ = static_cast<int>(lw);
     m_work_.resize(lwork_);
   }

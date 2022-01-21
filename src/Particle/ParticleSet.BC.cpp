@@ -17,7 +17,7 @@
  */
 #include "Particle/ParticleSet.h"
 #include "Particle/FastParticleOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "LongRange/StructFact.h"
 
 namespace qmcplusplus
