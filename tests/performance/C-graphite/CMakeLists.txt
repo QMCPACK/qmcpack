@@ -40,7 +40,7 @@ function(ADD_C_GRAPHITE_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
   set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
 
   if(ENABLE_TIMERS)
-    add_test(NAME "${TEST_NAME}-time" COMMAND ../process_perf.py ${INPUT_FILE})
+    add_test(NAME "${TEST_NAME}-time" COMMAND ${Python3_EXECUTABLE} ../process_perf.py ${INPUT_FILE})
     set_tests_properties("${TEST_NAME}-time" PROPERTIES LABELS "performance")
     set_tests_properties("${TEST_NAME}-time" PROPERTIES WORKING_DIRECTORY "${WDIR}")
     set_tests_properties("${TEST_NAME}-time" PROPERTIES DEPENDS ${TEST_NAME})

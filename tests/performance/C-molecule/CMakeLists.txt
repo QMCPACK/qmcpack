@@ -36,7 +36,7 @@ if(NOT QMC_CUDA)
 
       separate_arguments(ADJUST_INPUT)
       execute_process(
-        COMMAND ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
+        COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
                 ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/C-molecule")
 
       set(PROCS 1)
@@ -55,7 +55,7 @@ if(NOT QMC_CUDA)
       set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
 
       if(ENABLE_TIMERS)
-        add_test(NAME "${TEST_NAME}-time" COMMAND ../process_perf.py ${INPUT_FILE})
+        add_test(NAME "${TEST_NAME}-time" COMMAND ${Python3_EXECUTABLE} ../process_perf.py ${INPUT_FILE})
         set_tests_properties("${TEST_NAME}-time" PROPERTIES LABELS "performance")
         set_tests_properties("${TEST_NAME}-time" PROPERTIES WORKING_DIRECTORY "${WDIR}")
         set_tests_properties("${TEST_NAME}-time" PROPERTIES DEPENDS ${TEST_NAME})
