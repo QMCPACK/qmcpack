@@ -312,15 +312,6 @@ public:
    * @return true, if core is found
    */
   bool bcastSortBands(int splin, int N, bool root);
-
-  int MyToken;
-  inline void update_token(const char* f, int l, const char* msg)
-  {
-    app_debug() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl;
-    MyToken++;
-  }
-  //inline void update_token(const char* f, int l, const char* msg)
-  //{}
 };
 
 } // namespace qmcplusplus

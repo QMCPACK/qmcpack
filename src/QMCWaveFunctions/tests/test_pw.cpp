@@ -30,15 +30,30 @@ namespace qmcplusplus
 {
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  // BCC H
+  PtclOnLatticeTraits::ParticleLayout_t lattice;
+  lattice.R(0, 0) = 3.77945227;
+  lattice.R(0, 1) = 0.0;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.77945227;
+  lattice.R(1, 2) = 0.0;
+  lattice.R(2, 0) = 0.0;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.77945227;
+  lattice.reset();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions(*ions_uptr);
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
@@ -54,6 +69,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.create(agroup);
 
   elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -61,18 +77,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.R[1][1] = 1.0;
   elec.R[1][2] = 0.0;
 
-
-  // BCC H
-  elec.Lattice.R(0, 0) = 3.77945227;
-  elec.Lattice.R(0, 1) = 0.0;
-  elec.Lattice.R(0, 2) = 0.0;
-  elec.Lattice.R(1, 0) = 0.0;
-  elec.Lattice.R(1, 1) = 3.77945227;
-  elec.Lattice.R(1, 2) = 0.0;
-  elec.Lattice.R(2, 0) = 0.0;
-  elec.Lattice.R(2, 1) = 0.0;
-  elec.Lattice.R(2, 2) = 3.77945227;
-  elec.Lattice.reset();
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
@@ -85,13 +89,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.resetGroups();
   elec.update();
 
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
-  //diamondC_1x1x1
+  //BCC H
   const char* particles = "<tmp> \
 <determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
    <slaterdeterminant> \
@@ -171,15 +169,30 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  // LiH
+  PtclOnLatticeTraits::ParticleLayout_t lattice;
+  lattice.R(0, 0) = -3.55;
+  lattice.R(0, 1) = 0.0;
+  lattice.R(0, 2) = 3.55;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.55;
+  lattice.R(1, 2) = 3.55;
+  lattice.R(2, 0) = -3.55;
+  lattice.R(2, 1) = 3.55;
+  lattice.R(2, 2) = 0.0;
+  lattice.reset();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions(*ions_uptr);
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
@@ -195,6 +208,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.create(agroup);
 
   elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -209,18 +223,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.R[3][2] = 1.0;
 
 
-  // LiH
-  elec.Lattice.R(0, 0) = -3.55;
-  elec.Lattice.R(0, 1) = 0.0;
-  elec.Lattice.R(0, 2) = 3.55;
-  elec.Lattice.R(1, 0) = 0.0;
-  elec.Lattice.R(1, 1) = 3.55;
-  elec.Lattice.R(1, 2) = 3.55;
-  elec.Lattice.R(2, 0) = -3.55;
-  elec.Lattice.R(2, 1) = 3.55;
-  elec.Lattice.R(2, 2) = 0.0;
-  elec.Lattice.reset();
-
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -231,12 +233,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.addTable(ions);
   elec.resetGroups();
   elec.update();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \

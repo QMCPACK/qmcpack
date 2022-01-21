@@ -165,7 +165,7 @@ public:
         NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
         NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
-    UsePBC           = elecs.Lattice.SuperCellEnum;
+    UsePBC           = elecs.getLattice().SuperCellEnum;
     NumElecGroups    = elecs.groups();
     SpeciesSet& sSet = centers.getSpeciesSet();
     NumCenterGroups  = sSet.getTotalNum();
@@ -178,8 +178,8 @@ public:
       for (int i = 0; i < OHMMS_DIM; i++)
         for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)elecs.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)elecs.Lattice.b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)elecs.getLattice().a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)elecs.getLattice().b(j)[i];
         }
       L    = LHost;
       Linv = LinvHost;

@@ -34,7 +34,7 @@ SpinDensity::SpinDensity(ParticleSet& P)
 
   //jtk: spin density only works for periodic bc's for now
   //     abort if using open boundary conditions
-  bool open_bcs = (P.Lattice.SuperCellEnum == SUPERCELL_OPEN);
+  bool open_bcs = (P.getLattice().SuperCellEnum == SUPERCELL_OPEN);
   if (open_bcs)
   {
     APP_ABORT("SpinDensity is not implemented for open boundary conditions at present\n  please contact the developers "
@@ -136,7 +136,7 @@ bool SpinDensity::put(xmlNodePtr cur)
       APP_ABORT("SpinDensity::put  must provide corner or center");
   }
   else
-    cell = Ptmp->Lattice;
+    cell = Ptmp->getLattice();
 
   if (have_center)
     corner = center - cell.Center;
@@ -249,7 +249,7 @@ void SpinDensity::test(int moves, ParticleSet& P)
       PosType u;
       for (int d = 0; d < DIM; ++d)
         u[d] = rng();
-      P.R[p] = P.Lattice.toCart(u);
+      P.R[p] = P.getLattice().toCart(u);
     }
     test_evaluate(P, pmin, pmax);
   }

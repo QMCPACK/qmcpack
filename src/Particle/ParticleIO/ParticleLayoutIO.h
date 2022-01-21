@@ -34,10 +34,10 @@ public:
 class LatticeXMLWriter
 {
   typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-  ParticleLayout_t& ref_;
+  const ParticleLayout_t& ref_;
 
 public:
-  LatticeXMLWriter(ParticleLayout_t& lat) : ref_(lat) {}
+  LatticeXMLWriter(const ParticleLayout_t& lat) : ref_(lat) {}
   bool get(std::ostream&) const;
   xmlNodePtr createNode();
 };

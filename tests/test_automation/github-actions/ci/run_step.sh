@@ -59,6 +59,15 @@ case "$1" in
     esac
     
     case "${GH_JOBNAME}" in
+      *"GCC9-NoMPI-Debug-"*)
+        echo 'Configure for debug mode to capture asserts with gcc'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DQMC_MPI=0 \
+              -DCMAKE_BUILD_TYPE=Debug \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"GCC9-MPI-Gcov-"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
         cmake -GNinja \

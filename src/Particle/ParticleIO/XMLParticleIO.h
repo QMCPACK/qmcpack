@@ -116,7 +116,6 @@ class XMLParticleParser : public ParticleTags
   bool AssignmentOnly;
   Particle_t& ref_;
   AttribListType ref_AttribList;
-  Tensor<int, OHMMS_DIM>& TileMatrix;
 
   bool putSpecial(xmlNodePtr cur);
 
@@ -132,7 +131,7 @@ public:
    *@param aptcl the particleset to be initialized
    *@param donotresize if true, only assignment is done
    */
-  XMLParticleParser(Particle_t& aptcl, Tensor<int, OHMMS_DIM>& tmat, bool donotresize = false);
+  XMLParticleParser(Particle_t& aptcl, bool donotresize = false);
 
   ///reading from a file
   bool put(const std::string& fname_in, const std::string& fext_in);

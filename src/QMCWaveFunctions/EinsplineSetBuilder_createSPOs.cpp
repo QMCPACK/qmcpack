@@ -82,10 +82,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipC
   orb_info_timer.restart();
   if (myComm->rank() == 0)
     if (!ReadOrbitalInfo(skipChecks))
-    {
-      app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
-      APP_ABORT("EinsplineSetBuilder::createSPOSet");
-    }
+      throw std::runtime_error("EinsplineSetBuilder::set_metadata Error reading orbital info from HDF5 file.");
   app_log() << "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
   myComm->barrier();
 
@@ -108,7 +105,6 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipC
 
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  update_token(__FILE__, __LINE__, "createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   int numOrbs = 0;
   int sortBands(1);
@@ -467,8 +463,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
-  update_token(__FILE__, __LINE__, "createSPOSet(cur,input_info)");
-
   if (MixedSplineReader == 0)
     myComm->barrier_and_abort("EinsplineSetExtended<T> cannot create a SPOSet");
 

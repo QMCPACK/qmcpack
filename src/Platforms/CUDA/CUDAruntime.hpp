@@ -10,6 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+/**@file CUDAruntime.hpp
+ *@brief handle CUDA/HIP runtime selection.
+ */
 #ifndef QMCPLUSPLUS_CUDA_RUNTIME_H
 #define QMCPLUSPLUS_CUDA_RUNTIME_H
 

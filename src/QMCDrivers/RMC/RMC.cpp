@@ -20,7 +20,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Particle/Reptile.h"
 #include "Utilities/FairDivide.h"

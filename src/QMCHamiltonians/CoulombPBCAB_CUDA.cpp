@@ -48,8 +48,8 @@ CoulombPBCAB_CUDA::CoulombPBCAB_CUDA(ParticleSet& ions, ParticleSet& elns, bool 
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
     {
-      LHost[3 * i + j]    = elns.Lattice.a(j)[i];
-      LinvHost[3 * i + j] = elns.Lattice.b(i)[j];
+      LHost[3 * i + j]    = elns.getLattice().a(j)[i];
+      LinvHost[3 * i + j] = elns.getLattice().b(i)[j];
     }
   L    = LHost;
   Linv = LinvHost;

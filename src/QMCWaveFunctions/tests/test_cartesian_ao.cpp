@@ -31,7 +31,8 @@ void test_cartesian_ao()
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
+    const SimulationCell simulation_cell;
+    ParticleSet elec(simulation_cell);
     std::vector<int> agroup(2);
     agroup[0] = 1;
     elec.setName("e");
@@ -43,7 +44,7 @@ void test_cartesian_ao()
     int massIdx              = tspecies.addAttribute("mass");
     tspecies(massIdx, upIdx) = 1.0;
 
-    ParticleSet ions;
+    ParticleSet ions(simulation_cell);
     ions.setName("ion0");
     ions.create(1);
     ions.R[0]            = 0.0;
@@ -97,7 +98,8 @@ void test_dirac_ao()
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
+    const SimulationCell simulation_cell;
+    ParticleSet elec(simulation_cell);
     std::vector<int> agroup(2);
     agroup[0] = 1;
     elec.setName("e");
@@ -109,7 +111,7 @@ void test_dirac_ao()
     int massIdx              = tspecies.addAttribute("mass");
     tspecies(massIdx, upIdx) = 1.0;
 
-    ParticleSet ions;
+    ParticleSet ions(simulation_cell);
     ions.setName("ion0");
     ions.create(1);
     ions.R[0]            = 0.0;

@@ -72,7 +72,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     }
     cur = cur->next;
   }
-  HEGGrid<RealType> egGrid(targetPtcl.Lattice);
+  HEGGrid<RealType> egGrid(targetPtcl.getLattice());
   int nat = targetPtcl.getTotalNum();
   if (nc == 0)
     nc = nc2 = egGrid.getShellIndex(nat / 2);
@@ -105,7 +105,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
     if (nup != ndn)
     {
       int nkpts2 = (ndn - 1) / 2;
-      HEGGrid<RealType> egGrid2(targetPtcl.Lattice);
+      HEGGrid<RealType> egGrid2(targetPtcl.getLattice());
       egGrid2.createGrid(nc2, nkpts2);
     }
     psid = std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
@@ -140,7 +140,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder("ElectronGas", comm), egGrid(p.Lattice)
+    : SPOSetBuilder("ElectronGas", comm), egGrid(p.getLattice())
 {
   ClassName = "ElectronGasSPOBuilder";
 }

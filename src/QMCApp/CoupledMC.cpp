@@ -25,7 +25,7 @@
 #include "QMCDrivers/QMCDriver.h"
 //#include "QMCDrivers/CMC/DummyIonMove.h"
 #include "Message/Communicate.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Utilities/qmc_common.h"
 #include "OhmmsData/AttributeSet.h"
 

@@ -175,7 +175,7 @@ public:
         NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
         NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
-    UsePBC = pset.Lattice.SuperCellEnum;
+    UsePBC = pset.getLattice().SuperCellEnum;
     app_log() << "UsePBC = " << UsePBC << std::endl;
     int nsp = this->NumGroups = pset.groups();
     GPUSplines.resize(nsp * nsp, 0);
@@ -185,8 +185,8 @@ public:
       for (int i = 0; i < OHMMS_DIM; i++)
         for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.Lattice.b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.getLattice().a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.getLattice().b(j)[i];
         }
       // for (int i=0; i<OHMMS_DIM; i++)
       // 	for (int j=0; j<OHMMS_DIM; j++) {

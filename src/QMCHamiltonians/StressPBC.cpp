@@ -47,7 +47,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
     CalculateIonIonStress();
     firstTimeStress = false;
   }
-  RealType vinv = -1. / PtclTarg.Lattice.Volume;
+  RealType vinv = -1. / PtclTarg.getLattice().Volume;
   app_log() << "\n====ion-ion stress ====\n" << stress_IonIon * vinv << std::endl;
   app_log() << "\n e-e const = " << stress_ee_const * vinv << std::endl;
   app_log() << "\n e-I const = " << stress_eI_const * vinv << std::endl;
@@ -277,7 +277,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
 
 StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
 {
-  const RealType vinv(-1.0 / P.Lattice.Volume);
+  const RealType vinv(-1.0 / P.getLattice().Volume);
   stress     = 0.0;
   stress_ee  = 0.0;
   stress_ei  = 0.0;

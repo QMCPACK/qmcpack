@@ -30,8 +30,9 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);
@@ -98,15 +99,15 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(20);
-  Lattice.LR_dim_cutoff = 15;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(20);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
   ions.create(2);
@@ -124,11 +125,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
-
-  elec.Lattice = Lattice;
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);

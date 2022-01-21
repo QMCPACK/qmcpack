@@ -582,7 +582,12 @@ class Qmcpack(Simulation):
                         # einspline orbital ordering for excited state
                         excited = excited[:nelec]
                         # hand-crafted orbital order for excited state
-                        hc_excited = np.array(list(ground[:orb1-1])+[ground[orb2-1]]+list(ground[orb1:nelec]))
+
+                        # ground can be list or ndarray, but we'll convert it to list
+                        # so we can concatenate with list syntax
+                        ground = np.asarray(ground).tolist()
+                        # After concatenating, convert back to ndarray
+                        hc_excited = np.array(ground[:orb1-1]+[ground[orb2-1]]+ground[orb1:nelec])
                             
                         etol = 1e-6
                         if np.abs(hc_excited-excited).max() > etol:

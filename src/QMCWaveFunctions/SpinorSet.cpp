@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers
 //
 // File developed by: Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by:  Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +136,91 @@ void SpinorSet::evaluateVGL_spin(const ParticleSet& P,
   dspin = eye * (eis * psi_work_up - emis * psi_work_down);
 }
 
+void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                       const RefVectorWithLeader<ParticleSet>& P_list,
+                                       int iat,
+                                       const RefVector<ValueVector_t>& psi_v_list,
+                                       const RefVector<GradVector_t>& dpsi_v_list,
+                                       const RefVector<ValueVector_t>& d2psi_v_list,
+                                       const RefVector<ValueVector_t>& dspin_v_list) const
+{
+  auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
+  auto& P_leader   = P_list.getLeader();
+  assert(this == &spo_leader);
+
+  IndexType nw          = spo_list.size();
+  SPOSet& up_spo_leader = *(spo_leader.spo_up);
+  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
+  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
+  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
+  up_spo_list.reserve(nw);
+  dn_spo_list.reserve(nw);
+
+  std::vector<ValueVector_t> mw_up_psi_work, mw_dn_psi_work;
+  std::vector<GradVector_t> mw_up_dpsi_work, mw_dn_dpsi_work;
+  std::vector<ValueVector_t> mw_up_d2psi_work, mw_dn_d2psi_work;
+  mw_up_psi_work.reserve(nw);
+  mw_up_dpsi_work.reserve(nw);
+  mw_up_d2psi_work.reserve(nw);
+  mw_dn_psi_work.reserve(nw);
+  mw_dn_dpsi_work.reserve(nw);
+  mw_dn_d2psi_work.reserve(nw);
+
+  RefVector<ValueVector_t> up_psi_v_list, dn_psi_v_list;
+  RefVector<GradVector_t> up_dpsi_v_list, dn_dpsi_v_list;
+  RefVector<ValueVector_t> up_d2psi_v_list, dn_d2psi_v_list;
+  up_psi_v_list.reserve(nw);
+  up_dpsi_v_list.reserve(nw);
+  up_d2psi_v_list.reserve(nw);
+  dn_psi_v_list.reserve(nw);
+  dn_dpsi_v_list.reserve(nw);
+  dn_d2psi_v_list.reserve(nw);
+
+  ValueVector_t tmp_val_vec(OrbitalSetSize);
+  GradVector_t tmp_grad_vec(OrbitalSetSize);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
+    up_spo_list.emplace_back(*(spinor.spo_up));
+    dn_spo_list.emplace_back(*(spinor.spo_dn));
+
+    mw_up_psi_work.emplace_back(tmp_val_vec);
+    up_psi_v_list.emplace_back(mw_up_psi_work.back());
+    mw_dn_psi_work.emplace_back(tmp_val_vec);
+    dn_psi_v_list.emplace_back(mw_dn_psi_work.back());
+
+    mw_up_dpsi_work.emplace_back(tmp_grad_vec);
+    up_dpsi_v_list.emplace_back(mw_up_dpsi_work.back());
+    mw_dn_dpsi_work.emplace_back(tmp_grad_vec);
+    dn_dpsi_v_list.emplace_back(mw_dn_dpsi_work.back());
+
+    mw_up_d2psi_work.emplace_back(tmp_val_vec);
+    up_d2psi_v_list.emplace_back(mw_up_d2psi_work.back());
+    mw_dn_d2psi_work.emplace_back(tmp_val_vec);
+    dn_d2psi_v_list.emplace_back(mw_dn_d2psi_work.back());
+  }
+
+  up_spo_leader.mw_evaluateVGL(up_spo_list, P_list, iat, up_psi_v_list, up_dpsi_v_list, up_d2psi_v_list);
+  dn_spo_leader.mw_evaluateVGL(dn_spo_list, P_list, iat, dn_psi_v_list, dn_dpsi_v_list, dn_d2psi_v_list);
+
+#pragma omp parallel for
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
+
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+    ValueType eye(0, 1.0);
+
+    psi_v_list[iw].get()   = eis * up_psi_v_list[iw].get() + emis * dn_psi_v_list[iw].get();
+    dpsi_v_list[iw].get()  = eis * up_dpsi_v_list[iw].get() + emis * dn_dpsi_v_list[iw].get();
+    d2psi_v_list[iw].get() = eis * up_d2psi_v_list[iw].get() + emis * dn_d2psi_v_list[iw].get();
+    dspin_v_list[iw].get() = eye * (eis * up_psi_v_list[iw].get() - emis * dn_psi_v_list[iw].get());
+  }
+}
+
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
                                      int first,
                                      int last,
@@ -176,6 +262,99 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
       d2logdet(iat, no) = eis * d2logpsi_work_up(iat, no) + emis * d2logpsi_work_down(iat, no);
     }
   }
+}
+
+void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                                        const RefVectorWithLeader<ParticleSet>& P_list,
+                                        int first,
+                                        int last,
+                                        const RefVector<ValueMatrix_t>& logdet_list,
+                                        const RefVector<GradMatrix_t>& dlogdet_list,
+                                        const RefVector<ValueMatrix_t>& d2logdet_list) const
+{
+  auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
+  auto& P_leader   = P_list.getLeader();
+  assert(this == &spo_leader);
+
+  IndexType nw    = spo_list.size();
+  IndexType nelec = P_leader.getTotalNum();
+
+  SPOSet& up_spo_leader = *(spo_leader.spo_up);
+  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
+  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
+  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
+  up_spo_list.reserve(nw);
+  dn_spo_list.reserve(nw);
+
+  std::vector<ValueMatrix_t> mw_up_logdet, mw_dn_logdet;
+  std::vector<GradMatrix_t> mw_up_dlogdet, mw_dn_dlogdet;
+  std::vector<ValueMatrix_t> mw_up_d2logdet, mw_dn_d2logdet;
+  mw_up_logdet.reserve(nw);
+  mw_dn_logdet.reserve(nw);
+  mw_up_dlogdet.reserve(nw);
+  mw_dn_dlogdet.reserve(nw);
+  mw_up_d2logdet.reserve(nw);
+  mw_dn_d2logdet.reserve(nw);
+
+  RefVector<ValueMatrix_t> up_logdet_list, dn_logdet_list;
+  RefVector<GradMatrix_t> up_dlogdet_list, dn_dlogdet_list;
+  RefVector<ValueMatrix_t> up_d2logdet_list, dn_d2logdet_list;
+  up_logdet_list.reserve(nw);
+  dn_logdet_list.reserve(nw);
+  up_dlogdet_list.reserve(nw);
+  dn_dlogdet_list.reserve(nw);
+  up_d2logdet_list.reserve(nw);
+  dn_d2logdet_list.reserve(nw);
+
+  ValueMatrix_t tmp_val_mat(nelec, OrbitalSetSize);
+  GradMatrix_t tmp_grad_mat(nelec, OrbitalSetSize);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
+    up_spo_list.emplace_back(*(spinor.spo_up));
+    dn_spo_list.emplace_back(*(spinor.spo_dn));
+
+    mw_up_logdet.emplace_back(tmp_val_mat);
+    up_logdet_list.emplace_back(mw_up_logdet.back());
+    mw_dn_logdet.emplace_back(tmp_val_mat);
+    dn_logdet_list.emplace_back(mw_dn_logdet.back());
+
+    mw_up_dlogdet.emplace_back(tmp_grad_mat);
+    up_dlogdet_list.emplace_back(mw_up_dlogdet.back());
+    mw_dn_dlogdet.emplace_back(tmp_grad_mat);
+    dn_dlogdet_list.emplace_back(mw_dn_dlogdet.back());
+
+    mw_up_d2logdet.emplace_back(tmp_val_mat);
+    up_d2logdet_list.emplace_back(mw_up_d2logdet.back());
+    mw_dn_d2logdet.emplace_back(tmp_val_mat);
+    dn_d2logdet_list.emplace_back(mw_dn_d2logdet.back());
+  }
+
+  up_spo_leader.mw_evaluate_notranspose(up_spo_list, P_list, first, last, up_logdet_list, up_dlogdet_list,
+                                        up_d2logdet_list);
+  dn_spo_leader.mw_evaluate_notranspose(dn_spo_list, P_list, first, last, dn_logdet_list, dn_dlogdet_list,
+                                        dn_d2logdet_list);
+
+#pragma omp parallel for
+  for (int iw = 0; iw < nw; iw++)
+    for (int iat = 0; iat < nelec; iat++)
+    {
+      ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
+      RealType coss           = std::cos(s);
+      RealType sins           = std::sin(s);
+      ValueType eis(coss, sins);
+      ValueType emis(coss, -sins);
+
+      for (int no = 0; no < OrbitalSetSize; no++)
+      {
+        logdet_list[iw].get()(iat, no) =
+            eis * up_logdet_list[iw].get()(iat, no) + emis * dn_logdet_list[iw].get()(iat, no);
+        dlogdet_list[iw].get()(iat, no) =
+            eis * up_dlogdet_list[iw].get()(iat, no) + emis * dn_dlogdet_list[iw].get()(iat, no);
+        d2logdet_list[iw].get()(iat, no) =
+            eis * up_d2logdet_list[iw].get()(iat, no) + emis * dn_d2logdet_list[iw].get()(iat, no);
+      }
+    }
 }
 
 void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,

@@ -173,15 +173,15 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(20);
-  Lattice.LR_dim_cutoff = 15;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(20);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
   ions.create(2);
@@ -192,18 +192,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   ions.R[1][1] = 0.0;
   ions.R[1][2] = 0.0;
 
-
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("Na");
   int pChargeIdx                = ion_species.addAttribute("charge");
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
-
-  elec.Lattice = Lattice;
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
@@ -438,14 +434,15 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = false; // periodic
-  Lattice.R.diagonal(20);
-  Lattice.LR_dim_cutoff = 15;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = false; // periodic
+  lattice.R.diagonal(20);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions(*ions_uptr);
   ParticleSet& elec(*elec_uptr);
 
@@ -462,11 +459,9 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 0;
   ion_species(iatnumber, pIdx)  = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
-  elec.Lattice = Lattice;
   elec.setName("e");
   elec.create(1);
   elec.R[0][0]  = 0.138;

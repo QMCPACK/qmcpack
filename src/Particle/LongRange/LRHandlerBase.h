@@ -304,7 +304,7 @@ struct DummyLRHandler : public LRHandlerBase
 
   void initBreakup(ParticleSet& ref) override
   {
-    mRealType norm = 4.0 * M_PI / ref.Lattice.Volume;
+    mRealType norm = 4.0 * M_PI / ref.getLattice().Volume;
     mRealType kcsq = LR_kc * LR_kc;
     auto& KList(ref.getSK().getKLists());
     int maxshell = KList.kshell.size() - 1;

@@ -22,7 +22,7 @@
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/SOVMCUpdateAll.h"
 #include "RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/qmc_common.h"

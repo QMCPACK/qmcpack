@@ -29,15 +29,15 @@ namespace qmcplusplus
 // PBC case
 TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.24957306);
-  Lattice.LR_dim_cutoff = 40;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.24957306);
+  lattice.LR_dim_cutoff = 40;
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(2);
@@ -53,12 +53,10 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice = Lattice;
   ions.resetGroups();
   ions.createSK();
   ions.update();
 
-  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.4;

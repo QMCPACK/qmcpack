@@ -39,8 +39,8 @@ CoulombPBCAA_CUDA::CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
     {
-      LHost[3 * i + j]    = ref.Lattice.a(j)[i];
-      LinvHost[3 * i + j] = ref.Lattice.b(i)[j];
+      LHost[3 * i + j]    = ref.getLattice().a(j)[i];
+      LinvHost[3 * i + j] = ref.getLattice().b(i)[j];
     }
   L    = LHost;
   Linv = LinvHost;

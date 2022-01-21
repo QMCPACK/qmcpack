@@ -130,12 +130,6 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   ///default constructor, assign a huge supercell
   CrystalLattice();
 
-  ///copy constructor
-  CrystalLattice(const CrystalLattice&) = default;
-
-  ///destructor
-  virtual ~CrystalLattice() {}
-
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The lattice vector of the ith direction
    *@brief Provide interfaces familiar to fotran users

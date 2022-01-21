@@ -43,12 +43,12 @@ struct Pressure : public OperatorBase
   Pressure(ParticleSet& P)
   {
     update_mode_.set(OPTIMIZABLE, 1);
-    pNorm = 1.0 / (P.Lattice.DIM * P.Lattice.Volume);
+    pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume);
   }
   ///destructor
   ~Pressure() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) override { pNorm = 1.0 / (P.Lattice.DIM * P.Lattice.Volume); }
+  void resetTargetParticleSet(ParticleSet& P) override { pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume); }
 
   inline Return_t evaluate(ParticleSet& P) override
   {

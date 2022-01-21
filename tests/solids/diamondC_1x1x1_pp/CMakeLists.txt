@@ -95,6 +95,18 @@ qmc_run_and_check(
   DIAMOND_OPT_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-optbatch_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short
+  qmc_short_optbatch.in.xml
+  1
+  3
+  ${SUCCESS_STATUS_MP}
+  3
+  DIAMOND_OPT_SCALARS # VMC
+)
+
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
 list(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.5316 0.0024")
 list(APPEND DIAMOND_DMC_SCALARS "kinetic" "11.4857 0.0231")

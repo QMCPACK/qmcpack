@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers
 //
 // File developed by: Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by:  Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -79,6 +80,23 @@ public:
                         ValueVector_t& d2psi,
                         ValueVector_t& dspin) override;
 
+  /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital sets of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param psi_v_list the list of value vector pointers in a walker batch
+   * @param dpsi_v_list the list of gradient vector pointers in a walker batch
+   * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
+   * @param dspin_v_list the list of spin gradients vector pointers in a walker batch
+   */
+  void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector_t>& psi_v_list,
+                              const RefVector<GradVector_t>& dpsi_v_list,
+                              const RefVector<ValueVector_t>& d2psi_v_list,
+                              const RefVector<ValueVector_t>& dspin_v_list) const override;
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
@@ -94,6 +112,14 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             ValueMatrix_t& d2logdet) override;
+
+  void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int first,
+                               int last,
+                               const RefVector<ValueMatrix_t>& logdet_list,
+                               const RefVector<GradMatrix_t>& dlogdet_list,
+                               const RefVector<ValueMatrix_t>& d2logdet_list) const override;
 
   void evaluate_notranspose_spin(const ParticleSet& P,
                                  int first,

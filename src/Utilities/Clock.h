@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_CLOCK_H
 #define QMCPLUSPLUS_CLOCK_H
 
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 #include <sys/time.h>
 #include <stddef.h>
@@ -46,7 +46,7 @@ class CPUClock
 public:
   double operator()()
   {
-#if defined(ENABLE_OPENMP)
+#ifdef _OPENMP
     return omp_get_wtime();
 #else
     struct timeval tv;
