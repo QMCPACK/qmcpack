@@ -31,7 +31,8 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
 {
   LocalEnergyOnlyEstimator le_est;
 
-  MCWalkerConfiguration W;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration W(simulation_cell);
   W.setName("electrons");
   W.create(1);
   W.createWalkers(1);
@@ -52,7 +53,8 @@ TEST_CASE("LocalEnergy", "[estimators]")
   REQUIRE(le_est2 != nullptr);
   REQUIRE(le_est2.get() != &le_est);
 
-  MCWalkerConfiguration W;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration W(simulation_cell);
   W.setName("electrons");
   W.create(1);
   W.createWalkers(1);
@@ -76,7 +78,8 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, true);
 
-  MCWalkerConfiguration W;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration W(simulation_cell);
   W.setName("electrons");
   W.create(1);
   W.createWalkers(1);

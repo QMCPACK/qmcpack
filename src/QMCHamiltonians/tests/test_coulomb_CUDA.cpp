@@ -32,14 +32,14 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(1.0);
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(1.0);
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);
@@ -51,12 +51,9 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
   ions.update();
 
-
-  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.0;
@@ -91,15 +88,14 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.reset();
 
-
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
-  //ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(2);
@@ -114,12 +110,9 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
   ions.update();
 
-
-  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(2);
   elec.R[0][0] = 0.5;
@@ -173,18 +166,16 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.reset();
 
-
-  //ParticleSet ions;
-  MCWalkerConfiguration ions;
+  const SimulationCell simulation_cell(lattice);
+  MCWalkerConfiguration ions(simulation_cell);
   //ParticleSet elec;
 
   ions.setName("ion");
-  ions.Lattice = Lattice;
   std::vector<int> agroup(1);
   agroup[0] = 2;
   ions.create(agroup);
@@ -203,7 +194,6 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   int pIonMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)        = 1;
   ion_species(pIonMembersizeIdx, pIdx) = 2;
-  ions.Lattice                         = Lattice;
   ions.createSK();
   ions.update();
 

@@ -32,7 +32,7 @@ template<typename RNG, typename T>
 inline void generate(RNG& rng, T* restrict data, size_t n)
 {
   constexpr T shift(0.5);
-  std::generate(data, data+n, rng);
+  std::generate(data, data + n, rng);
   for (int i = 0; i < n; ++i)
     data[i] -= shift;
 }

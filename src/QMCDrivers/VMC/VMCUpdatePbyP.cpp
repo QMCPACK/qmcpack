@@ -16,7 +16,7 @@
 
 #include "VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else

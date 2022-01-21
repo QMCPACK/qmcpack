@@ -51,13 +51,13 @@ public:
 
 
   //Constructor
-  LRHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.LRBox)
+  LRHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLRBox())
   {
     LRHandlerBase::ClassName = "LRHandlerTemp";
     myFunc.reset(ref);
   }
 
-  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
+  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.getLRBox())
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -70,7 +70,7 @@ public:
    * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRHandlerTemp(const LRHandlerTemp& aLR, ParticleSet& ref)
-      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
+      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLRBox())
   {
     myFunc.reset(ref);
     fillFk(ref.getSK().getKLists());
@@ -80,17 +80,17 @@ public:
 
   void initBreakup(ParticleSet& ref) override
   {
-    InitBreakup(ref.LRBox, 1);
+    InitBreakup(ref.getLRBox(), 1);
     fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
 
   void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
-    //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
+    //ref.getLRBox().Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs = rs_ext;
     myFunc.reset(ref, rs);
-    InitBreakup(ref.LRBox, 1);
+    InitBreakup(ref.getLRBox(), 1);
     fillFk(ref.getSK().getKLists());
     LR_rc = Basis.get_rc();
   }
@@ -201,7 +201,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout_t& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);

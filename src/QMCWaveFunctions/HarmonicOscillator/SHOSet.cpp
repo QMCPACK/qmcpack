@@ -361,7 +361,8 @@ void SHOSet::test_derivatives()
 
   app_log() << "SHOSet::test_derivatives" << std::endl;
 
-  ParticleSet Ps;
+  const SimulationCell simulation_cell;
+  ParticleSet Ps(simulation_cell);
 
   int p = 0;
   PosType r, rtmp;

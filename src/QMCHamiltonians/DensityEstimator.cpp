@@ -31,11 +31,11 @@ typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 DensityEstimator::DensityEstimator(ParticleSet& elns)
 {
   update_mode_.set(COLLECTABLE, 1);
-  Periodic = (elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
+  Periodic = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
   for (int dim = 0; dim < OHMMS_DIM; ++dim)
   {
-    density_max[dim] = elns.Lattice.Length[dim];
-    ScaleFactor[dim] = 1.0 / elns.Lattice.Length[dim];
+    density_max[dim] = elns.getLattice().Length[dim];
+    ScaleFactor[dim] = 1.0 / elns.getLattice().Length[dim];
   }
 }
 
@@ -49,7 +49,7 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
     for (int iat = 0; iat < P.getTotalNum(); ++iat)
     {
       PosType ru;
-      ru    = P.Lattice.toUnit(P.R[iat]);
+      ru    = P.getLattice().toUnit(P.R[iat]);
       int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
       int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
       int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
@@ -93,7 +93,7 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
       for (int iat = 0; iat < N; iat++)
       {
         PosType ru;
-        ru = W.Lattice.toUnit(w.R[iat]);
+        ru = W.getLattice().toUnit(w.R[iat]);
         // for (int dim=0; dim<OHMMS_DIM; dim++)
         // {
         //   ru[dim]=(w.R[iat][dim]-density_min[dim])*ScaleFactor[dim];

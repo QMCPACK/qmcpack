@@ -54,7 +54,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     ewaldref::PosArray R;
     ewaldref::ChargeArray Q;
 
-    A = Ps.Lattice.R;
+    A = Ps.getLattice().R;
 
     R.resize(NumCenters);
     Q.resize(NumCenters);
@@ -67,21 +67,21 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     RealType Vii_ref        = ewaldref::ewaldEnergy(A, R, Q);
     RealType Vdiff_per_atom = std::abs(value_ - Vii_ref) / NumCenters;
     app_log() << "Checking ion-ion Ewald energy against reference..." << std::endl;
-    if (Vdiff_per_atom > Ps.Lattice.LR_tol)
+    if (Vdiff_per_atom > Ps.getLattice().LR_tol)
     {
       std::ostringstream msg;
       msg << std::setprecision(14);
-      msg << "in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
+      msg << "in ion-ion Ewald energy exceeds " << Ps.getLattice().LR_tol << " Ha/atom tolerance." << std::endl;
       msg << std::endl;
       msg << "  Reference ion-ion energy: " << Vii_ref << std::endl;
       msg << "  QMCPACK   ion-ion energy: " << value_ << std::endl;
       msg << "            ion-ion diff  : " << value_ - Vii_ref << std::endl;
       msg << "            diff/atom     : " << (value_ - Vii_ref) / NumCenters << std::endl;
-      msg << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
+      msg << "            tolerance     : " << Ps.getLattice().LR_tol << std::endl;
       msg << std::endl;
       msg << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
       msg << "input.  Alternatively, the tolerance can be increased by setting the" << std::endl;
-      msg << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.Lattice.LR_tol << ". " << std::endl;
+      msg << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.getLattice().LR_tol << ". " << std::endl;
       msg << "If you increase the tolerance, please perform careful checks of energy" << std::endl;
       msg << "differences to ensure this error is controlled for your application." << std::endl;
       msg << std::endl;

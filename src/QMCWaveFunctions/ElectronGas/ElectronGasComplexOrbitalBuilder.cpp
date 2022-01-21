@@ -63,7 +63,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildCo
   typedef SlaterDet SlaterDeterminant_t;
   int nat = targetPtcl.getTotalNum();
   int nup = nat / 2;
-  HEGGrid<RealType> egGrid(targetPtcl.Lattice);
+  HEGGrid<RealType> egGrid(targetPtcl.getLattice());
   if (nc == 0)
     nc = egGrid.getShellIndex(nup);
   egGrid.createGrid(nc, nup, twist);
@@ -78,7 +78,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildCo
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder("ElectronGas", comm), has_twist(false), unique_twist(-1.0), egGrid(p.Lattice), spo_node(NULL)
+    : SPOSetBuilder("ElectronGas", comm), has_twist(false), unique_twist(-1.0), egGrid(p.getLattice()), spo_node(NULL)
 {
   ClassName = "ElectronGasSPOBuilder";
 }

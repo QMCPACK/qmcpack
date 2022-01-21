@@ -124,8 +124,9 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
-  ParticleSet elec;
-  ParticleSet ions;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
+  ParticleSet ions(simulation_cell);
   std::unique_ptr<WaveFunctionFactory> wff;
   WaveFunctionFactory::PtclPoolType particle_set_map;
   setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
@@ -223,8 +224,9 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
-  ParticleSet elec1;
-  ParticleSet ions;
+  const SimulationCell simulation_cell;
+  ParticleSet elec1(simulation_cell);
+  ParticleSet ions(simulation_cell);
   std::unique_ptr<WaveFunctionFactory> wff;
   WaveFunctionFactory::PtclPoolType particle_set_map;
   // This He wavefunction has two components

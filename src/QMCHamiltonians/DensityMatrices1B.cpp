@@ -31,7 +31,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
                                      TrialWaveFunction& psi,
                                      ParticleSet* Pcl,
                                      const WaveFunctionFactory& factory)
-    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
+    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
 {
   reset();
 }
@@ -40,7 +40,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
       basis_functions(master.basis_functions),
-      Lattice(P.Lattice),
+      lattice_(P.getLattice()),
       Psi(psi),
       Pq(P),
       Pc(master.Pc),
@@ -205,12 +205,11 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     APP_ABORT("DensityMatrices1B::put  scale must be greater than zero");
 
   // get volume and cell information
-  Lattice.reset();
   if (!center_defined)
-    center = Lattice.Center;
-  volume   = Lattice.Volume * std::exp(DIM * std::log(scale));
-  periodic = Lattice.SuperCellEnum != SUPERCELL_OPEN;
-  rcorner  = center - scale * Lattice.Center;
+    center = lattice_.Center;
+  volume   = lattice_.Volume * std::exp(DIM * std::log(scale));
+  periodic = lattice_.SuperCellEnum != SUPERCELL_OPEN;
+  rcorner  = center - scale * lattice_.Center;
 
   energy_mat = emstr == "yes";
   if (igstr == "uniform_grid")
@@ -437,7 +436,7 @@ void DensityMatrices1B::report(const std::string& pad)
   out << pad << "  periodic      = " << periodic << std::endl;
   if (sampling == volume_based)
   {
-    PosType rmax = rcorner + 2 * scale * Lattice.Center;
+    PosType rmax = rcorner + 2 * scale * lattice_.Center;
     out << pad << "  points        = " << points << std::endl;
     out << pad << "  scale         = " << scale << std::endl;
     out << pad << "  center        = " << center << std::endl;
@@ -726,7 +725,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   //{
   //  app_log()<<" species "<<s<< std::endl;
   //  for(int ps=0;ps<species_size[s];++ps,++p)
-  //    app_log()<<"  "<<p<<"  "<<P.R[p]-P.Lattice.Center<< std::endl;
+  //    app_log()<<"  "<<p<<"  "<<P.R[p]-P.getLattice().Center<< std::endl;
   //}
   //
   ////app_log()<<"basis_values"<< std::endl;
@@ -974,7 +973,7 @@ inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator& rng)
       nrem -= ind * ind_dims[d];
     }
     rp[DIM - 1] = nrem * du + ushift[DIM - 1];
-    rsamples[s] = Lattice.toCart(rp) + rcorner;
+    rsamples[s] = lattice_.toCart(rp) + rcorner;
   }
 }
 
@@ -986,7 +985,7 @@ inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator& rng)
   {
     for (int d = 0; d < DIM; ++d)
       rp[d] = scale * rng();
-    rsamples[s] = Lattice.toCart(rp) + rcorner;
+    rsamples[s] = lattice_.toCart(rp) + rcorner;
   }
 }
 
@@ -1273,7 +1272,7 @@ inline void DensityMatrices1B::normalize()
       nrem -= ind * gdims[d];
     }
     rp[DIM - 1] = nrem * du + du / 2;
-    rp          = Lattice.toCart(rp) + rcorner;
+    rp          = lattice_.toCart(rp) + rcorner;
     update_basis(rp);
     for (int i = 0; i < basis_size; ++i)
       bnorms[i] += qmcplusplus::conj(basis_values[i]) * basis_values[i] * dV;
@@ -1317,7 +1316,7 @@ inline void DensityMatrices1B::test_overlap()
       nrem -= ind * gdims[d];
     }
     rp[DIM - 1] = nrem * du + du / 2;
-    rp          = Lattice.toCart(rp) + rcorner;
+    rp          = lattice_.toCart(rp) + rcorner;
     update_basis(rp);
     for (int i = 0; i < basis_size; ++i)
       for (int j = 0; j < basis_size; ++j)

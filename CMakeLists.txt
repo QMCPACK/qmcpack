@@ -227,7 +227,6 @@ if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Trying to figure out compiler options ....")
-  set(ENABLE_OPENMP 0)
 
   #------------------------
   # On Cray's machine

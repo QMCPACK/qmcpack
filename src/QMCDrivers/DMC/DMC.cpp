@@ -25,7 +25,7 @@
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Utilities/Timer.h"
 #include "Utilities/RunTimeManager.h"
 #include "RandomNumberControl.h"

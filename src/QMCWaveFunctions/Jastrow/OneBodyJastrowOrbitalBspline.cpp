@@ -175,7 +175,7 @@ void OneBodyJastrowOrbitalBspline<FT>::ratio(MCWalkerConfiguration& W,
       // 			    SumGPU.data(), N);
       if (UsePBC)
       {
-        bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
+        bool use_fast_image = W.getLattice().SimulationCellRadius >= spline.rMax;
         one_body_ratio_grad_PBC(C.data(),
                                 W.RList_GPU.data(),
                                 first,
@@ -282,7 +282,7 @@ void OneBodyJastrowOrbitalBspline<FT>::calcRatio(MCWalkerConfiguration& W,
       CudaSpline<CTS::RealType>& spline = *(GPUSplines[group]);
       if (UsePBC)
       {
-        bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
+        bool use_fast_image = W.getLattice().SimulationCellRadius >= spline.rMax;
         one_body_ratio_grad_PBC(C.data(),
                                 W.RList_GPU.data(),
                                 first,
@@ -381,7 +381,7 @@ void OneBodyJastrowOrbitalBspline<FT>::NLratios(MCWalkerConfiguration& W,
                                                 std::vector<ValueType>& psi_ratios)
 {
   auto& walkers = W.WalkerList;
-  float sim_cell_radius = W.Lattice.SimulationCellRadius;
+  float sim_cell_radius = W.getLattice().SimulationCellRadius;
   int njobs = jobList.size();
   if (NL_JobListHost.size() < njobs)
   {
@@ -462,7 +462,7 @@ void OneBodyJastrowOrbitalBspline<FT>::calcGradient(MCWalkerConfiguration& W,
                                                     int k,
                                                     std::vector<GradType>& grad)
 {
-  CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
+  CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers = W.WalkerList;
   if (this->OneGradHost.size() < OHMMS_DIM * walkers.size())
   {
@@ -662,7 +662,7 @@ void OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives(MCWalkerConfiguration
                                                            RealMatrix_t& d_logpsi,
                                                            RealMatrix_t& dlapl_over_psi)
 {
-  CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
+  CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers = W.WalkerList;
   int nw = walkers.size();
   if (DerivListGPU.size() < nw)

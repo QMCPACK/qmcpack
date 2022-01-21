@@ -20,7 +20,7 @@
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/qmc_common.h"

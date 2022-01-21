@@ -246,7 +246,7 @@ struct DiracDet
           InvertWithLog(psiM.data(), nels, nels, work.data(), pivot.data(), newlog);
 
           ratio_full = std::exp(std::real(newlog - log_value));
-          log_value   = newlog;
+          log_value  = newlog;
           double err = r / ratio_full - 1;
           ratio_error += err;
 #pragma omp master

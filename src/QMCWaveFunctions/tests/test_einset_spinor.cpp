@@ -39,15 +39,29 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout_t lattice;
+  // O2 test example from pwscf non-collinear calculation.
+  lattice.R(0, 0) = 5.10509515;
+  lattice.R(0, 1) = -3.23993545;
+  lattice.R(0, 2) = 0.00000000;
+  lattice.R(1, 0) = 5.10509515;
+  lattice.R(1, 1) = 3.23993545;
+  lattice.R(1, 2) = 0.00000000;
+  lattice.R(2, 0) = -6.49690625;
+  lattice.R(2, 1) = 0.00000000;
+  lattice.R(2, 2) = 7.08268015;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
 
   ions_.R[0][0] = 0.00000000;
@@ -58,6 +72,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ions_.R[1][2] = -1.08659253;
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(3);
   elec_.R[0][0] = 0.1;
   elec_.R[0][1] = -0.3;
@@ -74,25 +89,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.spins[2] = 0.4;
   elec_.setSpinor(true);
 
-  // O2 test example from pwscf non-collinear calculation.
-  elec_.Lattice.R(0, 0) = 5.10509515;
-  elec_.Lattice.R(0, 1) = -3.23993545;
-  elec_.Lattice.R(0, 2) = 0.00000000;
-  elec_.Lattice.R(1, 0) = 5.10509515;
-  elec_.Lattice.R(1, 1) = 3.23993545;
-  elec_.Lattice.R(1, 2) = 0.00000000;
-  elec_.Lattice.R(2, 0) = -6.49690625;
-  elec_.Lattice.R(2, 1) = 0.00000000;
-  elec_.Lattice.R(2, 2) = 7.08268015;
-
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   elec_.update();
   ions_.update();

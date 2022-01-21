@@ -15,16 +15,13 @@
 
 #include "SOVMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w,
-                               TrialWaveFunction& psi,
-                               QMCHamiltonian& h,
-                               RandomGenerator& rg)
+SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;

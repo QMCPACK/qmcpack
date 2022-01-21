@@ -44,8 +44,8 @@ void test_DiracDeterminantBatched_first()
   ddb.dpsiV.resize(norb);
   ddb.d2psiV.resize(norb);
 
-
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
 
   elec.create(3);
   ddb.recompute(elec);
@@ -146,8 +146,8 @@ void test_DiracDeterminantBatched_second()
   ddb.dpsiV.resize(norb);
   ddb.d2psiV.resize(norb);
 
-
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
 
   elec.create(4);
   ddb.recompute(elec);
@@ -281,8 +281,8 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ddc.dpsiV.resize(norb);
   ddc.d2psiV.resize(norb);
 
-
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
 
   elec.create(4);
   ddc.recompute(elec);

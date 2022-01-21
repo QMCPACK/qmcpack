@@ -31,10 +31,12 @@ target_link_libraries(qmc-extract-eshdf-kvectors PUBLIC qmcio)
 
 add_executable(qmc-get-supercell getSupercell.cpp)
 
+
 add_executable(qmc-check-affinity check-affinity.cpp)
 if(HAVE_MPI)
   target_link_libraries(qmc-check-affinity MPI::MPI_CXX)
 endif()
+
 
 add_executable(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 target_link_libraries(convertpw4qmc qmcutil Math::FFTW3)

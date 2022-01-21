@@ -91,6 +91,8 @@ struct QMCGaussianParserBase
   std::string multih5file;
   std::string WFS_name;
   std::string CodeName;
+
+  const SimulationCell simulation_cell;
   ParticleSet IonSystem;
 
 

@@ -190,7 +190,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     throw std::runtime_error("initMolecule unexpected random number consumption. Please report a bug!");
 
   //put all the electrons in a unit box
-  if (els->Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (els->getLattice().SuperCellEnum != SUPERCELL_OPEN)
   {
     els->R.setUnit(PosUnit::Cartesian);
     els->applyBC(els->R);
@@ -228,12 +228,12 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   }
 
   TinyVector<RealType, OHMMS_DIM> shift;
-  Tensor<RealType, OHMMS_DIM> newbox(ions->Lattice.R);
+  Tensor<RealType, OHMMS_DIM> newbox(ions->getLattice().R);
 
   RealType buffer = 2.0; //buffer 2 bohr
   for (int idim = 0; idim < OHMMS_DIM; ++idim)
   {
-    //if(ions->Lattice.BoxBConds[idim])
+    //if(ions->getLattice().BoxBConds[idim])
     //{
     //  start[idim]=0.0;
     //  end[idim]=1.0;
@@ -241,21 +241,21 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     //}
     //else
     {
-      RealType buffer_r = buffer * ions->Lattice.OneOverLength[idim];
+      RealType buffer_r = buffer * ions->getLattice().OneOverLength[idim];
       start[idim]       = std::max((RealType)0.0, (start[idim] - buffer_r));
       end[idim]         = std::min((RealType)1.0, (end[idim] + buffer_r));
-      shift[idim]       = start[idim] * ions->Lattice.Length[idim];
+      shift[idim]       = start[idim] * ions->getLattice().Length[idim];
       if (std::abs(end[idim] = start[idim]) < buffer)
       { //handle singular case
         start[idim] = std::max(0.0, start[idim] - buffer_r / 2.0);
         end[idim]   = std::min(1.0, end[idim] + buffer_r / 2.0);
       }
 
-      newbox(idim, idim) = (end[idim] - start[idim]) * ions->Lattice.Length[idim];
+      newbox(idim, idim) = (end[idim] - start[idim]) * ions->getLattice().Length[idim];
     }
   }
 
-  ParticleSet::ParticleLayout_t slattice(ions->Lattice);
+  ParticleSet::ParticleLayout_t slattice(ions->getLattice());
   slattice.set(newbox);
 
   app_log() << "  InitMolecularSystem::initWithVolume " << std::endl;

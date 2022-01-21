@@ -70,13 +70,10 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   bool okay = doc.parse("hcn.structure.xml");
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
-  Tensor<int, 3> tmat;
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
 
-  ParticleSet ions;
-  XMLParticleParser parse_ions(ions, tmat);
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
   parse_ions.put(particleset_ion[0]);
@@ -85,8 +82,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(ions.R.size() == 3);
   ions.update();
 
-  ParticleSet elec;
-  XMLParticleParser parse_elec(elec, tmat);
+  ParticleSet elec(simulation_cell);
+  XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
   parse_elec.put(particleset_elec[0]);
@@ -242,13 +239,10 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   bool okay = doc.parse("hcn.structure.xml");
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
-  Tensor<int, 3> tmat;
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
 
-  ParticleSet ions;
-  XMLParticleParser parse_ions(ions, tmat);
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
   parse_ions.put(particleset_ion[0]);
@@ -257,8 +251,8 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(ions.R.size() == 3);
   ions.update();
 
-  ParticleSet elec;
-  XMLParticleParser parse_elec(elec, tmat);
+  ParticleSet elec(simulation_cell);
+  XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
   parse_elec.put(particleset_elec[0]);
@@ -417,13 +411,10 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   bool okay = doc.parse("ethanol.structure.xml");
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
-  Tensor<int, 3> tmat;
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
 
-  ParticleSet ions;
-  XMLParticleParser parse_ions(ions, tmat);
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
   parse_ions.put(particleset_ion[0]);
@@ -432,8 +423,8 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(ions.R.size() == 9);
   ions.update();
 
-  ParticleSet elec;
-  XMLParticleParser parse_elec(elec, tmat);
+  ParticleSet elec(simulation_cell);
+  XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
   parse_elec.put(particleset_elec[0]);

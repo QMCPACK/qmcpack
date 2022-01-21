@@ -45,8 +45,8 @@ struct CoulombFunctor
 {
   T NormFactor;
   inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.getLRBox().Volume; }
+  void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.getLRBox().Volume; }
   inline T operator()(T r, T rinv) const { return rinv; }
   inline T df(T r) const { return -1.0 / (r * r); }
   inline T Vk(T k) const { return NormFactor / (k * k); }
@@ -64,8 +64,8 @@ struct CoulombFunctor
 {
   T NormFactor;
   inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref) { NormFactor = 2.0 * M_PI / ref.getLRBox().Volume; }
+  void reset(ParticleSet& ref, T rs) { NormFactor = 2.0 * M_PI / ref.getLRBox().Volume; }
   inline T operator()(T r, T rinv) const { return rinv; }
   inline T df(T r) const { return -1.0 / (r * r); }
   inline T Fk(T k, T rc) const { return NormFactor / k * std::cos(k * rc); }
@@ -87,7 +87,7 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
       CoulombHandler = std::make_unique<EwaldHandler>(ref);
     }
-    else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
+    else //if(ref.getLRBox().SuperCellEnum == SUPERCELL_BULK)
     {
       if (this_lr_type == ESLER)
       {
@@ -109,7 +109,7 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
         APP_ABORT("\n  Long range breakup method not recognized.\n");
       }
     }
-//        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
+//        else if(ref.getLRBox().SuperCellEnum == SUPERCELL_SLAB)
 //        {
 //          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
 //          CoulombHandler= new EwaldHandler(ref);

@@ -59,8 +59,8 @@ bool VMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid
 {
   for (int iw = 0; iw < newpos.size(); iw++)
   {
-    PosType red = W.Lattice.toUnit(newpos[iw]);
-    valid[iw]   = W.Lattice.isValid(red);
+    PosType red = W.getLattice().toUnit(newpos[iw]);
+    valid[iw]   = W.getLattice().isValid(red);
   }
   return true;
 }

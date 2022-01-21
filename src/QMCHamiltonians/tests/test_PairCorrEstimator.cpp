@@ -35,13 +35,16 @@ using std::string;
 
 // Lattice block
 const char* lat_xml = "<simulationcell> \
-                         <parameter name=\"bconds\"> \
+                        <parameter name=\"lattice\" units=\"bohr\"> \
+                          2.0 0.0 0.0 \
+                          0.0 2.0 0.0 \
+                          0.0 0.0 2.0 \
+                        </parameter> \
+                        <parameter name=\"bconds\"> \
                            p p p \
                         </parameter> \
                         <parameter name=\"LR_dim_cutoff\" >     6  </parameter> \
-                        <parameter name=\"rs\"            >   1.0  </parameter> \
-                        <parameter name=\"nparticles\"    >     8  </parameter> \
-                        </simulationcell>";
+                       </simulationcell>";
 
 // Particleset block
 const char* pset_xml = "<particleset name=\"e\" random=\"yes\"> \
@@ -67,13 +70,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   std::cout << std::setprecision(8);
   typedef QMCTraits::RealType RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  lattice.BoxBConds = true; // periodic
-  lattice.R.diagonal(2.0);
-  lattice.reset();
+  Communicate* c = OHMMS::Controller;
 
   // XML parser
   Libxml2Document doc;
@@ -86,7 +83,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   xmlNodePtr lat_xml_root = doc.getRoot();
 
   ParticleSetPool pset_builder(c, "pset_builder");
-  pset_builder.putLattice(lat_xml_root); // Builds lattice
+  pset_builder.readSimulationCellXML(lat_xml_root); // Builds lattice
 
   bool pset_okay = doc.parseFromString(pset_xml);
   REQUIRE(pset_okay);
@@ -95,8 +92,8 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 
   // Get the (now assembled) ParticleSet, do simple sanity checks, then print info
   ParticleSet* elec = pset_builder.getParticleSet("e");
-  elec->Lattice     = lattice; // copy in the new Lattice
 
+  std::cout << "cheeeee " << elec->getLattice().R << std::endl;
   REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 

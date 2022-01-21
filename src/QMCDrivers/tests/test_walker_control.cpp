@@ -243,7 +243,8 @@ struct WalkerControlMPITest
 
     wc.use_nonblocking = use_nonblocking;
 
-    MCWalkerConfiguration W; // Unused in the function
+    const SimulationCell simulation_cell;
+    MCWalkerConfiguration W(simulation_cell); // Unused in the function
     typedef MCWalkerConfiguration::Walker_t Walker_t;
 
     //UPtrVector<Walker_t> walkers;
@@ -444,7 +445,8 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
     wr.dN[1] = -1;
   }
 
-  MCWalkerConfiguration W;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration W(simulation_cell);
   W.createWalkers(1);
   typedef MCWalkerConfiguration::Walker_t Walker_t;
 

@@ -73,9 +73,11 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   // What else should we expect after process
 }
 
+#ifdef _OPENMP
 TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
 {
   using namespace testing;
+
   Concurrency::OverrideMaxCapacity<> override(8);
   Communicate* comm;
   comm = OHMMS::Controller;
@@ -160,5 +162,6 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 
   qmc_batched.testAdjustGlobalWalkerCount();
 }
+#endif
 
 } // namespace qmcplusplus

@@ -121,14 +121,14 @@ int main(int argc, char** argv)
   int nptcl = 0;
   double t0 = 0.0, t1 = 0.0;
 
+  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
+  ParticleSet ions(super_lattice);
+  tile_cell(ions, tmat);
+
   RandomNumberControl::make_seeds();
   std::vector<RandomGenerator> myRNG(NumThreads);
   std::vector<uint_type> mt(Random.state_size(), 0);
-  std::vector<MCWalkerConfiguration> elecs(NumThreads);
-
-  ParticleSet ions;
-  OHMMS_PRECISION scale = 1.0;
-  tile_cell(ions, tmat, scale);
+  std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
 
 #pragma omp parallel reduction(+ : t0)
   {
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
     MCWalkerConfiguration& els = elecs[ip];
 
     //create generator within the thread
-    myRNG[ip]                    = *RandomNumberControl::Children[ip];
+    myRNG[ip]                  = *RandomNumberControl::Children[ip];
     RandomGenerator& random_th = myRNG[ip];
 
     const int nions = ions.getTotalNum();
@@ -148,8 +148,6 @@ int main(int argc, char** argv)
     nptcl = nels;
 
     { //create up/down electrons
-      els.Lattice.BoxBConds = 1;
-      els.Lattice           = ions.Lattice;
       vector<int> ud(2);
       ud[0] = nels / 2;
       ud[1] = nels - ud[0];
@@ -192,7 +190,7 @@ int main(int argc, char** argv)
 // flush random seeds to zero
 #pragma omp parallel
   {
-    int ip                       = omp_get_thread_num();
+    int ip                     = omp_get_thread_num();
     RandomGenerator& random_th = *RandomNumberControl::Children[ip];
     std::vector<uint_type> vt(random_th.state_size(), 0);
     random_th.load(vt);
@@ -211,7 +209,7 @@ int main(int argc, char** argv)
   int mismatch_count = 0;
 #pragma omp parallel reduction(+ : mismatch_count)
   {
-    int ip                       = omp_get_thread_num();
+    int ip                     = omp_get_thread_num();
     RandomGenerator& random_th = myRNG[ip];
     std::vector<uint_type> vt_orig(random_th.state_size());
     std::vector<uint_type> vt_load(random_th.state_size());

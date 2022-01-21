@@ -17,7 +17,7 @@
 #include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -517,8 +517,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<< std::endl;
   }
   Point du, uc, ubc, rc;
-  RealType vol     = 0.0;
-  RealType vscale  = std::abs(det(axes));
+  RealType vol    = 0.0;
+  RealType vscale = std::abs(det(axes));
   for (int i = 0; i < dimensions[0]; i++)
   {
     for (int j = 0; j < dimensions[1]; j++)

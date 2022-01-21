@@ -11,7 +11,7 @@
 
 #include "DMCFactoryNew.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
