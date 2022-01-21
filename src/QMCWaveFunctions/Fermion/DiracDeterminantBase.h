@@ -85,6 +85,10 @@ public:
 
   inline void reportStatus(std::ostream& os) final {}
 
+  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
+  {
+    APP_ABORT("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
+  }
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
   using WaveFunctionComponent::evaluateGL;
