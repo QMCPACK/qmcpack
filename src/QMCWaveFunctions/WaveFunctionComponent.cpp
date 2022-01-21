@@ -226,4 +226,11 @@ void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
   evaluateRatios(VP, ratios);
 }
 
+void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  std::ostringstream o;
+  o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
+  APP_ABORT(o.str()); 
+}
+
 } // namespace qmcplusplus

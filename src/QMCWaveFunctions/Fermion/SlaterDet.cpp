@@ -253,4 +253,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) co
   return myclone;
 }
 
+void SlaterDet::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    Dets[i]->registerTWFFastDerivWrapper(P, twf);
+  }
+}
+
 } // namespace qmcplusplus

@@ -1340,5 +1340,21 @@ RefVector<ParticleSet::ParticleLaplacian_t> TrialWaveFunction::extractLRefList(
   return l_list;
 }
 
+void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  for (int i = 0; i < Z.size(); ++i)
+  {
+    if (Z[i]->is_fermionic)
+    {
+      //OK, so this is a hack only for SlaterDeterminant objects.
+      //Needs a bit of logic and protection before this reaches production.
+      //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
+      //det->registerTWFFastDerivWrapper(P, twf);
+      Z[i]->registerTWFFastDerivWrapper(P,twf);
+    }
+    else //Is Jastrow, so do nothing right now.
+    {}
+  }
+}
 
 } // namespace qmcplusplus
