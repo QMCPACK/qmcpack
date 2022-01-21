@@ -6,7 +6,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/MPIObjectBase.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsData/libxmldefs.h"
