@@ -86,6 +86,11 @@ public:
     QMC_WARMUP
   };
 
+  enum CoordsToMove
+  {
+    POSITIONS,
+  };
+
   using MCPWalker = MCPopulation::MCPWalker;
   using WFBuffer  = MCPopulation::WFBuffer;
 

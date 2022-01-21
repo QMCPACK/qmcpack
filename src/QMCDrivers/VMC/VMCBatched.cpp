@@ -18,6 +18,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
 #include "MemoryUsage.h"
+#include "MoveAbstraction.h"
 
 namespace qmcplusplus
 {
@@ -35,6 +36,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
+template<QMCDriverNew::CoordsToMove COORDS>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
@@ -66,11 +68,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
   const bool use_drift = sft.vmcdrv_input.get_use_drift();
-  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
-  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
 
-  std::vector<PosType> drifts(num_walkers);
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);
   std::vector<RealType> prob(num_walkers);
@@ -80,17 +79,18 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
+  MoveAbstraction<COORDS> move(ps_dispatcher, twf_dispatcher, step_context.get_random_gen(), sft.drift_modifier,
+                               num_walkers, sft.population.get_num_particles());
+
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
     //This generates an entire steps worth of deltas.
-    step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
+    move.generateDeltas();
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
     {
-      RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
-      RealType oneover2tau = 0.5 / (tauovermass);
-      RealType sqrttau     = std::sqrt(tauovermass);
+      move.setTauForGroup(sft.qmcdrv_input, sft.population.get_ptclgrp_inv_mass()[ig]);
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
@@ -98,50 +98,18 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       int end_index   = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
-        // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
-        // fastest in walkers then particles
-        auto delta_r_start = step_context.deltaRsBegin() + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
-
         if (use_drift)
-        {
-          twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-          sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
-
-          std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
-                         [sqrttau](const PosType& drift, const PosType& delta_r) {
-                           return drift + (sqrttau * delta_r);
-                         });
-        }
+          move.calcForwardMoveWithDrift(walker_twfs, walker_elecs, iat);
         else
-        {
-          std::transform(delta_r_start, delta_r_end, drifts.begin(),
-                         [sqrttau](const PosType& delta_r) { return sqrttau * delta_r; });
-        }
+          move.calcForwardMove(iat);
 
-        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+        move.makeMove(walker_elecs, iat);
 
         // This is inelegant
         if (use_drift)
-        {
-          twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
-          std::transform(delta_r_start, delta_r_end, log_gf.begin(),
-                         [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
-
-          sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
-
-          std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                         [iat](const ParticleSet& elecs, const PosType& drift) {
-                           return elecs.R[iat] - elecs.getActivePos() - drift;
-                         });
-
-          std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
-                         [oneover2tau](const PosType& drift) { return -oneover2tau * dot(drift, drift); });
-        }
+          move.updateGreensFunctionWithDrift(walker_twfs, walker_elecs, crowd, iat, ratios, log_gf, log_gb);
         else
-        {
-          twf_dispatcher.flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);
-        }
+          move.updateGreensFunction(walker_twfs, walker_elecs, iat, ratios);
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 
@@ -215,6 +183,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   //  check if all moves failed
 }
 
+template void VMCBatched::advanceWalkers<QMCDriverNew::POSITIONS>(const StateForThread& sft,
+                                                                  Crowd& crowd,
+                                                                  QMCDriverNew::DriverTimers& timers,
+                                                                  ContextForSteps& step_context,
+                                                                  bool recompute,
+                                                                  bool accumulate_this_step);
 
 /** Thread body for VMC step
  *
@@ -233,7 +207,9 @@ void VMCBatched::runVMCStep(int crowd_id,
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
-  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
+  const bool spin_move            = crowd.get_walker_elecs()[0].get().isSpinor();
+  advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                            accumulate_this_step);
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -304,7 +280,7 @@ bool VMCBatched::run()
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
-      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
+      advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
     };
 
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
