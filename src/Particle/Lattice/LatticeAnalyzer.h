@@ -259,6 +259,9 @@ inline void find_reduced_basis(TinyVector<TinyVector<T, 3>, 3>& rb)
     if (!changed && !found_shorter_base(rb))
       return;
   }
+
+  throw std::runtime_error("Reduced basis not found in allowed number of iterations. "
+                           "Check unit cell or contact a developer.");
 }
 
 } // namespace qmcplusplus
