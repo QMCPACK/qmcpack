@@ -163,25 +163,24 @@ bool hdf_archive::is_group(const std::string& aname)
   p       = (aname[0] == '/') ? file_id : p;
 
   if (H5Lexists(p, aname.c_str(), H5P_DEFAULT) > 0)
-    {
-      H5O_info_t oinfo;
-      oinfo.type = H5O_TYPE_UNKNOWN;
+  {
+    H5O_info_t oinfo;
+    oinfo.type = H5O_TYPE_UNKNOWN;
 
-#if H5_VERSION_GE(1,12,0)
-      H5Oget_info_by_name3(p, aname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
+#if H5_VERSION_GE(1, 12, 0)
+    H5Oget_info_by_name3(p, aname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
 #else
-      H5Oget_info_by_name(p, aname.c_str(), &oinfo, H5P_DEFAULT);
+    H5Oget_info_by_name(p, aname.c_str(), &oinfo, H5P_DEFAULT);
 #endif
 
-      if (oinfo.type != H5O_TYPE_GROUP)
-        return false;
-      return true;
-    }
-  else
-    {
+    if (oinfo.type != H5O_TYPE_GROUP)
       return false;
-    }
-
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 hid_t hdf_archive::push(const std::string& gname, bool createit)
@@ -193,21 +192,20 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
 
   H5O_info_t oinfo;
   oinfo.type = H5O_TYPE_UNKNOWN;
-  if (H5Lexists(p, gname.c_str(), H5P_DEFAULT) > 0) 
-    {
-#if H5_VERSION_GE(1,12,0)
-      H5Oget_info_by_name3(p, gname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
+  if (H5Lexists(p, gname.c_str(), H5P_DEFAULT) > 0)
+  {
+#if H5_VERSION_GE(1, 12, 0)
+    H5Oget_info_by_name3(p, gname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
 #else
-      H5Oget_info_by_name(p, gname.c_str(), &oinfo, H5P_DEFAULT);
+    H5Oget_info_by_name(p, gname.c_str(), &oinfo, H5P_DEFAULT);
 #endif
-    }
+  }
 
   if ((oinfo.type != H5O_TYPE_GROUP) && createit)
   {
     g = H5Gcreate2(p, gname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      
   }
-  else 
+  else
   {
     g = H5Gopen2(p, gname.c_str(), H5P_DEFAULT);
   }
