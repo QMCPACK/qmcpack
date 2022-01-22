@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -766,9 +767,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   REQUIRE(psi != nullptr);
   //end incantation
 
-//  TWFPrototype twf;
+  TWFFastDerivWrapper twf;
 
-//  psi->initialize_TWF_Prototype(elec, twf);
+  psi->initializeTWFFastDerivWrapper(elec, twf);
   SPOSet::ValueVector_t values;
   SPOSet::GradVector_t dpsi;
   SPOSet::ValueVector_t d2psi;
@@ -833,7 +834,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   X.push_back(upmat);
   X.push_back(dnmat);
 
-//  twf.get_M(elec, matlist);
+  twf.getM(elec, matlist);
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 
@@ -851,17 +852,17 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   minv.push_back(dnmat);
 
 
-//  twf.get_M(elec, matlist);
+//  twf.getM(elec, matlist);
   std::vector<std::vector<ValueMatrix_t>> dB_gs;
   std::vector<std::vector<ValueMatrix_t>> dM_gs;
   std::vector<ValueMatrix_t> tmp_gs;
-//  twf.get_gs_matrix(B, B_gs);
-//  twf.get_gs_matrix(matlist, M_gs);
-//  twf.invert_M(M_gs, minv);
-//  twf.build_X(minv, B_gs, X);
+  twf.getGSMatrices(B, B_gs);
+  twf.getGSMatrices(matlist, M_gs);
+  twf.invertMatrices(M_gs, minv);
+  twf.buildX(minv, B_gs, X);
   for (int id = 0; id < matlist.size(); id++)
   {
-//    int ptclnum = twf.num_particles(id);
+//    int ptclnum = twf.numParticles(id);
     int ptclnum = (id==0 ? Nup : Ndn); //hard coded until twf interface comes online.  
     ValueMatrix_t gs_m;
     gs_m.resize(ptclnum, ptclnum);
@@ -887,18 +888,18 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipe_matrix(dB[idim]);
-//      twf.wipe_matrix(dM[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
     }
 
-//    twf.get_igrad_M(elec, ions, ionid, dM);
+    twf.getIonGradM(elec, ions, ionid, dM);
 //    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.get_gs_matrix(dB[idim], dB_gs[idim]);
-//      twf.get_gs_matrix(dM[idim], dM_gs[idim]);
-//      fkin_complex[ionid][idim] = twf.compute_gs_derivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fkin_complex[ionid], fkin[ionid]);
   }
@@ -906,7 +907,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   ValueType keval = 0.0;
   RealType keobs  = 0.0;
-//  keval           = twf.trAB(minv, B_gs);
+  keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
 //  CHECK(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
@@ -933,12 +934,12 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
-//  twf.wipe_matrix(B);
-//  twf.wipe_matrix(B_gs);
-//  twf.wipe_matrix(X);
+//  twf.wipeMatrices(B);
+//  twf.wipeMatrices(B_gs);
+//  twf.wipeMatrices(X);
 //  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
-//  twf.get_gs_matrix(B, B_gs);
-//  twf.build_X(minv, B_gs, X);
+//  twf.getGSMatrices(B, B_gs);
+//  twf.buildX(minv, B_gs, X);
 
   ValueType nlpp    = 0.0;
   RealType nlpp_obs = 0.0;
@@ -955,18 +956,18 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipe_matrix(dB[idim]);
-//      twf.wipe_matrix(dM[idim]);
+//      twf.wipeMatrices(dB[idim]);
+//      twf.wipeMatrices(dM[idim]);
     }
 
-//    twf.get_igrad_M(elec, ions, ionid, dM);
+//    twf.getIonGradM(elec, ions, ionid, dM);
 //    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.get_gs_matrix(dB[idim], dB_gs[idim]);
-//      twf.get_gs_matrix(dM[idim], dM_gs[idim]);
-//      fnlpp_complex[ionid][idim] = twf.compute_gs_derivative(minv, X, dM_gs[idim], dB_gs[idim]);
+//      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+//      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+//      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
   }

@@ -71,19 +71,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format", {"table", "xml"});
-  pAttrib.add(NLPP_algo, "algorithm", {"", "batched", "non-batched"});
+  pAttrib.add(NLPP_algo, "algorithm", {"batched", "non-batched"});
   pAttrib.add(use_DLA, "DLA", {"no", "yes"});
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
   pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
   pAttrib.put(cur);
-
-  if (NLPP_algo.empty())
-#ifdef ENABLE_OFFLOAD
-    NLPP_algo = "batched";
-#else
-    NLPP_algo = "non-batched";
-#endif
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")

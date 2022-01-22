@@ -6,7 +6,7 @@ function(ADD_TEST_LABELS TEST_NAME TEST_LABELS)
   else()
     set(SUCCESS FALSE)
     execute_process(
-      COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/test_labels.py ${TEST_NAME} ${QMC_CUDA} ${QMC_COMPLEX}
+      COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/test_labels.py ${TEST_NAME} ${QMC_CUDA} ${QMC_COMPLEX}
               ${QMC_MIXED_PRECISION}
       OUTPUT_VARIABLE TEST_LABELS_TEMP
       RESULT_VARIABLE SUCCESS)

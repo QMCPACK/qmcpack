@@ -9,7 +9,7 @@
 
   <!--  Hamiltonian -->
   <hamiltonian name="h0" type="generic" target="e">
-    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml" algorithm="non-batched">
       <pseudo elementType="C" href="C.BFD.xml"/>
     </pairpot>
     <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
