@@ -408,7 +408,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
               #MESSAGE("check command = ${CHECK_CMD}")
               add_test(
                 NAME ${TEST_NAME}
-                COMMAND ${CHECK_CMD}
+                COMMAND ${Python3_EXECUTABLE} ${CHECK_CMD}
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
               set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
               set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
@@ -536,7 +536,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
             ${SCALAR_ERROR})
         add_test(
           NAME ${TEST_NAME}
-          COMMAND ${CHECK_CMD}
+          COMMAND ${Python3_EXECUTABLE} ${CHECK_CMD}
           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
         set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
         set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
@@ -595,7 +595,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     add_test(
       NAME "${test_name}"
-      COMMAND ${check_cmd} ${ARGN}
+      COMMAND ${Python3_EXECUTABLE} ${check_cmd} ${ARGN}
       WORKING_DIRECTORY "${work_dir}")
 
     # make test depend on the run
