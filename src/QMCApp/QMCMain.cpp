@@ -36,7 +36,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"

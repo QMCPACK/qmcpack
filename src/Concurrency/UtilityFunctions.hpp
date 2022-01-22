@@ -17,14 +17,13 @@
  *  @brief utility functions for executors
  */
 
-#include <omp.h>
 #include "Concurrency/Info.hpp"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 namespace Concurrency
 {
-
 template<Executor TT = Executor::OPENMP>
 class OverrideMaxCapacity;
 
@@ -33,17 +32,15 @@ class OverrideMaxCapacity<Executor::OPENMP>
 {
 private:
   int original_max_threads_;
+
 public:
   OverrideMaxCapacity(int max_threads)
   {
     original_max_threads_ = omp_get_max_threads();
     omp_set_num_threads(max_threads);
   }
-  
-  ~OverrideMaxCapacity()
-  {
-    omp_set_num_threads(original_max_threads_);
-  }
+
+  ~OverrideMaxCapacity() { omp_set_num_threads(original_max_threads_); }
 };
 
 template<Executor TT>
@@ -52,7 +49,7 @@ class OverrideMaxCapacity
   OverrideMaxCapacity(int max_threads) {}
 };
 
-}
-}
+} // namespace Concurrency
+} // namespace qmcplusplus
 
 #endif

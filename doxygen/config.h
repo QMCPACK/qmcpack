@@ -1,21 +1,21 @@
 /* src/ohmms-config.h.in.  Generated from configure.in by autoheader.  */
 // -*- c++  -*-
 //
-//Ohmms Configuration Header. Automatically Generated
+// Ohmms Configuration Header. Automatically Generated
 //
-//See the LICENSE file in the top-level directory for copyright notices
+// See the LICENSE file in the top-level directory for copyright notices
 //
 #ifndef QMCPLUSPLUS_CONFIGURATION_H
 #define QMCPLUSPLUS_CONFIGURATION_H
 
 /* define the major version */
-#define QMCPLUSPLUS_VERSION_MAJOR  0
+#define QMCPLUSPLUS_VERSION_MAJOR 0
 
 /* define the minor version */
-#define QMCPLUSPLUS_VERSION_MINOR  6
+#define QMCPLUSPLUS_VERSION_MINOR 6
 
 /* define the patch version */
-#define QMCPLUSPLUS_VERSION_PATCH  1
+#define QMCPLUSPLUS_VERSION_PATCH 1
 
 /* define the release version */
 /* #undef QMCPLUSPLUS_RELEASE */
@@ -24,16 +24,17 @@
 /* #undef QMCPLUSPLUS_LINEARSCALE */
 
 /* define the subversion branch */
-#define QMCPLUSPLUS_BRANCH  5487
+#define QMCPLUSPLUS_BRANCH 5487
 
 /* define the subversion last changed date */
-#define QMCPLUSPLUS_LAST_CHANGED_DATE  "2012-04-22 10:24:14 -0400 (Sun, 22 Apr 2012)"
+#define QMCPLUSPLUS_LAST_CHANGED_DATE                                          \
+  "2012-04-22 10:24:14 -0400 (Sun, 22 Apr 2012)"
 
 /* define PRINT_DEBUG */
 /* #undef PRINT_DEBUG */
 
 /* Enable OpenMP parallelization. */
-#define ENABLE_OPENMP 1
+#define QMC_OMP 1
 
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #define HAVE_LIBHDF5 1
@@ -165,4 +166,3 @@
 /* #undef DEBUG_PSIBUFFER_ON */
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
-

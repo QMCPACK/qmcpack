@@ -50,7 +50,7 @@ struct NLjob
 class WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
-
+class TWFFastDerivWrapper;
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
@@ -169,6 +169,10 @@ public:
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
+
+  /** Register the component with the TWFFastDerivWrapper wrapper.  
+   */
+  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * \param[in] P  active ParticleSet

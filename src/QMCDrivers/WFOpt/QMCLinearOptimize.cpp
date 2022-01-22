@@ -18,10 +18,10 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-//#if defined(ENABLE_OPENMP)
+
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-//#endif
+
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCHamiltonians/HamiltonianPool.h"

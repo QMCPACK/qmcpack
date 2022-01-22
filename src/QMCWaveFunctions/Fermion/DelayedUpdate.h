@@ -17,11 +17,10 @@
 #include "CPU/BLAS.hpp"
 #include "CPU/BlasThreadingEnv.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
-
 /** implements delayed update on CPU using BLAS
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T

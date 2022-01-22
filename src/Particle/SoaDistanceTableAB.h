@@ -15,7 +15,7 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "Utilities/FairDivide.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {

@@ -45,6 +45,7 @@ private:
 /** Since we check the DMC only feature of reserve walkers perhaps this should be
  *  a DMC integration test.
  */
+#ifdef _OPENMP
 TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
@@ -95,6 +96,6 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   CHECK(reserved_walkers == 10);
   // What else should we expect after process
 }
-
+#endif
 
 } // namespace qmcplusplus
