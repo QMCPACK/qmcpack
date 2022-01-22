@@ -53,8 +53,10 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(qmcfinitesize qmcparticle qmcutil)
 endif()
 
-install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize
-        RUNTIME DESTINATION bin)
+foreach(EXE_TARGET convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize)
+  add_test_target_in_output_location(${EXE_TARGET} bin)
+  install(TARGETS ${EXE_TARGET} RUNTIME DESTINATION bin)
+endforeach()
 
 add_subdirectory(ppconvert)
 
