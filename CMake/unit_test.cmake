@@ -36,3 +36,21 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
     APPEND
     PROPERTY LABELS "unit")
 endfunction()
+
+# Add a test to see if the target output exists in the desired location in the build directory.
+function(add_test_target_in_output_location TARGET_NAME_TO_TEST EXE_DIR_RELATIVE_TO_BUILD)
+
+  # obtain BASE_NAME
+  get_target_property(BASE_NAME ${TARGET_NAME_TO_TEST} OUTPUT_NAME)
+  if(NOT BASE_NAME)
+    set(BASE_NAME ${TARGET_NAME_TO_TEST})
+  endif()
+
+  set(TESTNAME build_output_${TARGET_NAME_TO_TEST}_exists)
+  add_test(NAME ${TESTNAME} COMMAND ls ${qmcpack_BINARY_DIR}/bin/${BASE_NAME})
+
+  set_property(
+    TEST ${TESTNAME}
+    APPEND
+    PROPERTY LABELS "unit;deterministic")
+endfunction()

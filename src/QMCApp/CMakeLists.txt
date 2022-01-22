@@ -56,4 +56,5 @@ if(USE_OBJECT_TARGET)
     platform_omptarget_LA)
 endif()
 
+add_test_target_in_output_location(qmcpack bin)
 install(TARGETS qmcpack RUNTIME DESTINATION bin)
