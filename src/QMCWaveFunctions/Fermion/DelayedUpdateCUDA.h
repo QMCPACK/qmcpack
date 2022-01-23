@@ -72,10 +72,7 @@ class DelayedUpdateCUDA
   int delay_count;
   /// scratch memory for cusolverDN
   Matrix<T_FP, CUDAAllocator<T_FP>> Mat1_gpu;
-  /** scratch memory for cusolverDN and shared storage with Ainv_gpu.
-   * The full precision build has Mat2_gpu = Ainv_gpu
-   * The mixed precision build has the first half of Mat2_gpu containing Ainv_gpu
-   */
+  /// scratch memory for cusolverDN
   Matrix<T_FP, CUDAAllocator<T_FP>> Mat2_gpu;
   /// pivot array + info
   Vector<int, CUDAHostAllocator<int>> ipiv;
@@ -135,16 +132,16 @@ public:
     Binv_gpu.resize(delay, delay);
     delay_list_gpu.resize(delay);
     Mat1_gpu.resize(norb, norb);
-    Mat2_gpu.resize(norb, norb);
+    if (!std::is_same<T, T_FP>::value)
+      Mat2_gpu.resize(norb, norb);
     LU_diag.resize(norb);
     LU_diag_gpu.resize(norb);
-    // Ainv_gpu reuses all or part of the memory of Mat2_gpu
-    Ainv_gpu.attachReference(reinterpret_cast<T*>(Mat2_gpu.data()), norb, norb);
+    Ainv_gpu.resize(norb, norb);
     // prepare cusolver auxiliary arrays
     ipiv.resize(norb + 1);
     ipiv_gpu.resize(norb + 1);
     int lwork;
-    cusolverErrorCheck(cusolver::getrf_bufferSize(h_cusolver, norb, norb, Mat2_gpu.data(), norb, &lwork),
+    cusolverErrorCheck(cusolver::getrf_bufferSize(h_cusolver, norb, norb, Mat1_gpu.data(), norb, &lwork),
                        "cusolver::getrf_bufferSize failed!");
     work_gpu.resize(lwork);
   }
@@ -182,9 +179,9 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
+    make_identity_matrix_cuda(norb, Ainv_gpu.data(), norb, hstream);
     cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
-                                       Mat2_gpu.data(), norb, ipiv_gpu.data()),
+                                       Ainv_gpu.data(), norb, ipiv_gpu.data()),
                        "cusolver::getrs failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
@@ -214,17 +211,17 @@ public:
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
-    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T), cudaMemcpyHostToDevice,
+    cudaErrorCheck(cudaMemcpyAsync(Mat2_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T), cudaMemcpyHostToDevice,
                                    hstream),
                    "cudaMemcpyAsync failed!");
-    copy_matrix_cuda(norb, norb, (T*)Mat1_gpu.data(), norb, Mat2_gpu.data(), norb, hstream);
-    cusolverErrorCheck(cusolver::getrf(h_cusolver, norb, norb, Mat2_gpu.data(), norb, work_gpu.data(),
+    copy_matrix_cuda(norb, norb, (T*)Mat2_gpu.data(), norb, Mat1_gpu.data(), norb, hstream);
+    cusolverErrorCheck(cusolver::getrf(h_cusolver, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),
                                        ipiv_gpu.data() + 1, ipiv_gpu.data()),
                        "cusolver::getrf failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
-    extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), hstream);
+    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream);
     cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
@@ -237,11 +234,11 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Mat1_gpu.data(), norb, hstream);
-    cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data() + 1,
-                                       Mat1_gpu.data(), norb, ipiv_gpu.data()),
+    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
+    cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
+                                       Mat2_gpu.data(), norb, ipiv_gpu.data()),
                        "cusolver::getrs failed!");
-    copy_matrix_cuda(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, hstream);
+    copy_matrix_cuda(norb, norb, Mat2_gpu.data(), norb, Ainv_gpu.data(), norb, hstream);
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
