@@ -255,10 +255,10 @@ protected:
   // First-order derivative w.r.t. the ion positions
   std::vector<TinyVector<SplineType*, OHMMS_DIM>> FirstOrderSplines;
   // Temporary storage for Eispline calls
-  StorageValueVector_t StorageValueVector, StorageLaplVector;
-  StorageGradVector_t StorageGradVector;
-  StorageHessVector_t StorageHessVector;
-  StorageGradHessVector_t StorageGradHessVector;
+  StorageValueVector_t storage_value_vector_, storage_lapl_vector_;
+  StorageGradVector_t storage_grad_vector_;
+  StorageHessVector_t storage_hess_vector_;
+  StorageGradHessVector_t storage_grad_hess_vector_;
 
   // True if we should unpack this orbital into two copies
   std::vector<bool> MakeTwoCopies;
@@ -330,11 +330,11 @@ public:
   {
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
-    StorageValueVector.resize(n);
-    StorageLaplVector.resize(n);
-    StorageGradVector.resize(n);
-    StorageHessVector.resize(n);
-    StorageGradHessVector.resize(n);
+    storage_value_vector_.resize(n);
+    storage_lapl_vector_.resize(n);
+    storage_grad_vector_.resize(n);
+    storage_hess_vector_.resize(n);
+    storage_grad_hess_vector_.resize(n);
     phase.resize(n);
     eikr.resize(n);
     NumValenceOrbs = nvals;

@@ -1838,13 +1838,13 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
         ru[i] -= img[i];
         sign += HalfG[i] * (int)img[i];
       }
-      EinsplineMultiEval(MultiSpline, ru, CPUvals, CPUgrad, StorageHessVector);
+      EinsplineMultiEval(MultiSpline, ru, CPUvals, CPUgrad, storage_hess_vector_);
       cudaMemcpy(&vals_CPU[0], phi_CPU[iw], NumOrbitals * sizeof(float), cudaMemcpyDeviceToHost);
       cudaMemcpy(&GL_CPU[0], grad_lapl_CPU[iw], 4 * row_stride * sizeof(float), cudaMemcpyDeviceToHost);
       for (int j = 0; j < NumOrbitals; j++)
       {
         CPUgrad[j] = dot(PrimLattice.G, CPUgrad[j]);
-        CPUlapl[j] = trace(StorageHessVector[j], GGt);
+        CPUlapl[j] = trace(storage_hess_vector_[j], GGt);
         if (sign & 1)
         {
           CPUvals[j] *= -1.0;
@@ -2227,7 +2227,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
       AtomicOrbital<std::complex<double>>& atom = AtomicOrbitals[d.ion];
       atom.evaluate(newpos[iw], CPUzvals, CPUzgrad, CPUzlapl);
       int index = 0;
-      for (int i = 0; i < StorageValueVector.size(); i++)
+      for (int i = 0; i < storage_value_vector_.size(); i++)
       {
         CPUvals[index] = CPUzvals[i].real();
         CPUlapl[index] = CPUzlapl[i].real();
@@ -2286,11 +2286,11 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
       PosType ru(PrimLattice.toUnit(newpos[iw]));
       for (int i = 0; i < 3; i++)
         ru[i] -= std::floor(ru[i]);
-      EinsplineMultiEval(MultiSpline, ru, CPUzvals, CPUzgrad, StorageHessVector);
+      EinsplineMultiEval(MultiSpline, ru, CPUzvals, CPUzgrad, storage_hess_vector_);
       for (int j = 0; j < MakeTwoCopies.size(); j++)
       {
         CPUzgrad[j] = dot(PrimLattice.G, CPUzgrad[j]);
-        CPUzlapl[j] = trace(StorageHessVector[j], GGt);
+        CPUzlapl[j] = trace(storage_hess_vector_[j], GGt);
       }
       // Add e^-ikr phase to B-spline orbitals
       std::complex<double> eye(0.0, 1.0);
