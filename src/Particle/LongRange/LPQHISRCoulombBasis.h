@@ -161,7 +161,7 @@ public:
 
 
   //    inline TinyVector<mRealType,3> getTriplet(int n, mRealType r) const {
-  //      typedef TinyVector<mRealType,3> Return_t;
+  //      using Return_t = TinyVector<mRealType,3>;
   //      int i=n/3;
   //      int alpha = n-3*i;
   //      mRealType ra = delta*(i-1);

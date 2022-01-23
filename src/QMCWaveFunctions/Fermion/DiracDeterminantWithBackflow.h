@@ -33,20 +33,20 @@ class BackflowTransformation;
 class DiracDeterminantWithBackflow : public DiracDeterminantBase
 {
 public:
-  typedef SPOSet::IndexVector IndexVector;
-  typedef SPOSet::ValueVector ValueVector;
-  typedef SPOSet::ValueMatrix ValueMatrix;
-  typedef SPOSet::GradVector GradVector;
-  typedef SPOSet::GradMatrix GradMatrix;
-  typedef SPOSet::HessMatrix HessMatrix;
-  typedef SPOSet::HessVector HessVector;
-  typedef SPOSet::HessType HessType;
-  typedef SPOSet::GGGType GGGType;
-  typedef SPOSet::GGGVector GGGVector;
-  typedef SPOSet::GGGMatrix GGGMatrix;
-  typedef SPOSet::HessArray HessArray;
-  //typedef Array<GradType,3>       GradArray_t;
-  //typedef Array<PosType,3>        PosArray_t;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector = SPOSet::GradVector;
+  using GradMatrix = SPOSet::GradMatrix;
+  using HessMatrix = SPOSet::HessMatrix;
+  using HessVector = SPOSet::HessVector;
+  using HessType = SPOSet::HessType;
+  using GGGType = SPOSet::GGGType;
+  using GGGVector = SPOSet::GGGVector;
+  using GGGMatrix = SPOSet::GGGMatrix;
+  using HessArray = SPOSet::HessArray;
+  //using GradArray_t = Array<GradType,3>      ;
+  //using PosArray_t = Array<PosType,3>       ;
 
   /** constructor
    *@param spos the single-particle orbital set

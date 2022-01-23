@@ -26,8 +26,8 @@ namespace qmcplusplus
 namespace ompBLAS
 {
 
-typedef int ompBLAS_status;
-typedef int ompBLAS_handle;
+using ompBLAS_status = int;
+using ompBLAS_handle = int;
 
 ompBLAS_status gemv(ompBLAS_handle&    handle,
                     const char         trans,

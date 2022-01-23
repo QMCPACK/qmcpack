@@ -34,9 +34,9 @@ class PWOrbitalBuilder : public WaveFunctionComponentBuilder
 {
 private:
 #if defined(QMC_COMPLEX)
-  typedef PWOrbitalSet SPOSetType;
+  using SPOSetType = PWOrbitalSet;
 #else
-  typedef PWRealOrbitalSet SPOSetType;
+  using SPOSetType = PWRealOrbitalSet;
 #endif
 
   std::map<std::string, SPOSetPtr> spomap;

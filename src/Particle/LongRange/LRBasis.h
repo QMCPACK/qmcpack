@@ -40,7 +40,7 @@ struct LRBasis
   mRealType m_rc;
 
   ///Typedef for the lattice-type. We don't need the full particle-set.
-  typedef ParticleSet::ParticleLayout ParticleLayout;
+  using ParticleLayout = ParticleSet::ParticleLayout;
 
   //A copy of the lattice, so that we have the cell-vectors + volume.
   ParticleLayout Lattice;

@@ -27,8 +27,8 @@ class CostFunctionBase
 {
 public:
 
-  typedef qmcplusplus::QMCTraits::ValueType Return_t;
-  typedef qmcplusplus::QMCTraits::RealType Return_rt;
+  using Return_t = qmcplusplus::QMCTraits::ValueType;
+  using Return_rt = qmcplusplus::QMCTraits::RealType;
 
 
   /** boolean to indicate if the cost function is valid.
@@ -98,7 +98,7 @@ struct MinimizerBase
 
   /** typedef of the object function to be optimized
    */
-  typedef CostFunctionBase<T> ObjectFuncType;
+  using ObjectFuncType = CostFunctionBase<T>;
 
   /** default constructor */
   MinimizerBase() : msg_stream(0) {}

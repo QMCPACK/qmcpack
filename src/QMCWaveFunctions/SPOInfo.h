@@ -22,7 +22,7 @@ namespace qmcplusplus
    */
 struct SPOInfo
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   enum
   {
@@ -80,7 +80,7 @@ inline bool index_order(const SPOInfo* left, const SPOInfo* right) { return left
 /// comparison functor for sorting SPOInfo based on energy
 struct EnergyOrder
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
   RealType energy_tol;
   EnergyOrder(RealType tol = 1e-6) : energy_tol(tol){};
   ~EnergyOrder(){};

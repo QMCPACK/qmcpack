@@ -57,10 +57,10 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildCo
   aAttrib.add(nc, "shell");
   aAttrib.add(twist, "twist");
   aAttrib.put(cur);
-  //typedef DiracDeterminant<EGOSet>  Det_t;
-  //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminant<> Det_t;
-  typedef SlaterDet SlaterDeterminant_t;
+  //using Det_t = DiracDeterminant<EGOSet> ;
+  //using SlaterDeterminant_t = SlaterDeterminant<EGOSet>;
+  using Det_t = DiracDeterminant<>;
+  using SlaterDeterminant_t = SlaterDet;
   int nat = targetPtcl.getTotalNum();
   int nup = nat / 2;
   HEGGrid<RealType> egGrid(targetPtcl.getLattice());

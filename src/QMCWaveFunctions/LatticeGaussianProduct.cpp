@@ -17,9 +17,9 @@
 
 namespace qmcplusplus
 {
-typedef LatticeGaussianProduct::ValueType ValueType;
-typedef LatticeGaussianProduct::GradType GradType;
-typedef LatticeGaussianProduct::PsiValueType PsiValueType;
+using ValueType = LatticeGaussianProduct::ValueType;
+using GradType = LatticeGaussianProduct::GradType;
+using PsiValueType = LatticeGaussianProduct::PsiValueType;
 
 LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
     : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)

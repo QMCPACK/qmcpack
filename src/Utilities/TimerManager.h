@@ -107,10 +107,10 @@ public:
   void reset();
   void print(Communicate* comm);
 
-  typedef std::map<std::string, int> nameList_t;
-  typedef std::vector<double> timeList_t;
-  typedef std::vector<long> callList_t;
-  typedef std::vector<std::string> names_t;
+  using nameList_t = std::map<std::string, int>;
+  using timeList_t = std::vector<double>;
+  using callList_t = std::vector<long>;
+  using names_t = std::vector<std::string>;
 
   struct FlatProfileData
   {

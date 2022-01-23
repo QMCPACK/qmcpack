@@ -47,11 +47,11 @@ class EstimatorManagerNew
 {
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
-  typedef QMCTraits::FullPrecRealType RealType;
+  using RealType = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   using QMCT = QMCTraits;
-  typedef ScalarEstimatorBase EstimatorType;
+  using EstimatorType = ScalarEstimatorBase;
   using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 

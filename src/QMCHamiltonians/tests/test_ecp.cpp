@@ -165,9 +165,9 @@ void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m = sopp.sg
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 
@@ -426,9 +426,9 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   app_log() << "!!!! Evaluate SOECPComponent !!!!\n";
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 

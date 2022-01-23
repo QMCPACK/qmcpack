@@ -40,21 +40,21 @@ class ResourceCollection;
 class SPOSet : public QMCTraits
 {
 public:
-  typedef OrbitalSetTraits<ValueType>::IndexVector IndexVector;
-  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix ValueMatrix;
-  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix GradMatrix;
-  typedef OrbitalSetTraits<ValueType>::HessVector HessVector;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix HessMatrix;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, OHMMS_DIM> HessArray;
-  typedef OrbitalSetTraits<ValueType>::GradHessType GGGType;
-  typedef OrbitalSetTraits<ValueType>::GradHessVector GGGVector;
-  typedef OrbitalSetTraits<ValueType>::GradHessMatrix GGGMatrix;
-  typedef OrbitalSetTraits<ValueType>::VGLVector VGLVector;
-  typedef ParticleSet::Walker_t Walker_t;
-  typedef std::map<std::string, SPOSet*> SPOPool_t;
+  using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
+  using GradMatrix = OrbitalSetTraits<ValueType>::GradMatrix;
+  using HessVector = OrbitalSetTraits<ValueType>::HessVector;
+  using HessMatrix = OrbitalSetTraits<ValueType>::HessMatrix;
+  using HessType = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray = Array<HessType, OHMMS_DIM>;
+  using GGGType = OrbitalSetTraits<ValueType>::GradHessType;
+  using GGGVector = OrbitalSetTraits<ValueType>::GradHessVector;
+  using GGGMatrix = OrbitalSetTraits<ValueType>::GradHessMatrix;
+  using VGLVector = OrbitalSetTraits<ValueType>::VGLVector;
+  using Walker_t = ParticleSet::Walker_t;
+  using SPOPool_t = std::map<std::string, SPOSet*>;
 
   /** constructor */
   SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
@@ -544,7 +544,7 @@ protected:
   std::string myName;
 };
 
-typedef SPOSet* SPOSetPtr;
+using SPOSetPtr = SPOSet*;
 
 } // namespace qmcplusplus
 #endif

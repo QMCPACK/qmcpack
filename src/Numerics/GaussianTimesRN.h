@@ -23,7 +23,7 @@
 template<class T>
 struct GaussianTimesRN : public OptimizableFunctorBase
 {
-  typedef T value_type;
+  using value_type = T;
   real_type Y, dY, d2Y;
 
   struct BasicGaussian

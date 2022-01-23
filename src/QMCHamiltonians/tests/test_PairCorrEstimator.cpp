@@ -68,7 +68,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 {
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   Communicate* c = OHMMS::Controller;
 

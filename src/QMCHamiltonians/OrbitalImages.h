@@ -112,10 +112,10 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef SPOSet::ValueVector ValueVector;
-  typedef SPOSet::GradVector GradVector;
-  typedef ParticleSet::ParticleLayout Lattice_t;
-  typedef std::map<std::string, ParticleSet*> PSPool;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector = SPOSet::GradVector;
+  using Lattice_t = ParticleSet::ParticleLayout;
+  using PSPool = std::map<std::string, ParticleSet*>;
 
 
   ///derivative types

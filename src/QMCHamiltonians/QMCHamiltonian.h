@@ -44,15 +44,15 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
-  typedef OperatorBase::Return_t Return_t;
-  typedef OperatorBase::PosType PosType;
-  typedef OperatorBase::TensorType TensorType;
-  typedef OperatorBase::RealType RealType;
-  typedef OperatorBase::ValueType ValueType;
+  using Return_t = OperatorBase::Return_t;
+  using PosType = OperatorBase::PosType;
+  using TensorType = OperatorBase::TensorType;
+  using RealType = OperatorBase::RealType;
+  using ValueType = OperatorBase::ValueType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  typedef OperatorBase::PropertySetType PropertySetType;
-  typedef OperatorBase::BufferType BufferType;
-  typedef OperatorBase::Walker_t Walker_t;
+  using PropertySetType = OperatorBase::PropertySetType;
+  using BufferType = OperatorBase::BufferType;
+  using Walker_t = OperatorBase::Walker_t;
   using WP = WalkerProperties::Indexes;
   enum
   {

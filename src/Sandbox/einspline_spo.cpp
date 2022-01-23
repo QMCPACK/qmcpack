@@ -40,11 +40,11 @@ int main(int argc, char** argv)
     outputManager.shutOff();
   }
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos ParticlePos;
-  typedef ParticleSet::ParticleLayout LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType = ParticleSet::TensorType;
+  using PosType = ParticleSet::PosType;
 
   //use the global generator
 
@@ -311,7 +311,7 @@ int main(int argc, char** argv)
   ///////////////////////
 
   //collect timing and normalized by the number of ranks
-  typedef TinyVector<double, 4> timer_type;
+  using timer_type = TinyVector<double, 4>;
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 

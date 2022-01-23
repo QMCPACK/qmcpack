@@ -26,9 +26,9 @@ namespace qmcplusplus
 class SpaceGrid : public QMCTraits, public PtclOnLatticeTraits
 {
 public:
-  typedef TinyVector<RealType, DIM> Point;
-  typedef PooledData<RealType> BufferType;
-  typedef Matrix<RealType> Matrix_t;
+  using Point = TinyVector<RealType, DIM>;
+  using BufferType = PooledData<RealType>;
+  using Matrix_t = Matrix<RealType>;
 
   SpaceGrid(int& nvalues);
   bool put(xmlNodePtr cur,

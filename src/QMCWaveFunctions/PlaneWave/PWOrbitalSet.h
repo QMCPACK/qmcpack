@@ -27,8 +27,8 @@ namespace qmcplusplus
 class PWOrbitalSet : public SPOSet
 {
 public:
-  typedef PWBasis BasisSet_t;
-  typedef PWBasis* PWBasisPtr;
+  using BasisSet_t = PWBasis;
+  using PWBasisPtr = PWBasis*;
 
   /** inherit the enum of BasisSet_t */
   enum

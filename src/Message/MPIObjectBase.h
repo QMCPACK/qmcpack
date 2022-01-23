@@ -26,7 +26,7 @@ namespace qmcplusplus
 class MPIObjectBase
 {
 public:
-  typedef Communicate::mpi_comm_type mpi_comm_type;
+  using mpi_comm_type = Communicate::mpi_comm_type;
 
   ///constructor with communicator
   MPIObjectBase(Communicate* c);

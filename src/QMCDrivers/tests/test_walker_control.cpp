@@ -245,7 +245,7 @@ struct WalkerControlMPITest
 
     const SimulationCell simulation_cell;
     MCWalkerConfiguration W(simulation_cell); // Unused in the function
-    typedef MCWalkerConfiguration::Walker_t Walker_t;
+    using Walker_t = MCWalkerConfiguration::Walker_t;
 
     //UPtrVector<Walker_t> walkers;
     // Set up Cur_pop
@@ -448,7 +448,7 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration W(simulation_cell);
   W.createWalkers(1);
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
 
   if (c->rank() == 0)
   {

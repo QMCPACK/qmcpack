@@ -149,9 +149,9 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
                                                   ParticleSet::ParticlePos& hf_terms,
                                                   ParticleSet::ParticlePos& pulay_terms)
 {
-  typedef ParticleSet::ParticlePos ParticlePos;
-  typedef ParticleSet::ParticleGradient ParticleGradient;
-  typedef ParticleSet::ParticleLaplacian ParticleLaplacian;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using ParticleGradient = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
 
   int Nions = ions.getTotalNum();
   int Nelec = P.getTotalNum();

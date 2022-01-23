@@ -41,7 +41,7 @@ public:
   //////////////////////
   // Type definitions //
   //////////////////////
-  typedef CrystalLattice<ParticleSet::Scalar_t, OHMMS_DIM> UnitCellType;
+  using UnitCellType = CrystalLattice<ParticleSet::Scalar_t, OHMMS_DIM>;
 
   ///////////
   // Flags //
@@ -90,58 +90,58 @@ struct MultiOrbitalTraits
 template<>
 struct MultiOrbitalTraits<double, 2>
 {
-  typedef multi_UBspline_2d_d SplineType;
+  using SplineType = multi_UBspline_2d_d;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_d_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_d_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<double>, 2>
 {
-  typedef multi_UBspline_2d_z SplineType;
+  using SplineType = multi_UBspline_2d_z;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_z_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_z_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<float, 2>
 {
-  typedef multi_UBspline_2d_s SplineType;
+  using SplineType = multi_UBspline_2d_s;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_s_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_s_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<float>, 2>
 {
-  typedef multi_UBspline_2d_c SplineType;
+  using SplineType = multi_UBspline_2d_c;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_c_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_c_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<double, 3>
 {
-  typedef multi_UBspline_3d_d SplineType;
-  typedef BCtype_d BCType;
-  typedef double DataType;
+  using SplineType = multi_UBspline_3d_d;
+  using BCType = BCtype_d;
+  using DataType = double;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_d_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_d_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<double>, 3>
 {
-  typedef multi_UBspline_3d_z SplineType;
-  typedef BCtype_z BCType;
-  typedef std::complex<double> DataType;
+  using SplineType = multi_UBspline_3d_z;
+  using BCType = BCtype_z;
+  using DataType = std::complex<double>;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_z_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_z_cuda;
 #endif
 };
 
@@ -149,22 +149,22 @@ struct MultiOrbitalTraits<std::complex<double>, 3>
 template<>
 struct MultiOrbitalTraits<float, 3>
 {
-  typedef multi_UBspline_3d_s SplineType;
-  typedef BCtype_s BCType;
-  typedef float DataType;
+  using SplineType = multi_UBspline_3d_s;
+  using BCType = BCtype_s;
+  using DataType = float;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_s_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_s_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<float>, 3>
 {
-  typedef multi_UBspline_3d_c SplineType;
-  typedef BCtype_c BCType;
-  typedef std::complex<float> DataType;
+  using SplineType = multi_UBspline_3d_c;
+  using BCType = BCtype_c;
+  using DataType = std::complex<float>;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_c_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_c_cuda;
 #endif
 };
 
@@ -175,27 +175,27 @@ struct StorageTypeConverter;
 template<>
 struct StorageTypeConverter<double, double>
 {
-  typedef double CudaStorageType;
+  using CudaStorageType = double;
 };
 template<>
 struct StorageTypeConverter<double, float>
 {
-  typedef float CudaStorageType;
+  using CudaStorageType = float;
 };
 template<>
 struct StorageTypeConverter<std::complex<double>, float>
 {
-  typedef std::complex<float> CudaStorageType;
+  using CudaStorageType = std::complex<float>;
 };
 template<>
 struct StorageTypeConverter<std::complex<double>, std::complex<double>>
 {
-  typedef std::complex<double> CudaStorageType;
+  using CudaStorageType = std::complex<double>;
 };
 template<>
 struct StorageTypeConverter<std::complex<double>, double>
 {
-  typedef std::complex<double> CudaStorageType;
+  using CudaStorageType = std::complex<double>;
 };
 #endif
 
@@ -213,34 +213,34 @@ protected:
   //////////////////////
   // Type definitions //
   //////////////////////
-  //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
-  typedef typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::SplineType SplineType;
-  typedef typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::BCType BCType;
+  //using UnitCellType = CrystalLattice<RealType,OHMMS_DIM>;
+  using SplineType = typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::SplineType;
+  using BCType = typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::BCType;
 
-  typedef typename OrbitalSetTraits<StorageType>::ValueVector StorageValueVector;
-  typedef typename OrbitalSetTraits<StorageType>::GradVector StorageGradVector;
-  typedef typename OrbitalSetTraits<StorageType>::HessVector StorageHessVector;
-  typedef typename OrbitalSetTraits<StorageType>::GradHessVector StorageGradHessVector;
-  typedef Vector<double> RealValueVector;
-  typedef Vector<std::complex<double>> ComplexValueVector;
-  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector;
-  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector;
-  typedef Tensor<double, OHMMS_DIM> RealHessType;
-  typedef Tensor<std::complex<double>, OHMMS_DIM> ComplexHessType;
-  typedef Vector<RealHessType> RealHessVector;
-  typedef Matrix<RealHessType> RealHessMatrix;
-  typedef Vector<ComplexHessType> ComplexHessVector;
-  typedef Matrix<ComplexHessType> ComplexHessMatrix;
-  typedef Matrix<double> RealValueMatrix;
-  typedef Matrix<std::complex<double>> ComplexValueMatrix;
-  typedef Matrix<TinyVector<double, OHMMS_DIM>> RealGradMatrix;
-  typedef Matrix<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradMatrix;
-  typedef TinyVector<RealHessType, 3> RealGGGType;
-  typedef Vector<RealGGGType> RealGGGVector;
-  typedef Matrix<RealGGGType> RealGGGMatrix;
-  typedef TinyVector<ComplexHessType, 3> ComplexGGGType;
-  typedef Vector<ComplexGGGType> ComplexGGGVector;
-  typedef Matrix<ComplexGGGType> ComplexGGGMatrix;
+  using StorageValueVector = typename OrbitalSetTraits<StorageType>::ValueVector;
+  using StorageGradVector = typename OrbitalSetTraits<StorageType>::GradVector;
+  using StorageHessVector = typename OrbitalSetTraits<StorageType>::HessVector;
+  using StorageGradHessVector = typename OrbitalSetTraits<StorageType>::GradHessVector;
+  using RealValueVector = Vector<double>;
+  using ComplexValueVector = Vector<std::complex<double>>;
+  using RealGradVector = Vector<TinyVector<double, OHMMS_DIM>>;
+  using ComplexGradVector = Vector<TinyVector<std::complex<double>, OHMMS_DIM>>;
+  using RealHessType = Tensor<double, OHMMS_DIM>;
+  using ComplexHessType = Tensor<std::complex<double>, OHMMS_DIM>;
+  using RealHessVector = Vector<RealHessType>;
+  using RealHessMatrix = Matrix<RealHessType>;
+  using ComplexHessVector = Vector<ComplexHessType>;
+  using ComplexHessMatrix = Matrix<ComplexHessType>;
+  using RealValueMatrix = Matrix<double>;
+  using ComplexValueMatrix = Matrix<std::complex<double>>;
+  using RealGradMatrix = Matrix<TinyVector<double, OHMMS_DIM>>;
+  using ComplexGradMatrix = Matrix<TinyVector<std::complex<double>, OHMMS_DIM>>;
+  using RealGGGType = TinyVector<RealHessType, 3>;
+  using RealGGGVector = Vector<RealGGGType>;
+  using RealGGGMatrix = Matrix<RealGGGType>;
+  using ComplexGGGType = TinyVector<ComplexHessType, 3>;
+  using ComplexGGGVector = Vector<ComplexGGGType>;
+  using ComplexGGGMatrix = Matrix<ComplexGGGType>;
 
   /////////////////////////////
   /// Orbital storage object //
@@ -283,8 +283,8 @@ protected:
 
 #ifdef QMC_CUDA
   // Cuda equivalents of the above
-  typedef typename StorageTypeConverter<StorageType, CUDA_PRECISION>::CudaStorageType CudaStorageType;
-  typedef typename MultiOrbitalTraits<CudaStorageType, OHMMS_DIM>::CudaSplineType CudaSplineType;
+  using CudaStorageType = typename StorageTypeConverter<StorageType, CUDA_PRECISION>::CudaStorageType;
+  using CudaSplineType = typename MultiOrbitalTraits<CudaStorageType, OHMMS_DIM>::CudaSplineType;
 
   CudaSplineType* CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
@@ -548,9 +548,9 @@ protected:
   // Type definitions //
   //////////////////////
   using CTS = CUDAGlobalTypes;
-  typedef typename EinsplineSetExtended<StorageType>::Walker_t Walker_t;
-  typedef typename EinsplineSetExtended<StorageType>::PosType PosType;
-  typedef typename EinsplineSetExtended<StorageType>::CudaStorageType CudaStorageType;
+  using Walker_t = typename EinsplineSetExtended<StorageType>::Walker_t;
+  using PosType = typename EinsplineSetExtended<StorageType>::PosType;
+  using CudaStorageType = typename EinsplineSetExtended<StorageType>::CudaStorageType;
 
   std::vector<gpu::device_vector<CTS::RealType>> AtomicSplineCoefs_GPU, AtomicPolyCoefs_GPU;
   gpu::device_vector<AtomicOrbitalCuda<CTS::RealType>> AtomicOrbitals_GPU;

@@ -72,7 +72,7 @@ private:
   gpu::device_vector<CTS::RealType> NL_rMaxGPU, NL_QuadPointsGPU, NL_RatiosGPU;
 
 public:
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
 
   void freeGPUmem() override;
   void checkInVariables(opt_variables_type& active) override;

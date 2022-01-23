@@ -24,8 +24,8 @@ namespace qmcplusplus
 {
 struct L2RadialPotential : public QMCTraits
 {
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using GridType = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   std::unique_ptr<RadialPotentialType> vL2;
   RealType rcut;

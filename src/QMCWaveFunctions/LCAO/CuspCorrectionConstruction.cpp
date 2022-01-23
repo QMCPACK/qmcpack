@@ -27,7 +27,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
                          LCAOrbitalSetWithCorrection& lcwc,
                          const std::string& id)
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   NewTimer& cuspApplyTimer =
       *timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
@@ -189,7 +189,7 @@ void generateCuspInfo(int orbital_set_size,
                       const std::string& id,
                       Communicate& Comm)
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   NewTimer& cuspCreateTimer =
       *timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
@@ -208,7 +208,7 @@ void generateCuspInfo(int orbital_set_size,
 
   std::vector<bool> corrCenter(num_centers, "true");
 
-  typedef OneDimGridBase<RealType> GridType;
+  using GridType = OneDimGridBase<RealType>;
   int npts = 500;
 
   // Parallelize correction of MO's across MPI ranks

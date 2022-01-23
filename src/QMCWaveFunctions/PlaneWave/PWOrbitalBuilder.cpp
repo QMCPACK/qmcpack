@@ -208,7 +208,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   std::vector<int> occBand(nb);
   for (int i = 0; i < nb; i++)
     occBand[i] = i;
-  typedef PWBasis::GIndex_t GIndex_t;
+  using GIndex_t = PWBasis::GIndex_t;
   GIndex_t nG(1);
   bool transform2grid = false;
   cur                 = cur->children;
@@ -279,8 +279,8 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   if (myParam->hasComplexData(hfileID)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;
-    typedef std::vector<std::complex<RealType>> TempVecType;
-    typedef std::vector<std::complex<double>> TempVecType_DP;
+    using TempVecType = std::vector<std::complex<RealType>>;
+    using TempVecType_DP = std::vector<std::complex<double>>;
     TempVecType_DP coefs_DP(myBasisSet->inputmap.size());
     HDFAttribIO<TempVecType_DP> hdfobj_coefs(coefs_DP);
     int ib = 0;
@@ -300,8 +300,8 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   {
     // It appears the coefficients are always stored as complex in the HDF file?
     //app_log() << "  PW coefficients are real." << std::endl;
-    typedef std::vector<std::complex<RealType>> ComplexTempVecType;
-    typedef std::vector<std::complex<double>> ComplexTempVecType_DP;
+    using ComplexTempVecType = std::vector<std::complex<RealType>>;
+    using ComplexTempVecType_DP = std::vector<std::complex<double>>;
     ComplexTempVecType_DP complex_coefs_DP(myBasisSet->inputmap.size());
     HDFAttribIO<ComplexTempVecType_DP> hdfobj_complex_coefs(complex_coefs_DP);
     int ib = 0;
@@ -362,7 +362,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   RealType dy = 1.0 / static_cast<RealType>(nG[1] - 1);
   RealType dz = 1.0 / static_cast<RealType>(nG[2] - 1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::SingleParticleValue, 3> StorageType;
+  using StorageType = Array<ParticleSet::SingleParticleValue, 3>;
   StorageType inData(nG[0], nG[1], nG[2]);
   int ib = 0;
   while (ib < myParam->numBands)
@@ -412,7 +412,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::SingleParticleValue, 3> StorageType;
+  using StorageType = Array<ParticleSet::SingleParticleValue, 3>;
   std::vector<StorageType*> inData;
   int nb = myParam->numBands;
   for (int ib = 0; ib < nb; ib++)

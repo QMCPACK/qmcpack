@@ -24,7 +24,7 @@ namespace qmcplusplus
 struct ForceBase
 {
   /** cheat, need to use virtual inheriance to clean up*/
-  typedef QMCTraits::RealType real_type;
+  using real_type = QMCTraits::RealType;
 
   int FirstForceIndex;
   int Nnuc;

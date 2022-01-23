@@ -29,28 +29,28 @@ namespace qmcplusplus
 class BackflowFunctionBase //: public OrbitalSetTraits<QMCTraits::ValueType>
 {
 public:
-  typedef ParticleSet::Walker_t Walker_t;
-  typedef Walker_t::WFBuffer_t WFBufferType;
+  using Walker_t = ParticleSet::Walker_t;
+  using WFBufferType = Walker_t::WFBuffer_t;
 
   // All BF quantities should be real, so eliminating complex (ValueType) possibility
   enum
   {
     DIM = OHMMS_DIM
   };
-  typedef OHMMS_PRECISION RealType;
-  typedef int IndexType;
-  typedef TinyVector<RealType, DIM> PosType;
-  typedef TinyVector<RealType, DIM> GradType;
-  typedef Tensor<RealType, DIM> HessType;
-  typedef Vector<IndexType> IndexVector;
-  typedef Vector<GradType> GradVector;
-  typedef Matrix<GradType> GradMatrix;
-  typedef Vector<HessType> HessVector;
-  typedef Matrix<HessType> HessMatrix;
+  using RealType = OHMMS_PRECISION;
+  using IndexType = int;
+  using PosType = TinyVector<RealType, DIM>;
+  using GradType = TinyVector<RealType, DIM>;
+  using HessType = Tensor<RealType, DIM>;
+  using IndexVector = Vector<IndexType>;
+  using GradVector = Vector<GradType>;
+  using GradMatrix = Matrix<GradType>;
+  using HessVector = Vector<HessType>;
+  using HessMatrix = Matrix<HessType>;
 
-  typedef Array<HessType, 3> HessArray;
-  //typedef Array<GradType,3>       GradArray_t;
-  //typedef Array<PosType,3>        PosArray_t;
+  using HessArray = Array<HessType, 3>;
+  //using GradArray_t = Array<GradType,3>      ;
+  //using PosArray_t = Array<PosType,3>       ;
 
   /** enum for a update mode */
   enum

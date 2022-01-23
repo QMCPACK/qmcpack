@@ -35,7 +35,7 @@ struct DummyGrid
   DummyGrid* makeClone() const { return new DummyGrid; }
 };
 
-typedef TinyVector<int, 4> QuantumNumberType;
+using QuantumNumberType = TinyVector<int, 4>;
 
 enum
 {
@@ -56,22 +56,22 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
   };
   using RealType = RealAlias<T>;
   using ValueType = T;
-  typedef int IndexType;
-  typedef TinyVector<RealType, DIM> PosType;
-  typedef TinyVector<ValueType, DIM> GradType;
-  typedef Tensor<ValueType, DIM> HessType;
-  typedef Tensor<ValueType, DIM> TensorType;
-  typedef TinyVector<Tensor<ValueType, DIM>, DIM> GradHessType;
-  typedef Vector<IndexType> IndexVector;
-  typedef Vector<ValueType> ValueVector;
-  typedef Matrix<ValueType> ValueMatrix;
-  typedef Vector<GradType> GradVector;
-  typedef Matrix<GradType> GradMatrix;
-  typedef Vector<HessType> HessVector;
-  typedef Matrix<HessType> HessMatrix;
-  typedef Vector<GradHessType> GradHessVector;
-  typedef Matrix<GradHessType> GradHessMatrix;
-  typedef VectorSoaContainer<ValueType, DIM + 2> VGLVector;
+  using IndexType = int;
+  using PosType = TinyVector<RealType, DIM>;
+  using GradType = TinyVector<ValueType, DIM>;
+  using HessType = Tensor<ValueType, DIM>;
+  using TensorType = Tensor<ValueType, DIM>;
+  using GradHessType = TinyVector<Tensor<ValueType, DIM>, DIM>;
+  using IndexVector = Vector<IndexType>;
+  using ValueVector = Vector<ValueType>;
+  using ValueMatrix = Matrix<ValueType>;
+  using GradVector = Vector<GradType>;
+  using GradMatrix = Matrix<GradType>;
+  using HessVector = Vector<HessType>;
+  using HessMatrix = Matrix<HessType>;
+  using GradHessVector = Vector<GradHessType>;
+  using GradHessMatrix = Matrix<GradHessType>;
+  using VGLVector = VectorSoaContainer<ValueType, DIM + 2>;
 };
 
 ///typedef for a set of variables that are varied during an optimization

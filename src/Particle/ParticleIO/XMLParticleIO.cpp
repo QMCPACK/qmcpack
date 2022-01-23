@@ -363,7 +363,7 @@ struct ParticleAttribXmlNode
 
   inline bool put(xmlNodePtr cur, int n_in, int start)
   {
-    typedef typename PAT::Type_t data_type;
+    using data_type = typename PAT::Type_t;
     std::vector<data_type> data_in(n_in);
     putContent(data_in, cur);
     copy(data_in.begin(), data_in.end(), ref_.begin() + start);

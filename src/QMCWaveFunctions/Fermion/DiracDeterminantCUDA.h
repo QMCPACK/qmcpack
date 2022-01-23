@@ -31,12 +31,12 @@ namespace qmcplusplus
 class DiracDeterminantCUDA : public DiracDeterminantBase
 {
 public:
-  typedef SPOSet::IndexVector IndexVector;
-  typedef SPOSet::ValueVector ValueVector;
-  typedef SPOSet::ValueMatrix ValueMatrix;
-  typedef SPOSet::GradVector GradVector;
-  typedef SPOSet::GradMatrix GradMatrix;
-  typedef ParticleSet::Walker_t Walker_t;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector = SPOSet::GradVector;
+  using GradMatrix = SPOSet::GradMatrix;
+  using Walker_t = ParticleSet::Walker_t;
 
   DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;

@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-typedef QMCTraits::RealType RealType;
+using RealType = QMCTraits::RealType;
 using namespace spoinfo;
 
 constexpr RealType no_energy_tol = std::numeric_limits<RealType>::max();

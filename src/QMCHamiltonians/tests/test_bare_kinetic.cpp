@@ -91,9 +91,9 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
 TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 

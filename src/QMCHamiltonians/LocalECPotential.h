@@ -32,8 +32,8 @@ namespace qmcplusplus
 
 struct LocalECPotential : public OperatorBase
 {
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using GridType = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;

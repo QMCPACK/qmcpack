@@ -25,9 +25,9 @@ namespace qmcplusplus
 template<class T>
 struct Quadrature3D
 {
-  typedef T RealType;
-  typedef TinyVector<T, 3> PosType;
-  typedef OHMMS_PRECISION_FULL mRealType;
+  using RealType = T;
+  using PosType = TinyVector<T, 3>;
+  using mRealType = OHMMS_PRECISION_FULL;
 
   int nk;
   typedef enum

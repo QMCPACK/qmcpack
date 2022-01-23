@@ -78,8 +78,8 @@ struct J1Spin : public WaveFunctionComponent
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
-  typedef ParticleAttrib<QTFull::GradType> WavefunctionFirstDerivativeType;
-  typedef ParticleAttrib<QTFull::ValueType> WavefunctionSecondDerivativeType;
+  using WavefunctionFirstDerivativeType = ParticleAttrib<QTFull::GradType>;
+  using WavefunctionSecondDerivativeType = ParticleAttrib<QTFull::ValueType>;
   std::vector<WavefunctionFirstDerivativeType> gradLogPsi;
   std::vector<WavefunctionSecondDerivativeType> lapLogPsi;
 

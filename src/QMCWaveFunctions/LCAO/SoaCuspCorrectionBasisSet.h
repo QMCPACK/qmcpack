@@ -32,8 +32,8 @@ template<typename T>
 class CuspCorrectionAtomicBasis
 {
   using QMCT = QMCTraits;
-  typedef MultiQuinticSpline1D<T> RadialSetType;
-  typedef ParticleSet::PosType PosType;
+  using RadialSetType = MultiQuinticSpline1D<T>;
+  using PosType = ParticleSet::PosType;
 
   QMCT::RealType r_max_ = 100;
   RadialSetType AOs;

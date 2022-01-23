@@ -30,10 +30,10 @@ namespace qmcplusplus
 struct LCAOrbitalSet : public SPOSet
 {
 public:
-  typedef SoaBasisSetBase<ValueType> basis_type;
-  typedef basis_type::vgl_type vgl_type;
-  typedef basis_type::vgh_type vgh_type;
-  typedef basis_type::vghgh_type vghgh_type;
+  using basis_type = SoaBasisSetBase<ValueType>;
+  using vgl_type = basis_type::vgl_type;
+  using vgh_type = basis_type::vgh_type;
+  using vghgh_type = basis_type::vghgh_type;
 
   ///pointer to the basis set
   std::unique_ptr<basis_type> myBasisSet;

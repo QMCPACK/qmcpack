@@ -61,26 +61,26 @@ public:
     DIM = t_traits::DIM
   };
   /** typedef for real data type */
-  typedef typename t_traits::RealType RealType;
+  using RealType = typename t_traits::RealType;
   /** typedef for estimator real data type */
-  typedef typename t_traits::FullPrecRealType FullPrecRealType;
+  using FullPrecRealType = typename t_traits::FullPrecRealType;
   /** typedef for value data type. */
-  typedef typename t_traits::ValueType ValueType;
+  using ValueType = typename t_traits::ValueType;
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
   /** array of laplacians */
-  typedef typename CTS::ValueType CudaLapType;
+  using CudaLapType = typename CTS::ValueType;
 #endif
   /** array of particles */
-  typedef typename p_traits::ParticlePos ParticlePos;
+  using ParticlePos = typename p_traits::ParticlePos;
   /** array of scalars */
-  typedef typename p_traits::ParticleScalar ParticleScalar;
+  using ParticleScalar = typename p_traits::ParticleScalar;
   /** array of gradients */
-  typedef typename p_traits::ParticleGradient ParticleGradient;
+  using ParticleGradient = typename p_traits::ParticleGradient;
   /** array of laplacians */
-  typedef typename p_traits::ParticleLaplacian ParticleLaplacian;
+  using ParticleLaplacian = typename p_traits::ParticleLaplacian;
   /** typedef for value data type. */
-  typedef typename p_traits::SingleParticleValue SingleParticleValue;
+  using SingleParticleValue = typename p_traits::SingleParticleValue;
 
   ///typedef for the property container, fixed size
   using PropertyContainer_t = ConstantSizeMatrix<FullPrecRealType, std::allocator<FullPrecRealType>>;
@@ -88,8 +88,8 @@ public:
   /** @{
    * Not really "buffers", "walker message" also used to serialize walker, rename
    */
-  typedef PooledMemory<FullPrecRealType> WFBuffer_t;
-  typedef PooledData<RealType> Buffer_t;
+  using WFBuffer_t = PooledMemory<FullPrecRealType>;
+  using Buffer_t = PooledData<RealType>;
   /** }@ */
 
   ///id reserved for forward walking
@@ -155,7 +155,7 @@ public:
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;
-  typedef gpu::device_vector<CTS::ValueType> cuda_Buffer_t;
+  using cuda_Buffer_t = gpu::device_vector<CTS::ValueType>;
   cuda_Buffer_t cuda_DataSet;
   // Note that R_GPU has size N+1.  The last element contains the
   // proposed position for single-particle moves.

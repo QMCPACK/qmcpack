@@ -127,8 +127,8 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
   {
-    typedef ValueMatrix::value_type value_type;
-    typedef GradMatrix::value_type grad_type;
+    using value_type = ValueMatrix::value_type;
+    using grad_type = GradMatrix::value_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
       ValueVector v(logdet[i], OrbitalSetSize);
@@ -147,8 +147,8 @@ public:
                                const RefVector<ValueMatrix>& d2logdet_list) const override
   {
     assert(this == &spo_list.getLeader());
-    typedef ValueMatrix::value_type value_type;
-    typedef GradMatrix::value_type grad_type;
+    using value_type = ValueMatrix::value_type;
+    using grad_type = GradMatrix::value_type;
 
     const size_t nw = spo_list.size();
     std::vector<ValueVector> mw_psi_v;

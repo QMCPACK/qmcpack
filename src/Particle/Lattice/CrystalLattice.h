@@ -64,13 +64,13 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   };
   //@{
   ///the type of scalar
-  typedef T Scalar_t;
+  using Scalar_t = T;
   ///the type of a D-dimensional position vector
-  typedef TinyVector<T, D> SingleParticlePos;
+  using SingleParticlePos = TinyVector<T, D>;
   ///the type of a D-dimensional index vector
-  typedef TinyVector<int, D> SingleParticleIndex;
+  using SingleParticleIndex = TinyVector<int, D>;
   ///the type of a D-dimensional Tensor
-  typedef Tensor<T, D> Tensor_t;
+  using Tensor_t = Tensor<T, D>;
   //@}
 
   ///true, if off-diagonal elements are zero so that other classes can take advantage of this

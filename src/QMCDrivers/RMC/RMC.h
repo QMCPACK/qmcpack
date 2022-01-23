@@ -26,8 +26,8 @@ class RMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  typedef ParticleSet::ParticlePos ParticlePos;
-  typedef Reptile::ReptileConfig_t ReptileConfig_t;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using ReptileConfig_t = Reptile::ReptileConfig_t;
 
   RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
   bool run() override;

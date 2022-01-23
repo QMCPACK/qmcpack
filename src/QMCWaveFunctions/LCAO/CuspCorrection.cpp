@@ -152,7 +152,7 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
 
 void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi, LCAOrbitalSet& Eta)
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   std::vector<bool> is_s_orbital(Phi.myBasisSet->BasisSetSize, false);
   std::vector<bool> correct_this_center(corrCenter.size(), false);
@@ -182,7 +182,7 @@ void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet&
 
 void removeSTypeOrbitals(const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi)
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   std::vector<bool> is_s_orbital(Phi.myBasisSet->BasisSetSize, false);
 
@@ -223,7 +223,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
   }
 }
 
-typedef QMCTraits::RealType RealType;
+using RealType = QMCTraits::RealType;
 
 // Get the ideal local energy at one point
 // Eq. 17 in the paper.  Coefficients are taken from the paper.

@@ -79,8 +79,8 @@ public:
     QMC_WARMUP
   };
 
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef Walker_t::Buffer_t Buffer_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
+  using Buffer_t = Walker_t::Buffer_t;
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker

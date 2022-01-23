@@ -43,15 +43,15 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef ValueType Value_t;
-  typedef GradType Grad_t;
-  typedef SPOSet::ValueVector ValueVector;
-  typedef SPOSet::GradVector GradVector;
-  typedef ParticleSet::ParticleLayout Lattice_t;
-  typedef Vector<Value_t> Vector_t;
-  typedef Matrix<Value_t> Matrix_t;
-  typedef std::vector<PosType> pts_t;
-  typedef std::vector<RealType> dens_t;
+  using Value_t = ValueType;
+  using Grad_t = GradType;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector = SPOSet::GradVector;
+  using Lattice_t = ParticleSet::ParticleLayout;
+  using Vector_t = Vector<Value_t>;
+  using Matrix_t = Matrix<Value_t>;
+  using pts_t = std::vector<PosType>;
+  using dens_t = std::vector<RealType>;
 
   enum integrators
   {

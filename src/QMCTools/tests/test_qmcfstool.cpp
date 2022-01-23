@@ -25,8 +25,8 @@ namespace qmcplusplus
 {
 TEST_CASE("FS parse Sk file", "[tools]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using PosType = QMCTraits::PosType;
   std::unique_ptr<SkParserBase> skparser = std::make_unique<SkParserASCII>();
   std::string filename   = "simple_Sk.dat";
   skparser->parse(filename);
@@ -51,8 +51,8 @@ TEST_CASE("FS parse Sk file", "[tools]")
 
 TEST_CASE("FS evaluate", "[tools]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using PosType = QMCTraits::PosType;
 
   std::unique_ptr<SkParserBase> skparser = std::make_unique<SkParserASCII>();
   std::string filename   = "simple_Sk.dat";

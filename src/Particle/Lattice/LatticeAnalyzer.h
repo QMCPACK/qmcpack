@@ -48,8 +48,8 @@ struct LatticeAnalyzer
 template<typename T>
 struct LatticeAnalyzer<T, 3>
 {
-  typedef TinyVector<T, 3> SingleParticlePos;
-  typedef Tensor<T, 3> Tensor_t;
+  using SingleParticlePos = TinyVector<T, 3>;
+  using Tensor_t = Tensor<T, 3>;
   ///SuperCell type
   int mySC;
 
@@ -143,8 +143,8 @@ struct LatticeAnalyzer<T, 3>
 template<typename T>
 struct LatticeAnalyzer<T, 2>
 {
-  typedef TinyVector<T, 2> SingleParticlePos;
-  typedef Tensor<T, 2> Tensor_t;
+  using SingleParticlePos = TinyVector<T, 2>;
+  using Tensor_t = Tensor<T, 2>;
 
   /** return supercell enum
    * @param[in] box[2] if box[i]==1, PBC
@@ -196,7 +196,7 @@ struct LatticeAnalyzer<T, 2>
 template<typename T>
 struct LatticeAnalyzer<T, 1>
 {
-  typedef TinyVector<T, 1> SingleParticlePos;
+  using SingleParticlePos = TinyVector<T, 1>;
   inline bool isDiagonalOnly(const Tensor<T, 1>& R) const { return true; }
 
   inline int operator()(const TinyVector<int, 1>& box) { return (box[0]) ? SUPERCELL_BULK : SUPERCELL_OPEN; }

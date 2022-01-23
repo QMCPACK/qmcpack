@@ -1081,8 +1081,8 @@ inline void DensityMatrices1B::density_drift(const PosType& r, RealType& dens, P
 }
 
 
-typedef DensityMatrices1B::RealType RealType;
-typedef DensityMatrices1B::Value_t Value_t;
+using RealType = DensityMatrices1B::RealType;
+using Value_t = DensityMatrices1B::Value_t;
 
 
 inline RealType accum_constant(CombinedTraceSample<TraceReal>* etrace, RealType weight = 1.0)

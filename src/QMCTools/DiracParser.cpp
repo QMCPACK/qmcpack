@@ -14,8 +14,8 @@
 #include <cstdio>
 #include <algorithm>
 
-typedef std::pair<double, double> primExpCoeff;
-typedef std::vector<primExpCoeff> basisFunc;
+using primExpCoeff = std::pair<double, double>;
+using basisFunc = std::vector<primExpCoeff>;
 
 fermIrrep::fermIrrep(std::string label_in, int nSpinors, int numAO) : label(label_in)
 {

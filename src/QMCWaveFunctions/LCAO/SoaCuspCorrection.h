@@ -32,14 +32,14 @@ class CuspCorrectionAtomicBasis;
  */
 class SoaCuspCorrection
 {
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::RealType RealType;
-  typedef VectorSoaContainer<ValueType, 5> VGLVector;
-  typedef SPOSet::ValueMatrix ValueMatrix;
-  typedef SPOSet::GradMatrix GradMatrix;
-  typedef SPOSet::GradVector GradVector;
-  typedef SPOSet::ValueVector ValueVector;
-  typedef ParticleSet::PosType PosType;
+  using ValueType = QMCTraits::ValueType;
+  using RealType = QMCTraits::RealType;
+  using VGLVector = VectorSoaContainer<ValueType, 5>;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix = SPOSet::GradMatrix;
+  using GradVector = SPOSet::GradVector;
+  using ValueVector = SPOSet::ValueVector;
+  using PosType = ParticleSet::PosType;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -51,7 +51,7 @@ class SoaCuspCorrection
   int BasisSetSize;
 
   ///COMPLEX WON'T WORK
-  typedef CuspCorrectionAtomicBasis<RealType> COT;
+  using COT = CuspCorrectionAtomicBasis<RealType>;
 
   int unused = 1;
   /** container of the unique pointers to the Atomic Orbitals

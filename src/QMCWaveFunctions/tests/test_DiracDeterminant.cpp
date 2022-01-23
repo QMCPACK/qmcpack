@@ -41,9 +41,9 @@ using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
 #ifdef ENABLE_CUDA
-typedef DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+using DetType = DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>;
 #else
-typedef DiracDeterminant<> DetType;
+using DetType = DiracDeterminant<>;
 #endif
 
 template<typename T1, typename T2>
@@ -428,13 +428,13 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 #ifdef QMC_COMPLEX
 TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 {
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
-  typedef QMCTraits::GradType GradType;
-  typedef WaveFunctionComponent::LogValueType LogValueType;
-  typedef ParticleSet::ParticlePos ParticlePos;
-  typedef ParticleSet::ParticleGradient ParticleGradient;
-  typedef ParticleSet::ParticleLaplacian ParticleLaplacian;
+  using ValueType = QMCTraits::ValueType;
+  using PosType = QMCTraits::PosType;
+  using GradType = QMCTraits::GradType;
+  using LogValueType = WaveFunctionComponent::LogValueType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using ParticleGradient = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   ParticleSet ions_;
   ParticleSet elec_;

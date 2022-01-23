@@ -106,8 +106,8 @@ struct SolvePeriodicInterp1D<double>
 template<>
 struct SolvePeriodicInterp1D<std::complex<double>>
 {
-  typedef std::complex<double> value_type;
-  typedef double real_type;
+  using value_type = std::complex<double>;
+  using real_type = double;
 
   static inline void apply(const std::vector<value_type>& data, std::vector<value_type>& p)
   {
@@ -179,8 +179,8 @@ struct SolveFirstDerivInterp1D<double>
 template<>
 struct SolveFirstDerivInterp1D<std::complex<double>>
 {
-  typedef std::complex<double> value_type;
-  typedef double real_type;
+  using value_type = std::complex<double>;
+  using real_type = double;
 
   template<class CT>
   static inline void apply(const CT& data, CT& p, int N, double* bcLower, double* bcUpper)
@@ -220,8 +220,8 @@ struct SolveFirstDerivInterp1D<float>
 template<>
 struct SolveFirstDerivInterp1D<std::complex<float>>
 {
-  typedef std::complex<float> value_type;
-  typedef float real_type;
+  using value_type = std::complex<float>;
+  using real_type = float;
 
   template<class CT>
   static inline void apply(const CT& data, CT& p, int N, float* bcLower, float* bcUpper)

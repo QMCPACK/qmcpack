@@ -28,7 +28,7 @@ namespace qmcplusplus
 // struct
 // RandomVector<TinyVector<T,D>, RNG> {
 
-//   typedef TinyVector<T,D> Return_t;
+//   using Return_t = TinyVector<T,D>;
 
 //   RandomVector(RNG& gen): RG(gen){ }
 
@@ -56,7 +56,7 @@ namespace qmcplusplus
 // // specialized for TinyVector<T,D>
 // template<class RNG>
 // struct RandomVector<TinyVector<double,3>, RNG> {
-//   typedef TinyVector<double,3> Return_t;
+//   using Return_t = TinyVector<double,3>;
 
 //   RandomVector(RNG& gen): RG(gen){ }
 

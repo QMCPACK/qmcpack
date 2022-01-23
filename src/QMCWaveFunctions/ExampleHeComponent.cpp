@@ -230,7 +230,7 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
                                              std::vector<ValueType>& dlogpsi,
                                              std::vector<ValueType>& dhpsioverpsi)
 {
-  typedef TinyVector<RealType, 3> RealGradType;
+  using RealGradType = TinyVector<RealType, 3>;
 
   double tmpB = std::real(optvars[0]);
 

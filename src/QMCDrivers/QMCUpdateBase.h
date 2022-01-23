@@ -40,15 +40,15 @@ class TraceManager;
 class QMCUpdateBase : public QMCTraits
 {
 public:
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef MCWalkerConfiguration::iterator WalkerIter_t;
-  typedef SimpleFixedNodeBranch BranchEngineType;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
+  using WalkerIter_t = MCWalkerConfiguration::iterator;
+  using BranchEngineType = SimpleFixedNodeBranch;
 #ifdef MIXED_PRECISION
-  typedef TinyVector<OHMMS_PRECISION_FULL, DIM> mPosType;
-  typedef Tensor<OHMMS_PRECISION_FULL, DIM> mTensorType;
+  using mPosType = TinyVector<OHMMS_PRECISION_FULL, DIM>;
+  using mTensorType = Tensor<OHMMS_PRECISION_FULL, DIM>;
 #else
-  typedef PosType mPosType;
-  typedef TensorType mTensorType;
+  using mPosType = PosType;
+  using mTensorType = TensorType;
 #endif
 
   ///If true, terminate the simulation, but it is never checked

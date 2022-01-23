@@ -24,8 +24,8 @@ namespace qmcplusplus
 {
 TEST_CASE("vector", "[OhmmsSoA]")
 {
-  typedef Vector<TinyVector<double, 3>> vec_t;
-  typedef VectorSoaContainer<double, 3> vec_soa_t;
+  using vec_t = Vector<TinyVector<double, 3>>;
+  using vec_soa_t = VectorSoaContainer<double, 3>;
 
   vec_t R(4);
   vec_soa_t RSoA(4);

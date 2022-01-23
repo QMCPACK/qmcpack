@@ -41,8 +41,8 @@ class LRHandlerTemp : public LRHandlerBase
 {
 public:
   //Typedef for the lattice-type.
-  typedef ParticleSet::ParticleLayout ParticleLayout;
-  typedef BreakupBasis BreakupBasisType;
+  using ParticleLayout = ParticleSet::ParticleLayout;
+  using BreakupBasisType = BreakupBasis;
 
   bool FirstTime;
   mRealType rs;

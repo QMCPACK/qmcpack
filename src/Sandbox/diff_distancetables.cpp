@@ -76,11 +76,11 @@ int main(int argc, char** argv)
 
   Random.init(iseed);
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos ParticlePos;
-  typedef ParticleSet::ParticleLayout LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType = ParticleSet::TensorType;
+  using PosType = ParticleSet::PosType;
 
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
   double t0 = 0.0, t1 = 0.0;

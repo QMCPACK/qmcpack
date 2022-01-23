@@ -392,7 +392,7 @@ struct device_allocator
   template<class U>
   struct rebind
   {
-    typedef device_allocator<U> other;
+    using other = device_allocator<U>;
   };
   using element_type     = T;
   using value_type       = T;
@@ -468,7 +468,7 @@ struct constructor
   template<class U>
   struct rebind
   {
-    typedef constructor<U> other;
+    using other = constructor<U>;
   };
   using value_type         = T;
   using pointer            = device_pointer<T>;

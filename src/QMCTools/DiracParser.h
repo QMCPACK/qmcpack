@@ -17,7 +17,7 @@
 #include <map>
 #include <cmath>
 
-typedef std::pair<double, double> primBasis;
+using primBasis = std::pair<double, double>;
 
 struct basisGroup
 {
@@ -70,7 +70,7 @@ public:
 
 class DiracParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-  typedef std::map<std::string, double> normMapType;
+  using normMapType = std::map<std::string, double>;
 
 public:
   DiracParser(int argc, char** argv);

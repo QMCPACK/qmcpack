@@ -21,8 +21,8 @@
 namespace qmcplusplus
 {
 
-typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
-typedef qmcplusplus::QMCTraits::ValueType ValueType;
+using FullPrecValueType = qmcplusplus::QMCTraits::FullPrecValueType;
+using ValueType = qmcplusplus::QMCTraits::ValueType;
 
 #if !defined(MIXED_PRECISION)
 ///This provides a basic test of the descent engine's parameter update algorithm

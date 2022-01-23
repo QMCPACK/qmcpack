@@ -200,7 +200,7 @@ void BsplineReaderBase::initialize_spo2band(int spin,
   std::ofstream o(aname.c_str());
   char s[1024];
   ns = 0;
-  typedef QMCTraits::PosType PosType;
+  using PosType = QMCTraits::PosType;
   o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK "
     << std::endl;
   for (int i = 0; i < bigspace.size(); ++i)

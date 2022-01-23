@@ -36,7 +36,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   int nptcl     = 0;
   int nsh       = 0; //for backwards compatibility w/ odd heg initialization style
   int pol       = 0;
-  typedef ParticleLayout::SingleParticleIndex SingleParticleIndex;
+  using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
   TinyVector<std::string, DIM> bconds("p");
 
   Tensor<OHMMS_PRECISION_FULL, DIM> lattice_in;

@@ -76,7 +76,7 @@ struct OMPallocator : public HostAllocator
   template<class U, class V>
   struct rebind
   {
-    typedef OMPallocator<U, V> other;
+    using other = OMPallocator<U, V>;
   };
 
   value_type* allocate(std::size_t n)

@@ -31,7 +31,7 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  typedef OneDimGridBase<double> GridType;
+  using GridType = OneDimGridBase<double>;
 
   Matrix<CuspCorrectionParameters> info;
   int num_center       = 3;
@@ -135,7 +135,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   // N is first atom
   int center_idx = 0;
 
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   splitPhiEta(center_idx, corrCenter, phi, eta);
 

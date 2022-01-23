@@ -35,7 +35,7 @@ class IOVarASCII;
 //     ArraySectionInfo<T5>::rank + ArraySectionInfo<T6>::rank + ArraySectionInfo<T7>::rank +
 //     ArraySectionInfo<T8>::rank + ArraySectionInfo<T9>::rank + ArraySectionInfo<T10>::rank;
 
-//     typedef IOVarASCII<T,rank> SliceType;
+//     using SliceType = IOVarASCII<T,rank>;
 //   };
 
 template<typename T,
@@ -59,8 +59,8 @@ public:
        SliceCheck<T4>::isSlice + SliceCheck<T5>::isSlice + SliceCheck<T6>::isSlice + SliceCheck<T7>::isSlice +
        SliceCheck<T8>::isSlice + SliceCheck<T9>::isSlice + SliceCheck<T10>::isSlice);
 
-  typedef IOVarASCII<T, rank> SliceType;
-  typedef Array<T, rank> T_slice;
+  using SliceType = IOVarASCII<T, rank>;
+  using T_slice = Array<T, rank>;
 };
 
 template<typename T, int RANK>
@@ -450,7 +450,7 @@ template<typename T0,
 typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::SliceType IOVarASCII<T, RANK>::
     Slice(T0 s0, T1 s1, T2 s2, T3 s3, T4 s4, T5 s5, T6 s6, T7 s7, T8 s8, T9 s9, T10 s10)
 {
-  typedef typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::SliceType newSliceType;
+  using newSliceType = typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::SliceType;
   newSliceType newVar(Name);
   newVar.ArrayValue.reference(ArrayValue(s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10));
   return newVar;

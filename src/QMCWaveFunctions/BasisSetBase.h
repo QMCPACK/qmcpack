@@ -38,20 +38,20 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   {
     MAXINDEX = 2 + OHMMS_DIM
   };
-  typedef typename OrbitalSetTraits<T>::RealType RealType;
-  typedef typename OrbitalSetTraits<T>::ValueType ValueType;
-  typedef typename OrbitalSetTraits<T>::IndexType IndexType;
-  typedef typename OrbitalSetTraits<T>::HessType HessType;
-  typedef typename OrbitalSetTraits<T>::IndexVector IndexVector;
-  typedef typename OrbitalSetTraits<T>::ValueVector ValueVector;
-  typedef typename OrbitalSetTraits<T>::ValueMatrix ValueMatrix;
-  typedef typename OrbitalSetTraits<T>::GradVector GradVector;
-  typedef typename OrbitalSetTraits<T>::GradMatrix GradMatrix;
-  typedef typename OrbitalSetTraits<T>::HessVector HessVector;
-  typedef typename OrbitalSetTraits<T>::HessMatrix HessMatrix;
-  typedef TinyVector<HessType, OHMMS_DIM> GGGType;
-  typedef Vector<GGGType> GGGVector;
-  typedef Matrix<GGGType> GGGMatrix;
+  using RealType = typename OrbitalSetTraits<T>::RealType;
+  using ValueType = typename OrbitalSetTraits<T>::ValueType;
+  using IndexType = typename OrbitalSetTraits<T>::IndexType;
+  using HessType = typename OrbitalSetTraits<T>::HessType;
+  using IndexVector = typename OrbitalSetTraits<T>::IndexVector;
+  using ValueVector = typename OrbitalSetTraits<T>::ValueVector;
+  using ValueMatrix = typename OrbitalSetTraits<T>::ValueMatrix;
+  using GradVector = typename OrbitalSetTraits<T>::GradVector;
+  using GradMatrix = typename OrbitalSetTraits<T>::GradMatrix;
+  using HessVector = typename OrbitalSetTraits<T>::HessVector;
+  using HessMatrix = typename OrbitalSetTraits<T>::HessMatrix;
+  using GGGType = TinyVector<HessType, OHMMS_DIM>;
+  using GGGVector = Vector<GGGType>;
+  using GGGMatrix = Matrix<GGGType>;
 
 
   ///size of the basis set
@@ -136,10 +136,10 @@ struct BasisSetBase : public OrbitalSetTraits<T>
 template<typename T>
 struct SoaBasisSetBase
 {
-  typedef T value_type;
-  typedef VectorSoaContainer<T, OHMMS_DIM + 2> vgl_type;
-  typedef VectorSoaContainer<T, 10> vgh_type;
-  typedef VectorSoaContainer<T, 20> vghgh_type;
+  using value_type = T;
+  using vgl_type = VectorSoaContainer<T, OHMMS_DIM + 2>;
+  using vgh_type = VectorSoaContainer<T, 10>;
+  using vghgh_type = VectorSoaContainer<T, 20>;
   ///size of the basis set
   int BasisSetSize;
 

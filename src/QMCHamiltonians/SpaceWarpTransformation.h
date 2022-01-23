@@ -25,9 +25,9 @@ namespace qmcplusplus
  */
 class SpaceWarpTransformation : public QMCTraits
 {
-  typedef ParticleSet::ParticleScalar ParticleScalar;
-  typedef ParticleSet::ParticlePos Force_t;
-  typedef ParticleSet::ParticleGradient ParticleGradient;
+  using ParticleScalar = ParticleSet::ParticleScalar;
+  using Force_t = ParticleSet::ParticlePos;
+  using ParticleGradient = ParticleSet::ParticleGradient;
 
 public:
   SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions);

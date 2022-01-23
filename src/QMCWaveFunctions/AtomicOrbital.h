@@ -39,12 +39,12 @@ struct AtomicOrbitalTraits
 template<>
 struct AtomicOrbitalTraits<double>
 {
-  typedef multi_UBspline_1d_d SplineType;
+  using SplineType = multi_UBspline_1d_d;
 };
 template<>
 struct AtomicOrbitalTraits<std::complex<double>>
 {
-  typedef multi_UBspline_1d_z SplineType;
+  using SplineType = multi_UBspline_1d_z;
 };
 
 inline void EinsplineMultiEval(multi_UBspline_1d_d* spline, double x, double* val)
@@ -73,16 +73,16 @@ template<typename StorageType>
 class AtomicOrbital
 {
 public:
-  typedef QMCTraits::PosType PosType;
-  typedef QMCTraits::RealType RealType;
-  typedef CrystalLattice<RealType, OHMMS_DIM> UnitCellType;
-  typedef Vector<double> RealValueVector;
-  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector;
-  typedef Vector<std::complex<double>> ComplexValueVector;
-  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector;
-  typedef Vector<Tensor<double, OHMMS_DIM>> RealHessVector;
-  typedef Vector<Tensor<std::complex<double>, OHMMS_DIM>> ComplexHessVector;
-  typedef typename AtomicOrbitalTraits<StorageType>::SplineType SplineType;
+  using PosType = QMCTraits::PosType;
+  using RealType = QMCTraits::RealType;
+  using UnitCellType = CrystalLattice<RealType, OHMMS_DIM>;
+  using RealValueVector = Vector<double>;
+  using RealGradVector = Vector<TinyVector<double, OHMMS_DIM>>;
+  using ComplexValueVector = Vector<std::complex<double>>;
+  using ComplexGradVector = Vector<TinyVector<std::complex<double>, OHMMS_DIM>>;
+  using RealHessVector = Vector<Tensor<double, OHMMS_DIM>>;
+  using ComplexHessVector = Vector<Tensor<std::complex<double>, OHMMS_DIM>>;
+  using SplineType = typename AtomicOrbitalTraits<StorageType>::SplineType;
 
 private:
   // Store in order

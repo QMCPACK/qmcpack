@@ -204,7 +204,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AB()
   int nelns = PtclTarg.getTotalNum();
   int nions = PtclA.getTotalNum();
 
-  typedef LRHandlerType::mRealType mRealType;
+  using mRealType = LRHandlerType::mRealType;
 
   SymTensor<mRealType, OHMMS_DIM> Consts = 0.0;
   SymTensor<mRealType, OHMMS_DIM> vs_k0  = AA->evaluateSR_k0_dstrain();

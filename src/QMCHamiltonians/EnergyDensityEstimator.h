@@ -25,8 +25,8 @@ namespace qmcplusplus
 class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
 {
 public:
-  typedef ReferencePoints::Point Point;
-  typedef std::map<std::string, ParticleSet*> PSPool;
+  using Point = ReferencePoints::Point;
+  using PSPool = std::map<std::string, ParticleSet*>;
 
   EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE);
   ~EnergyDensityEstimator() override;

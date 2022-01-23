@@ -32,8 +32,8 @@ namespace qmcplusplus
 template<typename ST, typename LT>
 struct Gvectors
 {
-  typedef TinyVector<ST, 3> PosType;
-  typedef std::complex<ST> ValueType;
+  using PosType = TinyVector<ST, 3>;
+  using ValueType = std::complex<ST>;
 
   const LT& Lattice;
   std::vector<PosType> gvecs_cart; //Cartesian.
@@ -141,7 +141,7 @@ template<typename SA>
 class HybridRepSetReader : public SplineSetReader<SA>
 {
 public:
-  typedef SplineSetReader<SA> BaseReader;
+  using BaseReader = SplineSetReader<SA>;
 
   using BaseReader::bspline;
   using BaseReader::mybuilder;
@@ -313,7 +313,7 @@ public:
     const int gvec_last  = gvec_groups[gvec_group_comm.getGroupID() + 1];
 
     // prepare Gvecs Ylm(G)
-    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+    using UnitCellType = typename EinsplineSetBuilder::UnitCellType;
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG, gvec_first,
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;

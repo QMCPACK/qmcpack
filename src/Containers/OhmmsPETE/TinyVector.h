@@ -48,7 +48,7 @@ namespace qmcplusplus
 template<class T, unsigned D>
 struct TinyVector
 {
-  typedef T Type_t;
+  using Type_t = T;
   enum
   {
     Size = D

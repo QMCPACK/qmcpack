@@ -41,8 +41,8 @@ namespace qmcplusplus
 class PWBasis : public QMCTraits
 {
 public:
-  typedef ParticleSet::ParticleLayout ParticleLayout;
-  typedef TinyVector<IndexType, 3> GIndex_t;
+  using ParticleLayout = ParticleSet::ParticleLayout;
+  using GIndex_t = TinyVector<IndexType, 3>;
 
 private:
   ///max of maxg[i]

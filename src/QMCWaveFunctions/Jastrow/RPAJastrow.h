@@ -31,9 +31,9 @@ namespace qmcplusplus
  */
 class RPAJastrow : public WaveFunctionComponent
 {
-  typedef LRHandlerBase HandlerType;
-  typedef BsplineFunctor<RealType> FuncType;
-  typedef LinearGrid<RealType> GridType;
+  using HandlerType = LRHandlerBase;
+  using FuncType = BsplineFunctor<RealType>;
+  using GridType = LinearGrid<RealType>;
 
 public:
   RPAJastrow(ParticleSet& target);

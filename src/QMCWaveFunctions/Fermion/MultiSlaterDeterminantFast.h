@@ -59,18 +59,18 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
-  typedef SPOSet* SPOSetPtr;
-  typedef OrbitalSetTraits<ValueType>::IndexVector IndexVector;
-  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
-  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix HessMatrix;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix ValueMatrix;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, 3> HessArray;
-  typedef TinyVector<HessType, OHMMS_DIM> GGGType;
-  typedef Vector<GGGType> GGGVector;
-  typedef Matrix<GGGType> GGGMatrix;
-  typedef ParticleSet::Walker_t Walker_t;
+  using SPOSetPtr = SPOSet*;
+  using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
+  using HessMatrix = OrbitalSetTraits<ValueType>::HessMatrix;
+  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using HessType = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray = Array<HessType, 3>;
+  using GGGType = TinyVector<HessType, OHMMS_DIM>;
+  using GGGVector = Vector<GGGType>;
+  using GGGMatrix = Matrix<GGGType>;
+  using Walker_t = ParticleSet::Walker_t;
 
 
   ///constructor

@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 struct PolynomialFunctor3D : public OptimizableFunctorBase
 {
-  typedef real_type value_type;
+  using value_type = real_type;
   int N_eI, N_ee;
   Array<real_type, 3> gamma;
   // Permutation vector, used when we need to pivot

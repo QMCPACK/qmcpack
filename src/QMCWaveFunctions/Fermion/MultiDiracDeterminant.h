@@ -40,13 +40,13 @@ public:
   // Optimizable parameter
   opt_variables_type myVars;
 
-  typedef SPOSet::IndexVector IndexVector;
-  typedef SPOSet::ValueVector ValueVector;
-  typedef SPOSet::ValueMatrix ValueMatrix;
-  typedef SPOSet::GradVector GradVector;
-  typedef SPOSet::GradMatrix GradMatrix;
-  typedef SPOSet::HessMatrix HessMatrix;
-  typedef SPOSet::HessType HessType;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector = SPOSet::GradVector;
+  using GradMatrix = SPOSet::GradMatrix;
+  using HessMatrix = SPOSet::HessMatrix;
+  using HessType = SPOSet::HessType;
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
   std::vector<std::vector<int>> lookup_tbl;

@@ -53,16 +53,16 @@ public:
   NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
   NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer, &evalOrbTimer;
 
-  typedef OrbitalSetTraits<ValueType>::IndexVector IndexVector;
-  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
-  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix HessMatrix;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, 3> HessArray;
-  typedef TinyVector<HessType, 3> GGGType;
-  typedef Vector<GGGType> GGGVector;
-  typedef Matrix<GGGType> GGGMatrix;
-  typedef ParticleSet::Walker_t Walker_t;
+  using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
+  using HessMatrix = OrbitalSetTraits<ValueType>::HessMatrix;
+  using HessType = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray = Array<HessType, 3>;
+  using GGGType = TinyVector<HessType, 3>;
+  using GGGVector = Vector<GGGType>;
+  using GGGMatrix = Matrix<GGGType>;
+  using Walker_t = ParticleSet::Walker_t;
 
 
   ///constructor

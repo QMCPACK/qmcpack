@@ -40,10 +40,10 @@ inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allo
 template<typename T>
 struct CUDAManagedAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type = T;
+  using size_type = size_t;
+  using pointer = T*;
+  using const_pointer = const T*;
 
   CUDAManagedAllocator() = default;
   template<class U>
@@ -53,7 +53,7 @@ struct CUDAManagedAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAManagedAllocator<U> other;
+    using other = CUDAManagedAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -95,10 +95,10 @@ template<typename T>
 class CUDAAllocator
 {
 public:
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type = T;
+  using size_type = size_t;
+  using pointer = T*;
+  using const_pointer = const T*;
 
   CUDAAllocator() = default;
   template<class U>
@@ -108,7 +108,7 @@ public:
   template<class U>
   struct rebind
   {
-    typedef CUDAAllocator<U> other;
+    using other = CUDAAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -208,10 +208,10 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 template<typename T>
 struct CUDAHostAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type = T;
+  using size_type = size_t;
+  using pointer = T*;
+  using const_pointer = const T*;
 
   CUDAHostAllocator() = default;
   template<class U>
@@ -221,7 +221,7 @@ struct CUDAHostAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAHostAllocator<U> other;
+    using other = CUDAHostAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -267,7 +267,7 @@ struct CUDALockedPageAllocator : public ULPHA
   template<class U, class V>
   struct rebind
   {
-    typedef CUDALockedPageAllocator<U, V> other;
+    using other = CUDALockedPageAllocator<U, V>;
   };
 
   value_type* allocate(std::size_t n)

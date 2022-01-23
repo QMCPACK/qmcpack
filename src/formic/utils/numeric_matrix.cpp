@@ -231,7 +231,7 @@ int formic::solve_general_nonsymmetric_eigensystem(const int n,
     throw formic::Exception("threshold argument must not be negative in formic::solve_general_nonsymmetric_eigensystem");
 
   // get convenient typedef for complex
-  typedef std::complex<double> Cplx;
+  using Cplx = std::complex<double>;
 
   // get zero and one
   const Cplx c0 = std::complex<double>(0.0, 0.0);

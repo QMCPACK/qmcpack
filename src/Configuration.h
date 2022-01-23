@@ -54,18 +54,18 @@ struct QMCTraits
   };
   using QTBase = QMCTypes<OHMMS_PRECISION, DIM>;
   using QTFull = QMCTypes<OHMMS_PRECISION_FULL, DIM>;
-  typedef QTBase::RealType RealType;
-  typedef QTBase::ComplexType ComplexType;
-  typedef QTBase::ValueType ValueType;
-  typedef QTBase::PosType PosType;
-  typedef QTBase::GradType GradType;
-  typedef QTBase::TensorType TensorType;
+  using RealType = QTBase::RealType;
+  using ComplexType = QTBase::ComplexType;
+  using ValueType = QTBase::ValueType;
+  using PosType = QTBase::PosType;
+  using GradType = QTBase::GradType;
+  using TensorType = QTBase::TensorType;
   ///define other types
-  typedef OHMMS_INDEXTYPE IndexType;
-  typedef QTFull::RealType FullPrecRealType;
-  typedef QTFull::ValueType FullPrecValueType;
+  using IndexType = OHMMS_INDEXTYPE;
+  using FullPrecRealType = QTFull::RealType;
+  using FullPrecValueType = QTFull::ValueType;
   ///define PropertyList_t
-  typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
+  using PropertySetType = RecordNamedProperty<FullPrecRealType>;
 
   // Type for particle group index pairs
   using PtclGrpIndexes = std::vector<std::pair<int,int>>;
@@ -78,22 +78,22 @@ struct PtclOnLatticeTraits
   using ParticleLayout = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
   using QTFull = QMCTraits::QTFull;
 
-  typedef int Index_t;
-  typedef QTFull::RealType Scalar_t;
-  typedef QTFull::ComplexType Complex_t;
+  using Index_t = int;
+  using Scalar_t = QTFull::RealType;
+  using Complex_t = QTFull::ComplexType;
 
-  typedef ParticleLayout::SingleParticleIndex SingleParticleIndex;
-  typedef ParticleLayout::SingleParticlePos SingleParticlePos;
-  typedef ParticleLayout::Tensor_t Tensor_t;
+  using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
+  using SingleParticlePos = ParticleLayout::SingleParticlePos;
+  using Tensor_t = ParticleLayout::Tensor_t;
 
-  typedef ParticleAttrib<Index_t> ParticleIndex;
-  typedef ParticleAttrib<Scalar_t> ParticleScalar;
-  typedef ParticleAttrib<SingleParticlePos> ParticlePos;
-  typedef ParticleAttrib<Tensor_t> ParticleTensor;
+  using ParticleIndex = ParticleAttrib<Index_t>;
+  using ParticleScalar = ParticleAttrib<Scalar_t>;
+  using ParticlePos = ParticleAttrib<SingleParticlePos>;
+  using ParticleTensor = ParticleAttrib<Tensor_t>;
 
-  typedef ParticleAttrib<QTFull::GradType> ParticleGradient;
-  typedef ParticleAttrib<QTFull::ValueType> ParticleLaplacian;
-  typedef QTFull::ValueType SingleParticleValue;
+  using ParticleGradient = ParticleAttrib<QTFull::GradType>;
+  using ParticleLaplacian = ParticleAttrib<QTFull::ValueType>;
+  using SingleParticleValue = QTFull::ValueType;
 };
 
 

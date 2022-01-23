@@ -53,7 +53,7 @@ extern bool timer_max_level_exceeded;
 
 // Unsigned char gives 254 timers (0 is reserved).
 // Use a longer type (eg. unsigned short) to increase the limit.
-typedef unsigned char timer_id_t;
+using timer_id_t = unsigned char;
 
 // Key for tracking time per stack.  Parametered by size.
 template<int N>
@@ -126,7 +126,7 @@ public:
 };
 
 // N = 2 gives 16 nesting levels
-typedef StackKeyParam<2> StackKey;
+using StackKey = StackKeyParam<2>;
 
 /** Timer accumulates time and call counts
  * @tparam CLOCK can be CPUClock or FakeCPUClock

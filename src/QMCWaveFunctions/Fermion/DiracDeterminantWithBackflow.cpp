@@ -311,8 +311,8 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   GradMatrix Fmat_p, Fmat_m;
   GradVector Fdiag_p, Fdiag_m;
   HessMatrix Kij, Qij; // finite difference and analytic derivative of Fmat
-  typedef Tensor<RealType, OHMMS_DIM> HessType_0;
-  typedef TinyVector<RealType, DIM> GradType_0;
+  using HessType_0 = Tensor<RealType, OHMMS_DIM>;
+  using GradType_0 = TinyVector<RealType, DIM>;
   Matrix<GradType_0> Bij, dAij;
   Matrix<HessType_0> Aij_p, Aij_m;
   Fdiag_p.resize(NumOrbitals);

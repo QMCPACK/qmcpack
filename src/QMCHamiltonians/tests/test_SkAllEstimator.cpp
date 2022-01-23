@@ -42,7 +42,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // Boiler plate setup
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
   Communicate* c;
   c = OHMMS::Controller;

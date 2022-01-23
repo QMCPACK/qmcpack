@@ -32,7 +32,7 @@ namespace qmcplusplus
 template<class T, typename Alloc = std::allocator<T>>
 class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
 {
-  typedef Vector<T, Alloc> __my_base;
+  using __my_base = Vector<T, Alloc>;
 
 public:
   /// The unit type

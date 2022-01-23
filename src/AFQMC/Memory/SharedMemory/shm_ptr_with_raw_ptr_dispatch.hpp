@@ -218,7 +218,7 @@ struct allocator_shm_ptr_with_raw_ptr_dispatch
   template<class U>
   struct rebind
   {
-    typedef allocator_shm_ptr_with_raw_ptr_dispatch<U> other;
+    using other = allocator_shm_ptr_with_raw_ptr_dispatch<U>;
   };
   using value_type      = T;
   using pointer         = shm_ptr_with_raw_ptr_dispatch<T>;

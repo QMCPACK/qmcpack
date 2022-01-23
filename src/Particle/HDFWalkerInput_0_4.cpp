@@ -146,7 +146,7 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
     return false;
   }
 
-  typedef std::vector<QMCTraits::RealType> Buffer_t;
+  using Buffer_t = std::vector<QMCTraits::RealType>;
   Buffer_t posin;
   std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
   posin.resize(dims[0] * dims[1] * dims[2]);
@@ -213,7 +213,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
     return false;
   }
 
-  typedef std::vector<QMCTraits::RealType> Buffer_t;
+  using Buffer_t = std::vector<QMCTraits::RealType>;
 
   const int np1 = myComm->size() + 1;
   std::vector<int> counts(myComm->size()), woffsets(np1, 0);
@@ -309,7 +309,7 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
   int found_group = hin.is_group(hdf::main_state);
   hin.push(hdf::main_state);
 
-  typedef std::vector<QMCTraits::RealType> Buffer_t;
+  using Buffer_t = std::vector<QMCTraits::RealType>;
   Buffer_t posin;
   std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
 

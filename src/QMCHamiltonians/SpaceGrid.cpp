@@ -703,7 +703,7 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
 
 void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid, int grid_index) const
 {
-  typedef Matrix<int> iMatrix;
+  using iMatrix = Matrix<int>;
   iMatrix imat;
   std::vector<int> ng(1);
   int cshift = 1;

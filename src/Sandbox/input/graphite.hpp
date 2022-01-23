@@ -60,7 +60,7 @@ void tile_cell(ParticleSet& ions, Tensor<int, 3>& tmat)
 template<typename PT>
 void graphite_4x4(PT& R)
 {
-  typedef typename PT::Type_t postype;
+  using postype = typename PT::Type_t;
 
   R[0]  = postype(0.000000, 0.000000, 0.000000);
   R[1]  = postype(-0.000000, 2.685253, 0.000000);

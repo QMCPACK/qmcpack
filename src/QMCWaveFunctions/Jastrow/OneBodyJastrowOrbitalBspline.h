@@ -78,7 +78,7 @@ private:
   int N;
 
 public:
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
 
   void resetParameters(const opt_variables_type& active) override;
   void checkInVariables(opt_variables_type& active) override;

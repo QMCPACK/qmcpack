@@ -133,20 +133,20 @@ template<class... Args> class SliceInfo{};
 
 constexpr class neverDeleteData_t{} neverDeleteData;
 
-typedef double scalar;
+using scalar = double;
 
-typedef TinyVector<scalar, 1> Vec1;
-typedef TinyVector<scalar, 2> Vec2;
-typedef TinyVector<scalar, 3> Vec3;
-typedef TinyVector<scalar, 4> Vec4;
+using Vec1 = TinyVector<scalar, 1>;
+using Vec2 = TinyVector<scalar, 2>;
+using Vec3 = TinyVector<scalar, 3>;
+using Vec4 = TinyVector<scalar, 4>;
 
-typedef TinyMatrix<scalar, 2, 2> Mat2;
-typedef TinyMatrix<scalar, 3, 3> Mat3;
-typedef TinyVector<std::complex<double>, 3> cVec3;
-typedef TinyMatrix<std::complex<double>, 3, 3> cMat3;
+using Mat2 = TinyMatrix<scalar, 2, 2>;
+using Mat3 = TinyMatrix<scalar, 3, 3>;
+using cVec3 = TinyVector<std::complex<double>, 3>;
+using cMat3 = TinyMatrix<std::complex<double>, 3, 3>;
 
-//typedef TinyVector<scalar,NDIM> dVec;
-//typedef TinyVector<int,NDIM> dVecInt;
+//using dVec = TinyVector<scalar,NDIM>;
+//using dVecInt = TinyVector<int,NDIM>;
 
 /* #ifdef MAC */
 /* //  extern "C" double isnan (double x); */

@@ -28,12 +28,12 @@ class AGPDeterminant : public WaveFunctionComponent
 {
 public:
   ///define BasisSetType with RealType
-  typedef BasisSetBase<RealType> BasisSetType;
-  typedef BasisSetType::IndexVector IndexVector;
-  typedef BasisSetType::ValueVector ValueVector;
-  typedef BasisSetType::ValueMatrix ValueMatrix;
-  typedef BasisSetType::GradVector GradVector;
-  typedef BasisSetType::GradMatrix GradMatrix;
+  using BasisSetType = BasisSetBase<RealType>;
+  using IndexVector = BasisSetType::IndexVector;
+  using ValueVector = BasisSetType::ValueVector;
+  using ValueMatrix = BasisSetType::ValueMatrix;
+  using GradVector = BasisSetType::GradVector;
+  using GradMatrix = BasisSetType::GradMatrix;
 
   BasisSetType* GeminalBasis;
 

@@ -268,8 +268,8 @@ void BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::
                                                                                      const int* offset,
                                                                                      const int* N)
 {
-  typedef typename bspline_type<MBT>::value_type out_type;
-  typedef typename bspline_type<UBT>::value_type in_type;
+  using out_type = typename bspline_type<MBT>::value_type;
+  using in_type = typename bspline_type<UBT>::value_type;
   intptr_t x_stride_in  = single->x_stride;
   intptr_t y_stride_in  = single->y_stride;
   intptr_t x_stride_out = multi->x_stride;

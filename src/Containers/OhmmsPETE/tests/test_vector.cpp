@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 TEST_CASE("vector", "[OhmmsPETE]")
 {
-  typedef Vector<double> vec_t;
+  using vec_t = Vector<double>;
   vec_t A(3);
   vec_t B(3);
 

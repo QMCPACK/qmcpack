@@ -312,8 +312,8 @@ public:
     int index; // particle index
     PosType r;
   };
-  typedef std::vector<PositionChange> PosChangeVector;
-  typedef std::vector<ValueType> ValueVector;
+  using PosChangeVector = std::vector<PositionChange>;
+  using ValueVector = std::vector<ValueType>;
 
 
   /** Generate points to evaluate */

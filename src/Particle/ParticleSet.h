@@ -53,11 +53,11 @@ class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatt
 {
 public:
   /// walker type
-  typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
+  using Walker_t = Walker<QMCTraits, PtclOnLatticeTraits>;
   /// container type to store the property
-  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
+  using PropertyContainer_t = Walker_t::PropertyContainer_t;
   /// buffer type for a serialized buffer
-  typedef PooledData<RealType> Buffer_t;
+  using Buffer_t = PooledData<RealType>;
 
   enum quantum_domains
   {

@@ -36,9 +36,9 @@ namespace qmcplusplus
 template<typename SA>
 struct SplineSetReader : public BsplineReaderBase
 {
-  typedef SA splineset_t;
-  typedef typename splineset_t::DataType DataType;
-  typedef typename splineset_t::SplineType SplineType;
+  using splineset_t = SA;
+  using DataType = typename splineset_t::DataType;
+  using SplineType = typename splineset_t::SplineType;
 
   Array<std::complex<double>, 3> FFTbox;
   Array<double, 3> splineData_r, splineData_i;

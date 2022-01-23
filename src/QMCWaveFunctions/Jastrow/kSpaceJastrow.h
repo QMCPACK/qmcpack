@@ -76,7 +76,7 @@ public:
   } SymmetryType;
 
 private:
-  typedef std::complex<RealType> ComplexType;
+  using ComplexType = std::complex<RealType>;
   ////////////////
   // Basic data //
   ////////////////

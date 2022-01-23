@@ -30,7 +30,7 @@ namespace qmcplusplus
 class WaveFunctionFactory : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
 
   /** constructor
    * @param psiName name for both the factory and psi

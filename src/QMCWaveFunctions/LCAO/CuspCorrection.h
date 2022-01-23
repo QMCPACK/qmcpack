@@ -43,8 +43,8 @@ namespace qmcplusplus
 
 struct CuspCorrectionParameters
 {
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::RealType RealType;
+  using ValueType = QMCTraits::ValueType;
+  using RealType = QMCTraits::RealType;
 
   /// The cutoff radius
   RealType Rc;
@@ -70,12 +70,12 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
 
 class OneMolecularOrbital
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::GradType GradType;
-  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
-  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
-  typedef SPOSet* SPOSetPtr;
+  using RealType = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using GradType = QMCTraits::GradType;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
+  using SPOSetPtr = SPOSet*;
 
 public:
   RealType phi(RealType r)
@@ -144,7 +144,7 @@ private:
 
 class CuspCorrection
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
 public:
   inline RealType phiBar(RealType r, OneMolecularOrbital& phiMO)
@@ -202,10 +202,10 @@ void computeRadialPhiBar(ParticleSet* targetP,
                          Vector<QMCTraits::RealType>& rad_orb,
                          const CuspCorrectionParameters& data);
 
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::ValueType ValueType;
-typedef QMCTraits::GradType GradType;
-typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
+using RealType = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
+using GradType = QMCTraits::GradType;
+using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
 
 /** Ideal local energy at one point
  * @param r  input radial distance
