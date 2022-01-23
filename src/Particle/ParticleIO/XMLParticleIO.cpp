@@ -76,8 +76,7 @@ void setSpeciesProperty(SpeciesSet& tspecies, int sid, xmlNodePtr cur)
 }
 
 
-XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize)
-    : AssignmentOnly(donotresize), ref_(aptcl)
+XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize) : AssignmentOnly(donotresize), ref_(aptcl)
 {
   //add ref particle attributes
   ref_.createAttributeList(ref_AttribList);
@@ -415,28 +414,28 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
     if (t_id == PA_IndexType)
     {
       ParticleIndex* obj = nullptr;
-      obj                  = ref_AttribList.getAttribute(otype, oname, obj);
+      obj                = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticleIndex> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
     else if (t_id == PA_ScalarType)
     {
       ParticleScalar* obj = nullptr;
-      obj                   = ref_AttribList.getAttribute(otype, oname, obj);
+      obj                 = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticleScalar> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
     else if (t_id == PA_PositionType)
     {
       ParticlePos* obj = nullptr;
-      obj                = ref_AttribList.getAttribute(otype, oname, obj);
+      obj              = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticlePos> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }
     else if (t_id == PA_TensorType)
     {
       ParticleTensor* obj = nullptr;
-      obj                   = ref_AttribList.getAttribute(otype, oname, obj);
+      obj                 = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticleTensor> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, nat, nloc);
     }

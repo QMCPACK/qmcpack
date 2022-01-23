@@ -42,7 +42,7 @@ class PWBasis : public QMCTraits
 {
 public:
   using ParticleLayout = ParticleSet::ParticleLayout;
-  using GIndex_t = TinyVector<IndexType, 3>;
+  using GIndex_t       = TinyVector<IndexType, 3>;
 
 private:
   ///max of maxg[i]

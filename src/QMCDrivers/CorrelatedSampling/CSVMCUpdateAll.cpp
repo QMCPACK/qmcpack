@@ -104,7 +104,7 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       W.L = *L1[ipsi];
       W.G = *G1[ipsi];
 
-      RealType et                                 = H1[ipsi]->evaluate(W);
+      RealType et                                     = H1[ipsi]->evaluate(W);
       thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
       thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];
@@ -202,9 +202,9 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
     thisWalker.G            = cumGrad;
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
-      W.L                                         = *L1[ipsi];
-      W.G                                         = *G1[ipsi];
-      RealType et                                 = H1[ipsi]->evaluate(W);
+      W.L                                             = *L1[ipsi];
+      W.G                                             = *G1[ipsi];
+      RealType et                                     = H1[ipsi]->evaluate(W);
       thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
       thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];

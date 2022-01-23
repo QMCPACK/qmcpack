@@ -35,7 +35,7 @@ template<class T, class CT = Vector<T>>
 struct OneDimGridBase
 {
   using value_type = T;
-  using Array_t = CT;
+  using Array_t    = CT;
 
 
   int GridTag;

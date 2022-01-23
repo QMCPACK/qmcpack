@@ -60,7 +60,7 @@ public:
        SliceCheck<T8>::isSlice + SliceCheck<T9>::isSlice + SliceCheck<T10>::isSlice);
 
   using SliceType = IOVarASCII<T, rank>;
-  using T_slice = Array<T, rank>;
+  using T_slice   = Array<T, rank>;
 };
 
 template<typename T, int RANK>
@@ -102,11 +102,12 @@ public:
 
   bool VarRead(Array<T, RANK>& val);
   template<class TT>
-  bool VarRead(Array<TT, 1>& val){
-  	assert(0);
-	return false;
+  bool VarRead(Array<TT, 1>& val)
+  {
+    assert(0);
+    return false;
   }
- 
+
   template<typename T0,
            typename T1,
            typename T2,
@@ -345,10 +346,10 @@ inline int IOVarASCII<T, RANK>::GetExtent(int dim)
 template<typename T, int RANK>
 inline void IOVarASCII<T, RANK>::Resize(int n)
 {
-//  TinyVector<int, RANK> 
-  auto dims = ArrayValue.shape();
+  //  TinyVector<int, RANK>
+  auto dims         = ArrayValue.shape();
   std::get<0>(dims) = n;
-//  dims[0]                    = n;
+  //  dims[0]                    = n;
   ArrayValue.resizeAndPreserve(dims);
 }
 

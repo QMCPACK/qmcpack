@@ -47,10 +47,7 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
-  {
-    className="PWRealOrbitalSet";
-  }
+  PWRealOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0) { className = "PWRealOrbitalSet"; }
 
   /** delete BasisSet only it owns this
    *

@@ -24,9 +24,9 @@ namespace qmcplusplus
 class PSdispatcher
 {
 public:
-  using Walker_t            = ParticleSet::Walker_t;
+  using Walker_t          = ParticleSet::Walker_t;
   using SingleParticlePos = ParticleSet::SingleParticlePos;
-  using Scalar_t            = ParticleSet::Scalar_t;
+  using Scalar_t          = ParticleSet::Scalar_t;
 
   PSdispatcher(bool use_batch);
 

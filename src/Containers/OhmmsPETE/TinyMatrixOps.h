@@ -467,7 +467,7 @@ struct OTBinary<T1, TinyMatrix<T2, 2, 2>, OP>
 template<class T1, class T2, class OP>
 struct OTBinary<TinyMatrix<T1, 3, 3>, TinyMatrix<T2, 3, 3>, OP>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OP>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OP>::Type_t;
   using Return_t = TinyMatrix<Type_t, 3, 3>;
   inline static Return_t apply(const TinyMatrix<T1, 3, 3>& lhs, const TinyMatrix<T2, 3, 3>& rhs, OP op)
   {
@@ -479,7 +479,7 @@ struct OTBinary<TinyMatrix<T1, 3, 3>, TinyMatrix<T2, 3, 3>, OP>
 template<class T1, class T2, class OP>
 struct OTBinary<TinyMatrix<T1, 3, 3>, T2, OP>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OP>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OP>::Type_t;
   using Return_t = TinyMatrix<Type_t, 3, 3>;
   inline static Return_t apply(const TinyMatrix<T1, 3, 3>& lhs, T2 rhs, OP op)
   {
@@ -491,7 +491,7 @@ struct OTBinary<TinyMatrix<T1, 3, 3>, T2, OP>
 template<class T1, class T2, class OP>
 struct OTBinary<T1, TinyMatrix<T2, 3, 3>, OP>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OP>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OP>::Type_t;
   using Return_t = TinyMatrix<Type_t, 3, 3>;
   inline static Return_t apply(T1 lhs, const TinyMatrix<T2, 3, 3>& rhs, OP op)
   {
@@ -506,7 +506,7 @@ struct OTBinary<T1, TinyMatrix<T2, 3, 3>, OP>
 template<class T1, class T2, class OP>
 struct OTBinary<TinyMatrix<T1, 4, 4>, TinyMatrix<T2, 4, 4>, OP>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OP>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OP>::Type_t;
   using Return_t = TinyMatrix<Type_t, 4, 4>;
   inline static Return_t apply(const TinyMatrix<T1, 4, 4>& lhs, const TinyMatrix<T2, 4, 4>& rhs, OP op)
   {
@@ -520,7 +520,7 @@ struct OTBinary<TinyMatrix<T1, 4, 4>, TinyMatrix<T2, 4, 4>, OP>
 template<class T1, class T2, class OP>
 struct OTBinary<TinyMatrix<T1, 4, 4>, T2, OP>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OP>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OP>::Type_t;
   using Return_t = TinyMatrix<Type_t, 4, 4>;
   inline static Return_t apply(const TinyMatrix<T1, 4, 4>& lhs, T2 rhs, OP op)
   {
@@ -534,7 +534,7 @@ struct OTBinary<TinyMatrix<T1, 4, 4>, T2, OP>
 template<class T1, class T2, class OP>
 struct OTBinary<T1, TinyMatrix<T2, 4, 4>, OP>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OP>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OP>::Type_t;
   using Return_t = TinyMatrix<Type_t, 4, 4>;
   inline static Return_t apply(T1 lhs, const TinyMatrix<T2, 4, 4>& rhs, OP op)
   {
@@ -589,7 +589,7 @@ inline TinyMatrix<T1, 4, 4> operator!(const TinyMatrix<T1, 4, 4>& a)
 template<class T1, class T2, unsigned D1, unsigned D2, unsigned D3>
 struct OTDot<TinyMatrix<T1, D1, D2>, TinyMatrix<T2, D2, D3>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyMatrix<Type_t, D1, D3>;
   inline static Return_t apply(const TinyMatrix<T1, D1, D2>& lhs, const TinyMatrix<T2, D2, D3>& rhs)
   {
@@ -609,7 +609,7 @@ struct OTDot<TinyMatrix<T1, D1, D2>, TinyMatrix<T2, D2, D3>>
 template<class T1, class T2>
 struct OTDot<TinyMatrix<T1, 3, 3>, TinyMatrix<T2, 3, 3>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyMatrix<Type_t, 3, 3>;
   inline static Return_t apply(const TinyMatrix<T1, 3, 3>& lhs, const TinyMatrix<T2, 3, 3>& rhs)
   {
@@ -634,7 +634,7 @@ struct OTDot<TinyMatrix<T1, 3, 3>, TinyMatrix<T2, 3, 3>>
 template<class T1, class T2, unsigned D1, unsigned D2>
 struct OTDot<TinyMatrix<T1, D1, D2>, TinyVector<T2, D2>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyVector<Type_t, D1>;
   inline static Return_t apply(const TinyMatrix<T1, D1, D2>& lhs, const TinyVector<T2, D2>& rhs)
   {
@@ -652,7 +652,7 @@ struct OTDot<TinyMatrix<T1, D1, D2>, TinyVector<T2, D2>>
 template<class T1, class T2, unsigned D1, unsigned D2>
 struct OTDot<TinyVector<T1, D1>, TinyMatrix<T2, D1, D2>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyVector<Type_t, D2>;
   inline static Return_t apply(const TinyVector<T1, D1>& lhs, const TinyMatrix<T2, D1, D2>& rhs)
   {
@@ -674,7 +674,7 @@ struct OTDot<TinyVector<T1, D1>, TinyMatrix<T2, D1, D2>>
 template<class T1, class T2>
 struct OTDot<TinyMatrix<T1, 3, 3>, TinyVector<T2, 3>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyVector<Type_t, 3>;
   inline static Return_t apply(const TinyMatrix<T1, 3, 3>& lhs, const TinyVector<T2, 3>& rhs)
   {
@@ -687,7 +687,7 @@ struct OTDot<TinyMatrix<T1, 3, 3>, TinyVector<T2, 3>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 3>, TinyMatrix<T2, 3, 3>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyVector<Type_t, 3>;
   inline static Return_t apply(const TinyVector<T1, 3>& lhs, const TinyMatrix<T2, 3, 3>& rhs)
   {
@@ -703,7 +703,7 @@ struct OTDot<TinyVector<T1, 3>, TinyMatrix<T2, 3, 3>>
 template<class T1, class T2>
 struct OTDot<TinyMatrix<T1, 4, 4>, TinyVector<T2, 4>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyVector<Type_t, 4>;
   inline static Return_t apply(const TinyMatrix<T1, 4, 4>& lhs, const TinyVector<T2, 4>& rhs)
   {
@@ -717,7 +717,7 @@ struct OTDot<TinyMatrix<T1, 4, 4>, TinyVector<T2, 4>>
 template<class T1, class T2>
 struct OTDot<TinyVector<T1, 4>, TinyMatrix<T2, 4, 4>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyVector<Type_t, 4>;
   inline static Return_t apply(const TinyVector<T1, 4>& lhs, const TinyMatrix<T2, 4, 4>& rhs)
   {
@@ -732,7 +732,7 @@ struct OTDot<TinyVector<T1, 4>, TinyMatrix<T2, 4, 4>>
 template<class T1, class T2>
 struct OTDot<TinyMatrix<T1, 4, 4>, TinyMatrix<T2, 4, 4>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = TinyMatrix<Type_t, 4, 4>;
   inline static Return_t apply(const TinyMatrix<T1, 4, 4>& lhs, const TinyMatrix<T2, 4, 4>& rhs)
   {

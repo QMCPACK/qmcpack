@@ -51,7 +51,7 @@ struct SPOInfo
 
   inline bool has_index() const { return index != no_index; }
 
-  inline bool has_energy() const{ return energy != no_energy; }
+  inline bool has_energy() const { return energy != no_energy; }
 
   inline bool has_degeneracy() const { return degeneracy != no_degeneracy; }
 

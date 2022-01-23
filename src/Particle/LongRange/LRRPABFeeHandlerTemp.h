@@ -38,7 +38,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
   DECLARE_COULOMB_TYPES
 
   //Typedef for the lattice-type.
-  using ParticleLayout = ParticleSet::ParticleLayout;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
   using BreakupBasisType = BreakupBasis;
 
   bool FirstTime;

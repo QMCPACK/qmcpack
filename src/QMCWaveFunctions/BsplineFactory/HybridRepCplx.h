@@ -157,11 +157,7 @@ public:
     }
   }
 
-  void evaluateVGL(const ParticleSet& P,
-                   const int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   ValueVector& d2psi) override
+  void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     const RealType smooth_factor = HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL);
     const RealType cone(1);

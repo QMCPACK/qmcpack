@@ -27,14 +27,14 @@ template<class T, typename Alloc = std::allocator<T>>
 class Matrix
 {
 public:
-  using Type_t = T;
-  using value_type = T;
-  using pointer = T*;
+  using Type_t        = T;
+  using value_type    = T;
+  using pointer       = T*;
   using const_pointer = const T*;
-  using Container_t = Vector<T, Alloc>;
-  using size_type = typename Container_t::size_type;
-  using iterator = typename Container_t::iterator;
-  using This_t = Matrix<T, Alloc>;
+  using Container_t   = Vector<T, Alloc>;
+  using size_type     = typename Container_t::size_type;
+  using iterator      = typename Container_t::iterator;
+  using This_t        = Matrix<T, Alloc>;
 
   Matrix() : D1(0), D2(0), TotSize(0) {} // Default Constructor initializes to zero.
 
@@ -410,7 +410,7 @@ template<class T, typename Alloc>
 std::ostream& operator<<(std::ostream& out, const Matrix<T, Alloc>& rhs)
 {
   using size_type = typename Matrix<T, Alloc>::size_type;
-  size_type ii = 0;
+  size_type ii    = 0;
   for (size_type i = 0; i < rhs.rows(); i++)
   {
     for (size_type j = 0; j < rhs.cols(); j++)

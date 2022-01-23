@@ -952,13 +952,13 @@ inline Tensor<T, 3> cholesky(const Tensor<T, 3>& a)
   Tensor<T, 3> L;
   T L00Inv;
   //L = T(0); // already done by default constructor
-  L(0,0) = sqrt(a(0,0));
-  L00Inv = 1.0/L(0,0);
-  L(1,0) = a(1,0)*L00Inv;
-  L(2,0) = a(2,0)*L00Inv;
-  L(1,1) = sqrt(a(1,1)-L(1,0)*L(1,0));
-  L(2,1) = (a(2,1)-L(2,0)*L(1,0))/L(1,1);
-  L(2,2) = sqrt(a(2,2)-(L(2,0)*L(2,0)+L(2,1)*L(2,1)));
+  L(0, 0) = sqrt(a(0, 0));
+  L00Inv  = 1.0 / L(0, 0);
+  L(1, 0) = a(1, 0) * L00Inv;
+  L(2, 0) = a(2, 0) * L00Inv;
+  L(1, 1) = sqrt(a(1, 1) - L(1, 0) * L(1, 0));
+  L(2, 1) = (a(2, 1) - L(2, 0) * L(1, 0)) / L(1, 1);
+  L(2, 2) = sqrt(a(2, 2) - (L(2, 0) * L(2, 0) + L(2, 1) * L(2, 1)));
   return L;
 }
 

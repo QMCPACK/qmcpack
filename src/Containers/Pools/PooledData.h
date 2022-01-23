@@ -30,7 +30,7 @@ template<class T>
 struct PooledData
 {
   using value_type = T;
-  using size_type = typename std::vector<T>::size_type;
+  using size_type  = typename std::vector<T>::size_type;
 
   size_type Current;
   std::vector<T> myData;

@@ -46,8 +46,8 @@ public:
     }
   };
 
-  using CountingIterator = typename thrust::counting_iterator<difference_type>;
-  using TransformIterator = typename thrust::transform_iterator<stride_functor, CountingIterator>;
+  using CountingIterator    = typename thrust::counting_iterator<difference_type>;
+  using TransformIterator   = typename thrust::transform_iterator<stride_functor, CountingIterator>;
   using PermutationIterator = typename thrust::permutation_iterator<Iterator, TransformIterator>;
 
   // type of the strided_2Drange iterator

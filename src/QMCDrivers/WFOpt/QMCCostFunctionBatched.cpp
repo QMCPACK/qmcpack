@@ -284,11 +284,11 @@ void QMCCostFunctionBatched::checkConfigurations()
 
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                          std::vector<int>& samples_per_crowd, int crowd_size,
-                          std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
-                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
-                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
+                          std::vector<int>& samples_per_crowd, int crowd_size, std::vector<ParticleGradient*>& gradPsi,
+                          std::vector<ParticleLaplacian*>& lapPsi, Matrix<Return_rt>& RecordsOnNode,
+                          Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
+                          opt_variables_type& optVars, bool needGrads, bool compute_nlpp,
+                          const std::string& includeNonlocalH) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];

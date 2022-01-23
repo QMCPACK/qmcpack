@@ -209,7 +209,7 @@ void generateCuspInfo(int orbital_set_size,
   std::vector<bool> corrCenter(num_centers, "true");
 
   using GridType = OneDimGridBase<RealType>;
-  int npts = 500;
+  int npts       = 500;
 
   // Parallelize correction of MO's across MPI ranks
   std::vector<int> offset;

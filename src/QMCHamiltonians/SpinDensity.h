@@ -23,8 +23,8 @@ class SpinDensity : public OperatorBase
 {
 public:
   using Lattice_t = ParticleSet::ParticleLayout;
-  using dens_t = std::vector<RealType>;
-  using pts_t = std::vector<PosType>;
+  using dens_t    = std::vector<RealType>;
+  using pts_t     = std::vector<PosType>;
 
   ParticleSet* Ptmp;
 

@@ -43,18 +43,18 @@ public:
   using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
   using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
-  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
-  using GradMatrix = OrbitalSetTraits<ValueType>::GradMatrix;
-  using HessVector = OrbitalSetTraits<ValueType>::HessVector;
-  using HessMatrix = OrbitalSetTraits<ValueType>::HessMatrix;
-  using HessType = OrbitalSetTraits<ValueType>::HessType;
-  using HessArray = Array<HessType, OHMMS_DIM>;
-  using GGGType = OrbitalSetTraits<ValueType>::GradHessType;
-  using GGGVector = OrbitalSetTraits<ValueType>::GradHessVector;
-  using GGGMatrix = OrbitalSetTraits<ValueType>::GradHessMatrix;
-  using VGLVector = OrbitalSetTraits<ValueType>::VGLVector;
-  using Walker_t = ParticleSet::Walker_t;
-  using SPOPool_t = std::map<std::string, SPOSet*>;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using GradMatrix  = OrbitalSetTraits<ValueType>::GradMatrix;
+  using HessVector  = OrbitalSetTraits<ValueType>::HessVector;
+  using HessMatrix  = OrbitalSetTraits<ValueType>::HessMatrix;
+  using HessType    = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray   = Array<HessType, OHMMS_DIM>;
+  using GGGType     = OrbitalSetTraits<ValueType>::GradHessType;
+  using GGGVector   = OrbitalSetTraits<ValueType>::GradHessVector;
+  using GGGMatrix   = OrbitalSetTraits<ValueType>::GradHessMatrix;
+  using VGLVector   = OrbitalSetTraits<ValueType>::VGLVector;
+  using Walker_t    = ParticleSet::Walker_t;
+  using SPOPool_t   = std::map<std::string, SPOSet*>;
 
   /** constructor */
   SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
@@ -226,11 +226,7 @@ public:
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
    */
-  virtual void evaluateVGL(const ParticleSet& P,
-                           int iat,
-                           ValueVector& psi,
-                           GradVector& dpsi,
-                           ValueVector& d2psi) = 0;
+  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) = 0;
 
   /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital set
    * @param P current ParticleSet

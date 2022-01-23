@@ -29,7 +29,7 @@ namespace qmcplusplus
 class BackflowFunctionBase //: public OrbitalSetTraits<QMCTraits::ValueType>
 {
 public:
-  using Walker_t = ParticleSet::Walker_t;
+  using Walker_t     = ParticleSet::Walker_t;
   using WFBufferType = Walker_t::WFBuffer_t;
 
   // All BF quantities should be real, so eliminating complex (ValueType) possibility
@@ -37,16 +37,16 @@ public:
   {
     DIM = OHMMS_DIM
   };
-  using RealType = OHMMS_PRECISION;
-  using IndexType = int;
-  using PosType = TinyVector<RealType, DIM>;
-  using GradType = TinyVector<RealType, DIM>;
-  using HessType = Tensor<RealType, DIM>;
+  using RealType    = OHMMS_PRECISION;
+  using IndexType   = int;
+  using PosType     = TinyVector<RealType, DIM>;
+  using GradType    = TinyVector<RealType, DIM>;
+  using HessType    = Tensor<RealType, DIM>;
   using IndexVector = Vector<IndexType>;
-  using GradVector = Vector<GradType>;
-  using GradMatrix = Matrix<GradType>;
-  using HessVector = Vector<HessType>;
-  using HessMatrix = Matrix<HessType>;
+  using GradVector  = Vector<GradType>;
+  using GradMatrix  = Matrix<GradType>;
+  using HessVector  = Vector<HessType>;
+  using HessMatrix  = Matrix<HessType>;
 
   using HessArray = Array<HessType, 3>;
   //using GradArray_t = Array<GradType,3>      ;

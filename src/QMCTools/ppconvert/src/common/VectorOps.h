@@ -27,8 +27,8 @@
 #include "Blitz.h"
 #include "../config.h"
 
-using Int3 = TinyVector<int, 3>;
-using zVec = Array<std::complex<double>, 1>;
+using Int3    = TinyVector<int, 3>;
+using zVec    = Array<std::complex<double>, 1>;
 using zVecVec = Array<cVec3, 1>;
 using zMatVec = Array<cMat3, 1>;
 

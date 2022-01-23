@@ -22,7 +22,7 @@
 template<class FnOut>
 struct Transform2GridFunctorBase
 {
-  using point_type = typename FnOut::point_type;
+  using point_type                                                        = typename FnOut::point_type;
   virtual void generate(point_type ri, point_type rf, int ng, int np = 0) = 0;
   virtual void generate(int np = 0)                                       = 0;
 };
@@ -36,7 +36,7 @@ struct Transform2GridFunctorBase
 template<class FnIn, class FnOut>
 struct Transform2GridFunctor : public Transform2GridFunctorBase<FnOut>
 {
-  using result_t = typename FnIn::real_type;
+  using result_t   = typename FnIn::real_type;
   using point_type = typename FnOut::point_type;
 
   FnIn& in_;

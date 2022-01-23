@@ -32,14 +32,14 @@ class CuspCorrectionAtomicBasis;
  */
 class SoaCuspCorrection
 {
-  using ValueType = QMCTraits::ValueType;
-  using RealType = QMCTraits::RealType;
-  using VGLVector = VectorSoaContainer<ValueType, 5>;
+  using ValueType   = QMCTraits::ValueType;
+  using RealType    = QMCTraits::RealType;
+  using VGLVector   = VectorSoaContainer<ValueType, 5>;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradMatrix = SPOSet::GradMatrix;
-  using GradVector = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using GradVector  = SPOSet::GradVector;
   using ValueVector = SPOSet::ValueVector;
-  using PosType = ParticleSet::PosType;
+  using PosType     = ParticleSet::PosType;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -88,12 +88,7 @@ public:
 
   void evaluate_vgl(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
-  void evaluate_vgl(const ParticleSet& P,
-                    int iat,
-                    int idx,
-                    ValueMatrix& psi,
-                    GradMatrix& dpsi,
-                    ValueMatrix& d2psi);
+  void evaluate_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& psi, GradMatrix& dpsi, ValueMatrix& d2psi);
 
   /** compute values for the iat-paricle move
    *

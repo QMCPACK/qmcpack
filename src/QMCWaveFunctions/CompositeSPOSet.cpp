@@ -90,7 +90,7 @@ void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& 
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
   {
-    SPOSet& component     = *components[c];
+    SPOSet& component   = *components[c];
     ValueVector& values = component_values[c];
     component.evaluateValue(P, iat, values);
     std::copy(values.begin(), values.end(), psi.begin() + n);
@@ -98,16 +98,12 @@ void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& 
   }
 }
 
-void CompositeSPOSet::evaluateVGL(const ParticleSet& P,
-                                  int iat,
-                                  ValueVector& psi,
-                                  GradVector& dpsi,
-                                  ValueVector& d2psi)
+void CompositeSPOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
   {
-    SPOSet& component         = *components[c];
+    SPOSet& component       = *components[c];
     ValueVector& values     = component_values[c];
     GradVector& gradients   = component_gradients[c];
     ValueVector& laplacians = component_laplacians[c];

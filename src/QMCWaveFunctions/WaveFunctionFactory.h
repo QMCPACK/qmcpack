@@ -39,7 +39,11 @@ public:
    * @param c  communicator
    * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c, bool tasking = false);
+  WaveFunctionFactory(const std::string& psiName,
+                      ParticleSet& qp,
+                      PtclPoolType& pset,
+                      Communicate* c,
+                      bool tasking = false);
 
   ///destructor
   ~WaveFunctionFactory();
@@ -52,6 +56,7 @@ public:
   TrialWaveFunction* getTWF() const { return targetPsi.get(); }
   ///get SPOSet
   SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
+
 private:
   /** process xmlNode to populate targetPsi
    */

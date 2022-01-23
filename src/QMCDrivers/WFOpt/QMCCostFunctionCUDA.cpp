@@ -488,7 +488,7 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
       WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                          << MinNumWalkers * NumSamples)
+                                                                         << MinNumWalkers * NumSamples)
       IsValid = false;
     }
   }

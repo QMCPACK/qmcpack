@@ -31,8 +31,8 @@ struct LCAOrbitalSet : public SPOSet
 {
 public:
   using basis_type = SoaBasisSetBase<ValueType>;
-  using vgl_type = basis_type::vgl_type;
-  using vgh_type = basis_type::vgh_type;
+  using vgl_type   = basis_type::vgl_type;
+  using vgh_type   = basis_type::vgh_type;
   using vghgh_type = basis_type::vghgh_type;
 
   ///pointer to the basis set
@@ -86,11 +86,7 @@ public:
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   ValueVector& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,

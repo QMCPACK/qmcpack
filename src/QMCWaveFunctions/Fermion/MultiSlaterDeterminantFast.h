@@ -59,18 +59,18 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
-  using SPOSetPtr = SPOSet*;
+  using SPOSetPtr   = SPOSet*;
   using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
-  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
-  using HessMatrix = OrbitalSetTraits<ValueType>::HessMatrix;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using HessMatrix  = OrbitalSetTraits<ValueType>::HessMatrix;
   using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
-  using HessType = OrbitalSetTraits<ValueType>::HessType;
-  using HessArray = Array<HessType, 3>;
-  using GGGType = TinyVector<HessType, OHMMS_DIM>;
-  using GGGVector = Vector<GGGType>;
-  using GGGMatrix = Matrix<GGGType>;
-  using Walker_t = ParticleSet::Walker_t;
+  using HessType    = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray   = Array<HessType, 3>;
+  using GGGType     = TinyVector<HessType, OHMMS_DIM>;
+  using GGGVector   = Vector<GGGType>;
+  using GGGMatrix   = Matrix<GGGType>;
+  using Walker_t    = ParticleSet::Walker_t;
 
 
   ///constructor

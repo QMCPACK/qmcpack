@@ -37,11 +37,11 @@ class MCWalkerConfiguration;
 class Reptile : public QMCTraits
 {
 public:
-  using WP = WalkerProperties::Indexes;
+  using WP       = WalkerProperties::Indexes;
   using Walker_t = MCWalkerConfiguration::Walker_t;
   //using Buffer_t = Walker_t::Buffer_t             ;
   //    using Walker_t = MCWalkerConfiguration::Walker_t;
-  using WalkerIter_t = MCWalkerConfiguration::iterator;
+  using WalkerIter_t    = MCWalkerConfiguration::iterator;
   using ReptileConfig_t = std::vector<Walker_t::ParticlePos>;
 
   std::vector<IndexType> Action;

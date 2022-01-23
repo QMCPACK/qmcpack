@@ -113,7 +113,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   print_mem("Memory Usage before cloning", app_log());
   outputManager.pause();
-// clang-format off
+  // clang-format off
   #pragma omp parallel
   {
     // check sizes

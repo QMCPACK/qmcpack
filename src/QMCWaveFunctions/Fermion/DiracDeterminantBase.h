@@ -62,7 +62,7 @@ public:
   ~DiracDeterminantBase() override {}
 
   // copy constructor and assign operator disabled
-  DiracDeterminantBase(const DiracDeterminantBase& s) = delete;
+  DiracDeterminantBase(const DiracDeterminantBase& s)            = delete;
   DiracDeterminantBase& operator=(const DiracDeterminantBase& s) = delete;
 
   // get the SPO pointer

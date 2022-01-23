@@ -477,7 +477,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ)
   active_pos_      = R[iat] + displ;
   active_spin_val_ = spins[iat];
   bool is_valid    = true;
-  auto& Lattice = simulation_cell_.getLattice();
+  auto& Lattice    = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
@@ -550,7 +550,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
 
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos& deltaR, RealType dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
   auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
@@ -583,7 +583,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
                                        const ParticlePos& deltaR,
                                        const std::vector<RealType>& dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
   auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
@@ -624,7 +624,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                                 const ParticlePos& deltaR,
                                                 RealType dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
   auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
@@ -658,7 +658,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
                                                 const ParticlePos& deltaR,
                                                 const std::vector<RealType>& dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
   auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {

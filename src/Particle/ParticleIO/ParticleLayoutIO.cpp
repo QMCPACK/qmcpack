@@ -30,12 +30,12 @@ namespace qmcplusplus
 {
 bool LatticeParser::put(xmlNodePtr cur)
 {
-  const int DIM = ParticleLayout::SingleParticlePos::Size;
-  double a0     = 1.0;
-  double rs     = -1.0;
-  int nptcl     = 0;
-  int nsh       = 0; //for backwards compatibility w/ odd heg initialization style
-  int pol       = 0;
+  const int DIM             = ParticleLayout::SingleParticlePos::Size;
+  double a0                 = 1.0;
+  double rs                 = -1.0;
+  int nptcl                 = 0;
+  int nsh                   = 0; //for backwards compatibility w/ odd heg initialization style
+  int pol                   = 0;
   using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
   TinyVector<std::string, DIM> bconds("p");
 

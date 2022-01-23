@@ -135,7 +135,7 @@ void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
                                        ValueMatrix& dspinlogdet)
 {
   throw std::runtime_error("Need specialization of " + className +
-            "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
+                           "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -188,13 +188,10 @@ void SPOSet::basic_report(const std::string& pad) const
   app_log().flush();
 }
 
-void SPOSet::evaluateVGH(const ParticleSet& P,
-                         int iat,
-                         ValueVector& psi,
-                         GradVector& dpsi,
-                         HessVector& grad_grad_psi)
+void SPOSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi)
 {
-  throw std::runtime_error("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className +
+                           "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
 void SPOSet::evaluateVGHGH(const ParticleSet& P,
@@ -204,7 +201,8 @@ void SPOSet::evaluateVGHGH(const ParticleSet& P,
                            HessVector& grad_grad_psi,
                            GGGVector& grad_grad_grad_psi)
 {
-  throw std::runtime_error("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className +
+                           "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
 
 void SPOSet::evaluateGradSource(const ParticleSet& P,
@@ -231,7 +229,8 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
 
 void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
-  throw std::runtime_error("Need specialization of " + className + "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className +
+                           "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 
 #ifdef QMC_CUDA

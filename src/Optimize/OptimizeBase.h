@@ -26,8 +26,7 @@ template<class T = double>
 class CostFunctionBase
 {
 public:
-
-  using Return_t = qmcplusplus::QMCTraits::ValueType;
+  using Return_t  = qmcplusplus::QMCTraits::ValueType;
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
 
@@ -51,7 +50,9 @@ public:
 
   virtual Return_rt Cost(bool needGrad = true) = 0;
 
-  virtual void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) = 0;
+  virtual void GradCost(std::vector<Return_rt>& PGradient,
+                        const std::vector<Return_rt>& PM,
+                        Return_rt FiniteDiff = 0) = 0;
 
   virtual void Report() = 0;
 

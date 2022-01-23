@@ -322,10 +322,7 @@ public:
     //}
   }
 
-  inline void evaluatePbyP(const ParticleSet& P,
-                           int iat,
-                           ParticleSet::ParticlePos& newQP,
-                           HessMatrix& Amat) override
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTableAB(myTableIndex_);

@@ -98,7 +98,7 @@ template<class T>
 struct DeReference
 {
   using Return_t = const T&;
-  using Type_t = T;
+  using Type_t   = T;
   static inline Return_t apply(const T& a) { return a; }
 };
 
@@ -106,7 +106,7 @@ template<class T>
 struct DeReference<Reference<T>>
 {
   using Return_t = const T&;
-  using Type_t = T;
+  using Type_t   = T;
   static inline Return_t apply(const Reference<T>& a) { return a.reference(); }
 };
 

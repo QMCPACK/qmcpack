@@ -34,9 +34,9 @@ public:
   using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector = SPOSet::GradVector;
-  using GradMatrix = SPOSet::GradMatrix;
-  using Walker_t = ParticleSet::Walker_t;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using Walker_t    = ParticleSet::Walker_t;
 
   DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;

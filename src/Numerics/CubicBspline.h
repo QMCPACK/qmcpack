@@ -22,8 +22,8 @@
 template<class T, unsigned GRIDTYPE, unsigned BC>
 struct CubicBspline : public CubicBsplineGrid<T, GRIDTYPE, BC>
 {
-  using point_type = typename CubicBsplineGrid<T, GRIDTYPE, BC>::point_type;
-  using value_type = typename CubicBsplineGrid<T, GRIDTYPE, BC>::value_type;
+  using point_type     = typename CubicBsplineGrid<T, GRIDTYPE, BC>::point_type;
+  using value_type     = typename CubicBsplineGrid<T, GRIDTYPE, BC>::value_type;
   using container_type = typename CubicBsplineGrid<T, GRIDTYPE, BC>::container_type;
 
   using CubicBsplineGrid<T, GRIDTYPE, BC>::tp;

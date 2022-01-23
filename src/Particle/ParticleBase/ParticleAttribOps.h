@@ -227,11 +227,11 @@ struct PAOps
 template<class T, class T1>
 struct PAOps<T, 3, T1>
 {
-  using real_type = T;
+  using real_type    = T;
   using complex_type = std::complex<T>;
-  using rpos_type = TinyVector<T, 3>;
-  using ipos_type = TinyVector<T1, 3>;
-  using cpos_type = TinyVector<std::complex<T1>, 3>;
+  using rpos_type    = TinyVector<T, 3>;
+  using ipos_type    = TinyVector<T1, 3>;
+  using cpos_type    = TinyVector<std::complex<T1>, 3>;
 
   static inline void scale(T a, const ParticleAttrib<cpos_type>& pa, ParticleAttrib<rpos_type>& pb)
   {
@@ -308,11 +308,11 @@ struct PAOps<T, 3, T1>
 template<class T, class T1>
 struct PAOps<T, 2, T1>
 {
-  using real_type = T;
+  using real_type    = T;
   using complex_type = std::complex<T>;
-  using rpos_type = TinyVector<T, 2>;
-  using ipos_type = TinyVector<T1, 2>;
-  using cpos_type = TinyVector<std::complex<T1>, 2>;
+  using rpos_type    = TinyVector<T, 2>;
+  using ipos_type    = TinyVector<T1, 2>;
+  using cpos_type    = TinyVector<std::complex<T1>, 2>;
 
   static inline void scale(T a, const ParticleAttrib<cpos_type>& pa, ParticleAttrib<rpos_type>& pb)
   {

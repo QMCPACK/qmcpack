@@ -23,14 +23,17 @@ namespace qmcplusplus
 // for return types
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
-SlaterDet::SlaterDet(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, const std::string& class_name) : WaveFunctionComponent(class_name), Dets(std::move(dets))
+SlaterDet::SlaterDet(ParticleSet& targetPtcl,
+                     std::vector<std::unique_ptr<Determinant_t>> dets,
+                     const std::string& class_name)
+    : WaveFunctionComponent(class_name), Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
   is_fermionic = true;
 
   Optimizable = false;
-  for(const auto& det : Dets)
+  for (const auto& det : Dets)
     Optimizable = Optimizable || det->Optimizable;
 
   Last.resize(targetPtcl.groups());
@@ -199,7 +202,8 @@ void SlaterDet::createResource(ResourceCollection& collection) const
     Dets[i]->createResource(collection);
 }
 
-void SlaterDet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void SlaterDet::acquireResource(ResourceCollection& collection,
+                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
   {
@@ -208,7 +212,8 @@ void SlaterDet::acquireResource(ResourceCollection& collection, const RefVectorW
   }
 }
 
-void SlaterDet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void SlaterDet::releaseResource(ResourceCollection& collection,
+                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
   {

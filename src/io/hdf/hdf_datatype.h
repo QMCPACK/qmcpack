@@ -50,9 +50,9 @@ BOOSTSUB_H5_DATATYPE(float, H5T_NATIVE_FLOAT);
 BOOSTSUB_H5_DATATYPE(double, H5T_NATIVE_DOUBLE);
 
 #else
-using hid_t = int;
-using herr_t = int;
-using hsize_t = std::size_t;
+using hid_t           = int;
+using herr_t          = int;
+using hsize_t         = std::size_t;
 const int H5P_DEFAULT = 0;
 
 //return a non-sense integer

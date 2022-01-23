@@ -230,7 +230,7 @@ void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TW
 {
   std::ostringstream o;
   o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
-  APP_ABORT(o.str()); 
+  APP_ABORT(o.str());
 }
 
 } // namespace qmcplusplus

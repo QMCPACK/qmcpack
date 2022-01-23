@@ -185,7 +185,7 @@ template<class MatrixA>
 inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true)
 {
   using value_type = typename MatrixA::value_type;
-  const int n = M.rows();
+  const int n      = M.rows();
   std::vector<int> pivot(n);
   std::vector<value_type> work(n);
   LUFactorization(n, n, M.data(), n, pivot.data());

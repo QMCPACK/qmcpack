@@ -33,14 +33,14 @@ template<class T, typename Alloc = std::allocator<T>>
 class Vector
 {
 public:
-  using Type_t = T;
-  using value_type = T;
-  using iterator = T*;
+  using Type_t         = T;
+  using value_type     = T;
+  using iterator       = T*;
   using const_iterator = const T*;
-  using size_type = typename Alloc::size_type;
-  using pointer = typename Alloc::pointer;
-  using const_pointer = typename Alloc::const_pointer;
-  using This_t = Vector<T, Alloc>;
+  using size_type      = typename Alloc::size_type;
+  using pointer        = typename Alloc::pointer;
+  using const_pointer  = typename Alloc::const_pointer;
+  using This_t         = Vector<T, Alloc>;
 
   /** constructor with size n*/
   explicit inline Vector(size_t n = 0, Type_t val = Type_t()) : nLocal(n)

@@ -40,9 +40,9 @@ inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allo
 template<typename T>
 struct CUDAManagedAllocator
 {
-  using value_type = T;
-  using size_type = size_t;
-  using pointer = T*;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
   using const_pointer = const T*;
 
   CUDAManagedAllocator() = default;
@@ -95,9 +95,9 @@ template<typename T>
 class CUDAAllocator
 {
 public:
-  using value_type = T;
-  using size_type = size_t;
-  using pointer = T*;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
   using const_pointer = const T*;
 
   CUDAAllocator() = default;
@@ -155,19 +155,19 @@ public:
   void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
   {
     cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
-                     "cudaMemcpy failed in copyToDevice");
+                   "cudaMemcpy failed in copyToDevice");
   }
 
   void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
   {
     cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
-                     "cudaMemcpy failed in copyFromDevice");
+                   "cudaMemcpy failed in copyFromDevice");
   }
 
   void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
   {
-      cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
-                     "cudaMemcpy failed in copyDeviceToDevice");
+    cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
+                   "cudaMemcpy failed in copyDeviceToDevice");
   }
 };
 
@@ -199,7 +199,6 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
     T* device_ptr = alloc.getDevicePtr(host_ptr);
     copyFromDevice(host_ptr, device_ptr, n);
   }
-
 };
 
 /** allocator for CUDA host pinned memory
@@ -208,9 +207,9 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 template<typename T>
 struct CUDAHostAllocator
 {
-  using value_type = T;
-  using size_type = size_t;
-  using pointer = T*;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
   using const_pointer = const T*;
 
   CUDAHostAllocator() = default;
@@ -230,8 +229,7 @@ struct CUDAHostAllocator
     cudaErrorCheck(cudaMallocHost(&pt, n * sizeof(T)), "Allocation failed in CUDAHostAllocator!");
     return static_cast<T*>(pt);
   }
-  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!");
-  }
+  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!"); }
 };
 
 template<class T1, class T2>

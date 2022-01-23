@@ -29,10 +29,10 @@ struct BlockHistogram
   std::deque<T> myData;
 
   //typedef for iterator
-  using value_type = T;
-  using reference = T&;
-  using size_type = typename std::deque<T>::size_type;
-  using iterator = typename std::deque<T>::iterator;
+  using value_type     = T;
+  using reference      = T&;
+  using size_type      = typename std::deque<T>::size_type;
+  using iterator       = typename std::deque<T>::iterator;
   using const_iterator = typename std::deque<T>::const_iterator;
 
   /** default constructor

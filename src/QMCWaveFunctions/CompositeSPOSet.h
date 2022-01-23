@@ -54,11 +54,7 @@ public:
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   ValueVector& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
@@ -95,7 +91,9 @@ public:
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
+  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory)
+      : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory)
+  {}
 
   //SPOSetBuilder interface
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;

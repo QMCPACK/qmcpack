@@ -232,7 +232,7 @@ inline void serial_comb(std::vector<std::pair<double, int>>& buff, Random& rng)
 template<class Random>
 inline void pair_branch(std::vector<std::pair<double, int>>& buff, Random& rng, double max_c, double min_c)
 {
-  using tp = std::tuple<double, int, int>;
+  using tp    = std::tuple<double, int, int>;
   using tp_it = std::vector<tp>::iterator;
   // slow for now, not efficient!!!
   int nw = buff.size();

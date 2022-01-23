@@ -32,8 +32,8 @@ struct CubicBsplineGrid
 template<class T>
 struct CubicBsplineGrid<T, LINEAR_1DGRID, PBC_CONSTRAINTS>
 {
-  using point_type = typename GridTraits<T>::point_type;
-  using value_type = typename GridTraits<T>::value_type;
+  using point_type     = typename GridTraits<T>::point_type;
+  using value_type     = typename GridTraits<T>::value_type;
   using container_type = std::vector<T>;
   int i0, i1, i2, i3;
   point_type GridStart, GridEnd, GridDelta, GridDeltaInv, GridDeltaInv2, L, Linv;
@@ -84,10 +84,10 @@ struct CubicBsplineGrid<T, LINEAR_1DGRID, PBC_CONSTRAINTS>
 template<class T>
 struct CubicBsplineGrid<T, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>
 {
-  using point_type = typename GridTraits<T>::point_type;
-  using value_type = typename GridTraits<T>::value_type;
+  using point_type     = typename GridTraits<T>::point_type;
+  using value_type     = typename GridTraits<T>::value_type;
   using container_type = std::vector<T>;
-  using size_t = std::size_t;
+  using size_t         = std::size_t;
   ///number of points
   int Npts;
   point_type GridStart, GridEnd, GridDelta, GridDeltaInv, GridDeltaInv2, L, Linv;

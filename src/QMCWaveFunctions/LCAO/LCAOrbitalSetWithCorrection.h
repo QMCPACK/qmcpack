@@ -43,11 +43,7 @@ public:
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector& psi,
-                   GradVector& dpsi,
-                   ValueVector& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,

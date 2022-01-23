@@ -104,13 +104,13 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
 </tmp> ";
-  okay = doc.parseFromString(xmltext);
+  okay    = doc.parseFromString(xmltext);
   REQUIRE(okay);
 
   root = doc.getRoot();
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
-  auto jas = std::make_unique<RPAJastrow>(elec_);
+  auto jas            = std::make_unique<RPAJastrow>(elec_);
   jas->put(root);
 
   // update all distance tables

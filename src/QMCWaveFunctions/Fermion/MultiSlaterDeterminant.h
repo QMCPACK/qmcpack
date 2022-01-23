@@ -55,14 +55,14 @@ public:
 
   using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
-  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
-  using HessMatrix = OrbitalSetTraits<ValueType>::HessMatrix;
-  using HessType = OrbitalSetTraits<ValueType>::HessType;
-  using HessArray = Array<HessType, 3>;
-  using GGGType = TinyVector<HessType, 3>;
-  using GGGVector = Vector<GGGType>;
-  using GGGMatrix = Matrix<GGGType>;
-  using Walker_t = ParticleSet::Walker_t;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using HessMatrix  = OrbitalSetTraits<ValueType>::HessMatrix;
+  using HessType    = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray   = Array<HessType, 3>;
+  using GGGType     = TinyVector<HessType, 3>;
+  using GGGVector   = Vector<GGGType>;
+  using GGGMatrix   = Matrix<GGGType>;
+  using Walker_t    = ParticleSet::Walker_t;
 
 
   ///constructor
@@ -78,9 +78,7 @@ public:
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
 
-  virtual ValueType evaluate(const ParticleSet& P,
-                             ParticleSet::ParticleGradient& G,
-                             ParticleSet::ParticleLaplacian& L);
+  virtual ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L);
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

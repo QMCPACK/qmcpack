@@ -36,15 +36,15 @@ public:
   using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector = SPOSet::GradVector;
-  using GradMatrix = SPOSet::GradMatrix;
-  using HessMatrix = SPOSet::HessMatrix;
-  using HessVector = SPOSet::HessVector;
-  using HessType = SPOSet::HessType;
-  using GGGType = SPOSet::GGGType;
-  using GGGVector = SPOSet::GGGVector;
-  using GGGMatrix = SPOSet::GGGMatrix;
-  using HessArray = SPOSet::HessArray;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
+  using HessVector  = SPOSet::HessVector;
+  using HessType    = SPOSet::HessType;
+  using GGGType     = SPOSet::GGGType;
+  using GGGVector   = SPOSet::GGGVector;
+  using GGGMatrix   = SPOSet::GGGMatrix;
+  using HessArray   = SPOSet::HessArray;
   //using GradArray_t = Array<GradType,3>      ;
   //using PosArray_t = Array<PosType,3>       ;
 
@@ -58,7 +58,7 @@ public:
   ~DiracDeterminantWithBackflow() override;
 
   // copy constructor and assign operator disabled
-  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
+  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s)            = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
   // in general, assume that P is the quasiparticle set
@@ -125,7 +125,8 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(std::shared_ptr<SPOSet>&& spo, BackflowTransformation& BF) const;
+  std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(std::shared_ptr<SPOSet>&& spo,
+                                                               BackflowTransformation& BF) const;
   std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("makeCopy spo should not be called.");

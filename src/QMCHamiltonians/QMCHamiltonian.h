@@ -44,16 +44,16 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
-  using Return_t = OperatorBase::Return_t;
-  using PosType = OperatorBase::PosType;
-  using TensorType = OperatorBase::TensorType;
-  using RealType = OperatorBase::RealType;
-  using ValueType = OperatorBase::ValueType;
+  using Return_t         = OperatorBase::Return_t;
+  using PosType          = OperatorBase::PosType;
+  using TensorType       = OperatorBase::TensorType;
+  using RealType         = OperatorBase::RealType;
+  using ValueType        = OperatorBase::ValueType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using PropertySetType = OperatorBase::PropertySetType;
-  using BufferType = OperatorBase::BufferType;
-  using Walker_t = OperatorBase::Walker_t;
-  using WP = WalkerProperties::Indexes;
+  using PropertySetType  = OperatorBase::PropertySetType;
+  using BufferType       = OperatorBase::BufferType;
+  using Walker_t         = OperatorBase::Walker_t;
+  using WP               = WalkerProperties::Indexes;
   enum
   {
     DIM = OHMMS_DIM
@@ -298,10 +298,7 @@ public:
   * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
   * @return EGrad.  Function itself returns nothing.
   */
-  void evaluateElecGrad(ParticleSet& P,
-                        TrialWaveFunction& psi,
-                        ParticleSet::ParticlePos& EGrad,
-                        RealType delta = 1e-5);
+  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)

@@ -26,8 +26,8 @@ namespace qmcplusplus
    */
 struct SPOSetInputInfo
 {
-  using RealType = QMCTraits::RealType;
-  using indices_t = std::vector<int>;
+  using RealType   = QMCTraits::RealType;
+  using indices_t  = std::vector<int>;
   using energies_t = std::vector<RealType>;
 
   int group;

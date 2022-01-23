@@ -46,10 +46,10 @@ class CartesianTensor
 {
 public:
   using value_type = T;
-  using pos_type = Point_t;
-  using hess_type = Tensor_t;
-  using ggg_type = GGG_t;
-  using This_t = CartesianTensor<T, Point_t, Tensor_t>;
+  using pos_type   = Point_t;
+  using hess_type  = Tensor_t;
+  using ggg_type   = GGG_t;
+  using This_t     = CartesianTensor<T, Point_t, Tensor_t>;
 
   /** constructor
    * @param l_max maximum angular momentum

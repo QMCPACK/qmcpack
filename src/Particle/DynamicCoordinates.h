@@ -37,14 +37,14 @@ enum class DynamicCoordinateKind
 class DynamicCoordinates
 {
 public:
-  using RealType      = QMCTraits::RealType;
-  using PosType       = QMCTraits::PosType;
-  using ParticlePos = PtclOnLatticeTraits::ParticlePos;
-  using PosVectorSoa  = VectorSoaContainer<RealType, QMCTraits::DIM>;
+  using RealType     = QMCTraits::RealType;
+  using PosType      = QMCTraits::PosType;
+  using ParticlePos  = PtclOnLatticeTraits::ParticlePos;
+  using PosVectorSoa = VectorSoaContainer<RealType, QMCTraits::DIM>;
 
   DynamicCoordinates(const DynamicCoordinateKind kind_in) : variable_kind_(kind_in) {}
 
-  DynamicCoordinates(const DynamicCoordinates&) = default;
+  DynamicCoordinates(const DynamicCoordinates&)            = default;
   DynamicCoordinates& operator=(const DynamicCoordinates&) = delete;
 
   DynamicCoordinateKind getKind() const { return variable_kind_; }

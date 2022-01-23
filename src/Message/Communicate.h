@@ -32,16 +32,16 @@ namespace mpi3 = boost::mpi3;
 struct CommunicatorTraits
 {
   using mpi_comm_type = MPI_Comm;
-  using status = MPI_Status;
-  using request = MPI_Request;
+  using status        = MPI_Status;
+  using request       = MPI_Request;
 };
 
 #else
 struct CommunicatorTraits
 {
-  using mpi_comm_type = int;
-  using status = int;
-  using request = int;
+  using mpi_comm_type               = int;
+  using status                      = int;
+  using request                     = int;
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };

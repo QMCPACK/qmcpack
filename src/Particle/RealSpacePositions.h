@@ -26,8 +26,8 @@ class RealSpacePositions : public DynamicCoordinates
 {
 public:
   using ParticlePos = PtclOnLatticeTraits::ParticlePos;
-  using RealType      = QMCTraits::RealType;
-  using PosType       = QMCTraits::PosType;
+  using RealType    = QMCTraits::RealType;
+  using PosType     = QMCTraits::PosType;
 
   RealSpacePositions() : DynamicCoordinates(DynamicCoordinateKind::DC_POS) {}
 

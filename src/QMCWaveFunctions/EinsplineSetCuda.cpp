@@ -2093,11 +2093,10 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
                                                         std::vector<PosType>& newpos,
                                                         gpu::device_vector<CTS::RealType*>& phi)
 {
-  app_error()
-      << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
-         "std::vector<PosType> &newpos,\n"
-      << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
-      << "not yet implemented.\n";
+  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
+                 "std::vector<PosType> &newpos,\n"
+              << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
+              << "not yet implemented.\n";
 }
 
 #else
@@ -2117,11 +2116,10 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
                                                         std::vector<PosType>& newpos,
                                                         gpu::device_vector<CTS::ComplexType*>& phi)
 {
-  app_error()
-      << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
-         "std::vector<PosType> ,\n"
-      << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
-      << "not yet implemented.\n";
+  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
+                 "std::vector<PosType> ,\n"
+              << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
+              << "not yet implemented.\n";
 }
 #endif
 

@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 #endif
   Communicate* myComm = OHMMS::Controller;
 
-  using RealType = QMCTraits::RealType;
+  using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 #if defined(QMC_COMPLEX)
   using mValueType = std::complex<OHMMS_PRECISION_FULL>;

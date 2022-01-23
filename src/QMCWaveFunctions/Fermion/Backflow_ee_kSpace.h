@@ -140,9 +140,10 @@ public:
       for (int i = 0; i < Fk.size(); ++i)
       {
         int loc = myVars.where(i);
-        if (loc >= 0) {
+        if (loc >= 0)
+        {
           myVars[i] = active[loc];
-          Fk[i] = std::real(myVars[i]);
+          Fk[i]     = std::real(myVars[i]);
           //Fk[i] = myVars[i] = active[loc];
         }
       }
@@ -368,11 +369,7 @@ public:
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P,
-                           int iat,
-                           ParticleSet::ParticlePos& newQP,
-                           HessMatrix& Amat) override
-  {}
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */

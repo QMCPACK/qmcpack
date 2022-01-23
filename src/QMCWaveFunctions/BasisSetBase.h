@@ -38,20 +38,20 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   {
     MAXINDEX = 2 + OHMMS_DIM
   };
-  using RealType = typename OrbitalSetTraits<T>::RealType;
-  using ValueType = typename OrbitalSetTraits<T>::ValueType;
-  using IndexType = typename OrbitalSetTraits<T>::IndexType;
-  using HessType = typename OrbitalSetTraits<T>::HessType;
+  using RealType    = typename OrbitalSetTraits<T>::RealType;
+  using ValueType   = typename OrbitalSetTraits<T>::ValueType;
+  using IndexType   = typename OrbitalSetTraits<T>::IndexType;
+  using HessType    = typename OrbitalSetTraits<T>::HessType;
   using IndexVector = typename OrbitalSetTraits<T>::IndexVector;
   using ValueVector = typename OrbitalSetTraits<T>::ValueVector;
   using ValueMatrix = typename OrbitalSetTraits<T>::ValueMatrix;
-  using GradVector = typename OrbitalSetTraits<T>::GradVector;
-  using GradMatrix = typename OrbitalSetTraits<T>::GradMatrix;
-  using HessVector = typename OrbitalSetTraits<T>::HessVector;
-  using HessMatrix = typename OrbitalSetTraits<T>::HessMatrix;
-  using GGGType = TinyVector<HessType, OHMMS_DIM>;
-  using GGGVector = Vector<GGGType>;
-  using GGGMatrix = Matrix<GGGType>;
+  using GradVector  = typename OrbitalSetTraits<T>::GradVector;
+  using GradMatrix  = typename OrbitalSetTraits<T>::GradMatrix;
+  using HessVector  = typename OrbitalSetTraits<T>::HessVector;
+  using HessMatrix  = typename OrbitalSetTraits<T>::HessMatrix;
+  using GGGType     = TinyVector<HessType, OHMMS_DIM>;
+  using GGGVector   = Vector<GGGType>;
+  using GGGMatrix   = Matrix<GGGType>;
 
 
   ///size of the basis set
@@ -137,8 +137,8 @@ template<typename T>
 struct SoaBasisSetBase
 {
   using value_type = T;
-  using vgl_type = VectorSoaContainer<T, OHMMS_DIM + 2>;
-  using vgh_type = VectorSoaContainer<T, 10>;
+  using vgl_type   = VectorSoaContainer<T, OHMMS_DIM + 2>;
+  using vgh_type   = VectorSoaContainer<T, 10>;
   using vghgh_type = VectorSoaContainer<T, 20>;
   ///size of the basis set
   int BasisSetSize;

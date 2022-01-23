@@ -50,8 +50,8 @@ protected:
   using CTS = CUDAGlobalTypes;
   Matrix<Return_rt> Records;
   using RealMatrix_t = TrialWaveFunction::RealMatrix_t;
-  using ValueMatrix = TrialWaveFunction::ValueMatrix;
-  using GradMatrix = TrialWaveFunction::GradMatrix;
+  using ValueMatrix  = TrialWaveFunction::ValueMatrix;
+  using GradMatrix   = TrialWaveFunction::GradMatrix;
 
   ///Hamiltonians that depend on the optimization: KE
   HamiltonianRef H_KE;

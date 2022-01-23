@@ -52,23 +52,23 @@ struct QMCTraits
   {
     DIM = OHMMS_DIM
   };
-  using QTBase = QMCTypes<OHMMS_PRECISION, DIM>;
-  using QTFull = QMCTypes<OHMMS_PRECISION_FULL, DIM>;
-  using RealType = QTBase::RealType;
+  using QTBase      = QMCTypes<OHMMS_PRECISION, DIM>;
+  using QTFull      = QMCTypes<OHMMS_PRECISION_FULL, DIM>;
+  using RealType    = QTBase::RealType;
   using ComplexType = QTBase::ComplexType;
-  using ValueType = QTBase::ValueType;
-  using PosType = QTBase::PosType;
-  using GradType = QTBase::GradType;
-  using TensorType = QTBase::TensorType;
+  using ValueType   = QTBase::ValueType;
+  using PosType     = QTBase::PosType;
+  using GradType    = QTBase::GradType;
+  using TensorType  = QTBase::TensorType;
   ///define other types
-  using IndexType = OHMMS_INDEXTYPE;
-  using FullPrecRealType = QTFull::RealType;
+  using IndexType         = OHMMS_INDEXTYPE;
+  using FullPrecRealType  = QTFull::RealType;
   using FullPrecValueType = QTFull::ValueType;
   ///define PropertyList_t
   using PropertySetType = RecordNamedProperty<FullPrecRealType>;
 
   // Type for particle group index pairs
-  using PtclGrpIndexes = std::vector<std::pair<int,int>>;
+  using PtclGrpIndexes = std::vector<std::pair<int, int>>;
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
@@ -76,23 +76,23 @@ struct QMCTraits
 struct PtclOnLatticeTraits
 {
   using ParticleLayout = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
-  using QTFull = QMCTraits::QTFull;
+  using QTFull         = QMCTraits::QTFull;
 
-  using Index_t = int;
-  using Scalar_t = QTFull::RealType;
+  using Index_t   = int;
+  using Scalar_t  = QTFull::RealType;
   using Complex_t = QTFull::ComplexType;
 
   using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
-  using SingleParticlePos = ParticleLayout::SingleParticlePos;
-  using Tensor_t = ParticleLayout::Tensor_t;
+  using SingleParticlePos   = ParticleLayout::SingleParticlePos;
+  using Tensor_t            = ParticleLayout::Tensor_t;
 
-  using ParticleIndex = ParticleAttrib<Index_t>;
+  using ParticleIndex  = ParticleAttrib<Index_t>;
   using ParticleScalar = ParticleAttrib<Scalar_t>;
-  using ParticlePos = ParticleAttrib<SingleParticlePos>;
+  using ParticlePos    = ParticleAttrib<SingleParticlePos>;
   using ParticleTensor = ParticleAttrib<Tensor_t>;
 
-  using ParticleGradient = ParticleAttrib<QTFull::GradType>;
-  using ParticleLaplacian = ParticleAttrib<QTFull::ValueType>;
+  using ParticleGradient    = ParticleAttrib<QTFull::GradType>;
+  using ParticleLaplacian   = ParticleAttrib<QTFull::ValueType>;
   using SingleParticleValue = QTFull::ValueType;
 };
 
@@ -101,9 +101,9 @@ struct PtclOnLatticeTraits
 //  Check if we are compiling with Catch defined.  Could use other symbols if needed.
 #ifdef TEST_CASE
 #ifdef QMC_COMPLEX
-  using ValueApprox = Catch::Detail::ComplexApprox;
+using ValueApprox = Catch::Detail::ComplexApprox;
 #else
-  using ValueApprox = Catch::Detail::Approx;
+using ValueApprox = Catch::Detail::Approx;
 #endif
 #endif
 

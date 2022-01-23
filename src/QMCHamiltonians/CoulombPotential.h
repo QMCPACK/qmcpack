@@ -181,9 +181,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 
   /** JNKIM: Need to check the precision */
-  inline T evaluateAB(const DistanceTableAB& d,
-                      const ParticleScalar* restrict Za,
-                      const ParticleScalar* restrict Zb)
+  inline T evaluateAB(const DistanceTableAB& d, const ParticleScalar* restrict Za, const ParticleScalar* restrict Zb)
   {
     constexpr T czero(0);
     T res = czero;
@@ -254,9 +252,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 
-  inline T evaluate_spAB(const DistanceTableAB& d,
-                         const ParticleScalar* restrict Za,
-                         const ParticleScalar* restrict Zb)
+  inline T evaluate_spAB(const DistanceTableAB& d, const ParticleScalar* restrict Za, const ParticleScalar* restrict Zb)
   {
     T res = 0.0;
     T pairpot;

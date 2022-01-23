@@ -271,7 +271,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 #endif
 
   using ValueType = QMCTraits::ValueType;
-  using PosType = QMCTraits::PosType;
+  using PosType   = QMCTraits::PosType;
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);

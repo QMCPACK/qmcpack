@@ -94,9 +94,7 @@ private:
   void printEloc();
 
   // compute numerical gradient and laplacian
-  void computeNumericalGrad(RealType delta,
-                            ParticleSet::ParticleGradient& G_fd,
-                            ParticleSet::ParticleLaplacian& L_fd);
+  void computeNumericalGrad(RealType delta, ParticleSet::ParticleGradient& G_fd, ParticleSet::ParticleLaplacian& L_fd);
 
   bool checkGradients(int lower_iat,
                       int upper_iat,

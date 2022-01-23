@@ -207,11 +207,11 @@ class OneDimConstFunctor : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
 public:
   Td ConstValue;
-  using base_type = OneDimGridFunctor<Td, Tg, CTd, CTg>;
+  using base_type  = OneDimGridFunctor<Td, Tg, CTd, CTg>;
   using value_type = typename base_type::value_type;
   using point_type = typename base_type::point_type;
-  using data_type = typename base_type::data_type;
-  using grid_type = typename base_type::grid_type;
+  using data_type  = typename base_type::data_type;
+  using grid_type  = typename base_type::grid_type;
 
 
   OneDimConstFunctor(grid_type* gt = 0) : base_type(gt), ConstValue(0.0) {}

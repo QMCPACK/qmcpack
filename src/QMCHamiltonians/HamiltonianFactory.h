@@ -30,7 +30,7 @@ class HamiltonianFactory : public MPIObjectBase
 {
 public:
   using PtclPoolType = std::map<std::string, ParticleSet*>;
-  using PsiPoolType = std::map<std::string, WaveFunctionFactory*>;
+  using PsiPoolType  = std::map<std::string, WaveFunctionFactory*>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName, ParticleSet& qp, PtclPoolType& pset, PsiPoolType& oset, Communicate* c);

@@ -241,20 +241,14 @@ template<class TIMER = NewTimer>
 class ScopeGuard
 {
 public:
-  ScopeGuard(TIMER& t) : timer(t)
-  {
-    timer.start();
-  }
+  ScopeGuard(TIMER& t) : timer(t) { timer.start(); }
 
-  ScopeGuard(const ScopeGuard&) = delete;
-  ScopeGuard& operator=(const ScopeGuard&) = delete;
-  ScopeGuard(ScopeGuard&&) noexcept        = default;
+  ScopeGuard(const ScopeGuard&)                = delete;
+  ScopeGuard& operator=(const ScopeGuard&)     = delete;
+  ScopeGuard(ScopeGuard&&) noexcept            = default;
   ScopeGuard& operator=(ScopeGuard&&) noexcept = default;
 
-  ~ScopeGuard()
-  {
-    timer.stop();
-  }
+  ~ScopeGuard() { timer.stop(); }
 
 private:
   TIMER& timer;

@@ -670,7 +670,8 @@ void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection) c
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection,
+                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
@@ -683,7 +684,8 @@ void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection, 
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection,
+                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);

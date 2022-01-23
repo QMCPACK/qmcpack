@@ -25,12 +25,12 @@ namespace qmcplusplus
 class SPOSetScanner
 {
 public:
-  using PtclPoolType  = std::map<std::string, ParticleSet*>;
-  using RealType      = QMCTraits::RealType;
-  using ValueType     = QMCTraits::ValueType;
-  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
-  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
-  using HessVector  = OrbitalSetTraits<ValueType>::HessVector;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using RealType     = QMCTraits::RealType;
+  using ValueType    = QMCTraits::ValueType;
+  using ValueVector  = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector   = OrbitalSetTraits<ValueType>::GradVector;
+  using HessVector   = OrbitalSetTraits<ValueType>::HessVector;
 
   RealType myfabs(RealType s) { return std::fabs(s); }
   template<typename T>

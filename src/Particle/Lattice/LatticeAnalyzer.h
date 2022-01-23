@@ -49,7 +49,7 @@ template<typename T>
 struct LatticeAnalyzer<T, 3>
 {
   using SingleParticlePos = TinyVector<T, 3>;
-  using Tensor_t = Tensor<T, 3>;
+  using Tensor_t          = Tensor<T, 3>;
   ///SuperCell type
   int mySC;
 
@@ -63,12 +63,12 @@ struct LatticeAnalyzer<T, 3>
   }
 
   inline SingleParticlePos calcSolidAngles(const TinyVector<SingleParticlePos, 3>& Rv,
-                                             const SingleParticlePos& OneOverLength)
+                                           const SingleParticlePos& OneOverLength)
   {
     const T rad_to_deg = 180.0 / M_PI;
     return SingleParticlePos(rad_to_deg * std::acos(dot(Rv[0], Rv[1]) * OneOverLength[0] * OneOverLength[1]),
-                               rad_to_deg * std::acos(dot(Rv[1], Rv[2]) * OneOverLength[1] * OneOverLength[2]),
-                               rad_to_deg * std::acos(dot(Rv[2], Rv[0]) * OneOverLength[2] * OneOverLength[0]));
+                             rad_to_deg * std::acos(dot(Rv[1], Rv[2]) * OneOverLength[1] * OneOverLength[2]),
+                             rad_to_deg * std::acos(dot(Rv[2], Rv[0]) * OneOverLength[2] * OneOverLength[0]));
   }
 
   inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos, 3>& a)
@@ -82,7 +82,7 @@ struct LatticeAnalyzer<T, 3>
             if (i || j || k)
             {
               SingleParticlePos L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1] + static_cast<T>(k) * a[2]);
-              rMin                  = std::min(rMin, dot(L, L));
+              rMin                = std::min(rMin, dot(L, L));
             }
     }
     else if (mySC == SUPERCELL_SLAB || mySC == SUPERCELL_SLAB + SOA_OFFSET) //slab type
@@ -92,7 +92,7 @@ struct LatticeAnalyzer<T, 3>
           if (i || j)
           {
             SingleParticlePos L = (static_cast<T>(i) * a[0] + static_cast<T>(j) * a[1]);
-            rMin                  = std::min(rMin, dot(L, L));
+            rMin                = std::min(rMin, dot(L, L));
           }
     }
     else if (mySC == SUPERCELL_WIRE || mySC == SUPERCELL_WIRE + SOA_OFFSET) //wire
@@ -113,8 +113,8 @@ struct LatticeAnalyzer<T, 3>
       SingleParticlePos B   = a[(i + 1) % 3];
       SingleParticlePos C   = a[(i + 2) % 3];
       SingleParticlePos BxC = cross(B, C);
-      T dist                  = 0.5 * std::abs(dot(A, BxC)) / std::sqrt(dot(BxC, BxC));
-      scr                     = std::min(scr, dist);
+      T dist                = 0.5 * std::abs(dot(A, BxC)) / std::sqrt(dot(BxC, BxC));
+      scr                   = std::min(scr, dist);
     }
     //}
     //else if(mySC == SUPERCELL_SLAB)
@@ -144,7 +144,7 @@ template<typename T>
 struct LatticeAnalyzer<T, 2>
 {
   using SingleParticlePos = TinyVector<T, 2>;
-  using Tensor_t = Tensor<T, 2>;
+  using Tensor_t          = Tensor<T, 2>;
 
   /** return supercell enum
    * @param[in] box[2] if box[i]==1, PBC
@@ -162,7 +162,7 @@ struct LatticeAnalyzer<T, 2>
   }
 
   inline SingleParticlePos calcSolidAngles(const TinyVector<SingleParticlePos, 2>& Rv,
-                                             const SingleParticlePos& OneOverLength)
+                                           const SingleParticlePos& OneOverLength)
   {
     const T rad_to_deg = 180.0 / M_PI;
     return SingleParticlePos(rad_to_deg * std::acos(dot(Rv[0], Rv[1]) * OneOverLength[0] * OneOverLength[1]), 0.0);
@@ -171,10 +171,10 @@ struct LatticeAnalyzer<T, 2>
   inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos, 2>& a)
   {
     T rMin;
-    T dotP                 = dot(a[0], a[1]);
+    T dotP               = dot(a[0], a[1]);
     SingleParticlePos L0 = a[0] - dotP * a[1];
     SingleParticlePos L1 = a[1] - dotP * a[0];
-    rMin                   = 0.5 * std::min(std::sqrt(dot(L0, L0)), std::sqrt(dot(L1, L1)));
+    rMin                 = 0.5 * std::min(std::sqrt(dot(L0, L0)), std::sqrt(dot(L1, L1)));
     return rMin;
   }
 

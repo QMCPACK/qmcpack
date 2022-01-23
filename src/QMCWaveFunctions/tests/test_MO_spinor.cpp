@@ -30,11 +30,11 @@ void test_lcao_spinor()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c = OHMMS::Controller;
+  Communicate* c  = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -330,11 +330,11 @@ void test_lcao_spinor_excited()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c = OHMMS::Controller;
+  Communicate* c  = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 

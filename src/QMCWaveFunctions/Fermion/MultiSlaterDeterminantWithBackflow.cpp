@@ -152,8 +152,8 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::evaluate(co
   myL           = 0.0;
   for (int i = 0; i < C.size(); i++)
   {
-    int upC                                = C2node_up[i];
-    int dnC                                = C2node_dn[i];
+    int upC                              = C2node_up[i];
+    int dnC                              = C2node_dn[i];
     ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
     psi += tmp;
     myG += grads_up[upC] * tmp;
@@ -194,8 +194,8 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(Par
     ValueType psi = 0.0;
     for (int i = 0; i < C.size(); i++)
     {
-      int upC                                = C2node_up[i];
-      int dnC                                = C2node_dn[i];
+      int upC                              = C2node_up[i];
+      int dnC                              = C2node_dn[i];
       ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
       psi += tmp;
       grad_iat += grads_up[upC][iat] * tmp;
@@ -213,8 +213,8 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(Par
     }
     for (int i = 0; i < C.size(); i++)
     {
-      int upC                                = C2node_up[i];
-      int dnC                                = C2node_dn[i];
+      int upC                              = C2node_up[i];
+      int dnC                              = C2node_dn[i];
       ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
       psi += tmp;
       grad_iat += grads_dn[dnC][iat] * tmp;
@@ -564,8 +564,8 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::updateBu
   myL           = 0.0;
   for (int i = 0; i < C.size(); i++)
   {
-    int upC                                = C2node_up[i];
-    int dnC                                = C2node_dn[i];
+    int upC                              = C2node_up[i];
+    int dnC                              = C2node_dn[i];
     ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
     psi += tmp;
     myG += grads_up[upC] * tmp; // other spin sector should be zero
@@ -847,12 +847,12 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           ValueType dlog = 0.0, dhpsi = 0.0;
           for (int i = 0; i < C.size(); i++)
           {
-            int upC                                 = C2node_up[i];
-            int dnC                                 = C2node_dn[i];
-            ValueType cdet                          = C[i] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
+            int upC                               = C2node_up[i];
+            int dnC                               = C2node_dn[i];
+            ValueType cdet                        = C[i] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
             ParticleSet::SingleParticleValue dot1 = 0.0;
-            ValueType dpsi1                         = dpsia_up(upC, pa);
-            ValueType dpsi2                         = dpsia_dn(dnC, pa);
+            ValueType dpsi1                       = dpsia_up(upC, pa);
+            ValueType dpsi2                       = dpsia_dn(dnC, pa);
             ParticleSet::ParticleGradient& g1     = grads_up[upC];
             ParticleSet::ParticleGradient& g2     = grads_dn[dnC];
             for (int k = 0; k < n; k++)

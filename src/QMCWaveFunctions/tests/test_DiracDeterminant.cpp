@@ -428,12 +428,12 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 #ifdef QMC_COMPLEX
 TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 {
-  using ValueType = QMCTraits::ValueType;
-  using PosType = QMCTraits::PosType;
-  using GradType = QMCTraits::GradType;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using ParticlePos = ParticleSet::ParticlePos;
-  using ParticleGradient = ParticleSet::ParticleGradient;
+  using ValueType         = QMCTraits::ValueType;
+  using PosType           = QMCTraits::PosType;
+  using GradType          = QMCTraits::GradType;
+  using LogValueType      = WaveFunctionComponent::LogValueType;
+  using ParticlePos       = ParticleSet::ParticlePos;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
   using ParticleLaplacian = ParticleSet::ParticleLaplacian;
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   ParticleSet ions_;

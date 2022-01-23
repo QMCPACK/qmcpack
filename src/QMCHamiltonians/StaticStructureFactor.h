@@ -21,9 +21,9 @@ namespace qmcplusplus
 class StaticStructureFactor : public OperatorBase
 {
 public:
-  using k2_t = std::vector<RealType>;
+  using k2_t   = std::vector<RealType>;
   using dens_t = std::vector<RealType>;
-  using pts_t = std::vector<PosType>;
+  using pts_t  = std::vector<PosType>;
 
   //data members
   int nspecies;

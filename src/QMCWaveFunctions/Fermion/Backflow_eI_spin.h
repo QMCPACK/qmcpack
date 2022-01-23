@@ -384,10 +384,7 @@ public:
     evaluatePbyP(P, index[0], newQP, Amat);
   }
 
-  inline void evaluatePbyP(const ParticleSet& P,
-                           int iat,
-                           ParticleSet::ParticlePos& newQP,
-                           HessMatrix& Amat) override
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;

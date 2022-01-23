@@ -48,7 +48,7 @@ struct SHOState : public SPOInfo
 struct SHOSet : public SPOSet
 {
   using value_type = ValueMatrix::value_type;
-  using grad_type = GradMatrix::value_type;
+  using grad_type  = GradMatrix::value_type;
 
   RealType length;
   PosType center;

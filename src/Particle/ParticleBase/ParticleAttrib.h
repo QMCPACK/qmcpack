@@ -46,7 +46,7 @@ public:
 
   ParticleAttrib(const ParticleAttrib& rhs) = default;
 
-  ParticleAttrib(std::initializer_list<T> ts) : __my_base(ts), InUnit(PosUnit::Cartesian) {};
+  ParticleAttrib(std::initializer_list<T> ts) : __my_base(ts), InUnit(PosUnit::Cartesian){};
 
   inline ParticleAttrib& operator=(const ParticleAttrib& rhs) = default;
 

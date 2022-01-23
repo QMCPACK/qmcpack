@@ -24,8 +24,8 @@
 
 namespace qmcplusplus
 {
-using LRHandlerType = LRCoulombSingleton::LRHandlerType;
-using GridType = LRCoulombSingleton::GridType;
+using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+using GridType       = LRCoulombSingleton::GridType;
 using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 DensityEstimator::DensityEstimator(ParticleSet& elns)

@@ -53,13 +53,13 @@ int main(int argc, char** argv)
   myComm->setName("restart");
   myComm->barrier();
 
-  using RealType = QMCTraits::RealType;
+  using RealType    = QMCTraits::RealType;
   using ParticlePos = ParticleSet::ParticlePos;
   using LatticeType = ParticleSet::ParticleLayout;
-  using TensorType = ParticleSet::TensorType;
-  using PosType = ParticleSet::PosType;
-  using uint_type = RandomGenerator::uint_type;
-  using Walker_t = MCWalkerConfiguration::Walker_t;
+  using TensorType  = ParticleSet::TensorType;
+  using PosType     = ParticleSet::PosType;
+  using uint_type   = RandomGenerator::uint_type;
+  using Walker_t    = MCWalkerConfiguration::Walker_t;
 
   //use the global generator
 

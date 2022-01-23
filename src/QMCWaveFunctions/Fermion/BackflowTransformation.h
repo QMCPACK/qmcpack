@@ -37,16 +37,16 @@ public:
   {
     DIM = OHMMS_DIM
   };
-  using RealType = OHMMS_PRECISION;
-  using IndexType = int;
-  using PosType = TinyVector<RealType, DIM>;
-  using GradType = TinyVector<RealType, DIM>;
-  using HessType = Tensor<RealType, DIM>;
+  using RealType    = OHMMS_PRECISION;
+  using IndexType   = int;
+  using PosType     = TinyVector<RealType, DIM>;
+  using GradType    = TinyVector<RealType, DIM>;
+  using HessType    = Tensor<RealType, DIM>;
   using IndexVector = Vector<IndexType>;
-  using GradVector = Vector<GradType>;
-  using GradMatrix = Matrix<GradType>;
-  using HessVector = Vector<HessType>;
-  using HessMatrix = Matrix<HessType>;
+  using GradVector  = Vector<GradType>;
+  using GradMatrix  = Matrix<GradType>;
+  using HessVector  = Vector<HessType>;
+  using HessMatrix  = Matrix<HessType>;
 
   using HessArray = Array<HessType, 3>;
 

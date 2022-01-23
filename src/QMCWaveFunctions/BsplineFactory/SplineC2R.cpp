@@ -301,10 +301,7 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
 template<typename ST>
-inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
-                                             ValueVector& psi,
-                                             GradVector& dpsi,
-                                             ValueVector& d2psi)
+inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];

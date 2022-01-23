@@ -36,7 +36,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
     for (int iat = 0; iat < NumIons; iat++)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         value_ += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                      dhpsioverpsi);
+                                                       dhpsioverpsi);
   }
   return value_;
 }

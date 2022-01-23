@@ -79,7 +79,7 @@ public:
   template<typename AT>
   ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>* pa)
   {
-    using attrib_type = ParticleAttrib<AT>;
+    using attrib_type                                = ParticleAttrib<AT>;
     std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(oname);
     if (it != AttribList.end())
     {
@@ -107,10 +107,10 @@ public:
 
 class XMLParticleParser : public ParticleTags
 {
-  using Particle_t = ParticleSet;
-  using ParticleIndex = Particle_t::ParticleIndex;
+  using Particle_t     = ParticleSet;
+  using ParticleIndex  = Particle_t::ParticleIndex;
   using ParticleScalar = Particle_t::ParticleScalar;
-  using ParticlePos = Particle_t::ParticlePos;
+  using ParticlePos    = Particle_t::ParticlePos;
   using ParticleTensor = Particle_t::ParticleTensor;
 
   bool AssignmentOnly;
@@ -145,10 +145,10 @@ public:
 
 class XMLSaveParticle : public ParticleTags, public RecordProperty
 {
-  using Particle_t = ParticleSet;
-  using ParticleIndex = Particle_t::ParticleIndex;
+  using Particle_t     = ParticleSet;
+  using ParticleIndex  = Particle_t::ParticleIndex;
   using ParticleScalar = Particle_t::ParticleScalar;
-  using ParticlePos = Particle_t::ParticlePos;
+  using ParticlePos    = Particle_t::ParticlePos;
   using ParticleTensor = Particle_t::ParticleTensor;
 
   Particle_t& ref_;

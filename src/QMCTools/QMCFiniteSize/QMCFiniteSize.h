@@ -19,14 +19,14 @@ namespace qmcplusplus
 class QMCFiniteSize : public QMCAppBase, QMCTraits
 {
 public:
-  using LRHandlerType = LRCoulombSingleton::LRHandlerType;
-  using GridType = LRCoulombSingleton::GridType;
-  using RadFunctorType = LRCoulombSingleton::RadFunctorType;
-  using mRealType = LRHandlerType::mRealType;
-  using Grid_t = SkParserBase::Grid_t;
-  using RealType = QMCTraits::RealType;
+  using LRHandlerType    = LRCoulombSingleton::LRHandlerType;
+  using GridType         = LRCoulombSingleton::GridType;
+  using RadFunctorType   = LRCoulombSingleton::RadFunctorType;
+  using mRealType        = LRHandlerType::mRealType;
+  using Grid_t           = SkParserBase::Grid_t;
+  using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using PosType = QMCTraits::PosType;
+  using PosType          = QMCTraits::PosType;
   QMCFiniteSize();
   QMCFiniteSize(SkParserBase* skparser_i);
   ~QMCFiniteSize(){};

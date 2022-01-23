@@ -615,7 +615,7 @@ struct OuterProduct
 template<class T1, class T2, unsigned D>
 struct OuterProduct<TinyVector<T1, D>, TinyVector<T2, D>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, D>;
   inline static Return_t apply(const TinyVector<T1, D>& a, const TinyVector<T2, D>& b) { return Return_t(); }
 };
@@ -623,7 +623,7 @@ struct OuterProduct<TinyVector<T1, D>, TinyVector<T2, D>>
 template<class T1, class T2>
 struct OuterProduct<TinyVector<T1, 2>, TinyVector<T2, 2>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 2>;
   inline static Return_t apply(const TinyVector<T1, 2>& a, const TinyVector<T2, 2>& b)
   {
@@ -634,7 +634,7 @@ struct OuterProduct<TinyVector<T1, 2>, TinyVector<T2, 2>>
 template<class T1, class T2>
 struct OuterProduct<TinyVector<T1, 3>, TinyVector<T2, 3>>
 {
-  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using Type_t   = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   using Return_t = Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 3>;
   inline static Return_t apply(const TinyVector<T1, 3>& a, const TinyVector<T2, 3>& b)
   {

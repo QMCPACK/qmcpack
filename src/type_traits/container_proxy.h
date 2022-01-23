@@ -31,7 +31,7 @@ struct scalar_traits
   {
     DIM = 1
   };
-  using real_type = T;
+  using real_type  = T;
   using value_type = T;
   static inline T* get_address(T* a) { return a; }
 };
@@ -43,7 +43,7 @@ struct scalar_traits<std::complex<T>>
   {
     DIM = 2
   };
-  using real_type = T;
+  using real_type  = T;
   using value_type = std::complex<T>;
   static inline T* get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
 };
@@ -142,7 +142,7 @@ struct container_proxy<std::vector<TinyVector<T, D>>>
   {
     DIM = D * scalar_traits<T>::DIM
   };
-  using pointer = typename container_proxy<T>::pointer;
+  using pointer   = typename container_proxy<T>::pointer;
   using data_type = std::vector<TinyVector<T, D>>;
   data_type& ref;
   inline container_proxy(data_type& a) : ref(a) {}
@@ -204,9 +204,9 @@ struct container_proxy<Matrix<T>>
   template<typename I>
   inline void resize(I* n, int d)
   {
-    if ( d != 2 )
+    if (d != 2)
       throw std::runtime_error("OhmmsMatrix can only be resized with int[2].");
-    ref.resize(n[0],n[1]);
+    ref.resize(n[0], n[1]);
   }
 };
 
@@ -217,7 +217,7 @@ struct container_proxy<Vector<TinyVector<T, D>>>
   {
     DIM = D * scalar_traits<T>::DIM
   };
-  using pointer = typename container_proxy<T>::pointer;
+  using pointer   = typename container_proxy<T>::pointer;
   using data_type = Vector<TinyVector<T, D>>;
   data_type& ref;
   inline container_proxy(data_type& a) : ref(a) {}

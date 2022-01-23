@@ -136,7 +136,8 @@ std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::putSlaterDet(xmlNodePtr
   }
 
   if (spin_group)
-    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));;
+    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
+  ;
 
   myComm->barrier_and_abort(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
   return nullptr;
@@ -279,7 +280,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   if (myParam->hasComplexData(hfileID)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;
-    using TempVecType = std::vector<std::complex<RealType>>;
+    using TempVecType    = std::vector<std::complex<RealType>>;
     using TempVecType_DP = std::vector<std::complex<double>>;
     TempVecType_DP coefs_DP(myBasisSet->inputmap.size());
     HDFAttribIO<TempVecType_DP> hdfobj_coefs(coefs_DP);
@@ -300,7 +301,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   {
     // It appears the coefficients are always stored as complex in the HDF file?
     //app_log() << "  PW coefficients are real." << std::endl;
-    using ComplexTempVecType = std::vector<std::complex<RealType>>;
+    using ComplexTempVecType    = std::vector<std::complex<RealType>>;
     using ComplexTempVecType_DP = std::vector<std::complex<double>>;
     ComplexTempVecType_DP complex_coefs_DP(myBasisSet->inputmap.size());
     HDFAttribIO<ComplexTempVecType_DP> hdfobj_complex_coefs(complex_coefs_DP);
@@ -380,7 +381,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     hid_t parent_id = band_grp_id;
     if (myParam->hasSpin)
     {
-      bname  = myParam->getSpinName(spinIndex);
+      bname = myParam->getSpinName(spinIndex);
       if (H5Lexists(band_grp_id, bname.c_str(), H5P_DEFAULT) != true)
       {
         spin_grp_id = H5Gcreate2(band_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -451,7 +452,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     hid_t parent_id = band_grp_id;
     if (myParam->hasSpin)
     {
-      bname  = myParam->getSpinName(spinIndex);
+      bname = myParam->getSpinName(spinIndex);
       if (H5Lexists(band_grp_id, bname.c_str(), H5P_DEFAULT) != true)
       {
         spin_grp_id = H5Gcreate2(band_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);

@@ -198,7 +198,7 @@ void SHOSet::evaluate_d1(const PosType& xpos, ValueVector& psi, GradVector& dpsi
       int ns      = n + shift;
       RealType Hn = hermite(ns);
       bvalues(ns) = (-x + 2 * n * Hnm1 / Hn) * ol;
-      Hnm1 = Hn;
+      Hnm1        = Hn;
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
@@ -429,7 +429,7 @@ void SHOSet::test_derivatives()
           app_log() << std::endl;
         }
         app_log() << "    laplacians" << std::endl;
-        PosType x   = r / length;
+        PosType x = r / length;
         for (int m = 0; m < nphi; ++m)
         {
           std::string qn = "";

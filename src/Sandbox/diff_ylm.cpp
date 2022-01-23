@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   }
 
   using RealType = float;
-  using PosType = TinyVector<RealType, 3>;
+  using PosType  = TinyVector<RealType, 3>;
 
   //using RealType = QMCTraits::RealType          ;
   //using ParticlePos = ParticleSet::ParticlePos   ;

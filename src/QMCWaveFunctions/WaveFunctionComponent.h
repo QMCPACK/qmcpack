@@ -81,14 +81,14 @@ public:
     ORB_ALLWALKER     /*!< all walkers update */
   };
 
-  using Walker_t = ParticleSet::Walker_t;
+  using Walker_t     = ParticleSet::Walker_t;
   using WFBufferType = Walker_t::WFBuffer_t;
-  using BufferType = Walker_t::Buffer_t;
+  using BufferType   = Walker_t::Buffer_t;
   using RealMatrix_t = OrbitalSetTraits<RealType>::ValueMatrix;
-  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
-  using GradMatrix = OrbitalSetTraits<ValueType>::GradMatrix;
-  using HessType = OrbitalSetTraits<ValueType>::HessType;
-  using HessVector = OrbitalSetTraits<ValueType>::HessVector;
+  using ValueMatrix  = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using GradMatrix   = OrbitalSetTraits<ValueType>::GradMatrix;
+  using HessType     = OrbitalSetTraits<ValueType>::HessType;
+  using HessVector   = OrbitalSetTraits<ValueType>::HessVector;
 
   // the value type for log(psi)
   using LogValueType = std::complex<QTFull::RealType>;

@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 struct L2RadialPotential : public QMCTraits
 {
-  using GridType = OneDimGridBase<RealType>;
+  using GridType            = OneDimGridBase<RealType>;
   using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   std::unique_ptr<RadialPotentialType> vL2;
@@ -42,7 +42,7 @@ struct L2RadialPotential : public QMCTraits
 
   L2RadialPotential* makeClone()
   {
-    auto c  = new L2RadialPotential();
+    auto c = new L2RadialPotential();
     c->vL2.reset(vL2->makeClone());
     c->rcut = rcut;
     return c;

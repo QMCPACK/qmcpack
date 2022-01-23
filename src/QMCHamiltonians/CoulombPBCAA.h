@@ -31,10 +31,10 @@ namespace qmcplusplus
  */
 struct CoulombPBCAA : public OperatorBase, public ForceBase
 {
-  using LRHandlerType = LRCoulombSingleton::LRHandlerType;
-  using GridType = LRCoulombSingleton::GridType;
+  using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+  using GridType       = LRCoulombSingleton::GridType;
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
-  using mRealType = LRHandlerType::mRealType;
+  using mRealType      = LRHandlerType::mRealType;
 
   /// energy-optimized long range handle
   std::shared_ptr<LRHandlerType> AA;

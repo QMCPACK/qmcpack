@@ -56,13 +56,13 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
 
 std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
-  using Det_t = DiracDeterminant<>;
-  auto spo_up_C    = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
+  using Det_t     = DiracDeterminant<>;
+  auto spo_up_C   = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
                                                       FirstIndex_up, LastIndex_up);
-  auto spo_dn_C    = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
+  auto spo_dn_C   = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
                                                       FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup  = spo_up->occup;
-  spo_dn_C->occup  = spo_dn->occup;
+  spo_up_C->occup = spo_up->occup;
+  spo_dn_C->occup = spo_dn->occup;
   std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos;
   spos.push_back(std::move(spo_up_C));
   spos.push_back(std::move(spo_dn_C));
@@ -78,9 +78,11 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminant::makeClone(Particl
   }
 
   for (int i = 0; i < dets_up.size(); i++)
-    clone->dets_up.push_back(std::make_unique<Det_t>(std::static_pointer_cast<SPOSet>(clone->spo_up), clone->FirstIndex_up, clone->FirstIndex_up + clone->nels_up));
+    clone->dets_up.push_back(std::make_unique<Det_t>(std::static_pointer_cast<SPOSet>(clone->spo_up),
+                                                     clone->FirstIndex_up, clone->FirstIndex_up + clone->nels_up));
   for (int i = 0; i < dets_dn.size(); i++)
-    clone->dets_dn.emplace_back(std::make_unique<Det_t>(std::static_pointer_cast<SPOSet>(clone->spo_dn), clone->FirstIndex_dn, clone->FirstIndex_dn + clone->nels_dn));
+    clone->dets_dn.emplace_back(std::make_unique<Det_t>(std::static_pointer_cast<SPOSet>(clone->spo_dn),
+                                                        clone->FirstIndex_dn, clone->FirstIndex_dn + clone->nels_dn));
 
   clone->Optimizable = Optimizable;
   clone->C           = C;
@@ -164,8 +166,8 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(const Particle
   myL           = 0.0;
   for (int i = 0; i < C.size(); i++)
   {
-    int upC                                = C2node_up[i];
-    int dnC                                = C2node_dn[i];
+    int upC                              = C2node_up[i];
+    int dnC                              = C2node_dn[i];
     ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
     psi += tmp;
     //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
@@ -560,8 +562,8 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(Particl
   myL           = 0.0;
   for (int i = 0; i < C.size(); i++)
   {
-    int upC                                = C2node_up[i];
-    int dnC                                = C2node_dn[i];
+    int upC                              = C2node_up[i];
+    int dnC                              = C2node_dn[i];
     ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
     psi += tmp;
     //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
@@ -743,7 +745,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           //           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
           cnt++;
         }
-        dlogpsi[kk] = cdet;
+        dlogpsi[kk]     = cdet;
         ValueType dhpsi = (RealType)(-0.5) * (q0 - cdet * lapl_sum) - cdet * gg + v1;
         //                            -cdet*gg-v1-v2;
         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
@@ -787,10 +789,10 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         if (kk < 0)
           continue;
         //dlogpsi[kk] = cdet;
-        int upC        = C2node_up[ip];
-        int dnC        = C2node_dn[ip];
-        ValueType cdet = detValues_up[upC] * detValues_dn[dnC] * psiinv;
-        dlogpsi[kk] = cdet;
+        int upC         = C2node_up[ip];
+        int dnC         = C2node_dn[ip];
+        ValueType cdet  = detValues_up[upC] * detValues_dn[dnC] * psiinv;
+        dlogpsi[kk]     = cdet;
         ValueType dhpsi = ((RealType)(-0.5) * cdet) *
             (tempstorage_up[upC] + tempstorage_dn[dnC] - lapl_sum +
              (RealType)2.0 * (gg - static_cast<ValueType>(Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]))));

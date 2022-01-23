@@ -43,10 +43,10 @@ public:
   using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector = SPOSet::GradVector;
-  using GradMatrix = SPOSet::GradMatrix;
-  using HessMatrix = SPOSet::HessMatrix;
-  using HessType = SPOSet::HessType;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
+  using HessType    = SPOSet::HessType;
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
   std::vector<std::vector<int>> lookup_tbl;

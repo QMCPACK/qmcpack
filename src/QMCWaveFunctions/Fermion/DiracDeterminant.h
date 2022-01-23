@@ -46,7 +46,7 @@ public:
   using GradMatrix  = SPOSet::GradMatrix;
   using HessMatrix  = SPOSet::HessMatrix;
   using HessVector  = SPOSet::HessVector;
-  using HessType      = SPOSet::HessType;
+  using HessType    = SPOSet::HessType;
 
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
@@ -60,7 +60,7 @@ public:
   DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
 
   // copy constructor and assign operator disabled
-  DiracDeterminant(const DiracDeterminant& s) = delete;
+  DiracDeterminant(const DiracDeterminant& s)            = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -77,7 +77,7 @@ public:
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   /** Finds the SPOSet associated with this determinant, and registers it with WFN wrapper
-   */ 
+   */
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const final;
 
   /** return the ratio only for the  iat-th partcle move
@@ -172,8 +172,10 @@ public:
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
 
   /** cloning function
    * @param tqp target particleset

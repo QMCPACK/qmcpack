@@ -125,8 +125,8 @@ bool SpaceGrid::initialize_voronoi(std::map<std::string, Point>& points)
   if (Rptcl)
   {
     const ParticlePos& R = *Rptcl;
-    origin                 = points["center"];
-    ndomains               = R.size();
+    origin               = points["center"];
+    ndomains             = R.size();
     domain_volumes.resize(ndomains, 1);
     domain_centers.resize(ndomains, DIM);
     nearcell.resize(ndparticles);

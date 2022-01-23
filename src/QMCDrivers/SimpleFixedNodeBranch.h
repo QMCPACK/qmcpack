@@ -98,7 +98,7 @@ class EstimatorManagerBase;
  */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
-  using ThisType = SimpleFixedNodeBranch;
+  using ThisType  = SimpleFixedNodeBranch;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans

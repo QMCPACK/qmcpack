@@ -39,10 +39,10 @@ namespace qmcplusplus
 struct DiffWaveFunctionComponent
 {
   //@{typedefs inherited from WaveFunctionComponent
-  using RealType = WaveFunctionComponent::RealType;
-  using ValueType = WaveFunctionComponent::ValueType;
-  using PosType = WaveFunctionComponent::PosType;
-  using GradVectorType = ParticleSet::ParticleGradient;
+  using RealType        = WaveFunctionComponent::RealType;
+  using ValueType       = WaveFunctionComponent::ValueType;
+  using PosType         = WaveFunctionComponent::PosType;
+  using GradVectorType  = ParticleSet::ParticleGradient;
   using ValueVectorType = ParticleSet::ParticleLaplacian;
   // the value type for \f$ log(\psi) \f$
   using LogValueType = std::complex<QMCTraits::QTFull::RealType>;

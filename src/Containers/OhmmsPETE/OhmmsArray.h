@@ -26,9 +26,9 @@
 template<class T, unsigned D>
 struct Array
 {
-  using Type_t = T;
+  using Type_t      = T;
   using Container_t = std::vector<T>;
-  using This_t = Array<T, D>;
+  using This_t      = Array<T, D>;
 
   size_t Length[D];
   Container_t X;

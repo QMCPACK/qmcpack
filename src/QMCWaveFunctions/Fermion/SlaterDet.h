@@ -41,7 +41,9 @@ public:
   /**  constructor
    * @param targetPtcl target Particleset
    */
-  SlaterDet(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, const std::string& class_name = "SlaterDet");
+  SlaterDet(ParticleSet& targetPtcl,
+            std::vector<std::unique_ptr<Determinant_t>> dets,
+            const std::string& class_name = "SlaterDet");
 
   ///destructor
   ~SlaterDet() override;
@@ -96,9 +98,11 @@ public:
 
   void createResource(ResourceCollection& collection) const override;
 
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
@@ -250,8 +254,7 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
-                               std::vector<ValueType>& dgradlogpsi) override
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi) override
   {
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);

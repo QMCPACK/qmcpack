@@ -32,7 +32,7 @@ namespace qmcplusplus
 
 struct LocalECPotential : public OperatorBase
 {
-  using GridType = OneDimGridBase<RealType>;
+  using GridType            = OneDimGridBase<RealType>;
   using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///reference to the ionic configuration

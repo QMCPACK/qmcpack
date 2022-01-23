@@ -38,7 +38,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
   DECLARE_COULOMB_TYPES
 
   //Typedef for the lattice-type.
-  using ParticleLayout = ParticleSet::ParticleLayout;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
   using BreakupBasisType = BreakupBasis;
 
   bool FirstTime;
@@ -48,7 +48,8 @@ struct LRRPAHandlerTemp : public LRHandlerBase
   Func myFunc;
 
   //Constructor
-  LRRPAHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLattice())
+  LRRPAHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0)
+      : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLattice())
   {
     LRHandlerBase::ClassName = "LRRPAHandlerTemp";
     myFunc.reset(ref);

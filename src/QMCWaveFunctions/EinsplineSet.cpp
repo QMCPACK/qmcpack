@@ -517,8 +517,8 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
         int dphiIndex = 0;
         for (int j = 0; j < NumValenceOrbs; j++)
         {
-          storage_grad_vector_[j]                              = dot(PrimLattice.G, storage_grad_vector_[j]);
-          storage_lapl_vector_[j]                              = trace(storage_hess_vector_[j], GGt);
+          storage_grad_vector_[j]                           = dot(PrimLattice.G, storage_grad_vector_[j]);
+          storage_lapl_vector_[j]                           = trace(storage_hess_vector_[j], GGt);
           std::complex<double> u                            = storage_value_vector_[j];
           TinyVector<std::complex<double>, OHMMS_DIM> gradu = storage_grad_vector_[j];
           std::complex<double> laplu                        = storage_lapl_vector_[j];
@@ -530,10 +530,10 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
           double phase = -dot(r, k);
           qmcplusplus::sincos(phase, &s, &c);
           std::complex<double> e_mikr(c, s);
-          storage_value_vector_[j]   = e_mikr * u;
-          storage_grad_vector_[j]    = e_mikr * (-eye * u * ck + gradu);
-          storage_lapl_vector_[j]    = e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu);
-          dphi(i, dphiIndex)[dim] = real(storage_value_vector_[j]);
+          storage_value_vector_[j] = e_mikr * u;
+          storage_grad_vector_[j]  = e_mikr * (-eye * u * ck + gradu);
+          storage_lapl_vector_[j]  = e_mikr * (-dot(k, k) * u - 2.0 * eye * dot(ck, gradu) + laplu);
+          dphi(i, dphiIndex)[dim]  = real(storage_value_vector_[j]);
           for (int k = 0; k < OHMMS_DIM; k++)
             dgrad_phi(dphiIndex)[dim] = real(storage_grad_vector_[j][k]);
           dlapl_phi(dphiIndex)[dim] = real(storage_lapl_vector_[j]);
@@ -931,9 +931,9 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       TinyVector<std::complex<double>, OHMMS_DIM> tmpg;
       Tensor<std::complex<double>, OHMMS_DIM> tmphs;
       TinyVector<Tensor<std::complex<double>, OHMMS_DIM>, OHMMS_DIM> tmpghs;
-      tmpg                 = dot(PrimLattice.G, storage_grad_vector_[j]);
+      tmpg                    = dot(PrimLattice.G, storage_grad_vector_[j]);
       storage_grad_vector_[j] = tmpg;
-      tmphs                = dot(PrimLattice.G, storage_hess_vector_[j]);
+      tmphs                   = dot(PrimLattice.G, storage_hess_vector_[j]);
       storage_hess_vector_[j] = dot(tmphs, PrimLattice.Gt);
       for (int n = 0; n < OHMMS_DIM; n++)
       {
@@ -1201,11 +1201,11 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     for (int j = 0; j < NumValenceOrbs; j++)
     {
       storage_grad_vector_[j] = dot(PG, storage_grad_vector_[j]);
-      tmphs                = dot(PG, storage_hess_vector_[j]);
+      tmphs                   = dot(PG, storage_hess_vector_[j]);
       storage_hess_vector_[j] = dot(tmphs, TPG);
       for (int n = 0; n < OHMMS_DIM; n++)
       {
-        tmpghs[n]                   = dot(PG, storage_grad_hess_vector_[j][n]);
+        tmpghs[n]                       = dot(PG, storage_grad_hess_vector_[j][n]);
         storage_grad_hess_vector_[j][n] = dot(tmpghs[n], TPG);
       }
       storage_grad_hess_vector_[j] = dot(PG, storage_grad_hess_vector_[j]);

@@ -29,9 +29,9 @@ PWOrbitalSet::~PWOrbitalSet()
 
 std::unique_ptr<SPOSet> PWOrbitalSet::makeClone() const
 {
-  auto myclone          = std::make_unique<PWOrbitalSet>(*this);
-  myclone->myBasisSet   = new PWBasis(*myBasisSet);
-  myclone->IsCloned     = true;
+  auto myclone        = std::make_unique<PWOrbitalSet>(*this);
+  myclone->myBasisSet = new PWBasis(*myBasisSet);
+  myclone->IsCloned   = true;
   return myclone;
 }
 

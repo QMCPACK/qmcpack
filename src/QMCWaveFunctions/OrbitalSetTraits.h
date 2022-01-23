@@ -54,24 +54,24 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
   {
     DIM = OHMMS_DIM
   };
-  using RealType = RealAlias<T>;
-  using ValueType = T;
-  using IndexType = int;
-  using PosType = TinyVector<RealType, DIM>;
-  using GradType = TinyVector<ValueType, DIM>;
-  using HessType = Tensor<ValueType, DIM>;
-  using TensorType = Tensor<ValueType, DIM>;
-  using GradHessType = TinyVector<Tensor<ValueType, DIM>, DIM>;
-  using IndexVector = Vector<IndexType>;
-  using ValueVector = Vector<ValueType>;
-  using ValueMatrix = Matrix<ValueType>;
-  using GradVector = Vector<GradType>;
-  using GradMatrix = Matrix<GradType>;
-  using HessVector = Vector<HessType>;
-  using HessMatrix = Matrix<HessType>;
+  using RealType       = RealAlias<T>;
+  using ValueType      = T;
+  using IndexType      = int;
+  using PosType        = TinyVector<RealType, DIM>;
+  using GradType       = TinyVector<ValueType, DIM>;
+  using HessType       = Tensor<ValueType, DIM>;
+  using TensorType     = Tensor<ValueType, DIM>;
+  using GradHessType   = TinyVector<Tensor<ValueType, DIM>, DIM>;
+  using IndexVector    = Vector<IndexType>;
+  using ValueVector    = Vector<ValueType>;
+  using ValueMatrix    = Matrix<ValueType>;
+  using GradVector     = Vector<GradType>;
+  using GradMatrix     = Matrix<GradType>;
+  using HessVector     = Vector<HessType>;
+  using HessMatrix     = Matrix<HessType>;
   using GradHessVector = Vector<GradHessType>;
   using GradHessMatrix = Matrix<GradHessType>;
-  using VGLVector = VectorSoaContainer<ValueType, DIM + 2>;
+  using VGLVector      = VectorSoaContainer<ValueType, DIM + 2>;
 };
 
 ///typedef for a set of variables that are varied during an optimization
@@ -125,10 +125,7 @@ struct LogToValue<std::complex<T>>
     return std::exp(tmp);
   }
 
-  inline static std::complex<T> convert(const std::complex<T>& logpsi)
-  {
-    return std::exp(logpsi);
-  }
+  inline static std::complex<T> convert(const std::complex<T>& logpsi) { return std::exp(logpsi); }
 };
 
 } // namespace qmcplusplus

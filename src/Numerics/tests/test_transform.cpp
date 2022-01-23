@@ -35,7 +35,7 @@ public:
 
 TEST_CASE("transform2gridfunctor", "[numerics]")
 {
-  using GridType = OneDimGridBase<double>;
+  using GridType   = OneDimGridBase<double>;
   using OutputType = OneDimQuinticSpline<double>;
 
   auto agrid = std::make_unique<LogGrid<double>>();

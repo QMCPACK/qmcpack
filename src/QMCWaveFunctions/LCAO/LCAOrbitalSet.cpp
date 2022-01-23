@@ -308,11 +308,7 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
 }
 
 
-void LCAOrbitalSet::evaluateVGL(const ParticleSet& P,
-                                int iat,
-                                ValueVector& psi,
-                                GradVector& dpsi,
-                                ValueVector& d2psi)
+void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   //TAKE CARE OF IDENTITY
   myBasisSet->evaluateVGL(P, iat, Temp);
@@ -344,11 +340,7 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   }
 }
 
-void LCAOrbitalSet::evaluateVGH(const ParticleSet& P,
-                                int iat,
-                                ValueVector& psi,
-                                GradVector& dpsi,
-                                HessVector& dhpsi)
+void LCAOrbitalSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& dhpsi)
 {
   //TAKE CARE OF IDENTITY
   myBasisSet->evaluateVGH(P, iat, Temph);

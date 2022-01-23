@@ -92,9 +92,9 @@ template<typename FN, typename SH>
 class RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> : public MPIObjectBase
 {
 public:
-  using COT = SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>;
+  using COT             = SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>;
   using RadialOrbital_t = MultiFunctorAdapter<FN>;
-  using single_type = typename RadialOrbital_t::single_type;
+  using single_type     = typename RadialOrbital_t::single_type;
 
   ///true, if the RadialOrbitalType is normalized
   bool Normalized;

@@ -73,16 +73,16 @@ template<typename StorageType>
 class AtomicOrbital
 {
 public:
-  using PosType = QMCTraits::PosType;
-  using RealType = QMCTraits::RealType;
-  using UnitCellType = CrystalLattice<RealType, OHMMS_DIM>;
-  using RealValueVector = Vector<double>;
-  using RealGradVector = Vector<TinyVector<double, OHMMS_DIM>>;
+  using PosType            = QMCTraits::PosType;
+  using RealType           = QMCTraits::RealType;
+  using UnitCellType       = CrystalLattice<RealType, OHMMS_DIM>;
+  using RealValueVector    = Vector<double>;
+  using RealGradVector     = Vector<TinyVector<double, OHMMS_DIM>>;
   using ComplexValueVector = Vector<std::complex<double>>;
-  using ComplexGradVector = Vector<TinyVector<std::complex<double>, OHMMS_DIM>>;
-  using RealHessVector = Vector<Tensor<double, OHMMS_DIM>>;
-  using ComplexHessVector = Vector<Tensor<std::complex<double>, OHMMS_DIM>>;
-  using SplineType = typename AtomicOrbitalTraits<StorageType>::SplineType;
+  using ComplexGradVector  = Vector<TinyVector<std::complex<double>, OHMMS_DIM>>;
+  using RealHessVector     = Vector<Tensor<double, OHMMS_DIM>>;
+  using ComplexHessVector  = Vector<Tensor<std::complex<double>, OHMMS_DIM>>;
+  using SplineType         = typename AtomicOrbitalTraits<StorageType>::SplineType;
 
 private:
   // Store in order

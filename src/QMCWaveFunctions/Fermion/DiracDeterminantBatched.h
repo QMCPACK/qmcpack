@@ -81,11 +81,11 @@ public:
   DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
                           int first,
                           int last,
-                          int ndelay                           = 1,
+                          int ndelay                          = 1,
                           DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
-  DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
+  DiracDeterminantBatched(const DiracDeterminantBatched& s)            = delete;
   DiracDeterminantBatched& operator=(const DiracDeterminantBatched& s) = delete;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -301,8 +301,8 @@ private:
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                     const RefVector<const DualMatrix<Value>>& logdetT_list,
-                     const RefVector<DualMatrix<Value>>& a_inv_lis);
+                            const RefVector<const DualMatrix<Value>>& logdetT_list,
+                            const RefVector<DualMatrix<Value>>& a_inv_lis);
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()

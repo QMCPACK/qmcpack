@@ -42,8 +42,8 @@ bool kpdata_comp(const kpdata<T>& left, const kpdata<T>& right)
 template<class T>
 struct HEGGrid
 {
-  using PL_t = CrystalLattice<T, OHMMS_DIM>;
-  using PosType = typename PL_t::SingleParticlePos;
+  using PL_t     = CrystalLattice<T, OHMMS_DIM>;
+  using PosType  = typename PL_t::SingleParticlePos;
   using RealType = typename PL_t::Scalar_t;
 
   ///number of kpoints of a half sphere excluding gamma
@@ -61,7 +61,7 @@ struct HEGGrid
   PosType twist{0.0};
 
 
-  using kpdata_t = kpdata<T>;
+  using kpdata_t  = kpdata<T>;
   using kpoints_t = std::vector<kpdata_t>;
 
   std::optional<kpoints_t> kpoints_grid;
@@ -151,8 +151,8 @@ struct HEGGrid
     NumKptsHalf = nkpts;
     kpt.resize(nkpts);
     mk2.resize(nkpts);
-    int ikpt = 0;
-    MaxKsq    = 0.0;
+    int ikpt    = 0;
+    MaxKsq      = 0.0;
     auto rs_it  = rs.begin();
     auto rs_end = rs.end();
     while (ikpt < nkpts && rs_it != rs_end)

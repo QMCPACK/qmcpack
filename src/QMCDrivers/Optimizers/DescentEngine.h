@@ -27,9 +27,9 @@ namespace qmcplusplus
 class DescentEngine
 {
   using FullPrecValueType = qmcplusplus::QMCTraits::FullPrecValueType;
-  using ValueType = qmcplusplus::QMCTraits::ValueType;
-  using RealType = qmcplusplus::QMCTraits::RealType;
-  using FullPrecRealType = qmcplusplus::QMCTraits::FullPrecRealType;
+  using ValueType         = qmcplusplus::QMCTraits::ValueType;
+  using RealType          = qmcplusplus::QMCTraits::RealType;
+  using FullPrecRealType  = qmcplusplus::QMCTraits::FullPrecRealType;
 
 private:
   ///Vector for local energy parameter derivatives

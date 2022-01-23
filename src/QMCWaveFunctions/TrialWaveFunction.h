@@ -61,25 +61,25 @@ class TrialWaveFunction
 {
 public:
   // derived types from WaveFunctionComponent
-  using RealType = WaveFunctionComponent::RealType;
-  using ComplexType = WaveFunctionComponent::ComplexType;
+  using RealType         = WaveFunctionComponent::RealType;
+  using ComplexType      = WaveFunctionComponent::ComplexType;
   using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
-  using ValueType = WaveFunctionComponent::ValueType;
-  using PosType = WaveFunctionComponent::PosType;
-  using GradType = WaveFunctionComponent::GradType;
-  using BufferType = WaveFunctionComponent::BufferType;
-  using WFBufferType = WaveFunctionComponent::WFBufferType;
-  using HessType = WaveFunctionComponent::HessType;
-  using HessVector = WaveFunctionComponent::HessVector;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using PsiValueType = WaveFunctionComponent::PsiValueType;
+  using ValueType        = WaveFunctionComponent::ValueType;
+  using PosType          = WaveFunctionComponent::PosType;
+  using GradType         = WaveFunctionComponent::GradType;
+  using BufferType       = WaveFunctionComponent::BufferType;
+  using WFBufferType     = WaveFunctionComponent::WFBufferType;
+  using HessType         = WaveFunctionComponent::HessType;
+  using HessVector       = WaveFunctionComponent::HessVector;
+  using LogValueType     = WaveFunctionComponent::LogValueType;
+  using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
 #ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
+  using CTS          = CUDAGlobalTypes;
   using RealMatrix_t = WaveFunctionComponent::RealMatrix_t;
-  using ValueMatrix = WaveFunctionComponent::ValueMatrix;
-  using GradMatrix = WaveFunctionComponent::GradMatrix;
-  using Walker_t = ParticleSet::Walker_t;
+  using ValueMatrix  = WaveFunctionComponent::ValueMatrix;
+  using GradMatrix   = WaveFunctionComponent::GradMatrix;
+  using Walker_t     = ParticleSet::Walker_t;
 #endif
 
   /// enum type for computing partial WaveFunctionComponents

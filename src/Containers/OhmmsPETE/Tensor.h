@@ -371,7 +371,7 @@ inline T traceAtB(const Tensor<T, D>& a, const Tensor<T, D>& b)
 template<class T1, class T2, unsigned D>
 inline typename BinaryReturn<T1, T2, OpMultiply>::Type_t traceAtB(const Tensor<T1, D>& a, const Tensor<T2, D>& b)
 {
-  using T = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
+  using T  = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   T result = 0.0;
   for (int i = 0; i < D * D; i++)
     result += a(i) * b(i);

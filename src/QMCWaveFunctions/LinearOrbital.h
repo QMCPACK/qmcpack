@@ -51,7 +51,7 @@ public:
       }
       G[i] = coeff;
     }
-    L        = 0.0;
+    L          = 0.0;
     log_value_ = convertValueToLog(v);
     return log_value_;
   }

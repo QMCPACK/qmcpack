@@ -82,8 +82,8 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     p = m_act_rot_inds[i].first;
     q = m_act_rot_inds[i].second;
     std::stringstream sstr;
-    sstr << myName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
-         << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
+    sstr << myName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
+         << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied)

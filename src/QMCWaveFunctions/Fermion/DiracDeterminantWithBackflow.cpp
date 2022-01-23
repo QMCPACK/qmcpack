@@ -82,9 +82,7 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
 }
 
 /** replace of SPOSet::evaluate function with the removal of t_logpsi */
-void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet,
-                                                GradMatrix& dlogdet,
-                                                HessMatrix& grad_grad_logdet)
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
@@ -482,10 +480,9 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
-    const ParticleSet& P,
-    ParticleSet::ParticleGradient& G,
-    ParticleSet::ParticleLaplacian& L)
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(const ParticleSet& P,
+                                                                                     ParticleSet::ParticleGradient& G,
+                                                                                     ParticleSet::ParticleLaplacian& L)
 {
   //testGG(P);
   //testL(P);
@@ -996,8 +993,9 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(std::shared_ptr<SPOSet>&& spo,
-                                                                           BackflowTransformation& BF) const
+std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(
+    std::shared_ptr<SPOSet>&& spo,
+    BackflowTransformation& BF) const
 {
   return std::make_unique<DiracDeterminantWithBackflow>(std::move(spo), BF, FirstIndex, LastIndex);
 }

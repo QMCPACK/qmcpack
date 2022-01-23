@@ -149,7 +149,7 @@ public:
   {
     assert(this == &spo_list.getLeader());
     auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-    auto res_ptr = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, TT>*>(collection.lendResource().release());
+    auto res_ptr     = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, TT>*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
     phi_leader.mw_mem_.reset(res_ptr);

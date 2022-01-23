@@ -100,10 +100,10 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 </jastrow> \
 </tmp> \
 ";
-  okay = doc.parseFromString(particles);
+  okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
-  root = doc.getRoot();
+  root            = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   kSpaceJastrowBuilder jastrow(c, elec_, ions_);

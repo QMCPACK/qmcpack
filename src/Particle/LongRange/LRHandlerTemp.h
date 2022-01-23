@@ -41,7 +41,7 @@ class LRHandlerTemp : public LRHandlerBase
 {
 public:
   //Typedef for the lattice-type.
-  using ParticleLayout = ParticleSet::ParticleLayout;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
   using BreakupBasisType = BreakupBasis;
 
   bool FirstTime;
@@ -76,7 +76,10 @@ public:
     fillFk(ref.getSK().getKLists());
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override
+  {
+    return new LRHandlerTemp<Func, BreakupBasis>(*this, ref);
+  }
 
   void initBreakup(ParticleSet& ref) override
   {

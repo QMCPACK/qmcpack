@@ -155,7 +155,6 @@ struct GenericSTO
     }
     return rnl;
   }
-
 };
 
 /**class for Slater-type orbitals,

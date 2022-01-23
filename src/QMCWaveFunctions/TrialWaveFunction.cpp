@@ -150,12 +150,12 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   const int num_particles = p_leader.getTotalNum();
   auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
                                           ParticleSet::ParticleLaplacian& lapl) {
-    grad.resize(num_particles);
-    lapl.resize(num_particles);
-    grad           = czero;
-    lapl           = czero;
-    twf.log_real_  = czero;
-    twf.PhaseValue = czero;
+             grad.resize(num_particles);
+             lapl.resize(num_particles);
+             grad           = czero;
+             lapl           = czero;
+             twf.log_real_  = czero;
+             twf.PhaseValue = czero;
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
     initGandL(wf_list[iw], g_list[iw], l_list[iw]);
@@ -778,9 +778,7 @@ void TrialWaveFunction::mw_calcRatioGradWithSpin(const RefVectorWithLeader<Trial
     wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
 }
 
-void TrialWaveFunction::printGL(ParticleSet::ParticleGradient& G,
-                                ParticleSet::ParticleLaplacian& L,
-                                std::string tag)
+void TrialWaveFunction::printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag)
 {
   std::ostringstream o;
   o << "---  reporting " << tag << std::endl << "  ---" << std::endl;
@@ -1350,7 +1348,7 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
       //Needs a bit of logic and protection before this reaches production.
       //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
       //det->registerTWFFastDerivWrapper(P, twf);
-      Z[i]->registerTWFFastDerivWrapper(P,twf);
+      Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
     else //Is Jastrow, so do nothing right now.
     {}

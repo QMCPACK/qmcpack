@@ -47,8 +47,8 @@ namespace qmcplusplus
 class SPOSetBuilder : public QMCTraits, public MPIObjectBase
 {
 public:
-  using SPOPool_t = std::map<std::string, SPOSet*>;
-  using indices_t = std::vector<int>;
+  using SPOPool_t  = std::map<std::string, SPOSet*>;
+  using indices_t  = std::vector<int>;
   using energies_t = std::vector<RealType>;
 
   /// whether implementation conforms only to legacy standard

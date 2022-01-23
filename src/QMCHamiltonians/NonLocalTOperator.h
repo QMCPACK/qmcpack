@@ -37,7 +37,7 @@ enum
 struct NonLocalTOperator
 {
   using RealType = NonLocalData::RealType;
-  using PosType = NonLocalData::PosType;
+  using PosType  = NonLocalData::PosType;
 
   NonLocalTOperator();
 

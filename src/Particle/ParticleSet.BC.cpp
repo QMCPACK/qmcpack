@@ -32,7 +32,7 @@ void ParticleSet::createSK()
     throw std::runtime_error("Report bug! structure_factor_ has already been created. Unexpected call sequence.");
 
   auto& Lattice = getLattice();
-  auto& LRBox = getLRBox();
+  auto& LRBox   = getLRBox();
   if (Lattice.explicitly_defined)
     convert2Cart(R); //make sure that R is in Cartesian coordinates
 

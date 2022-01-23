@@ -109,7 +109,6 @@ QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
   hf.put(root);
 
   return *hf.getH();
-  
 }
 
 TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
@@ -163,7 +162,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   REQUIRE(logpsi == Approx(-14.233853149));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc       = ham.evaluateDeterministic(elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -780,7 +779,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  
+
   //This is already defined in QMCHamiltonian, but keep it here for easy access.
   enum observ_id
   {
@@ -794,29 +793,29 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   using ValueMatrix = SPOSet::ValueMatrix;
 
   int IONINDEX = 1;
- 
+
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
-  //These matrices are not necessarily square to accomodate orb opt and multidets.  
+  //These matrices are not necessarily square to accomodate orb opt and multidets.
 
   ValueMatrix upmat; //Up slater matrix.
   ValueMatrix dnmat; //Down slater matrix.
-  int Nup=5;  //These are hard coded until the interface calls get implemented/cleaned up.
-  int Ndn=4;
-  int Norb=14;
+  int Nup  = 5;      //These are hard coded until the interface calls get implemented/cleaned up.
+  int Ndn  = 4;
+  int Norb = 14;
   upmat.resize(Nup, Norb);
   dnmat.resize(Ndn, Norb);
 
-  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.  
-  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons. 
-  std::vector<ValueMatrix> matlist; //Vector of slater matrices.  
-  std::vector<ValueMatrix> B, X; //Vector of B matrix, and auxiliary X matrix.  
+  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.
+  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons.
+  std::vector<ValueMatrix> matlist; //Vector of slater matrices.
+  std::vector<ValueMatrix> B, X;    //Vector of B matrix, and auxiliary X matrix.
 
   //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
   // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
   // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
 
   std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
-  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices. 
+  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices.
   matlist.push_back(upmat);
   matlist.push_back(dnmat);
 
@@ -838,12 +837,12 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 
-//  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+  //  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
-  
+
   std::vector<ValueMatrix> minv;
-  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations. 
-                                         //These are N_s x N_s square matrices (N_s is number of particles for species s).
+  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations.
+                                       //These are N_s x N_s square matrices (N_s is number of particles for species s).
   B_gs.push_back(upmat);
   B_gs.push_back(dnmat);
   M_gs.push_back(upmat);
@@ -852,7 +851,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   minv.push_back(dnmat);
 
 
-//  twf.getM(elec, matlist);
+  //  twf.getM(elec, matlist);
   std::vector<std::vector<ValueMatrix>> dB_gs;
   std::vector<std::vector<ValueMatrix>> dM_gs;
   std::vector<ValueMatrix> tmp_gs;
@@ -862,8 +861,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   twf.buildX(minv, B_gs, X);
   for (int id = 0; id < matlist.size(); id++)
   {
-//    int ptclnum = twf.numParticles(id);
-    int ptclnum = (id==0 ? Nup : Ndn); //hard coded until twf interface comes online.  
+    //    int ptclnum = twf.numParticles(id);
+    int ptclnum = (id == 0 ? Nup : Ndn); //hard coded until twf interface comes online.
     ValueMatrix gs_m;
     gs_m.resize(ptclnum, ptclnum);
     tmp_gs.push_back(gs_m);
@@ -893,7 +892,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     }
 
     twf.getIonGradM(elec, ions, ionid, dM);
-//    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    //    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
@@ -934,21 +933,21 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
-//  twf.wipeMatrices(B);
-//  twf.wipeMatrices(B_gs);
-//  twf.wipeMatrices(X);
-//  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
-//  twf.getGSMatrices(B, B_gs);
-//  twf.buildX(minv, B_gs, X);
+  //  twf.wipeMatrices(B);
+  //  twf.wipeMatrices(B_gs);
+  //  twf.wipeMatrices(X);
+  //  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  //  twf.getGSMatrices(B, B_gs);
+  //  twf.buildX(minv, B_gs, X);
 
   ValueType nlpp    = 0.0;
   RealType nlpp_obs = 0.0;
-//  nlpp              = twf.trAB(minv, B_gs);
+  //  nlpp              = twf.trAB(minv, B_gs);
   convertToReal(nlpp, nlpp_obs);
 
   app_log() << "NLPP = " << nlpp << std::endl;
 
-//  CHECK(nlpp_obs == Approx(1.3849558361e+01));
+  //  CHECK(nlpp_obs == Approx(1.3849558361e+01));
 
   ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
@@ -956,18 +955,18 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipeMatrices(dB[idim]);
-//      twf.wipeMatrices(dM[idim]);
+      //      twf.wipeMatrices(dB[idim]);
+      //      twf.wipeMatrices(dM[idim]);
     }
 
-//    twf.getIonGradM(elec, ions, ionid, dM);
-//    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    //    twf.getIonGradM(elec, ions, ionid, dM);
+    //    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.getGSMatrices(dB[idim], dB_gs[idim]);
-//      twf.getGSMatrices(dM[idim], dM_gs[idim]);
-//      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      //      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      //      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      //      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
   }

@@ -31,7 +31,7 @@ class KPoint;
 */
 class EshdfFile
 {
-  using momap_t = std::map<std::vector<int>, std::complex<double>>;
+  using momap_t  = std::map<std::vector<int>, std::complex<double>>;
   using mopair_t = std::pair<std::vector<int>, std::complex<double>>;
 
 private:

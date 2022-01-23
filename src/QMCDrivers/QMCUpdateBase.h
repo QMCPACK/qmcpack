@@ -40,14 +40,14 @@ class TraceManager;
 class QMCUpdateBase : public QMCTraits
 {
 public:
-  using Walker_t = MCWalkerConfiguration::Walker_t;
-  using WalkerIter_t = MCWalkerConfiguration::iterator;
+  using Walker_t         = MCWalkerConfiguration::Walker_t;
+  using WalkerIter_t     = MCWalkerConfiguration::iterator;
   using BranchEngineType = SimpleFixedNodeBranch;
 #ifdef MIXED_PRECISION
-  using mPosType = TinyVector<OHMMS_PRECISION_FULL, DIM>;
+  using mPosType    = TinyVector<OHMMS_PRECISION_FULL, DIM>;
   using mTensorType = Tensor<OHMMS_PRECISION_FULL, DIM>;
 #else
-  using mPosType = PosType;
+  using mPosType    = PosType;
   using mTensorType = TensorType;
 #endif
 

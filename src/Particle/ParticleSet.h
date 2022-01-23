@@ -504,11 +504,11 @@ public:
   inline void assign(const ParticleSet& ptclin)
   {
     resize(ptclin.getTotalNum());
-    R.InUnit         = ptclin.R.InUnit;
-    R                = ptclin.R;
-    spins            = ptclin.spins;
-    GroupID          = ptclin.GroupID;
-    is_spinor_       = ptclin.is_spinor_;
+    R.InUnit   = ptclin.R.InUnit;
+    R          = ptclin.R;
+    spins      = ptclin.spins;
+    GroupID    = ptclin.GroupID;
+    is_spinor_ = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());

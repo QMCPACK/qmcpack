@@ -20,8 +20,8 @@
 #if defined(HAVE_LIBHDF5)
 #include "hdf5.h"
 #else
-using hid_t = int;
-using hsize_t = std::size_t;
+using hid_t           = int;
+using hsize_t         = std::size_t;
 const int H5P_DEFAULT = 0;
 #endif
 

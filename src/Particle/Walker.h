@@ -89,7 +89,7 @@ public:
    * Not really "buffers", "walker message" also used to serialize walker, rename
    */
   using WFBuffer_t = PooledMemory<FullPrecRealType>;
-  using Buffer_t = PooledData<RealType>;
+  using Buffer_t   = PooledData<RealType>;
   /** }@ */
 
   ///id reserved for forward walking
@@ -311,8 +311,8 @@ public:
 #endif
     //Drift = a.Drift;
     Properties.copy(a.Properties);
-    DataSet = a.DataSet;
-    block_end = a.block_end;
+    DataSet    = a.DataSet;
+    block_end  = a.block_end;
     scalar_end = a.scalar_end;
     if (PropertyHistory.size() != a.PropertyHistory.size())
       PropertyHistory.resize(a.PropertyHistory.size());

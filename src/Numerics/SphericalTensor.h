@@ -41,10 +41,10 @@ class SphericalTensor
 {
 public:
   using value_type = T;
-  using pos_type = Point_t;
-  using hess_type = Tensor_t;
-  using ggg_type = GGG_t;
-  using This_t = SphericalTensor<T, Point_t>;
+  using pos_type   = Point_t;
+  using hess_type  = Tensor_t;
+  using ggg_type   = GGG_t;
+  using This_t     = SphericalTensor<T, Point_t>;
 
   /** constructor
    * @param l_max maximum angular momentum
@@ -646,7 +646,7 @@ template<class SCT, unsigned L>
 struct SCTFunctor
 {
   using value_type = typename SCT::value_type;
-  using pos_type = typename SCT::pos_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     SCTFunctor<SCT, L - 1>::apply(Ylm, gYlm, p);
@@ -657,7 +657,7 @@ template<class SCT>
 struct SCTFunctor<SCT, 1>
 {
   using value_type = typename SCT::value_type;
-  using pos_type = typename SCT::pos_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     const value_type L1 = sqrt(3.0);
@@ -674,7 +674,7 @@ template<class SCT>
 struct SCTFunctor<SCT, 2>
 {
   using value_type = typename SCT::value_type;
-  using pos_type = typename SCT::pos_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     SCTFunctor<SCT, 1>::apply(Ylm, gYlm, p);
@@ -701,7 +701,7 @@ template<class SCT>
 struct SCTFunctor<SCT, 3>
 {
   using value_type = typename SCT::value_type;
-  using pos_type = typename SCT::pos_type;
+  using pos_type   = typename SCT::pos_type;
   static inline void apply(std::vector<value_type>& Ylm, std::vector<pos_type>& gYlm, const pos_type& p)
   {
     SCTFunctor<SCT, 2>::apply(Ylm, gYlm, p);

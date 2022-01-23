@@ -32,8 +32,8 @@ namespace qmcplusplus
 class NonLocalECPComponent : public QMCTraits
 {
 private:
-  using SpherGridType = std::vector<PosType>;
-  using GridType = OneDimGridBase<RealType>;
+  using SpherGridType       = std::vector<PosType>;
+  using GridType            = OneDimGridBase<RealType>;
   using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///Non Local part: angular momentum, potential and grid

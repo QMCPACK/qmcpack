@@ -43,5 +43,5 @@ private:
 
   friend class ParticleSetPool;
 };
-}
+} // namespace qmcplusplus
 #endif

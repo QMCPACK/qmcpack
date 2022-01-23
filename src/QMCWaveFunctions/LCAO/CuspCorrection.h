@@ -44,7 +44,7 @@ namespace qmcplusplus
 struct CuspCorrectionParameters
 {
   using ValueType = QMCTraits::ValueType;
-  using RealType = QMCTraits::RealType;
+  using RealType  = QMCTraits::RealType;
 
   /// The cutoff radius
   RealType Rc;
@@ -70,12 +70,12 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
 
 class OneMolecularOrbital
 {
-  using RealType = QMCTraits::RealType;
-  using ValueType = QMCTraits::ValueType;
-  using GradType = QMCTraits::GradType;
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using GradType    = QMCTraits::GradType;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
-  using GradVector = OrbitalSetTraits<ValueType>::GradVector;
-  using SPOSetPtr = SPOSet*;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using SPOSetPtr   = SPOSet*;
 
 public:
   RealType phi(RealType r)
@@ -202,9 +202,9 @@ void computeRadialPhiBar(ParticleSet* targetP,
                          Vector<QMCTraits::RealType>& rad_orb,
                          const CuspCorrectionParameters& data);
 
-using RealType = QMCTraits::RealType;
-using ValueType = QMCTraits::ValueType;
-using GradType = QMCTraits::GradType;
+using RealType    = QMCTraits::RealType;
+using ValueType   = QMCTraits::ValueType;
+using GradType    = QMCTraits::GradType;
 using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
 
 /** Ideal local energy at one point
@@ -221,11 +221,7 @@ RealType getOneIdealLocalEnergy(RealType r, RealType Z, RealType beta0);
  * @param ELorigAtRc local energy at Rc.  beta0 is adjusted to make energy continuous at Rc
  * @param ELideal - output the ideal local energy at pos values
  */
-void getIdealLocalEnergy(const ValueVector& pos,
-                         RealType Z,
-                         RealType Rc,
-                         RealType ELorigAtRc,
-                         ValueVector& ELideal);
+void getIdealLocalEnergy(const ValueVector& pos, RealType Z, RealType Rc, RealType ELorigAtRc, ValueVector& ELideal);
 
 /** Evaluate various orbital quantities that enter as constraints on the correction
  * @param valRc  orbital value at Rc

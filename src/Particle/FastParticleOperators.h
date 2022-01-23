@@ -36,7 +36,7 @@ struct ConvertPosUnit
 template<class T>
 struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 {
-  using Array_t = ParticleAttrib<TinyVector<T, 3>>;
+  using Array_t       = ParticleAttrib<TinyVector<T, 3>>;
   using Transformer_t = Tensor<T, 3>;
 
   inline static void apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
@@ -96,7 +96,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 template<class T>
 struct ConvertPosUnit<ParticleAttrib<TinyVector<T, 2>>, Tensor<T, 2>, 2>
 {
-  using Array_t = ParticleAttrib<TinyVector<T, 2>>;
+  using Array_t       = ParticleAttrib<TinyVector<T, 2>>;
   using Transformer_t = Tensor<T, 2>;
 
   inline static void apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
@@ -184,8 +184,8 @@ struct ApplyBConds
 template<class T>
 struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 {
-  using Array_t = ParticleAttrib<TinyVector<T, 3>>;
-  using Component_t = typename Array_t::Type_t;
+  using Array_t       = ParticleAttrib<TinyVector<T, 3>>;
+  using Component_t   = typename Array_t::Type_t;
   using Transformer_t = Tensor<T, 3>;
 
   inline static void Cart2Cart(const Array_t& pin,

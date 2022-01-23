@@ -45,8 +45,8 @@
 
 using namespace qmcplusplus;
 using RealType = QMCTraits::RealType;
-using PosType = QMCTraits::PosType;
-using Grid_t = SkParserBase::Grid_t;
+using PosType  = QMCTraits::PosType;
+using Grid_t   = SkParserBase::Grid_t;
 
 int main(int argc, char** argv)
 {

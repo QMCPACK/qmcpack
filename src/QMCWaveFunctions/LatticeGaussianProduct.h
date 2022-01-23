@@ -84,9 +84,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  void evaluateLogAndStore(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& dG,
-                           ParticleSet::ParticleLaplacian& dL);
+  void evaluateLogAndStore(const ParticleSet& P, ParticleSet::ParticleGradient& dG, ParticleSet::ParticleLaplacian& dL);
 };
 } // namespace qmcplusplus
 #endif

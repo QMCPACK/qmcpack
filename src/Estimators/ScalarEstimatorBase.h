@@ -40,12 +40,12 @@ class ObservableHelper;
  */
 struct ScalarEstimatorBase
 {
-  using RealType = QMCTraits::FullPrecRealType;
+  using RealType         = QMCTraits::FullPrecRealType;
   using accumulator_type = accumulator_set<RealType>;
-  using Walker_t = MCWalkerConfiguration::Walker_t;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WalkerIterator = MCWalkerConfiguration::const_iterator;
-  using RecordListType = RecordNamedProperty<RealType>;
+  using Walker_t         = MCWalkerConfiguration::Walker_t;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WalkerIterator   = MCWalkerConfiguration::const_iterator;
+  using RecordListType   = RecordNamedProperty<RealType>;
 
   ///first index within an record of the first element handled by an object
   int FirstIndex;

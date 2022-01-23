@@ -6,8 +6,8 @@
 
 namespace qmcplusplus
 {
-using PosType = QMCTraits::PosType;
-using RealType = QMCTraits::RealType;
+using PosType   = QMCTraits::PosType;
+using RealType  = QMCTraits::RealType;
 using IndexType = QMCTraits::IndexType;
 
 void get_gridinfo_from_posgrid(const std::vector<PosType>& posgridlist, //list of grid points

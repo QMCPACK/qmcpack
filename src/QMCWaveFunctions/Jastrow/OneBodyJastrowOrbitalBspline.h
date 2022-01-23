@@ -37,13 +37,13 @@ private:
   // Mostly QMCTraits here
   using JBase = J1OrbitalSoA<FT>;
   // Duplication that should be removed
-  using RealType      = typename JBase::RealType;
-  using ValueType     = typename JBase::ValueType;
-  using GradType      = typename JBase::GradType;
-  using PosType       = typename JBase::PosType;
-  using GradMatrix  = typename JBase::GradMatrix;
-  using ValueMatrix = typename JBase::ValueMatrix;
-  using RealMatrix_t  = typename JBase::RealMatrix_t;
+  using RealType     = typename JBase::RealType;
+  using ValueType    = typename JBase::ValueType;
+  using GradType     = typename JBase::GradType;
+  using PosType      = typename JBase::PosType;
+  using GradMatrix   = typename JBase::GradMatrix;
+  using ValueMatrix  = typename JBase::ValueMatrix;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
   std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;

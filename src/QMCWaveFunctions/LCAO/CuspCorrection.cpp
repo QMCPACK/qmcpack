@@ -28,7 +28,7 @@ bool readCuspInfo(const std::string& cuspInfoFile,
                   Matrix<CuspCorrectionParameters>& info)
 {
   bool success = true;
-  int ncenter = info.rows();
+  int ncenter  = info.rows();
   app_log() << "Reading cusp info from : " << cuspInfoFile << std::endl;
   Libxml2Document adoc;
   if (!adoc.parse(cuspInfoFile))

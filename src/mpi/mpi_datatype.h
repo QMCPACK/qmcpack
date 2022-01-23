@@ -89,8 +89,8 @@ MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
 }
 
 #else
-using status = int;
-using request = int;
+using status       = int;
+using request      = int;
 using MPI_Datatype = int;
 
 //return a non-sense integer

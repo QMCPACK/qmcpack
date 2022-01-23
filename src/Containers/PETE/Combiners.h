@@ -99,7 +99,7 @@ template<class A, class B, class C, class Op, class Tag>
 struct Combine3
 {
   using Type1_t = typename Combine2<A, B, Op, Tag>::Type_t;
-  using Type_t = typename Combine2<Type1_t, C, Op, Tag>::Type_t;
+  using Type_t  = typename Combine2<Type1_t, C, Op, Tag>::Type_t;
   inline static Type_t combine(const A& a, const B& b, const C& c, const Op& op, const Tag& t)
   {
     return Combine2<Type1_t, C, Op, Tag>::combine(Combine2<A, B, Op, Tag>::combine(a, b, op, t), c, op, t);

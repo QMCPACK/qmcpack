@@ -127,7 +127,7 @@ struct h5data_proxy<einspline_engine<ENGT>>
     D = einspline_engine<ENGT>::D
   };
   using value_type = typename einspline_engine<ENGT>::value_type;
-  using Base = h5_space_type<value_type, D + 1>;
+  using Base       = h5_space_type<value_type, D + 1>;
   using Base::dims;
   using Base::get_address;
   using data_type = einspline_engine<ENGT>;

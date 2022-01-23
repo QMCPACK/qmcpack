@@ -33,14 +33,14 @@ public:
   using ValueMatrix = SPOSet::ValueMatrix;
   using GradMatrix  = SPOSet::GradMatrix;
   using HessMatrix  = SPOSet::HessMatrix;
-  using IndexType     = QMCTraits::IndexType;
-  using RealType      = QMCTraits::RealType;
-  using ValueType     = QMCTraits::ValueType;
+  using IndexType   = QMCTraits::IndexType;
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
 
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
-  
+
   /** @brief Add a particle group.
    *
    *  Here, a "group" corresponds to a subset of particles which are antisymmetric with 
@@ -53,7 +53,7 @@ public:
    *  @param[in] groupid.  ParticleSet groupid to which SPOSet corresponds.
    *  @param[in] spo.  Pointer to SPOSet.  
    *  @return void.
-   */  
+   */
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
 
@@ -68,7 +68,7 @@ public:
    *
    *  @param[in] gid. ParticleSet group ID to look up.  
    *  @return The corresponding internal groupID.  
-   */  
+   */
   IndexType getTWFGroupIndex(const IndexType gid);
 
   /** @ingroup Query functions
@@ -118,9 +118,9 @@ public:
    *  @return Void
    */
   void getEGradELaplM(const ParticleSet& P,
-                         std::vector<ValueMatrix>& mvec,
-                         std::vector<GradMatrix>& gmat,
-                         std::vector<ValueMatrix>& lmat);
+                      std::vector<ValueMatrix>& mvec,
+                      std::vector<GradMatrix>& gmat,
+                      std::vector<ValueMatrix>& lmat);
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices.
    *
@@ -147,10 +147,10 @@ public:
    *  @return Void
    */
   void getIonGradIonGradELaplM(const ParticleSet& P,
-                              const ParticleSet& source,
-                              int iat,
-                              std::vector<std::vector<ValueMatrix>>& dmvec,
-                              std::vector<std::vector<ValueMatrix>>& dlmat);
+                               const ParticleSet& source,
+                               int iat,
+                               std::vector<std::vector<ValueMatrix>>& dmvec,
+                               std::vector<std::vector<ValueMatrix>>& dlmat);
 
 
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
@@ -171,9 +171,9 @@ public:
    *  @return Derivative of O psi/psi = Tr[M^{-1} dB - X * dM ]
    */
   ValueType computeGSDerivative(const std::vector<ValueMatrix>& Minv,
-                                  const std::vector<ValueMatrix>& X,
-                                  const std::vector<ValueMatrix>& dM,
-                                  const std::vector<ValueMatrix>& dB);
+                                const std::vector<ValueMatrix>& X,
+                                const std::vector<ValueMatrix>& dM,
+                                const std::vector<ValueMatrix>& dB);
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
@@ -194,9 +194,7 @@ public:
    *  @param[in,out] X. M^-1*B*M^-1 is stored in this list of matrices.
    *  @return Void. 
    */
-  void buildX(const std::vector<ValueMatrix>& Minv,
-               const std::vector<ValueMatrix>& B,
-               std::vector<ValueMatrix>& X);
+  void buildX(const std::vector<ValueMatrix>& Minv, const std::vector<ValueMatrix>& B, std::vector<ValueMatrix>& X);
 
   /** @brief Goes through a list of matrices and zeros them out.  Does this in place.
    *
@@ -221,7 +219,6 @@ private:
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
-
 };
 
 /**@}*/

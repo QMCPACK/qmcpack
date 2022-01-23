@@ -42,9 +42,9 @@ namespace qmcplusplus
 //#define TRACE_CHECK
 
 const unsigned int DMAX = 4;
-using TraceInt = long;
-using TraceReal = OHMMS_PRECISION;
-using TraceComp = std::complex<TraceReal>;
+using TraceInt          = long;
+using TraceReal         = OHMMS_PRECISION;
+using TraceComp         = std::complex<TraceReal>;
 
 
 struct TraceQuantity
@@ -2123,7 +2123,7 @@ public:
 
 namespace qmcplusplus
 {
-using TraceInt = long;
+using TraceInt  = long;
 using TraceReal = double;
 using TraceComp = std::complex<TraceReal>;
 

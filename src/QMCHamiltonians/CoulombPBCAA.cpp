@@ -81,7 +81,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       msg << std::endl;
       msg << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
       msg << "input.  Alternatively, the tolerance can be increased by setting the" << std::endl;
-      msg << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.getLattice().LR_tol << ". " << std::endl;
+      msg << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.getLattice().LR_tol << ". "
+          << std::endl;
       msg << "If you increase the tolerance, please perform careful checks of energy" << std::endl;
       msg << "differences to ensure this error is controlled for your application." << std::endl;
       msg << std::endl;

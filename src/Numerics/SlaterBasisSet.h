@@ -24,7 +24,7 @@ template<class T>
 struct SlaterCombo
 {
   static_assert(std::is_floating_point<T>::value, "T must be a float point type");
-  using real_type = T;
+  using real_type   = T;
   using Component_t = GenericSTO<T>;
 
   int L;
@@ -92,8 +92,8 @@ struct SlaterCombo
     typename std::vector<Component_t>::iterator it(sset.begin()), it_end(sset.end());
     while (it != it_end)
     {
-      Y   += (*it).evaluate(r, rinv, du, d2u);
-      dY  += du;
+      Y += (*it).evaluate(r, rinv, du, d2u);
+      dY += du;
       d2Y += d2u;
       ++it;
     }
@@ -109,8 +109,8 @@ struct SlaterCombo
     typename std::vector<Component_t>::iterator it(sset.begin()), it_end(sset.end());
     while (it != it_end)
     {
-      Y   += (*it).evaluate(r, rinv, du, d2u, d3u);
-      dY  += du;
+      Y += (*it).evaluate(r, rinv, du, d2u, d3u);
+      dY += du;
       d2Y += d2u;
       d3Y += d3u;
       ++it;

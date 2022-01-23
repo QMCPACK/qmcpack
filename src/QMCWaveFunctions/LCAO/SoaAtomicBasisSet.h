@@ -29,9 +29,9 @@ template<typename ROT, typename SH>
 struct SoaAtomicBasisSet
 {
   using RadialOrbital_t = ROT;
-  using RealType  = typename ROT::RealType;
-  using GridType  = typename ROT::GridType;
-  using ValueType = typename QMCTraits::ValueType;
+  using RealType        = typename ROT::RealType;
+  using GridType        = typename ROT::GridType;
+  using ValueType       = typename QMCTraits::ValueType;
 
   ///size of the basis set
   int BasisSetSize;

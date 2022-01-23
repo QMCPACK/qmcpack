@@ -85,7 +85,7 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
     forces = forces_IonIon;
   else
     forces = 0.0;
-  const auto& d_ab                     = P.getDistTableAB(d_ei_ID);
+  const auto& d_ab                   = P.getDistTableAB(d_ei_ID);
   const ParticleScalar* restrict Zat = Ions.Z.first_address();
   const ParticleScalar* restrict Qat = P.Z.first_address();
   for (int jat = 0; jat < Nel; jat++)

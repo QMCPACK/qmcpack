@@ -25,8 +25,8 @@ namespace qmcplusplus
 class SPOSetInfo
 {
 public:
-  using RealType = QMCTraits::RealType;
-  using states_t = std::vector<SPOInfo*>;
+  using RealType  = QMCTraits::RealType;
+  using states_t  = std::vector<SPOInfo*>;
   using orderings = spoinfo::orderings;
 
   // construction/destruction

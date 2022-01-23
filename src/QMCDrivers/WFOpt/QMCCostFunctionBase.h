@@ -292,7 +292,7 @@ protected:
   //vector<std::vector<vector<Return_t> >* > DerivRecords;
   //vector<std::vector<vector<Return_t> >* > HDerivRecords;
 
-  using ParticleGradient = ParticleSet::ParticleGradient;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
   using ParticleLaplacian = ParticleSet::ParticleLaplacian;
   ///** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */
   std::vector<ParticleGradient*> dLogPsi;

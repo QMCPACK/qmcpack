@@ -31,9 +31,9 @@ public:
   {
     D = bspline_engine_traits<ENGT>::DIM
   };
-  using real_type = typename bspline_engine_traits<ENGT>::real_type;
+  using real_type  = typename bspline_engine_traits<ENGT>::real_type;
   using value_type = typename bspline_engine_traits<ENGT>::value_type;
-  using pointer = value_type*;
+  using pointer    = value_type*;
   ///number of splines
   int num_splines;
   ///spline engine

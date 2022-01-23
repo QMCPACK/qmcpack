@@ -34,10 +34,10 @@ namespace qmcplusplus
  */
 struct CoulombPBCAB : public OperatorBase, public ForceBase
 {
-  using LRHandlerType = LRCoulombSingleton::LRHandlerType;
-  using GridType = LRCoulombSingleton::GridType;
+  using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+  using GridType       = LRCoulombSingleton::GridType;
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
-  using mRealType = LRHandlerType::mRealType;
+  using mRealType      = LRHandlerType::mRealType;
 
   ///source particle set
   ParticleSet& PtclA;

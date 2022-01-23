@@ -395,7 +395,7 @@ public:
       FClap(I, iat)  = FClap_t[I];
     }
     // update exponent values to that at proposed position
-    Jval     = Jval_t;
+    Jval       = Jval_t;
     log_value_ = Jval;
     for (int i = 0; i < num_els; ++i)
     {

@@ -313,7 +313,7 @@ public:
     PosType r;
   };
   using PosChangeVector = std::vector<PositionChange>;
-  using ValueVector = std::vector<ValueType>;
+  using ValueVector     = std::vector<ValueType>;
 
 
   /** Generate points to evaluate */

@@ -44,9 +44,9 @@ class LRHandlerSRCoulomb : public LRHandlerBase
 {
 public:
   //Typedef for the lattice-type.
-  using ParticleLayout = ParticleSet::ParticleLayout;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
   using BreakupBasisType = BreakupBasis;
-  using GridType = LinearGrid<mRealType>;
+  using GridType         = LinearGrid<mRealType>;
 
   bool FirstTime;
   mRealType rs;
@@ -57,7 +57,8 @@ public:
 
 
   //Constructor
-  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLRBox())
+  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0)
+      : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLRBox())
 
   {
     LRHandlerBase::ClassName = "LRHandlerSRCoulomb";
@@ -169,7 +170,8 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag) const override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k,
+                                                            pRealType kmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -185,7 +187,8 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag) const override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r,
+                                                            pRealType rmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
