@@ -156,8 +156,8 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
     return 0;

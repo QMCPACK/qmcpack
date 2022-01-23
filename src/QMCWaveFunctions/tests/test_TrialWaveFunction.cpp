@@ -45,7 +45,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
 #endif
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0)   = 3.37316115;
   lattice.R(0, 1)   = 3.37316115;
   lattice.R(0, 2)   = 0.0;

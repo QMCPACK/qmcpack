@@ -140,14 +140,14 @@ void test_lcao_spinor()
   //single particle moves that bring it back to our original R reference values.
 
   //Our perturbation vector.
-  ParticleSet::ParticlePos_t dR;
+  ParticleSet::ParticlePos dR;
   dR.resize(1);
   dR[0][0] = 0.1;
   dR[0][1] = 0.2;
   dR[0][2] = 0.1;
 
   //The new R of our perturbed particle set. Ma
-  ParticleSet::ParticlePos_t Rnew;
+  ParticleSet::ParticlePos Rnew;
   Rnew.resize(1);
   Rnew    = elec_.R + dR;
   elec_.R = Rnew;
@@ -270,7 +270,7 @@ void test_lcao_spinor()
   //first, lets displace all the elec in each walker
   for (int iat = 0; iat < 1; iat++)
   {
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
     elec_.mw_accept_rejectMove(p_list, iat, accept);
@@ -299,7 +299,7 @@ void test_lcao_spinor()
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0
@@ -446,14 +446,14 @@ void test_lcao_spinor_excited()
   //single particle moves that bring it back to our original R reference values.
 
   //Our perturbation vector.
-  ParticleSet::ParticlePos_t dR;
+  ParticleSet::ParticlePos dR;
   dR.resize(1);
   dR[0][0] = 0.1;
   dR[0][1] = 0.2;
   dR[0][2] = 0.1;
 
   //The new R of our perturbed particle set. Ma
-  ParticleSet::ParticlePos_t Rnew;
+  ParticleSet::ParticlePos Rnew;
   Rnew.resize(1);
   Rnew    = elec_.R + dR;
   elec_.R = Rnew;
@@ -575,7 +575,7 @@ void test_lcao_spinor_excited()
   //first, lets displace all the elec in each walker
   for (int iat = 0; iat < 1; iat++)
   {
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
     elec_.mw_accept_rejectMove(p_list, iat, accept);
@@ -604,7 +604,7 @@ void test_lcao_spinor_excited()
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0

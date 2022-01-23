@@ -41,8 +41,8 @@ int main(int argc, char** argv)
   }
 
   typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
+  typedef ParticleSet::ParticlePos ParticlePos;
+  typedef ParticleSet::ParticleLayout LatticeType;
   typedef ParticleSet::TensorType TensorType;
   typedef ParticleSet::PosType PosType;
 
@@ -184,8 +184,8 @@ int main(int argc, char** argv)
       NonLocalPP<OHMMS_PRECISION> ecp(random_th);
 
       const int nknots(ecp.size());
-      ParticlePos_t delta(nels);
-      ParticlePos_t rOnSphere(nknots);
+      ParticlePos delta(nels);
+      ParticlePos rOnSphere(nknots);
 
       RealType sqrttau = 2.0;
       RealType accept  = 0.5;

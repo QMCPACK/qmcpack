@@ -108,10 +108,10 @@ public:
 class XMLParticleParser : public ParticleTags
 {
   typedef ParticleSet Particle_t;
-  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
-  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t ParticlePos_t;
-  typedef Particle_t::ParticleTensor_t ParticleTensor_t;
+  typedef Particle_t::ParticleIndex ParticleIndex;
+  typedef Particle_t::ParticleScalar ParticleScalar;
+  typedef Particle_t::ParticlePos ParticlePos;
+  typedef Particle_t::ParticleTensor ParticleTensor;
 
   bool AssignmentOnly;
   Particle_t& ref_;
@@ -146,10 +146,10 @@ public:
 class XMLSaveParticle : public ParticleTags, public RecordProperty
 {
   typedef ParticleSet Particle_t;
-  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
-  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t ParticlePos_t;
-  typedef Particle_t::ParticleTensor_t ParticleTensor_t;
+  typedef Particle_t::ParticleIndex ParticleIndex;
+  typedef Particle_t::ParticleScalar ParticleScalar;
+  typedef Particle_t::ParticlePos ParticlePos;
+  typedef Particle_t::ParticleTensor ParticleTensor;
 
   Particle_t& ref_;
   AttribListType ref_AttribList;

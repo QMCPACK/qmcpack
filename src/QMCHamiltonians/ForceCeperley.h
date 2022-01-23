@@ -57,7 +57,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override {}
 
   // Compute ion-ion forces at construction to include in the total forces
-  void evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const;
+  void evaluate_IonIon(ParticleSet::ParticlePos& forces) const;
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetF(plist, offset); }
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;

@@ -75,25 +75,25 @@ struct QMCTraits
  */
 struct PtclOnLatticeTraits
 {
-  using ParticleLayout_t = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
+  using ParticleLayout = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
   using QTFull = QMCTraits::QTFull;
 
   typedef int Index_t;
   typedef QTFull::RealType Scalar_t;
   typedef QTFull::ComplexType Complex_t;
 
-  typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
-  typedef ParticleLayout_t::SingleParticlePos_t SingleParticlePos_t;
-  typedef ParticleLayout_t::Tensor_t Tensor_t;
+  typedef ParticleLayout::SingleParticleIndex SingleParticleIndex;
+  typedef ParticleLayout::SingleParticlePos SingleParticlePos;
+  typedef ParticleLayout::Tensor_t Tensor_t;
 
-  typedef ParticleAttrib<Index_t> ParticleIndex_t;
-  typedef ParticleAttrib<Scalar_t> ParticleScalar_t;
-  typedef ParticleAttrib<SingleParticlePos_t> ParticlePos_t;
-  typedef ParticleAttrib<Tensor_t> ParticleTensor_t;
+  typedef ParticleAttrib<Index_t> ParticleIndex;
+  typedef ParticleAttrib<Scalar_t> ParticleScalar;
+  typedef ParticleAttrib<SingleParticlePos> ParticlePos;
+  typedef ParticleAttrib<Tensor_t> ParticleTensor;
 
-  typedef ParticleAttrib<QTFull::GradType> ParticleGradient_t;
-  typedef ParticleAttrib<QTFull::ValueType> ParticleLaplacian_t;
-  typedef QTFull::ValueType SingleParticleValue_t;
+  typedef ParticleAttrib<QTFull::GradType> ParticleGradient;
+  typedef ParticleAttrib<QTFull::ValueType> ParticleLaplacian;
+  typedef QTFull::ValueType SingleParticleValue;
 };
 
 

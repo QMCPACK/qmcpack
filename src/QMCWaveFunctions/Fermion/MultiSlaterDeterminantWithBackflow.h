@@ -45,12 +45,12 @@ public:
   void reportStatus(std::ostream& os) override;
 
   ValueType evaluate(const ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L) override;
+                     ParticleSet::ParticleGradient& G,
+                     ParticleSet::ParticleLaplacian& L) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;

@@ -176,8 +176,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos_t& hf_terms,
-                                                           ParticleSet::ParticlePos_t& pulay_terms)
+                                                           ParticleSet::ParticlePos& hf_terms,
+                                                           ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces and !is_active)
     hf_terms -= forces;

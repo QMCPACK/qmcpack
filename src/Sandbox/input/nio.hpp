@@ -17,7 +17,7 @@ inline int count_electrons(const ParticleSet& ions) { return ions.getTotalNum() 
 inline auto create_prim_lattice()
 {
   Lattice::Tensor_t nio_cell = {7.8811, 7.8811, 0.0, -7.8811, 7.8811, 0.0, 0.0, 0.0, 15.7622};
-  ParticleSet::ParticleLayout_t prim_lat;
+  ParticleSet::ParticleLayout prim_lat;
   // set PBC in x,y,z directions
   prim_lat.BoxBConds = 1;
   // set the lattice

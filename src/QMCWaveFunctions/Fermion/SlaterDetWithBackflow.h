@@ -73,8 +73,8 @@ public:
 
   void reportStatus(std::ostream& os) override {}
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
@@ -107,8 +107,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& src,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return GradType();

@@ -77,8 +77,8 @@ struct LocalECPotential : public OperatorBase
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
 
   Return_t evaluate_orig(ParticleSet& P);

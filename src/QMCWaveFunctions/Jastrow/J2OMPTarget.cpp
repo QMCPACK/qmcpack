@@ -709,8 +709,8 @@ void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionCompone
 
 template<typename FT>
 typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const ParticleSet& P,
-                                                                    ParticleSet::ParticleGradient_t& G,
-                                                                    ParticleSet::ParticleLaplacian_t& L)
+                                                                    ParticleSet::ParticleGradient& G,
+                                                                    ParticleSet::ParticleLaplacian& L)
 {
   return evaluateGL(P, G, L, true);
 }
@@ -718,8 +718,8 @@ typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const Partic
 template<typename FT>
 void J2OMPTarget<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                      const RefVectorWithLeader<ParticleSet>& p_list,
-                                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
+                                     const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                     const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 
 {
   mw_evaluateGL(wfc_list, p_list, G_list, L_list, true);
@@ -727,8 +727,8 @@ void J2OMPTarget<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionCompo
 
 
 template<typename FT>
-typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L) const
+typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L) const
 {
   QTFull::RealType log_val(0);
   for (int iat = 0; iat < N; ++iat)
@@ -742,8 +742,8 @@ typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSe
 
 template<typename FT>
 WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSet& P,
-                                                                ParticleSet::ParticleGradient_t& G,
-                                                                ParticleSet::ParticleLaplacian_t& L,
+                                                                ParticleSet::ParticleGradient& G,
+                                                                ParticleSet::ParticleLaplacian& L,
                                                                 bool fromscratch)
 {
   if (fromscratch)
@@ -754,8 +754,8 @@ WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSe
 template<typename FT>
 void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
-                                    const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                                    const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                    const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                    const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                                     bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());

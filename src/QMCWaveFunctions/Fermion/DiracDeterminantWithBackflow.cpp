@@ -254,8 +254,8 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
     ParticleSet& P,
     ParticleSet& source,
     int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evalGradSource() \n");
   return GradType();
@@ -271,7 +271,7 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
   UpdateMode                        = ORB_PBYP_PARTIAL;
   std::vector<int>::iterator it     = BFTrans_.indexQP.begin();
   std::vector<int>::iterator it_end = BFTrans_.indexQP.end();
-  ParticleSet::ParticlePos_t dr;
+  ParticleSet::ParticlePos dr;
   while (it != it_end)
   {
     if (*it < FirstIndex || *it >= LastIndex)
@@ -484,8 +484,8 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  */
 DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L)
 {
   //testGG(P);
   //testL(P);
@@ -731,11 +731,11 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 #if defined(QMC_COMPLEX)
     //dlogpsi[kk] += real(dpsia);
     dlogpsi[kk] += dpsia;
-    //dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
-    dhpsioverpsi[kk] -= 0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp);
+    //dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue>(dLa) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= 0.5 * static_cast<ParticleSet::SingleParticleValue>(dLa) + Dot(P.G, Gtemp);
 #else
     dlogpsi[kk] += dpsia;
-    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue>(dLa) + Dot(P.G, Gtemp));
 #endif
   }
 }
@@ -872,7 +872,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for (int k = 0; k < num; k++)
       dG(offset, pa, k) =
-          Gtemp[k] + myG[k] * static_cast<ParticleSet::SingleParticleValue_t>(dpsia); // (\nabla_pa \nabla_i D) / D
+          Gtemp[k] + myG[k] * static_cast<ParticleSet::SingleParticleValue>(dpsia); // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -880,8 +880,8 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                        const opt_variables_type& active,
                                                        std::vector<RealType>& dlogpsi,
                                                        std::vector<RealType>& dhpsioverpsi,
-                                                       ParticleSet::ParticleGradient_t* G0,
-                                                       ParticleSet::ParticleLaplacian_t* L0,
+                                                       ParticleSet::ParticleGradient* G0,
+                                                       ParticleSet::ParticleLaplacian* L0,
                                                        int pa)
 {
   evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
@@ -986,10 +986,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = pa; //BFTrans_.optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk] += real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(La1 + La2 + La3) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue>(La1 + La2 + La3) + Dot(P.G, Gtemp));
 #else
     dlogpsi[kk] += dpsia;
-    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue_t>(La1 + La2 + La3) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue>(La1 + La2 + La3) + Dot(P.G, Gtemp));
 #endif
     *G0 += Gtemp;
     (*L0)[0] += La1 + La2 + La3;
@@ -1004,7 +1004,7 @@ std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::make
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {
-  ParticleSet::ParticlePos_t qp_0;
+  ParticleSet::ParticlePos qp_0;
   qp_0.resize(BFTrans_.QP.getTotalNum());
   ValueMatrix psiM_1, psiM_2;
   ValueMatrix psiM_3, psiM_4;
@@ -1108,7 +1108,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 
 void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 {
-  ParticleSet::ParticlePos_t qp_0;
+  ParticleSet::ParticlePos qp_0;
   qp_0.resize(BFTrans_.QP.getTotalNum());
   ValueMatrix psiM_1, psiM_2;
   GradMatrix dpsiM_1, dpsiM_2;

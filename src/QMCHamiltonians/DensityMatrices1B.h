@@ -47,7 +47,7 @@ public:
   typedef GradType Grad_t;
   typedef SPOSet::ValueVector ValueVector;
   typedef SPOSet::GradVector GradVector;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
+  typedef ParticleSet::ParticleLayout Lattice_t;
   typedef Vector<Value_t> Vector_t;
   typedef Matrix<Value_t> Matrix_t;
   typedef std::vector<PosType> pts_t;

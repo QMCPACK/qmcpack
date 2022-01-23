@@ -91,9 +91,9 @@ public:
   };
 
   ///differential gradients
-  ParticleSet::ParticleGradient_t G;
+  ParticleSet::ParticleGradient G;
   ///differential laplacians
-  ParticleSet::ParticleLaplacian_t L;
+  ParticleSet::ParticleLaplacian L;
 
   TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false, bool create_local_resource = true);
 
@@ -222,8 +222,8 @@ public:
   void evaluateDeltaLog(ParticleSet& P,
                         RealType& logpsi_fixed,
                         RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient_t& fixedG,
-                        ParticleSet::ParticleLaplacian_t& fixedL);
+                        ParticleSet::ParticleGradient& fixedG,
+                        ParticleSet::ParticleLaplacian& fixedL);
 
   /** evaluate the sum of log value of optimizable many-body wavefunctions
    * @param wf_list vector of wavefunctions
@@ -249,8 +249,8 @@ public:
                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                        std::vector<RealType>& logpsi_fixed_list,
                                        std::vector<RealType>& logpsi_opt_list,
-                                       RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
-                                       RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+                                       RefVector<ParticleSet::ParticleGradient>& fixedG_list,
+                                       RefVector<ParticleSet::ParticleLaplacian>& fixedL_list);
 
   /** evaluate the log value for optimizable parts of a many-body wave function
    * @param wf_list vector of wavefunctions
@@ -278,8 +278,8 @@ public:
   static void mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                   const RefVectorWithLeader<ParticleSet>& p_list,
                                   std::vector<RealType>& logpsi_list,
-                                  RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
-                                  RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
+                                  RefVector<ParticleSet::ParticleGradient>& dummyG_list,
+                                  RefVector<ParticleSet::ParticleLaplacian>& dummyL_list,
                                   bool recompute = false);
 
 
@@ -316,7 +316,7 @@ public:
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
 
-  void printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
+  void printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag = "GL");
 
   /** Returns the logarithmic gradient of the trial wave function
    *  with respect to the iat^th atom of the source ParticleSet. */
@@ -327,8 +327,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad);
 
   /** compute psi(R_new) / psi(R_current) ratio and \nabla ln(psi(R_new)) gradients
    * It returns a complex value if the wavefunction is complex.
@@ -482,7 +482,7 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
@@ -562,11 +562,11 @@ private:
   /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(
+  static RefVector<ParticleSet::ParticleGradient> extractGRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleLaplacian_t> extractLRefList(
+  static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   ///////////////////////////////////////////

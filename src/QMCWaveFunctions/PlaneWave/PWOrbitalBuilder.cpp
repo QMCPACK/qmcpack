@@ -357,12 +357,12 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   TwistAngle_DP = TwistAngle;
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.write(twist_grp_id, "twist_angle");
-  const ParticleSet::ParticleLayout_t& lattice(targetPtcl.getLattice());
+  const ParticleSet::ParticleLayout& lattice(targetPtcl.getLattice());
   RealType dx = 1.0 / static_cast<RealType>(nG[0] - 1);
   RealType dy = 1.0 / static_cast<RealType>(nG[1] - 1);
   RealType dz = 1.0 / static_cast<RealType>(nG[2] - 1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::SingleParticleValue_t, 3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue, 3> StorageType;
   StorageType inData(nG[0], nG[1], nG[2]);
   int ib = 0;
   while (ib < myParam->numBands)
@@ -412,7 +412,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::SingleParticleValue_t, 3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue, 3> StorageType;
   std::vector<StorageType*> inData;
   int nb = myParam->numBands;
   for (int ib = 0; ib < nb; ib++)

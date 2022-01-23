@@ -39,8 +39,8 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     ValueType v = 0.0;
     for (int i = 0; i < P.R.size(); i++)

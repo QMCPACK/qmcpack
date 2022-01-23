@@ -71,8 +71,8 @@ public:
   void resetParameters(const opt_variables_type& active) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   GradType evalGrad(ParticleSet& P, int iat) override;

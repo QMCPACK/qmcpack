@@ -257,8 +257,8 @@ void DiracDeterminant<DU_TYPE>::completeUpdates()
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& G,
-                                                 ParticleSet::ParticleLaplacian_t& L)
+                                                 ParticleSet::ParticleGradient& G,
+                                                 ParticleSet::ParticleLaplacian& L)
 {
   if (UpdateMode == ORB_PBYP_RATIO)
   { //need to compute dpsiM and d2psiM. Do not touch psiM!
@@ -307,8 +307,8 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateGL(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L,
     bool fromscratch)
 {
   if (fromscratch)
@@ -510,8 +510,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     ParticleSet& P,
     ParticleSet& source,
     int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   GradType gradPsi(0.0);
   if (Phi->hasIonDerivs())
@@ -619,8 +619,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
 

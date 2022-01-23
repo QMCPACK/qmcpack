@@ -346,7 +346,7 @@ public:
   /** calculate quasi-particle coordinates after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
   {
     evaluatePbyP(P, index[0], newQP);
@@ -355,7 +355,7 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
@@ -377,7 +377,7 @@ public:
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            HessMatrix& Amat) override
   {
@@ -386,7 +386,7 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            HessMatrix& Amat) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
@@ -416,7 +416,7 @@ public:
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            GradMatrix& Bmat_full,
                            HessMatrix& Amat) override
@@ -426,7 +426,7 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            GradMatrix& Bmat_full,
                            HessMatrix& Amat) override
   {

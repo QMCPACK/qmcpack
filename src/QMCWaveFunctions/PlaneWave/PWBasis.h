@@ -41,7 +41,7 @@ namespace qmcplusplus
 class PWBasis : public QMCTraits
 {
 public:
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+  typedef ParticleSet::ParticleLayout ParticleLayout;
   typedef TinyVector<IndexType, 3> GIndex_t;
 
 private:
@@ -112,7 +112,7 @@ public:
   int NumPlaneWaves;
 
   ///local copy of Lattice
-  ParticleLayout_t Lattice;
+  ParticleLayout Lattice;
 
   ///default constructor
   PWBasis() : maxmaxg(0), NumPlaneWaves(0) {}
@@ -140,7 +140,7 @@ public:
    */
   int readbasis(hid_t h5basisgroup,
                 RealType ecutoff,
-                const ParticleLayout_t& lat,
+                const ParticleLayout& lat,
                 const std::string& pwname     = "planewaves",
                 const std::string& pwmultname = "multipliers",
                 bool resizeContainer          = true);

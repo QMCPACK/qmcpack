@@ -349,8 +349,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   }
   if (recalculate)
   {
-    ParticleSet::ParticleGradient_t myG_temp, myG_J;
-    ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
+    ParticleSet::ParticleGradient myG_temp, myG_J;
+    ParticleSet::ParticleLaplacian myL_temp, myL_J;
     const int NP = P.getTotalNum();
     myG_temp.resize(NP);
     myG_temp = 0.0;
@@ -441,8 +441,8 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 
 void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,
                                     std::vector<ValueType>& dhpsioverpsi,
-                                    const ParticleSet::ParticleLaplacian_t& myL_J,
-                                    const ParticleSet::ParticleGradient_t& myG_J,
+                                    const ParticleSet::ParticleLaplacian& myL_J,
+                                    const ParticleSet::ParticleGradient& myG_J,
                                     const size_t nel,
                                     const size_t nmo,
                                     const ValueType& psiCurrent,

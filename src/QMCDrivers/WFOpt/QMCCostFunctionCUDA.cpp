@@ -201,9 +201,9 @@ void QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     dLogPsi.resize(nwtot, 0);
     d2LogPsi.resize(nwtot, 0);
     for (int i = 0; i < nwtot; ++i)
-      dLogPsi[i] = new ParticleGradient_t(nptcl);
+      dLogPsi[i] = new ParticleGradient(nptcl);
     for (int i = 0; i < nwtot; ++i)
-      d2LogPsi[i] = new ParticleLaplacian_t(nptcl);
+      d2LogPsi[i] = new ParticleLaplacian(nptcl);
   }
   PointerPool<Walker_t::cuda_Buffer_t> pool;
   // Reserve memory only for optimizable parts of the wavefunction

@@ -72,15 +72,15 @@ public:
   typedef typename CTS::ValueType CudaLapType;
 #endif
   /** array of particles */
-  typedef typename p_traits::ParticlePos_t ParticlePos_t;
+  typedef typename p_traits::ParticlePos ParticlePos;
   /** array of scalars */
-  typedef typename p_traits::ParticleScalar_t ParticleScalar_t;
+  typedef typename p_traits::ParticleScalar ParticleScalar;
   /** array of gradients */
-  typedef typename p_traits::ParticleGradient_t ParticleGradient_t;
+  typedef typename p_traits::ParticleGradient ParticleGradient;
   /** array of laplacians */
-  typedef typename p_traits::ParticleLaplacian_t ParticleLaplacian_t;
+  typedef typename p_traits::ParticleLaplacian ParticleLaplacian;
   /** typedef for value data type. */
-  typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
+  typedef typename p_traits::SingleParticleValue SingleParticleValue;
 
   ///typedef for the property container, fixed size
   using PropertyContainer_t = ConstantSizeMatrix<FullPrecRealType, std::allocator<FullPrecRealType>>;
@@ -118,15 +118,15 @@ public:
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
-  ParticlePos_t R;
+  ParticlePos R;
 
   //Dynamical spin variable.
-  ParticleScalar_t spins;
+  ParticleScalar spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
-  ParticleGradient_t G;
+  ParticleGradient G;
   /** \f$ \nabla^2_i d\log \Psi for the i-th particle */
-  ParticleLaplacian_t L;
+  ParticleLaplacian L;
 #endif
   ///scalar properties of a walker
   PropertyContainer_t Properties;

@@ -191,8 +191,8 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     return evaluateGL(P, G, L, true);
   }
@@ -418,8 +418,8 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   inline LogValueType evaluateGL(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient_t& G,
-                                 ParticleSet::ParticleLaplacian_t& L,
+                                 ParticleSet::ParticleGradient& G,
+                                 ParticleSet::ParticleLaplacian& L,
                                  bool fromscratch = false) override
   {
     if (fromscratch)
@@ -703,8 +703,8 @@ struct J1Spin : public WaveFunctionComponent
   inline GradType evalGradSource(ParticleSet& P,
                                  ParticleSet& source,
                                  int isrc,
-                                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
+                                 TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                 TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     GradType g_return(0.0);
     const auto& d_ie(P.getDistTableAB(myTableID));

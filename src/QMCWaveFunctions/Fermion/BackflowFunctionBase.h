@@ -171,36 +171,36 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  virtual void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index) = 0;
+  virtual void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos& newQP, const std::vector<int>& index) = 0;
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   virtual void evaluatePbyP(const ParticleSet& P,
-                            ParticleSet::ParticlePos_t& newQP,
+                            ParticleSet::ParticlePos& newQP,
                             const std::vector<int>& index,
                             HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move
    */
   virtual void evaluatePbyP(const ParticleSet& P,
-                            ParticleSet::ParticlePos_t& newQP,
+                            ParticleSet::ParticlePos& newQP,
                             const std::vector<int>& index,
                             GradMatrix& Bmat,
                             HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  virtual void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) = 0;
+  virtual void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) = 0;
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
-  virtual void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix& Amat) = 0;
+  virtual void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move
    */
   virtual void evaluatePbyP(const ParticleSet& P,
                             int iat,
-                            ParticleSet::ParticlePos_t& newQP,
+                            ParticleSet::ParticlePos& newQP,
                             GradMatrix& Bmat,
                             HessMatrix& Amat) = 0;
 

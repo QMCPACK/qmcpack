@@ -103,8 +103,8 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(Par
  */
 WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& g_tmp,
-    ParticleSet::ParticleLaplacian_t& l_tmp)
+    ParticleSet::ParticleGradient& g_tmp,
+    ParticleSet::ParticleLaplacian& l_tmp)
 {
   const ValueType czero(0);
   psi_ratio_to_ref_det_ = czero;
@@ -135,8 +135,8 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
 }
 
 WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(const ParticleSet& P,
-                                                                            ParticleSet::ParticleGradient_t& G,
-                                                                            ParticleSet::ParticleLaplacian_t& L)
+                                                                            ParticleSet::ParticleGradient& G,
+                                                                            ParticleSet::ParticleLaplacian& L)
 {
   ScopedTimer local_timer(EvaluateTimer);
   for (size_t id = 0; id < Dets.size(); id++)

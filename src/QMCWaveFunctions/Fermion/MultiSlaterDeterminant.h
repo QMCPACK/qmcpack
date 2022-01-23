@@ -79,12 +79,12 @@ public:
   void reportStatus(std::ostream& os) override;
 
   virtual ValueType evaluate(const ParticleSet& P,
-                             ParticleSet::ParticleGradient_t& G,
-                             ParticleSet::ParticleLaplacian_t& L);
+                             ParticleSet::ParticleGradient& G,
+                             ParticleSet::ParticleLaplacian& L);
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
@@ -137,18 +137,18 @@ public:
 
   // UGLY, how do I get around this? I want to use GradMatrix instead...
   // grads(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleGradient_t> grads_up;
-  std::vector<ParticleSet::ParticleGradient_t> grads_dn;
+  std::vector<ParticleSet::ParticleGradient> grads_up;
+  std::vector<ParticleSet::ParticleGradient> grads_dn;
 
   // lap(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleLaplacian_t> lapls_up;
-  std::vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
+  std::vector<ParticleSet::ParticleLaplacian> lapls_up;
+  std::vector<ParticleSet::ParticleLaplacian> lapls_dn;
 
   // grads(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleGradient_t> tempgrad;
+  std::vector<ParticleSet::ParticleGradient> tempgrad;
 
   // lap(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleLaplacian_t> templapl;
+  std::vector<ParticleSet::ParticleLaplacian> templapl;
 
   PsiValueType curRatio;
   ValueType psiCurrent;
@@ -157,8 +157,8 @@ public:
   ValueVector tempstorage_dn;
   GradVector grad_temp;
 
-  ParticleSet::ParticleGradient_t myG;
-  ParticleSet::ParticleLaplacian_t myL;
+  ParticleSet::ParticleGradient myG;
+  ParticleSet::ParticleLaplacian myL;
 
   opt_variables_type myVars;
 

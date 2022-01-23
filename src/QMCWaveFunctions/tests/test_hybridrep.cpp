@@ -34,7 +34,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // diamondC_1x1x1
   lattice.R(0, 0) = 3.37316115;
   lattice.R(0, 1) = 3.37316115;
@@ -158,7 +158,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // diamondC_2x1x1
   lattice.R(0, 0) = 6.7463223;
   lattice.R(0, 1) = 6.7463223;

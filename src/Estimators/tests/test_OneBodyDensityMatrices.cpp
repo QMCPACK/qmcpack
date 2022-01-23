@@ -49,7 +49,7 @@ constexpr bool dump_obdm = false;
 
 std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
                                                     ParticleSet& pset_source,
-                                                    std::vector<ParticleSet::ParticlePos_t>& deterministic_rs,
+                                                    std::vector<ParticleSet::ParticlePos>& deterministic_rs,
                                                     int num_psets)
 {
   int nwalkers = num_psets;
@@ -353,7 +353,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   for (int iw = 0; iw < nwalkers; ++iw)
     walkers.emplace_back(8);
 
-  std::vector<ParticleSet::ParticlePos_t> deterministic_rs = {{
+  std::vector<ParticleSet::ParticlePos> deterministic_rs = {{
                                                                   {-0.6759092808, 0.835668385, 1.985307097},
                                                                   {0.09710352868, -0.76751858, -1.89306891},
                                                                   {-0.5605484247, -0.9578875303, 1.476860642},
@@ -452,7 +452,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.
-    pset_target.R = ParticleSet::ParticlePos_t{
+    pset_target.R = ParticleSet::ParticlePos{
         {4.120557308, 2.547962427, 2.11555481},   {2.545657158, 2.021627665, 3.17555666},
         {1.251996636, 1.867651463, 0.7268046737}, {4.749059677, 5.845647812, 3.871560574},
         {5.18129015, 4.168475151, 2.748870373},   {6.24560833, 4.087143421, 4.187825203},

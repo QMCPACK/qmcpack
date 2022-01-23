@@ -39,7 +39,7 @@ class DynamicCoordinates
 public:
   using RealType      = QMCTraits::RealType;
   using PosType       = QMCTraits::PosType;
-  using ParticlePos_t = PtclOnLatticeTraits::ParticlePos_t;
+  using ParticlePos = PtclOnLatticeTraits::ParticlePos;
   using PosVectorSoa  = VectorSoaContainer<RealType, QMCTraits::DIM>;
 
   DynamicCoordinates(const DynamicCoordinateKind kind_in) : variable_kind_(kind_in) {}
@@ -61,7 +61,7 @@ public:
   virtual size_t size() const = 0;
 
   /// overwrite the positions of all the particles.
-  virtual void setAllParticlePos(const ParticlePos_t& R) = 0;
+  virtual void setAllParticlePos(const ParticlePos& R) = 0;
   /// overwrite the position of one the particle.
   virtual void setOneParticlePos(const PosType& pos, size_t iat) = 0;
   /** copy the active positions of particles with a uniform id in all the walkers to a single internal buffer.

@@ -32,7 +32,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // monoO
   /*
   lattice.R(0,0) = 5.10509515;
@@ -240,7 +240,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // diamondC_2x1x1
   lattice.R(0, 0) = 6.7463223;
   lattice.R(0, 1) = 6.7463223;
@@ -426,7 +426,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R       = 0.0;
   lattice.R(0, 0) = 1.0;
   lattice.R(1, 1) = 1.0;

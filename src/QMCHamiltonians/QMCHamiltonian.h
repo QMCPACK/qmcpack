@@ -300,7 +300,7 @@ public:
   */
   void evaluateElecGrad(ParticleSet& P,
                         TrialWaveFunction& psi,
-                        ParticleSet::ParticlePos_t& EGrad,
+                        ParticleSet::ParticlePos& EGrad,
                         RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
@@ -315,9 +315,9 @@ public:
   FullPrecRealType evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
                                      TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                     ParticleSet::ParticlePos& hf_terms,
+                                     ParticleSet::ParticlePos& pulay_terms,
+                                     ParticleSet::ParticlePos& wf_grad);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
   * @param P target particle set (electrons)
@@ -331,9 +331,9 @@ public:
   FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
                                                   ParticleSet& ions,
                                                   TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos_t& hf_terms,
-                                                  ParticleSet::ParticlePos_t& pulay_terms,
-                                                  ParticleSet::ParticlePos_t& wf_grad);
+                                                  ParticleSet::ParticlePos& hf_terms,
+                                                  ParticleSet::ParticlePos& pulay_terms,
+                                                  ParticleSet::ParticlePos& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */

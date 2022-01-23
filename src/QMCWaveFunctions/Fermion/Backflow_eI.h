@@ -265,7 +265,7 @@ public:
   /** calculate quasi-particle coordinates after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
@@ -284,7 +284,7 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) override
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTableAB(myTableIndex_);
@@ -298,7 +298,7 @@ public:
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            HessMatrix& Amat) override
   {
@@ -324,7 +324,7 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            HessMatrix& Amat) override
   {
     RealType du, d2u;
@@ -349,7 +349,7 @@ public:
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            GradMatrix& Bmat_full,
                            HessMatrix& Amat) override
@@ -378,7 +378,7 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            GradMatrix& Bmat_full,
                            HessMatrix& Amat) override
   {

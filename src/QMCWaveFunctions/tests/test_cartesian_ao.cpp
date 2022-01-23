@@ -79,7 +79,7 @@ void test_cartesian_ao()
     values.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.1, -0.3, 0.2);
+    ParticleSet::SingleParticlePos newpos(0.1, -0.3, 0.2);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -146,7 +146,7 @@ void test_dirac_ao()
     values.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.1, -0.3, 0.2);
+    ParticleSet::SingleParticlePos newpos(0.1, -0.3, 0.2);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);

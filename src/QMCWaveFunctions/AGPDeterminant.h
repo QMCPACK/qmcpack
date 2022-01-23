@@ -91,8 +91,8 @@ public:
    *for local energy calculations.
    */
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
@@ -165,16 +165,16 @@ public:
   ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
   BasisSetType::ValueType* LastAddressOfdVD;
   ///address of myG[0][0]
-  ParticleSet::SingleParticleValue_t* FirstAddressOfG;
+  ParticleSet::SingleParticleValue* FirstAddressOfG;
   ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
-  ParticleSet::SingleParticleValue_t* LastAddressOfG;
+  ParticleSet::SingleParticleValue* LastAddressOfG;
   ///address of dY[0][0]
   BasisSetType::ValueType* FirstAddressOfdY;
   ///address of FirstAddressOfdY+NumPtcls*BasisSize
   BasisSetType::ValueType* LastAddressOfdY;
 
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
 
   void evaluateLogAndStore(const ParticleSet& P);
 };

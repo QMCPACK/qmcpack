@@ -156,7 +156,7 @@ public:
     double Delta   = 1.0 / (nknots - 1);
     int elec_count = target.R.size();
     auto R_saved   = target.R;
-    ParticleSet::SingleParticlePos_t zero_pos(0.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos zero_pos(0.0, 0.0, 0.0);
     for (int icount = 0, ind = 0; icount < nknots; icount++, ind++)
     {
       if (ind == elec_count)

@@ -43,7 +43,7 @@ template<class T>
 struct HEGGrid
 {
   typedef CrystalLattice<T, OHMMS_DIM> PL_t;
-  typedef typename PL_t::SingleParticlePos_t PosType;
+  typedef typename PL_t::SingleParticlePos PosType;
   typedef typename PL_t::Scalar_t RealType;
 
   ///number of kpoints of a half sphere excluding gamma

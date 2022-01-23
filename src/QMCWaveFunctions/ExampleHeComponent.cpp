@@ -63,8 +63,8 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
 }
 
 ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L)
+                                                                 ParticleSet::ParticleGradient& G,
+                                                                 ParticleSet::ParticleLaplacian& L)
 {
   const auto& ee_table  = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();

@@ -128,8 +128,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   //Ionic Derivative Test.
   QMCTraits::GradType gsource(0.0);
-  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
-  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad_source;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad_source;
   int nelecs = elec_.getTotalNum();
 
   for (int dim = 0; dim < OHMMS_DIM; dim++)

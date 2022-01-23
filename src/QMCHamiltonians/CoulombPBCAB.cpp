@@ -114,8 +114,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos_t& hf_terms,
-                                                           ParticleSet::ParticlePos_t& pulay_terms)
+                                                           ParticleSet::ParticlePos& hf_terms,
+                                                           ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces)
   {

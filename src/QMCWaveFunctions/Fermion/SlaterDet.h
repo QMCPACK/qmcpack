@@ -58,23 +58,23 @@ public:
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
-                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
 
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch) override;
 
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
-                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     const RefVector<ParticleSet::ParticleGradient>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                      bool fromscratch) const override;
 
   void recompute(const ParticleSet& P) override;
@@ -154,8 +154,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& src,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     GradType G = GradType();
     for (int iz = 0; iz < size(); iz++)
@@ -250,7 +250,7 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
                                std::vector<ValueType>& dgradlogpsi) override
   {
     for (int i = 0; i < Dets.size(); i++)

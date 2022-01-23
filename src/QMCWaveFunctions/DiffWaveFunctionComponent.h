@@ -42,8 +42,8 @@ struct DiffWaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
-  typedef ParticleSet::ParticleGradient_t GradVectorType;
-  typedef ParticleSet::ParticleLaplacian_t ValueVectorType;
+  typedef ParticleSet::ParticleGradient GradVectorType;
+  typedef ParticleSet::ParticleLaplacian ValueVectorType;
   // the value type for \f$ log(\psi) \f$
   using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
   // the value type for \f$ \psi(r')/\psi(r) \f$

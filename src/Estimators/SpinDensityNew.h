@@ -36,7 +36,7 @@ class SpinDensityNew : public OperatorEstBase
 {
 public:
   using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout_t;
+  using Lattice = POLT::ParticleLayout;
   using QMCT    = QMCTraits;
 
   /** Constructor for SpinDensityInput that contains an explicitly defined cell

@@ -33,7 +33,7 @@ class MomentumDistributionTests;
 class MomentumDistribution : public OperatorEstBase
 {
 public:
-  using LatticeType = PtclOnLatticeTraits::ParticleLayout_t;
+  using LatticeType = PtclOnLatticeTraits::ParticleLayout;
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;

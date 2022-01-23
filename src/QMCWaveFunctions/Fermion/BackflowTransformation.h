@@ -130,8 +130,8 @@ public:
   std::vector<std::string> names;
 
   /// new qp coordinates for pbyp moves.
-  ParticleSet::ParticlePos_t newQP;
-  ParticleSet::ParticlePos_t oldQP;
+  ParticleSet::ParticlePos newQP;
+  ParticleSet::ParticlePos oldQP;
 
   //Vector<PosType> storeQP;
   Vector<PosType> storeQP;

@@ -42,7 +42,7 @@ public:
   ///reference to the trial wavefunction for ratio evaluations
   TrialWaveFunction& refPsi;
   ///lattice vector
-  const ParticleSet::ParticleLayout_t& lattice_;
+  const ParticleSet::ParticleLayout& lattice_;
   ///normalization factor for n(k)
   RealType norm_nofK;
   ///random generator

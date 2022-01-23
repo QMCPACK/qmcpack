@@ -35,7 +35,7 @@ private:
 
 public:
   //Typedef for the lattice-type
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout_t;
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
 
   ///number of k-points
   int numk;

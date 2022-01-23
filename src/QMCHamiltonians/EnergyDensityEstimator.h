@@ -83,7 +83,7 @@ private:
   //  contains the Energy information of particles
   std::vector<SpaceGrid*> spacegrids;
   //particle positions
-  ParticlePos_t R;
+  ParticlePos R;
   //number of samples accumulated
   int nsamples;
 
@@ -91,7 +91,7 @@ private:
   //ParticleSet should carry Zptcl so it doesn't have
   // to be computed everywhere from species
   std::vector<RealType> Zptcl;
-  ParticlePos_t Rptcl;
+  ParticlePos Rptcl;
   void set_ptcl(void);
   void unset_ptcl(void);
 

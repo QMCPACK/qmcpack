@@ -80,7 +80,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   d2psi.resize(1);
 
   // Call makeMove to compute the distances
-  ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
+  ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
   elec.makeMove(0, newpos);
 
   sposet->evaluateValue(elec, 0, values);
@@ -98,7 +98,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   REQUIRE(d2psi[0] == ValueApprox(-20.03410564));
 
 
-  ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+  ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
   elec.makeMove(0, disp);
 
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);

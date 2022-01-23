@@ -350,18 +350,18 @@ public:
   /** calculate quasi-particle coordinates after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
   {}
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override {}
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) override {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            HessMatrix& Amat) override
   {}
@@ -370,14 +370,14 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            HessMatrix& Amat) override
   {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            GradMatrix& Bmat,
                            HessMatrix& Amat) override
@@ -387,7 +387,7 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            GradMatrix& Bmat,
                            HessMatrix& Amat) override
   {}

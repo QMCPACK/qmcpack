@@ -353,7 +353,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   double Value2(0.0);
   double Value3(0.0);
-  ParticleSet::ParticlePos_t PulayTerm, HFTerm, HFTerm2;
+  ParticleSet::ParticlePos PulayTerm, HFTerm, HFTerm2;
   HFTerm.resize(ions.getTotalNum());
   HFTerm2.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());

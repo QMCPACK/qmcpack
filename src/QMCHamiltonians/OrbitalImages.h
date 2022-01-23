@@ -114,7 +114,7 @@ public:
 
   typedef SPOSet::ValueVector ValueVector;
   typedef SPOSet::GradVector GradVector;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
+  typedef ParticleSet::ParticleLayout Lattice_t;
   typedef std::map<std::string, ParticleSet*> PSPool;
 
 

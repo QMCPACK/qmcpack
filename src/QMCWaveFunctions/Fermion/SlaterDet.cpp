@@ -101,8 +101,8 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
 }
 
 SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
-                                               ParticleSet::ParticleGradient_t& G,
-                                               ParticleSet::ParticleLaplacian_t& L)
+                                               ParticleSet::ParticleGradient& G,
+                                               ParticleSet::ParticleLaplacian& L)
 {
   log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
@@ -112,8 +112,8 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
 
 void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
-                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
+                               const RefVector<ParticleSet::ParticleGradient>& G_list,
+                               const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   constexpr LogValueType czero(0);
 
@@ -130,8 +130,8 @@ void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
 }
 
 SlaterDet::LogValueType SlaterDet::evaluateGL(const ParticleSet& P,
-                                              ParticleSet::ParticleGradient_t& G,
-                                              ParticleSet::ParticleLaplacian_t& L,
+                                              ParticleSet::ParticleGradient& G,
+                                              ParticleSet::ParticleLaplacian& L,
                                               bool from_scratch)
 {
   log_value_ = 0.0;
@@ -142,8 +142,8 @@ SlaterDet::LogValueType SlaterDet::evaluateGL(const ParticleSet& P,
 
 void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                              const RefVector<ParticleSet::ParticleGradient>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                               bool fromscratch) const
 {
   constexpr LogValueType czero(0);

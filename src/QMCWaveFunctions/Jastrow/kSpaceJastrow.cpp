@@ -362,8 +362,8 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
 ///////////////////////////////////////////////////////////////
 
 kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(const ParticleSet& P,
-                                                       ParticleSet::ParticleGradient_t& G,
-                                                       ParticleSet::ParticleLaplacian_t& L)
+                                                       ParticleSet::ParticleGradient& G,
+                                                       ParticleSet::ParticleLaplacian& L)
 {
   RealType J1(0.0), J2(0.0);
   int N = P.getTotalNum();

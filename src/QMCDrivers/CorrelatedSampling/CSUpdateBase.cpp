@@ -65,8 +65,8 @@ void CSUpdateBase::resizeWorkSpace(int nw, int nptcls)
   {
     Psi1[ipsi]->G.resize(nptcls);
     Psi1[ipsi]->L.resize(nptcls);
-    G1.push_back(new ParticleSet::ParticleGradient_t(nptcls));
-    L1.push_back(new ParticleSet::ParticleLaplacian_t(nptcls));
+    G1.push_back(new ParticleSet::ParticleGradient(nptcls));
+    L1.push_back(new ParticleSet::ParticleLaplacian(nptcls));
   }
 }
 

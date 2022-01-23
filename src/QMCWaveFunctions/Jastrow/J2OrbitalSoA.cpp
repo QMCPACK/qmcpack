@@ -448,16 +448,16 @@ void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 
 template<typename FT>
 typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L)
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L)
 {
   return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
 WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L,
+                                                                 ParticleSet::ParticleGradient& G,
+                                                                 ParticleSet::ParticleLaplacian& L,
                                                                  bool fromscratch)
 {
   if (fromscratch)

@@ -70,7 +70,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L);
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
@@ -119,8 +119,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
@@ -153,20 +153,20 @@ public:
 
   ///evaluate log of a determinant for a particle set
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& wfc_list,
   //                    const std::vector<ParticleSet*>& p_list,
-  //                    const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-  //                    const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
+  //                    const std::vector<ParticleSet::ParticleGradient*>& G_list,
+  //                    const std::vector<ParticleSet::ParticleLaplacian*>& L_list) override;
 
   void recompute(const ParticleSet& P) override;
 
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch) override;
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;

@@ -198,14 +198,14 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
-  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();

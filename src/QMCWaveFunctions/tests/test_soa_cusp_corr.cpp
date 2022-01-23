@@ -295,7 +295,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   elec.R = 0.0;
   elec.update();
-  ParticleSet::SingleParticlePos_t newpos;
+  ParticleSet::SingleParticlePos newpos;
   elec.makeMove(0, newpos);
 
   sposet->evaluateValue(elec, 0, values);
@@ -471,7 +471,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   elec.R[0][1] = 0.50;
 
   elec.update();
-  ParticleSet::SingleParticlePos_t newpos;
+  ParticleSet::SingleParticlePos newpos;
   elec.makeMove(0, newpos);
 
   sposet->evaluateValue(elec, 0, values);

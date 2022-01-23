@@ -99,7 +99,7 @@ void test_He(bool transform)
     d2psi.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
+    ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -117,7 +117,7 @@ void test_He(bool transform)
     REQUIRE(d2psi[0] == Approx(-20.03410564));
 
 
-    ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
@@ -215,7 +215,7 @@ void test_Ne(bool transform)
     dpsi.resize(5);
     d2psi.resize(5);
 
-    ParticleSet::SingleParticlePos_t newpos(0.00001, 0.0, 0.0);
+    ParticleSet::SingleParticlePos newpos(0.00001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -236,7 +236,7 @@ void test_Ne(bool transform)
     REQUIRE(dpsi[0][2] == Approx(0));
 
 
-    ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
     sposet->evaluateValue(elec, 0, values);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
@@ -336,7 +336,7 @@ void test_HCN(bool transform)
     dpsi.resize(7);
     d2psi.resize(7);
 
-    ParticleSet::SingleParticlePos_t newpos;
+    ParticleSet::SingleParticlePos newpos;
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -500,7 +500,7 @@ void test_HCN(bool transform)
 
 
     //Move electron 0 to some nontrivial position:
-    ParticleSet::SingleParticlePos_t disp(0.02, -0.1, 0.05);
+    ParticleSet::SingleParticlePos disp(0.02, -0.1, 0.05);
     elec.makeMove(0, disp);
 
 

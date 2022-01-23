@@ -432,9 +432,9 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   typedef QMCTraits::PosType PosType;
   typedef QMCTraits::GradType GradType;
   typedef WaveFunctionComponent::LogValueType LogValueType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  typedef ParticleSet::ParticlePos ParticlePos;
+  typedef ParticleSet::ParticleGradient ParticleGradient;
+  typedef ParticleSet::ParticleLaplacian ParticleLaplacian;
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   ParticleSet ions_;
   ParticleSet elec_;
@@ -529,8 +529,8 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   dd.resize(nelec, norb);
   app_log() << " nelec=" << nelec << " norb=" << norb << std::endl;
 
-  ParticleGradient_t G;
-  ParticleLaplacian_t L;
+  ParticleGradient G;
+  ParticleLaplacian L;
   ParticleAttrib<ComplexType> SG;
 
   G.resize(nelec);

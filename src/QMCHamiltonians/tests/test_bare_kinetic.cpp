@@ -221,7 +221,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   //This is validated against an alternate code path (waveefunction tester for local energy).
   REQUIRE(keval == Approx(-0.147507745));
 
-  ParticleSet::ParticlePos_t HFTerm, PulayTerm;
+  ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
 

@@ -33,7 +33,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // BCC H
-  PtclOnLatticeTraits::ParticleLayout_t lattice;
+  PtclOnLatticeTraits::ParticleLayout lattice;
   lattice.R(0, 0) = 3.77945227;
   lattice.R(0, 1) = 0.0;
   lattice.R(0, 2) = 0.0;
@@ -172,7 +172,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // LiH
-  PtclOnLatticeTraits::ParticleLayout_t lattice;
+  PtclOnLatticeTraits::ParticleLayout lattice;
   lattice.R(0, 0) = -3.55;
   lattice.R(0, 1) = 0.0;
   lattice.R(0, 2) = 3.55;

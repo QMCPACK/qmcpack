@@ -54,8 +54,8 @@ int main(int argc, char** argv)
   myComm->barrier();
 
   typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
+  typedef ParticleSet::ParticlePos ParticlePos;
+  typedef ParticleSet::ParticleLayout LatticeType;
   typedef ParticleSet::TensorType TensorType;
   typedef ParticleSet::PosType PosType;
   typedef RandomGenerator::uint_type uint_type;

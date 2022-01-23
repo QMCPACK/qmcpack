@@ -266,8 +266,8 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   print_mem("Memory Usage after the buffer registration", app_log());
 }
 
-QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g,
-                                                         ParticleSet::ParticlePos_t& gscaled)
+QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient& g,
+                                                         ParticleSet::ParticlePos& gscaled)
 {
   //setScaledDrift(m_tauovermass,g,gscaled);
   //RealType vsq=Dot(g,g);
@@ -280,8 +280,8 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
 {
   bool success = true;
   TrialWaveFunction::LogValueType log_value{twf.getLogPsi(), twf.getPhase()};
-  ParticleSet::ParticleGradient_t G_saved  = twf.G;
-  ParticleSet::ParticleLaplacian_t L_saved = twf.L;
+  ParticleSet::ParticleGradient G_saved  = twf.G;
+  ParticleSet::ParticleLaplacian L_saved = twf.L;
 
   pset.update();
   twf.evaluateLog(pset);

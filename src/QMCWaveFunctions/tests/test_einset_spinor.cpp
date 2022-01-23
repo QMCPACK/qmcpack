@@ -41,7 +41,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   using RealType  = SPOSet::RealType;
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // O2 test example from pwscf non-collinear calculation.
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
@@ -346,7 +346,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //single particle moves that bring it back to our original R reference values.
 
   //Our perturbation vector.
-  ParticleSet::ParticlePos_t dR;
+  ParticleSet::ParticlePos dR;
   dR.resize(3);
   //Values chosen based on divine inspiration.  Not important.
   dR[0][0] = 0.1;
@@ -360,7 +360,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   dR[2][2] = 0.0;
 
   //The new R of our perturbed particle set.
-  ParticleSet::ParticlePos_t Rnew;
+  ParticleSet::ParticlePos Rnew;
   Rnew.resize(3);
   Rnew    = elec_.R + dR;
   elec_.R = Rnew;
@@ -528,7 +528,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //first, lets displace all the electrons in each walker.
   for (int iat = 0; iat < 3; iat++)
   {
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
     elec_.mw_accept_rejectMove(p_list, iat, accept);
@@ -557,7 +557,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0

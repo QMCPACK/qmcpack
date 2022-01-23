@@ -43,7 +43,7 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    ParticleSet::ParticleLayout_t lattice;
+    ParticleSet::ParticleLayout lattice;
     // BCC H
     lattice.R(0, 0) = 3.37316115;
     lattice.R(0, 1) = 3.37316115;

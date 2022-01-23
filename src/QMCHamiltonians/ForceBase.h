@@ -34,8 +34,8 @@ struct ForceBase
   bool addionion;
 
   ParticleSet& Ions;
-  ParticleSet::ParticlePos_t forces;
-  ParticleSet::ParticlePos_t forces_IonIon;
+  ParticleSet::ParticlePos forces;
+  ParticleSet::ParticlePos forces_IonIon;
   SymTensor<real_type, OHMMS_DIM> stress_IonIon;
   SymTensor<real_type, OHMMS_DIM> stress_ee, stress_ei, stress_kin;
   SymTensor<real_type, OHMMS_DIM> stress;

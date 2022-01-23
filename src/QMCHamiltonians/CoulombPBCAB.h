@@ -145,8 +145,8 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }

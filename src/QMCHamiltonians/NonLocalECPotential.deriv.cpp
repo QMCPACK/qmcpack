@@ -67,7 +67,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   dlogpsi_vp.resize(dlogpsi.size());
 
   ValueType pairpot;
-  ParticleSet::ParticlePos_t deltarV(nknot);
+  ParticleSet::ParticlePos deltarV(nknot);
 
   //displacements wrt W.R[iel]
   for (int j = 0; j < nknot; j++)

@@ -424,9 +424,9 @@ void BackflowTransformation::testDeriv(const ParticleSet& P)
   }
   for (int i = 0; i < bfFuns.size(); i++)
     bfFuns[i]->evaluateWithDerivatives(P, QP, Bmat_full, Amat, Cmat, Ymat, Xmat);
-  ParticleSet::ParticlePos_t qp_0;
-  ParticleSet::ParticlePos_t qp_1;
-  ParticleSet::ParticlePos_t qp_2;
+  ParticleSet::ParticlePos qp_0;
+  ParticleSet::ParticlePos qp_1;
+  ParticleSet::ParticlePos qp_2;
   GradMatrix Bmat_full_1;
   HessMatrix Amat_1;
   GradMatrix Bmat_full_2;
@@ -555,9 +555,9 @@ void BackflowTransformation::testPbyP(ParticleSet& P)
   HessMatrix Amat_0;
   GradMatrix Bmat_full_1;
   HessMatrix Amat_1;
-  ParticleSet::ParticlePos_t qp_0;
-  ParticleSet::ParticlePos_t qp_1;
-  ParticleSet::ParticlePos_t qp_2, qp_3;
+  ParticleSet::ParticlePos qp_0;
+  ParticleSet::ParticlePos qp_1;
+  ParticleSet::ParticlePos qp_2, qp_3;
   qp_0.resize(NumTargets);
   qp_1.resize(NumTargets);
   qp_2.resize(NumTargets);

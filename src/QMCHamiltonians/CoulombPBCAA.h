@@ -87,8 +87,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
   void updateSource(ParticleSet& s) override;
 
   /** Do nothing */

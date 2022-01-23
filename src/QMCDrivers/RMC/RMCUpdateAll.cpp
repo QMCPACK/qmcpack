@@ -136,7 +136,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   W.reptile->saveTransProb(curhead, +1, logGf);
   W.reptile->saveAction(curhead, +1, Action_forward);
 
-  Walker_t::ParticlePos_t fromdeltaR(deltaR);
+  Walker_t::ParticlePos fromdeltaR(deltaR);
 
 
   if (scaleDrift == true)
@@ -361,7 +361,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   RealType logGf = -0.5 * Dot(deltaR, deltaR);
   //W.reptile->saveTransProb(curhead,+1,logGf);
 
-  Walker_t::ParticlePos_t fromdeltaR(deltaR);
+  Walker_t::ParticlePos fromdeltaR(deltaR);
 
 
   if (scaleDrift == true)

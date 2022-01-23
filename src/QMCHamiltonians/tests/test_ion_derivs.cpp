@@ -183,10 +183,10 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -352,10 +352,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -520,10 +520,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -660,10 +660,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -880,8 +880,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   //Finally, we have all the data structures with the right dimensions.  Continue.
 
-  ParticleSet::ParticleGradient_t fkin_complex(ions.getTotalNum());
-  ParticleSet::ParticlePos_t fkin(ions.getTotalNum());
+  ParticleSet::ParticleGradient fkin_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fkin(ions.getTotalNum());
 
 
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
@@ -950,8 +950,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
 //  CHECK(nlpp_obs == Approx(1.3849558361e+01));
 
-  ParticleSet::ParticleGradient_t fnlpp_complex(ions.getTotalNum());
-  ParticleSet::ParticlePos_t fnlpp(ions.getTotalNum());
+  ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
@@ -1076,10 +1076,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -1261,10 +1261,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -1417,10 +1417,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);

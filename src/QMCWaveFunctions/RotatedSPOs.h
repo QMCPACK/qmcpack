@@ -53,8 +53,8 @@ public:
   //       It represents \frac{\nabla\psi_{J}}{\psi_{J}}
   // myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}} . The Laplacian portion
   // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold
-  ParticleSet::ParticleGradient_t myG_temp, myG_J;
-  ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
+  ParticleSet::ParticleGradient myG_temp, myG_J;
+  ParticleSet::ParticleLaplacian myL_temp, myL_J;
 
   ValueMatrix Bbar;
   ValueMatrix psiM_inv;
@@ -122,8 +122,8 @@ public:
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
   void table_method_eval(std::vector<ValueType>& dlogpsi,
                          std::vector<ValueType>& dhpsioverpsi,
-                         const ParticleSet::ParticleLaplacian_t& myL_J,
-                         const ParticleSet::ParticleGradient_t& myG_J,
+                         const ParticleSet::ParticleLaplacian& myL_J,
+                         const ParticleSet::ParticleGradient& myG_J,
                          const size_t nel,
                          const size_t nmo,
                          const ValueType& psiCurrent,

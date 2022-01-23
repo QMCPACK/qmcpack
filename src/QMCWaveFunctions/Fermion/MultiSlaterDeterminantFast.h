@@ -90,12 +90,12 @@ public:
   void buildOptVariables();
 
   LogValueType evaluate_vgl_impl(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient_t& g_tmp,
-                                 ParticleSet::ParticleLaplacian_t& l_tmp);
+                                 ParticleSet::ParticleGradient& g_tmp,
+                                 ParticleSet::ParticleLaplacian& l_tmp);
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void prepareGroup(ParticleSet& P, int ig) override;
 
@@ -174,8 +174,8 @@ public:
   Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
   Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
 
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
   std::vector<ValueVector> laplSum;
 
   //optimizable variable is shared with the clones
@@ -188,7 +188,7 @@ public:
   std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
   // temporary storage for evaluateDerivatives
-  ParticleSet::ParticleGradient_t gmPG;
+  ParticleSet::ParticleGradient gmPG;
   std::vector<Matrix<RealType>> dpsia, dLa;
   std::vector<Array<GradType, OHMMS_DIM>> dGa;
 

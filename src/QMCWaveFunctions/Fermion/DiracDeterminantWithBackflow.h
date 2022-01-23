@@ -71,8 +71,8 @@ public:
                            const opt_variables_type& active,
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
-                           ParticleSet::ParticleGradient_t* G0,
-                           ParticleSet::ParticleLaplacian_t* L0,
+                           ParticleSet::ParticleGradient* G0,
+                           ParticleSet::ParticleLaplacian* L0,
                            int k);
 
   void evaluateDerivatives(ParticleSet& P,
@@ -103,8 +103,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
@@ -115,8 +115,8 @@ public:
   void restore(int iat) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -170,7 +170,7 @@ private:
   HessVector grad_gradV;
   HessMatrix grad_grad_psiM_temp;
   GGGMatrix grad_grad_grad_psiM;
-  ParticleSet::ParticleGradient_t Gtemp;
+  ParticleSet::ParticleGradient Gtemp;
   ValueType La1, La2, La3;
   HessMatrix Ajk_sum, Qmat;
   GradMatrix Fmat;
@@ -194,8 +194,8 @@ private:
   ValueVector d2psiV;
 
   PsiValueType curRatio;
-  ParticleSet::SingleParticleValue_t* FirstAddressOfG;
-  ParticleSet::SingleParticleValue_t* LastAddressOfG;
+  ParticleSet::SingleParticleValue* FirstAddressOfG;
+  ParticleSet::SingleParticleValue* LastAddressOfG;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
 
@@ -208,8 +208,8 @@ private:
   ValueType* FirstAddressOfFm;
   ValueType* LastAddressOfFm;
 
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
 
   void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
 

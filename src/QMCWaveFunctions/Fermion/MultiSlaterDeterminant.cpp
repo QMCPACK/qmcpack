@@ -130,8 +130,8 @@ void MultiSlaterDeterminant::resize(int n1, int n2)
 }
 
 WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(const ParticleSet& P,
-                                                                  ParticleSet::ParticleGradient_t& G,
-                                                                  ParticleSet::ParticleLaplacian_t& L)
+                                                                  ParticleSet::ParticleGradient& G,
+                                                                  ParticleSet::ParticleLaplacian& L)
 {
   EvaluateTimer.start();
   // mmorales: For now always assume 2 electron components, up/down
@@ -166,7 +166,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(const Particle
   {
     int upC                                = C2node_up[i];
     int dnC                                = C2node_dn[i];
-    ParticleSet::SingleParticleValue_t tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
+    ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
     psi += tmp;
     //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
     myG += grads_up[upC] * tmp; // other spin sector should be zero
@@ -188,8 +188,8 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(const Particle
 }
 
 WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(const ParticleSet& P,
-                                                                        ParticleSet::ParticleGradient_t& G,
-                                                                        ParticleSet::ParticleLaplacian_t& L)
+                                                                        ParticleSet::ParticleGradient& G,
+                                                                        ParticleSet::ParticleLaplacian& L)
 {
   return log_value_ = convertValueToLog(evaluate(P, G, L));
 }
@@ -562,7 +562,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(Particl
   {
     int upC                                = C2node_up[i];
     int dnC                                = C2node_dn[i];
-    ParticleSet::SingleParticleValue_t tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
+    ParticleSet::SingleParticleValue tmp = C[i] * detValues_up[upC] * detValues_dn[dnC];
     psi += tmp;
     //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
     myG += grads_up[upC] * tmp; // other spin sector should be zero
@@ -694,7 +694,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
-      ParticleSet::ParticleGradient_t g(n), gmP(n);
+      ParticleSet::ParticleGradient g(n), gmP(n);
       ValueType gg = 0.0;
       g            = 0.0;
       gmP          = 0.0;
@@ -708,7 +708,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         int dnC       = C2node_dn[i];
         ValueType tmp = C[i] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
         lapl_sum += tmp * (tempstorage_up[upC] + tempstorage_dn[dnC]);
-        ParticleSet::SingleParticleValue_t tmp_DP(tmp);
+        ParticleSet::SingleParticleValue tmp_DP(tmp);
         g += grads_up[upC] * tmp_DP;
         g += grads_dn[dnC] * tmp_DP;
       }
@@ -737,7 +737,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           ValueType tmp = CSFexpansion[cnt] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
           cdet += tmp;
           q0 += tmp * (tempstorage_up[upC] + tempstorage_dn[dnC]);
-          ParticleSet::SingleParticleValue_t tmp_DP(tmp);
+          ParticleSet::SingleParticleValue tmp_DP(tmp);
           v1 += tmp_DP * (Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]));
           //           v1 += tmp*(Dot(P.G,grads_up[upC])-Dot(g,grads_up[upC]));
           //           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
@@ -758,7 +758,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(log_value_);
 
       ValueType lapl_sum = 0.0;
-      ParticleSet::ParticleGradient_t g(n), gmP(n);
+      ParticleSet::ParticleGradient g(n), gmP(n);
       ValueType gg = 0.0;
       g            = 0.0;
       gmP          = 0.0;
@@ -772,7 +772,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         int dnC       = C2node_dn[i];
         ValueType tmp = C[i] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
         lapl_sum += tmp * (tempstorage_up[upC] + tempstorage_dn[dnC]);
-        ParticleSet::SingleParticleValue_t tmp_DP(tmp);
+        ParticleSet::SingleParticleValue tmp_DP(tmp);
         g += grads_up[upC] * tmp_DP;
         g += grads_dn[dnC] * tmp_DP;
       }

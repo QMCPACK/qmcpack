@@ -124,7 +124,7 @@ bool SpaceGrid::initialize_voronoi(std::map<std::string, Point>& points)
   bool succeeded = true;
   if (Rptcl)
   {
-    const ParticlePos_t& R = *Rptcl;
+    const ParticlePos& R = *Rptcl;
     origin                 = points["center"];
     ndomains               = R.size();
     domain_volumes.resize(ndomains, 1);
@@ -819,7 +819,7 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_
 #define SPACEGRID_CHECK
 
 
-void SpaceGrid::evaluate(const ParticlePos_t& R,
+void SpaceGrid::evaluate(const ParticlePos& R,
                          const Matrix<RealType>& values,
                          BufferType& buf,
                          std::vector<bool>& particles_outside,
