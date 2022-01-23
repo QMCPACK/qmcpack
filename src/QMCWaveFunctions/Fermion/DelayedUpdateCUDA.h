@@ -96,8 +96,6 @@ class DelayedUpdateCUDA
   cusolverDnHandle_t h_cusolver;
   cudaStream_t hstream;
 
-  inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
-
 public:
   /// default constructor
   DelayedUpdateCUDA() : delay_count(0)
@@ -176,7 +174,7 @@ public:
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    waitStream();
+    cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -195,7 +193,7 @@ public:
                                    hstream),
                    "cudaMemcpyAsync failed!");
     // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-    //waitStream();
+    //cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -231,7 +229,7 @@ public:
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    waitStream();
+    cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -251,7 +249,7 @@ public:
                                    hstream),
                    "cudaMemcpyAsync failed!");
     // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-    //waitStream();
+    //cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -289,7 +287,7 @@ public:
                                      hstream),
                      "cudaMemcpyAsync failed!");
       prefetched_range.setRange(rowchanged, last_row);
-      waitStream();
+      cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
     }
     // save AinvRow to new_AinvRow
     std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
@@ -389,7 +387,7 @@ public:
                                      hstream),
                      "cudaMemcpyAsync failed!");
       // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-      //waitStream();
+      //cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
     }
   }
 };
