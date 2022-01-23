@@ -84,11 +84,11 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
   typedef Walker_t::WFBuffer_t WFBufferType;
   typedef Walker_t::Buffer_t BufferType;
-  typedef OrbitalSetTraits<RealType>::ValueMatrix_t RealMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix_t GradMatrix_t;
+  typedef OrbitalSetTraits<RealType>::ValueMatrix RealMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix ValueMatrix;
+  typedef OrbitalSetTraits<ValueType>::GradMatrix GradMatrix;
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
+  typedef OrbitalSetTraits<ValueType>::HessVector HessVector;
 
   // the value type for log(psi)
   using LogValueType = std::complex<QTFull::RealType>;
@@ -213,7 +213,7 @@ public:
   //   APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");
   // }
 
-  virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
+  virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
   {
     APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
   }
@@ -679,7 +679,7 @@ public:
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
-  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::gradLapl for " + ClassName +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");

@@ -123,7 +123,7 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(const ParticleSet& P) override;

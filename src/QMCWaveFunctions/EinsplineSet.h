@@ -217,30 +217,30 @@ protected:
   typedef typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::SplineType SplineType;
   typedef typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::BCType BCType;
 
-  typedef typename OrbitalSetTraits<StorageType>::ValueVector_t StorageValueVector_t;
-  typedef typename OrbitalSetTraits<StorageType>::GradVector_t StorageGradVector_t;
-  typedef typename OrbitalSetTraits<StorageType>::HessVector_t StorageHessVector_t;
-  typedef typename OrbitalSetTraits<StorageType>::GradHessVector_t StorageGradHessVector_t;
-  typedef Vector<double> RealValueVector_t;
-  typedef Vector<std::complex<double>> ComplexValueVector_t;
-  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector_t;
-  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector_t;
+  typedef typename OrbitalSetTraits<StorageType>::ValueVector StorageValueVector;
+  typedef typename OrbitalSetTraits<StorageType>::GradVector StorageGradVector;
+  typedef typename OrbitalSetTraits<StorageType>::HessVector StorageHessVector;
+  typedef typename OrbitalSetTraits<StorageType>::GradHessVector StorageGradHessVector;
+  typedef Vector<double> RealValueVector;
+  typedef Vector<std::complex<double>> ComplexValueVector;
+  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector;
+  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector;
   typedef Tensor<double, OHMMS_DIM> RealHessType;
   typedef Tensor<std::complex<double>, OHMMS_DIM> ComplexHessType;
-  typedef Vector<RealHessType> RealHessVector_t;
-  typedef Matrix<RealHessType> RealHessMatrix_t;
-  typedef Vector<ComplexHessType> ComplexHessVector_t;
-  typedef Matrix<ComplexHessType> ComplexHessMatrix_t;
-  typedef Matrix<double> RealValueMatrix_t;
-  typedef Matrix<std::complex<double>> ComplexValueMatrix_t;
-  typedef Matrix<TinyVector<double, OHMMS_DIM>> RealGradMatrix_t;
-  typedef Matrix<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradMatrix_t;
+  typedef Vector<RealHessType> RealHessVector;
+  typedef Matrix<RealHessType> RealHessMatrix;
+  typedef Vector<ComplexHessType> ComplexHessVector;
+  typedef Matrix<ComplexHessType> ComplexHessMatrix;
+  typedef Matrix<double> RealValueMatrix;
+  typedef Matrix<std::complex<double>> ComplexValueMatrix;
+  typedef Matrix<TinyVector<double, OHMMS_DIM>> RealGradMatrix;
+  typedef Matrix<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradMatrix;
   typedef TinyVector<RealHessType, 3> RealGGGType;
-  typedef Vector<RealGGGType> RealGGGVector_t;
-  typedef Matrix<RealGGGType> RealGGGMatrix_t;
+  typedef Vector<RealGGGType> RealGGGVector;
+  typedef Matrix<RealGGGType> RealGGGMatrix;
   typedef TinyVector<ComplexHessType, 3> ComplexGGGType;
-  typedef Vector<ComplexGGGType> ComplexGGGVector_t;
-  typedef Matrix<ComplexGGGType> ComplexGGGMatrix_t;
+  typedef Vector<ComplexGGGType> ComplexGGGVector;
+  typedef Matrix<ComplexGGGType> ComplexGGGMatrix;
 
   /////////////////////////////
   /// Orbital storage object //
@@ -255,10 +255,10 @@ protected:
   // First-order derivative w.r.t. the ion positions
   std::vector<TinyVector<SplineType*, OHMMS_DIM>> FirstOrderSplines;
   // Temporary storage for Eispline calls
-  StorageValueVector_t storage_value_vector_, storage_lapl_vector_;
-  StorageGradVector_t storage_grad_vector_;
-  StorageHessVector_t storage_hess_vector_;
-  StorageGradHessVector_t storage_grad_hess_vector_;
+  StorageValueVector storage_value_vector_, storage_lapl_vector_;
+  StorageGradVector storage_grad_vector_;
+  StorageHessVector storage_hess_vector_;
+  StorageGradHessVector storage_grad_hess_vector_;
 
   // True if we should unpack this orbital into two copies
   std::vector<bool> MakeTwoCopies;
@@ -342,31 +342,31 @@ public:
 
 #if !defined(QMC_COMPLEX)
   // Real return values
-  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, RealValueVector& psi) override;
   void evaluateVGL(const ParticleSet& P,
                    int iat,
-                   RealValueVector_t& psi,
-                   RealGradVector_t& dpsi,
-                   RealValueVector_t& d2psi) override;
+                   RealValueVector& psi,
+                   RealGradVector& dpsi,
+                   RealValueVector& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            RealValueMatrix_t& psi,
-                            RealGradMatrix_t& dpsi,
-                            RealValueMatrix_t& d2psi) override;
+                            RealValueMatrix& psi,
+                            RealGradMatrix& dpsi,
+                            RealValueMatrix& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            RealValueMatrix_t& psi,
-                            RealGradMatrix_t& dpsi,
-                            RealHessMatrix_t& grad_grad_psi) override;
+                            RealValueMatrix& psi,
+                            RealGradMatrix& dpsi,
+                            RealHessMatrix& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            RealValueMatrix_t& psi,
-                            RealGradMatrix_t& dpsi,
-                            RealHessMatrix_t& grad_grad_psi,
-                            RealGGGMatrix_t& grad_grad_grad_logdet) override;
+                            RealValueMatrix& psi,
+                            RealGradMatrix& dpsi,
+                            RealHessMatrix& grad_grad_psi,
+                            RealGGGMatrix& grad_grad_grad_logdet) override;
 
   //    void evaluate (const ParticleSet& P, const PosType& r, std::vector<double> &psi);
   // This is the gradient of the orbitals w.r.t. the ion iat
@@ -375,7 +375,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          RealGradMatrix_t& gradphi) override;
+                          RealGradMatrix& gradphi) override;
   // Evaluate the gradient w.r.t. to ion iat of the gradient and
   // laplacian of the orbitals w.r.t. the electrons
   void evaluateGradSource(const ParticleSet& P,
@@ -383,41 +383,41 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          RealGradMatrix_t& dphi,
-                          RealHessMatrix_t& dgrad_phi,
-                          RealGradMatrix_t& dlaplphi) override;
+                          RealGradMatrix& dphi,
+                          RealHessMatrix& dgrad_phi,
+                          RealGradMatrix& dlaplphi) override;
 #else
   // Complex return values
-  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector& psi) override;
   void evaluateVGL(const ParticleSet& P,
                    int iat,
-                   ComplexValueVector_t& psi,
-                   ComplexGradVector_t& dpsi,
-                   ComplexValueVector_t& d2psi) override;
+                   ComplexValueVector& psi,
+                   ComplexGradVector& dpsi,
+                   ComplexValueVector& d2psi) override;
   void evaluateVGH(const ParticleSet& P,
                    int iat,
-                   ComplexValueVector_t& psi,
-                   ComplexGradVector_t& dpsi,
-                   ComplexHessVector_t& grad_grad_psi) override;
+                   ComplexValueVector& psi,
+                   ComplexGradVector& dpsi,
+                   ComplexHessVector& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ComplexValueMatrix_t& psi,
-                            ComplexGradMatrix_t& dpsi,
-                            ComplexValueMatrix_t& d2psi) override;
+                            ComplexValueMatrix& psi,
+                            ComplexGradMatrix& dpsi,
+                            ComplexValueMatrix& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ComplexValueMatrix_t& psi,
-                            ComplexGradMatrix_t& dpsi,
-                            ComplexHessMatrix_t& grad_grad_psi) override;
+                            ComplexValueMatrix& psi,
+                            ComplexGradMatrix& dpsi,
+                            ComplexHessMatrix& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ComplexValueMatrix_t& psi,
-                            ComplexGradMatrix_t& dpsi,
-                            ComplexHessMatrix_t& grad_grad_psi,
-                            ComplexGGGMatrix_t& grad_grad_grad_logdet) override;
+                            ComplexValueMatrix& psi,
+                            ComplexGradMatrix& dpsi,
+                            ComplexHessMatrix& grad_grad_psi,
+                            ComplexGGGMatrix& grad_grad_grad_logdet) override;
 #endif
 
 #ifdef QMC_CUDA

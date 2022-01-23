@@ -28,9 +28,9 @@ public:
   using PtclPoolType  = std::map<std::string, ParticleSet*>;
   using RealType      = QMCTraits::RealType;
   using ValueType     = QMCTraits::ValueType;
-  using ValueVector_t = OrbitalSetTraits<ValueType>::ValueVector_t;
-  using GradVector_t  = OrbitalSetTraits<ValueType>::GradVector_t;
-  using HessVector_t  = OrbitalSetTraits<ValueType>::HessVector_t;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using HessVector  = OrbitalSetTraits<ValueType>::HessVector;
 
   RealType myfabs(RealType s) { return std::fabs(s); }
   template<typename T>
@@ -141,8 +141,8 @@ public:
     }
 
     // prepare a fake particle set
-    ValueVector_t SPO_v, SPO_l, SPO_v_avg, SPO_l_avg;
-    GradVector_t SPO_g, SPO_g_avg;
+    ValueVector SPO_v, SPO_l, SPO_v_avg, SPO_l_avg;
+    GradVector SPO_g, SPO_g_avg;
     int OrbitalSize(sposet.size());
     SPO_v.resize(OrbitalSize);
     SPO_g.resize(OrbitalSize);

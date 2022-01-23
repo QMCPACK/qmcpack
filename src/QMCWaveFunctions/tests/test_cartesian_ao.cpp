@@ -75,7 +75,7 @@ void test_cartesian_ao()
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
-    SPOSet::ValueVector_t values;
+    SPOSet::ValueVector values;
     values.resize(1);
 
     // Call makeMove to compute the distances
@@ -142,7 +142,7 @@ void test_dirac_ao()
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
-    SPOSet::ValueVector_t values;
+    SPOSet::ValueVector values;
     values.resize(1);
 
     // Call makeMove to compute the distances

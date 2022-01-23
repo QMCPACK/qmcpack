@@ -73,8 +73,8 @@ class OneMolecularOrbital
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::GradType GradType;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
+  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
   typedef SPOSet* SPOSetPtr;
 
 public:
@@ -122,9 +122,9 @@ public:
 
 private:
   /// Temporary storage for real wavefunction values
-  ValueVector_t val1;
-  GradVector_t grad1;
-  ValueVector_t lap1;
+  ValueVector val1;
+  GradVector grad1;
+  ValueVector lap1;
 
   /// target ParticleSet
   ParticleSet* targetPtcl;
@@ -205,7 +205,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
 typedef QMCTraits::RealType RealType;
 typedef QMCTraits::ValueType ValueType;
 typedef QMCTraits::GradType GradType;
-typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
 
 /** Ideal local energy at one point
  * @param r  input radial distance
@@ -221,11 +221,11 @@ RealType getOneIdealLocalEnergy(RealType r, RealType Z, RealType beta0);
  * @param ELorigAtRc local energy at Rc.  beta0 is adjusted to make energy continuous at Rc
  * @param ELideal - output the ideal local energy at pos values
  */
-void getIdealLocalEnergy(const ValueVector_t& pos,
+void getIdealLocalEnergy(const ValueVector& pos,
                          RealType Z,
                          RealType Rc,
                          RealType ELorigAtRc,
-                         ValueVector_t& ELideal);
+                         ValueVector& ELideal);
 
 /** Evaluate various orbital quantities that enter as constraints on the correction
  * @param valRc  orbital value at Rc
@@ -271,13 +271,13 @@ RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero);
  * @param phiMO uncorrected orbital (S-orbitals on this center only)
  * @param ELcurr output local energy at each distance in pos
  */
-void getCurrentLocalEnergy(const ValueVector_t& pos,
+void getCurrentLocalEnergy(const ValueVector& pos,
                            RealType Zeff,
                            RealType Rc,
                            RealType originalELatRc,
                            CuspCorrection& cusp,
                            OneMolecularOrbital& phiMO,
-                           ValueVector_t& ELcurr);
+                           ValueVector& ELcurr);
 
 /** Local energy from uncorrected orbital
  * @param pos input vector of radial distances
@@ -289,18 +289,18 @@ void getCurrentLocalEnergy(const ValueVector_t& pos,
  * Return is value of local energy at zero.  This is the value needed for subsequent computations.
  * The routine can be called with an empty vector of positions to get just this value.
  */
-RealType getOriginalLocalEnergy(const ValueVector_t& pos,
+RealType getOriginalLocalEnergy(const ValueVector& pos,
                                 RealType Zeff,
                                 RealType Rc,
                                 OneMolecularOrbital& phiMO,
-                                ValueVector_t& Elorig);
+                                ValueVector& Elorig);
 
 /** Sum of squares difference between the current and ideal local energies
  * This is the objective function to be minimized.
  * @param Elcurr  current local energy
  * @param Elideal  ideal local energy
  */
-RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal);
+RealType getELchi2(const ValueVector& ELcurr, const ValueVector& ELideal);
 
 
 /** Minimize chi2 with respect to phi at zero for a fixed Rc
@@ -316,9 +316,9 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
                               OneMolecularOrbital& phiMO,
                               RealType Z,
                               RealType eta0,
-                              ValueVector_t& pos,
-                              ValueVector_t& ELcurr,
-                              ValueVector_t& ELideal,
+                              ValueVector& pos,
+                              ValueVector& ELcurr,
+                              ValueVector& ELideal,
                               RealType start_phi0);
 
 
@@ -341,9 +341,9 @@ void minimizeForRc(CuspCorrection& cusp,
                    RealType Rc_init,
                    RealType Rc_max,
                    RealType eta0,
-                   ValueVector_t& pos,
-                   ValueVector_t& ELcurr,
-                   ValueVector_t& ELideal);
+                   ValueVector& pos,
+                   ValueVector& ELcurr,
+                   ValueVector& ELideal);
 
 
 } // namespace qmcplusplus

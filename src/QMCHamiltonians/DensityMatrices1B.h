@@ -45,8 +45,8 @@ public:
 
   typedef ValueType Value_t;
   typedef GradType Grad_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t GradVector_t;
+  typedef SPOSet::ValueVector ValueVector;
+  typedef SPOSet::GradVector GradVector;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef Vector<Value_t> Vector_t;
   typedef Matrix<Value_t> Matrix_t;
@@ -78,11 +78,11 @@ public:
   //data members
   bool energy_mat;
   CompositeSPOSet basis_functions;
-  ValueVector_t basis_values;
-  ValueVector_t basis_norms;
-  GradVector_t basis_gradients;
-  ValueVector_t basis_laplacians;
-  ValueVector_t integrated_values;
+  ValueVector basis_values;
+  ValueVector basis_norms;
+  GradVector basis_gradients;
+  ValueVector basis_laplacians;
+  ValueVector integrated_values;
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;

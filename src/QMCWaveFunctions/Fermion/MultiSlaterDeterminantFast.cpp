@@ -169,7 +169,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
     Dets[det_id]->evaluateGrads(P, iat);
 
   const auto& grads               = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const ValueVector& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const size_t noffset            = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
@@ -199,8 +199,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
   const auto& grads               = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueMatrix_t& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
+  const ValueVector& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const ValueMatrix& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
   const size_t noffset            = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
@@ -518,7 +518,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
 
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+  const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
   PsiValueType psi = 0;
   // This function computes
@@ -537,7 +537,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
   const int det_id = getDetID(iat);
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
+  const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
   const size_t* restrict det0     = (*C2node)[det_id].data();
   const ValueType* restrict cptr  = C->data();
   const size_t nc                 = C->size();
@@ -653,7 +653,7 @@ void MultiSlaterDeterminantFast::evaluateRatios(const VirtualParticleSet& VP, st
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
     Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
-    const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+    const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
     PsiValueType psiNew(0);
     if (use_pre_computing_)
@@ -909,7 +909,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
               {
                 if (id == other_id)
                   continue;
-                const ValueVector_t& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
+                const ValueVector& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
                 size_t otherspinC                        = (*C2node)[other_id][cnt];
                 tmp *= detValues_otherspin[otherspinC];
               }

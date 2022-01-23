@@ -885,7 +885,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
             ParticleSet::SingleParticlePos_t zeroR;
             W.makeMove(it->index,zeroR);
 
-            SPOSet::ValueVector_t psi(spo->size());
+            SPOSet::ValueVector psi(spo->size());
 
             spo->evaluate(W, it->index, psi);
             ValueType logpsi = psi[0];
@@ -2096,7 +2096,7 @@ void WaveFunctionTester::runwftricks()
   SO.put(myNode);
   SymmetryGroup symOp(*SO.getSymmetryGroup());
   //       SO.changeBasis(InverseBasisMatrix);
-  OrbitalSetTraits<ValueType>::ValueVector_t values;
+  OrbitalSetTraits<ValueType>::ValueVector values;
   values.resize(NumOrbitals);
   RealType overG0(1.0 / Grid[0]);
   RealType overG1(1.0 / Grid[1]);
@@ -2118,7 +2118,7 @@ void WaveFunctionTester::runwftricks()
   //       for(int l=0;l<totsymops;l++) brokenSymmetryCharacter[l]+=0.5;
   if ((doProj == "yes") || (doRotate == "yes"))
   {
-    OrbitalSetTraits<ValueType>::ValueVector_t identityValues(values.size());
+    OrbitalSetTraits<ValueType>::ValueVector identityValues(values.size());
     //Loop over grid
     for (int i = 0; i < Grid[0]; i++)
       for (int j = 0; j < Grid[1]; j++)

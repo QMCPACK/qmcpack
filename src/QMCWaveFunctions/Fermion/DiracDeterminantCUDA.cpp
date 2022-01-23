@@ -1273,7 +1273,7 @@ void DiracDeterminantCUDA::ratio(std::vector<Walker_t*>& walkers,
   }
 }
 
-void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
 {
   auto& walkers = W.WalkerList;
   int nw = walkers.size();
@@ -1405,8 +1405,8 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
 #ifdef CUDA_DEBUG
   // Now do it on the CPU
   gpu::host_vector<CTS::ValueType> host_data;
-  GradMatrix_t cpu_grads(grads.rows(), grads.cols());
-  ValueMatrix_t cpu_lapl(grads.rows(), grads.cols());
+  GradMatrix cpu_grads(grads.rows(), grads.cols());
+  ValueMatrix cpu_lapl(grads.rows(), grads.cols());
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     fprintf(stderr, "walker #%i:\n", iw);
@@ -1437,7 +1437,7 @@ void DiracDeterminantCUDA::NLratios_CPU(MCWalkerConfiguration& W,
   // Phi->evaluate needs to be replaced
   APP_ABORT("DiracDeterminantCUDA::NLratios_CPU is currently disabled.\n");
   auto& walkers = W.WalkerList;
-  std::vector<ValueMatrix_t> Ainv_host;
+  std::vector<ValueMatrix> Ainv_host;
   int nw = walkers.size();
   Ainv_host.resize(nw);
   int mat_size = NumOrbitals * NumOrbitals * sizeof(CTS::ValueType);

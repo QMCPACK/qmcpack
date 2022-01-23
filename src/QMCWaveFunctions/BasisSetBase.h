@@ -42,16 +42,16 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   typedef typename OrbitalSetTraits<T>::ValueType ValueType;
   typedef typename OrbitalSetTraits<T>::IndexType IndexType;
   typedef typename OrbitalSetTraits<T>::HessType HessType;
-  typedef typename OrbitalSetTraits<T>::IndexVector_t IndexVector_t;
-  typedef typename OrbitalSetTraits<T>::ValueVector_t ValueVector_t;
-  typedef typename OrbitalSetTraits<T>::ValueMatrix_t ValueMatrix_t;
-  typedef typename OrbitalSetTraits<T>::GradVector_t GradVector_t;
-  typedef typename OrbitalSetTraits<T>::GradMatrix_t GradMatrix_t;
-  typedef typename OrbitalSetTraits<T>::HessVector_t HessVector_t;
-  typedef typename OrbitalSetTraits<T>::HessMatrix_t HessMatrix_t;
+  typedef typename OrbitalSetTraits<T>::IndexVector IndexVector;
+  typedef typename OrbitalSetTraits<T>::ValueVector ValueVector;
+  typedef typename OrbitalSetTraits<T>::ValueMatrix ValueMatrix;
+  typedef typename OrbitalSetTraits<T>::GradVector GradVector;
+  typedef typename OrbitalSetTraits<T>::GradMatrix GradMatrix;
+  typedef typename OrbitalSetTraits<T>::HessVector HessVector;
+  typedef typename OrbitalSetTraits<T>::HessMatrix HessMatrix;
   typedef TinyVector<HessType, OHMMS_DIM> GGGType;
-  typedef Vector<GGGType> GGGVector_t;
-  typedef Matrix<GGGType> GGGMatrix_t;
+  typedef Vector<GGGType> GGGVector;
+  typedef Matrix<GGGType> GGGMatrix;
 
 
   ///size of the basis set
@@ -61,21 +61,21 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   ///counter to keep track
   unsigned long Counter;
   ///phi[i] the value of the i-th basis set
-  ValueVector_t Phi;
+  ValueVector Phi;
   ///dphi[i] the gradient of the i-th basis set
-  GradVector_t dPhi;
+  GradVector dPhi;
   ///d2phi[i] the laplacian of the i-th basis set
-  ValueVector_t d2Phi;
+  ValueVector d2Phi;
   ///grad_grad_Phi[i] the full hessian of the i-th basis set
-  HessVector_t grad_grad_Phi;
+  HessVector grad_grad_Phi;
   ///grad_grad_grad_Phi the full hessian of the i-th basis set
-  GGGVector_t grad_grad_grad_Phi;
+  GGGVector grad_grad_grad_Phi;
   ///container to store value, laplacian and gradient
-  ValueMatrix_t Temp;
+  ValueMatrix Temp;
 
-  ValueMatrix_t Y;
-  GradMatrix_t dY;
-  ValueMatrix_t d2Y;
+  ValueMatrix Y;
+  GradMatrix dY;
+  ValueMatrix d2Y;
 
   ///default constructor
   BasisSetBase() : BasisSetSize(0), ActivePtcl(-1), Counter(0) {}

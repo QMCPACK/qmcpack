@@ -177,10 +177,10 @@ void SlaterDet::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& w
   }
 }
 
-void SlaterDet::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void SlaterDet::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   grad_grad_psi.resize(P.getTotalNum());
-  HessVector_t tmp;
+  HessVector tmp;
   tmp.resize(P.getTotalNum());
   for (int i = 0; i < Dets.size(); ++i)
   {

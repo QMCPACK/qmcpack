@@ -286,9 +286,9 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
   values.resize(7);
   dpsi.resize(7);
   d2psi.resize(7);
@@ -355,9 +355,9 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(d2psi[1] == Approx(19.8720529007));
 
 
-  SPOSet::ValueMatrix_t all_values;
-  SPOSet::GradMatrix_t all_grad;
-  SPOSet::ValueMatrix_t all_lap;
+  SPOSet::ValueMatrix all_values;
+  SPOSet::GradMatrix all_grad;
+  SPOSet::ValueMatrix all_lap;
   all_values.resize(7, 7);
   all_grad.resize(7, 7);
   all_lap.resize(7, 7);
@@ -458,9 +458,9 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
   values.resize(13);
   dpsi.resize(13);
   d2psi.resize(13);
@@ -518,9 +518,9 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(d2psi[12] == Approx(-4.3399821309));
 
 
-  SPOSet::ValueMatrix_t all_values;
-  SPOSet::GradMatrix_t all_grad;
-  SPOSet::ValueMatrix_t all_lap;
+  SPOSet::ValueMatrix all_values;
+  SPOSet::GradMatrix all_grad;
+  SPOSet::ValueMatrix all_lap;
   all_values.resize(13, 13);
   all_grad.resize(13, 13);
   all_lap.resize(13, 13);

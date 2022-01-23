@@ -773,7 +773,7 @@ void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCompon
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   log_value_ = 0.0;
   const auto& d_ee(P.getDistTableAA(my_table_ID_));

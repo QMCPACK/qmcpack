@@ -1253,7 +1253,7 @@ inline void DensityMatrices1B::normalize()
   RealType du = scale / ngrid;
   RealType dV = volume / ngtot;
   PosType rp;
-  ValueVector_t bnorms;
+  ValueVector bnorms;
   int gdims[DIM];
   gdims[0] = pow(ngrid, DIM - 1);
   for (int d = 1; d < DIM; ++d)

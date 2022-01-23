@@ -60,16 +60,16 @@ public:
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   typedef SPOSet* SPOSetPtr;
-  typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::IndexVector IndexVector;
+  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
+  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
+  typedef OrbitalSetTraits<ValueType>::HessMatrix HessMatrix;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix ValueMatrix;
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, 3> HessArray_t;
+  typedef Array<HessType, 3> HessArray;
   typedef TinyVector<HessType, OHMMS_DIM> GGGType;
-  typedef Vector<GGGType> GGGVector_t;
-  typedef Matrix<GGGType> GGGMatrix_t;
+  typedef Vector<GGGType> GGGVector;
+  typedef Matrix<GGGType> GGGMatrix;
   typedef ParticleSet::Walker_t Walker_t;
 
 
@@ -176,7 +176,7 @@ public:
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
-  std::vector<ValueVector_t> laplSum;
+  std::vector<ValueVector> laplSum;
 
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;

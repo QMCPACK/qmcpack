@@ -70,15 +70,15 @@ public:
   typedef WaveFunctionComponent::BufferType BufferType;
   typedef WaveFunctionComponent::WFBufferType WFBufferType;
   typedef WaveFunctionComponent::HessType HessType;
-  typedef WaveFunctionComponent::HessVector_t HessVector_t;
+  typedef WaveFunctionComponent::HessVector HessVector;
   using LogValueType = WaveFunctionComponent::LogValueType;
   using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
   typedef WaveFunctionComponent::RealMatrix_t RealMatrix_t;
-  typedef WaveFunctionComponent::ValueMatrix_t ValueMatrix_t;
-  typedef WaveFunctionComponent::GradMatrix_t GradMatrix_t;
+  typedef WaveFunctionComponent::ValueMatrix ValueMatrix;
+  typedef WaveFunctionComponent::GradMatrix GradMatrix;
   typedef ParticleSet::Walker_t Walker_t;
 #endif
 
@@ -487,7 +487,7 @@ public:
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
-  void evaluateHessian(ParticleSet& P, HessVector_t& all_grad_grad_psi);
+  void evaluateHessian(ParticleSet& P, HessVector& all_grad_grad_psi);
 
   std::unique_ptr<TrialWaveFunction> makeClone(ParticleSet& tqp) const;
 
@@ -654,7 +654,7 @@ public:
   void update(std::vector<Walker_t*>& walkers, int iat) { update(NULL, walkers, iat, NULL, 0); }
   void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
 
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl);
 
 
   void evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<RealType>& logpsi_opt);
@@ -662,13 +662,13 @@ public:
   void evaluateDeltaLog(MCWalkerConfiguration& W,
                         std::vector<RealType>& logpsi_fixed,
                         std::vector<RealType>& logpsi_opt,
-                        GradMatrix_t& fixedG,
-                        ValueMatrix_t& fixedL);
+                        GradMatrix& fixedG,
+                        ValueMatrix& fixedL);
 
   void evaluateOptimizableLog(MCWalkerConfiguration& W,
                               std::vector<RealType>& logpsi_opt,
-                              GradMatrix_t& optG,
-                              ValueMatrix_t& optL);
+                              GradMatrix& optG,
+                              ValueMatrix& optL);
 
   void evaluateDerivatives(MCWalkerConfiguration& W,
                            const opt_variables_type& optvars,

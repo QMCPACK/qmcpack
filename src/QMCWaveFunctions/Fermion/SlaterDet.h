@@ -83,7 +83,7 @@ public:
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     const std::vector<bool>& recompute) const override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   ///return the total number of Dirac determinants
   inline int size() const { return Dets.size(); }
@@ -346,7 +346,7 @@ public:
 
   void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override;
 
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override
   {
     for (int id = 0; id < Dets.size(); id++)
       Dets[id]->gradLapl(W, grads, lapl);

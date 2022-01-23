@@ -53,15 +53,15 @@ public:
   NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
   NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer, &evalOrbTimer;
 
-  typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::IndexVector IndexVector;
+  typedef OrbitalSetTraits<ValueType>::ValueVector ValueVector;
+  typedef OrbitalSetTraits<ValueType>::GradVector GradVector;
+  typedef OrbitalSetTraits<ValueType>::HessMatrix HessMatrix;
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, 3> HessArray_t;
+  typedef Array<HessType, 3> HessArray;
   typedef TinyVector<HessType, 3> GGGType;
-  typedef Vector<GGGType> GGGVector_t;
-  typedef Matrix<GGGType> GGGMatrix_t;
+  typedef Vector<GGGType> GGGVector;
+  typedef Matrix<GGGType> GGGMatrix;
   typedef ParticleSet::Walker_t Walker_t;
 
 
@@ -132,8 +132,8 @@ public:
   std::vector<ValueType> C;
 
   // lap(#uniqueDet,part#)
-  ValueVector_t detValues_up;
-  ValueVector_t detValues_dn;
+  ValueVector detValues_up;
+  ValueVector detValues_dn;
 
   // UGLY, how do I get around this? I want to use GradMatrix instead...
   // grads(#uniqueDet,part#)
@@ -152,10 +152,10 @@ public:
 
   PsiValueType curRatio;
   ValueType psiCurrent;
-  ValueVector_t detsRatios;
-  ValueVector_t tempstorage_up;
-  ValueVector_t tempstorage_dn;
-  GradVector_t grad_temp;
+  ValueVector detsRatios;
+  ValueVector tempstorage_up;
+  ValueVector tempstorage_dn;
+  GradVector grad_temp;
 
   ParticleSet::ParticleGradient_t myG;
   ParticleSet::ParticleLaplacian_t myL;

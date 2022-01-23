@@ -102,7 +102,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
 
   // now test evaluateHessian
-  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 

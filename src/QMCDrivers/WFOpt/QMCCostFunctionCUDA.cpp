@@ -58,10 +58,10 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool need
   int numPtcl   = W.getTotalNum();
   std::vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
   RealMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
-  GradMatrix_t fixedG(nw, numPtcl);
-  ValueMatrix_t fixedL(nw, numPtcl);
-  GradMatrix_t newG(nw, numPtcl);
-  ValueMatrix_t newL(nw, numPtcl);
+  GradMatrix fixedG(nw, numPtcl);
+  ValueMatrix fixedL(nw, numPtcl);
+  GradMatrix newG(nw, numPtcl);
+  ValueMatrix newL(nw, numPtcl);
   if (needDerivs)
   {
     d_logpsi_dalpha.resize(nw, numParams);

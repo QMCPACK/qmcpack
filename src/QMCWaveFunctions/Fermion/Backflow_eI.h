@@ -204,7 +204,7 @@ public:
   }
 
 
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector& Bmat, HessMatrix& Amat)
   {
     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
     //RealType du, d2u;
@@ -233,7 +233,7 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix& Bmat_full, HessMatrix& Amat) override
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTableAB(myTableIndex_);
@@ -300,7 +300,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            ParticleSet::ParticlePos_t& newQP,
                            const std::vector<int>& index,
-                           HessMatrix_t& Amat) override
+                           HessMatrix& Amat) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
     //RealType du, d2u;
@@ -325,7 +325,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
                            ParticleSet::ParticlePos_t& newQP,
-                           HessMatrix_t& Amat) override
+                           HessMatrix& Amat) override
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTableAB(myTableIndex_);
@@ -351,8 +351,8 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            ParticleSet::ParticlePos_t& newQP,
                            const std::vector<int>& index,
-                           GradMatrix_t& Bmat_full,
-                           HessMatrix_t& Amat) override
+                           GradMatrix& Bmat_full,
+                           HessMatrix& Amat) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
     //RealType du, d2u;
@@ -379,8 +379,8 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
                            ParticleSet::ParticlePos_t& newQP,
-                           GradMatrix_t& Bmat_full,
-                           HessMatrix_t& Amat) override
+                           GradMatrix& Bmat_full,
+                           HessMatrix& Amat) override
   {
     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     //RealType du, d2u;
@@ -406,7 +406,7 @@ public:
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) override
+  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix& Bmat_full) override
   {
     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
     //RealType du, d2u;
@@ -427,11 +427,11 @@ public:
    */
   inline void evaluateWithDerivatives(const ParticleSet& P,
                                       ParticleSet& QP,
-                                      GradMatrix_t& Bmat_full,
-                                      HessMatrix_t& Amat,
-                                      GradMatrix_t& Cmat,
-                                      GradMatrix_t& Ymat,
-                                      HessArray_t& Xmat) override
+                                      GradMatrix& Bmat_full,
+                                      HessMatrix& Amat,
+                                      GradMatrix& Cmat,
+                                      GradMatrix& Ymat,
+                                      HessArray& Xmat) override
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTableAB(myTableIndex_);

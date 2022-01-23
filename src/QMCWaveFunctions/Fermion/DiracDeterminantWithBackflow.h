@@ -33,18 +33,18 @@ class BackflowTransformation;
 class DiracDeterminantWithBackflow : public DiracDeterminantBase
 {
 public:
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef SPOSet::HessMatrix_t HessMatrix_t;
-  typedef SPOSet::HessVector_t HessVector_t;
+  typedef SPOSet::IndexVector IndexVector;
+  typedef SPOSet::ValueVector ValueVector;
+  typedef SPOSet::ValueMatrix ValueMatrix;
+  typedef SPOSet::GradVector GradVector;
+  typedef SPOSet::GradMatrix GradMatrix;
+  typedef SPOSet::HessMatrix HessMatrix;
+  typedef SPOSet::HessVector HessVector;
   typedef SPOSet::HessType HessType;
   typedef SPOSet::GGGType GGGType;
-  typedef SPOSet::GGGVector_t GGGVector_t;
-  typedef SPOSet::GGGMatrix_t GGGMatrix_t;
-  typedef SPOSet::HessArray_t HessArray_t;
+  typedef SPOSet::GGGVector GGGVector;
+  typedef SPOSet::GGGMatrix GGGMatrix;
+  typedef SPOSet::HessArray HessArray;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 
@@ -165,33 +165,33 @@ private:
   ///total number of particles. Ye: used to track first time allocation but I still feel it very strange.
   int NP;
   int NumParticles;
-  GradMatrix_t dFa;
-  HessMatrix_t grad_grad_psiM;
-  HessVector_t grad_gradV;
-  HessMatrix_t grad_grad_psiM_temp;
-  GGGMatrix_t grad_grad_grad_psiM;
+  GradMatrix dFa;
+  HessMatrix grad_grad_psiM;
+  HessVector grad_gradV;
+  HessMatrix grad_grad_psiM_temp;
+  GGGMatrix grad_grad_grad_psiM;
   ParticleSet::ParticleGradient_t Gtemp;
   ValueType La1, La2, La3;
-  HessMatrix_t Ajk_sum, Qmat;
-  GradMatrix_t Fmat;
-  GradVector_t Fmatdiag;
-  GradVector_t Fmatdiag_temp;
+  HessMatrix Ajk_sum, Qmat;
+  GradMatrix Fmat;
+  GradVector Fmatdiag;
+  GradVector Fmatdiag_temp;
 
   /////Current determinant value
   //ValueType CurrentDet;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM, psiM_temp;
+  ValueMatrix psiM, psiM_temp;
 
   /// temporary container for testing
-  ValueMatrix_t psiMinv;
+  ValueMatrix psiMinv;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM, dpsiM_temp;
+  GradMatrix dpsiM, dpsiM_temp;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
+  ValueVector psiV;
+  GradVector dpsiV;
+  ValueVector d2psiV;
 
   PsiValueType curRatio;
   ParticleSet::SingleParticleValue_t* FirstAddressOfG;
@@ -202,7 +202,7 @@ private:
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
-  ValueMatrix_t psiMinv_temp;
+  ValueMatrix psiMinv_temp;
   ValueType* FirstAddressOfGGG;
   ValueType* LastAddressOfGGG;
   ValueType* FirstAddressOfFm;
@@ -213,11 +213,11 @@ private:
 
   void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
 
-  void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
-  void evaluate_SPO(ValueMatrix_t& logdet,
-                    GradMatrix_t& dlogdet,
-                    HessMatrix_t& grad_grad_logdet,
-                    GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluate_SPO(ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet);
+  void evaluate_SPO(ValueMatrix& logdet,
+                    GradMatrix& dlogdet,
+                    HessMatrix& grad_grad_logdet,
+                    GGGMatrix& grad_grad_grad_logdet);
 };
 
 

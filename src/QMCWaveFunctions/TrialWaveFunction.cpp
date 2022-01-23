@@ -417,13 +417,13 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
   }
 }*/
 
-void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   grad_grad_psi.resize(P.getTotalNum());
 
   for (int i = 0; i < Z.size(); i++)
   {
-    HessVector_t tmp_hess(grad_grad_psi);
+    HessVector tmp_hess(grad_grad_psi);
     tmp_hess = 0.0;
     Z[i]->evaluateHessian(P, tmp_hess);
     grad_grad_psi += tmp_hess;

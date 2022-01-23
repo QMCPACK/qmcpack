@@ -146,7 +146,7 @@ void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 
 #if !defined(QMC_COMPLEX)
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, RealValueVector& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -158,7 +158,7 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
     if (inAtom)
       break;
   }
-  StorageValueVector_t& valVec = storage_value_vector_;
+  StorageValueVector& valVec = storage_value_vector_;
   if (!inAtom)
   {
     PosType ru(PrimLattice.toUnit(r));
@@ -199,7 +199,7 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
 // with a real return value, i.e. simulations at the gamma or L
 // point.
 template<>
-void EinsplineSetExtended<double>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
+void EinsplineSetExtended<double>::evaluateValue(const ParticleSet& P, int iat, RealValueVector& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -236,9 +236,9 @@ void EinsplineSetExtended<double>::evaluateValue(const ParticleSet& P, int iat, 
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
                                                     int iat,
-                                                    RealValueVector_t& psi,
-                                                    RealGradVector_t& dpsi,
-                                                    RealValueVector_t& d2psi)
+                                                    RealValueVector& psi,
+                                                    RealGradVector& dpsi,
+                                                    RealValueVector& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -250,9 +250,9 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
     if (inAtom)
       break;
   }
-  StorageValueVector_t& valVec  = storage_value_vector_;
-  StorageGradVector_t& gradVec  = storage_grad_vector_;
-  StorageValueVector_t& laplVec = storage_lapl_vector_;
+  StorageValueVector& valVec  = storage_value_vector_;
+  StorageGradVector& gradVec  = storage_grad_vector_;
+  StorageValueVector& laplVec = storage_lapl_vector_;
   // Finally, copy into output vectors
   int psiIndex = 0;
   const int N  = storage_value_vector_.size();
@@ -283,9 +283,9 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
 template<>
 void EinsplineSetExtended<double>::evaluateVGL(const ParticleSet& P,
                                                int iat,
-                                               RealValueVector_t& psi,
-                                               RealGradVector_t& dpsi,
-                                               RealValueVector_t& d2psi)
+                                               RealValueVector& psi,
+                                               RealGradVector& dpsi,
+                                               RealValueVector& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -330,9 +330,9 @@ template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
                                                              int first,
                                                              int last,
-                                                             RealValueMatrix_t& psi,
-                                                             RealGradMatrix_t& dpsi,
-                                                             RealValueMatrix_t& d2psi)
+                                                             RealValueMatrix& psi,
+                                                             RealGradMatrix& dpsi,
+                                                             RealValueMatrix& d2psi)
 {
   std::complex<double> eye(0.0, 1.0);
   VGLMatTimer.start();
@@ -346,9 +346,9 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       if (inAtom)
         break;
     }
-    StorageValueVector_t& valVec  = storage_value_vector_;
-    StorageGradVector_t& gradVec  = storage_grad_vector_;
-    StorageValueVector_t& laplVec = storage_lapl_vector_;
+    StorageValueVector& valVec  = storage_value_vector_;
+    StorageGradVector& gradVec  = storage_grad_vector_;
+    StorageValueVector& laplVec = storage_lapl_vector_;
     // Finally, copy into output vectors
     int psiIndex = 0;
     const int N  = storage_value_vector_.size();
@@ -385,9 +385,9 @@ template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
                                                              int first,
                                                              int last,
-                                                             RealValueMatrix_t& psi,
-                                                             RealGradMatrix_t& dpsi,
-                                                             RealHessMatrix_t& grad_grad_psi)
+                                                             RealValueMatrix& psi,
+                                                             RealGradMatrix& dpsi,
+                                                             RealHessMatrix& grad_grad_psi)
 {
   std::complex<double> eye(0.0, 1.0);
   VGLMatTimer.start();
@@ -401,9 +401,9 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       if (inAtom)
         break;
     }
-    StorageValueVector_t& valVec = storage_value_vector_;
-    StorageGradVector_t& gradVec = storage_grad_vector_;
-    StorageHessVector_t& hessVec = storage_hess_vector_;
+    StorageValueVector& valVec = storage_value_vector_;
+    StorageGradVector& gradVec = storage_grad_vector_;
+    StorageHessVector& hessVec = storage_hess_vector_;
     Tensor<std::complex<double>, OHMMS_DIM> tmphs;
     // Finally, copy into output vectors
     int psiIndex = 0;
@@ -448,7 +448,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            int last,
                                                            const ParticleSet& source,
                                                            int iat,
-                                                           RealGradMatrix_t& dpsi)
+                                                           RealGradMatrix& dpsi)
 {
   if (ionDerivs)
   {
@@ -496,9 +496,9 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            int last,
                                                            const ParticleSet& source,
                                                            int iat_src,
-                                                           RealGradMatrix_t& dphi,
-                                                           RealHessMatrix_t& dgrad_phi,
-                                                           RealGradMatrix_t& dlapl_phi)
+                                                           RealGradMatrix& dphi,
+                                                           RealHessMatrix& dgrad_phi,
+                                                           RealGradMatrix& dlapl_phi)
 {
   if (ionDerivs)
   {
@@ -567,9 +567,9 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
                                                       int last,
                                                       const ParticleSet& source,
                                                       int iat_src,
-                                                      RealGradMatrix_t& dphi,
-                                                      RealHessMatrix_t& dgrad_phi,
-                                                      RealGradMatrix_t& dlapl_phi)
+                                                      RealGradMatrix& dphi,
+                                                      RealHessMatrix& dgrad_phi,
+                                                      RealGradMatrix& dlapl_phi)
 {
   if (ionDerivs)
   {
@@ -629,7 +629,7 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
                                                       int last,
                                                       const ParticleSet& source,
                                                       int iat,
-                                                      RealGradMatrix_t& dpsi)
+                                                      RealGradMatrix& dpsi)
 {
   if (ionDerivs)
   {
@@ -671,7 +671,7 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
 #else
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, ComplexValueVector& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -698,9 +698,9 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
                                                     int iat,
-                                                    ComplexValueVector_t& psi,
-                                                    ComplexGradVector_t& dpsi,
-                                                    ComplexValueVector_t& d2psi)
+                                                    ComplexValueVector& psi,
+                                                    ComplexGradVector& dpsi,
+                                                    ComplexValueVector& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -739,9 +739,9 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
                                                     int iat,
-                                                    ComplexValueVector_t& psi,
-                                                    ComplexGradVector_t& dpsi,
-                                                    ComplexHessVector_t& grad_grad_psi)
+                                                    ComplexValueVector& psi,
+                                                    ComplexGradVector& dpsi,
+                                                    ComplexHessVector& grad_grad_psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -788,9 +788,9 @@ template<>
 void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
                                                         int first,
                                                         int last,
-                                                        RealValueMatrix_t& psi,
-                                                        RealGradMatrix_t& dpsi,
-                                                        RealValueMatrix_t& d2psi)
+                                                        RealValueMatrix& psi,
+                                                        RealGradMatrix& dpsi,
+                                                        RealValueMatrix& d2psi)
 {
   VGLMatTimer.start();
   for (int iat = first, i = 0; iat < last; iat++, i++)
@@ -848,9 +848,9 @@ template<>
 void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
                                                         int first,
                                                         int last,
-                                                        RealValueMatrix_t& psi,
-                                                        RealGradMatrix_t& dpsi,
-                                                        RealHessMatrix_t& grad_grad_psi)
+                                                        RealValueMatrix& psi,
+                                                        RealGradMatrix& dpsi,
+                                                        RealHessMatrix& grad_grad_psi)
 {
   //APP_ABORT("evaluate_notranspose:  Check Hessian, then remove this error message.\n")
   VGLMatTimer.start();
@@ -909,10 +909,10 @@ template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
                                                              int first,
                                                              int last,
-                                                             RealValueMatrix_t& psi,
-                                                             RealGradMatrix_t& dpsi,
-                                                             RealHessMatrix_t& grad_grad_psi,
-                                                             RealGGGMatrix_t& grad_grad_grad_logdet)
+                                                             RealValueMatrix& psi,
+                                                             RealGradMatrix& dpsi,
+                                                             RealHessMatrix& grad_grad_psi,
+                                                             RealGGGMatrix& grad_grad_grad_logdet)
 {
   //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
   VGLMatTimer.start();
@@ -943,11 +943,11 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       storage_grad_hess_vector_[j] = dot(PrimLattice.G, tmpghs);
     }
     std::complex<double> eye(0.0, 1.0);
-    //    StorageValueVector_t &valVec =
+    //    StorageValueVector &valVec =
     //      storage_value_vector_;
-    //    StorageGradVector_t &gradVec =
+    //    StorageGradVector &gradVec =
     //      storage_grad_vector_;
-    //    StorageHessVector_t &hessVec =
+    //    StorageHessVector &hessVec =
     //      storage_hess_vector_;
     //    Tensor<std::complex<double>,OHMMS_DIM> tmphs;
     for (int j = 0; j < NumValenceOrbs; j++)
@@ -1036,10 +1036,10 @@ template<>
 void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
                                                         int first,
                                                         int last,
-                                                        RealValueMatrix_t& psi,
-                                                        RealGradMatrix_t& dpsi,
-                                                        RealHessMatrix_t& grad_grad_psi,
-                                                        RealGGGMatrix_t& grad_grad_grad_logdet)
+                                                        RealValueMatrix& psi,
+                                                        RealGradMatrix& dpsi,
+                                                        RealHessMatrix& grad_grad_psi,
+                                                        RealGGGMatrix& grad_grad_grad_logdet)
 {
   //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
   VGLMatTimer.start();
@@ -1067,9 +1067,9 @@ template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
                                                              int first,
                                                              int last,
-                                                             ComplexValueMatrix_t& psi,
-                                                             ComplexGradMatrix_t& dpsi,
-                                                             ComplexValueMatrix_t& d2psi)
+                                                             ComplexValueMatrix& psi,
+                                                             ComplexGradMatrix& dpsi,
+                                                             ComplexValueMatrix& d2psi)
 {
   VGLMatTimer.start();
   for (int iat = first, i = 0; iat < last; iat++, i++)
@@ -1112,9 +1112,9 @@ template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
                                                              int first,
                                                              int last,
-                                                             ComplexValueMatrix_t& psi,
-                                                             ComplexGradMatrix_t& dpsi,
-                                                             ComplexHessMatrix_t& grad_grad_psi)
+                                                             ComplexValueMatrix& psi,
+                                                             ComplexGradMatrix& dpsi,
+                                                             ComplexHessMatrix& grad_grad_psi)
 {
   VGLMatTimer.start();
   for (int iat = first, i = 0; iat < last; iat++, i++)
@@ -1162,10 +1162,10 @@ template<>
 void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
                                                         int first,
                                                         int last,
-                                                        ComplexValueMatrix_t& psi,
-                                                        ComplexGradMatrix_t& dpsi,
-                                                        ComplexHessMatrix_t& grad_grad_psi,
-                                                        ComplexGGGMatrix_t& grad_grad_grad_logdet)
+                                                        ComplexValueMatrix& psi,
+                                                        ComplexGradMatrix& dpsi,
+                                                        ComplexHessMatrix& grad_grad_psi,
+                                                        ComplexGGGMatrix& grad_grad_grad_logdet)
 {
   APP_ABORT(
       " EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
@@ -1175,10 +1175,10 @@ template<typename StorageType>
 void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P,
                                                              int first,
                                                              int last,
-                                                             ComplexValueMatrix_t& psi,
-                                                             ComplexGradMatrix_t& dpsi,
-                                                             ComplexHessMatrix_t& grad_grad_psi,
-                                                             ComplexGGGMatrix_t& grad_grad_grad_logdet)
+                                                             ComplexValueMatrix& psi,
+                                                             ComplexGradMatrix& dpsi,
+                                                             ComplexHessMatrix& grad_grad_psi,
+                                                             ComplexGGGMatrix& grad_grad_grad_logdet)
 {
   //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
   //    VGLMatTimer.start();

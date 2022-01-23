@@ -418,7 +418,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   for (int ib = 0; ib < nb; ib++)
     inData.push_back(new StorageType(nG[0], nG[1], nG[2]));
   PosType tAngle = targetPtcl.getLattice().k_cart(TwistAngle);
-  PWOrbitalSet::ValueVector_t phi(nb);
+  PWOrbitalSet::ValueVector phi(nb);
   for (int ig = 0; ig < nG[0]; ig++)
   {
     RealType x = ig * dx;

@@ -474,7 +474,7 @@ WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleS
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   log_value_ = 0.0;
   const auto& d_ee(P.getDistTableAA(my_table_ID_));

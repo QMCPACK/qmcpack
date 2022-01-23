@@ -42,13 +42,13 @@ public:
   typedef TinyVector<RealType, DIM> PosType;
   typedef TinyVector<RealType, DIM> GradType;
   typedef Tensor<RealType, DIM> HessType;
-  typedef Vector<IndexType> IndexVector_t;
-  typedef Vector<GradType> GradVector_t;
-  typedef Matrix<GradType> GradMatrix_t;
-  typedef Vector<HessType> HessVector_t;
-  typedef Matrix<HessType> HessMatrix_t;
+  typedef Vector<IndexType> IndexVector;
+  typedef Vector<GradType> GradVector;
+  typedef Matrix<GradType> GradMatrix;
+  typedef Vector<HessType> HessVector;
+  typedef Matrix<HessType> HessMatrix;
 
-  typedef Array<HessType, 3> HessArray_t;
+  typedef Array<HessType, 3> HessArray;
 
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
   //typedef Array<GradType,3>       GradArray_t;
@@ -93,26 +93,26 @@ public:
 
   // matrix of laplacians
   // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i}
-  GradVector_t Bmat;
+  GradVector Bmat;
 
-  GradMatrix_t Bmat_full, Bmat_temp;
+  GradMatrix Bmat_full, Bmat_temp;
 
   // matrix of first derivatives
   // A(i,j)[a,b] = (Grad_i)_a (x_j)_b
   //               i,j:particle index
   //               a,b=(x,y,z)
   // notice that A(i,j) is a symmetric matrix, improve later
-  HessMatrix_t Amat, Amat_temp;
+  HessMatrix Amat, Amat_temp;
 
   // \nabla_a A_{i,j}^{\alpha,\beta}
   // derivative of A matrix with respect to var. prms.
-  HessArray_t Xmat;
+  HessArray Xmat;
 
   // \sum_i \nabla_a B_{i,j}^{\alpha}
-  GradMatrix_t Ymat;
+  GradMatrix Ymat;
 
   // \nabla_a x_i^{\alpha}
-  GradMatrix_t Cmat;
+  GradMatrix Cmat;
 
   RealType *FirstOfP, *LastOfP;
   RealType *FirstOfA, *LastOfA;

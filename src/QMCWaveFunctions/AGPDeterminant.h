@@ -29,11 +29,11 @@ class AGPDeterminant : public WaveFunctionComponent
 public:
   ///define BasisSetType with RealType
   typedef BasisSetBase<RealType> BasisSetType;
-  typedef BasisSetType::IndexVector_t IndexVector_t;
-  typedef BasisSetType::ValueVector_t ValueVector_t;
-  typedef BasisSetType::ValueMatrix_t ValueMatrix_t;
-  typedef BasisSetType::GradVector_t GradVector_t;
-  typedef BasisSetType::GradMatrix_t GradMatrix_t;
+  typedef BasisSetType::IndexVector IndexVector;
+  typedef BasisSetType::ValueVector ValueVector;
+  typedef BasisSetType::ValueMatrix ValueMatrix;
+  typedef BasisSetType::GradVector GradVector;
+  typedef BasisSetType::GradMatrix GradMatrix;
 
   BasisSetType* GeminalBasis;
 
@@ -112,13 +112,13 @@ public:
   //ValueType CurrentDet;
 
   ///coefficient of the up/down block
-  ValueMatrix_t Lambda;
+  ValueMatrix Lambda;
 
   ///coefficient of the major block
-  ValueMatrix_t LambdaUP;
+  ValueMatrix LambdaUP;
 
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM, psiM_temp;
+  ValueMatrix psiM, psiM_temp;
 
 
   /**  Transient data for gradient and laplacian evaluation
@@ -126,31 +126,31 @@ public:
    * \f$phiD(j,k) = \sum_{j^{'}} \lambda_{j^{'},j} \phi_k(r_j) \f$
    * j runs over the particle index index
    */
-  ValueMatrix_t phiT;
+  ValueMatrix phiT;
 
   /// temporary container for testing
-  ValueMatrix_t psiMinv;
+  ValueMatrix psiMinv;
   /// store gradients
-  GradMatrix_t dY;
+  GradMatrix dY;
   /// store laplacians
-  ValueMatrix_t d2Y;
+  ValueMatrix d2Y;
   /// temporary determinant-related matrix for gradients
-  GradMatrix_t dpsiU, dpsiD;
+  GradMatrix dpsiU, dpsiD;
   /// temporary determinant-related matrix for laplacians
-  ValueMatrix_t d2psiU, d2psiD;
+  ValueMatrix d2psiU, d2psiD;
 
   /// value of single-particle orbital for particle-by-particle update
   /** temporary vector for a particle-by-particle move
    *
    * phiTv = Lambda Y(iat)
    */
-  ValueVector_t phiTv;
-  ValueVector_t psiU, psiD;
-  GradVector_t dpsiUv, dpsiDv;
-  ValueVector_t d2psiUv, d2psiDv;
-  ValueVector_t workV1, workV2;
-  ValueVector_t WorkSpace;
-  IndexVector_t Pivot;
+  ValueVector phiTv;
+  ValueVector psiU, psiD;
+  GradVector dpsiUv, dpsiDv;
+  ValueVector d2psiUv, d2psiDv;
+  ValueVector workV1, workV2;
+  ValueVector WorkSpace;
+  IndexVector Pivot;
 
   ///current ratio
   PsiValueType curRatio;

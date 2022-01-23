@@ -72,9 +72,9 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   REQUIRE(spo_ptr);
   std::unique_ptr<SPOSet> sposet(spo_ptr->makeClone());
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
   values.resize(1);
   dpsi.resize(1);
   d2psi.resize(1);

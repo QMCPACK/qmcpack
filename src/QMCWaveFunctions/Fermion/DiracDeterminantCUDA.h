@@ -31,11 +31,11 @@ namespace qmcplusplus
 class DiracDeterminantCUDA : public DiracDeterminantBase
 {
 public:
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
+  typedef SPOSet::IndexVector IndexVector;
+  typedef SPOSet::ValueVector ValueVector;
+  typedef SPOSet::ValueMatrix ValueMatrix;
+  typedef SPOSet::GradVector GradVector;
+  typedef SPOSet::GradMatrix GradMatrix;
   typedef ParticleSet::Walker_t Walker_t;
 
   DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last);
@@ -272,7 +272,7 @@ public:
              std::vector<GradType>& grad,
              std::vector<ValueType>& lapl) override;
 
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
 
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,

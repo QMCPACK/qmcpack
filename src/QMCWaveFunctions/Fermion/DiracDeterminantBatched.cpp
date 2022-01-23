@@ -478,7 +478,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
 
 #ifndef NDEBUG
-      GradMatrix_t dpsiM_from_device   = det.dpsiM;
+      GradMatrix dpsiM_from_device   = det.dpsiM;
       Matrix<Value> d2psiM_from_device = det.d2psiM;
 
       auto& my_psiM_vgl  = det.psiM_vgl;
@@ -713,7 +713,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_E
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   auto& psiMinv = det_engine_.get_ref_psiMinv();
   // Hessian is not often used, so only resize/allocate if used

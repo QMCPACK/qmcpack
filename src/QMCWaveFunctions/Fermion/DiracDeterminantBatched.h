@@ -204,7 +204,7 @@ public:
                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                      bool fromscratch) const override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection,

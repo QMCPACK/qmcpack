@@ -1785,8 +1785,8 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
   for (int iw = 0; iw < newpos.size(); iw++)
     if (false && HybridJobs_CPU[iw] == ATOMIC_POLY_JOB)
     {
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       HybridData<CTS::RealType>& d = HybridData_CPU[iw];
       AtomicOrbital<double>& atom  = AtomicOrbitals[d.ion];
       atom.evaluate(newpos[iw], CPUvals, CPUgrad, CPUlapl);
@@ -1827,8 +1827,8 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
     else if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
     {
       std::cerr << "HalfG = " << HalfG << std::endl;
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       PosType ru(PrimLattice.toUnit(newpos[iw]));
       PosType img;
       int sign = 0;
@@ -2170,8 +2170,8 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
   // gpu::host_vector<HybridJobType> HybridJobs_CPU(HybridJobs_GPU.size());
   // HybridJobs_CPU = HybridJobs_GPU;
   // int M = MakeTwoCopies.size();
-  // // ComplexValueVector_t CPUzvals(M), CPUzlapl(M);
-  // // ComplexGradVector_t CPUzgrad(M);
+  // // ComplexValueVector CPUzvals(M), CPUzlapl(M);
+  // // ComplexGradVector CPUzgrad(M);
   // for (int iw=0; iw<newpos.size(); iw++) {
   //   if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
   // 	num3D++;
@@ -2219,10 +2219,10 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
     {
       //if (HybridJobs_CPU[iw] != BSPLINE_3D_JOB && std::abs(rhats_CPU[3*iw+2]) < 1.0e-6) {
       int M = MakeTwoCopies.size();
-      ComplexValueVector_t CPUzvals(M), CPUzlapl(M);
-      ComplexGradVector_t CPUzgrad(M);
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ComplexValueVector CPUzvals(M), CPUzlapl(M);
+      ComplexGradVector CPUzgrad(M);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       HybridData<CTS::RealType>& d              = HybridData_CPU[iw];
       AtomicOrbital<std::complex<double>>& atom = AtomicOrbitals[d.ion];
       atom.evaluate(newpos[iw], CPUzvals, CPUzgrad, CPUzlapl);
@@ -2279,10 +2279,10 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
     }
     else if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
     {
-      ComplexValueVector_t CPUzvals(NumOrbitals), CPUzlapl(NumOrbitals);
-      ComplexGradVector_t CPUzgrad(NumOrbitals);
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ComplexValueVector CPUzvals(NumOrbitals), CPUzlapl(NumOrbitals);
+      ComplexGradVector CPUzgrad(NumOrbitals);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       PosType ru(PrimLattice.toUnit(newpos[iw]));
       for (int i = 0; i < 3; i++)
         ru[i] -= std::floor(ru[i]);
@@ -2458,7 +2458,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<PosType>& po
   // gpu::host_vector<HybridJobType> HybridJobs_CPU(HybridJobs_GPU.size());
   // HybridJobs_CPU = HybridJobs_GPU;
   // int M = CudaMakeTwoCopies.size();
-  // ComplexValueVector_t CPUzvals(M);
+  // ComplexValueVector CPUzvals(M);
   // for (int iw=0; iw<pos.size(); iw++)
   //   if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
   // 	cerr << "Error:  used BSPLINE_3D for PP eval.  Walker = "

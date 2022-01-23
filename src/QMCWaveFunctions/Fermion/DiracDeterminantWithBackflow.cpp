@@ -82,18 +82,18 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
 }
 
 /** replace of SPOSet::evaluate function with the removal of t_logpsi */
-void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet,
-                                                GradMatrix_t& dlogdet,
-                                                HessMatrix_t& grad_grad_logdet)
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet,
+                                                GradMatrix& dlogdet,
+                                                HessMatrix& grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
 
-void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet,
-                                                GradMatrix_t& dlogdet,
-                                                HessMatrix_t& grad_grad_logdet,
-                                                GGGMatrix_t& grad_grad_grad_logdet)
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet,
+                                                GradMatrix& dlogdet,
+                                                HessMatrix& grad_grad_logdet,
+                                                GGGMatrix& grad_grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,
                             grad_grad_grad_logdet);
@@ -308,9 +308,9 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
 
 void DiracDeterminantWithBackflow::testL(ParticleSet& P)
 {
-  GradMatrix_t Fmat_p, Fmat_m;
-  GradVector_t Fdiag_p, Fdiag_m;
-  HessMatrix_t Kij, Qij; // finite difference and analytic derivative of Fmat
+  GradMatrix Fmat_p, Fmat_m;
+  GradVector Fdiag_p, Fdiag_m;
+  HessMatrix Kij, Qij; // finite difference and analytic derivative of Fmat
   typedef Tensor<RealType, OHMMS_DIM> HessType_0;
   typedef TinyVector<RealType, DIM> GradType_0;
   Matrix<GradType_0> Bij, dAij;
@@ -1006,10 +1006,10 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {
   ParticleSet::ParticlePos_t qp_0;
   qp_0.resize(BFTrans_.QP.getTotalNum());
-  ValueMatrix_t psiM_1, psiM_2;
-  ValueMatrix_t psiM_3, psiM_4;
-  GradMatrix_t dpsiM_1, dpsiM_2;
-  HessMatrix_t dgM, ggM, ggM0;
+  ValueMatrix psiM_1, psiM_2;
+  ValueMatrix psiM_3, psiM_4;
+  GradMatrix dpsiM_1, dpsiM_2;
+  HessMatrix dgM, ggM, ggM0;
   psiM_1.resize(NumPtcls, NumOrbitals);
   psiM_2.resize(NumPtcls, NumOrbitals);
   psiM_3.resize(NumPtcls, NumOrbitals);
@@ -1110,16 +1110,16 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 {
   ParticleSet::ParticlePos_t qp_0;
   qp_0.resize(BFTrans_.QP.getTotalNum());
-  ValueMatrix_t psiM_1, psiM_2;
-  GradMatrix_t dpsiM_1, dpsiM_2;
-  HessMatrix_t ggM_1, ggM_2;
+  ValueMatrix psiM_1, psiM_2;
+  GradMatrix dpsiM_1, dpsiM_2;
+  HessMatrix ggM_1, ggM_2;
   psiM_1.resize(NumPtcls, NumOrbitals);
   psiM_2.resize(NumPtcls, NumOrbitals);
   dpsiM_1.resize(NumPtcls, NumOrbitals);
   dpsiM_2.resize(NumPtcls, NumOrbitals);
   ggM_1.resize(NumPtcls, NumOrbitals);
   ggM_2.resize(NumPtcls, NumOrbitals);
-  GGGMatrix_t ggg_psiM1, ggg_psiM2;
+  GGGMatrix ggg_psiM1, ggg_psiM2;
   ggg_psiM1.resize(NumPtcls, NumOrbitals);
   ggg_psiM2.resize(NumPtcls, NumOrbitals);
   const RealType dh = 0.000001; //PREC_WARNING
@@ -1181,7 +1181,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   BFTrans_.checkOutVariables(wfVars);
   int Nvars   = wfVars.size();
   wfvar_prime = wfVars;
-  GradMatrix_t dpsiM_1, dpsiM_2, dpsiM_0;
+  GradMatrix dpsiM_1, dpsiM_2, dpsiM_0;
   dpsiM_0.resize(NumPtcls, NumOrbitals);
   dpsiM_1.resize(NumPtcls, NumOrbitals);
   dpsiM_2.resize(NumPtcls, NumOrbitals);

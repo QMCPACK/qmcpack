@@ -50,8 +50,8 @@ protected:
   using CTS = CUDAGlobalTypes;
   Matrix<Return_rt> Records;
   typedef TrialWaveFunction::RealMatrix_t RealMatrix_t;
-  typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
-  typedef TrialWaveFunction::GradMatrix_t GradMatrix_t;
+  typedef TrialWaveFunction::ValueMatrix ValueMatrix;
+  typedef TrialWaveFunction::GradMatrix GradMatrix;
 
   ///Hamiltonians that depend on the optimization: KE
   HamiltonianRef H_KE;
@@ -60,8 +60,8 @@ protected:
   std::vector<std::vector<Return_rt>> TempDerivRecords;
   std::vector<std::vector<Return_rt>> TempHDerivRecords;
   RealMatrix_t LogPsi_Derivs, LocE_Derivs;
-  ValueMatrix_t d2logPsi_opt, d2logPsi_fixed;
-  GradMatrix_t dlogPsi_opt, dlogPsi_fixed;
+  ValueMatrix d2logPsi_opt, d2logPsi_fixed;
+  GradMatrix dlogPsi_opt, dlogPsi_fixed;
 
   std::vector<Matrix<Return_rt>*> RecordsOnNode;
   std::vector<Matrix<Return_rt>*> DerivRecords;

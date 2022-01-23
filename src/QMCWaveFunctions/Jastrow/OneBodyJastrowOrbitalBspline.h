@@ -41,8 +41,8 @@ private:
   using ValueType     = typename JBase::ValueType;
   using GradType      = typename JBase::GradType;
   using PosType       = typename JBase::PosType;
-  using GradMatrix_t  = typename JBase::GradMatrix_t;
-  using ValueMatrix_t = typename JBase::ValueMatrix_t;
+  using GradMatrix  = typename JBase::GradMatrix;
+  using ValueMatrix = typename JBase::ValueMatrix;
   using RealMatrix_t  = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
@@ -136,7 +136,7 @@ public:
 
   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
   void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,

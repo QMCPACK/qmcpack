@@ -770,9 +770,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   TWFFastDerivWrapper twf;
 
   psi->initializeTWFFastDerivWrapper(elec, twf);
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
   values.resize(9);
   dpsi.resize(9);
   d2psi.resize(9);
@@ -791,15 +791,15 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     NONLOCALECP
   };
 
-  using ValueMatrix_t = SPOSet::ValueMatrix_t;
+  using ValueMatrix = SPOSet::ValueMatrix;
 
   int IONINDEX = 1;
  
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
   //These matrices are not necessarily square to accomodate orb opt and multidets.  
 
-  ValueMatrix_t upmat; //Up slater matrix.
-  ValueMatrix_t dnmat; //Down slater matrix.
+  ValueMatrix upmat; //Up slater matrix.
+  ValueMatrix dnmat; //Down slater matrix.
   int Nup=5;  //These are hard coded until the interface calls get implemented/cleaned up.
   int Ndn=4;
   int Norb=14;
@@ -808,15 +808,15 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.  
   //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons. 
-  std::vector<ValueMatrix_t> matlist; //Vector of slater matrices.  
-  std::vector<ValueMatrix_t> B, X; //Vector of B matrix, and auxiliary X matrix.  
+  std::vector<ValueMatrix> matlist; //Vector of slater matrices.  
+  std::vector<ValueMatrix> B, X; //Vector of B matrix, and auxiliary X matrix.  
 
   //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
   // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
   // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
 
-  std::vector<std::vector<ValueMatrix_t>> dM; //Derivative of slater matrix.
-  std::vector<std::vector<ValueMatrix_t>> dB; //Derivative of B matrices. 
+  std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
+  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices. 
   matlist.push_back(upmat);
   matlist.push_back(dnmat);
 
@@ -841,8 +841,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 //  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
   
-  std::vector<ValueMatrix_t> minv;
-  std::vector<ValueMatrix_t> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations. 
+  std::vector<ValueMatrix> minv;
+  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations. 
                                          //These are N_s x N_s square matrices (N_s is number of particles for species s).
   B_gs.push_back(upmat);
   B_gs.push_back(dnmat);
@@ -853,9 +853,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
 
 //  twf.getM(elec, matlist);
-  std::vector<std::vector<ValueMatrix_t>> dB_gs;
-  std::vector<std::vector<ValueMatrix_t>> dM_gs;
-  std::vector<ValueMatrix_t> tmp_gs;
+  std::vector<std::vector<ValueMatrix>> dB_gs;
+  std::vector<std::vector<ValueMatrix>> dM_gs;
+  std::vector<ValueMatrix> tmp_gs;
   twf.getGSMatrices(B, B_gs);
   twf.getGSMatrices(matlist, M_gs);
   twf.invertMatrices(M_gs, minv);
@@ -864,7 +864,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
 //    int ptclnum = twf.numParticles(id);
     int ptclnum = (id==0 ? Nup : Ndn); //hard coded until twf interface comes online.  
-    ValueMatrix_t gs_m;
+    ValueMatrix gs_m;
     gs_m.resize(ptclnum, ptclnum);
     tmp_gs.push_back(gs_m);
   }

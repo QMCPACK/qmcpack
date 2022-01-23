@@ -42,13 +42,13 @@ public:
   typedef TinyVector<RealType, DIM> PosType;
   typedef TinyVector<RealType, DIM> GradType;
   typedef Tensor<RealType, DIM> HessType;
-  typedef Vector<IndexType> IndexVector_t;
-  typedef Vector<GradType> GradVector_t;
-  typedef Matrix<GradType> GradMatrix_t;
-  typedef Vector<HessType> HessVector_t;
-  typedef Matrix<HessType> HessMatrix_t;
+  typedef Vector<IndexType> IndexVector;
+  typedef Vector<GradType> GradVector;
+  typedef Matrix<GradType> GradMatrix;
+  typedef Vector<HessType> HessVector;
+  typedef Matrix<HessType> HessMatrix;
 
-  typedef Array<HessType, 3> HessArray_t;
+  typedef Array<HessType, 3> HessArray;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 
@@ -80,11 +80,11 @@ public:
   Matrix<PosType> UIJ;
   Vector<PosType> UIJ_temp;
 
-  HessMatrix_t AIJ;
-  HessVector_t AIJ_temp;
+  HessMatrix AIJ;
+  HessVector AIJ_temp;
 
-  GradMatrix_t BIJ;
-  GradVector_t BIJ_temp;
+  GradMatrix BIJ;
+  GradVector BIJ_temp;
 
   RealType *FirstOfU, *LastOfU;
   RealType *FirstOfA, *LastOfA;
@@ -167,7 +167,7 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  virtual void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat, HessMatrix_t& Amat) = 0;
+  virtual void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix& Bmat, HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates after pbyp move
    */
@@ -178,15 +178,15 @@ public:
   virtual void evaluatePbyP(const ParticleSet& P,
                             ParticleSet::ParticlePos_t& newQP,
                             const std::vector<int>& index,
-                            HessMatrix_t& Amat) = 0;
+                            HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move
    */
   virtual void evaluatePbyP(const ParticleSet& P,
                             ParticleSet::ParticlePos_t& newQP,
                             const std::vector<int>& index,
-                            GradMatrix_t& Bmat,
-                            HessMatrix_t& Amat) = 0;
+                            GradMatrix& Bmat,
+                            HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates after pbyp move
    */
@@ -194,31 +194,31 @@ public:
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
-  virtual void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat) = 0;
+  virtual void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix& Amat) = 0;
 
   /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move
    */
   virtual void evaluatePbyP(const ParticleSet& P,
                             int iat,
                             ParticleSet::ParticlePos_t& newQP,
-                            GradMatrix_t& Bmat,
-                            HessMatrix_t& Amat) = 0;
+                            GradMatrix& Bmat,
+                            HessMatrix& Amat) = 0;
 
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  virtual void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) = 0;
+  virtual void evaluateBmatOnly(const ParticleSet& P, GradMatrix& Bmat_full) = 0;
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    *  calculate derivatives wrt to variational parameters
    */
   virtual void evaluateWithDerivatives(const ParticleSet& P,
                                        ParticleSet& QP,
-                                       GradMatrix_t& Bmat,
-                                       HessMatrix_t& Amat,
-                                       GradMatrix_t& Cmat,
-                                       GradMatrix_t& Ymat,
-                                       HessArray_t& Xmat) = 0;
+                                       GradMatrix& Bmat,
+                                       HessMatrix& Amat,
+                                       GradMatrix& Cmat,
+                                       GradMatrix& Ymat,
+                                       HessArray& Xmat) = 0;
 };
 
 } // namespace qmcplusplus

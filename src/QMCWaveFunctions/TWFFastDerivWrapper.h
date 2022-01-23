@@ -30,15 +30,15 @@ namespace qmcplusplus
 class TWFFastDerivWrapper
 {
 public:
-  using ValueMatrix_t = SPOSet::ValueMatrix_t;
-  using GradMatrix_t  = SPOSet::GradMatrix_t;
-  using HessMatrix_t  = SPOSet::HessMatrix_t;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
   using IndexType     = QMCTraits::IndexType;
   using RealType      = QMCTraits::RealType;
   using ValueType     = QMCTraits::ValueType;
 
-  using ValueVector_t = SPOSet::ValueVector_t;
-  using GradVector_t  = SPOSet::GradVector_t;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
 
   
   /** @brief Add a particle group.
@@ -97,7 +97,7 @@ public:
    *  @param[in,out] mmat Output vector of slater matrices.  Each vector entry corresponds to a different particle group.
    *  @return Void
    */
-  void getM(const ParticleSet& P, std::vector<ValueMatrix_t>& mmat);
+  void getM(const ParticleSet& P, std::vector<ValueMatrix>& mmat);
 
   /** @brief Returns value of all orbitals (relevant to given species/group) at a particular particle coordinate.
    *
@@ -106,7 +106,7 @@ public:
    *  @param[in,out] val Vector of phi_i(r_iel) for all i=0,Norbs.
    *  @return Void
    */
-  IndexType getRowM(const ParticleSet& P, const IndexType iel, ValueVector_t& val);
+  IndexType getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val);
 
 
   /** @brief Returns value, gradient, and laplacian matrices for all orbitals and all particles, species by species. 
@@ -118,9 +118,9 @@ public:
    *  @return Void
    */
   void getEGradELaplM(const ParticleSet& P,
-                         std::vector<ValueMatrix_t>& mvec,
-                         std::vector<GradMatrix_t>& gmat,
-                         std::vector<ValueMatrix_t>& lmat);
+                         std::vector<ValueMatrix>& mvec,
+                         std::vector<GradMatrix>& gmat,
+                         std::vector<ValueMatrix>& lmat);
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices.
    *
@@ -133,7 +133,7 @@ public:
   void getIonGradM(const ParticleSet& P,
                    const ParticleSet& source,
                    const int iat,
-                   std::vector<std::vector<ValueMatrix_t>>& dmvec);
+                   std::vector<std::vector<ValueMatrix>>& dmvec);
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices and their laplacians..
    *
@@ -149,8 +149,8 @@ public:
   void getIonGradIonGradELaplM(const ParticleSet& P,
                               const ParticleSet& source,
                               int iat,
-                              std::vector<std::vector<ValueMatrix_t>>& dmvec,
-                              std::vector<std::vector<ValueMatrix_t>>& dlmat);
+                              std::vector<std::vector<ValueMatrix>>& dmvec,
+                              std::vector<std::vector<ValueMatrix>>& dlmat);
 
 
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
@@ -160,7 +160,7 @@ public:
    *  @param[in,out] Aslice square matrices consistent with a ground state occupation.
    *  @return Void
    */
-  void getGSMatrices(const std::vector<ValueMatrix_t>& A, std::vector<ValueMatrix_t>& Aslice);
+  void getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice);
 
   /** @brief Calculates derivative of observable via Tr[M^{-1} dB - X * dM ].  Consistent with ground state occupation.
    *
@@ -170,10 +170,10 @@ public:
    *  @param[in] dB. Target derivative of B, and is consistent with ground state occupation.
    *  @return Derivative of O psi/psi = Tr[M^{-1} dB - X * dM ]
    */
-  ValueType computeGSDerivative(const std::vector<ValueMatrix_t>& Minv,
-                                  const std::vector<ValueMatrix_t>& X,
-                                  const std::vector<ValueMatrix_t>& dM,
-                                  const std::vector<ValueMatrix_t>& dB);
+  ValueType computeGSDerivative(const std::vector<ValueMatrix>& Minv,
+                                  const std::vector<ValueMatrix>& X,
+                                  const std::vector<ValueMatrix>& dM,
+                                  const std::vector<ValueMatrix>& dB);
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
@@ -185,7 +185,7 @@ public:
    *  @param[in,out] Minv. The species by species list of inverted matrices from M.
    *  @return Void.
    */
-  void invertMatrices(const std::vector<ValueMatrix_t>& M, std::vector<ValueMatrix_t>& Minv);
+  void invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv);
 
   /** @brief Build the auxiliary X=M^-1 B M^-1 matrix.
    *
@@ -194,16 +194,16 @@ public:
    *  @param[in,out] X. M^-1*B*M^-1 is stored in this list of matrices.
    *  @return Void. 
    */
-  void buildX(const std::vector<ValueMatrix_t>& Minv,
-               const std::vector<ValueMatrix_t>& B,
-               std::vector<ValueMatrix_t>& X);
+  void buildX(const std::vector<ValueMatrix>& Minv,
+               const std::vector<ValueMatrix>& B,
+               std::vector<ValueMatrix>& X);
 
   /** @brief Goes through a list of matrices and zeros them out.  Does this in place.
    *
    *  @param[in,out] A. The list of matrices to be zeroed out.  After call, A is all zeros.
    *  @return Void.
    */
-  void wipeMatrices(std::vector<ValueMatrix_t>& A);
+  void wipeMatrices(std::vector<ValueMatrix>& A);
 
   /** @brief Returns Tr(A*B).  Actually, we assume a block diagonal structure, so this is 
    *    really Sum_i Tr(A_i*B_i), where i is the species index.
@@ -212,14 +212,14 @@ public:
    *  @param[in] B.  Vector of matrices B.
    *  @return Value of Sum_i Tr(A_i*B_i).
    */
-  ValueType trAB(const std::vector<ValueMatrix_t>& A, const std::vector<ValueMatrix_t>& B);
+  ValueType trAB(const std::vector<ValueMatrix>& A, const std::vector<ValueMatrix>& B);
 
 
 private:
   std::vector<SPOSet*> spos_;
   std::vector<IndexType> groups_;
-  std::vector<ValueMatrix_t> psi_M_;
-  std::vector<ValueMatrix_t> psi_M_inv_;
+  std::vector<ValueMatrix> psi_M_;
+  std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
 
 };

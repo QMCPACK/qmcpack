@@ -73,7 +73,7 @@ public:
   inline int getLastIndex() const { return LastIndex; }
 
 #ifndef NDEBUG
-  virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
+  virtual ValueMatrix& getPsiMinv() { return dummy_vmt; }
 #endif
 
   ///optimizations  are disabled
@@ -197,7 +197,7 @@ protected:
   // This is for debugging and testing in debug mode
   // psiMinv is not a base class data member or public in most implementations
   // it is frequently Dual and its consistency not guaranteed.
-  ValueMatrix_t dummy_vmt;
+  ValueMatrix dummy_vmt;
 #endif
 
   static bool checkG(const GradType& g)

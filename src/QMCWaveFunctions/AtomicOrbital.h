@@ -76,12 +76,12 @@ public:
   typedef QMCTraits::PosType PosType;
   typedef QMCTraits::RealType RealType;
   typedef CrystalLattice<RealType, OHMMS_DIM> UnitCellType;
-  typedef Vector<double> RealValueVector_t;
-  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector_t;
-  typedef Vector<std::complex<double>> ComplexValueVector_t;
-  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector_t;
-  typedef Vector<Tensor<double, OHMMS_DIM>> RealHessVector_t;
-  typedef Vector<Tensor<std::complex<double>, OHMMS_DIM>> ComplexHessVector_t;
+  typedef Vector<double> RealValueVector;
+  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector;
+  typedef Vector<std::complex<double>> ComplexValueVector;
+  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector;
+  typedef Vector<Tensor<double, OHMMS_DIM>> RealHessVector;
+  typedef Vector<Tensor<std::complex<double>, OHMMS_DIM>> ComplexHessVector;
   typedef typename AtomicOrbitalTraits<StorageType>::SplineType SplineType;
 
 private:
@@ -143,12 +143,12 @@ public:
                       std::vector<double>& dYlm_dtheta,
                       std::vector<double>& dYlm_dphi);
 
-  inline bool evaluate(PosType r, ComplexValueVector_t& vals);
-  inline bool evaluate(PosType r, ComplexValueVector_t& val, ComplexGradVector_t& grad, ComplexValueVector_t& lapl);
-  inline bool evaluate(PosType r, ComplexValueVector_t& val, ComplexGradVector_t& grad, ComplexHessVector_t& lapl);
-  inline bool evaluate(PosType r, RealValueVector_t& vals);
-  inline bool evaluate(PosType r, RealValueVector_t& val, RealGradVector_t& grad, RealValueVector_t& lapl);
-  inline bool evaluate(PosType r, RealValueVector_t& val, RealGradVector_t& grad, RealHessVector_t& lapl);
+  inline bool evaluate(PosType r, ComplexValueVector& vals);
+  inline bool evaluate(PosType r, ComplexValueVector& val, ComplexGradVector& grad, ComplexValueVector& lapl);
+  inline bool evaluate(PosType r, ComplexValueVector& val, ComplexGradVector& grad, ComplexHessVector& lapl);
+  inline bool evaluate(PosType r, RealValueVector& vals);
+  inline bool evaluate(PosType r, RealValueVector& val, RealGradVector& grad, RealValueVector& lapl);
+  inline bool evaluate(PosType r, RealValueVector& val, RealGradVector& grad, RealHessVector& lapl);
 
 
   AtomicOrbital()
@@ -164,7 +164,7 @@ public:
 
 
 template<typename StorageType>
-inline bool AtomicOrbital<StorageType>::evaluate(PosType r, ComplexValueVector_t& vals)
+inline bool AtomicOrbital<StorageType>::evaluate(PosType r, ComplexValueVector& vals)
 {
   PosType dr = r - Pos;
   PosType u  = Lattice.toUnit(dr);
@@ -223,7 +223,7 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r, ComplexValueVector_t
 
 
 template<typename StorageType>
-inline bool AtomicOrbital<StorageType>::evaluate(PosType r, RealValueVector_t& vals)
+inline bool AtomicOrbital<StorageType>::evaluate(PosType r, RealValueVector& vals)
 {
   PosType dr = r - Pos;
   PosType u  = Lattice.toUnit(dr);
@@ -288,9 +288,9 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r, RealValueVector_t& v
 
 template<typename StorageType>
 inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
-                                                 RealValueVector_t& vals,
-                                                 RealGradVector_t& grads,
-                                                 RealHessVector_t& hess)
+                                                 RealValueVector& vals,
+                                                 RealGradVector& grads,
+                                                 RealHessVector& hess)
 {
   APP_ABORT(" AtomicOrbital<StorageType>::evaluate not implemented for Hess. \n");
   return true;
@@ -299,9 +299,9 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
 
 template<typename StorageType>
 inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
-                                                 RealValueVector_t& vals,
-                                                 RealGradVector_t& grads,
-                                                 RealValueVector_t& lapl)
+                                                 RealValueVector& vals,
+                                                 RealGradVector& grads,
+                                                 RealValueVector& lapl)
 {
   PosType dr = r - Pos;
   PosType u  = Lattice.toUnit(dr);
@@ -402,9 +402,9 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
 
 template<typename StorageType>
 inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
-                                                 ComplexValueVector_t& vals,
-                                                 ComplexGradVector_t& grads,
-                                                 ComplexHessVector_t& hess)
+                                                 ComplexValueVector& vals,
+                                                 ComplexGradVector& grads,
+                                                 ComplexHessVector& hess)
 {
   APP_ABORT(" AtomicOrbital<StorageType>::evaluate not implemented for Hess. \n");
   return true;
@@ -412,9 +412,9 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
 
 template<typename StorageType>
 inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
-                                                 ComplexValueVector_t& vals,
-                                                 ComplexGradVector_t& grads,
-                                                 ComplexValueVector_t& lapl)
+                                                 ComplexValueVector& vals,
+                                                 ComplexGradVector& grads,
+                                                 ComplexValueVector& lapl)
 {
   PosType dr = r - Pos;
   PosType u  = Lattice.toUnit(dr);

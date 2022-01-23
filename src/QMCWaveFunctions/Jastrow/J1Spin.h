@@ -197,7 +197,7 @@ struct J1Spin : public WaveFunctionComponent
     return evaluateGL(P, G, L, true);
   }
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override
   {
     const auto& d_ie(P.getDistTableAB(myTableID));
     valT dudr, d2udr2;

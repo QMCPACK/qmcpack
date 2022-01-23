@@ -275,16 +275,16 @@ void generateCuspInfo(int orbital_set_size,
         RealType rc     = 0.1;
 
         RealType dx = rc * 1.2 / npts;
-        ValueVector_t pos(npts);
-        ValueVector_t ELideal(npts);
-        ValueVector_t ELcurr(npts);
+        ValueVector pos(npts);
+        ValueVector ELideal(npts);
+        ValueVector ELcurr(npts);
         for (int i = 0; i < npts; i++)
         {
           pos[i] = (i + 1.0) * dx;
         }
 
         RealType eta0 = etaMO.phi(0.0);
-        ValueVector_t ELorig(npts);
+        ValueVector ELorig(npts);
         CuspCorrection cusp(info(center_idx, mo_idx));
         {
           ScopedTimer local_timer(computeTimer);
