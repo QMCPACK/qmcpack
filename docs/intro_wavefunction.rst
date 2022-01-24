@@ -860,7 +860,7 @@ Attribute:
 
 Additional information:
 
-- ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al.:cite:`Clark2011`.
+- ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :cite:`Clark2011` .
   ``precomputed_table_method`` adds partial sum precomputation on top of ``table_method``.
 
 .. code-block::
