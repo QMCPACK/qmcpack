@@ -57,9 +57,7 @@ set(JASTROW_SRCS
     Jastrow/RPAJastrow.cpp
     Jastrow/J2OrbitalSoA.cpp
     LatticeGaussianProduct.cpp
-    LatticeGaussianProductBuilder.cpp
-    Fermion/SPOSetProxy.cpp
-    Fermion/SPOSetProxyForMSD.cpp)
+    LatticeGaussianProductBuilder.cpp)
 
 if(ENABLE_OFFLOAD)
   set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/J2OMPTarget.cpp)

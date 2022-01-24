@@ -39,8 +39,6 @@
 //#include "QMCWaveFunctions/Fermion/ci_node.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
-#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 
 namespace qmcplusplus
 {
