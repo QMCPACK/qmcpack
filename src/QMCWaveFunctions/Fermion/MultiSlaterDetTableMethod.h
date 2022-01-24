@@ -48,7 +48,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminantFast : public WaveFunctionComponent
+class MultiSlaterDetTableMethod : public WaveFunctionComponent
 {
 public:
   void registerTimers();
@@ -74,12 +74,12 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
+  MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                              std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                              bool use_pre_computing);
 
   ///destructor
-  ~MultiSlaterDeterminantFast() override;
+  ~MultiSlaterDetTableMethod() override;
 
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
@@ -130,7 +130,7 @@ public:
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
-    throw std::runtime_error(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+    throw std::runtime_error(" Need to implement MultiSlaterDetTableMethod::evaluateRatiosAlltoOne. \n");
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;

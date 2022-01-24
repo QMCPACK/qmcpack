@@ -28,7 +28,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos,
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::unique_ptr<SPOSet>&& spos,
                                                            BackflowTransformation& BF,
                                                            int first,
                                                            int last)
@@ -994,7 +994,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 }
 
 std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(
-    std::shared_ptr<SPOSet>&& spo,
+    std::unique_ptr<SPOSet>&& spo,
     BackflowTransformation& BF) const
 {
   return std::make_unique<DiracDeterminantWithBackflow>(std::move(spo), BF, FirstIndex, LastIndex);

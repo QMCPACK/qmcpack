@@ -342,7 +342,7 @@ Additional information:
 .. _spo-lcao:
 
 Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of localized basis sets to expand the ``sposet``. The general form of a single particle orbital in this case is given by:
 
@@ -780,7 +780,7 @@ Attribute:
 +-----------------------+----------+----------+---------+-------------------------------------------+
 | ``batch``             | Text     | yes/no   | dep.    | Select the batched walker implementation. |
 +-----------------------+----------+----------+---------+-------------------------------------------+
-| ``matrix_inverter``   | Text     | gpu/host | gpu     | Batched Slater matrix inversion scheme.   |
+| ``matrix_inverter``   | Text     | gpu/host | gpu     | Slater matrix inversion scheme.           |
 +-----------------------+----------+----------+---------+-------------------------------------------+
 
 
@@ -822,12 +822,46 @@ Additional information:
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 
-- ``matrix_inverter`` This option is only effective when ``batch=yes``. If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed. If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
+- ``matrix_inverter`` If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed.
+  If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
 
 .. _multideterminants:
 
 Multideterminant wavefunctions
 ------------------------------
+
+``multideterminant`` element:
+
+
+.. _Table_msd:
+.. table::
+
+     +-----------------+--------------------+
+     | Parent elements | ``determinantset`` |
+     +-----------------+--------------------+
+     | Child elements  | ``detlist``        |
+     +-----------------+--------------------+
+
+Attribute:
+
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| Name                  | Datatype | Values   | Default                  | Description                               |
++=======================+==========+==========+==========================+===========================================+
+| ``optimize``          | Text     | yes/no   | yes                      | Enable optimization.                      |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| ``spo_up``            | Text     |          |                          | The name of SPO for spin up electrons     |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| ``spo_down``          | Text     |          |                          | The name of SPO for spin down electrons   |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| ``algorithm``         | Text     |          | precomputed_table_method | Slater matrix inversion scheme.           |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+
+.. centered:: Table 3 Options for the ``multideterminant`` xml-block.
+
+Additional information:
+
+- ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :cite:`Clark2011` .
+  ``precomputed_table_method`` adds partial sum precomputation on top of ``table_method``.
 
 .. code-block::
    :caption: multideterminant set XML element.
@@ -2005,13 +2039,13 @@ For both the Yukawa and Gaskell RPA Jastrows, the default value for :math:`r_s` 
 
   parameters:
 
-    +-------------------+--------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+
-    | **Name**          | **Datatype** | **Values**     | **Default**                                                                                                                                     | **Description**         |
-    +===================+==============+================+=================================================================================================================================================+=========================+
-    | ``rs``:math:`^o`  | rs           | :math:`r_s>0`  | :math:`\tfrac{3\Omega}{4\pi N_e}`                                                                                                               | Avg. elec-elec distance |
-    +-------------------+--------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+
-    | ``kc``:math:`^o`  | kc           | :math:`k_c>0`  | :math:`2\left(\tfrac{9\pi}{4}\right)^{1/3}\tfrac{4\pi N_e}{3\Omega}`                                                                            | k-space cutoff          |
-    +-------------------+--------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+
+    +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
+    | **Name**          | **Datatype** | **Values**     | **Default**                                                          | **Description**         |
+    +===================+==============+================+======================================================================+=========================+
+    | ``rs``:math:`^o`  | rs           | :math:`r_s>0`  | :math:`\tfrac{3\Omega}{4\pi N_e}`                                    | Avg. elec-elec distance |
+    +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
+    | ``kc``:math:`^o`  | kc           | :math:`k_c>0`  | :math:`2\left(\tfrac{9\pi}{4}\right)^{1/3}\tfrac{4\pi N_e}{3\Omega}` | k-space cutoff          |
+    +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
 
 .. code-block::
   :caption: Two body RPA Jastrow with long- and short-ranged parts.

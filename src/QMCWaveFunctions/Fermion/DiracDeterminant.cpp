@@ -30,7 +30,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos,
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
                                             int first,
                                             int last,
                                             int ndelay,
@@ -673,7 +673,7 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DU_TYPE>
-std::unique_ptr<DiracDeterminantBase> DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
+std::unique_ptr<DiracDeterminantBase> DiracDeterminant<DU_TYPE>::makeCopy(std::unique_ptr<SPOSet>&& spo) const
 {
   return std::make_unique<DiracDeterminant<DU_TYPE>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
                                                      matrix_inverter_kind_);

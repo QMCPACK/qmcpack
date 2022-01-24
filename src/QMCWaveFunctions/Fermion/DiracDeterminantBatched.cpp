@@ -27,7 +27,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DET_ENGINE>
-DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
+DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::unique_ptr<SPOSet>&& spos,
                                                              int first,
                                                              int last,
                                                              int ndelay,
@@ -968,7 +968,7 @@ void DiracDeterminantBatched<DET_ENGINE>::registerTWFFastDerivWrapper(const Part
 }
 
 template<typename DET_ENGINE>
-std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
+std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::unique_ptr<SPOSet>&& spo) const
 {
   return std::make_unique<DiracDeterminantBatched<DET_ENGINE>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
                                                                matrix_inverter_kind_);

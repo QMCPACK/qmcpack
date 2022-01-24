@@ -293,38 +293,6 @@ TEST_CASE("LiH multi Slater dets table_method", "[wavefunction]")
   test_LiH_msd(spo_xml_string1, "spo-up", 85, 105, true, true);
 }
 
-TEST_CASE("LiH multi Slater dets all_determinants", "[wavefunction]")
-{
-  app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd using the traditional slow method with all the determinants" << std::endl;
-  app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1_slow = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
-        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
-      </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-    </sposet_collection> \
-    <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"  algorithm=\"all_determinants\"> \
-        <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
-      </multideterminant> \
-    </determinantset> \
-</wavefunction> \
-";
-  /* NOTE: test_batched_api is set false because of unexpected failures.
-     all_determinants should pass all the existing tests. There are likely bugs.
-   */
-  test_LiH_msd(spo_xml_string1_slow, "spo-up", 85, 105, false, false);
-}
-
 TEST_CASE("LiH multi Slater dets precomputed_table_method", "[wavefunction]")
 {
   app_log() << "-----------------------------------------------------------------" << std::endl;

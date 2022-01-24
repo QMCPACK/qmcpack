@@ -34,12 +34,10 @@ class DiracDeterminantBase : public WaveFunctionComponent
 public:
   /** constructor
    *@param spos the single-particle orbital set.
-   *  shared_ptr is intended neither for sharing between spin up and down electrons nor for sharing between clones.
-   *  The sharing aspect is for the determinants used by the the multi-determinant slow implementation.
    *@param first index of the first particle
    *@param last index of last particle
    */
-  DiracDeterminantBase(const std::string& class_name, std::shared_ptr<SPOSet>&& spos, int first, int last)
+  DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
       : WaveFunctionComponent(class_name),
         UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
@@ -158,7 +156,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
+  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const = 0;
 
 #ifdef QMC_CUDA
   // expose GPU interfaces
@@ -179,11 +177,8 @@ public:
 protected:
   /// Timers
   NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
-  /** a set of single-particle orbitals used to fill in the  values of the matrix
-   *  shared_ptr is intended neither for sharing between spin up and down electrons nor for sharing between clones.
-   *  The sharing aspect is for the determinants used by the the multi-determinant slow implementation.
-   */
-  const std::shared_ptr<SPOSet> Phi;
+  /// a set of single-particle orbitals used to fill in the  values of the matrix
+  const std::unique_ptr<SPOSet> Phi;
   ///index of the first particle with respect to the particle set
   const int FirstIndex;
   ///index of the last particle with respect to the particle set

@@ -52,7 +52,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos, BackflowTransformation& BF, int first, int last);
+  DiracDeterminantWithBackflow(std::unique_ptr<SPOSet>&& spos, BackflowTransformation& BF, int first, int last);
 
   ///default destructor
   ~DiracDeterminantWithBackflow() override;
@@ -125,9 +125,9 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(std::shared_ptr<SPOSet>&& spo,
+  std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(std::unique_ptr<SPOSet>&& spo,
                                                                BackflowTransformation& BF) const;
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("makeCopy spo should not be called.");
     return nullptr;

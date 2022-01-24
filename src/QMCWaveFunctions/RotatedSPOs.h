@@ -65,7 +65,7 @@ public:
 
   // Single Slater creation
   void buildOptVariables(const size_t nel) override;
-  // For the MSD case rotations must be created in MultiSlaterFast class
+  // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
   void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) override;
 
 
