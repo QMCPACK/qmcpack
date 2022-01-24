@@ -324,7 +324,7 @@ private:
   const int ndelay_;
 
   /// selected scheme for inversion with walker batching
-  DetMatInvertor matrix_inverter_kind_;
+  const DetMatInvertor matrix_inverter_kind_;
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;

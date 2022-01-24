@@ -42,7 +42,7 @@
       </particleset>
       <wavefunction name="psi0" target="e">
          <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
-            <slaterdeterminant batch="no">
+            <slaterdeterminant batch="no" matrix_inverter="gpu">
                <determinant id="updet" size="8">
                   <occupation mode="ground" spindataset="0"/>
                </determinant>

@@ -24,7 +24,7 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
+#if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
 
@@ -57,7 +57,11 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
+  DiracDeterminant(std::shared_ptr<SPOSet>&& spos,
+                   int first,
+                   int last,
+                   int ndelay                          = 1,
+                   DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s)            = delete;
@@ -242,6 +246,12 @@ public:
   ValueType* LastAddressOfdV;
 
 private:
+  /// slow but doesn't consume device memory
+  DiracMatrix<QMCTraits::QTFull::ValueType> host_inverter_;
+
+  /// selected scheme for inversion
+  const DetMatInvertor matrix_inverter_kind_;
+
   /// invert psiM or its copies
   void invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat);
 
@@ -253,7 +263,7 @@ private:
 };
 
 extern template class DiracDeterminant<>;
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
+#if defined(ENABLE_CUDA)
 extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
