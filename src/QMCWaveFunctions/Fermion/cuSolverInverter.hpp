@@ -85,13 +85,15 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL, typename = std::enable_if_t<std::is_same<TMAT, T_FP>::value>>
-  std::enable_if_t<std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
+  std::enable_if_t<std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
+                                                                     Matrix<TMAT>& Ainv,
+                                                                     Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
+                                                                     std::complex<TREAL>& log_value)
   {
     const int norb = logdetT.rows();
     resize(norb);
-    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), cudaMemcpyHostToDevice,
-                                   hstream_),
+    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT),
+                                   cudaMemcpyHostToDevice, hstream_),
                    "cudaMemcpyAsync failed!");
     cusolverErrorCheck(cusolver::getrf(h_cusolver_, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),
                                        ipiv_gpu.data() + 1, ipiv_gpu.data()),
@@ -137,14 +139,16 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL, typename = std::enable_if_t<!std::is_same<TMAT, T_FP>::value>>
-  std::enable_if_t<!std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
+  std::enable_if_t<!std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
+                                                                      Matrix<TMAT>& Ainv,
+                                                                      Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
+                                                                      std::complex<TREAL>& log_value)
   {
     const int norb = logdetT.rows();
     resize(norb);
     Mat2_gpu.resize(norb, norb);
-    cudaErrorCheck(cudaMemcpyAsync(Mat2_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), cudaMemcpyHostToDevice,
-                                   hstream_),
+    cudaErrorCheck(cudaMemcpyAsync(Mat2_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT),
+                                   cudaMemcpyHostToDevice, hstream_),
                    "cudaMemcpyAsync failed!");
     copy_matrix_cuda(norb, norb, (TMAT*)Mat2_gpu.data(), norb, Mat1_gpu.data(), norb, hstream_);
     cusolverErrorCheck(cusolver::getrf(h_cusolver_, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),

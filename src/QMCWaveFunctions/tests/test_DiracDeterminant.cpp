@@ -61,7 +61,7 @@ void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
 template<typename DET>
 void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
 {
-  auto spo_init = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
@@ -154,8 +154,10 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #ifdef ENABLE_CUDA
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::HOST);
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::ACCEL);
+  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::ACCEL);
 #endif
 }
 //#define DUMP_INFO
@@ -163,7 +165,7 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
 {
-  auto spo_init = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DetType ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
@@ -291,15 +293,17 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #ifdef ENABLE_CUDA
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::HOST);
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::ACCEL);
+  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::ACCEL);
 #endif
 }
 
 template<typename DET>
 void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 {
-  auto spo_init = std::make_unique<FakeSPO>();
+  auto spo_init  = std::make_unique<FakeSPO>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   // maximum delay 2
@@ -445,8 +449,10 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #ifdef ENABLE_CUDA
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::HOST);
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::ACCEL);
+  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::ACCEL);
 #endif
 }
 
@@ -685,8 +691,10 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   test_DiracDeterminant_spinor_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_spinor_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #ifdef ENABLE_CUDA
-  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::HOST);
-  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(DetMatInvertor::ACCEL);
+  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::ACCEL);
 #endif
 }
 #endif

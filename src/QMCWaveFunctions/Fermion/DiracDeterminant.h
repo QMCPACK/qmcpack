@@ -57,7 +57,11 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1, DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
+  DiracDeterminant(std::shared_ptr<SPOSet>&& spos,
+                   int first,
+                   int last,
+                   int ndelay                          = 1,
+                   DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s)            = delete;

@@ -482,13 +482,15 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
-                                                                                          delay_rank, matrix_inverter_kind);
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
       }
       else
 #endif
       {
         app_summary() << "      Running on CPU." << std::endl;
-        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank, matrix_inverter_kind);
+        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
+                                                    matrix_inverter_kind);
       }
     }
   }

@@ -30,9 +30,14 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay,
-                                                             DetMatInvertor matrix_inverter_kind)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last), ndelay_(ndelay), invRow_id(-1),
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos,
+                                            int first,
+                                            int last,
+                                            int ndelay,
+                                            DetMatInvertor matrix_inverter_kind)
+    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last),
+      ndelay_(ndelay),
+      invRow_id(-1),
       matrix_inverter_kind_(matrix_inverter_kind)
 {
   resize(NumPtcls, NumPtcls);
