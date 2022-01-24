@@ -178,7 +178,7 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   if (info != 0)
   {
     std::ostringstream msg;
-    msg << "heev failed with info = " << info << " in MultiSlaterDeterminantFast::exponentiate_antisym_matrix";
+    msg << "heev failed with info = " << info << " in MultiSlaterDetTableMethod::exponentiate_antisym_matrix";
     app_log() << msg.str() << std::endl;
     APP_ABORT(msg.str());
   }

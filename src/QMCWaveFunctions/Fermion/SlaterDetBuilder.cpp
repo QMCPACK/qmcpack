@@ -25,7 +25,7 @@
 #include "OhmmsData/AttributeSet.h"
 
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -230,16 +230,16 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
           dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
         }
 
-        std::unique_ptr<MultiSlaterDeterminantFast> msd_fast;
+        std::unique_ptr<MultiSlaterDetTableMethod> msd_fast;
         if (msd_algorithm == "precomputed_table_method")
         {
           app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
-          msd_fast = std::make_unique<MultiSlaterDeterminantFast>(targetPtcl, std::move(dets), true);
+          msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), true);
         }
         else
         {
           app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
-          msd_fast = std::make_unique<MultiSlaterDeterminantFast>(targetPtcl, std::move(dets), false);
+          msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), false);
         }
 
         msd_fast->initialize();

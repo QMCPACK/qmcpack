@@ -105,7 +105,7 @@ public:
   /// create optimizable orbital rotation parameters
   // Single Slater creation
   virtual void buildOptVariables(const size_t nel) {}
-  // For the MSD case rotations must be created in MultiSlaterFast class
+  // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
   // store parameters before getting destroyed by rotation.
   virtual void storeParamsBeforeRotation() {}
