@@ -13,10 +13,10 @@
 
 void print(OptimizableFunctorBase& func, std::ostream& os, double extent)
 {
-  typedef OptimizableFunctorBase::real_type real_type;
-  int n       = 1000;
-  real_type d = extent == -1.0 ? func.cutoff_radius / n : extent / n;
-  real_type r = 0;
+  using real_type = OptimizableFunctorBase::real_type;
+  int n           = 1000;
+  real_type d     = extent == -1.0 ? func.cutoff_radius / n : extent / n;
+  real_type r     = 0;
   real_type u, du;
   for (int i = 0; i < n; ++i)
   {

@@ -25,8 +25,8 @@ namespace qmcplusplus
 class ReferencePoints : public QMCTraits
 {
 public:
-  typedef TinyVector<RealType, DIM> Point;
-  typedef Tensor<RealType, DIM> Tensor_t;
+  using Point    = TinyVector<RealType, DIM>;
+  using Tensor_t = Tensor<RealType, DIM>;
 
   std::map<std::string, Point> points;
   Tensor_t axes;

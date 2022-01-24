@@ -70,15 +70,15 @@ public:
 
   using Walker_t = WalkerConfigurations::Walker_t;
   ///container type of the Properties of a Walker
-  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
+  using PropertyContainer_t = Walker_t::PropertyContainer_t;
   ///container type of Walkers
-  typedef std::vector<std::unique_ptr<Walker_t>> WalkerList_t;
+  using WalkerList_t = std::vector<std::unique_ptr<Walker_t>>;
   /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
-  typedef WalkerList_t::iterator iterator;
+  using iterator = WalkerList_t::iterator;
   ///const_iterator of Walker container
-  typedef WalkerList_t::const_iterator const_iterator;
+  using const_iterator = WalkerList_t::const_iterator;
 
-  typedef UPtrVector<Reptile> ReptileList_t;
+  using ReptileList_t = UPtrVector<Reptile>;
 
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
@@ -118,7 +118,8 @@ public:
 #endif
 
   ///default constructor
-  MCWalkerConfiguration(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  MCWalkerConfiguration(const SimulationCell& simulation_cell,
+                        const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);

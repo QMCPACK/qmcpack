@@ -20,7 +20,7 @@ class FakeRandom
 public:
   using result_type = double;
   FakeRandom();
-  typedef unsigned int uint_type;
+  using uint_type = unsigned int;
   double operator()();
   double rand();
   void set_value(double val);

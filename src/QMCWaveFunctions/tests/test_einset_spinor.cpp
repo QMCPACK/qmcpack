@@ -39,9 +39,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c = OHMMS::Controller;
+  Communicate* c  = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // O2 test example from pwscf non-collinear calculation.
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
@@ -121,25 +121,25 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   SPOSet* spo = builder.createSPOSet(ein1);
   CHECK(spo);
 
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t dspsiM(elec_.R.size(), spo->getOrbitalSetSize()); //spin gradient
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix dspsiM(elec_.R.size(), spo->getOrbitalSetSize()); //spin gradient
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
 
   //These are the reference values computed from a spin-polarized calculation,
   //with the assumption that the coefficients for phi^\uparrow
-  SPOSet::ValueMatrix_t psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t dspsiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix dspsiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
 
-  SPOSet::GradMatrix_t dpsiM_up(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM_down(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM_up(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM_down(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
 
-  SPOSet::ValueMatrix_t d2psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
 
 
   //These reference values were generated as follows:
@@ -321,16 +321,16 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
-  SPOSet::ValueVector_t psi_work;
+  SPOSet::ValueVector psi_work;
 
   //temporary arrays for holding the gradients of the up and down channels respectively.
-  SPOSet::GradVector_t dpsi_work;
+  SPOSet::GradVector dpsi_work;
 
   //temporary arrays for holding the laplacians of the up and down channels respectively.
-  SPOSet::ValueVector_t d2psi_work;
+  SPOSet::ValueVector d2psi_work;
 
   //temporary arrays for holding the spin gradient
-  SPOSet::ValueVector_t dspsi_work;
+  SPOSet::ValueVector dspsi_work;
 
 
   psi_work.resize(OrbitalSetSize);
@@ -346,7 +346,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //single particle moves that bring it back to our original R reference values.
 
   //Our perturbation vector.
-  ParticleSet::ParticlePos_t dR;
+  ParticleSet::ParticlePos dR;
   dR.resize(3);
   //Values chosen based on divine inspiration.  Not important.
   dR[0][0] = 0.1;
@@ -360,7 +360,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   dR[2][2] = 0.0;
 
   //The new R of our perturbed particle set.
-  ParticleSet::ParticlePos_t Rnew;
+  ParticleSet::ParticlePos Rnew;
   Rnew.resize(3);
   Rnew    = elec_.R + dR;
   elec_.R = Rnew;
@@ -472,13 +472,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
-  SPOSet::ValueMatrix_t psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
 
-  RefVector<SPOSet::ValueMatrix_t> logdet_list;
-  RefVector<SPOSet::GradMatrix_t> dlogdet_list;
-  RefVector<SPOSet::ValueMatrix_t> d2logdet_list;
+  RefVector<SPOSet::ValueMatrix> logdet_list;
+  RefVector<SPOSet::GradMatrix> dlogdet_list;
+  RefVector<SPOSet::ValueMatrix> d2logdet_list;
 
   logdet_list.push_back(psiM);
   logdet_list.push_back(psiM_2);
@@ -528,22 +528,22 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //first, lets displace all the electrons in each walker.
   for (int iat = 0; iat < 3; iat++)
   {
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
 
-  SPOSet::ValueVector_t psi_work_2(OrbitalSetSize);
-  SPOSet::GradVector_t dpsi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector_t d2psi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector_t dspsi_work_2(OrbitalSetSize);
+  SPOSet::ValueVector psi_work_2(OrbitalSetSize);
+  SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
+  SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
+  SPOSet::ValueVector dspsi_work_2(OrbitalSetSize);
 
-  RefVector<SPOSet::ValueVector_t> psi_v_list   = {psi_work, psi_work_2};
-  RefVector<SPOSet::GradVector_t> dpsi_v_list   = {dpsi_work, dpsi_work_2};
-  RefVector<SPOSet::ValueVector_t> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  RefVector<SPOSet::ValueVector_t> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
+  RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
+  RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
+  RefVector<SPOSet::ValueVector> dspsi_v_list = {dspsi_work, dspsi_work_2};
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 3; iat++)
   {
@@ -557,7 +557,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    std::vector<ParticleSet::SingleParticlePos_t> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0

@@ -35,7 +35,7 @@ class StructFact : public QMCTraits
 {
 public:
   //Typedef for the lattice-type
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout_t;
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
   /** false, if the structure factor is not actively updated
    *
    * Default is false. Particle-by-particle update functions, makeMove,

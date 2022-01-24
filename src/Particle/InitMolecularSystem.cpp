@@ -27,7 +27,7 @@
 
 namespace qmcplusplus
 {
-typedef QMCTraits::RealType RealType;
+using RealType = QMCTraits::RealType;
 
 InitMolecularSystem::InitMolecularSystem(ParticleSetPool& pset, const char* aname)
     : OhmmsElementBase(aname), ptclPool(pset)
@@ -75,7 +75,7 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
 void InitMolecularSystem::initAtom(ParticleSet* ions, ParticleSet* els)
 {
   //3N-dimensional Gaussian
-  ParticleSet::ParticlePos_t chi(els->getTotalNum());
+  ParticleSet::ParticlePos chi(els->getTotalNum());
   makeGaussRandom(chi);
   RealType q = std::sqrt(static_cast<RealType>(els->getTotalNum())) * 0.5;
   int nel(els->getTotalNum()), items(0);
@@ -101,7 +101,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 
   const int d_ii_ID = ions->addTable(*ions);
   ions->update();
-  const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
+  const ParticleSet::ParticleIndex& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
   std::vector<int> Qtot(Centers), Qcore(Centers), Qval(Centers, 0);
@@ -112,7 +112,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     Qtot[iat] = static_cast<int>(Species(icharge, grID[iat]));
   //cutoff radius (Bohr) this a random choice
   RealType cutoff = 4.0;
-  ParticleSet::ParticlePos_t chi(els->getTotalNum());
+  ParticleSet::ParticlePos chi(els->getTotalNum());
   //makeGaussRandom(chi);
   makeSphereRandom(chi);
   // the upper limit of the electron index with spin up
@@ -124,7 +124,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   int nup_tot = 0, ndown_tot = numUp;
   std::vector<LoneElectron> loneQ;
   RealType rmin = cutoff;
-  ParticleSet::SingleParticlePos_t cm;
+  ParticleSet::SingleParticlePos cm;
 
   const auto& dist = ions->getDistTableAA(d_ii_ID).getDistances();
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
@@ -217,7 +217,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   TinyVector<RealType, OHMMS_DIM> start(1.0);
   TinyVector<RealType, OHMMS_DIM> end(0.0);
 
-  ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
+  ParticleSet::ParticlePos Ru(ions->getTotalNum());
   Ru.setUnit(PosUnit::Lattice);
   ions->applyBC(ions->R, Ru);
 
@@ -255,7 +255,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     }
   }
 
-  ParticleSet::ParticleLayout_t slattice(ions->getLattice());
+  ParticleSet::ParticleLayout slattice(ions->getLattice());
   slattice.set(newbox);
 
   app_log() << "  InitMolecularSystem::initWithVolume " << std::endl;

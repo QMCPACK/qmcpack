@@ -76,7 +76,7 @@ struct OMPallocator : public HostAllocator
   template<class U, class V>
   struct rebind
   {
-    typedef OMPallocator<U, V> other;
+    using other = OMPallocator<U, V>;
   };
 
   value_type* allocate(std::size_t n)
@@ -101,7 +101,7 @@ struct OMPallocator : public HostAllocator
     OMPallocator_device_mem_allocated -= n * sizeof(T);
 #if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
     T* device_ptr_from_omp = getOffloadDevicePtr(pt);
-    const int status = omp_target_disassociate_ptr(pt, omp_get_default_device());
+    const int status       = omp_target_disassociate_ptr(pt, omp_get_default_device());
     if (status != 0)
       throw std::runtime_error("omp_target_disassociate_ptr failed in OMPallocator!");
     cudaErrorCheck(cudaFree(device_ptr_from_omp), "cudaFree failed in OMPallocator!");

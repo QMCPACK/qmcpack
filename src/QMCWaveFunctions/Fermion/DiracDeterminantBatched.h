@@ -81,11 +81,11 @@ public:
   DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
                           int first,
                           int last,
-                          int ndelay                           = 1,
+                          int ndelay                          = 1,
                           DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
-  DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
+  DiracDeterminantBatched(const DiracDeterminantBatched& s)            = delete;
   DiracDeterminantBatched& operator=(const DiracDeterminantBatched& s) = delete;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -142,8 +142,8 @@ public:
   Grad evalGradSource(ParticleSet& P,
                       ParticleSet& source,
                       int iat,
-                      TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                      TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
+                      TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                      TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
@@ -175,13 +175,13 @@ public:
    *  suspect psiMinv or other state variables may have picked up error.
    */
   LogValue evaluateLog(const ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L) override;
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
-                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
 
   void recompute(const ParticleSet& P) override;
 
@@ -194,17 +194,17 @@ public:
                     const std::vector<bool>& recompute) const override;
 
   LogValue evaluateGL(const ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& G,
-                      ParticleSet::ParticleLaplacian_t& L,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
                       bool fromscratch) override;
 
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
-                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     const RefVector<ParticleSet::ParticleGradient>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                      bool fromscratch) const override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection,
@@ -284,7 +284,7 @@ private:
   std::unique_ptr<typename DET_ENGINE::DetInverter> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
-  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
+  void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
 
   /// single invert logdetT(psiM)
   /// as a side effect this->log_value_ gets the log determinant of logdetT
@@ -301,8 +301,8 @@ private:
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                     const RefVector<const DualMatrix<Value>>& logdetT_list,
-                     const RefVector<DualMatrix<Value>>& a_inv_lis);
+                            const RefVector<const DualMatrix<Value>>& logdetT_list,
+                            const RefVector<DualMatrix<Value>>& a_inv_lis);
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()

@@ -104,7 +104,7 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       W.L = *L1[ipsi];
       W.G = *G1[ipsi];
 
-      RealType et                                 = H1[ipsi]->evaluate(W);
+      RealType et                                     = H1[ipsi]->evaluate(W);
       thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
       thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];
@@ -133,7 +133,7 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
   assignDrift(Tau, MassInvP, W.G, drift);
   makeGaussRandomWithEngine(deltaR, RandomGen);
 
-  Walker_t::ParticleGradient_t cumGrad(W.G);
+  Walker_t::ParticleGradient cumGrad(W.G);
   cumGrad = 0.0;
 
   RealType tau_over_mass = std::sqrt(Tau * MassInvS[0]);
@@ -172,7 +172,7 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
   for (int ipsi = 0; ipsi < nPsi; ipsi++)
   {
     invsumratio[ipsi] = 1.0 / sumratio[ipsi];
-    cumGrad += Psi1[ipsi]->G * static_cast<Walker_t::SingleParticleValue_t>(invsumratio[ipsi]);
+    cumGrad += Psi1[ipsi]->G * static_cast<Walker_t::SingleParticleValue>(invsumratio[ipsi]);
   }
 
   for (int ipsi = 0; ipsi < nPsi; ipsi++)
@@ -202,9 +202,9 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
     thisWalker.G            = cumGrad;
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
-      W.L                                         = *L1[ipsi];
-      W.G                                         = *G1[ipsi];
-      RealType et                                 = H1[ipsi]->evaluate(W);
+      W.L                                             = *L1[ipsi];
+      W.G                                             = *G1[ipsi];
+      RealType et                                     = H1[ipsi]->evaluate(W);
       thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
       thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];

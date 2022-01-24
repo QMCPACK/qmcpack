@@ -23,7 +23,7 @@ namespace qmcplusplus
 template<>
 struct HDFAttribIO<std::string> : public HDFAttribIOBase
 {
-  typedef std::string ArrayType_t;
+  using ArrayType_t = std::string;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
@@ -77,7 +77,7 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
 {
-  typedef std::ostringstream Data_t;
+  using Data_t = std::ostringstream;
   Data_t& ref;
 
   HDFAttribIO<Data_t>(Data_t& a) : ref(a) {}

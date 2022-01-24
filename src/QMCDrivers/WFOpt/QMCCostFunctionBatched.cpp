@@ -210,9 +210,9 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
     dLogPsi.resize(rank_local_num_samples_);
     d2LogPsi.resize(rank_local_num_samples_);
     for (int i = 0; i < rank_local_num_samples_; ++i)
-      dLogPsi[i] = new ParticleGradient_t(nptcl);
+      dLogPsi[i] = new ParticleGradient(nptcl);
     for (int i = 0; i < rank_local_num_samples_; ++i)
-      d2LogPsi[i] = new ParticleLaplacian_t(nptcl);
+      d2LogPsi[i] = new ParticleLaplacian(nptcl);
   }
 }
 
@@ -284,11 +284,11 @@ void QMCCostFunctionBatched::checkConfigurations()
 
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                          std::vector<int>& samples_per_crowd, int crowd_size,
-                          std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
-                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
-                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
+                          std::vector<int>& samples_per_crowd, int crowd_size, std::vector<ParticleGradient*>& gradPsi,
+                          std::vector<ParticleLaplacian*>& lapPsi, Matrix<Return_rt>& RecordsOnNode,
+                          Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
+                          opt_variables_type& optVars, bool needGrads, bool compute_nlpp,
+                          const std::string& includeNonlocalH) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
@@ -518,7 +518,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   // lambda to execute on each crowd
   auto evalOptCorrelated = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                               const std::vector<int>& samples_per_crowd, int crowd_size,
-                              std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
+                              std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                               Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                               Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
                               const opt_variables_type& optVars, bool compute_all_from_scratch, Return_rt vmc_or_dmc,
@@ -567,10 +567,10 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
       // Evaluate difference in log psi
 
-      std::vector<std::unique_ptr<ParticleSet::ParticleGradient_t>> dummyG_ptr_list;
-      std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian_t>> dummyL_ptr_list;
-      RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
-      RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
+      std::vector<std::unique_ptr<ParticleSet::ParticleGradient>> dummyG_ptr_list;
+      std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian>> dummyL_ptr_list;
+      RefVector<ParticleSet::ParticleGradient> dummyG_list;
+      RefVector<ParticleSet::ParticleLaplacian> dummyL_list;
       if (compute_all_from_scratch)
       {
         int nptcl = gradPsi[0]->size();
@@ -578,8 +578,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
         dummyL_ptr_list.reserve(curr_crowd_size);
         for (int i = 0; i < curr_crowd_size; i++)
         {
-          dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient_t>(nptcl));
-          dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian_t>(nptcl));
+          dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient>(nptcl));
+          dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian>(nptcl));
         }
         dummyG_list = convertUPtrToRefVector(dummyG_ptr_list);
         dummyL_list = convertUPtrToRefVector(dummyL_ptr_list);

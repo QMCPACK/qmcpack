@@ -49,8 +49,8 @@ public:
   ///MinusOver2M[i] = \f$ -1/2m[i]\f$ for the ith species
   std::vector<FullPrecRealType> MinusOver2M;
 
-  ParticleSet::ParticleGradient_t Gtmp;
-  ParticleSet::ParticleLaplacian_t Ltmp;
+  ParticleSet::ParticleGradient Gtmp;
+  ParticleSet::ParticleLaplacian Ltmp;
 
   ///single particle trace samples
   bool streaming_kinetic;
@@ -104,8 +104,8 @@ public:
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   Return_t evaluate_sp(ParticleSet& P);

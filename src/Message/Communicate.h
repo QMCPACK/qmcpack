@@ -31,17 +31,17 @@ namespace mpi3 = boost::mpi3;
 #ifdef HAVE_MPI
 struct CommunicatorTraits
 {
-  typedef MPI_Comm mpi_comm_type;
-  typedef MPI_Status status;
-  typedef MPI_Request request;
+  using mpi_comm_type = MPI_Comm;
+  using status        = MPI_Status;
+  using request       = MPI_Request;
 };
 
 #else
 struct CommunicatorTraits
 {
-  typedef int mpi_comm_type;
-  typedef int status;
-  typedef int request;
+  using mpi_comm_type               = int;
+  using status                      = int;
+  using request                     = int;
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };

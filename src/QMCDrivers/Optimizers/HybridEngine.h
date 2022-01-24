@@ -27,8 +27,8 @@ namespace qmcplusplus
 {
 class HybridEngine
 {
-  typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
-  typedef qmcplusplus::QMCTraits::ValueType ValueType;
+  using FullPrecValueType = qmcplusplus::QMCTraits::FullPrecValueType;
+  using ValueType         = qmcplusplus::QMCTraits::ValueType;
 
 private:
   Communicate* myComm;

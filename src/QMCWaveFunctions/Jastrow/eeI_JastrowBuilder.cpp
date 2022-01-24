@@ -51,7 +51,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
       rAttrib.add(ee_cusp, "ecusp");
       rAttrib.add(eI_cusp, "icusp");
       rAttrib.put(kids);
-      typedef typename J3type::FuncType FT;
+      using FT           = typename J3type::FuncType;
       auto functor       = std::make_unique<FT>(ee_cusp, eI_cusp);
       functor->iSpecies  = iSpecies;
       functor->eSpecies1 = eSpecies1;
@@ -131,11 +131,11 @@ std::unique_ptr<WaveFunctionComponent> eeI_JastrowBuilder::buildComponent(xmlNod
 
     std::string input_name(getXMLAttributeValue(cur, "name"));
     std::string jname = input_name.empty() ? "JeeI_" + ftype : input_name;
-    SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
+    SpeciesSet& iSet  = sourcePtcl->getSpeciesSet();
     if (ftype == "polynomial")
     {
-      typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-      auto J3 = std::make_unique<J3Type>(jname, *sourcePtcl, targetPtcl, true);
+      using J3Type = JeeIOrbitalSoA<PolynomialFunctor3D>;
+      auto J3      = std::make_unique<J3Type>(jname, *sourcePtcl, targetPtcl, true);
       putkids(kids, *J3);
       return J3;
     }

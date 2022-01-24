@@ -32,14 +32,14 @@ class CuspCorrectionAtomicBasis;
  */
 class SoaCuspCorrection
 {
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::RealType RealType;
-  typedef VectorSoaContainer<ValueType, 5> VGLVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef ParticleSet::PosType PosType;
+  using ValueType   = QMCTraits::ValueType;
+  using RealType    = QMCTraits::RealType;
+  using VGLVector   = VectorSoaContainer<ValueType, 5>;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using GradVector  = SPOSet::GradVector;
+  using ValueVector = SPOSet::ValueVector;
+  using PosType     = ParticleSet::PosType;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -51,7 +51,7 @@ class SoaCuspCorrection
   int BasisSetSize;
 
   ///COMPLEX WON'T WORK
-  typedef CuspCorrectionAtomicBasis<RealType> COT;
+  using COT = CuspCorrectionAtomicBasis<RealType>;
 
   int unused = 1;
   /** container of the unique pointers to the Atomic Orbitals
@@ -84,16 +84,11 @@ public:
    * @param vgl Matrix(5,BasisSetSize)
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
-  void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
+  void evaluateVGL(const ParticleSet& P, int iat, VGLVector& vgl);
 
-  void evaluate_vgl(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluate_vgl(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
-  void evaluate_vgl(const ParticleSet& P,
-                    int iat,
-                    int idx,
-                    ValueMatrix_t& psi,
-                    GradMatrix_t& dpsi,
-                    ValueMatrix_t& d2psi);
+  void evaluate_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& psi, GradMatrix& dpsi, ValueMatrix& d2psi);
 
   /** compute values for the iat-paricle move
    *
@@ -107,13 +102,13 @@ public:
    */
   void add(int icenter, std::unique_ptr<COT> aos);
 
-  void addVGL(const ParticleSet& P, int iat, VGLVector_t& vgl) { evaluateVGL(P, iat, vgl); }
+  void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
   void addV(const ParticleSet& P, int iat, ValueType* restrict vals) { evaluateV(P, iat, vals); }
-  void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t& vals, GradMatrix_t& dpsi, ValueMatrix_t& d2psi)
+  void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
   {
     evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);
   }
-  void add_vector_vgl(const ParticleSet& P, int iat, ValueVector_t& vals, GradVector_t& dpsi, ValueVector_t& d2psi)
+  void add_vector_vgl(const ParticleSet& P, int iat, ValueVector& vals, GradVector& dpsi, ValueVector& d2psi)
   {
     evaluate_vgl(P, iat, vals, dpsi, d2psi);
   }

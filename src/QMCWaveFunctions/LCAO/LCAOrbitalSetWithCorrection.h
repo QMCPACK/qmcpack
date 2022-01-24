@@ -41,43 +41,39 @@ public:
 
   void setOrbitalSetSize(int norbs) override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   HessVector_t& grad_grad_psi) override;
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet,
+                            GGGMatrix& grad_grad_grad_logdet) override;
 
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet) override;
+  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
 
   SoaCuspCorrection cusp;
 };

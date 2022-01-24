@@ -42,7 +42,7 @@ public:
   ParticleSetPool(Communicate* c, const char* aname = "particleset");
   ~ParticleSetPool();
 
-  ParticleSetPool(const ParticleSetPool&) = delete;
+  ParticleSetPool(const ParticleSetPool&)            = delete;
   ParticleSetPool& operator=(const ParticleSetPool&) = delete;
   ParticleSetPool(ParticleSetPool&& pset) noexcept;
   ParticleSetPool& operator=(ParticleSetPool&&) = default;
@@ -56,7 +56,7 @@ public:
   /** initialize the supercell shared by all the particle sets
    *
    *  return value is never checked anywhere
-   *  side effect simulation_cell_ UPtr<ParticleLayout_t> is set
+   *  side effect simulation_cell_ UPtr<ParticleLayout> is set
    *  to particle layout created on heap.
    *  This is later directly assigned to pset member variable Lattice.
    */

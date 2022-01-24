@@ -31,13 +31,13 @@ extern hipsparseMatDescr_t afqmc_hipsparse_matrix_descr;
 extern std::vector<hipStream_t> afqmc_hip_streams;
 
 // FDM: Temprorary hack to allow for easier grepping.
-typedef rocsolver_status rocsolverStatus_t;
-typedef rocsolver_status hipsolverStatus_t;
-typedef rocsolver_handle hipsolverHandle_t;
-typedef rocsolver_handle rocsolverHandle_t;
-typedef rocblas_operation_ rocblasOperation_t;
-typedef rocrand_status hiprandStatus_t;
-typedef rocrand_generator hiprandGenerator_t;
+using rocsolverStatus_t  = rocsolver_status;
+using hipsolverStatus_t  = rocsolver_status;
+using hipsolverHandle_t  = rocsolver_handle;
+using rocsolverHandle_t  = rocsolver_handle;
+using rocblasOperation_t = rocblas_operation_;
+using hiprandStatus_t    = rocrand_status;
+using hiprandGenerator_t = rocrand_generator;
 
 void hip_check_error();
 void hip_check(hipError_t success, std::string message = "");

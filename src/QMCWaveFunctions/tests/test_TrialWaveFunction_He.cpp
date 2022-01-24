@@ -198,20 +198,20 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 }
 
 
-UPtrVector<ParticleSet::ParticleGradient_t> create_particle_gradient(int nelec, int nentry)
+UPtrVector<ParticleSet::ParticleGradient> create_particle_gradient(int nelec, int nentry)
 {
-  UPtrVector<ParticleSet::ParticleGradient_t> G_list;
+  UPtrVector<ParticleSet::ParticleGradient> G_list;
   for (int i = 0; i < nentry; i++)
-    G_list.emplace_back(std::make_unique<ParticleSet::ParticleGradient_t>(nelec));
+    G_list.emplace_back(std::make_unique<ParticleSet::ParticleGradient>(nelec));
 
   return G_list;
 }
 
-UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec, int nentry)
+UPtrVector<ParticleSet::ParticleLaplacian> create_particle_laplacian(int nelec, int nentry)
 {
-  UPtrVector<ParticleSet::ParticleLaplacian_t> L_list;
+  UPtrVector<ParticleSet::ParticleLaplacian> L_list;
   for (int i = 0; i < nentry; i++)
-    L_list.emplace_back(std::make_unique<ParticleSet::ParticleLaplacian_t>(nelec));
+    L_list.emplace_back(std::make_unique<ParticleSet::ParticleLaplacian>(nelec));
 
   return L_list;
 }
@@ -281,7 +281,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_list);
 
-  
+
   TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list,
                                               fixedL_list);
 
@@ -290,8 +290,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r1;
   RealType logpsi_opt_r1;
-  ParticleSet::ParticleGradient_t fixedG1;
-  ParticleSet::ParticleLaplacian_t fixedL1;
+  ParticleSet::ParticleGradient fixedG1;
+  ParticleSet::ParticleLaplacian fixedL1;
   fixedG1.resize(nelec);
   fixedL1.resize(nelec);
 
@@ -325,8 +325,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   wf_list.push_back(psi2);
   p_list.push_back(elec2b);
 
-  ParticleSet::ParticleGradient_t G2;
-  ParticleSet::ParticleLaplacian_t L2;
+  ParticleSet::ParticleGradient G2;
+  ParticleSet::ParticleLaplacian L2;
   G2.resize(nelec);
   L2.resize(nelec);
   fixedG_list.push_back(G2);
@@ -354,8 +354,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r2;
   RealType logpsi_opt_r2;
-  ParticleSet::ParticleGradient_t fixedG2;
-  ParticleSet::ParticleLaplacian_t fixedL2;
+  ParticleSet::ParticleGradient fixedG2;
+  ParticleSet::ParticleLaplacian fixedL2;
   fixedG2.resize(nelec);
   fixedL2.resize(nelec);
 
@@ -414,8 +414,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
 
   // these lists not used if 'recompute' is false
-  RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
-  RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
+  RefVector<ParticleSet::ParticleGradient> dummyG_list;
+  RefVector<ParticleSet::ParticleLaplacian> dummyL_list;
 
   std::vector<RealType> logpsi_variable_list(nentry);
   TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list, dummyG_list, dummyL_list, false);

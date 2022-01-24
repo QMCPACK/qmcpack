@@ -23,7 +23,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 //#define TEST_INNERBRANCH
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
@@ -235,7 +235,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
     H.rejectedMove(W, thisWalker);
     thisWalker.Weight = wtmp;
     ++nAllRejected;
-    enew   = eold; //copy back old energy
+    enew = eold; //copy back old energy
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)

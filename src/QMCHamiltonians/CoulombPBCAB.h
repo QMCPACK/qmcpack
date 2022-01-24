@@ -34,10 +34,10 @@ namespace qmcplusplus
  */
 struct CoulombPBCAB : public OperatorBase, public ForceBase
 {
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-  typedef LRCoulombSingleton::GridType GridType;
-  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  typedef LRHandlerType::mRealType mRealType;
+  using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+  using GridType       = LRCoulombSingleton::GridType;
+  using RadFunctorType = LRCoulombSingleton::RadFunctorType;
+  using mRealType      = LRHandlerType::mRealType;
 
   ///source particle set
   ParticleSet& PtclA;
@@ -145,8 +145,8 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }

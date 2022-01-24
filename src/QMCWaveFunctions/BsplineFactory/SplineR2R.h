@@ -41,10 +41,10 @@ public:
   using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
   using TT = typename BsplineSet::ValueType;
-  using BsplineSet::GGGVector_t;
-  using BsplineSet::GradVector_t;
-  using BsplineSet::HessVector_t;
-  using BsplineSet::ValueVector_t;
+  using BsplineSet::GGGVector;
+  using BsplineSet::GradVector;
+  using BsplineSet::HessVector;
+  using BsplineSet::ValueVector;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
@@ -143,50 +143,50 @@ public:
     return bc_sign;
   }
 
-  void assign_v(int bc_sign, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const;
+  void assign_v(int bc_sign, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
-  void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
-                         ValueVector_t& psi,
-                         const ValueVector_t& psiinv,
+                         ValueVector& psi,
+                         const ValueVector& psiinv,
                          std::vector<TT>& ratios) override;
 
-  void assign_vgl(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi, int first, int last) const;
+  void assign_vgl(int bc_sign, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, int first, int last) const;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
-  void assign_vgl_from_l(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void assign_vgl_from_l(int bc_sign, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
   void evaluateVGL(const ParticleSet& P,
                    const int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override;
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   ValueVector& d2psi) override;
 
-  void assign_vgh(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, int first, int last)
+  void assign_vgh(int bc_sign, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi, int first, int last)
       const;
 
   void evaluateVGH(const ParticleSet& P,
                    const int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   HessVector_t& grad_grad_psi) override;
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override;
 
   void assign_vghgh(int bc_sign,
-                    ValueVector_t& psi,
-                    GradVector_t& dpsi,
-                    HessVector_t& grad_grad_psi,
-                    GGGVector_t& grad_grad_grad_psi,
+                    ValueVector& psi,
+                    GradVector& dpsi,
+                    HessVector& grad_grad_psi,
+                    GGGVector& grad_grad_grad_psi,
                     int first = 0,
                     int last  = -1) const;
 
   void evaluateVGHGH(const ParticleSet& P,
                      const int iat,
-                     ValueVector_t& psi,
-                     GradVector_t& dpsi,
-                     HessVector_t& grad_grad_psi,
-                     GGGVector_t& grad_grad_grad_psi) override;
+                     ValueVector& psi,
+                     GradVector& dpsi,
+                     HessVector& grad_grad_psi,
+                     GGGVector& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
   friend struct SplineSetReader;

@@ -47,10 +47,10 @@ public:
   using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
   using ComplexT = typename BsplineSet::ValueType;
-  using BsplineSet::GGGVector_t;
-  using BsplineSet::GradVector_t;
-  using BsplineSet::HessVector_t;
-  using BsplineSet::ValueVector_t;
+  using BsplineSet::GGGVector;
+  using BsplineSet::GradVector;
+  using BsplineSet::HessVector;
+  using BsplineSet::ValueVector;
 
   using vContainer_type  = Vector<ST, aligned_allocator<ST>>;
   using gContainer_type  = VectorSoaContainer<ST, 3>;
@@ -93,9 +93,9 @@ private:
   void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
                            Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
                            Vector<ComplexT, OffloadPinnedAllocator<ComplexT>>& results_scratch,
-                           const RefVector<ValueVector_t>& psi_v_list,
-                           const RefVector<GradVector_t>& dpsi_v_list,
-                           const RefVector<ValueVector_t>& d2psi_v_list) const;
+                           const RefVector<ValueVector>& psi_v_list,
+                           const RefVector<GradVector>& dpsi_v_list,
+                           const RefVector<ValueVector>& d2psi_v_list) const;
 
 protected:
   /// intermediate result vectors
@@ -143,7 +143,7 @@ public:
   {
     assert(this == &spo_list.getLeader());
     auto& phi_leader = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-    auto res_ptr = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, ComplexT>*>(collection.lendResource().release());
+    auto res_ptr     = dynamic_cast<SplineOMPTargetMultiWalkerMem<ST, ComplexT>*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SplineC2COMPTarget::acquireResource dynamic_cast failed");
     phi_leader.mw_mem_.reset(res_ptr);
@@ -245,80 +245,80 @@ public:
 
   bool write_splines(hdf_archive& h5f);
 
-  void assign_v(const PointType& r, const vContainer_type& myV, ValueVector_t& psi, int first, int last) const;
+  void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
-  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override;
+  virtual void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override;
 
   virtual void evaluateDetRatios(const VirtualParticleSet& VP,
-                                 ValueVector_t& psi,
-                                 const ValueVector_t& psiinv,
+                                 ValueVector& psi,
+                                 const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios) override;
 
   virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                    const RefVector<ValueVector_t>& psi_list,
+                                    const RefVector<ValueVector>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const override;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
-  void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi);
 
   virtual void evaluateVGL(const ParticleSet& P,
                            const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           ValueVector_t& d2psi) override;
+                           ValueVector& psi,
+                           GradVector& dpsi,
+                           ValueVector& d2psi) override;
 
   virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
-                              const RefVector<ValueVector_t>& psi_v_list,
-                              const RefVector<GradVector_t>& dpsi_v_list,
-                              const RefVector<ValueVector_t>& d2psi_v_list) const override;
+                              const RefVector<ValueVector>& psi_v_list,
+                              const RefVector<GradVector>& dpsi_v_list,
+                              const RefVector<ValueVector>& d2psi_v_list) const override;
 
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
-                                              VGLVector_t& phi_vgl_v,
+                                              VGLVector& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
                                               std::vector<GradType>& grads) const override;
 
   void assign_vgh(const PointType& r,
-                  ValueVector_t& psi,
-                  GradVector_t& dpsi,
-                  HessVector_t& grad_grad_psi,
+                  ValueVector& psi,
+                  GradVector& dpsi,
+                  HessVector& grad_grad_psi,
                   int first,
                   int last) const;
 
   virtual void evaluateVGH(const ParticleSet& P,
                            const int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           HessVector_t& grad_grad_psi) override;
+                           ValueVector& psi,
+                           GradVector& dpsi,
+                           HessVector& grad_grad_psi) override;
 
   void assign_vghgh(const PointType& r,
-                    ValueVector_t& psi,
-                    GradVector_t& dpsi,
-                    HessVector_t& grad_grad_psi,
-                    GGGVector_t& grad_grad_grad_psi,
+                    ValueVector& psi,
+                    GradVector& dpsi,
+                    HessVector& grad_grad_psi,
+                    GGGVector& grad_grad_grad_psi,
                     int first = 0,
                     int last  = -1) const;
 
   virtual void evaluateVGHGH(const ParticleSet& P,
                              const int iat,
-                             ValueVector_t& psi,
-                             GradVector_t& dpsi,
-                             HessVector_t& grad_grad_psi,
-                             GGGVector_t& grad_grad_grad_psi) override;
+                             ValueVector& psi,
+                             GradVector& dpsi,
+                             HessVector& grad_grad_psi,
+                             GGGVector& grad_grad_grad_psi) override;
 
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
                                     int last,
-                                    ValueMatrix_t& logdet,
-                                    GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet) override;
+                                    ValueMatrix& logdet,
+                                    GradMatrix& dlogdet,
+                                    ValueMatrix& d2logdet) override;
 
   template<class BSPLINESPO>
   friend struct SplineSetReader;

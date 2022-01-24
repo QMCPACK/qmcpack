@@ -34,7 +34,7 @@ void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, const Part
 
 //This function handles parsing of the intermediate matrices and construction of the w_I(r_i) and Grad_i(w_I(r_i)) functions
 // that appear in the space warp transformation formulas.
-void SpaceWarpTransformation::getSWT(int iat, ParticleScalar_t& w, Force_t& grad_w)
+void SpaceWarpTransformation::getSWT(int iat, ParticleScalar& w, Force_t& grad_w)
 {
   for (size_t iel = 0; iel < Nelec; iel++)
   {
@@ -53,13 +53,13 @@ void SpaceWarpTransformation::getSWT(int iat, ParticleScalar_t& w, Force_t& grad
 void SpaceWarpTransformation::computeSWT(ParticleSet& P,
                                          const ParticleSet& ions,
                                          Force_t& dEl,
-                                         ParticleGradient_t& dlogpsi,
+                                         ParticleGradient& dlogpsi,
                                          Force_t& el_contribution,
                                          Force_t& psi_contribution)
 {
   el_contribution  = 0;
   psi_contribution = 0;
-  ParticleScalar_t w;
+  ParticleScalar w;
   Force_t gradw;
   w.resize(Nelec);
   gradw.resize(Nelec);

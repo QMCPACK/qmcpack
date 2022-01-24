@@ -40,9 +40,9 @@ using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
 #ifdef ENABLE_CUDA
-typedef DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+using DetType = DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>;
 #else
-typedef DiracDeterminant<> DetType;
+using DetType = DiracDeterminant<>;
 #endif
 
 template<typename T1, typename T2>
@@ -454,16 +454,16 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 {
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
-  typedef QMCTraits::GradType GradType;
-  typedef WaveFunctionComponent::LogValueType LogValueType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  using ValueType         = QMCTraits::ValueType;
+  using PosType           = QMCTraits::PosType;
+  using GradType          = QMCTraits::GradType;
+  using LogValueType      = WaveFunctionComponent::LogValueType;
+  using ParticlePos       = ParticleSet::ParticlePos;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
 
   // O2 test example from pwscf non-collinear calculation.
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
   lattice.R(0, 2) = 0.00000000;
@@ -556,8 +556,8 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   DetType dd(std::move(spinor_set), 0, nelec, 1, inverter_kind);
   app_log() << " nelec=" << nelec << std::endl;
 
-  ParticleGradient_t G;
-  ParticleLaplacian_t L;
+  ParticleGradient G;
+  ParticleLaplacian L;
   ParticleAttrib<ComplexType> SG;
 
   G.resize(nelec);

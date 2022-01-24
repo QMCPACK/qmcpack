@@ -395,8 +395,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::computeGL(ParticleSet::ParticleGradient_t& G,
-                                                    ParticleSet::ParticleLaplacian_t& L) const
+void DiracDeterminantBatched<DET_ENGINE>::computeGL(ParticleSet::ParticleGradient& G,
+                                                    ParticleSet::ParticleLaplacian& L) const
 {
   auto& psiMinv = det_engine_.get_psiMinv();
   for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
@@ -411,8 +411,8 @@ void DiracDeterminantBatched<DET_ENGINE>::computeGL(ParticleSet::ParticleGradien
 template<typename DET_ENGINE>
 typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<DET_ENGINE>::evaluateGL(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L,
     bool fromscratch)
 {
   if (fromscratch)
@@ -433,8 +433,8 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<D
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                                        const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                                                        const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                                        const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                        const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                                                         bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
@@ -478,7 +478,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
 
 #ifndef NDEBUG
-      GradMatrix_t dpsiM_from_device   = det.dpsiM;
+      GradMatrix dpsiM_from_device     = det.dpsiM;
       Matrix<Value> d2psiM_from_device = det.d2psiM;
 
       auto& my_psiM_vgl  = det.psiM_vgl;
@@ -713,7 +713,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_E
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   auto& psiMinv = det_engine_.get_ref_psiMinv();
   // Hessian is not often used, so only resize/allocate if used
@@ -745,8 +745,8 @@ typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_E
     ParticleSet& P,
     ParticleSet& source,
     int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   Grad gradPsi(0.0);
   if (Phi->hasIonDerivs())
@@ -836,8 +836,8 @@ typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_E
 template<typename DET_ENGINE>
 typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<DET_ENGINE>::evaluateLog(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
   computeGL(G, L);
@@ -845,11 +845,10 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<D
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
-    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-    const RefVectorWithLeader<ParticleSet>& p_list,
-    const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-    const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
+void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                                         const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                         const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
   const std::vector<bool> recompute_all(wfc_list.size(), true);
@@ -958,8 +957,9 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
-{  
+void DiracDeterminantBatched<DET_ENGINE>::registerTWFFastDerivWrapper(const ParticleSet& P,
+                                                                      TWFFastDerivWrapper& twf) const
+{
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }
 

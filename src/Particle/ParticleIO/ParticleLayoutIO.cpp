@@ -30,13 +30,13 @@ namespace qmcplusplus
 {
 bool LatticeParser::put(xmlNodePtr cur)
 {
-  const int DIM = ParticleLayout_t::SingleParticlePos_t::Size;
-  double a0     = 1.0;
-  double rs     = -1.0;
-  int nptcl     = 0;
-  int nsh       = 0; //for backwards compatibility w/ odd heg initialization style
-  int pol       = 0;
-  typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
+  const int DIM             = ParticleLayout::SingleParticlePos::Size;
+  double a0                 = 1.0;
+  double rs                 = -1.0;
+  int nptcl                 = 0;
+  int nsh                   = 0; //for backwards compatibility w/ odd heg initialization style
+  int pol                   = 0;
+  using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
   TinyVector<std::string, DIM> bconds("p");
 
   Tensor<OHMMS_PRECISION_FULL, DIM> lattice_in;
@@ -159,7 +159,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   //special heg processing
   if (rs > 0.0)
   {
-    HEGGrid<ParticleLayout_t::Scalar_t> heg(ref_);
+    HEGGrid<ParticleLayout::Scalar_t> heg(ref_);
     if (pol == 0)
     {
       if (nsh > 0)
@@ -174,7 +174,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       else
         nsh = heg.getShellIndex(nptcl);
     }
-    ParticleLayout_t::Scalar_t acubic = heg.getCellLength(nptcl, rs);
+    ParticleLayout::Scalar_t acubic = heg.getCellLength(nptcl, rs);
     app_log() << "  " << OHMMS_DIM << "D HEG system"
               << "\n     rs  = " << rs;
     if (pol == 0)
@@ -216,7 +216,7 @@ bool LatticeXMLWriter::get(std::ostream& os) const
   os << "<parameter name=\"lattice\" datatype=\"tensor\">" << std::endl;
   os << ref_.R << "</parameter>" << std::endl;
   os << "<parameter name=\"bconds\">";
-  const int DIM = ParticleLayout_t::SingleParticlePos_t::Size;
+  const int DIM = ParticleLayout::SingleParticlePos::Size;
   for (int idir = 0; idir < DIM; idir++)
   {
     if (ref_.BoxBConds[idir])

@@ -22,7 +22,7 @@ class ParticleSetPool;
 class SimulationCell
 {
 public:
-  using Lattice = PtclOnLatticeTraits::ParticleLayout_t;
+  using Lattice = PtclOnLatticeTraits::ParticleLayout;
 
   SimulationCell();
   SimulationCell(const Lattice& lattice);
@@ -43,5 +43,5 @@ private:
 
   friend class ParticleSetPool;
 };
-}
+} // namespace qmcplusplus
 #endif

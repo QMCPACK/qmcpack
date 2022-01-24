@@ -43,7 +43,7 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    ParticleSet::ParticleLayout_t lattice;
+    ParticleSet::ParticleLayout lattice;
     // BCC H
     lattice.R(0, 0) = 3.37316115;
     lattice.R(0, 1) = 3.37316115;
@@ -101,7 +101,7 @@ void test_C_diamond()
     OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
     SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
-    SPOSet::ValueVector_t values;
+    SPOSet::ValueVector values;
     values.resize(26);
 
     // BEGIN generated C++ input from Carbon1x1x1-tw1_gen_mos.py (pyscf version 1.6.2) on 2019-11-19 15:08:42.652893

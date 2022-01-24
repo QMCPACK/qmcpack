@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 TEST_CASE("OMPmath", "[OMP]")
 {
-  typedef std::vector<double, OMPallocator<double>> vec_t;
+  using vec_t = std::vector<double, OMPallocator<double>>;
   vec_t A(3);
 
   // iterator

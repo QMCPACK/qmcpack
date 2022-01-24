@@ -38,8 +38,8 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
   DECLARE_COULOMB_TYPES
 
   //Typedef for the lattice-type.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  typedef BreakupBasis BreakupBasisType;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
+  using BreakupBasisType = BreakupBasis;
 
   bool FirstTime;
   mRealType rs;
@@ -185,7 +185,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(const ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);

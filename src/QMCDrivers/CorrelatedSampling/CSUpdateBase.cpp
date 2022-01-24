@@ -65,8 +65,8 @@ void CSUpdateBase::resizeWorkSpace(int nw, int nptcls)
   {
     Psi1[ipsi]->G.resize(nptcls);
     Psi1[ipsi]->L.resize(nptcls);
-    G1.push_back(new ParticleSet::ParticleGradient_t(nptcls));
-    L1.push_back(new ParticleSet::ParticleLaplacian_t(nptcls));
+    G1.push_back(new ParticleSet::ParticleGradient(nptcls));
+    L1.push_back(new ParticleSet::ParticleLaplacian(nptcls));
   }
 }
 
@@ -202,8 +202,8 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end, bool rese
     //evalaute the wavefunction and hamiltonian
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
-      logpsi[ipsi]                        = Psi1[ipsi]->evaluateLog(W);
-      Psi1[ipsi]->G                       = W.G;
+      logpsi[ipsi]                            = Psi1[ipsi]->evaluateLog(W);
+      Psi1[ipsi]->G                           = W.G;
       thisWalker.Properties(ipsi, WP::LOGPSI) = logpsi[ipsi];
       RealType e = thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
@@ -333,8 +333,8 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
       //Need to modify the return value of WaveFunctionComponent::registerData
-      logpsi[ipsi]                             = Psi1[ipsi]->updateBuffer(W, (*it)->DataSet);
-      Psi1[ipsi]->G                            = W.G;
+      logpsi[ipsi]                                 = Psi1[ipsi]->updateBuffer(W, (*it)->DataSet);
+      Psi1[ipsi]->G                                = W.G;
       thisWalker.Properties(ipsi, WP::LOGPSI)      = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));

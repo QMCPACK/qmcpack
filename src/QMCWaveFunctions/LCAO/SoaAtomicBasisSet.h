@@ -28,10 +28,10 @@ namespace qmcplusplus
 template<typename ROT, typename SH>
 struct SoaAtomicBasisSet
 {
-  typedef ROT RadialOrbital_t;
-  using RealType  = typename ROT::RealType;
-  using GridType  = typename ROT::GridType;
-  using ValueType = typename QMCTraits::ValueType;
+  using RadialOrbital_t = ROT;
+  using RealType        = typename ROT::RealType;
+  using GridType        = typename ROT::GridType;
+  using ValueType       = typename QMCTraits::ValueType;
 
   ///size of the basis set
   int BasisSetSize;

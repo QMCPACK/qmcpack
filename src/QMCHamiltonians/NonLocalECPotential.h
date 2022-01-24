@@ -60,14 +60,14 @@ public:
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
   Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                               ParticleSet& ions,
                                               TrialWaveFunction& psi,
-                                              ParticleSet::ParticlePos_t& hf_terms,
-                                              ParticleSet::ParticlePos_t& pulay_terms) override;
+                                              ParticleSet::ParticlePos& hf_terms,
+                                              ParticleSet::ParticlePos& pulay_terms) override;
 
 
   /** set non local moves options
@@ -170,7 +170,7 @@ private:
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///Pulay force vector
-  ParticleSet::ParticlePos_t PulayTerm;
+  ParticleSet::ParticlePos PulayTerm;
   // Tmove data
   std::vector<NonLocalData> tmove_xy_;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -203,8 +203,8 @@ private:
   void evalIonDerivsImpl(ParticleSet& P,
                          ParticleSet& ions,
                          TrialWaveFunction& psi,
-                         ParticleSet::ParticlePos_t& hf_terms,
-                         ParticleSet::ParticlePos_t& pulay_terms,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
                          bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
