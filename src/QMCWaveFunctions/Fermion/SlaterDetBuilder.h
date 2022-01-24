@@ -28,7 +28,7 @@ class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiDiracDeterminant;
 class SPOSetBuilderFactory;
-class ci_configuration;
+struct ci_configuration;
 
 /** derived class from WaveFunctionComponentBuilder
  *

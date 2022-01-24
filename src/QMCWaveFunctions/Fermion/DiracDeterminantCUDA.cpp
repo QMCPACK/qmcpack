@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-DiracDeterminantCUDA::DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last)
+DiracDeterminantCUDA::DiracDeterminantCUDA(std::unique_ptr<SPOSet>&& spos, int first, int last)
     : DiracDeterminantBase("DiracDeterminantCUDA", std::move(spos), first, last),
       UpdateJobList_d("DiracDeterminant::UpdateJobList_d"),
       srcList_d("DiracDeterminant::srcList_d"),
