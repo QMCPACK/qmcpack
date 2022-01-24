@@ -41,7 +41,7 @@ TEST_CASE("dummy", "[lrhandler]")
   REQUIRE(Lattice.LR_kc == Approx(12));
 
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
@@ -60,8 +60,8 @@ TEST_CASE("dummy", "[lrhandler]")
   //  the full Coulomb potential should be retained in kspace
   for (int ish = 0; ish < handler.MaxKshell; ish++)
   {
-    int ik           = ref.getSK().getKLists().kshell[ish];
-    double k2        = ref.getSK().getKLists().ksq[ik];
+    int ik           = ref.getSimulationCell().getKLists().kshell[ish];
+    double k2        = ref.getSimulationCell().getKLists().ksq[ik];
     double fk_expect = fk(k2);
     REQUIRE(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }
