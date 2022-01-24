@@ -16,7 +16,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/BLAS.hpp"
 #include "CPU/BlasThreadingEnv.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "DiracMatrix.h"
 #include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus

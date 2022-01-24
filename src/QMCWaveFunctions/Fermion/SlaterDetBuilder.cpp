@@ -475,7 +475,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     }
     else
     {
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
+#if defined(ENABLE_CUDA)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
