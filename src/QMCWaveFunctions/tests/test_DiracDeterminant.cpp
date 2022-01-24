@@ -461,10 +461,23 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   typedef ParticleSet::ParticlePos_t ParticlePos_t;
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+
+  // O2 test example from pwscf non-collinear calculation.
+  ParticleSet::ParticleLayout_t lattice;
+  lattice.R(0, 0) = 5.10509515;
+  lattice.R(0, 1) = -3.23993545;
+  lattice.R(0, 2) = 0.00000000;
+  lattice.R(1, 0) = 5.10509515;
+  lattice.R(1, 1) = 3.23993545;
+  lattice.R(1, 2) = 0.00000000;
+  lattice.R(2, 0) = -6.49690625;
+  lattice.R(2, 1) = 0.00000000;
+  lattice.R(2, 2) = 7.08268015;
+
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
-  const SimulationCell simulation_cell;
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ions_(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  ParticleSet elec_(simulation_cell);
   ions_.setName("ion");
   ions_.create(2);
 
@@ -491,17 +504,6 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   elec_.spins[1] = 0.2;
   elec_.spins[2] = 0.4;
   elec_.setSpinor(true);
-
-  // O2 test example from pwscf non-collinear calculation.
-  elec_.Lattice.R(0, 0) = 5.10509515;
-  elec_.Lattice.R(0, 1) = -3.23993545;
-  elec_.Lattice.R(0, 2) = 0.00000000;
-  elec_.Lattice.R(1, 0) = 5.10509515;
-  elec_.Lattice.R(1, 1) = 3.23993545;
-  elec_.Lattice.R(1, 2) = 0.00000000;
-  elec_.Lattice.R(2, 0) = -6.49690625;
-  elec_.Lattice.R(2, 1) = 0.00000000;
-  elec_.Lattice.R(2, 2) = 7.08268015;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -552,7 +554,6 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
   DetType dd(std::move(spinor_set), 0, nelec, 1, inverter_kind);
-  dd.resize(nelec, nelec);
   app_log() << " nelec=" << nelec << std::endl;
 
   ParticleGradient_t G;

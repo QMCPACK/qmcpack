@@ -124,8 +124,6 @@ public:
     Binv_gpu.resize(delay, delay);
     delay_list_gpu.resize(delay);
     Ainv_gpu.resize(norb, norb);
-
-    cusolver_invertor.resize(norb);
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log

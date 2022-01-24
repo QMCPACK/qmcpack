@@ -44,6 +44,27 @@ class cuSolverInverter
   cusolverDnHandle_t h_cusolver_;
   cudaStream_t hstream_;
 
+  /** resize the internal storage
+   * @param norb number of electrons/orbitals
+   * @param delay, maximum delay 0<delay<=norb
+   */
+  inline void resize(int norb)
+  {
+    if (Mat1_gpu.rows() != norb)
+    {
+      Mat1_gpu.resize(norb, norb);
+      // prepare cusolver auxiliary arrays
+      ipiv.resize(norb + 1);
+      ipiv_gpu.resize(norb + 1);
+      LU_diag.resize(norb);
+      LU_diag_gpu.resize(norb);
+      int lwork;
+      cusolverErrorCheck(cusolver::getrf_bufferSize(h_cusolver_, norb, norb, Mat1_gpu.data(), norb, &lwork),
+                         "cusolver::getrf_bufferSize failed!");
+      work_gpu.resize(lwork);
+    }
+  }
+
 public:
   /// default constructor
   cuSolverInverter()
@@ -59,24 +80,6 @@ public:
     cudaErrorCheck(cudaStreamDestroy(hstream_), "cudaStreamDestroy failed!");
   }
 
-  /** resize the internal storage
-   * @param norb number of electrons/orbitals
-   * @param delay, maximum delay 0<delay<=norb
-   */
-  inline void resize(int norb)
-  {
-    Mat1_gpu.resize(norb, norb);
-    // prepare cusolver auxiliary arrays
-    ipiv.resize(norb + 1);
-    ipiv_gpu.resize(norb + 1);
-    LU_diag.resize(norb);
-    LU_diag_gpu.resize(norb);
-    int lwork;
-    cusolverErrorCheck(cusolver::getrf_bufferSize(h_cusolver_, norb, norb, Mat1_gpu.data(), norb, &lwork),
-                       "cusolver::getrf_bufferSize failed!");
-    work_gpu.resize(lwork);
-  }
-
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * when T_FP and TMAT are the same
    * @tparam TREAL real type
@@ -86,6 +89,7 @@ public:
   invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
   {
     const int norb = logdetT.rows();
+    resize(norb);
     cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), cudaMemcpyHostToDevice,
                                    hstream_),
                    "cudaMemcpyAsync failed!");
@@ -137,6 +141,7 @@ public:
   invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
   {
     const int norb = logdetT.rows();
+    resize(norb);
     Mat2_gpu.resize(norb, norb);
     cudaErrorCheck(cudaMemcpyAsync(Mat2_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), cudaMemcpyHostToDevice,
                                    hstream_),
