@@ -17,9 +17,7 @@
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/CUDAallocator.hpp"
 #include "CUDA/cuBLAS.hpp"
-#include "CUDA/cusolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "cuSolverInverter.hpp"
 
 namespace qmcplusplus
