@@ -89,6 +89,7 @@ public:
   enum CoordsToMove
   {
     POSITIONS,
+    POSITIONS_SPINS,
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
@@ -429,6 +430,8 @@ private:
   SetNonLocalMoveHandler setNonLocalMoveHandler_;
 
   static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
+
+  CoordsToMove coords;
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   friend class qmcplusplus::testing::DMCBatchedTest;
