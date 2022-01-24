@@ -675,7 +675,8 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 template<typename DU_TYPE>
 std::unique_ptr<DiracDeterminantBase> DiracDeterminant<DU_TYPE>::makeCopy(std::unique_ptr<SPOSet>&& spo) const
 {
-  return std::make_unique<DiracDeterminant<DU_TYPE>>(std::move(spo), FirstIndex, LastIndex, ndelay_);
+  return std::make_unique<DiracDeterminant<DU_TYPE>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
+                                                     matrix_inverter_kind_);
 }
 
 template<typename DU_TYPE>
