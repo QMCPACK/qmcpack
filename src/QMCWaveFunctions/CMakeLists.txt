@@ -157,7 +157,6 @@ set(FERMION_SRCS
     Fermion/DiracDeterminantBatched.cpp
     Fermion/SlaterDet.cpp
     Fermion/SlaterDetBuilder.cpp
-    Fermion/MultiSlaterDeterminant.cpp
     Fermion/MultiSlaterDeterminantFast.cpp
     Fermion/MultiDiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.2.cpp
@@ -165,7 +164,6 @@ set(FERMION_SRCS
     Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
     Fermion/SlaterDetWithBackflow.cpp
-    Fermion/MultiSlaterDeterminantWithBackflow.cpp
     SPOSetBuilderFactory.cpp
     TrialWaveFunction.cpp
     TWFdispatcher.cpp
