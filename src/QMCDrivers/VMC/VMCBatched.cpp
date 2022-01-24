@@ -208,8 +208,12 @@ void VMCBatched::runVMCStep(int crowd_id,
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
   const bool spin_move            = crowd.get_walker_elecs()[0].get().isSpinor();
-  advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
-                            accumulate_this_step);
+  if (spin_move)
+    advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                                    accumulate_this_step);
+  else
+    advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                              accumulate_this_step);
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -280,7 +284,12 @@ bool VMCBatched::run()
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
-      advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
+      const bool spin_move            = crowd.get_walker_elecs()[0].get().isSpinor();
+      if (spin_move)
+        advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
+                                        accumulate_this_step);
+      else
+        advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
     };
 
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
