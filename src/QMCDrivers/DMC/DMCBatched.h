@@ -132,6 +132,7 @@ private:
   ///walker controller for load-balance
   std::unique_ptr<WalkerControl> walker_controller_;
 
+  template<CoordsToMove COORDS>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,

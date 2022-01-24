@@ -189,12 +189,6 @@ template void VMCBatched::advanceWalkers<QMCDriverNew::POSITIONS>(const StateFor
                                                                   ContextForSteps& step_context,
                                                                   bool recompute,
                                                                   bool accumulate_this_step);
-template void VMCBatched::advanceWalkers<QMCDriverNew::POSITIONS_SPINS>(const StateForThread& sft,
-                                                                        Crowd& crowd,
-                                                                        QMCDriverNew::DriverTimers& timers,
-                                                                        ContextForSteps& step_context,
-                                                                        bool recompute,
-                                                                        bool accumulate_this_step);
 
 /** Thread body for VMC step
  *

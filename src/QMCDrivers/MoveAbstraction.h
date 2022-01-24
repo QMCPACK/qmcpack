@@ -68,6 +68,8 @@ public:
                             const int iat,
                             std::vector<PsiV>& ratios);
 
+  void updaterr(const int iat, std::vector<Real>& rr);
+
 private:
   std::vector<Pos> drifts_;
   std::vector<Pos> walker_deltas_;
@@ -89,12 +91,12 @@ private:
 };
 
 template<>
-MoveAbstraction<QMCDriverNew::POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                          const TWFdispatcher& twf_dispatcher,
-                                                          RandomGenerator& random_gen,
-                                                          const DriftModifierBase& drift_modifier,
-                                                          const int num_walkers,
-                                                          const int num_particles)
+inline MoveAbstraction<QMCDriverNew::POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
+                                                                 const TWFdispatcher& twf_dispatcher,
+                                                                 RandomGenerator& random_gen,
+                                                                 const DriftModifierBase& drift_modifier,
+                                                                 const int num_walkers,
+                                                                 const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
       twf_dispatcher_(twf_dispatcher),
       random_gen_(random_gen),
@@ -108,12 +110,12 @@ MoveAbstraction<QMCDriverNew::POSITIONS>::MoveAbstraction(const PSdispatcher& ps
 }
 
 template<>
-MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                                const TWFdispatcher& twf_dispatcher,
-                                                                RandomGenerator& random_gen,
-                                                                const DriftModifierBase& drift_modifier,
-                                                                const int num_walkers,
-                                                                const int num_particles)
+inline MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
+                                                                       const TWFdispatcher& twf_dispatcher,
+                                                                       RandomGenerator& random_gen,
+                                                                       const DriftModifierBase& drift_modifier,
+                                                                       const int num_walkers,
+                                                                       const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
       twf_dispatcher_(twf_dispatcher),
       random_gen_(random_gen),
@@ -131,20 +133,21 @@ MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::MoveAbstraction(const PSdispatch
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS>::generateDeltas()
+inline void MoveAbstraction<QMCDriverNew::POSITIONS>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_, random_gen_);
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::generateDeltas()
+inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_, random_gen_);
   makeGaussRandomWithEngine(walker_spindeltas_, random_gen_);
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
+inline void MoveAbstraction<QMCDriverNew::POSITIONS>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
+                                                                     const Real& invmass)
 {
   tauovermass_ = qmcdrv_input.get_tau() * invmass;
   oneover2tau_ = 0.5 / tauovermass_;
@@ -152,8 +155,8 @@ void MoveAbstraction<QMCDriverNew::POSITIONS>::setTauForGroup(const QMCDriverInp
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
-                                                                    const Real& invmass)
+inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
+                                                                           const Real& invmass)
 {
   tauovermass_     = qmcdrv_input.get_tau() * invmass;
   oneover2tau_     = 0.5 / tauovermass_;
@@ -164,7 +167,7 @@ void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::setTauForGroup(const QMCDri
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMoveWithDrift(
+inline void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMoveWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     const int iat)
@@ -179,7 +182,7 @@ void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMoveWithDrift(
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMoveWithDrift(
+inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMoveWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     const int iat)
@@ -202,7 +205,7 @@ void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMoveWithDrift(
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMove(const int iat)
+inline void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMove(const int iat)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
@@ -212,7 +215,7 @@ void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMove(const int iat)
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMove(const int iat)
+inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMove(const int iat)
 {
   auto delta_r_start    = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end      = delta_r_start + num_walkers_;
@@ -226,20 +229,21 @@ void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMove(const int i
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat)
+inline void MoveAbstraction<QMCDriverNew::POSITIONS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs,
+                                                               const int iat)
 {
   ps_dispatcher_.flex_makeMove(elecs, iat, drifts_);
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs,
-                                                              const int iat)
+inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs,
+                                                                     const int iat)
 {
   ps_dispatcher_.flex_makeMoveWithSpin(elecs, iat, drifts_, spindrifts_);
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS>::updateGreensFunctionWithDrift(
+inline void MoveAbstraction<QMCDriverNew::POSITIONS>::updateGreensFunctionWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     Crowd& crowd,
@@ -266,7 +270,7 @@ void MoveAbstraction<QMCDriverNew::POSITIONS>::updateGreensFunctionWithDrift(
 }
 
 template<>
-void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::updateGreensFunctionWithDrift(
+inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::updateGreensFunctionWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     Crowd& crowd,
@@ -310,13 +314,24 @@ void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::updateGreensFunctionWithDri
                    return loggb - halfovertau * spindrift * spindrift;
                  });
 }
+
 template<QMCDriverNew::CoordsToMove COORDS>
-void MoveAbstraction<COORDS>::updateGreensFunction(const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                                   const RefVectorWithLeader<ParticleSet>& elecs,
-                                                   const int iat,
-                                                   std::vector<PsiV>& ratios)
+inline void MoveAbstraction<COORDS>::updateGreensFunction(const RefVectorWithLeader<TrialWaveFunction>& twfs,
+                                                          const RefVectorWithLeader<ParticleSet>& elecs,
+                                                          const int iat,
+                                                          std::vector<PsiV>& ratios)
 {
   twf_dispatcher_.flex_calcRatio(twfs, elecs, iat, ratios);
+}
+
+template<QMCDriverNew::CoordsToMove COORDS>
+inline void MoveAbstraction<COORDS>::updaterr(const int iat, std::vector<Real>& rr)
+{
+  auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
+  auto delta_r_end   = delta_r_start + num_walkers_;
+  assert(rr.size() == delta_r_end - delta_r_start);
+  std::transform(delta_r_start, delta_r_end, rr.begin(),
+                 [t = tauovermass_](auto& delta_r) { return t * dot(delta_r, delta_r); });
 }
 
 } // namespace qmcplusplus
