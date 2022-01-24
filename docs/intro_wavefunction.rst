@@ -342,7 +342,7 @@ Additional information:
 .. _spo-lcao:
 
 Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of localized basis sets to expand the ``sposet``. The general form of a single particle orbital in this case is given by:
 
@@ -833,7 +833,7 @@ Multideterminant wavefunctions
 ``multideterminant`` element:
 
 
-.. _Table3:
+.. _Table_msd:
 .. table::
 
      +-----------------+--------------------+
