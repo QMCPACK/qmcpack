@@ -91,15 +91,15 @@ void test_He(bool transform)
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSet::ValueVector_t values;
-    SPOSet::GradVector_t dpsi;
-    SPOSet::ValueVector_t d2psi;
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
     values.resize(1);
     dpsi.resize(1);
     d2psi.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
+    ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -117,7 +117,7 @@ void test_He(bool transform)
     REQUIRE(d2psi[0] == Approx(-20.03410564));
 
 
-    ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
@@ -208,14 +208,14 @@ void test_Ne(bool transform)
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSet::ValueVector_t values;
-    SPOSet::GradVector_t dpsi;
-    SPOSet::ValueVector_t d2psi;
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
     values.resize(5);
     dpsi.resize(5);
     d2psi.resize(5);
 
-    ParticleSet::SingleParticlePos_t newpos(0.00001, 0.0, 0.0);
+    ParticleSet::SingleParticlePos newpos(0.00001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -236,7 +236,7 @@ void test_Ne(bool transform)
     REQUIRE(dpsi[0][2] == Approx(0));
 
 
-    ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
     sposet->evaluateValue(elec, 0, values);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
@@ -329,14 +329,14 @@ void test_HCN(bool transform)
     SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
 
-    SPOSet::ValueVector_t values;
-    SPOSet::GradVector_t dpsi;
-    SPOSet::ValueVector_t d2psi;
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
     values.resize(7);
     dpsi.resize(7);
     d2psi.resize(7);
 
-    ParticleSet::SingleParticlePos_t newpos;
+    ParticleSet::SingleParticlePos newpos;
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -396,7 +396,7 @@ void test_HCN(bool transform)
     REQUIRE(d2psi[6] == Approx(0));
 
     //==========Hessian and Grad Hessian Test==========
-    SPOSet::HessVector_t dhpsi;
+    SPOSet::HessVector dhpsi;
     dhpsi.resize(7);
 
     sposet->evaluateVGH(elec, 0, values, dpsi, dhpsi);
@@ -417,10 +417,10 @@ void test_HCN(bool transform)
     /////////////////////////////////////////////////////////////////////////////
     //Now we're going to test the API's called by SPOSet for higher derivatives//
     /////////////////////////////////////////////////////////////////////////////
-    SPOSet::ValueMatrix_t psiM(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::GradMatrix_t dpsiM(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::HessMatrix_t hesspsiV(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::GGGMatrix_t d3psiV(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::ValueMatrix psiM(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix dpsiM(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::HessMatrix hesspsiV(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GGGMatrix d3psiV(elec.R.size(), sposet->getOrbitalSetSize());
 
     sposet->evaluate_notranspose(elec, 0, elec.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
 
@@ -500,13 +500,13 @@ void test_HCN(bool transform)
 
 
     //Move electron 0 to some nontrivial position:
-    ParticleSet::SingleParticlePos_t disp(0.02, -0.1, 0.05);
+    ParticleSet::SingleParticlePos disp(0.02, -0.1, 0.05);
     elec.makeMove(0, disp);
 
 
-    SPOSet::GradMatrix_t dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::HessMatrix diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 0, dionpsi, diongradpsi, dionlaplpsi);
 

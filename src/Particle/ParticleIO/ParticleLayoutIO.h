@@ -22,22 +22,22 @@ namespace qmcplusplus
 {
 class LatticeParser
 {
-  typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-  ParticleLayout_t& ref_;
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  ParticleLayout& ref_;
 
 public:
-  LatticeParser(ParticleLayout_t& lat) : ref_(lat) {}
+  LatticeParser(ParticleLayout& lat) : ref_(lat) {}
   bool put(xmlNodePtr cur);
 };
 
 
 class LatticeXMLWriter
 {
-  typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-  const ParticleLayout_t& ref_;
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  const ParticleLayout& ref_;
 
 public:
-  LatticeXMLWriter(const ParticleLayout_t& lat) : ref_(lat) {}
+  LatticeXMLWriter(const ParticleLayout& lat) : ref_(lat) {}
   bool get(std::ostream&) const;
   xmlNodePtr createNode();
 };

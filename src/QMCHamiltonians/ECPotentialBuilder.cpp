@@ -346,7 +346,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     RealType rmax(0.0);
     app_log() << "  ECPotential for " << species << std::endl;
     std::unique_ptr<NonLocalECPComponent> mynnloc;
-    typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
+    using CubicSplineFuncType = OneDimCubicSpline<RealType>;
     for (int ij = 0; ij < npotentials; ij++)
     {
       int angmom, npoints;

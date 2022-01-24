@@ -263,7 +263,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     //Collect positions from ParticleSets
     int p = 0;
     {
-      const ParticlePos_t& Rs = Pdynamic->R;
+      const ParticlePos& Rs = Pdynamic->R;
       for (int i = 0; i < Rs.size(); i++)
       {
         R[p] = Rs[i];
@@ -272,7 +272,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     }
     if (Pstatic && !ion_points)
     {
-      const ParticlePos_t& Rs = Pstatic->R;
+      const ParticlePos& Rs = Pstatic->R;
       for (int i = 0; i < Rs.size(); i++)
       {
         R[p] = Rs[i];

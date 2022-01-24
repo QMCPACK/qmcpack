@@ -21,9 +21,9 @@
 #include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus
 {
-typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-typedef LRCoulombSingleton::GridType GridType;
-typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+using GridType       = LRCoulombSingleton::GridType;
+using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 class DensityEstimator : public OperatorBase
 {

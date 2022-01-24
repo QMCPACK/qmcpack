@@ -31,7 +31,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   Communicate* c = OHMMS::Controller;
 
   // diamondC_2x1x1
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0) = 6.7463223;
   lattice.R(0, 1) = 6.7463223;
   lattice.R(0, 2) = 0.0;
@@ -95,9 +95,9 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   std::unique_ptr<SPOSet> spo(spo_ptr->makeClone());
 
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)

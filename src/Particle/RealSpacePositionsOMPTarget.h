@@ -55,7 +55,7 @@ public:
 
   size_t size() const override { return RSoA_hostview.size(); }
 
-  void setAllParticlePos(const ParticlePos_t& R) override
+  void setAllParticlePos(const ParticlePos& R) override
   {
     resize(R.size());
     RSoA_hostview.copyIn(R);

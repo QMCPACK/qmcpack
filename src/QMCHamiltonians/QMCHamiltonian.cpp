@@ -822,7 +822,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
 }
 void QMCHamiltonian::evaluateElecGrad(ParticleSet& P,
                                       TrialWaveFunction& psi,
-                                      ParticleSet::ParticlePos_t& Egrad,
+                                      ParticleSet::ParticlePos& Egrad,
                                       RealType delta)
 {
   int nelec = P.getTotalNum();
@@ -860,11 +860,11 @@ void QMCHamiltonian::evaluateElecGrad(ParticleSet& P,
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
                                                                    ParticleSet& ions,
                                                                    TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos_t& hf_term,
-                                                                   ParticleSet::ParticlePos_t& pulay_terms,
-                                                                   ParticleSet::ParticlePos_t& wf_grad)
+                                                                   ParticleSet::ParticlePos& hf_term,
+                                                                   ParticleSet::ParticlePos& pulay_terms,
+                                                                   ParticleSet::ParticlePos& wf_grad)
 {
-  ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
+  ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
   RealType localEnergy = 0.0;
 
@@ -882,11 +882,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
                                                                                 ParticleSet& ions,
                                                                                 TrialWaveFunction& psi,
-                                                                                ParticleSet::ParticlePos_t& hf_term,
-                                                                                ParticleSet::ParticlePos_t& pulay_terms,
-                                                                                ParticleSet::ParticlePos_t& wf_grad)
+                                                                                ParticleSet::ParticlePos& hf_term,
+                                                                                ParticleSet::ParticlePos& pulay_terms,
+                                                                                ParticleSet::ParticlePos& wf_grad)
 {
-  ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
+  ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
   RealType localEnergy = 0.0;
 

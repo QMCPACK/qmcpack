@@ -19,7 +19,7 @@ inline int count_electrons(const ParticleSet& ions) { return ions.getTotalNum() 
 inline auto create_prim_lattice()
 {
   Lattice::Tensor_t graphite_cell = {4.65099, 0.0, 0.0, -2.3255, 4.02788, 0.0, 0.0, 0.0, 12.67609393};
-  ParticleSet::ParticleLayout_t prim_lat;
+  ParticleSet::ParticleLayout prim_lat;
   // set PBC in x,y,z directions
   prim_lat.BoxBConds = 1;
   // set the lattice
@@ -60,7 +60,7 @@ void tile_cell(ParticleSet& ions, Tensor<int, 3>& tmat)
 template<typename PT>
 void graphite_4x4(PT& R)
 {
-  typedef typename PT::Type_t postype;
+  using postype = typename PT::Type_t;
 
   R[0]  = postype(0.000000, 0.000000, 0.000000);
   R[1]  = postype(-0.000000, 2.685253, 0.000000);

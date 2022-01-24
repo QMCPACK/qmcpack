@@ -61,7 +61,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
 #endif
   // diamondC_2x1x1
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0)   = 6.7463223;
   lattice.R(0, 1)   = 6.7463223;
   lattice.R(0, 2)   = 0.0;

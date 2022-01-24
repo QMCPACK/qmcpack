@@ -31,8 +31,8 @@ struct scalar_traits
   {
     DIM = 1
   };
-  typedef T real_type;
-  typedef T value_type;
+  using real_type  = T;
+  using value_type = T;
   static inline T* get_address(T* a) { return a; }
 };
 
@@ -43,8 +43,8 @@ struct scalar_traits<std::complex<T>>
   {
     DIM = 2
   };
-  typedef T real_type;
-  typedef std::complex<T> value_type;
+  using real_type  = T;
+  using value_type = std::complex<T>;
   static inline T* get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
 };
 
@@ -55,7 +55,7 @@ struct container_proxy
   {
     DIM = scalar_traits<T>::DIM
   };
-  typedef typename scalar_traits<T>::real_type* pointer;
+  using pointer = typename scalar_traits<T>::real_type*;
   T& ref;
   inline container_proxy(T& a) : ref(a) {}
   inline size_t size() const { return DIM; }
@@ -69,7 +69,7 @@ struct container_proxy<TinyVector<T, D>>
   {
     DIM = scalar_traits<T>::DIM * D
   };
-  typedef typename scalar_traits<T>::real_type* pointer;
+  using pointer = typename scalar_traits<T>::real_type*;
   TinyVector<T, D>& ref;
   inline container_proxy(TinyVector<T, D>& a) : ref(a) {}
   inline size_t size() const { return DIM; }
@@ -83,7 +83,7 @@ struct container_proxy<Tensor<T, D>>
   {
     DIM = scalar_traits<T>::DIM * D * D
   };
-  typedef typename scalar_traits<T>::real_type* pointer;
+  using pointer = typename scalar_traits<T>::real_type*;
   Tensor<T, D>& ref;
   inline container_proxy(Tensor<T, D>& a) : ref(a) {}
   inline size_t size() const { return DIM; }
@@ -97,7 +97,7 @@ struct container_proxy<std::vector<T>>
   {
     DIM = scalar_traits<T>::DIM
   };
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   std::vector<T>& ref;
   inline container_proxy(std::vector<T>& a) : ref(a) {}
   inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
@@ -122,7 +122,7 @@ struct container_proxy<std::vector<bool>>
   {
     DIM = 1
   };
-  typedef int* pointer;
+  using pointer = int*;
   std::vector<bool>& ref;
   std::vector<int> my_copy;
   inline container_proxy(std::vector<bool>& a) : ref(a)
@@ -142,8 +142,8 @@ struct container_proxy<std::vector<TinyVector<T, D>>>
   {
     DIM = D * scalar_traits<T>::DIM
   };
-  typedef typename container_proxy<T>::pointer pointer;
-  typedef std::vector<TinyVector<T, D>> data_type;
+  using pointer   = typename container_proxy<T>::pointer;
+  using data_type = std::vector<TinyVector<T, D>>;
   data_type& ref;
   inline container_proxy(data_type& a) : ref(a) {}
   inline size_t size() const { return ref.size() * DIM; }
@@ -158,7 +158,7 @@ struct container_proxy<PooledData<T>>
   {
     DIM = 1
   };
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   PooledData<T>& ref;
   inline container_proxy(PooledData<T>& a) : ref(a) {}
   inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
@@ -177,7 +177,7 @@ struct container_proxy<Vector<T>>
   {
     DIM = scalar_traits<T>::DIM
   };
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   Vector<T>& ref;
   inline container_proxy(Vector<T>& a) : ref(a) {}
   inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
@@ -196,7 +196,7 @@ struct container_proxy<Matrix<T>>
   {
     DIM = scalar_traits<T>::DIM
   };
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   Matrix<T>& ref;
   inline container_proxy(Matrix<T>& a) : ref(a) {}
   inline size_t size() const { return ref.size(); }
@@ -204,9 +204,9 @@ struct container_proxy<Matrix<T>>
   template<typename I>
   inline void resize(I* n, int d)
   {
-    if ( d != 2 )
+    if (d != 2)
       throw std::runtime_error("OhmmsMatrix can only be resized with int[2].");
-    ref.resize(n[0],n[1]);
+    ref.resize(n[0], n[1]);
   }
 };
 
@@ -217,8 +217,8 @@ struct container_proxy<Vector<TinyVector<T, D>>>
   {
     DIM = D * scalar_traits<T>::DIM
   };
-  typedef typename container_proxy<T>::pointer pointer;
-  typedef Vector<TinyVector<T, D>> data_type;
+  using pointer   = typename container_proxy<T>::pointer;
+  using data_type = Vector<TinyVector<T, D>>;
   data_type& ref;
   inline container_proxy(data_type& a) : ref(a) {}
   inline size_t size() const { return ref.size() * DIM; }
@@ -228,7 +228,7 @@ struct container_proxy<Vector<TinyVector<T, D>>>
 template<typename T, unsigned D>
 struct container_proxy<Array<T, D>>
 {
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   Array<T, D>& ref;
   inline container_proxy(Array<T, D>& a) : ref(a) {}
   inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
@@ -239,7 +239,7 @@ template<typename T, class Alloc>
 struct container_proxy<boost::multi::array<T,2,Alloc> >
 {
   enum {DIM=scalar_traits<T>::DIM};
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   boost::multi::array<T,2,Alloc>& ref;
   inline container_proxy(boost::multi::array<T,2,Alloc>& a):ref(a) {}
   inline size_t size() const
@@ -269,7 +269,7 @@ template<typename T>
 struct container_proxy<boost::multi::array_ref<T,2> >
 {
   enum {DIM=scalar_traits<T>::DIM};
-  typedef typename container_proxy<T>::pointer pointer;
+  using pointer = typename container_proxy<T>::pointer;
   boost::multi::array_ref<T,2>& ref;
   inline container_proxy(boost::multi::array_ref<T,2>& a):ref(a) {}
   inline size_t size() const

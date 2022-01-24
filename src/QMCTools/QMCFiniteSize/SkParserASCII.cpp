@@ -7,8 +7,8 @@
 
 namespace qmcplusplus
 {
-typedef SkParserASCII::RealType RealType;
-typedef SkParserASCII::PosType PosType;
+using RealType = SkParserASCII::RealType;
+using PosType  = SkParserASCII::PosType;
 
 vector<vector<RealType>> SkParserASCII::read_sk_file(const string& fname)
 {

@@ -27,7 +27,7 @@ struct GaussianCombo
   // Caution: most other code assumes value_type can only be real
   // but maybe it can be different precision
   // Possibly one of these types is the full precision and the other reduced precision
-  typedef T real_type;
+  using real_type = T;
   real_type Y, dY, d2Y, d3Y;
 
   struct BasicGaussian
@@ -71,14 +71,14 @@ struct GaussianCombo
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u)
     {
       real_type v = std::exp(MinusSigma * rr);
-      du  += CoeffP * r * v;
+      du += CoeffP * r * v;
       d2u += (CoeffP + CoeffPP * rr) * v;
       return Coeff * v;
     }
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u, real_type& d3u)
     {
       real_type v = std::exp(MinusSigma * rr);
-      du  += CoeffP * r * v;
+      du += CoeffP * r * v;
       d2u += (CoeffP + CoeffPP * rr) * v;
       d3u += (CoeffPPP1 * r + CoeffPPP2 * r * rr) * v;
       return Coeff * v;

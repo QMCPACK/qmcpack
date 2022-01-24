@@ -52,7 +52,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);
@@ -104,13 +104,13 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
 </tmp> ";
-  okay = doc.parseFromString(xmltext);
+  okay    = doc.parseFromString(xmltext);
   REQUIRE(okay);
 
   root = doc.getRoot();
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
-  auto jas = std::make_unique<RPAJastrow>(elec_);
+  auto jas            = std::make_unique<RPAJastrow>(elec_);
   jas->put(root);
 
   // update all distance tables

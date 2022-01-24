@@ -59,13 +59,13 @@ public:
 
 private:
   ///PooledData<T> is used to define the shape of multi-dimensional array
-  typedef PooledData<OHMMS_PRECISION> BufferType;
+  using BufferType = PooledData<OHMMS_PRECISION>;
   std::vector<Communicate::request> myRequest;
   std::vector<BufferType*> RemoteData;
   int block;
 
   //     //define some types for the FW collection
-  //     typedef std::vector<ForwardWalkingData> FWBufferType;
+  //     using FWBufferType = std::vector<ForwardWalkingData>;
   //     std::vector<FWBufferType*> FWData;
   //     std::vector<std::vector<int> > FWCountData;
 

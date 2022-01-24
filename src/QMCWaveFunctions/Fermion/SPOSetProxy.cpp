@@ -40,7 +40,7 @@ void SPOSetProxy::setOrbitalSetSize(int norbs)
   d2psiV.resize(norbs);
 }
 
-void SPOSetProxy::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void SPOSetProxy::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   refPhi->evaluateValue(P, iat, psiV);
   std::copy(psiV.begin(), psiV.begin() + OrbitalSetSize, psi.begin());
@@ -48,7 +48,7 @@ void SPOSetProxy::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& ps
   std::copy(psiV.begin(), psiV.end(), psiM[iat]);
 }
 
-void SPOSetProxy::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SPOSetProxy::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   refPhi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   std::copy(psiV.begin(), psiV.begin() + OrbitalSetSize, psi.begin());
@@ -63,9 +63,9 @@ void SPOSetProxy::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi,
 void SPOSetProxy::evaluate(const ParticleSet& P,
                            int first,
                            int last,
-                           ValueMatrix_t& logdet,
-                           GradMatrix_t& dlogdet,
-                           ValueMatrix_t& d2logdet)
+                           ValueMatrix& logdet,
+                           GradMatrix& dlogdet,
+                           ValueMatrix& d2logdet)
 {
   //evaluate all using notranspose
   refPhi->evaluate_notranspose(P, first, last, psiM, dpsiM, d2psiM);
@@ -83,9 +83,9 @@ void SPOSetProxy::evaluate(const ParticleSet& P,
 void SPOSetProxy::evaluate_notranspose(const ParticleSet& P,
                                        int first,
                                        int last,
-                                       ValueMatrix_t& logdet,
-                                       GradMatrix_t& dlogdet,
-                                       ValueMatrix_t& d2logdet)
+                                       ValueMatrix& logdet,
+                                       GradMatrix& dlogdet,
+                                       ValueMatrix& d2logdet)
 {
   //evaluate all
   refPhi->evaluate_notranspose(P, first, last, psiM, dpsiM, d2psiM);
@@ -101,9 +101,9 @@ void SPOSetProxy::evaluate_notranspose(const ParticleSet& P,
 void SPOSetProxy::evaluate(const ParticleSet& P,
                            int first,
                            int last,
-                           ValueMatrix_t& logdet,
-                           GradMatrix_t& dlogdet,
-                           HessMatrix_t& grad_grad_logdet)
+                           ValueMatrix& logdet,
+                           GradMatrix& dlogdet,
+                           HessMatrix& grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }
@@ -111,10 +111,10 @@ void SPOSetProxy::evaluate(const ParticleSet& P,
 void SPOSetProxy::evaluate(const ParticleSet& P,
                            int first,
                            int last,
-                           ValueMatrix_t& logdet,
-                           GradMatrix_t& dlogdet,
-                           HessMatrix_t& grad_grad_logdet,
-                           GGGMatrix_t& grad_grad_grad_logdet)
+                           ValueMatrix& logdet,
+                           GradMatrix& dlogdet,
+                           HessMatrix& grad_grad_logdet,
+                           GGGMatrix& grad_grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }
@@ -122,9 +122,9 @@ void SPOSetProxy::evaluate(const ParticleSet& P,
 void SPOSetProxy::evaluate_notranspose(const ParticleSet& P,
                                        int first,
                                        int last,
-                                       ValueMatrix_t& logdet,
-                                       GradMatrix_t& dlogdet,
-                                       HessMatrix_t& grad_grad_logdet)
+                                       ValueMatrix& logdet,
+                                       GradMatrix& dlogdet,
+                                       HessMatrix& grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }
@@ -132,10 +132,10 @@ void SPOSetProxy::evaluate_notranspose(const ParticleSet& P,
 void SPOSetProxy::evaluate_notranspose(const ParticleSet& P,
                                        int first,
                                        int last,
-                                       ValueMatrix_t& logdet,
-                                       GradMatrix_t& dlogdet,
-                                       HessMatrix_t& grad_grad_logdet,
-                                       GGGMatrix_t& grad_grad_grad_logdet)
+                                       ValueMatrix& logdet,
+                                       GradMatrix& dlogdet,
+                                       HessMatrix& grad_grad_logdet,
+                                       GGGMatrix& grad_grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }

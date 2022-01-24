@@ -30,8 +30,8 @@ public:
   ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     G = 0.0;
     L = 0.0;

@@ -336,7 +336,7 @@ void EinsplineSetBuilder::TileIons()
   //  IonTypes.resize(primPos.size()*numCopies);
   //  IonPos.resize  (primPos.size()*numCopies);
   //  int maxCopies = 10;
-  //  typedef TinyVector<double,3> Vec3;
+  //  using Vec3 = TinyVector<double,3>;
   //  int index=0;
   //  for (int i0=-maxCopies; i0<=maxCopies; i0++)
   //    for (int i1=-maxCopies; i1<=maxCopies; i1++)

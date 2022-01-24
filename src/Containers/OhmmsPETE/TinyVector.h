@@ -48,7 +48,7 @@ namespace qmcplusplus
 template<class T, unsigned D>
 struct TinyVector
 {
-  typedef T Type_t;
+  using Type_t = T;
   enum
   {
     Size = D
@@ -155,7 +155,7 @@ struct TinyVector
   inline int byteSize() const { return D * sizeof(T); }
 
   inline TinyVector& operator=(const TinyVector& rhs) = default;
-  inline TinyVector& operator=(TinyVector&& rhs) = default;
+  inline TinyVector& operator=(TinyVector&& rhs)      = default;
 
   template<class T1>
   inline TinyVector<T, D>& operator=(const TinyVector<T1, D>& rhs)
@@ -201,16 +201,20 @@ struct TinyVector
    *
    *  not optimized but useful for testing
    */
-  bool operator==(const TinyVector<T,D>& that) const {
-    for( int i = 0; i < D; ++i) {
+  bool operator==(const TinyVector<T, D>& that) const
+  {
+    for (int i = 0; i < D; ++i)
+    {
       if ((*this)[i] != that[i])
         return false;
     }
     return true;
   }
-  
-  bool operator!=(const TinyVector<T,D>& that) const {
-    for( int i = 0; i < D; ++i) {
+
+  bool operator!=(const TinyVector<T, D>& that) const
+  {
+    for (int i = 0; i < D; ++i)
+    {
       if ((*this)[i] == that[i])
         return false;
     }

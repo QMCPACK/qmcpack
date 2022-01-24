@@ -120,10 +120,10 @@ public:
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(const ParticleSet& P) override;
@@ -142,8 +142,8 @@ public:
   /** compute G and L after the sweep
    */
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch = false) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;

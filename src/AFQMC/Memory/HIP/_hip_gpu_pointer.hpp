@@ -342,7 +342,7 @@ struct hip_gpu_allocator
   template<class U>
   struct rebind
   {
-    typedef hip_gpu_allocator<U> other;
+    using other = hip_gpu_allocator<U>;
   };
   using element_type     = T;
   using value_type       = T;

@@ -33,9 +33,9 @@ namespace qmcplusplus
 class SpeciesSet
 {
 public:
-  typedef double Scalar_t;
-  typedef std::vector<Scalar_t> SpeciesAttrib_t;
-  typedef std::vector<SpeciesAttrib_t> AttribList_t;
+  using Scalar_t        = double;
+  using SpeciesAttrib_t = std::vector<Scalar_t>;
+  using AttribList_t    = std::vector<SpeciesAttrib_t>;
 
   //! The number of species
   unsigned TotalNum = 0;

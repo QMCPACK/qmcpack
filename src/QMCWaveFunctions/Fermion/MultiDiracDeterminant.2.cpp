@@ -26,9 +26,9 @@ namespace qmcplusplus
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
                                                                     ValueType det0,
                                                                     ValueType* restrict ratios,
-                                                                    const ValueMatrix_t& psiinv,
-                                                                    const ValueMatrix_t& psi,
-                                                                    ValueMatrix_t& dotProducts,
+                                                                    const ValueMatrix& psiinv,
+                                                                    const ValueMatrix& psi,
+                                                                    ValueMatrix& dotProducts,
                                                                     const std::vector<int>& data,
                                                                     const std::vector<std::pair<int, int>>& pairs,
                                                                     const std::vector<RealType>& sign)
@@ -62,10 +62,10 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
-                                                               ValueVector_t& ratios,
-                                                               const ValueMatrix_t& psiinv,
-                                                               const ValueMatrix_t& psi,
-                                                               ValueMatrix_t& dotProducts,
+                                                               ValueVector& ratios,
+                                                               const ValueMatrix& psiinv,
+                                                               const ValueMatrix& psi,
+                                                               ValueMatrix& dotProducts,
                                                                const std::vector<int>& data,
                                                                const std::vector<std::pair<int, int>>& pairs,
                                                                const std::vector<RealType>& sign)
@@ -102,10 +102,10 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
                                                                int iat,
-                                                               GradMatrix_t& ratios,
-                                                               ValueMatrix_t& psiinv,
-                                                               ValueMatrix_t& psi,
-                                                               ValueMatrix_t& dotProducts,
+                                                               GradMatrix& ratios,
+                                                               ValueMatrix& psiinv,
+                                                               ValueMatrix& psi,
+                                                               ValueMatrix& dotProducts,
                                                                std::vector<int>& data,
                                                                std::vector<std::pair<int, int>>& pairs,
                                                                std::vector<RealType>& sign,
@@ -148,10 +148,10 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
                                                                int iat,
-                                                               ValueMatrix_t& ratios,
-                                                               ValueMatrix_t& psiinv,
-                                                               ValueMatrix_t& psi,
-                                                               ValueMatrix_t& dotProducts,
+                                                               ValueMatrix& ratios,
+                                                               ValueMatrix& psiinv,
+                                                               ValueMatrix& psi,
+                                                               ValueMatrix& dotProducts,
                                                                std::vector<int>& data,
                                                                std::vector<std::pair<int, int>>& pairs,
                                                                std::vector<RealType>& sign)
@@ -198,7 +198,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 
   det_leader.UpdateMode = ORB_PBYP_RATIO;
   /*  FOR YE: THIS IS NOT compiling...
-  std::vector<RefVector<Vector<ValueVector_t>>> psiV_list;
+  std::vector<RefVector<Vector<ValueVector>>> psiV_list;
   for (size_t iw=0;iw<nw;iw++)
   {
     MultiDiracDeterminant& det= (det_list[iw]);

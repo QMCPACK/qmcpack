@@ -30,18 +30,18 @@ namespace qmcplusplus
  * - RT real data type
  * - FNOUT final numerical functor
  *  An example is in CBSOBuilder.h which uses CubicBspline
- *  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
- *  typedef CubicSplineSingle<RealType,SplineEngineType> RadialOrbitalType;
+ *  using SplineEngineType = CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>;
+ *  using RadialOrbitalType = CubicSplineSingle<RealType,SplineEngineType>;
  */
 template<typename RT, typename FNOUT>
 struct CubicSplineSingle : public OptimizableFunctorBase
 {
   ///typedef for the value_type
-  typedef RT value_type;
+  using value_type = RT;
   ///typedef of the source functor
-  typedef OptimizableFunctorBase FNIN;
+  using FNIN = OptimizableFunctorBase;
   ///typedef for the grid
-  typedef OneDimGridBase<real_type> grid_type;
+  using grid_type = OneDimGridBase<real_type>;
 
   // mmorales: until I figure out how to go around this
   int NumParams;
@@ -218,11 +218,11 @@ template<typename RT>
 struct CubicSplineBasisSet : public OptimizableFunctorBase
 {
   ///typedef of the source functor
-  typedef OptimizableFunctorBase FNIN;
+  using FNIN = OptimizableFunctorBase;
   ///typedef for the argument
-  typedef CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS> FNOUT;
+  using FNOUT = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
   ///typedef for the grid
-  typedef OneDimGridBase<real_type> grid_type;
+  using grid_type = OneDimGridBase<real_type>;
 
   FNIN* InFunc;
   FNOUT* OutFunc;

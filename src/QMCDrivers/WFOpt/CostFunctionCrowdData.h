@@ -28,7 +28,7 @@ namespace qmcplusplus
 class CostFunctionCrowdData
 {
 public:
-  typedef qmcplusplus::QMCTraits::RealType Return_rt;
+  using Return_rt = qmcplusplus::QMCTraits::RealType;
 
   /// Create the arrays of crowd_size and create object copies
   CostFunctionCrowdData(int crowd_size,

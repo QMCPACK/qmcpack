@@ -21,8 +21,8 @@ template<typename CONT>
 class PointerPool
 {
 public:
-  typedef CONT buffer_type;
-  typedef typename CONT::pointer pointer;
+  using buffer_type = CONT;
+  using pointer     = typename CONT::pointer;
 
   // Local data routines
   pointer getPointer(int index, buffer_type& buffer) { return &(buffer[offsets[index]]); }

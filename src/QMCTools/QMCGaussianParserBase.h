@@ -33,8 +33,8 @@ using namespace qmcplusplus;
 
 struct QMCGaussianParserBase
 {
-  typedef double value_type;
-  typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
+  using value_type        = double;
+  using SingleParticlePos = ParticleSet::SingleParticlePos;
 
   bool multideterminant;
   bool multidetH5;

@@ -71,7 +71,7 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   //Now build the wavefunction.  This will be needed to test \Nabla_i E_L and \Nabla_i logPsi contributions.
   //For now, just take them from a reference calculation.
 
-  using Force_t = ParticleSet::ParticlePos_t;
+  using Force_t = ParticleSet::ParticlePos;
   Force_t dE_L;
   Force_t el_contribution;
   Force_t psi_contribution;

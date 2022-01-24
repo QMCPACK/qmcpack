@@ -25,7 +25,7 @@ namespace qmcplusplus
 class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
 
   /** constructor
    * \param comm communicator

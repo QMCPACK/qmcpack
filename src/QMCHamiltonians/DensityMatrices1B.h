@@ -43,15 +43,15 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef ValueType Value_t;
-  typedef GradType Grad_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef Vector<Value_t> Vector_t;
-  typedef Matrix<Value_t> Matrix_t;
-  typedef std::vector<PosType> pts_t;
-  typedef std::vector<RealType> dens_t;
+  using Value_t     = ValueType;
+  using Grad_t      = GradType;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  using Lattice_t   = ParticleSet::ParticleLayout;
+  using Vector_t    = Vector<Value_t>;
+  using Matrix_t    = Matrix<Value_t>;
+  using pts_t       = std::vector<PosType>;
+  using dens_t      = std::vector<RealType>;
 
   enum integrators
   {
@@ -78,11 +78,11 @@ public:
   //data members
   bool energy_mat;
   CompositeSPOSet basis_functions;
-  ValueVector_t basis_values;
-  ValueVector_t basis_norms;
-  GradVector_t basis_gradients;
-  ValueVector_t basis_laplacians;
-  ValueVector_t integrated_values;
+  ValueVector basis_values;
+  ValueVector basis_norms;
+  GradVector basis_gradients;
+  ValueVector basis_laplacians;
+  ValueVector integrated_values;
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;

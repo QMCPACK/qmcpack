@@ -64,13 +64,13 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   };
   //@{
   ///the type of scalar
-  typedef T Scalar_t;
+  using Scalar_t = T;
   ///the type of a D-dimensional position vector
-  typedef TinyVector<T, D> SingleParticlePos_t;
+  using SingleParticlePos = TinyVector<T, D>;
   ///the type of a D-dimensional index vector
-  typedef TinyVector<int, D> SingleParticleIndex_t;
+  using SingleParticleIndex = TinyVector<int, D>;
   ///the type of a D-dimensional Tensor
-  typedef Tensor<T, D> Tensor_t;
+  using Tensor_t = Tensor<T, D>;
   //@}
 
   ///true, if off-diagonal elements are zero so that other classes can take advantage of this
@@ -104,26 +104,26 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   ///Metric tensor for G vectors
   Tensor_t Mg;
   ///Length[idim] length of the idim-th lattice vector
-  SingleParticlePos_t Length;
+  SingleParticlePos Length;
   ///OneOverLength[idim] 1/length of the idim-th lattice vector
-  SingleParticlePos_t OneOverLength;
+  SingleParticlePos OneOverLength;
   ///Center of the cell sum(Rv[i])/2
-  SingleParticlePos_t Center;
+  SingleParticlePos Center;
   /**@brief Real-space unit vectors.
    *
    *Introduced to efficiently return one vector at a time.
    *Rv[i] is D-dim vector of the ith direction.
    */
-  TinyVector<SingleParticlePos_t, D> Rv;
+  TinyVector<SingleParticlePos, D> Rv;
   /**@brief Reciprocal unit vectors.
    *
    *Introduced to efficiently return one vector at a time.
    *Gv[i] is D-dim vector of the ith direction.
    */
-  TinyVector<SingleParticlePos_t, D> Gv;
+  TinyVector<SingleParticlePos, D> Gv;
   //@}
   //angles between the two lattice vectors
-  SingleParticlePos_t ABC;
+  SingleParticlePos ABC;
   ///true, the lattice is defined by the input instead of an artificial default
   bool explicitly_defined;
 
@@ -134,27 +134,27 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
    *@return The lattice vector of the ith direction
    *@brief Provide interfaces familiar to fotran users
    */
-  inline SingleParticlePos_t a(int i) const { return Rv[i]; }
+  inline SingleParticlePos a(int i) const { return Rv[i]; }
 
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The reciprocal vector of the ith direction
    *@brief Provide interfaces familiar to fotran users
    */
-  inline SingleParticlePos_t b(int i) const { return Gv[i]; }
+  inline SingleParticlePos b(int i) const { return Gv[i]; }
 
   /** Convert a cartesian vector to a unit vector.
    * Boundary conditions are not applied.
    */
   template<class T1>
-  inline SingleParticlePos_t toUnit(const TinyVector<T1, D>& r) const
+  inline SingleParticlePos toUnit(const TinyVector<T1, D>& r) const
   {
     return dot(r, G);
   }
 
   template<class T1>
-  inline SingleParticlePos_t toUnit_floor(const TinyVector<T1, D>& r) const
+  inline SingleParticlePos toUnit_floor(const TinyVector<T1, D>& r) const
   {
-    SingleParticlePos_t val_dot;
+    SingleParticlePos val_dot;
     val_dot = toUnit(r);
     for (int i = 0; i < D; i++)
       if (-std::numeric_limits<T1>::epsilon() < val_dot[i] && val_dot[i] < 0)
@@ -168,7 +168,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
    * Boundary conditions are not applied.
    */
   template<class T1>
-  inline SingleParticlePos_t toCart(const TinyVector<T1, D>& c) const
+  inline SingleParticlePos toCart(const TinyVector<T1, D>& c) const
   {
     return dot(c, R);
   }
@@ -210,26 +210,26 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
    @note The distance between two cartesian vectors are handled
    *by dot function defined in OhmmsPETE/TinyVector.h
    */
-  inline T Dot(const SingleParticlePos_t& ra, const SingleParticlePos_t& rb) const { return dot(ra, dot(M, rb)); }
+  inline T Dot(const SingleParticlePos& ra, const SingleParticlePos& rb) const { return dot(ra, dot(M, rb)); }
 
   /** conversion of a reciprocal-vector
    *@param kin an input reciprocal vector in the Reciprocal-vector unit
    *@return k(reciprocal vector) in cartesian unit
   */
-  inline SingleParticlePos_t k_cart(const SingleParticlePos_t& kin) const { return TWOPI * dot(G, kin); }
+  inline SingleParticlePos k_cart(const SingleParticlePos& kin) const { return TWOPI * dot(G, kin); }
 
   /** conversion of a caresian reciprocal-vector to unit k-vector
    *@param kin an input reciprocal vector in cartesian form
    *@return k(reciprocal vector) as unit vector
   */
-  inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const { return dot(R, kin) / TWOPI; }
+  inline SingleParticlePos k_unit(const SingleParticlePos& kin) const { return dot(R, kin) / TWOPI; }
 
   /** evaluate \f$k^2\f$
    *
    *@param kin an input reciprocal vector in reciprocal-vector unit
    *@return \f$k_{in}^2\f$
    */
-  inline T ksq(const SingleParticlePos_t& kin) const { return dot(kin, dot(Mg, kin)); }
+  inline T ksq(const SingleParticlePos& kin) const { return dot(kin, dot(Mg, kin)); }
 
   ///assignment operator
   template<typename T1>

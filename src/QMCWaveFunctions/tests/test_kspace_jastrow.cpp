@@ -54,7 +54,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);
@@ -100,10 +100,10 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 </jastrow> \
 </tmp> \
 ";
-  okay = doc.parseFromString(particles);
+  okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
-  root = doc.getRoot();
+  root            = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   kSpaceJastrowBuilder jastrow(c, elec_, ions_);

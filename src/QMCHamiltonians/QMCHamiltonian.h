@@ -44,16 +44,16 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
-  typedef OperatorBase::Return_t Return_t;
-  typedef OperatorBase::PosType PosType;
-  typedef OperatorBase::TensorType TensorType;
-  typedef OperatorBase::RealType RealType;
-  typedef OperatorBase::ValueType ValueType;
+  using Return_t         = OperatorBase::Return_t;
+  using PosType          = OperatorBase::PosType;
+  using TensorType       = OperatorBase::TensorType;
+  using RealType         = OperatorBase::RealType;
+  using ValueType        = OperatorBase::ValueType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  typedef OperatorBase::PropertySetType PropertySetType;
-  typedef OperatorBase::BufferType BufferType;
-  typedef OperatorBase::Walker_t Walker_t;
-  using WP = WalkerProperties::Indexes;
+  using PropertySetType  = OperatorBase::PropertySetType;
+  using BufferType       = OperatorBase::BufferType;
+  using Walker_t         = OperatorBase::Walker_t;
+  using WP               = WalkerProperties::Indexes;
   enum
   {
     DIM = OHMMS_DIM
@@ -298,10 +298,7 @@ public:
   * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
   * @return EGrad.  Function itself returns nothing.
   */
-  void evaluateElecGrad(ParticleSet& P,
-                        TrialWaveFunction& psi,
-                        ParticleSet::ParticlePos_t& EGrad,
-                        RealType delta = 1e-5);
+  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
@@ -315,9 +312,9 @@ public:
   FullPrecRealType evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
                                      TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                     ParticleSet::ParticlePos& hf_terms,
+                                     ParticleSet::ParticlePos& pulay_terms,
+                                     ParticleSet::ParticlePos& wf_grad);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
   * @param P target particle set (electrons)
@@ -331,9 +328,9 @@ public:
   FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
                                                   ParticleSet& ions,
                                                   TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos_t& hf_terms,
-                                                  ParticleSet::ParticlePos_t& pulay_terms,
-                                                  ParticleSet::ParticlePos_t& wf_grad);
+                                                  ParticleSet::ParticlePos& hf_terms,
+                                                  ParticleSet::ParticlePos& pulay_terms,
+                                                  ParticleSet::ParticlePos& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */

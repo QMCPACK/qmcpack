@@ -33,7 +33,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // BCC H
-  PtclOnLatticeTraits::ParticleLayout_t lattice;
+  PtclOnLatticeTraits::ParticleLayout lattice;
   lattice.R(0, 0) = 3.77945227;
   lattice.R(0, 1) = 0.0;
   lattice.R(0, 2) = 0.0;
@@ -125,7 +125,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
   int orbSize = spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
   REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
@@ -148,7 +148,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
         elec.R[0][1] = y;
         elec.R[0][2] = z;
         elec.update();
-        SPOSet::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector orbs(orbSize);
         spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -172,7 +172,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // LiH
-  PtclOnLatticeTraits::ParticleLayout_t lattice;
+  PtclOnLatticeTraits::ParticleLayout lattice;
   lattice.R(0, 0) = -3.55;
   lattice.R(0, 1) = 0.0;
   lattice.R(0, 2) = 3.55;
@@ -270,7 +270,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   int orbSize = spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
   REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
@@ -293,7 +293,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
         elec.R[0][1] = y;
         elec.R[0][2] = z;
         elec.update();
-        SPOSet::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector orbs(orbSize);
         spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {

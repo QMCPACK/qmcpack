@@ -25,9 +25,9 @@ namespace qmcplusplus
  */
 class SpaceWarpTransformation : public QMCTraits
 {
-  typedef ParticleSet::ParticleScalar_t ParticleScalar_t;
-  typedef ParticleSet::ParticlePos_t Force_t;
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
+  using ParticleScalar   = ParticleSet::ParticleScalar;
+  using Force_t          = ParticleSet::ParticlePos;
+  using ParticleGradient = ParticleSet::ParticleGradient;
 
 public:
   SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions);
@@ -58,7 +58,7 @@ public:
    *  \param[out] w, w_iat(r_i) for each i, where i is the electron index. 
    *  \param[out] grad_w,  grad_i w_iat(r_i) for each i, where i is the electron index.
    */
-  void getSWT(int iat, ParticleScalar_t& w, Force_t& grad_w);
+  void getSWT(int iat, ParticleScalar& w, Force_t& grad_w);
 
   /** Takes in precomputed grad(E_L) and grad(logPsi) and computes the ZV and ZB space warp contributions 
    *  to the force.
@@ -73,7 +73,7 @@ public:
   void computeSWT(ParticleSet& elec,
                   const ParticleSet& ions,
                   Force_t& dEl,
-                  ParticleGradient_t& dlogpsi,
+                  ParticleGradient& dlogpsi,
                   Force_t& el_contribution,
                   Force_t& psi_contribution);
 

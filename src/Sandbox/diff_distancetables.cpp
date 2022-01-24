@@ -76,11 +76,11 @@ int main(int argc, char** argv)
 
   Random.init(iseed);
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
+  using RealType    = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType  = ParticleSet::TensorType;
+  using PosType     = ParticleSet::PosType;
 
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
   double t0 = 0.0, t1 = 0.0;
@@ -114,7 +114,7 @@ int main(int argc, char** argv)
   constexpr RealType eps = numeric_limits<float>::epsilon();
 
   //copy of ParticleSet for validations
-  ParticleSet::ParticlePos_t Rcopy(els.R);
+  ParticleSet::ParticlePos Rcopy(els.R);
 
   const auto& d_ee = els.getDistTableAA(els.addTable(els));
   const auto& d_ie = els.getDistTableAB(els.addTable(ions));
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
   cout << "---------------------------------" << endl;
   cout << "AA SoA(upper) - SoA(lower) distances     = " << sym_err / nn << endl;
 
-  ParticlePos_t delta(nels);
+  ParticlePos delta(nels);
 
   //main particle-by-particle update
   RealType sqrttau = 0.2;

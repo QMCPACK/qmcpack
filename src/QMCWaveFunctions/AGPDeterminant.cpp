@@ -100,8 +100,8 @@ void AGPDeterminant::reportStatus(std::ostream& os)
  *for local energy calculations.
  */
 AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(const ParticleSet& P,
-                                                         ParticleSet::ParticleGradient_t& G,
-                                                         ParticleSet::ParticleLaplacian_t& L)
+                                                         ParticleSet::ParticleGradient& G,
+                                                         ParticleSet::ParticleLaplacian& L)
 {
   evaluateLogAndStore(P);
   G += myG;

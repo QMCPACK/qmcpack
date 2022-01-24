@@ -32,7 +32,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // monoO
   /*
   lattice.R(0,0) = 5.10509515;
@@ -112,9 +112,9 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
@@ -132,9 +132,9 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(d2psiM[1][1]) == Approx(-4.712583065));
 
   // for vgh
-  SPOSet::ValueVector_t psiV(psiM[1], spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsiV(dpsiM[1], spo->getOrbitalSetSize());
-  SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psiV(psiM[1], spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsiV(dpsiM[1], spo->getOrbitalSetSize());
+  SPOSet::HessVector ddpsiV(spo->getOrbitalSetSize());
   spo->evaluateVGH(elec_, 1, psiV, dpsiV, ddpsiV);
 
   // Catch default is 100*(float epsilson)
@@ -150,8 +150,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(ddpsiV[1](2, 1)) == Approx(0.5237969314));
   REQUIRE(std::real(ddpsiV[1](2, 2)) == Approx(-2.316497764));
 
-  SPOSet::HessMatrix_t hesspsiV(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GGGMatrix_t d3psiV(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::HessMatrix hesspsiV(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GGGMatrix d3psiV(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
 
   //The reference values for grad_grad_grad_psi.
@@ -222,7 +222,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
         elec_.R[0][1] = y;
         elec_.R[0][2] = z;
         elec_.update();
-        SPOSet::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector orbs(orbSize);
         spo->evaluate(elec_, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -240,7 +240,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // diamondC_2x1x1
   lattice.R(0, 0) = 6.7463223;
   lattice.R(0, 1) = 6.7463223;
@@ -310,9 +310,9 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(spo);
 
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -366,16 +366,16 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
-  SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t psi_2(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi_2(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psi(spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psi_2(spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi_2(spo->getOrbitalSetSize());
 
-  RefVector<SPOSet::ValueVector_t> psi_v_list;
-  RefVector<SPOSet::GradVector_t> dpsi_v_list;
-  RefVector<SPOSet::ValueVector_t> d2psi_v_list;
+  RefVector<SPOSet::ValueVector> psi_v_list;
+  RefVector<SPOSet::GradVector> dpsi_v_list;
+  RefVector<SPOSet::ValueVector> d2psi_v_list;
 
   psi_v_list.push_back(psi);
   psi_v_list.push_back(psi_2);
@@ -426,7 +426,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R       = 0.0;
   lattice.R(0, 0) = 1.0;
   lattice.R(1, 1) = 1.0;

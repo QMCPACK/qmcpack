@@ -86,7 +86,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_);
 
-  typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
+  using J2Type = J2OrbitalSoA<BsplineFunctor<RealType>>;
   auto j2_uptr = jastrow.buildComponent(jas1);
   J2Type* j2   = dynamic_cast<J2Type*>(j2_uptr.get());
   REQUIRE(j2);
@@ -102,7 +102,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
 
   // now test evaluateHessian
-  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
@@ -192,8 +192,8 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   }
 #endif
 
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);

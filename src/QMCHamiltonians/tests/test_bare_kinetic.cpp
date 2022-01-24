@@ -91,9 +91,9 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
 TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 
@@ -221,7 +221,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   //This is validated against an alternate code path (waveefunction tester for local energy).
   REQUIRE(keval == Approx(-0.147507745));
 
-  ParticleSet::ParticlePos_t HFTerm, PulayTerm;
+  ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
 

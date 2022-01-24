@@ -84,7 +84,7 @@ private:
   unsigned int managed_flags;
 
 public:
-  typedef T* pointer;
+  using pointer = T*;
 
   void set_name(std::string n) { name = n; }
 

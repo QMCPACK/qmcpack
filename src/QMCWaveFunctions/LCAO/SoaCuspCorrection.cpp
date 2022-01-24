@@ -33,7 +33,7 @@ void SoaCuspCorrection::setBasisSetSize(int nbs)
   myVGL.resize(5, BasisSetSize);
 }
 
-inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
+inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVector& vgl)
 {
   myVGL = 0.0;
 
@@ -72,9 +72,9 @@ inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVec
 
 void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
                                      int iat,
-                                     ValueVector_t& psi,
-                                     GradVector_t& dpsi,
-                                     ValueVector_t& d2psi)
+                                     ValueVector& psi,
+                                     GradVector& dpsi,
+                                     ValueVector& d2psi)
 {
   myVGL = 0.0;
 
@@ -107,9 +107,9 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
 void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
                                      int iat,
                                      int idx,
-                                     ValueMatrix_t& psi,
-                                     GradMatrix_t& dpsi,
-                                     ValueMatrix_t& d2psi)
+                                     ValueMatrix& psi,
+                                     GradMatrix& dpsi,
+                                     ValueMatrix& d2psi)
 {
   myVGL = 0.0;
 

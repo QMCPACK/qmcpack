@@ -21,7 +21,7 @@ using namespace std;
 class SkParserBase : public QMCTraits
 {
 public:
-  typedef LinearGrid<RealType> Grid_t;
+  using Grid_t = LinearGrid<RealType>;
 
   SkParserBase();
   virtual ~SkParserBase() {}

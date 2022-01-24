@@ -45,7 +45,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
 #endif
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0)   = 3.37316115;
   lattice.R(0, 1)   = 3.37316115;
   lattice.R(0, 2)   = 0.0;
@@ -266,21 +266,21 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
-  GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
+    ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
+    GradType grad_temp;
+    ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
 #if defined(QMC_COMPLEX)
-  CHECK(r_0 == ComplexApprox(ValueType(-0.045474407700114, -0.59956233350555)));
-  CHECK(r_1 == ComplexApprox(ValueType(-0.44602867091608, -1.8105588403509)));
-  CHECK(grad_temp[0] == ComplexApprox(ValueType(-6.6139971152489, 22.82304260002)));
-  CHECK(grad_temp[1] == ComplexApprox(ValueType(8.3367501707711, -23.362154838104)));
-  CHECK(grad_temp[2] == ComplexApprox(ValueType(-2.6347597529645, 0.67383144279783)));
+    CHECK(r_0 == ComplexApprox(ValueType(-0.045474407700114, -0.59956233350555)));
+    CHECK(r_1 == ComplexApprox(ValueType(-0.44602867091608, -1.8105588403509)));
+    CHECK(grad_temp[0] == ComplexApprox(ValueType(-6.6139971152489, 22.82304260002)));
+    CHECK(grad_temp[1] == ComplexApprox(ValueType(8.3367501707711, -23.362154838104)));
+    CHECK(grad_temp[2] == ComplexApprox(ValueType(-2.6347597529645, 0.67383144279783)));
 #else
-  CHECK(r_0 == Approx(-0.4138835449));
-  CHECK(r_1 == Approx(-2.5974770159));
-  CHECK(grad_temp[0] == Approx(-17.865723259764));
-  CHECK(grad_temp[1] == Approx(19.854257889369));
-  CHECK(grad_temp[2] == Approx(-2.9669578650441));
+    CHECK(r_0 == Approx(-0.4138835449));
+    CHECK(r_1 == Approx(-2.5974770159));
+    CHECK(grad_temp[0] == Approx(-17.865723259764));
+    CHECK(grad_temp[1] == Approx(19.854257889369));
+    CHECK(grad_temp[2] == Approx(-2.9669578650441));
 #endif
   }
 
@@ -304,12 +304,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
+    ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+    ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
-            << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
+    std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+              << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
+              << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces

@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 int PWBasis::readbasis(hid_t h5basisgroup,
                        RealType ecutoff,
-                       const ParticleLayout_t& lat,
+                       const ParticleLayout& lat,
                        const std::string& pwname,
                        const std::string& pwmultname,
                        bool resizeContainer)

@@ -37,13 +37,13 @@ private:
   // Mostly QMCTraits here
   using JBase = J1OrbitalSoA<FT>;
   // Duplication that should be removed
-  using RealType      = typename JBase::RealType;
-  using ValueType     = typename JBase::ValueType;
-  using GradType      = typename JBase::GradType;
-  using PosType       = typename JBase::PosType;
-  using GradMatrix_t  = typename JBase::GradMatrix_t;
-  using ValueMatrix_t = typename JBase::ValueMatrix_t;
-  using RealMatrix_t  = typename JBase::RealMatrix_t;
+  using RealType     = typename JBase::RealType;
+  using ValueType    = typename JBase::ValueType;
+  using GradType     = typename JBase::GradType;
+  using PosType      = typename JBase::PosType;
+  using GradMatrix   = typename JBase::GradMatrix;
+  using ValueMatrix  = typename JBase::ValueMatrix;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
   std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;
@@ -78,7 +78,7 @@ private:
   int N;
 
 public:
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
 
   void resetParameters(const opt_variables_type& active) override;
   void checkInVariables(opt_variables_type& active) override;
@@ -136,7 +136,7 @@ public:
 
   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
   void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,

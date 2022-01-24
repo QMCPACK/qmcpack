@@ -26,7 +26,7 @@ namespace qmcplusplus
 class ACForce : public OperatorBase
 {
 public:
-  using Forces = ParticleSet::ParticlePos_t;
+  using Forces = ParticleSet::ParticlePos;
 
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);

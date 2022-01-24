@@ -79,8 +79,8 @@ public:
     QMC_WARMUP
   };
 
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef Walker_t::Buffer_t Buffer_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
+  using Buffer_t = Walker_t::Buffer_t;
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -332,10 +332,10 @@ protected:
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
   ///temporary storage for drift
-  ParticleSet::ParticlePos_t drift;
+  ParticleSet::ParticlePos drift;
 
   ///temporary storage for random displacement
-  ParticleSet::ParticlePos_t deltaR;
+  ParticleSet::ParticlePos deltaR;
 
   ///spin mass for spinor calcs
   RealType SpinMass;

@@ -82,20 +82,20 @@ void SHOSet::report(const std::string& pad) const
 }
 
 
-void SHOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void SHOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   const PosType& r(P.activeR(iat));
-  ValueVector_t p(&psi[0], size());
+  ValueVector p(&psi[0], size());
   evaluate_v(r, p);
 }
 
 
-void SHOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SHOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   const PosType& r(P.activeR(iat));
-  ValueVector_t p(&psi[0], size());
-  GradVector_t dp(&dpsi[0], size());
-  ValueVector_t d2p(&d2psi[0], size());
+  ValueVector p(&psi[0], size());
+  GradVector dp(&dpsi[0], size());
+  ValueVector d2p(&d2psi[0], size());
   evaluate_vgl(r, p, dp, d2p);
 }
 
@@ -103,21 +103,21 @@ void SHOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, Grad
 void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,
-                                  ValueMatrix_t& logdet,
-                                  GradMatrix_t& dlogdet,
-                                  ValueMatrix_t& d2logdet)
+                                  ValueMatrix& logdet,
+                                  GradMatrix& dlogdet,
+                                  ValueMatrix& d2logdet)
 {
   for (int iat = first, i = 0; iat < last; ++iat, ++i)
   {
-    ValueVector_t p(logdet[i], size());
-    GradVector_t dp(dlogdet[i], size());
-    ValueVector_t d2p(d2logdet[i], size());
+    ValueVector p(logdet[i], size());
+    GradVector dp(dlogdet[i], size());
+    ValueVector d2p(d2logdet[i], size());
     evaluate_vgl(P.R[iat], p, dp, d2p);
   }
 }
 
 
-void SHOSet::evaluate_v(PosType r, ValueVector_t& psi)
+void SHOSet::evaluate_v(PosType r, ValueVector& psi)
 {
   PosType x = (r - center) / length;
   evaluate_hermite(x);
@@ -125,7 +125,7 @@ void SHOSet::evaluate_v(PosType r, ValueVector_t& psi)
 }
 
 
-void SHOSet::evaluate_vgl(PosType r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SHOSet::evaluate_vgl(PosType r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   PosType x = (r - center) / length;
   evaluate_hermite(x);
@@ -159,7 +159,7 @@ void SHOSet::evaluate_hermite(const PosType& xpos)
 }
 
 
-void SHOSet::evaluate_d0(const PosType& xpos, ValueVector_t& psi)
+void SHOSet::evaluate_d0(const PosType& xpos, ValueVector& psi)
 {
   using std::exp;
   int shift = 0;
@@ -185,7 +185,7 @@ void SHOSet::evaluate_d0(const PosType& xpos, ValueVector_t& psi)
 }
 
 
-void SHOSet::evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& dpsi)
+void SHOSet::evaluate_d1(const PosType& xpos, ValueVector& psi, GradVector& dpsi)
 {
   RealType ol = 1.0 / length;
   int shift   = 0;
@@ -198,7 +198,7 @@ void SHOSet::evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& 
       int ns      = n + shift;
       RealType Hn = hermite(ns);
       bvalues(ns) = (-x + 2 * n * Hnm1 / Hn) * ol;
-      Hnm1 = Hn;
+      Hnm1        = Hn;
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
@@ -214,7 +214,7 @@ void SHOSet::evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& 
 }
 
 
-void SHOSet::evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t& d2psi)
+void SHOSet::evaluate_d2(const PosType& xpos, ValueVector& psi, ValueVector& d2psi)
 {
   RealType ol2 = 1.0 / (length * length);
   int shift    = 0;
@@ -241,7 +241,7 @@ void SHOSet::evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t&
 }
 
 
-void SHOSet::evaluate_check(PosType r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SHOSet::evaluate_check(PosType r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   using std::exp;
   using std::sqrt;
@@ -325,9 +325,9 @@ void SHOSet::test_derivatives()
 
   PosType o2dr, odr2;
 
-  ValueVector_t vpsi, vpsitmp;
-  GradVector_t vdpsi, vdpsin;
-  ValueVector_t vd2psi, vd2psin;
+  ValueVector vpsi, vpsitmp;
+  GradVector vdpsi, vdpsin;
+  ValueVector vd2psi, vd2psin;
 
 
   vpsi.resize(nphi);
@@ -339,13 +339,13 @@ void SHOSet::test_derivatives()
   vd2psin.resize(nphi);
 
 
-  ValueVector_t psi(&vpsi[0], size());
-  GradVector_t dpsi(&vdpsi[0], size());
-  ValueVector_t d2psi(&vd2psi[0], size());
+  ValueVector psi(&vpsi[0], size());
+  GradVector dpsi(&vdpsi[0], size());
+  ValueVector d2psi(&vd2psi[0], size());
 
-  ValueVector_t psitmp(&vpsitmp[0], size());
-  GradVector_t dpsin(&vdpsin[0], size());
-  ValueVector_t d2psin(&vd2psin[0], size());
+  ValueVector psitmp(&vpsitmp[0], size());
+  GradVector dpsin(&vdpsin[0], size());
+  ValueVector d2psin(&vd2psin[0], size());
 
 
   app_log() << " loading dr" << std::endl;
@@ -429,7 +429,7 @@ void SHOSet::test_derivatives()
           app_log() << std::endl;
         }
         app_log() << "    laplacians" << std::endl;
-        PosType x   = r / length;
+        PosType x = r / length;
         for (int m = 0; m < nphi; ++m)
         {
           std::string qn = "";
@@ -462,9 +462,9 @@ void SHOSet::test_overlap()
 
   app_log() << "  1d overlap" << std::endl;
 
-  ValueVector_t vpsi;
+  ValueVector vpsi;
   vpsi.resize(size());
-  ValueVector_t psi(&vpsi[0], size());
+  ValueVector psi(&vpsi[0], size());
 
   double xmax = 4.0;
   double dx   = .1;
@@ -536,7 +536,7 @@ void SHOSet::test_overlap()
 //methods to be implemented later
 void SHOSet::resetParameters(const opt_variables_type& optVariables) { not_implemented("resetParameters"); }
 
-void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
+void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {
   not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)");
 }
@@ -544,9 +544,9 @@ void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMa
 void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,
-                                  ValueMatrix_t& logdet,
-                                  GradMatrix_t& dlogdet,
-                                  HessMatrix_t& grad_grad_logdet)
+                                  ValueMatrix& logdet,
+                                  GradMatrix& dlogdet,
+                                  HessMatrix& grad_grad_logdet)
 {
   not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet)");
 }
@@ -554,10 +554,10 @@ void SHOSet::evaluate_notranspose(const ParticleSet& P,
 void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,
-                                  ValueMatrix_t& logdet,
-                                  GradMatrix_t& dlogdet,
-                                  HessMatrix_t& grad_grad_logdet,
-                                  GGGMatrix_t& grad_grad_grad_logdet)
+                                  ValueMatrix& logdet,
+                                  GradMatrix& dlogdet,
+                                  HessMatrix& grad_grad_logdet,
+                                  GGGMatrix& grad_grad_grad_logdet)
 {
   not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
 }
@@ -567,7 +567,7 @@ void SHOSet::evaluateGradSource(const ParticleSet& P,
                                 int last,
                                 const ParticleSet& source,
                                 int iat_src,
-                                GradMatrix_t& gradphi)
+                                GradMatrix& gradphi)
 {
   not_implemented("evaluateGradSource(P,first,last,source,iat,dphi)");
 }
@@ -577,9 +577,9 @@ void SHOSet::evaluateGradSource(const ParticleSet& P,
                                 int last,
                                 const ParticleSet& source,
                                 int iat_src,
-                                GradMatrix_t& grad_phi,
-                                HessMatrix_t& grad_grad_phi,
-                                GradMatrix_t& grad_lapl_phi)
+                                GradMatrix& grad_phi,
+                                HessMatrix& grad_grad_phi,
+                                GradMatrix& grad_lapl_phi)
 {
   not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)");
 }

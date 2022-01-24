@@ -39,7 +39,7 @@ struct EGOSet : public SPOSet
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override {}
 
-  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
@@ -59,9 +59,9 @@ struct EGOSet : public SPOSet
    */
   inline void evaluateVGL(const ParticleSet& P,
                           int iat,
-                          ValueVector_t& psi,
-                          GradVector_t& dpsi,
-                          ValueVector_t& d2psi) override
+                          ValueVector& psi,
+                          GradVector& dpsi,
+                          ValueVector& d2psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
@@ -77,25 +77,25 @@ struct EGOSet : public SPOSet
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector_t v(logdet[i], OrbitalSetSize);
-      GradVector_t g(dlogdet[i], OrbitalSetSize);
-      ValueVector_t l(d2logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], OrbitalSetSize);
+      GradVector g(dlogdet[i], OrbitalSetSize);
+      ValueVector l(d2logdet[i], OrbitalSetSize);
       evaluateVGL(P, iat, v, g, l);
     }
   }
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet) override
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet,
+                            GGGMatrix& grad_grad_grad_logdet) override
   {
     APP_ABORT(
         "Incomplete implementation EGOSet::evaluate(P,first,last,lodget,dlodet,grad_grad_logdet,grad_grad_grad_logdet");

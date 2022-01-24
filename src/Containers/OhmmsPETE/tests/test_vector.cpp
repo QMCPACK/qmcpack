@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 TEST_CASE("vector", "[OhmmsPETE]")
 {
-  typedef Vector<double> vec_t;
+  using vec_t = Vector<double>;
   vec_t A(3);
   vec_t B(3);
 
@@ -58,17 +58,17 @@ TEST_CASE("Vector simple intializer list", "[OhmmsPETE]")
 {
   //empty list should work
   Vector<int> vec_int{};
-  Vector<double> vec_double{5.0,4.0,3.0,2.0,1.0};
-  CHECK(vec_double[0]==Approx(5.0));
-  CHECK(vec_double[4]==Approx(1.0));
+  Vector<double> vec_double{5.0, 4.0, 3.0, 2.0, 1.0};
+  CHECK(vec_double[0] == Approx(5.0));
+  CHECK(vec_double[4] == Approx(1.0));
 }
 
 TEST_CASE("Vector nested intializer list", "[OhmmsPETE]")
 {
-  Vector<TinyVector<double, 3>> vec_tinyd3({{1,2,3},{4,5,6},{7,8,9}});
+  Vector<TinyVector<double, 3>> vec_tinyd3({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}});
   CHECK(vec_tinyd3[1][1] == 5);
   CHECK(vec_tinyd3[2][0] == 7);
-  Vector<std::pair<int, int>> vec_pair{{1,2},{3,4}};
+  Vector<std::pair<int, int>> vec_pair{{1, 2}, {3, 4}};
   CHECK(vec_pair[0].first == 1);
   CHECK(vec_pair[1].second == 4);
 }

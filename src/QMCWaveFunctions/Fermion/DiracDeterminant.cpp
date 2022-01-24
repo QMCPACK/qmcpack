@@ -48,7 +48,7 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int 
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
+void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
   updateEng.invert_transpose(logdetT, invMat, log_value_);
@@ -192,11 +192,11 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
     ScopedTimer local_timer(SPOVGLTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(wfc_list.size());
-    RefVector<ValueVector_t> psi_v_list;
+    RefVector<ValueVector> psi_v_list;
     psi_v_list.reserve(wfc_list.size());
-    RefVector<GradVector_t> dpsi_v_list;
+    RefVector<GradVector> dpsi_v_list;
     dpsi_v_list.reserve(wfc_list.size());
-    RefVector<ValueVector_t> d2psi_v_list;
+    RefVector<ValueVector> d2psi_v_list;
     d2psi_v_list.reserve(wfc_list.size());
 
     for (WaveFunctionComponent& wfc : wfc_list)
@@ -257,8 +257,8 @@ void DiracDeterminant<DU_TYPE>::completeUpdates()
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& G,
-                                                 ParticleSet::ParticleLaplacian_t& L)
+                                                 ParticleSet::ParticleGradient& G,
+                                                 ParticleSet::ParticleLaplacian& L)
 {
   if (UpdateMode == ORB_PBYP_RATIO)
   { //need to compute dpsiM and d2psiM. Do not touch psiM!
@@ -307,8 +307,8 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateGL(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L,
     bool fromscratch)
 {
   if (fromscratch)
@@ -403,7 +403,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<Wave
   const size_t nw = wfc_list.size();
 
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
-  RefVector<ValueVector_t> psiV_list;
+  RefVector<ValueVector> psiV_list;
   std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
@@ -480,7 +480,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void DiracDeterminant<DU_TYPE>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
   grad_grad_source_psiM.resize(psiM.rows(), psiM.cols());
@@ -510,8 +510,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     ParticleSet& P,
     ParticleSet& source,
     int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   GradType gradPsi(0.0);
   if (Phi->hasIonDerivs())
@@ -619,8 +619,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(
     const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
 
@@ -670,7 +670,8 @@ void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection) c
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection,
+                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
@@ -683,7 +684,8 @@ void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection, 
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection,
+                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);

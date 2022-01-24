@@ -40,14 +40,14 @@ struct LRBasis
   mRealType m_rc;
 
   ///Typedef for the lattice-type. We don't need the full particle-set.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+  using ParticleLayout = ParticleSet::ParticleLayout;
 
   //A copy of the lattice, so that we have the cell-vectors + volume.
-  ParticleLayout_t Lattice;
+  ParticleLayout Lattice;
 
 public:
   //Constructor: copy lattice and init rc
-  LRBasis(const ParticleLayout_t& ref) : m_rc(0.0), Lattice(ref)
+  LRBasis(const ParticleLayout& ref) : m_rc(0.0), Lattice(ref)
   { /*Do nothing*/
   }
 
@@ -149,8 +149,8 @@ public:
   virtual void set_rc(mRealType rc) = 0;
   inline mRealType get_rc() const { return m_rc; }
   inline mRealType get_CellVolume() const { return Lattice.Volume; }
-  inline void set_Lattice(const ParticleLayout_t& ref) { Lattice = ref; }
-  inline const ParticleLayout_t& get_Lattice() const { return Lattice; }
+  inline void set_Lattice(const ParticleLayout& ref) { Lattice = ref; }
+  inline const ParticleLayout& get_Lattice() const { return Lattice; }
 };
 
 } // namespace qmcplusplus

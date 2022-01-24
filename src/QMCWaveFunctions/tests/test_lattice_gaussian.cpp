@@ -28,7 +28,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType = QMCTraits::RealType;
+using RealType     = QMCTraits::RealType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 
 TEST_CASE("lattice gaussian", "[wavefunction]")
@@ -36,7 +36,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // initialize simulationcell for kvectors
   const char* xmltext = "<tmp> \
   <simulationcell>\
@@ -104,7 +104,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   <ionwf name=\"ionwf\" source=\"ion\" width=\"0.5 0.5\"/> \
 </tmp> \
 ";
-  okay = doc.parseFromString(particles);
+  okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
   root = doc.getRoot();
@@ -114,10 +114,10 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   LatticeGaussianProductBuilder jastrow(c, elec_, pp);
   auto LGP_uptr = jastrow.buildComponent(jas1);
   auto LGP      = dynamic_cast<LatticeGaussianProduct*>(LGP_uptr.get());
-  double width = 0.5;
-  double alpha = 1./(2*width*width);
+  double width  = 0.5;
+  double alpha  = 1. / (2 * width * width);
   // check initialization. Nope, cannot access Psi.Z
-  for (int i=0; i<2; i++)
+  for (int i = 0; i < 2; i++)
   {
     REQUIRE(LGP->ParticleAlpha[i] == Approx(alpha));
   }
@@ -128,8 +128,8 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   LogValueType logpsi = LGP->evaluateLog(elec_, elec_.G, elec_.L);
   // check answer
-  RealType r2 = Dot(elec_.R, elec_.R);
-  double wfval = std::exp(-alpha*r2);
+  RealType r2  = Dot(elec_.R, elec_.R);
+  double wfval = std::exp(-alpha * r2);
   REQUIRE(logpsi == ComplexApprox(std::log(wfval)));
 }
 } // namespace qmcplusplus

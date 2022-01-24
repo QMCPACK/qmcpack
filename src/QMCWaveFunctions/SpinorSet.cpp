@@ -53,7 +53,7 @@ void SpinorSet::resetParameters(const opt_variables_type& optVariables){};
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
 
 
-void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   psi_work_up   = 0.0;
   psi_work_down = 0.0;
@@ -75,7 +75,7 @@ void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
   psi = eis * psi_work_up + emis * psi_work_down;
 }
 
-void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   psi_work_up     = 0.0;
   psi_work_down   = 0.0;
@@ -104,10 +104,10 @@ void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, G
 
 void SpinorSet::evaluateVGL_spin(const ParticleSet& P,
                                  int iat,
-                                 ValueVector_t& psi,
-                                 GradVector_t& dpsi,
-                                 ValueVector_t& d2psi,
-                                 ValueVector_t& dspin)
+                                 ValueVector& psi,
+                                 GradVector& dpsi,
+                                 ValueVector& d2psi,
+                                 ValueVector& dspin)
 {
   psi_work_up     = 0.0;
   psi_work_down   = 0.0;
@@ -139,10 +139,10 @@ void SpinorSet::evaluateVGL_spin(const ParticleSet& P,
 void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                        const RefVectorWithLeader<ParticleSet>& P_list,
                                        int iat,
-                                       const RefVector<ValueVector_t>& psi_v_list,
-                                       const RefVector<GradVector_t>& dpsi_v_list,
-                                       const RefVector<ValueVector_t>& d2psi_v_list,
-                                       const RefVector<ValueVector_t>& dspin_v_list) const
+                                       const RefVector<ValueVector>& psi_v_list,
+                                       const RefVector<GradVector>& dpsi_v_list,
+                                       const RefVector<ValueVector>& d2psi_v_list,
+                                       const RefVector<ValueVector>& dspin_v_list) const
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& P_leader   = P_list.getLeader();
@@ -156,9 +156,9 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   up_spo_list.reserve(nw);
   dn_spo_list.reserve(nw);
 
-  std::vector<ValueVector_t> mw_up_psi_work, mw_dn_psi_work;
-  std::vector<GradVector_t> mw_up_dpsi_work, mw_dn_dpsi_work;
-  std::vector<ValueVector_t> mw_up_d2psi_work, mw_dn_d2psi_work;
+  std::vector<ValueVector> mw_up_psi_work, mw_dn_psi_work;
+  std::vector<GradVector> mw_up_dpsi_work, mw_dn_dpsi_work;
+  std::vector<ValueVector> mw_up_d2psi_work, mw_dn_d2psi_work;
   mw_up_psi_work.reserve(nw);
   mw_up_dpsi_work.reserve(nw);
   mw_up_d2psi_work.reserve(nw);
@@ -166,9 +166,9 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   mw_dn_dpsi_work.reserve(nw);
   mw_dn_d2psi_work.reserve(nw);
 
-  RefVector<ValueVector_t> up_psi_v_list, dn_psi_v_list;
-  RefVector<GradVector_t> up_dpsi_v_list, dn_dpsi_v_list;
-  RefVector<ValueVector_t> up_d2psi_v_list, dn_d2psi_v_list;
+  RefVector<ValueVector> up_psi_v_list, dn_psi_v_list;
+  RefVector<GradVector> up_dpsi_v_list, dn_dpsi_v_list;
+  RefVector<ValueVector> up_d2psi_v_list, dn_d2psi_v_list;
   up_psi_v_list.reserve(nw);
   up_dpsi_v_list.reserve(nw);
   up_d2psi_v_list.reserve(nw);
@@ -176,8 +176,8 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   dn_dpsi_v_list.reserve(nw);
   dn_d2psi_v_list.reserve(nw);
 
-  ValueVector_t tmp_val_vec(OrbitalSetSize);
-  GradVector_t tmp_grad_vec(OrbitalSetSize);
+  ValueVector tmp_val_vec(OrbitalSetSize);
+  GradVector tmp_grad_vec(OrbitalSetSize);
   for (int iw = 0; iw < nw; iw++)
   {
     SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
@@ -224,9 +224,9 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
                                      int first,
                                      int last,
-                                     ValueMatrix_t& logdet,
-                                     GradMatrix_t& dlogdet,
-                                     ValueMatrix_t& d2logdet)
+                                     ValueMatrix& logdet,
+                                     GradMatrix& dlogdet,
+                                     ValueMatrix& d2logdet)
 {
   IndexType nelec = P.getTotalNum();
 
@@ -268,9 +268,9 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
                                         const RefVectorWithLeader<ParticleSet>& P_list,
                                         int first,
                                         int last,
-                                        const RefVector<ValueMatrix_t>& logdet_list,
-                                        const RefVector<GradMatrix_t>& dlogdet_list,
-                                        const RefVector<ValueMatrix_t>& d2logdet_list) const
+                                        const RefVector<ValueMatrix>& logdet_list,
+                                        const RefVector<GradMatrix>& dlogdet_list,
+                                        const RefVector<ValueMatrix>& d2logdet_list) const
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& P_leader   = P_list.getLeader();
@@ -286,9 +286,9 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   up_spo_list.reserve(nw);
   dn_spo_list.reserve(nw);
 
-  std::vector<ValueMatrix_t> mw_up_logdet, mw_dn_logdet;
-  std::vector<GradMatrix_t> mw_up_dlogdet, mw_dn_dlogdet;
-  std::vector<ValueMatrix_t> mw_up_d2logdet, mw_dn_d2logdet;
+  std::vector<ValueMatrix> mw_up_logdet, mw_dn_logdet;
+  std::vector<GradMatrix> mw_up_dlogdet, mw_dn_dlogdet;
+  std::vector<ValueMatrix> mw_up_d2logdet, mw_dn_d2logdet;
   mw_up_logdet.reserve(nw);
   mw_dn_logdet.reserve(nw);
   mw_up_dlogdet.reserve(nw);
@@ -296,9 +296,9 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   mw_up_d2logdet.reserve(nw);
   mw_dn_d2logdet.reserve(nw);
 
-  RefVector<ValueMatrix_t> up_logdet_list, dn_logdet_list;
-  RefVector<GradMatrix_t> up_dlogdet_list, dn_dlogdet_list;
-  RefVector<ValueMatrix_t> up_d2logdet_list, dn_d2logdet_list;
+  RefVector<ValueMatrix> up_logdet_list, dn_logdet_list;
+  RefVector<GradMatrix> up_dlogdet_list, dn_dlogdet_list;
+  RefVector<ValueMatrix> up_d2logdet_list, dn_d2logdet_list;
   up_logdet_list.reserve(nw);
   dn_logdet_list.reserve(nw);
   up_dlogdet_list.reserve(nw);
@@ -306,8 +306,8 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   up_d2logdet_list.reserve(nw);
   dn_d2logdet_list.reserve(nw);
 
-  ValueMatrix_t tmp_val_mat(nelec, OrbitalSetSize);
-  GradMatrix_t tmp_grad_mat(nelec, OrbitalSetSize);
+  ValueMatrix tmp_val_mat(nelec, OrbitalSetSize);
+  GradMatrix tmp_grad_mat(nelec, OrbitalSetSize);
   for (int iw = 0; iw < nw; iw++)
   {
     SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
@@ -360,10 +360,10 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
 void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
                                           int first,
                                           int last,
-                                          ValueMatrix_t& logdet,
-                                          GradMatrix_t& dlogdet,
-                                          ValueMatrix_t& d2logdet,
-                                          ValueMatrix_t& dspinlogdet)
+                                          ValueMatrix& logdet,
+                                          GradMatrix& dlogdet,
+                                          ValueMatrix& d2logdet,
+                                          ValueMatrix& dspinlogdet)
 {
   IndexType nelec = P.getTotalNum();
 
@@ -404,7 +404,7 @@ void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
 }
 
 
-void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi)
+void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
   psi_work_up   = 0.0;
   psi_work_down = 0.0;

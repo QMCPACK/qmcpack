@@ -85,7 +85,8 @@ template<typename FT>
 void J2OrbitalSoA<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   for (int k = 0; k < ratios.size(); ++k)
-    ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
+    ratios[k] =
+        std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
 }
 
 template<typename FT>
@@ -448,16 +449,16 @@ void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 
 template<typename FT>
 typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L)
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L)
 {
   return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
 WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L,
+                                                                 ParticleSet::ParticleGradient& G,
+                                                                 ParticleSet::ParticleLaplacian& L,
                                                                  bool fromscratch)
 {
   if (fromscratch)
@@ -474,7 +475,7 @@ WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleS
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   log_value_ = 0.0;
   const auto& d_ee(P.getDistTableAA(my_table_ID_));
