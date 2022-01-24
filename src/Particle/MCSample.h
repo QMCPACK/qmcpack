@@ -30,10 +30,10 @@ struct MCSample
   using WP       = WalkerProperties::Indexes;
   using Walker_t = ParticleSet::Walker_t;
 
-  ParticleSet::ParticlePos_t R;
-  ParticleSet::ParticleScalar_t spins;
-  ParticleSet::ParticleGradient_t G;
-  ParticleSet::ParticleLaplacian_t L;
+  ParticleSet::ParticlePos R;
+  ParticleSet::ParticleScalar spins;
+  ParticleSet::ParticleGradient G;
+  ParticleSet::ParticleLaplacian L;
   ParticleSet::RealType LogPsi, Sign, PE, KE;
 
   inline MCSample(const ParticleSet& pset) : R(pset.R), spins(pset.spins) {}

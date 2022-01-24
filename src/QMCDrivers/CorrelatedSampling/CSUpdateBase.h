@@ -56,8 +56,8 @@ public:
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
 
-  std::vector<ParticleSet::ParticleGradient_t*> G1;
-  std::vector<ParticleSet::ParticleLaplacian_t*> L1;
+  std::vector<ParticleSet::ParticleGradient*> G1;
+  std::vector<ParticleSet::ParticleLaplacian*> L1;
 
   //a list of single particle gradients for multiple wavefunctions;
   std::vector<GradType> g1_old;

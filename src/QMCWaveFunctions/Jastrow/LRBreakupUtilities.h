@@ -465,7 +465,7 @@ struct derivEPRPABreakup
 template<typename T>
 struct ShortRangePartAdapter : OptimizableFunctorBase
 {
-  typedef LRHandlerBase HandlerType;
+  using HandlerType = LRHandlerBase;
 
   explicit ShortRangePartAdapter(HandlerType* inhandler) : Uconst(0), myHandler(inhandler) {}
 

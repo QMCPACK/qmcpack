@@ -47,13 +47,13 @@ class EstimatorManagerNew
 {
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
-  typedef QMCTraits::FullPrecRealType RealType;
+  using RealType         = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
-  using QMCT = QMCTraits;
-  typedef ScalarEstimatorBase EstimatorType;
-  using FPRBuffer = std::vector<FullPrecRealType>;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using QMCT          = QMCTraits;
+  using EstimatorType = ScalarEstimatorBase;
+  using FPRBuffer     = std::vector<FullPrecRealType>;
+  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///default constructor
   EstimatorManagerNew(Communicate* c);
@@ -76,7 +76,11 @@ public:
   int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H,
+           const ParticleSet& pset,
+           const TrialWaveFunction& twf,
+           const WaveFunctionFactory& wf_factory,
+           xmlNodePtr cur);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.

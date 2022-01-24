@@ -45,12 +45,12 @@ int main(int argc, char** argv)
 #endif
   Communicate* myComm = OHMMS::Controller;
 
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
 #if defined(QMC_COMPLEX)
-  typedef std::complex<OHMMS_PRECISION_FULL> mValueType;
+  using mValueType = std::complex<OHMMS_PRECISION_FULL>;
 #else
-  typedef OHMMS_PRECISION_FULL mValueType;
+  using mValueType = OHMMS_PRECISION_FULL;
 #endif
   //use the global generator
 

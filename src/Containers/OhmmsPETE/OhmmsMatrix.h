@@ -27,14 +27,14 @@ template<class T, typename Alloc = std::allocator<T>>
 class Matrix
 {
 public:
-  typedef T Type_t;
-  typedef T value_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef Vector<T, Alloc> Container_t;
-  typedef typename Container_t::size_type size_type;
-  typedef typename Container_t::iterator iterator;
-  typedef Matrix<T, Alloc> This_t;
+  using Type_t        = T;
+  using value_type    = T;
+  using pointer       = T*;
+  using const_pointer = const T*;
+  using Container_t   = Vector<T, Alloc>;
+  using size_type     = typename Container_t::size_type;
+  using iterator      = typename Container_t::iterator;
+  using This_t        = Matrix<T, Alloc>;
 
   Matrix() : D1(0), D2(0), TotSize(0) {} // Default Constructor initializes to zero.
 
@@ -409,8 +409,8 @@ bool operator!=(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 template<class T, typename Alloc>
 std::ostream& operator<<(std::ostream& out, const Matrix<T, Alloc>& rhs)
 {
-  typedef typename Matrix<T, Alloc>::size_type size_type;
-  size_type ii = 0;
+  using size_type = typename Matrix<T, Alloc>::size_type;
+  size_type ii    = 0;
   for (size_type i = 0; i < rhs.rows(); i++)
   {
     for (size_type j = 0; j < rhs.cols(); j++)
@@ -424,7 +424,7 @@ std::ostream& operator<<(std::ostream& out, const Matrix<T, Alloc>& rhs)
 template<class T, typename Alloc>
 std::istream& operator>>(std::istream& is, Matrix<T, Alloc>& rhs)
 {
-  typedef typename Matrix<T, Alloc>::size_type size_type;
+  using size_type = typename Matrix<T, Alloc>::size_type;
   for (size_type i = 0; i < rhs.size(); i++)
   {
     is >> rhs(i++);
@@ -438,7 +438,7 @@ std::istream& operator>>(std::istream& is, Matrix<T, Alloc>& rhs)
 template<class T, typename Alloc>
 struct CreateLeaf<Matrix<T, Alloc>>
 {
-  typedef Reference<Matrix<T, Alloc>> Leaf_t;
+  using Leaf_t = Reference<Matrix<T, Alloc>>;
   inline static Leaf_t make(const Matrix<T, Alloc>& a) { return Leaf_t(a); }
 };
 
@@ -450,7 +450,7 @@ struct CreateLeaf<Matrix<T, Alloc>>
 class SizeLeaf2
 {
 public:
-  typedef int size_type;
+  using size_type = int;
 
   SizeLeaf2(size_type s, size_type p) : size_m(s), size_n(p) {}
   SizeLeaf2(const SizeLeaf2& model) : size_m(model.size_m), size_n(model.size_n) {}
@@ -464,7 +464,7 @@ private:
 template<class T>
 struct LeafFunctor<Scalar<T>, SizeLeaf2>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Scalar<T>&, const SizeLeaf2&)
   {
     // Scalars always conform.
@@ -475,7 +475,7 @@ struct LeafFunctor<Scalar<T>, SizeLeaf2>
 template<class T, typename Alloc>
 struct LeafFunctor<Matrix<T, Alloc>, SizeLeaf2>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Matrix<T, Alloc>& v, const SizeLeaf2& s) { return s(v.rows(), v.cols()); }
 };
 
@@ -486,7 +486,7 @@ struct LeafFunctor<Matrix<T, Alloc>, SizeLeaf2>
 //  template<class T, typename Alloc>
 //  struct LeafFunctor<Matrix<T,Alloc>,EvalLeaf1>
 //  {
-//    typedef T Type_t;
+//    using Type_t = T;
 //    inline static
 //    Type_t apply(const Matrix<T,Alloc>& mat, const EvalLeaf1 &f)
 //    {
@@ -500,7 +500,7 @@ struct LeafFunctor<Matrix<T, Alloc>, SizeLeaf2>
 template<class T, typename Alloc>
 struct LeafFunctor<Matrix<T, Alloc>, EvalLeaf2>
 {
-  typedef T Type_t;
+  using Type_t = T;
   inline static Type_t apply(const Matrix<T, Alloc>& mat, const EvalLeaf2& f) { return mat(f.val1(), f.val2()); }
 };
 

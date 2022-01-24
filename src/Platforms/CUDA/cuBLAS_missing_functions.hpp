@@ -28,8 +28,8 @@ namespace qmcplusplus
  */
 namespace cuBLAS_MFs
 {
-typedef cudaError_t cuBLAS_MFs_status;
-typedef cudaStream_t cuBLAS_MFs_handle;
+using cuBLAS_MFs_status = cudaError_t;
+using cuBLAS_MFs_handle = cudaStream_t;
 
 // BLAS2
 /** Xgemv batched API

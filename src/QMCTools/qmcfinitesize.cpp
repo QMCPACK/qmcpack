@@ -44,9 +44,9 @@
 //Returns: (E(N=infty)-E(N)) for the given simulation cell.
 
 using namespace qmcplusplus;
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::PosType PosType;
-typedef SkParserBase::Grid_t Grid_t;
+using RealType = QMCTraits::RealType;
+using PosType  = QMCTraits::PosType;
+using Grid_t   = SkParserBase::Grid_t;
 
 int main(int argc, char** argv)
 {

@@ -34,7 +34,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // diamondC_1x1x1
   lattice.R(0, 0) = 3.37316115;
   lattice.R(0, 1) = 3.37316115;
@@ -110,9 +110,9 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   elec_.update();
 
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -158,7 +158,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   // diamondC_2x1x1
   lattice.R(0, 0) = 6.7463223;
   lattice.R(0, 1) = 6.7463223;
@@ -253,9 +253,9 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 #endif
 
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -342,16 +342,16 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
-  SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t psi_2(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi_2(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psi(spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psi_2(spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi_2(spo->getOrbitalSetSize());
 
-  RefVector<SPOSet::ValueVector_t> psi_v_list;
-  RefVector<SPOSet::GradVector_t> dpsi_v_list;
-  RefVector<SPOSet::ValueVector_t> d2psi_v_list;
+  RefVector<SPOSet::ValueVector> psi_v_list;
+  RefVector<SPOSet::GradVector> dpsi_v_list;
+  RefVector<SPOSet::ValueVector> d2psi_v_list;
 
   psi_v_list.push_back(psi);
   psi_v_list.push_back(psi_2);

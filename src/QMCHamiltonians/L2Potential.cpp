@@ -51,7 +51,7 @@ void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 {
   // compute the Hessian
-  TrialWaveFunction::HessVector_t D2;
+  TrialWaveFunction::HessVector D2;
   // evaluateHessian gives the Hessian(log(Psi))
   psi_ref->evaluateHessian(P, D2);
   // add gradient terms to get (Hessian(Psi))/Psi instead

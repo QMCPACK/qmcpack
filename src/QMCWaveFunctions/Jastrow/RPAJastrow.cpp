@@ -141,10 +141,10 @@ void RPAJastrow::makeLongRange()
   // create two-body kSpaceJastrow
   kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
   bool oneBodySpin, twoBodySpin;
-  oneBodySymm  = kSpaceJastrow::ISOTROPIC;
-  twoBodySymm  = kSpaceJastrow::ISOTROPIC;
-  oneBodySpin  = false;
-  twoBodySpin  = false;
+  oneBodySymm = kSpaceJastrow::ISOTROPIC;
+  twoBodySymm = kSpaceJastrow::ISOTROPIC;
+  oneBodySpin = false;
+  twoBodySpin = false;
   auto LongRangeRPA_uptr =
       std::make_unique<kSpaceJastrow>(targetPtcl, targetPtcl, oneBodySymm, -1, "cG1", oneBodySpin, // no one-body part
                                       twoBodySymm, Kc, "cG2", twoBodySpin);
@@ -177,11 +177,11 @@ void RPAJastrow::makeShortRange()
   nfunc           = nfunc_uptr.get();
   ShortRangePartAdapter<RealType> SRA(myHandler.get());
   SRA.setRmax(Rcut);
-  auto j2 = std::make_unique<J2OrbitalSoA<BsplineFunctor<RealType>>>("RPA", targetPtcl);
-  size_t nparam                              = 12;  // number of Bspline parameters
-  size_t npts                                = 100; // number of 1D grid points for basis functions
-  RealType cusp                              = SRA.df(0);
-  RealType delta                             = Rcut / static_cast<double>(npts);
+  auto j2        = std::make_unique<J2OrbitalSoA<BsplineFunctor<RealType>>>("RPA", targetPtcl);
+  size_t nparam  = 12;  // number of Bspline parameters
+  size_t npts    = 100; // number of 1D grid points for basis functions
+  RealType cusp  = SRA.df(0);
+  RealType delta = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
   {
@@ -220,8 +220,8 @@ void RPAJastrow::reportStatus(std::ostream& os)
 }
 
 RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& G,
-                                                 ParticleSet::ParticleLaplacian_t& L)
+                                                 ParticleSet::ParticleGradient& G,
+                                                 ParticleSet::ParticleLaplacian& L)
 {
   log_value_ = 0.0;
   for (int i = 0; i < Psi.size(); i++)

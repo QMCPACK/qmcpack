@@ -29,8 +29,8 @@ namespace qmcplusplus
 class HamiltonianFactory : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  typedef std::map<std::string, WaveFunctionFactory*> PsiPoolType;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using PsiPoolType  = std::map<std::string, WaveFunctionFactory*>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName, ParticleSet& qp, PtclPoolType& pset, PsiPoolType& oset, Communicate* c);

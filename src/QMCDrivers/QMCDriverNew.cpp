@@ -512,8 +512,8 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
-  std::vector<ParticleSet::ParticleGradient_t> Gs;
-  std::vector<ParticleSet::ParticleLaplacian_t> Ls;
+  std::vector<ParticleSet::ParticleGradient> Gs;
+  std::vector<ParticleSet::ParticleLaplacian> Ls;
   Gs.reserve(log_values.size());
   Ls.reserve(log_values.size());
 

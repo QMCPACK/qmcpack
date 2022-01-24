@@ -4,9 +4,9 @@
 #include <vector>
 #include <complex>
 
-double PI = 4. * std::atan(1);
-typedef std::complex<double> dcomp;
-typedef std::vector<double> vec;
+double PI   = 4. * std::atan(1);
+using dcomp = std::complex<double>;
+using vec   = std::vector<double>;
 
 //Same quadrature grid as in QMCPACK
 std::vector<vec> quad = {{1, 0, 0},

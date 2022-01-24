@@ -146,28 +146,28 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
 Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
                                                   ParticleSet& ions,
                                                   TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos_t& hf_terms,
-                                                  ParticleSet::ParticlePos_t& pulay_terms)
+                                                  ParticleSet::ParticlePos& hf_terms,
+                                                  ParticleSet::ParticlePos& pulay_terms)
 {
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  using ParticlePos       = ParticleSet::ParticlePos;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
 
   int Nions = ions.getTotalNum();
   int Nelec = P.getTotalNum();
 
   //These are intermediate arrays for potentially complex math.
-  ParticleLaplacian_t term2_(Nelec);
-  ParticleGradient_t term4_(Nelec);
+  ParticleLaplacian term2_(Nelec);
+  ParticleGradient term4_(Nelec);
 
   //Potentially complex temporary array for \partial \psi/\psi and \nabla^2 \partial \psi / \psi
-  ParticleGradient_t iongradpsi_(Nions), pulaytmp_(Nions);
+  ParticleGradient iongradpsi_(Nions), pulaytmp_(Nions);
   //temporary arrays that will be explicitly real.
-  ParticlePos_t pulaytmpreal_(Nions), iongradpsireal_(Nions);
+  ParticlePos pulaytmpreal_(Nions), iongradpsireal_(Nions);
 
 
-  TinyVector<ParticleGradient_t, OHMMS_DIM> iongrad_grad_;
-  TinyVector<ParticleLaplacian_t, OHMMS_DIM> iongrad_lapl_;
+  TinyVector<ParticleGradient, OHMMS_DIM> iongrad_grad_;
+  TinyVector<ParticleLaplacian, OHMMS_DIM> iongrad_lapl_;
 
   for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
   {

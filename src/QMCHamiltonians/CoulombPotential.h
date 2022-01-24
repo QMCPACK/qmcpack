@@ -143,7 +143,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
   /** evaluate AA-type interactions */
-  inline T evaluateAA(const DistanceTableAA& d, const ParticleScalar_t* restrict Z)
+  inline T evaluateAA(const DistanceTableAA& d, const ParticleScalar* restrict Z)
   {
     T res = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -163,7 +163,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 
   /** evaluate AA-type forces */
-  inline void evaluateAAForces(const DistanceTableAA& d, const ParticleScalar_t* restrict Z)
+  inline void evaluateAAForces(const DistanceTableAA& d, const ParticleScalar* restrict Z)
   {
     forces = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
@@ -181,9 +181,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 
   /** JNKIM: Need to check the precision */
-  inline T evaluateAB(const DistanceTableAB& d,
-                      const ParticleScalar_t* restrict Za,
-                      const ParticleScalar_t* restrict Zb)
+  inline T evaluateAB(const DistanceTableAB& d, const ParticleScalar* restrict Za, const ParticleScalar* restrict Zb)
   {
     constexpr T czero(0);
     T res = czero;
@@ -209,7 +207,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   /** evaluate AA-type interactions */
-  inline T evaluate_spAA(const DistanceTableAA& d, const ParticleScalar_t* restrict Z)
+  inline T evaluate_spAA(const DistanceTableAA& d, const ParticleScalar* restrict Z)
   {
     T res = 0.0;
     T pairpot;
@@ -254,9 +252,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 
-  inline T evaluate_spAB(const DistanceTableAB& d,
-                         const ParticleScalar_t* restrict Za,
-                         const ParticleScalar_t* restrict Zb)
+  inline T evaluate_spAB(const DistanceTableAB& d, const ParticleScalar* restrict Za, const ParticleScalar* restrict Zb)
   {
     T res = 0.0;
     T pairpot;
@@ -345,8 +341,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   inline Return_t evaluateWithIonDerivs(ParticleSet& P,
                                         ParticleSet& ions,
                                         TrialWaveFunction& psi,
-                                        ParticleSet::ParticlePos_t& hf_terms,
-                                        ParticleSet::ParticlePos_t& pulay_terms) override
+                                        ParticleSet::ParticlePos& hf_terms,
+                                        ParticleSet::ParticlePos& pulay_terms) override
   {
     if (is_active)
       value_ = evaluate(P); // No forces for the active

@@ -30,7 +30,7 @@ namespace afqmc
 // Follows a monostate-type pattern. All variables are static and refer to a global instance
 // of the resource.
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-//  typedef LocalTGBufferManager DeviceBufferManager;
+//  using DeviceBufferManager = LocalTGBufferManager;
 class LocalTGBufferManager : public DeviceBufferManager
 {
 public:

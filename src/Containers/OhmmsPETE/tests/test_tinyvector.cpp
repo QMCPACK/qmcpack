@@ -26,7 +26,7 @@ namespace qmcplusplus
 template<unsigned int D>
 void test_tiny_vector()
 {
-  typedef TinyVector<double, D> vec_t;
+  using vec_t = TinyVector<double, D>;
 
   vec_t v1;
   // default constructor sets elements to zero
@@ -63,7 +63,7 @@ void test_tiny_vector()
 template<unsigned int D>
 void test_tiny_vector_size_two()
 {
-  typedef TinyVector<double, D> vec_t;
+  using vec_t = TinyVector<double, D>;
   vec_t v3(1.0, 2.0);
   REQUIRE(v3[0] == Approx(1.0));
   REQUIRE(v3[1] == Approx(2.0));

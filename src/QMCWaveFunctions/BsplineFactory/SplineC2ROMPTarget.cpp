@@ -181,7 +181,7 @@ bool SplineC2ROMPTarget<ST>::write_splines(hdf_archive& h5f)
 template<typename ST>
 inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
                                              const vContainer_type& myV,
-                                             ValueVector_t& psi,
+                                             ValueVector& psi,
                                              int first,
                                              int last) const
 {
@@ -220,7 +220,7 @@ inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi)
+void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -274,7 +274,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first,
                                              index);
         const int first_cplx = first / 2;
-        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
+        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
@@ -286,8 +286,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 
 template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
-                                               ValueVector_t& psi,
-                                               const ValueVector_t& psiinv,
+                                               ValueVector& psi,
+                                               const ValueVector& psiinv,
                                                std::vector<ValueType>& ratios)
 {
   const int nVP = VP.getTotalNum();
@@ -353,7 +353,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
         const int first_cplx = first / 2;
-        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
+        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
@@ -382,7 +382,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 template<typename ST>
 void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                  const RefVector<ValueVector_t>& psi_list,
+                                                  const RefVector<ValueVector>& psi_list,
                                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
@@ -476,7 +476,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
         const int first_cplx = first / 2;
-        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
+        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
@@ -511,9 +511,9 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
    */
 template<typename ST>
 inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
-                                                      ValueVector_t& psi,
-                                                      GradVector_t& dpsi,
-                                                      ValueVector_t& d2psi)
+                                                      ValueVector& psi,
+                                                      GradVector& dpsi,
+                                                      ValueVector& d2psi)
 {
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
@@ -630,9 +630,9 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
 template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
                                          const int iat,
-                                         ValueVector_t& psi,
-                                         GradVector_t& dpsi,
-                                         ValueVector_t& d2psi)
+                                         ValueVector& psi,
+                                         GradVector& dpsi,
+                                         ValueVector& d2psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -675,8 +675,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
       const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                       PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                       PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+                            PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                            PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
       const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                             GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -686,7 +686,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
                                              offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
                                              offload_scratch_ptr + padded_size * 4 + first, padded_size, first, index);
       const int first_cplx = first / 2;
-      const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
+      const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
         C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
@@ -708,9 +708,9 @@ template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
                                                  Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
                                                  Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
-                                                 const RefVector<ValueVector_t>& psi_v_list,
-                                                 const RefVector<GradVector_t>& dpsi_v_list,
-                                                 const RefVector<ValueVector_t>& d2psi_v_list) const
+                                                 const RefVector<ValueVector>& psi_v_list,
+                                                 const RefVector<GradVector>& dpsi_v_list,
+                                                 const RefVector<ValueVector>& d2psi_v_list) const
 {
   const size_t num_pos       = psi_v_list.size();
   const int ChunkSizePerTeam = 128;
@@ -754,8 +754,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                                               pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
         const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -767,7 +767,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                                                offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
                                                index);
         const int first_cplx = first / 2;
-        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
+        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
@@ -779,9 +779,9 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   for (int iw = 0; iw < num_pos; ++iw)
   {
     auto* restrict results_iw_ptr = results_scratch_ptr + orb_size * iw * 5;
-    ValueVector_t& psi_v(psi_v_list[iw]);
-    GradVector_t& dpsi_v(dpsi_v_list[iw]);
-    ValueVector_t& d2psi_v(d2psi_v_list[iw]);
+    ValueVector& psi_v(psi_v_list[iw]);
+    GradVector& dpsi_v(dpsi_v_list[iw]);
+    ValueVector& d2psi_v(d2psi_v_list[iw]);
     for (size_t i = 0; i < orb_size; i++)
     {
       psi_v[i]     = results_iw_ptr[i];
@@ -797,9 +797,9 @@ template<typename ST>
 void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
-                                            const RefVector<ValueVector_t>& psi_v_list,
-                                            const RefVector<GradVector_t>& dpsi_v_list,
-                                            const RefVector<ValueVector_t>& d2psi_v_list) const
+                                            const RefVector<ValueVector>& psi_v_list,
+                                            const RefVector<GradVector>& dpsi_v_list,
+                                            const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &sa_list.getLeader());
   auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
@@ -840,7 +840,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                                             int iat,
                                                             const std::vector<const ValueType*>& invRow_ptr_list,
-                                                            VGLVector_t& phi_vgl_v,
+                                                            VGLVector& phi_vgl_v,
                                                             std::vector<ValueType>& ratios,
                                                             std::vector<GradType>& grads) const
 {
@@ -923,8 +923,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                               c, da, db, dc, d2a, d2b, d2c);
 
         const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -936,7 +936,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
                                                index);
         const int first_cplx = first / 2;
-        const int last_cplx = last / 2 < orb_size ? last / 2 : orb_size;
+        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
@@ -996,9 +996,9 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 
 template<typename ST>
 void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
-                                        ValueVector_t& psi,
-                                        GradVector_t& dpsi,
-                                        HessVector_t& grad_grad_psi,
+                                        ValueVector& psi,
+                                        GradVector& dpsi,
+                                        HessVector& grad_grad_psi,
                                         int first,
                                         int last) const
 {
@@ -1221,9 +1221,9 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
 template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateVGH(const ParticleSet& P,
                                          const int iat,
-                                         ValueVector_t& psi,
-                                         GradVector_t& dpsi,
-                                         HessVector_t& grad_grad_psi)
+                                         ValueVector& psi,
+                                         GradVector& dpsi,
+                                         HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -1239,10 +1239,10 @@ void SplineC2ROMPTarget<ST>::evaluateVGH(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
-                                          ValueVector_t& psi,
-                                          GradVector_t& dpsi,
-                                          HessVector_t& grad_grad_psi,
-                                          GGGVector_t& grad_grad_grad_psi,
+                                          ValueVector& psi,
+                                          GradVector& dpsi,
+                                          HessVector& grad_grad_psi,
+                                          GGGVector& grad_grad_grad_psi,
                                           int first,
                                           int last) const
 {
@@ -1708,10 +1708,10 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
 template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
                                            const int iat,
-                                           ValueVector_t& psi,
-                                           GradVector_t& dpsi,
-                                           HessVector_t& grad_grad_psi,
-                                           GGGVector_t& grad_grad_grad_psi)
+                                           ValueVector& psi,
+                                           GradVector& dpsi,
+                                           HessVector& grad_grad_psi,
+                                           GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -1729,20 +1729,20 @@ template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
                                                   int first,
                                                   int last,
-                                                  ValueMatrix_t& logdet,
-                                                  GradMatrix_t& dlogdet,
-                                                  ValueMatrix_t& d2logdet)
+                                                  ValueMatrix& logdet,
+                                                  GradMatrix& dlogdet,
+                                                  ValueMatrix& d2logdet)
 {
   // chunk the [first, last) loop into blocks to save temporary memory usage
   const int block_size = 16;
 
   // reference vectors refer to the rows of matrices
-  std::vector<ValueVector_t> multi_psi_v;
-  std::vector<GradVector_t> multi_dpsi_v;
-  std::vector<ValueVector_t> multi_d2psi_v;
-  RefVector<ValueVector_t> psi_v_list;
-  RefVector<GradVector_t> dpsi_v_list;
-  RefVector<ValueVector_t> d2psi_v_list;
+  std::vector<ValueVector> multi_psi_v;
+  std::vector<GradVector> multi_dpsi_v;
+  std::vector<ValueVector> multi_d2psi_v;
+  RefVector<ValueVector> psi_v_list;
+  RefVector<GradVector> dpsi_v_list;
+  RefVector<ValueVector> d2psi_v_list;
 
   multi_psi_v.reserve(block_size);
   multi_dpsi_v.reserve(block_size);

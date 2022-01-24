@@ -29,8 +29,8 @@
 template<class T>
 struct PooledData
 {
-  typedef T value_type;
-  typedef typename std::vector<T>::size_type size_type;
+  using value_type = T;
+  using size_type  = typename std::vector<T>::size_type;
 
   size_type Current;
   std::vector<T> myData;

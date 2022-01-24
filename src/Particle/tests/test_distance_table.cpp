@@ -339,7 +339,7 @@ SimulationCell parse_pbc_lattice()
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout_t lattice;
+  ParticleSet::ParticleLayout lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);
@@ -445,7 +445,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   }
 
   // move a particle by a lattice vector
-  ParticleSet::SingleParticlePos_t disp(6.0, 0, 0);
+  ParticleSet::SingleParticlePos disp(6.0, 0, 0);
   electrons.makeMove(0, disp); // temporary change written in distance table
   electrons.acceptMove(0);     // update distance table with temporary change
 
@@ -471,7 +471,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   electrons.update();
 
   // shift electron 0 a bit to avoid box edges.
-  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
   electrons.makeMove(0, shift);
   electrons.acceptMove(0);
 
@@ -549,7 +549,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   electrons.update();
 
   // shift electron 0 a bit to avoid box edges.
-  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
   electrons.makeMove(0, shift);
   electrons.accept_rejectMove(0, true, false);
   electrons.donePbyP();
@@ -563,7 +563,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   electrons.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
+  std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
   ParticleSet::mw_makeMove(p_list, 0, disp);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
@@ -603,7 +603,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   electrons.update();
 
   // shift electron 0 a bit to avoid box edges.
-  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
   electrons.makeMove(0, shift);
   electrons.accept_rejectMove(0, true, false);
   electrons.donePbyP();
@@ -617,7 +617,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   electrons.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
+  std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
   ParticleSet::mw_makeMove(p_list, 0, disp);
   CHECK(ee_dtable.getTempDists()[1] == Approx(2.7239676944));

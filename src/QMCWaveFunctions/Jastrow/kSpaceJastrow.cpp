@@ -69,7 +69,8 @@ void kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType>& gvecs, bool us
   gvecs.clear();
   int maxIndex[OHMMS_DIM];
   for (int i = 0; i < OHMMS_DIM; i++)
-    maxIndex[i] = 2 + (int)std::floor(std::sqrt(dot(Ions.getLattice().a(i), Ions.getLattice().a(i))) * kc / (2.0 * M_PI));
+    maxIndex[i] =
+        2 + (int)std::floor(std::sqrt(dot(Ions.getLattice().a(i), Ions.getLattice().a(i))) * kc / (2.0 * M_PI));
   std::vector<ComplexType> rho_G(NumIonSpecies);
 #if OHMMS_DIM == 3
   for (int i = 0; i <= maxIndex[0]; i++)
@@ -80,7 +81,8 @@ void kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType>& gvecs, bool us
         if (Include(i, j, k))
         {
           PosType G = 2.0 * M_PI *
-              ((RealType)i * Ions.getLattice().Gv[0] + (RealType)j * Ions.getLattice().Gv[1] + (RealType)k * Ions.getLattice().Gv[2]);
+              ((RealType)i * Ions.getLattice().Gv[0] + (RealType)j * Ions.getLattice().Gv[1] +
+               (RealType)k * Ions.getLattice().Gv[2]);
           if (dot(G, G) <= (kc * kc))
           {
             bool notZero(false);
@@ -362,8 +364,8 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
 ///////////////////////////////////////////////////////////////
 
 kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(const ParticleSet& P,
-                                                       ParticleSet::ParticleGradient_t& G,
-                                                       ParticleSet::ParticleLaplacian_t& L)
+                                                       ParticleSet::ParticleGradient& G,
+                                                       ParticleSet::ParticleLaplacian& L)
 {
   RealType J1(0.0), J2(0.0);
   int N = P.getTotalNum();

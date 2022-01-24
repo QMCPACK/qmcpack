@@ -27,8 +27,8 @@ namespace qmcplusplus
 class PWOrbitalSet : public SPOSet
 {
 public:
-  typedef PWBasis BasisSet_t;
-  typedef PWBasis* PWBasisPtr;
+  using BasisSet_t = PWBasis;
+  using PWBasisPtr = PWBasis*;
 
   /** inherit the enum of BasisSet_t */
   enum
@@ -77,16 +77,16 @@ public:
     return BLAS::dot(BasisSetSize, (*C)[ib], myBasisSet->Zv.data());
   }
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
 
   /** boolean
    *
@@ -103,7 +103,7 @@ public:
    *
    * makeClone makes a shallow copy and flag IsCloned
    */
-  ValueMatrix_t* C;
+  ValueMatrix* C;
   ///if true, do not clean up
   bool IsCloned;
   /////Plane-wave coefficients: (iband,g-vector)

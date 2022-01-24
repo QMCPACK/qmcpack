@@ -53,16 +53,16 @@ public:
   NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
   NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer, &evalOrbTimer;
 
-  typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, 3> HessArray_t;
-  typedef TinyVector<HessType, 3> GGGType;
-  typedef Vector<GGGType> GGGVector_t;
-  typedef Matrix<GGGType> GGGMatrix_t;
-  typedef ParticleSet::Walker_t Walker_t;
+  using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using HessMatrix  = OrbitalSetTraits<ValueType>::HessMatrix;
+  using HessType    = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray   = Array<HessType, 3>;
+  using GGGType     = TinyVector<HessType, 3>;
+  using GGGVector   = Vector<GGGType>;
+  using GGGMatrix   = Matrix<GGGType>;
+  using Walker_t    = ParticleSet::Walker_t;
 
 
   ///constructor
@@ -78,13 +78,11 @@ public:
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
 
-  virtual ValueType evaluate(const ParticleSet& P,
-                             ParticleSet::ParticleGradient_t& G,
-                             ParticleSet::ParticleLaplacian_t& L);
+  virtual ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L);
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
@@ -132,33 +130,33 @@ public:
   std::vector<ValueType> C;
 
   // lap(#uniqueDet,part#)
-  ValueVector_t detValues_up;
-  ValueVector_t detValues_dn;
+  ValueVector detValues_up;
+  ValueVector detValues_dn;
 
   // UGLY, how do I get around this? I want to use GradMatrix instead...
   // grads(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleGradient_t> grads_up;
-  std::vector<ParticleSet::ParticleGradient_t> grads_dn;
+  std::vector<ParticleSet::ParticleGradient> grads_up;
+  std::vector<ParticleSet::ParticleGradient> grads_dn;
 
   // lap(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleLaplacian_t> lapls_up;
-  std::vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
+  std::vector<ParticleSet::ParticleLaplacian> lapls_up;
+  std::vector<ParticleSet::ParticleLaplacian> lapls_dn;
 
   // grads(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleGradient_t> tempgrad;
+  std::vector<ParticleSet::ParticleGradient> tempgrad;
 
   // lap(#uniqueDet,part#)
-  std::vector<ParticleSet::ParticleLaplacian_t> templapl;
+  std::vector<ParticleSet::ParticleLaplacian> templapl;
 
   PsiValueType curRatio;
   ValueType psiCurrent;
-  ValueVector_t detsRatios;
-  ValueVector_t tempstorage_up;
-  ValueVector_t tempstorage_dn;
-  GradVector_t grad_temp;
+  ValueVector detsRatios;
+  ValueVector tempstorage_up;
+  ValueVector tempstorage_dn;
+  GradVector grad_temp;
 
-  ParticleSet::ParticleGradient_t myG;
-  ParticleSet::ParticleLaplacian_t myL;
+  ParticleSet::ParticleGradient myG;
+  ParticleSet::ParticleLaplacian myL;
 
   opt_variables_type myVars;
 

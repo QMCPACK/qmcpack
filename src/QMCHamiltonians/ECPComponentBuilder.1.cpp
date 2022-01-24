@@ -62,7 +62,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
 ECPComponentBuilder::RadialPotentialType* ECPComponentBuilder::createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid)
 {
   //todo rcut should be reset if necessary
-  typedef GaussianTimesRN<RealType> InFuncType;
+  using InFuncType = GaussianTimesRN<RealType>;
   InFuncType a;
   a.putBasisGroup(cur);
   bool ignore        = true;
@@ -125,7 +125,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   {
     app_log() << "  Local pseudopotential format = V" << std::endl;
   }
-  typedef GaussianTimesRN<RealType> InFuncType;
+  using InFuncType = GaussianTimesRN<RealType>;
   std::unique_ptr<GridType> grid_local;
   std::unique_ptr<mGridType> grid_local_inp;
   InFuncType vr;

@@ -32,8 +32,8 @@ namespace qmcplusplus
 
 struct LocalECPotential : public OperatorBase
 {
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using GridType            = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
@@ -77,8 +77,8 @@ struct LocalECPotential : public OperatorBase
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
 
   Return_t evaluate_orig(ParticleSet& P);

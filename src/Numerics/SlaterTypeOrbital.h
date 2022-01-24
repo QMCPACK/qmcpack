@@ -57,7 +57,7 @@ template<class T>
 struct GenericSTO
 {
   static_assert(std::is_floating_point<T>::value, "T must be a float point type");
-  typedef T real_type;
+  using real_type = T;
 
   int ID;
   ///Principal number
@@ -155,7 +155,6 @@ struct GenericSTO
     }
     return rnl;
   }
-
 };
 
 /**class for Slater-type orbitals,
@@ -168,7 +167,7 @@ template<class T>
 struct RadialSTO
 {
   static_assert(std::is_floating_point<T>::value, "T must be a float point type");
-  typedef T real_type;
+  using real_type = T;
   int NminusOne;
   T Z;
   T Norm;

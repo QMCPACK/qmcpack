@@ -35,14 +35,14 @@ int main(int argc, char** argv)
     outputManager.shutOff();
   }
 
-  typedef float RealType;
-  typedef TinyVector<RealType, 3> PosType;
+  using RealType = float;
+  using PosType  = TinyVector<RealType, 3>;
 
-  //typedef QMCTraits::RealType           RealType;
-  //typedef ParticleSet::ParticlePos_t    ParticlePos_t;
-  //typedef ParticleSet::ParticleLayout_t LatticeType;
-  //typedef ParticleSet::TensorType       TensorType;
-  //typedef ParticleSet::PosType          PosType;
+  //using RealType = QMCTraits::RealType          ;
+  //using ParticlePos = ParticleSet::ParticlePos   ;
+  //using LatticeType = ParticleSet::ParticleLayout;
+  //using TensorType = ParticleSet::TensorType      ;
+  //using PosType = ParticleSet::PosType         ;
   //use the global generator
 
   bool ionode  = (myComm->rank() == 0);

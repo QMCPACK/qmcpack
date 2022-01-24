@@ -26,7 +26,7 @@ namespace qmcplusplus
  */
 std::unique_ptr<DistanceTable> createDistanceTableAA(ParticleSet& s, std::ostream& description)
 {
-  typedef OHMMS_PRECISION RealType;
+  using RealType = OHMMS_PRECISION;
   enum
   {
     DIM = OHMMS_DIM

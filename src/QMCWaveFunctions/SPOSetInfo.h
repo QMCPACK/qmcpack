@@ -25,9 +25,9 @@ namespace qmcplusplus
 class SPOSetInfo
 {
 public:
-  typedef QMCTraits::RealType RealType;
-  typedef std::vector<SPOInfo*> states_t;
-  typedef spoinfo::orderings orderings;
+  using RealType  = QMCTraits::RealType;
+  using states_t  = std::vector<SPOInfo*>;
+  using orderings = spoinfo::orderings;
 
   // construction/destruction
   SPOSetInfo();
@@ -136,7 +136,7 @@ private:
 template<typename SPOI>
 struct SPOSetInfoSimple
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
   std::vector<SPOI*> states; //SPOI should derive from SPOInfo
 
   SPOSetInfoSimple() {}

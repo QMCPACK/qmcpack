@@ -27,10 +27,10 @@ namespace qmcplusplus
 {
 struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
 {
-  typedef LocalECPotential::GridType GridType;
-  typedef ParticleSet::Scalar_t mRealType;
-  typedef OneDimGridBase<mRealType> mGridType;
-  typedef LocalECPotential::RadialPotentialType RadialPotentialType;
+  using GridType            = LocalECPotential::GridType;
+  using mRealType           = ParticleSet::Scalar_t;
+  using mGridType           = OneDimGridBase<mRealType>;
+  using RadialPotentialType = LocalECPotential::RadialPotentialType;
 
   int NumNonLocal;
   int Lmax, Llocal, Nrule, Srule;

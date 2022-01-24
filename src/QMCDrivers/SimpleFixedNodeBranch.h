@@ -98,7 +98,7 @@ class EstimatorManagerBase;
  */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
-  typedef SimpleFixedNodeBranch ThisType;
+  using ThisType  = SimpleFixedNodeBranch;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
@@ -130,7 +130,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** booleans to set the branch modes
    * \since 2008-05-05
    */
-  typedef std::bitset<B_MODE_MAX> BranchModeType;
+  using BranchModeType = std::bitset<B_MODE_MAX>;
   BranchModeType BranchMode;
 
   /*! enum for iParam std::bitset<B_IPARAM_MAX>
@@ -161,7 +161,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** input parameters of integer types
    * \since 2008-05-05
    */
-  typedef TinyVector<int, B_IPARAM_MAX> IParamType;
+  using IParamType = TinyVector<int, B_IPARAM_MAX>;
   IParamType iParam;
 
   /** enum for vParam 

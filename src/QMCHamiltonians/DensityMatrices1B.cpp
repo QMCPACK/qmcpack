@@ -901,7 +901,7 @@ inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 {
   ScopedTimer t(timers[DM_gen_samples]);
   RandomGenerator& rng = *uniform_random;
-  bool save              = false;
+  bool save            = false;
   if (steps == 0)
   {
     save  = true;
@@ -1081,8 +1081,8 @@ inline void DensityMatrices1B::density_drift(const PosType& r, RealType& dens, P
 }
 
 
-typedef DensityMatrices1B::RealType RealType;
-typedef DensityMatrices1B::Value_t Value_t;
+using RealType = DensityMatrices1B::RealType;
+using Value_t  = DensityMatrices1B::Value_t;
 
 
 inline RealType accum_constant(CombinedTraceSample<TraceReal>* etrace, RealType weight = 1.0)
@@ -1253,7 +1253,7 @@ inline void DensityMatrices1B::normalize()
   RealType du = scale / ngrid;
   RealType dV = volume / ngtot;
   PosType rp;
-  ValueVector_t bnorms;
+  ValueVector bnorms;
   int gdims[DIM];
   gdims[0] = pow(ngrid, DIM - 1);
   for (int d = 1; d < DIM; ++d)

@@ -204,7 +204,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AB()
   int nelns = PtclTarg.getTotalNum();
   int nions = PtclA.getTotalNum();
 
-  typedef LRHandlerType::mRealType mRealType;
+  using mRealType = LRHandlerType::mRealType;
 
   SymTensor<mRealType, OHMMS_DIM> Consts = 0.0;
   SymTensor<mRealType, OHMMS_DIM> vs_k0  = AA->evaluateSR_k0_dstrain();
@@ -303,7 +303,7 @@ StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(ParticleSet& P)
 {
-  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector grad_grad_psi;
   Psi.evaluateHessian(P, grad_grad_psi);
   SymTensor<RealType, OHMMS_DIM> kinetic_tensor;
   Tensor<ComplexType, OHMMS_DIM> complex_ktensor;
@@ -311,7 +311,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(Pa
   for (int iat = 0; iat < P.getTotalNum(); iat++)
   {
     const RealType minv(1.0 / P.Mass[iat]);
-    complex_ktensor += outerProduct(P.G[iat], P.G[iat]) * static_cast<ParticleSet::SingleParticleValue_t>(minv);
+    complex_ktensor += outerProduct(P.G[iat], P.G[iat]) * static_cast<ParticleSet::SingleParticleValue>(minv);
     complex_ktensor += grad_grad_psi[iat] * minv;
   }
 

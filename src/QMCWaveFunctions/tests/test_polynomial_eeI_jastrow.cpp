@@ -109,7 +109,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   eeI_JastrowBuilder jastrow(c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
-  typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
+  using J3Type              = JeeIOrbitalSoA<PolynomialFunctor3D>;
   auto j3_uptr              = jastrow.buildComponent(jas_eeI);
   WaveFunctionComponent* j3 = dynamic_cast<J3Type*>(j3_uptr.get());
   REQUIRE(j3 != nullptr);
@@ -123,8 +123,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
 
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);

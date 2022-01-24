@@ -292,12 +292,12 @@ protected:
   //vector<std::vector<vector<Return_t> >* > DerivRecords;
   //vector<std::vector<vector<Return_t> >* > HDerivRecords;
 
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
   ///** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */
-  std::vector<ParticleGradient_t*> dLogPsi;
+  std::vector<ParticleGradient*> dLogPsi;
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
-  std::vector<ParticleLaplacian_t*> d2LogPsi;
+  std::vector<ParticleLaplacian*> d2LogPsi;
   ///stream for debug
   std::ostream* debug_stream;
 

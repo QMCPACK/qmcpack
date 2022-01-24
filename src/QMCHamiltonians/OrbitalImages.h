@@ -112,10 +112,10 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef std::map<std::string, ParticleSet*> PSPool;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  using Lattice_t   = ParticleSet::ParticleLayout;
+  using PSPool      = std::map<std::string, ParticleSet*>;
 
 
   ///derivative types
@@ -195,13 +195,13 @@ public:
   int batch_size;
 
   ///temporary vector to hold values of all orbitals at a single point
-  ValueVector_t spo_vtmp;
+  ValueVector spo_vtmp;
 
   ///temporary vector to hold gradients of all orbitals at a single point
-  GradVector_t spo_gtmp;
+  GradVector spo_gtmp;
 
   ///temporary vector to hold laplacians of all orbitals at a single point
-  ValueVector_t spo_ltmp;
+  ValueVector spo_ltmp;
 
   ///temporary array to hold values of a batch of orbitals at all grid points
   Array<ValueType, 2> batch_values;

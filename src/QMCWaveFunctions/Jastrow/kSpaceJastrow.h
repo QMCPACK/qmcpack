@@ -76,7 +76,7 @@ public:
   } SymmetryType;
 
 private:
-  typedef std::complex<RealType> ComplexType;
+  using ComplexType = std::complex<RealType>;
   ////////////////
   // Basic data //
   ////////////////
@@ -162,8 +162,8 @@ public:
   void reportStatus(std::ostream& os) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
 

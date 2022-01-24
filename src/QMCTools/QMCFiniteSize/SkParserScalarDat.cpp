@@ -7,8 +7,8 @@
 
 namespace qmcplusplus
 {
-typedef SkParserScalarDat::RealType RealType;
-typedef SkParserScalarDat::PosType PosType;
+using RealType = SkParserScalarDat::RealType;
+using PosType  = SkParserScalarDat::PosType;
 
 void SkParserScalarDat::read_sk_file(const string& fname)
 {

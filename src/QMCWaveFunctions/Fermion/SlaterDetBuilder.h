@@ -39,7 +39,7 @@ class BackflowTransformation;
 class SlaterDetBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
+  using MultiSlaterDeterminant_t = MultiSlaterDeterminant;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
