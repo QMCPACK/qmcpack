@@ -445,13 +445,14 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   }
   else
   {
+    const DetMatInvertor matrix_inverter_kind =
+        (matrix_inverter == "host") ? DetMatInvertor::HOST : DetMatInvertor::ACCEL;
+    if (matrix_inverter_kind == DetMatInvertor::HOST)
+      app_summary() << "      Matrix inversion running on host." << std::endl;
+
     if (use_batch == "yes")
     {
       app_summary() << "      Using walker batching." << std::endl;
-      const DetMatInvertor matrix_inverter_kind =
-          (matrix_inverter == "host") ? DetMatInvertor::HOST : DetMatInvertor::ACCEL;
-      if (matrix_inverter_kind == DetMatInvertor::HOST)
-        app_summary() << "      Batched matrix inversion running on host." << std::endl;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
@@ -481,13 +482,13 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
-                                                                                          delay_rank);
+                                                                                          delay_rank, matrix_inverter_kind);
       }
       else
 #endif
       {
         app_summary() << "      Running on CPU." << std::endl;
-        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank);
+        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank, matrix_inverter_kind);
       }
     }
   }

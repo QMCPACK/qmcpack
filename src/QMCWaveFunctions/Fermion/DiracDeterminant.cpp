@@ -30,8 +30,10 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last), ndelay_(ndelay), invRow_id(-1)
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay,
+                                                             DetMatInvertor matrix_inverter_kind)
+    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last), ndelay_(ndelay), invRow_id(-1),
+      matrix_inverter_kind_(matrix_inverter_kind)
 {
   resize(NumPtcls, NumPtcls);
 
@@ -51,7 +53,13 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
-  updateEng.invert_transpose(logdetT, invMat, log_value_);
+  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
+    updateEng.invert_transpose(logdetT, invMat, log_value_);
+  else
+  {
+    host_inverter_.invert_transpose(logdetT, invMat, log_value_);
+    updateEng.initializeInv(psiM);
+  }
 }
 
 

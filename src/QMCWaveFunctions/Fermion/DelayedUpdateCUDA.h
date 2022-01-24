@@ -83,6 +83,13 @@ class DelayedUpdateCUDA
   cublasHandle_t h_cublas;
   cudaStream_t hstream;
 
+  /// reset delay count to 0
+  inline void clearDelayCount()
+  {
+    delay_count = 0;
+    prefetched_range.clear();
+  }
+
 public:
   /// default constructor
   DelayedUpdateCUDA() : delay_count(0)
@@ -124,37 +131,13 @@ public:
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
-   * when T_FP and T are the same
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL, typename = std::enable_if_t<std::is_same<TMAT, T>::value>>
-  std::enable_if_t<std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& log_value)
+  template<typename TREAL>
+  void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-    // safe mechanism
-    delay_count = 0;
-    cusolver_invertor.invert_transpose(logdetT, Ainv_gpu, log_value);
-    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-  }
-
-  /** compute the inverse of the transpose of matrix A and its determinant value in log
-   * when T_FP and T are the same
-   * @tparam TREAL real type
-   */
-  template<typename TMAT, typename TREAL, typename = std::enable_if_t<std::is_same<TMAT, T>::value>>
-  std::enable_if_t<!std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& log_value)
-  {
-    // safe mechanism
-    delay_count = 0;
-    cusolver_invertor.invert_transpose(logdetT, Ainv_gpu, log_value);
-    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    clearDelayCount();
+    cusolver_invertor.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
   }
 
   /** initialize internal objects when Ainv is refreshed
@@ -165,10 +148,11 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T), cudaMemcpyHostToDevice,
                                    hstream),
                    "cudaMemcpyAsync failed!");
-    // safe mechanism
-    delay_count = 0;
-    prefetched_range.clear();
+    clearDelayCount();
+    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
   }
+
+  inline int getDelayCount() const { return delay_count; }
 
   /** compute the row of up-to-date Ainv
    * @param Ainv inverse matrix
@@ -185,7 +169,7 @@ public:
                                      hstream),
                      "cudaMemcpyAsync failed!");
       prefetched_range.setRange(rowchanged, last_row);
-      cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
+      cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
     }
     // save AinvRow to new_AinvRow
     std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
@@ -273,9 +257,7 @@ public:
       cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
                                     U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb),
                        "cuBLAS::gemm failed!");
-      delay_count = 0;
-      // Ainv is invalid, reset range
-      prefetched_range.clear();
+      clearDelayCount();
     }
 
     // transfer Ainv_gpu to Ainv and wait till completion
@@ -285,7 +267,7 @@ public:
                                      hstream),
                      "cudaMemcpyAsync failed!");
       // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-      //cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");;
+      //cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
     }
   }
 };

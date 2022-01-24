@@ -83,7 +83,7 @@ public:
    */
   template<typename TMAT, typename TREAL, typename = std::enable_if_t<std::is_same<TMAT, T_FP>::value>>
   std::enable_if_t<std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
+  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
   {
     const int norb = logdetT.rows();
     cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), cudaMemcpyHostToDevice,
@@ -100,7 +100,7 @@ public:
                                    cudaMemcpyDeviceToHost, hstream_),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");;
+    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -115,7 +115,10 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream_),
                    "cudaMemcpyAsync failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");;
+    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), cudaMemcpyDeviceToHost,
+                                   hstream_),
+                   "cudaMemcpyAsync failed!");
+    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -131,7 +134,7 @@ public:
    */
   template<typename TMAT, typename TREAL, typename = std::enable_if_t<!std::is_same<TMAT, T_FP>::value>>
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value>
-  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
+  invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu, std::complex<TREAL>& log_value)
   {
     const int norb = logdetT.rows();
     Mat2_gpu.resize(norb, norb);
@@ -150,7 +153,7 @@ public:
                                    cudaMemcpyDeviceToHost, hstream_),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");;
+    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -166,7 +169,10 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream_),
                    "cudaMemcpyAsync failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!");;
+    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), cudaMemcpyDeviceToHost,
+                                   hstream_),
+                   "cudaMemcpyAsync failed!");
+    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
     if (ipiv[0] != 0)
     {
       std::ostringstream err;

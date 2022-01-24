@@ -57,7 +57,7 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
+  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1, DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
@@ -240,6 +240,12 @@ public:
   ValueType* LastAddressOfdV;
 
 private:
+  /// slow but doesn't consume device memory
+  DiracMatrix<QMCTraits::QTFull::ValueType> host_inverter_;
+
+  /// selected scheme for inversion
+  const DetMatInvertor matrix_inverter_kind_;
+
   /// invert psiM or its copies
   void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 

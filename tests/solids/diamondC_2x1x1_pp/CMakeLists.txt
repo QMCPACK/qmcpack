@@ -1389,10 +1389,42 @@ if(NOT QMC_CUDA)
   )
 
   qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_inverter-host_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_vmcbatch_dmcbatch_mwalkers
+    det_qmc_short_vmcbatch_dmcbatch_mwalkers_inverter_host.in.xml
+    2
+    3
+    TRUE
+    0
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
+    1
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
+    2
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
     deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
     det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
     det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
+    2
+    3
+    TRUE
+    0
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
+    1
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
+    2
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_inverter-host_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers_inverter_host.in.xml
     2
     3
     TRUE
