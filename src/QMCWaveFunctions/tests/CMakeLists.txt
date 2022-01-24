@@ -101,7 +101,7 @@ set(JASTROW_SRC
     test_DiffTwoBodyJastrowOrbital.cpp)
 set(DETERMINANT_SRC
     FakeSPO.cpp
-    test_DiracDeterminantBatched.cpp
+    test_DiracDeterminant.cpp
     test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
     test_dirac_matrix.cpp
