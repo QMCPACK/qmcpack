@@ -308,6 +308,14 @@ template void DMCBatched::advanceWalkers<QMCDriverNew::POSITIONS>(const StateFor
                                                                   bool recompute,
                                                                   bool accumulate_this_step);
 
+template void DMCBatched::advanceWalkers<QMCDriverNew::POSITIONS_SPINS>(const StateForThread& sft,
+                                                                        Crowd& crowd,
+                                                                        DriverTimers& timers,
+                                                                        DMCTimers& dmc_timers,
+                                                                        ContextForSteps& step_context,
+                                                                        bool recompute,
+                                                                        bool accumulate_this_step);
+
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
