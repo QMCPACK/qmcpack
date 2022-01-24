@@ -272,6 +272,7 @@ void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
   { //need to compute dpsiM and d2psiM. Do not touch psiM!
     ScopedTimer local_timer(SPOVGLTimer);
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    UpdateMode = ORB_WALKER;
   }
 
   for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
@@ -647,6 +648,7 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
+    UpdateMode = ORB_WALKER;
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   }
 

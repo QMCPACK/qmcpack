@@ -425,6 +425,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::LogValue DiracDeterminantBatched<D
       ScopedTimer spo_timer(SPOVGLTimer);
       Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host, dpsiM, d2psiM);
     }
+    UpdateMode = ORB_WALKER;
     computeGL(G, L);
   }
   return log_value_;
@@ -492,6 +493,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeade
       assert(d2psiM_from_device == det.d2psiM);
 #endif
 
+      det.UpdateMode = ORB_WALKER;
       det.computeGL(G_list[iw], L_list[iw]);
     }
   }
@@ -867,6 +869,7 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(const ParticleSet& P)
   {
     ScopedTimer spo_timer(SPOVGLTimer);
 
+    UpdateMode = ORB_WALKER;
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host, dpsiM, d2psiM);
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
@@ -942,6 +945,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
       auto* psiM_vgl_ptr = det.psiM_vgl.data();
       size_t stride      = wfc_leader.psiM_vgl.capacity();
       PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
+      det.UpdateMode = ORB_WALKER;
     }
     PRAGMA_OFFLOAD("omp taskwait")
   }
