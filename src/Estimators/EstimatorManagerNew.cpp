@@ -76,7 +76,7 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
                                          const ParticleSet& pset,
                                          const TrialWaveFunction& twf,
                                          const WaveFunctionFactory& wf_factory)
-  : input_(std::move(emi)),
+    : input_(std::move(emi)),
       MainEstimatorName("LocalEnergy"),
       RecordCount(0),
       my_comm_(c),
@@ -105,19 +105,19 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
   };
 
   auto makeMomentumDistribution = [&](auto& est_in, auto total_number, auto twist,
-                                     auto& lattice) -> UPtr<OperatorEstBase> {
+                                      auto& lattice) -> UPtr<OperatorEstBase> {
     return std::make_unique<MomentumDistribution>(est_in, total_number, twist, lattice, DataLocality::crowd);
   };
 
   for (auto& est_input : input_.get_estimator_inputs())
   {
-    if (tryConstructEstimator<SpinDensityInput>(est_input, makeSpinDensity, pset.Lattice, pset.getSpeciesSet()))
+    if (tryConstructEstimator<SpinDensityInput>(est_input, makeSpinDensity, pset.getLattice(), pset.getSpeciesSet()))
       continue;
-    else if (tryConstructEstimator<OneBodyDensityMatricesInput>(est_input, makeOBDM, pset.Lattice, pset.getSpeciesSet(),
-                                                                wf_factory))
+    else if (tryConstructEstimator<OneBodyDensityMatricesInput>(est_input, makeOBDM, pset.getLattice(),
+                                                                pset.getSpeciesSet(), wf_factory))
       continue;
     else if (tryConstructEstimator<MomentumDistributionInput>(est_input, makeMomentumDistribution, pset.getTotalNum(),
-                                                         pset.getTwist(), pset.Lattice))
+                                                              pset.getTwist(), pset.getLattice()))
       continue;
   }
 }
