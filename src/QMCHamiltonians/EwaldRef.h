@@ -411,7 +411,12 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
     std::vector<RealVec> rr(Npairs);
     for (size_t i = 0, n = 0; i < N; ++i)
       for (size_t j = 0; j < i; ++j, ++n)
-        rr[n] = R[i] - R[j];
+      {
+        RealVec reduced = dot(R[i] - R[j], inverse(a));
+        for (size_t dim = 0; dim < DIM; dim++)
+          reduced[dim] -= std::floor(reduced[dim]);
+        rr[n] = dot(reduced, a);
+      }
 
 #pragma omp parallel for reduction(+ : ve)
     for (size_t n = 0; n < Npairs; ++n)
