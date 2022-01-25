@@ -18,6 +18,7 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
+#include "QMCDrivers/MoveAbstraction.h"
 
 #include "Utilities/Timer.h"
 

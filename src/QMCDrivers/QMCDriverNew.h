@@ -86,12 +86,6 @@ public:
     QMC_WARMUP
   };
 
-  enum CoordsToMove
-  {
-    POSITIONS,
-    POSITIONS_SPINS,
-  };
-
   using MCPWalker = MCPopulation::MCPWalker;
   using WFBuffer  = MCPopulation::WFBuffer;
 

@@ -18,7 +18,6 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
 #include "MemoryUsage.h"
-#include "MoveAbstraction.h"
 
 namespace qmcplusplus
 {
@@ -36,7 +35,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
-template<QMCDriverNew::CoordsToMove COORDS>
+template<CoordsToMove COORDS>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
@@ -183,19 +182,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   //  check if all moves failed
 }
 
-template void VMCBatched::advanceWalkers<QMCDriverNew::POSITIONS>(const StateForThread& sft,
-                                                                  Crowd& crowd,
-                                                                  QMCDriverNew::DriverTimers& timers,
-                                                                  ContextForSteps& step_context,
-                                                                  bool recompute,
-                                                                  bool accumulate_this_step);
+template void VMCBatched::advanceWalkers<POSITIONS>(const StateForThread& sft,
+                                                    Crowd& crowd,
+                                                    QMCDriverNew::DriverTimers& timers,
+                                                    ContextForSteps& step_context,
+                                                    bool recompute,
+                                                    bool accumulate_this_step);
 
-template void VMCBatched::advanceWalkers<QMCDriverNew::POSITIONS_SPINS>(const StateForThread& sft,
-                                                                        Crowd& crowd,
-                                                                        QMCDriverNew::DriverTimers& timers,
-                                                                        ContextForSteps& step_context,
-                                                                        bool recompute,
-                                                                        bool accumulate_this_step);
+template void VMCBatched::advanceWalkers<POSITIONS_SPINS>(const StateForThread& sft,
+                                                          Crowd& crowd,
+                                                          QMCDriverNew::DriverTimers& timers,
+                                                          ContextForSteps& step_context,
+                                                          bool recompute,
+                                                          bool accumulate_this_step);
 
 /** Thread body for VMC step
  *

@@ -26,7 +26,6 @@
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
 #include "MemoryUsage.h"
-#include "MoveAbstraction.h"
 
 namespace qmcplusplus
 {
@@ -61,7 +60,7 @@ void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
-template<QMCDriverNew::CoordsToMove COORDS>
+template<CoordsToMove COORDS>
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
@@ -300,21 +299,21 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 }
 
-template void DMCBatched::advanceWalkers<QMCDriverNew::POSITIONS>(const StateForThread& sft,
-                                                                  Crowd& crowd,
-                                                                  DriverTimers& timers,
-                                                                  DMCTimers& dmc_timers,
-                                                                  ContextForSteps& step_context,
-                                                                  bool recompute,
-                                                                  bool accumulate_this_step);
+template void DMCBatched::advanceWalkers<POSITIONS>(const StateForThread& sft,
+                                                    Crowd& crowd,
+                                                    DriverTimers& timers,
+                                                    DMCTimers& dmc_timers,
+                                                    ContextForSteps& step_context,
+                                                    bool recompute,
+                                                    bool accumulate_this_step);
 
-template void DMCBatched::advanceWalkers<QMCDriverNew::POSITIONS_SPINS>(const StateForThread& sft,
-                                                                        Crowd& crowd,
-                                                                        DriverTimers& timers,
-                                                                        DMCTimers& dmc_timers,
-                                                                        ContextForSteps& step_context,
-                                                                        bool recompute,
-                                                                        bool accumulate_this_step);
+template void DMCBatched::advanceWalkers<POSITIONS_SPINS>(const StateForThread& sft,
+                                                          Crowd& crowd,
+                                                          DriverTimers& timers,
+                                                          DMCTimers& dmc_timers,
+                                                          ContextForSteps& step_context,
+                                                          bool recompute,
+                                                          bool accumulate_this_step);
 
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,

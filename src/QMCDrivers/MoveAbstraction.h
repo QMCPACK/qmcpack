@@ -12,7 +12,6 @@
 #ifndef QMCPLUSPLUS_MOVEABSTRACTION_H
 #define QMCPLUSPLUS_MOVEABSTRACTION_H
 
-#include "QMCDriverNew.h"
 #include "Particle/PSdispatcher.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/TWFdispatcher.h"
@@ -25,12 +24,18 @@
 
 namespace qmcplusplus
 {
+enum CoordsToMove
+{
+  POSITIONS,
+  POSITIONS_SPINS,
+};
+
 /** abstraction class to handle particle moves in batched QMC drivers
  *
- * QMCDriverNew has an enum CoordsToMove
+ * Templated on enum CoordsToMove
  * Currently supports POSITIONS and POSITIONS_SPINS, which includes dynamic spins in particle moves
  */
-template<QMCDriverNew::CoordsToMove COORDS>
+template<CoordsToMove COORDS>
 class MoveAbstraction
 {
   using Pos     = ParticleSet::PosType;
@@ -172,7 +177,7 @@ private:
   const PSdispatcher& ps_dispatcher_;
   /// provides flex_ APIs to do select sw/mw updates of trial wave function
   const TWFdispatcher& twf_dispatcher_;
-  /// rng, provided by ContextForSteps 
+  /// rng, provided by ContextForSteps
   RandomGenerator& random_gen_;
   /// drift modifer used to limit size of drift velocity
   const DriftModifierBase& drift_modifier_;
@@ -196,12 +201,12 @@ private:
 };
 
 template<>
-inline MoveAbstraction<QMCDriverNew::POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                                 const TWFdispatcher& twf_dispatcher,
-                                                                 RandomGenerator& random_gen,
-                                                                 const DriftModifierBase& drift_modifier,
-                                                                 const int num_walkers,
-                                                                 const int num_particles)
+inline MoveAbstraction<POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
+                                                   const TWFdispatcher& twf_dispatcher,
+                                                   RandomGenerator& random_gen,
+                                                   const DriftModifierBase& drift_modifier,
+                                                   const int num_walkers,
+                                                   const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
       twf_dispatcher_(twf_dispatcher),
       random_gen_(random_gen),
@@ -215,12 +220,12 @@ inline MoveAbstraction<QMCDriverNew::POSITIONS>::MoveAbstraction(const PSdispatc
 }
 
 template<>
-inline MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                                       const TWFdispatcher& twf_dispatcher,
-                                                                       RandomGenerator& random_gen,
-                                                                       const DriftModifierBase& drift_modifier,
-                                                                       const int num_walkers,
-                                                                       const int num_particles)
+inline MoveAbstraction<POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
+                                                         const TWFdispatcher& twf_dispatcher,
+                                                         RandomGenerator& random_gen,
+                                                         const DriftModifierBase& drift_modifier,
+                                                         const int num_walkers,
+                                                         const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
       twf_dispatcher_(twf_dispatcher),
       random_gen_(random_gen),
@@ -238,21 +243,20 @@ inline MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::MoveAbstraction(const PSd
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS>::generateDeltas()
+inline void MoveAbstraction<POSITIONS>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_, random_gen_);
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::generateDeltas()
+inline void MoveAbstraction<POSITIONS_SPINS>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_, random_gen_);
   makeGaussRandomWithEngine(walker_spindeltas_, random_gen_);
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
-                                                                     const Real& invmass)
+inline void MoveAbstraction<POSITIONS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
 {
   tauovermass_ = qmcdrv_input.get_tau() * invmass;
   oneover2tau_ = 0.5 / tauovermass_;
@@ -260,8 +264,7 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS>::setTauForGroup(const QMCDr
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
-                                                                           const Real& invmass)
+inline void MoveAbstraction<POSITIONS_SPINS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
 {
   tauovermass_     = qmcdrv_input.get_tau() * invmass;
   oneover2tau_     = 0.5 / tauovermass_;
@@ -272,10 +275,9 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::setTauForGroup(const
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMoveWithDrift(
-    const RefVectorWithLeader<TrialWaveFunction>& twfs,
-    const RefVectorWithLeader<ParticleSet>& elecs,
-    const int iat)
+inline void MoveAbstraction<POSITIONS>::calcForwardMoveWithDrift(const RefVectorWithLeader<TrialWaveFunction>& twfs,
+                                                                 const RefVectorWithLeader<ParticleSet>& elecs,
+                                                                 const int iat)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
@@ -287,7 +289,7 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMoveWithDrift(
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMoveWithDrift(
+inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMoveWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     const int iat)
@@ -310,7 +312,7 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMoveWithD
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMove(const int iat)
+inline void MoveAbstraction<POSITIONS>::calcForwardMove(const int iat)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
@@ -320,7 +322,7 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS>::calcForwardMove(const int 
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMove(const int iat)
+inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMove(const int iat)
 {
   auto delta_r_start    = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end      = delta_r_start + num_walkers_;
@@ -334,21 +336,19 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::calcForwardMove(cons
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs,
-                                                               const int iat)
+inline void MoveAbstraction<POSITIONS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat)
 {
   ps_dispatcher_.flex_makeMove(elecs, iat, drifts_);
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs,
-                                                                     const int iat)
+inline void MoveAbstraction<POSITIONS_SPINS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat)
 {
   ps_dispatcher_.flex_makeMoveWithSpin(elecs, iat, drifts_, spindrifts_);
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS>::updateGreensFunctionWithDrift(
+inline void MoveAbstraction<POSITIONS>::updateGreensFunctionWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     Crowd& crowd,
@@ -375,7 +375,7 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS>::updateGreensFunctionWithDr
 }
 
 template<>
-inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::updateGreensFunctionWithDrift(
+inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const RefVectorWithLeader<ParticleSet>& elecs,
     Crowd& crowd,
@@ -420,7 +420,7 @@ inline void MoveAbstraction<QMCDriverNew::POSITIONS_SPINS>::updateGreensFunction
                  });
 }
 
-template<QMCDriverNew::CoordsToMove COORDS>
+template<CoordsToMove COORDS>
 inline void MoveAbstraction<COORDS>::updateGreensFunction(const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                                           const RefVectorWithLeader<ParticleSet>& elecs,
                                                           const int iat,
@@ -429,7 +429,7 @@ inline void MoveAbstraction<COORDS>::updateGreensFunction(const RefVectorWithLea
   twf_dispatcher_.flex_calcRatio(twfs, elecs, iat, ratios);
 }
 
-template<QMCDriverNew::CoordsToMove COORDS>
+template<CoordsToMove COORDS>
 inline void MoveAbstraction<COORDS>::updaterr(const int iat, std::vector<Real>& rr)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
