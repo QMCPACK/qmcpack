@@ -50,6 +50,13 @@ void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
   outputManager.resume();
 }
 
+void NonLocalECPComponent::deleteVirtualParticle()
+{
+  if (VP)
+    delete VP;
+  VP = nullptr;
+}
+
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 {
   angpp_m.push_back(l);

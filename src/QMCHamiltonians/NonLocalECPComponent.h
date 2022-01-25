@@ -242,6 +242,7 @@ public:
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);
+  void deleteVirtualParticle();
 
   inline void setRmax(int rmax) { Rmax = rmax; }
   inline RealType getRmax() const { return Rmax; }
