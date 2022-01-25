@@ -33,14 +33,14 @@ template<class T, typename Alloc = std::allocator<T>>
 class Vector
 {
 public:
-  typedef T Type_t;
-  typedef T value_type;
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef typename Alloc::size_type size_type;
-  typedef typename Alloc::pointer pointer;
-  typedef typename Alloc::const_pointer const_pointer;
-  typedef Vector<T, Alloc> This_t;
+  using Type_t         = T;
+  using value_type     = T;
+  using iterator       = T*;
+  using const_iterator = const T*;
+  using size_type      = typename Alloc::size_type;
+  using pointer        = typename Alloc::pointer;
+  using const_pointer  = typename Alloc::const_pointer;
+  using This_t         = Vector<T, Alloc>;
 
   /** constructor with size n*/
   explicit inline Vector(size_t n = 0, Type_t val = Type_t()) : nLocal(n)
@@ -316,7 +316,7 @@ namespace qmcplusplus
 template<class T, class C>
 struct CreateLeaf<Vector<T, C>>
 {
-  typedef Reference<Vector<T, C>> Leaf_t;
+  using Leaf_t = Reference<Vector<T, C>>;
   inline static Leaf_t make(const Vector<T, C>& a) { return Leaf_t(a); }
 };
 
@@ -339,7 +339,7 @@ private:
 template<class T>
 struct LeafFunctor<Scalar<T>, SizeLeaf>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Scalar<T>&, const SizeLeaf&)
   {
     // Scalars always conform.
@@ -350,7 +350,7 @@ struct LeafFunctor<Scalar<T>, SizeLeaf>
 template<class T, class C>
 struct LeafFunctor<Vector<T, C>, SizeLeaf>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Vector<T, C>& v, const SizeLeaf& s) { return s(v.size()); }
 };
 
@@ -362,7 +362,7 @@ struct LeafFunctor<Vector<T, C>, SizeLeaf>
 template<class T, class C>
 struct LeafFunctor<Vector<T, C>, EvalLeaf1>
 {
-  typedef T Type_t;
+  using Type_t = T;
   inline static Type_t apply(const Vector<T, C>& vec, const EvalLeaf1& f) { return vec[f.val1()]; }
 };
 

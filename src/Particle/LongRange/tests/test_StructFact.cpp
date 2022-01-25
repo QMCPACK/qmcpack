@@ -34,9 +34,8 @@ TEST_CASE("StructFact", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
 
   SpeciesSet& tspecies = ref.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
@@ -48,7 +47,7 @@ TEST_CASE("StructFact", "[lrhandler]")
   ref.R[2] = {0.3, 4.0, 1.4};
   ref.R[3] = {3.2, 4.7, 0.7};
 
-  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.LRBox, 50);
+  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.getLRBox(), 50);
   REQUIRE(sk.getKLists().numk == 263786);
   sk.updateAllPart(ref);
 

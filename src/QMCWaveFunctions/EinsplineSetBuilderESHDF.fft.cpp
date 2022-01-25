@@ -41,7 +41,6 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
 
 bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
-  update_token(__FILE__, __LINE__, "ReadOrbitalInfo_ESHDF");
   app_log() << "  Reading orbital file in ESHDF format.\n";
   HDFAttribIO<TinyVector<int, 3>> h_version(Version);
   h_version.read(H5FileID, "/version");
@@ -66,7 +65,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
            SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
   app_log() << buff;
   if (!CheckLattice())
-    APP_ABORT("CheckLattice failed");
+    throw std::runtime_error("CheckLattice failed");
   PrimCell.set(Lattice);
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
@@ -313,7 +312,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     // the density is available, read it in and save it     //
     // in TargetPtcl.                                       //
     //////////////////////////////////////////////////////////
-    if (TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
+    if (TargetPtcl.getLattice().SuperCellEnum == SUPERCELL_BULK)
     {
       // FIXME:  add support for more than one spin density
       if (!TargetPtcl.Density_G.size())
@@ -420,7 +419,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 
 void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs)
 {
-  update_token(__FILE__, __LINE__, "OccupyBands_ESHDF");
   if (myComm->rank() != 0)
     return;
 
@@ -660,7 +658,6 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"RotateBands_ESHDF:complex");
   bool root = (myComm->rank()==0);
   if (root)
   {
@@ -836,7 +833,6 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std:
 
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<double>* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"RotateBands_ESHDF:double");
   bool root = (myComm->rank()==0);
   if (root)
   {

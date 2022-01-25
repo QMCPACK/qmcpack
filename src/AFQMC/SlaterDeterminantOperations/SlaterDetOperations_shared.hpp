@@ -273,10 +273,10 @@ protected:
   {
     if (SM_TMats == nullptr || SM_TMats->get_allocator() != shared_allocator<T>{comm})
     {
-      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N}, shared_allocator<T>{comm}));
+      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>(N), shared_allocator<T>{comm}));
     }
     else if (SM_TMats->num_elements() < N)
-      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N}, shared_allocator<T>{comm}));
+      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>(N), shared_allocator<T>{comm}));
   }
 };
 

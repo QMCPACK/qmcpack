@@ -349,7 +349,7 @@ struct cuda_gpu_allocator
   template<class U>
   struct rebind
   {
-    typedef cuda_gpu_allocator<U> other;
+    using other = cuda_gpu_allocator<U>;
   };
   using element_type     = T;
   using value_type       = T;

@@ -15,21 +15,23 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <type_traits>
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+
 #include "SlaterDetBuilder.h"
+#include <type_traits>
+#include <bitset>
+#include <unordered_map>
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
@@ -37,11 +39,6 @@
 //#include "QMCWaveFunctions/Fermion/ci_node.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
-#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
-
-#include <bitset>
-#include <unordered_map>
 
 namespace qmcplusplus
 {
@@ -202,7 +199,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         spoAttrib.add(spoNames[1], "spo_dn");
       }
       spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DELETED);
-      spoAttrib.add(msd_algorithm, "algorithm", {"precomputed_table_method", "table_method", "all_determinants"});
+      spoAttrib.add(msd_algorithm, "algorithm", {"precomputed_table_method", "table_method"});
       spoAttrib.put(cur);
 
       //new format
@@ -221,9 +218,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         spo_clones.emplace_back(spo_tmp->makeClone());
       }
 
-
-      if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
-      {
         app_summary() << "    Using Bryan's table method." << std::endl;
         if (BFTrans)
           myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
@@ -236,16 +230,16 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
           dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
         }
 
-        std::unique_ptr<MultiSlaterDeterminantFast> msd_fast;
+        std::unique_ptr<MultiSlaterDetTableMethod> msd_fast;
         if (msd_algorithm == "precomputed_table_method")
         {
           app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
-          msd_fast = std::make_unique<MultiSlaterDeterminantFast>(targetPtcl, std::move(dets), true);
+          msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), true);
         }
         else
         {
           app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
-          msd_fast = std::make_unique<MultiSlaterDeterminantFast>(targetPtcl, std::move(dets), false);
+          msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), false);
         }
 
         msd_fast->initialize();
@@ -258,36 +252,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         // and then remove the orbital rotation parameters
         msd_fast->buildOptVariables();
         built_singledet_or_multidets = std::move(msd_fast);
-      }
-      else
-      {
-        if (nGroups != 2)
-        {
-          PRE.error("MSD using all_determinants algorithm requires two particle species.");
-          return nullptr;
-        }
-        app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
-        std::vector<std::unique_ptr<SPOSetProxyForMSD>> spos;
-        spos.push_back(
-            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[0]), targetPtcl.first(0), targetPtcl.last(0)));
-        spos.push_back(
-            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[1]), targetPtcl.first(1), targetPtcl.last(1)));
-        if (BFTrans)
-        {
-          app_summary() << "    Using backflow transformation." << std::endl;
-          BackflowTransformation* const BFTrans_ptr = BFTrans.get();
-          auto msd_all_dets =
-              std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spos), std::move(BFTrans));
-          createMSD(*msd_all_dets, cur, BFTrans_ptr);
-          built_singledet_or_multidets = std::move(msd_all_dets);
-        }
-        else
-        {
-          auto msd_all_dets = std::make_unique<MultiSlaterDeterminant>(targetPtcl, std::move(spos));
-          createMSD(*msd_all_dets, cur, nullptr);
-          built_singledet_or_multidets = std::move(msd_all_dets);
-        }
-      }
     }
     cur = cur->next;
   }
@@ -445,13 +409,14 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   }
   else
   {
+    const DetMatInvertor matrix_inverter_kind =
+        (matrix_inverter == "host") ? DetMatInvertor::HOST : DetMatInvertor::ACCEL;
+    if (matrix_inverter_kind == DetMatInvertor::HOST)
+      app_summary() << "      Matrix inversion running on host." << std::endl;
+
     if (use_batch == "yes")
     {
       app_summary() << "      Using walker batching." << std::endl;
-      const DetMatInvertor matrix_inverter_kind =
-          (matrix_inverter == "host") ? DetMatInvertor::HOST : DetMatInvertor::ACCEL;
-      if (matrix_inverter_kind == DetMatInvertor::HOST)
-        app_summary() << "      Batched matrix inversion running on host." << std::endl;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
@@ -474,20 +439,22 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     }
     else
     {
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
+#if defined(ENABLE_CUDA)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
-                                                                                          delay_rank);
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
       }
       else
 #endif
       {
         app_summary() << "      Running on CPU." << std::endl;
-        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank);
+        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
+                                                    matrix_inverter_kind);
       }
     }
   }
@@ -639,140 +606,6 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     Optimizable = true;
   }
 
-  return success;
-}
-
-bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD,
-                                 xmlNodePtr cur,
-                                 BackflowTransformation* const BFTrans) const
-{
-  bool success = true;
-  std::vector<std::vector<ci_configuration>> uniqueConfgs(2);
-  std::vector<std::string> CItags;
-  bool optimizeCI;
-  std::vector<int> nels(2);
-  nels[0] = multiSD.nels_up;
-  nels[1] = multiSD.nels_dn;
-  std::vector<std::vector<size_t>> C2nodes(2);
-
-  //Check id multideterminants are in HDF5
-
-  xmlNodePtr curTemp = cur, DetListNode = nullptr;
-  curTemp = curTemp->children;
-  while (curTemp != NULL) //check the basis set
-  {
-    std::string cname(getNodeName(curTemp));
-    if (cname == "detlist")
-      DetListNode = curTemp;
-    curTemp = curTemp->next;
-  }
-  std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
-  if (!HDF5Path.empty())
-  {
-    app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, multiSD.C, optimizeCI, nels);
-  }
-  else
-    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, multiSD.C, optimizeCI, nels, multiSD.CSFcoeff,
-                          multiSD.DetsPerCSF, multiSD.CSFexpansion, multiSD.usingCSF);
-  if (!success)
-    return false;
-
-  multiSD.C2node_up = C2nodes[0];
-  multiSD.C2node_dn = C2nodes[1];
-  multiSD.resize(uniqueConfgs[0].size(), uniqueConfgs[1].size());
-  // alpha dets
-  {
-    auto& spo = multiSD.spo_up;
-    spo->occup.resize(uniqueConfgs[0].size(), multiSD.nels_up);
-    multiSD.dets_up.reserve(uniqueConfgs[0].size());
-    for (int i = 0; i < uniqueConfgs[0].size(); i++)
-    {
-      int nq               = 0;
-      ci_configuration& ci = uniqueConfgs[0][i];
-      for (int k = 0; k < ci.occup.size(); k++)
-        if (ci.occup[k])
-          spo->occup(i, nq++) = k;
-      std::unique_ptr<DiracDeterminantBase> adet;
-      if (BFTrans)
-        adet = std::make_unique<DiracDeterminantWithBackflow>(std::static_pointer_cast<SPOSet>(spo), *BFTrans,
-                                                              multiSD.FirstIndex_up,
-                                                              multiSD.FirstIndex_up + multiSD.nels_up);
-      else
-        adet = std::make_unique<DiracDeterminant<>>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_up,
-                                                    multiSD.FirstIndex_up + multiSD.nels_up);
-      multiSD.dets_up.push_back(std::move(adet));
-    }
-  }
-  // beta dets
-  {
-    auto& spo = multiSD.spo_dn;
-    spo->occup.resize(uniqueConfgs[1].size(), multiSD.nels_dn);
-    multiSD.dets_dn.reserve(uniqueConfgs[1].size());
-    for (int i = 0; i < uniqueConfgs[1].size(); i++)
-    {
-      int nq               = 0;
-      ci_configuration& ci = uniqueConfgs[1][i];
-      for (int k = 0; k < ci.occup.size(); k++)
-        if (ci.occup[k])
-          spo->occup(i, nq++) = k;
-      std::unique_ptr<DiracDeterminantBase> adet;
-      if (BFTrans)
-        adet = std::make_unique<DiracDeterminantWithBackflow>(std::static_pointer_cast<SPOSet>(spo), *BFTrans,
-                                                              multiSD.FirstIndex_dn,
-                                                              multiSD.FirstIndex_dn + multiSD.nels_dn);
-      else
-        adet = std::make_unique<DiracDeterminant<>>(std::static_pointer_cast<SPOSet>(spo), multiSD.FirstIndex_dn,
-                                                    multiSD.FirstIndex_dn + multiSD.nels_dn);
-      multiSD.dets_dn.push_back(std::move(adet));
-    }
-  }
-  if (multiSD.CSFcoeff.size() == 1 || multiSD.C.size() == 1)
-    optimizeCI = false;
-  if (optimizeCI)
-  {
-    app_log() << "CI coefficients are optimizable. \n";
-    std::string resetCI("no");
-    OhmmsAttributeSet spoAttrib;
-    spoAttrib.add(resetCI, "reset_coeff");
-    spoAttrib.put(cur);
-    if (resetCI == "yes")
-    {
-      if (multiSD.usingCSF)
-        for (int i = 1; i < multiSD.CSFcoeff.size(); i++)
-          multiSD.CSFcoeff[i] = 0;
-      else
-        for (int i = 1; i < multiSD.C.size(); i++)
-          multiSD.C[i] = 0;
-      app_log() << "CI coefficients are reset. \n";
-    }
-    multiSD.Optimizable = true;
-    if (multiSD.usingCSF)
-    {
-      //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
-      for (int i = 1; i < multiSD.CSFcoeff.size(); i++)
-      {
-        //std::stringstream sstr;
-        //sstr << "CIcoeff" << "_" << i;
-        multiSD.myVars.insert(CItags[i], multiSD.CSFcoeff[i], true, optimize::LINEAR_P);
-      }
-    }
-    else
-    {
-      //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
-      for (int i = 1; i < multiSD.C.size(); i++)
-      {
-        //std::stringstream sstr;
-        //sstr << "CIcoeff" << "_" << i;
-        multiSD.myVars.insert(CItags[i], multiSD.C[i], true, optimize::LINEAR_P);
-      }
-    }
-  }
-  else
-  {
-    app_log() << "CI coefficients are not optimizable. \n";
-    multiSD.Optimizable = false;
-  }
   return success;
 }
 

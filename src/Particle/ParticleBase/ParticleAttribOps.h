@@ -41,7 +41,7 @@ namespace qmcplusplus
 template<class T1, class T2, unsigned D>
 struct OTCDot
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Type_t apply(const TinyVector<std::complex<T1>, D>& lhs, const TinyVector<std::complex<T2>, D>& rhs)
   {
     Type_t res = lhs[0].real() * rhs[0].real() - lhs[0].imag() * rhs[0].imag();
@@ -64,7 +64,7 @@ struct OTCDot
 template<class T1, class T2, unsigned D>
 struct OTCDot_CC
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Type_t apply(const TinyVector<std::complex<T1>, D>& lhs, const TinyVector<std::complex<T2>, D>& rhs)
   {
     Type_t res = lhs[0].real() * rhs[0].real() + lhs[0].imag() * rhs[0].imag();
@@ -77,7 +77,7 @@ struct OTCDot_CC
 template<class T1, class T2>
 struct OTCDot<T1, T2, 3>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Type_t apply(const TinyVector<std::complex<T1>, 3>& lhs, const TinyVector<std::complex<T2>, 3>& rhs)
   {
     return lhs[0].real() * rhs[0].real() - lhs[0].imag() * rhs[0].imag() + lhs[1].real() * rhs[1].real() -
@@ -95,7 +95,7 @@ struct OTCDot<T1, T2, 3>
 template<class T1, class T2>
 struct OTCDot_CC<T1, T2, 3>
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t Type_t;
+  using Type_t = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   inline static Type_t apply(const TinyVector<std::complex<T1>, 3>& lhs, const TinyVector<std::complex<T2>, 3>& rhs)
   {
     return lhs[0].real() * rhs[0].real() + lhs[0].imag() * rhs[0].imag() + lhs[1].real() * rhs[1].real() +
@@ -227,11 +227,11 @@ struct PAOps
 template<class T, class T1>
 struct PAOps<T, 3, T1>
 {
-  typedef T real_type;
-  typedef std::complex<T> complex_type;
-  typedef TinyVector<T, 3> rpos_type;
-  typedef TinyVector<T1, 3> ipos_type;
-  typedef TinyVector<std::complex<T1>, 3> cpos_type;
+  using real_type    = T;
+  using complex_type = std::complex<T>;
+  using rpos_type    = TinyVector<T, 3>;
+  using ipos_type    = TinyVector<T1, 3>;
+  using cpos_type    = TinyVector<std::complex<T1>, 3>;
 
   static inline void scale(T a, const ParticleAttrib<cpos_type>& pa, ParticleAttrib<rpos_type>& pb)
   {
@@ -308,11 +308,11 @@ struct PAOps<T, 3, T1>
 template<class T, class T1>
 struct PAOps<T, 2, T1>
 {
-  typedef T real_type;
-  typedef std::complex<T> complex_type;
-  typedef TinyVector<T, 2> rpos_type;
-  typedef TinyVector<T1, 2> ipos_type;
-  typedef TinyVector<std::complex<T1>, 2> cpos_type;
+  using real_type    = T;
+  using complex_type = std::complex<T>;
+  using rpos_type    = TinyVector<T, 2>;
+  using ipos_type    = TinyVector<T1, 2>;
+  using cpos_type    = TinyVector<std::complex<T1>, 2>;
 
   static inline void scale(T a, const ParticleAttrib<cpos_type>& pa, ParticleAttrib<rpos_type>& pb)
   {

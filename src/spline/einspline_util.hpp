@@ -127,10 +127,10 @@ struct h5data_proxy<einspline_engine<ENGT>>
     D = einspline_engine<ENGT>::D
   };
   using value_type = typename einspline_engine<ENGT>::value_type;
-  using Base = h5_space_type<value_type, D + 1>;
+  using Base       = h5_space_type<value_type, D + 1>;
   using Base::dims;
   using Base::get_address;
-  typedef einspline_engine<ENGT> data_type;
+  using data_type = einspline_engine<ENGT>;
 
   inline h5data_proxy(const data_type& a) { dim_traits<D + 1>::setdim(a, dims); }
 
@@ -257,7 +257,7 @@ struct GridConvert
   template<typename ENGT1, typename ENGT2, typename PT>
   void create(ENGT1*& out, ENGT2* in, PT& lower, PT& upper, int num)
   {
-    typedef typename bspline_engine_traits<ENGT1>::real_type real_type;
+    using real_type = typename bspline_engine_traits<ENGT1>::real_type;
 
     Ugrid agrid[3];
     agrid[0] = in->x_grid;

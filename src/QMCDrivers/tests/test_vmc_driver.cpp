@@ -40,11 +40,11 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   c->setName("test");
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);
@@ -120,11 +120,11 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   c->setName("test");
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);
@@ -206,11 +206,11 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   c->setName("test");
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);

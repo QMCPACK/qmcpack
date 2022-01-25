@@ -76,7 +76,7 @@ int main(int argc, char** argv)
     }
   }
 
-  Random.init(0, 1, iseed);
+  Random.init(iseed);
 
   //turn off output
   if (omp_get_max_threads() > 1)
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     const int teamID = ip / ncrews;
     const int crewID = ip % ncrews;
 
-    RandomGenerator<OHMMS_PRECISION> random_th(myPrimes[ip]);
+    RandomGenerator random_th(myPrimes[ip]);
 
     DiracDet<OHMMS_PRECISION> det(nels);
     det.initialize(random_th);

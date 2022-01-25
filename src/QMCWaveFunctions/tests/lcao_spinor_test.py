@@ -130,12 +130,12 @@ class cartGauss:
         norm = self.norm()
         return norm *pos[0]**self.i * pos[1]**self.j * pos[2]**self.k * np.exp(-self.expt * r * r)
 
-def get_reference_values():
-    pos = np.array([0.1,-0.3, 1.7])
-    s   = 0.6
-
+def get_reference_values(pos, s):
     cs = np.cos(s)
     ss = np.sin(s)
+
+    print("Position: {}".format(pos))
+    print("Spin: {}".format(s))
 
     #gaussian basis function values
     g = cartGauss(2.5,0,0,0,0) #s function
@@ -215,5 +215,16 @@ def get_reference_values():
     print("  Lap     : {}".format(splap))
     print("  SpinGrad: {}".format(spds))
 
-write_h5_file()
-get_reference_values()
+    print()
+    print()
+
+if __name__ == "__main__":
+    write_h5_file()
+    
+    pos = np.array([0.1,-0.3, 1.7])
+    s   = 0.6
+    get_reference_values(pos,s)
+    
+    pos = np.array([-0.4,1.5,-0.2])
+    s   = -1.3
+    get_reference_values(pos,s)

@@ -40,13 +40,13 @@ public:
   // Optimizable parameter
   opt_variables_type myVars;
 
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef SPOSet::HessMatrix_t HessMatrix_t;
-  typedef SPOSet::HessType HessType;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
+  using HessType    = SPOSet::HessType;
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
   std::vector<std::vector<int>> lookup_tbl;
@@ -110,18 +110,18 @@ public:
     if (!Optimizable)
       return;
 
-    const ValueVector_t& detValues_up = getRatiosToRefDet();
-    const ValueVector_t& detValues_dn = pseudo_dn.getRatiosToRefDet();
-    const GradMatrix_t& grads_up      = grads;
-    const GradMatrix_t& grads_dn      = pseudo_dn.grads;
-    const ValueMatrix_t& lapls_up     = lapls;
-    const ValueMatrix_t& lapls_dn     = pseudo_dn.lapls;
-    const ValueMatrix_t& M_up         = psiM;
-    const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
-    const ValueMatrix_t& Minv_up      = psiMinv;
-    const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
-    const GradMatrix_t& B_grad        = dpsiM;
-    const ValueMatrix_t& B_lapl       = d2psiM;
+    const ValueVector& detValues_up = getRatiosToRefDet();
+    const ValueVector& detValues_dn = pseudo_dn.getRatiosToRefDet();
+    const GradMatrix& grads_up      = grads;
+    const GradMatrix& grads_dn      = pseudo_dn.grads;
+    const ValueMatrix& lapls_up     = lapls;
+    const ValueMatrix& lapls_dn     = pseudo_dn.lapls;
+    const ValueMatrix& M_up         = psiM;
+    const ValueMatrix& M_dn         = pseudo_dn.psiM;
+    const ValueMatrix& Minv_up      = psiMinv;
+    const ValueMatrix& Minv_dn      = pseudo_dn.psiMinv;
+    const GradMatrix& B_grad        = dpsiM;
+    const ValueMatrix& B_lapl       = d2psiM;
 
     const size_t N1  = FirstIndex;
     const size_t N2  = pseudo_dn.FirstIndex;
@@ -145,12 +145,12 @@ public:
     if (!Optimizable)
       return;
 
-    const ValueVector_t& detValues_up = getRatiosToRefDet();
-    const ValueVector_t& detValues_dn = pseudo_dn.getRatiosToRefDet();
-    const ValueMatrix_t& M_up         = psiM;
-    const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
-    const ValueMatrix_t& Minv_up      = psiMinv;
-    const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
+    const ValueVector& detValues_up = getRatiosToRefDet();
+    const ValueVector& detValues_dn = pseudo_dn.getRatiosToRefDet();
+    const ValueMatrix& M_up         = psiM;
+    const ValueMatrix& M_dn         = pseudo_dn.psiM;
+    const ValueMatrix& Minv_up      = psiMinv;
+    const ValueMatrix& Minv_dn      = pseudo_dn.psiMinv;
 
     Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn,
                                M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
@@ -198,14 +198,14 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
-  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
@@ -224,7 +224,7 @@ public:
                      std::vector<RealType>& sign);
 
   template<typename ITER>
-  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, ITER it)
+  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix& dotProducts, ITER it)
   {
     switch (n)
     {
@@ -292,28 +292,28 @@ public:
   void BuildDotProductsAndCalculateRatios_impl(int ref,
                                                ValueType det0,
                                                ValueType* restrict ratios,
-                                               const ValueMatrix_t& psiinv,
-                                               const ValueMatrix_t& psi,
-                                               ValueMatrix_t& dotProducts,
+                                               const ValueMatrix& psiinv,
+                                               const ValueMatrix& psi,
+                                               ValueMatrix& dotProducts,
                                                const std::vector<int>& data,
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign);
 
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          ValueVector_t& ratios,
-                                          const ValueMatrix_t& psiinv,
-                                          const ValueMatrix_t& psi,
-                                          ValueMatrix_t& dotProducts,
+                                          ValueVector& ratios,
+                                          const ValueMatrix& psiinv,
+                                          const ValueMatrix& psi,
+                                          ValueMatrix& dotProducts,
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
                                           const std::vector<RealType>& sign);
 
   void BuildDotProductsAndCalculateRatios(int ref,
                                           int iat,
-                                          GradMatrix_t& ratios,
-                                          ValueMatrix_t& psiinv,
-                                          ValueMatrix_t& psi,
-                                          ValueMatrix_t& dotProducts,
+                                          GradMatrix& ratios,
+                                          ValueMatrix& psiinv,
+                                          ValueMatrix& psi,
+                                          ValueMatrix& dotProducts,
                                           std::vector<int>& data,
                                           std::vector<std::pair<int, int>>& pairs,
                                           std::vector<RealType>& sign,
@@ -321,19 +321,19 @@ public:
 
   void BuildDotProductsAndCalculateRatios(int ref,
                                           int iat,
-                                          ValueMatrix_t& ratios,
-                                          ValueMatrix_t& psiinv,
-                                          ValueMatrix_t& psi,
-                                          ValueMatrix_t& dotProducts,
+                                          ValueMatrix& ratios,
+                                          ValueMatrix& psiinv,
+                                          ValueMatrix& psi,
+                                          ValueMatrix& dotProducts,
                                           std::vector<int>& data,
                                           std::vector<std::pair<int, int>>& pairs,
                                           std::vector<RealType>& sign);
 
   //   Finish this at some point
-  inline void InverseUpdateByColumn_GRAD(ValueMatrix_t& Minv,
-                                         GradVector_t& newcol,
-                                         ValueVector_t& rvec,
-                                         ValueVector_t& rvecinv,
+  inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
+                                         GradVector& newcol,
+                                         ValueVector& rvec,
+                                         ValueVector& rvecinv,
                                          int colchanged,
                                          ValueType c_ratio,
                                          int dx)
@@ -346,9 +346,9 @@ public:
     BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
   /*
-      inline void InverseUpdateByColumn(ValueMatrix_t& Minv
-            , GradVector_t& dM, ValueVector_t& rvec
-            , ValueVector_t& rvecinv, int colchanged
+      inline void InverseUpdateByColumn(ValueMatrix& Minv
+            , GradVector& dM, ValueVector& rvec
+            , ValueVector& rvecinv, int colchanged
             , ValueType c_ratio, std::vector<int>::iterator& it)
       {
             ValueType c_ratio=1.0/ratioLapl;
@@ -400,14 +400,14 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
 
-  const ValueVector_t& getRatiosToRefDet() const { return ratios_to_ref_; }
-  const ValueVector_t& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
-  const GradMatrix_t& getGrads() const { return grads; }
-  const GradMatrix_t& getNewGrads() const { return new_grads; }
-  const ValueMatrix_t& getLapls() const { return lapls; }
-  const ValueMatrix_t& getNewLapls() const { return new_lapls; }
-  const ValueMatrix_t& getSpinGrads() const { return spingrads; }
-  const ValueMatrix_t& getNewSpinGrads() const { return new_spingrads; }
+  const ValueVector& getRatiosToRefDet() const { return ratios_to_ref_; }
+  const ValueVector& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  const GradMatrix& getGrads() const { return grads; }
+  const GradMatrix& getNewGrads() const { return new_grads; }
+  const ValueMatrix& getLapls() const { return lapls; }
+  const ValueMatrix& getNewLapls() const { return new_lapls; }
+  const ValueMatrix& getSpinGrads() const { return spingrads; }
+  const ValueMatrix& getNewSpinGrads() const { return new_spingrads; }
 
   PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
@@ -437,29 +437,29 @@ private:
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM, TpsiM;
+  ValueMatrix psiM, TpsiM;
   /// inverse Dirac determinant matrix of the reference det
-  ValueMatrix_t psiMinv, psiMinv_temp;
+  ValueMatrix psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM;
+  GradMatrix dpsiM;
   // temporaty storage
-  ValueMatrix_t dpsiMinv;
+  ValueMatrix dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM;
+  ValueMatrix d2psiM;
   /* dspin_psiM(i,j) \f$= \partial_{s_i} \psi_j({\bf r}_i,s_i)\f$ where \f$s_i\f$s is the spin variable
    * This is only resized if a spinor calculation is used
    */
-  ValueMatrix_t dspin_psiM;
+  ValueMatrix dspin_psiM;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV, psiV_temp;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
-  ValueVector_t workV1, workV2;
+  ValueVector psiV, psiV_temp;
+  GradVector dpsiV;
+  ValueVector d2psiV;
+  ValueVector workV1, workV2;
   //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
-  ValueVector_t dspin_psiV;
+  ValueVector dspin_psiV;
 
-  ValueMatrix_t dotProducts;
+  ValueMatrix dotProducts;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
@@ -470,19 +470,19 @@ private:
   ValueType* LastAddressOfdpsiM;
 
   /// determinant ratios with respect to the reference determinant
-  ValueVector_t ratios_to_ref_;
+  ValueVector ratios_to_ref_;
   /// new determinant ratios with respect to the updated reference determinant upon a proposed move
-  ValueVector_t new_ratios_to_ref_;
+  ValueVector new_ratios_to_ref_;
   /// new value of the reference determinant over the old value upon a proposed move
   ValueType curRatio;
   /// log value of the reference determinant
   LogValueType log_value_ref_det_;
   /// store determinant grads (old and new)
-  GradMatrix_t grads, new_grads;
+  GradMatrix grads, new_grads;
   /// store determinant lapls (old and new)
-  ValueMatrix_t lapls, new_lapls;
+  ValueMatrix lapls, new_lapls;
   // additional storage for spin derivatives. Only resized if the calculation uses spinors
-  ValueMatrix_t spingrads, new_spingrads;
+  ValueMatrix spingrads, new_spingrads;
 
 
   /* mmorales:

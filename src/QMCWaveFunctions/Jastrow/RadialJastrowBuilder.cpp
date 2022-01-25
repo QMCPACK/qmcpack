@@ -104,7 +104,7 @@ RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& targe
 // helper method for dealing with functor incompatible with Open Boundaries
 void RadialJastrowBuilder::guardAgainstOBC()
 {
-  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+  if (targetPtcl.getLattice().SuperCellEnum == SUPERCELL_OPEN)
   {
     app_error() << Jastfunction << " relies on the total density for its form\n";
     app_error() << "but open boundary conditions are requested.  Please choose other forms of Jastrow\n";
@@ -114,7 +114,7 @@ void RadialJastrowBuilder::guardAgainstOBC()
 // helper method for dealing with functor incompatible with PBC
 void RadialJastrowBuilder::guardAgainstPBC()
 {
-  if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (targetPtcl.getLattice().SuperCellEnum != SUPERCELL_OPEN)
   {
     app_error() << Jastfunction << " does not support a cutoff, but is requested with\n";
     app_error() << "periodic boundary conditions, please choose other forms of Jastrow\n";
@@ -128,7 +128,7 @@ void RadialJastrowBuilder::initTwoBodyFunctor(RadFuncType& functor, double fac)
 template<>
 void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RealType>& bfunc, double fac)
 {
-  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN) // for open systems, do nothing
+  if (targetPtcl.getLattice().SuperCellEnum == SUPERCELL_OPEN) // for open systems, do nothing
   {
     return;
   }
@@ -243,8 +243,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       auto functor = std::make_unique<RadFuncType>();
       functor->setCusp(cusp);
-      functor->setPeriodic(targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      functor->cutoff_radius   = targetPtcl.Lattice.WignerSeitzRadius;
+      functor->setPeriodic(targetPtcl.getLattice().SuperCellEnum != SUPERCELL_OPEN);
+      functor->cutoff_radius   = targetPtcl.getLattice().WignerSeitzRadius;
       bool functor_initialized = functor->put(cur);
       if (!functor_initialized && init_mode == "rpa")
       {
@@ -274,7 +274,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   J2->ChiesaKEcorrection();
 
   // Ye: actually don't know what uk.dat is used for
-  if (targetPtcl.Lattice.SuperCellEnum)
+  if (targetPtcl.getLattice().SuperCellEnum)
     computeJ2uk(J2->getPairFunctions());
 
   return J2;
@@ -285,7 +285,7 @@ template<class RadFuncType>
 void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors)
 {
   const int numPoints = 1000;
-  RealType vol        = targetPtcl.Lattice.Volume;
+  RealType vol        = targetPtcl.getLattice().Volume;
   int nsp             = targetPtcl.groups();
   FILE* fout          = 0;
   if (is_manager())
@@ -375,8 +375,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       rAttrib.add(cusp, "cusp");
       rAttrib.put(kids);
       auto functor = std::make_unique<RadFuncType>();
-      functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+      functor->setPeriodic(SourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN);
+      functor->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
       functor->setCusp(cusp);
       const int ig = sSet.findSpecies(speciesA);
       const int jg = speciesB.size() ? tSet.findSpecies(speciesB) : -1;
@@ -463,7 +463,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   HandlerType* myHandler = nullptr;
   if (Rs < 0)
   {
-    Rs = std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
+    Rs = std::pow(3.0 / 4.0 / M_PI * targetPtcl.getLattice().Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
                   1.0 / 3.0);
   }
   if (Kc < 0)

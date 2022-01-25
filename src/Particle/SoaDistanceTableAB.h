@@ -15,7 +15,7 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "Utilities/FairDivide.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -26,17 +26,16 @@ template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
-      : DTD_BConds<T, D, SC>(source.Lattice),
+      : DTD_BConds<T, D, SC>(source.getLattice()),
         DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::evaluate_") + target.getName() +
-                                                       "_" + source.getName(),
-                                                   timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::move_") + target.getName() + "_" +
-                                                   source.getName(),
+        evaluate_timer_(
+            *timer_manager.createTimer(std::string("DTAB::evaluate_") + target.getName() + "_" + source.getName(),
+                                       timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("DTAB::move_") + target.getName() + "_" + source.getName(),
                                                timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::update_") + target.getName() + "_" +
-                                                     source.getName(),
-                                                 timer_level_fine))
+        update_timer_(
+            *timer_manager.createTimer(std::string("DTAB::update_") + target.getName() + "_" + source.getName(),
+                                       timer_level_fine))
   {
     resize();
   }

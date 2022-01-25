@@ -56,7 +56,7 @@ struct sign2<float>
 template<class T>
 struct NRCOptimization
 {
-  typedef T Return_t;
+  using Return_t = T;
 
   /** number of line iteration for Brent method */
   int ITMAX;

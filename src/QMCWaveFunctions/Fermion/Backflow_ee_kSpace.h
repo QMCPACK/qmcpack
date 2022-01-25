@@ -25,13 +25,13 @@ namespace qmcplusplus
 {
 class Backflow_ee_kSpace : public BackflowFunctionBase
 {
-  typedef QMCTraits::ComplexType ComplexType;
+  using ComplexType = QMCTraits::ComplexType;
   ///typedef for real values
-  //typedef optimize::VariableSet::real_type real_type;
+  //using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
-  typedef optimize::VariableSet opt_variables_type;
+  using opt_variables_type = optimize::VariableSet;
   ///typedef for name-value lists
-  typedef optimize::VariableSet::variable_map_type variable_map_type;
+  using variable_map_type = optimize::VariableSet::variable_map_type;
 
 public:
   //number of groups of the target particleset
@@ -140,9 +140,10 @@ public:
       for (int i = 0; i < Fk.size(); ++i)
       {
         int loc = myVars.where(i);
-        if (loc >= 0) {
+        if (loc >= 0)
+        {
           myVars[i] = active[loc];
-          Fk[i] = std::real(myVars[i]);
+          Fk[i]     = std::real(myVars[i]);
           //Fk[i] = myVars[i] = active[loc];
         }
       }
@@ -283,7 +284,7 @@ public:
 #endif
   }
 
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector& Bmat, HessMatrix& Amat)
   {
     APP_ABORT("This shouldn't be called: Backflow_ee_kSpace::evaluate(Bmat)");
   }
@@ -291,7 +292,7 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix& Bmat_full, HessMatrix& Amat) override
   {
 #if defined(USE_REAL_STRUCT_FACTOR)
     APP_ABORT("Backflow_ee_kSpace::evaluate");
@@ -350,63 +351,59 @@ public:
   /** calculate quasi-particle coordinates after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
   {}
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override {}
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) override {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
-                           HessMatrix_t& Amat) override
+                           HessMatrix& Amat) override
+  {}
+
+  /** calculate quasi-particle coordinates and Amat after pbyp move
+   */
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override {}
+
+  /** calculate quasi-particle coordinates and Amat after pbyp move
+   */
+  inline void evaluatePbyP(const ParticleSet& P,
+                           ParticleSet::ParticlePos& newQP,
+                           const std::vector<int>& index,
+                           GradMatrix& Bmat,
+                           HessMatrix& Amat) override
   {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
-                           HessMatrix_t& Amat) override
-  {}
-
-  /** calculate quasi-particle coordinates and Amat after pbyp move
-   */
-  inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
-                           const std::vector<int>& index,
-                           GradMatrix_t& Bmat,
-                           HessMatrix_t& Amat) override
-  {}
-
-  /** calculate quasi-particle coordinates and Amat after pbyp move
-   */
-  inline void evaluatePbyP(const ParticleSet& P,
-                           int iat,
-                           ParticleSet::ParticlePos_t& newQP,
-                           GradMatrix_t& Bmat,
-                           HessMatrix_t& Amat) override
+                           ParticleSet::ParticlePos& newQP,
+                           GradMatrix& Bmat,
+                           HessMatrix& Amat) override
   {}
 
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) override {}
+  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix& Bmat_full) override {}
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    *  calculate derivatives wrt to variational parameters
    */
   inline void evaluateWithDerivatives(const ParticleSet& P,
                                       ParticleSet& QP,
-                                      GradMatrix_t& Bmat_full,
-                                      HessMatrix_t& Amat,
-                                      GradMatrix_t& Cmat,
-                                      GradMatrix_t& Ymat,
-                                      HessArray_t& Xmat) override
+                                      GradMatrix& Bmat_full,
+                                      HessMatrix& Amat,
+                                      GradMatrix& Cmat,
+                                      GradMatrix& Ymat,
+                                      HessArray& Xmat) override
   {}
 };
 

@@ -392,8 +392,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
                                             ParticleSet& ions,
                                             TrialWaveFunction& psi,
-                                            ParticleSet::ParticlePos_t& hf_terms,
-                                            ParticleSet::ParticlePos_t& pulay_terms,
+                                            ParticleSet::ParticlePos& hf_terms,
+                                            ParticleSet::ParticlePos& pulay_terms,
                                             bool keepGrid)
 {
   //We're going to ignore psi and use the internal Psi.
@@ -447,8 +447,8 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
                                                                          ParticleSet& ions,
                                                                          TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos_t& hf_terms,
-                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+                                                                         ParticleSet::ParticlePos& hf_terms,
+                                                                         ParticleSet::ParticlePos& pulay_terms)
 {
   evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms);
   return value_;
@@ -458,8 +458,8 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDetermin
     ParticleSet& P,
     ParticleSet& ions,
     TrialWaveFunction& psi,
-    ParticleSet::ParticlePos_t& hf_terms,
-    ParticleSet::ParticlePos_t& pulay_terms)
+    ParticleSet::ParticlePos& hf_terms,
+    ParticleSet::ParticlePos& pulay_terms)
 {
   evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms, true);
   return value_;
@@ -484,7 +484,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
 int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;
-  RandomGenerator_t& RandomGen(*myRNG);
+  RandomGenerator& RandomGen(*myRNG);
   if (UseTMove == TMOVE_V0)
   {
     const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);

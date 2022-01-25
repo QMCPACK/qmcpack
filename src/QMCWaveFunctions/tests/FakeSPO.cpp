@@ -83,7 +83,7 @@ std::unique_ptr<SPOSet> FakeSPO::makeClone() const { return std::make_unique<Fak
 
 void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
 
-void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   if (iat < 0)
     for (int i = 0; i < psi.size(); i++)
@@ -96,7 +96,7 @@ void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
       psi[i] = a2(iat, i);
 }
 
-void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   if (OrbitalSetSize == 3)
   {
@@ -119,9 +119,9 @@ void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, Gra
 void FakeSPO::evaluate_notranspose(const ParticleSet& P,
                                    int first,
                                    int last,
-                                   ValueMatrix_t& logdet,
-                                   GradMatrix_t& dlogdet,
-                                   ValueMatrix_t& d2logdet)
+                                   ValueMatrix& logdet,
+                                   GradMatrix& dlogdet,
+                                   ValueMatrix& d2logdet)
 {
   if (OrbitalSetSize == 3)
   {

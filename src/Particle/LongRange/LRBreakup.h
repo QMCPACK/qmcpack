@@ -31,7 +31,7 @@ struct LRBreakup
   DECLARE_COULOMB_TYPES
 
   //Typedef for the lattice-type. We don't need the full particle-set.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+  using ParticleLayout = ParticleSet::ParticleLayout;
 
   //We use an internal k-list with degeneracies to do the breakup.
   //We do this because the number of vectors is much larger than we'd

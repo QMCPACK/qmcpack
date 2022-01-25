@@ -116,8 +116,8 @@ struct H5OrbSet
 class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  typedef CrystalLattice<ParticleSet::Scalar_t, DIM> UnitCellType;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using UnitCellType = CrystalLattice<ParticleSet::Scalar_t, DIM>;
 
   ///reference to the particleset pool
   const PtclPoolType& ParticleSets;
@@ -312,15 +312,6 @@ public:
    * @return true, if core is found
    */
   bool bcastSortBands(int splin, int N, bool root);
-
-  int MyToken;
-  inline void update_token(const char* f, int l, const char* msg)
-  {
-    app_debug() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl;
-    MyToken++;
-  }
-  //inline void update_token(const char* f, int l, const char* msg)
-  //{}
 };
 
 } // namespace qmcplusplus

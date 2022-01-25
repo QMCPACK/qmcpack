@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus

@@ -39,8 +39,9 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 {
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);

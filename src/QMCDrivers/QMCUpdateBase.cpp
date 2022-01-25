@@ -20,11 +20,11 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 namespace qmcplusplus
@@ -34,7 +34,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
-                             RandomGenerator_t& rg)
+                             RandomGenerator& rg)
     : csoffset(0),
       Traces(0),
       W(w),
@@ -50,7 +50,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
 }
 
 /// Constructor.
-QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
     : csoffset(0),
       Traces(0),
       W(w),
@@ -143,7 +143,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher,
   }
   //app_log() << "  QMCUpdateBase::resetRun m/tau=" << m_tauovermass << std::endl;
   if (m_r2max < 0)
-    m_r2max = W.Lattice.LR_rc * W.Lattice.LR_rc;
+    m_r2max = W.getLattice().LR_rc * W.getLattice().LR_rc;
   //app_log() << "  Setting the bound for the displacement std::max(r^2) = " <<  m_r2max << std::endl;
 }
 
@@ -266,8 +266,8 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   print_mem("Memory Usage after the buffer registration", app_log());
 }
 
-QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g,
-                                                         ParticleSet::ParticlePos_t& gscaled)
+QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient& g,
+                                                         ParticleSet::ParticlePos& gscaled)
 {
   //setScaledDrift(m_tauovermass,g,gscaled);
   //RealType vsq=Dot(g,g);
@@ -280,8 +280,8 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
 {
   bool success = true;
   TrialWaveFunction::LogValueType log_value{twf.getLogPsi(), twf.getPhase()};
-  ParticleSet::ParticleGradient_t G_saved  = twf.G;
-  ParticleSet::ParticleLaplacian_t L_saved = twf.L;
+  ParticleSet::ParticleGradient G_saved  = twf.G;
+  ParticleSet::ParticleLaplacian L_saved = twf.L;
 
   pset.update();
   twf.evaluateLog(pset);

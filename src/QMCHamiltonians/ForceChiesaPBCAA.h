@@ -23,9 +23,9 @@ namespace qmcplusplus
 {
 struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 {
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-  typedef LRCoulombSingleton::GridType GridType;
-  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+  using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+  using GridType       = LRCoulombSingleton::GridType;
+  using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
   RealType Rcut;         // parameter: radial distance within which estimator is used
   int m_exp;             // parameter: exponent in polynomial fit

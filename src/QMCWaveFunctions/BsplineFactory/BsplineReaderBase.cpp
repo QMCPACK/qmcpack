@@ -152,7 +152,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
   vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
-                                    input_info.min_index(), input_info.max_index());
+                                        input_info.min_index(), input_info.max_index());
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
 
@@ -199,8 +199,8 @@ void BsplineReaderBase::initialize_spo2band(int spin,
 
   std::ofstream o(aname.c_str());
   char s[1024];
-  ns = 0;
-  typedef QMCTraits::PosType PosType;
+  ns            = 0;
+  using PosType = QMCTraits::PosType;
   o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK "
     << std::endl;
   for (int i = 0; i < bigspace.size(); ++i)

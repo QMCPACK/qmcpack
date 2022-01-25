@@ -5,7 +5,6 @@ endif()
 
 # Enable OpenMP
 if(QMC_OMP)
-  set(ENABLE_OPENMP 1)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
   if(ENABLE_OFFLOAD)

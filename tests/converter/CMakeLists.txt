@@ -12,7 +12,7 @@ function(ADD_CONVERTER_TEST test_name)
     string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
   endif()
   add_test(NAME converter_${test_name}
-           COMMAND "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
+           COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
   set_tests_properties(converter_${test_name} PROPERTIES 
                        FAIL_REGULAR_EXPRESSION "  FAIL"
@@ -25,7 +25,7 @@ function(ADD_PWCONVERTER_TEST test_name)
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
   set(EXE_NAME $<TARGET_FILE:convertpw4qmc>)
   add_test(NAME converter_${test_name}
-           COMMAND "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
+           COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
   set_tests_properties(converter_${test_name} PROPERTIES 
                        FAIL_REGULAR_EXPRESSION "  FAIL"

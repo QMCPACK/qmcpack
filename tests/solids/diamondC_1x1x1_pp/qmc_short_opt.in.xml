@@ -50,22 +50,22 @@
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="C" size="8" cusp="0.0">
-               <coefficients id="eC" type="Array">                  
--0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 
+               <coefficients id="eC" type="Array">
+-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038
 -0.04445345869 -0.02135082917
                </coefficients>
             </correlation>
          </jastrow>
          <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
             <correlation speciesA="u" speciesB="u" size="8">
-               <coefficients id="uu" type="Array">                  
-0.2797730287 0.2172604155 0.1656172964 0.1216984261 0.083995349 0.05302065936 
+               <coefficients id="uu" type="Array">
+0.2797730287 0.2172604155 0.1656172964 0.1216984261 0.083995349 0.05302065936
 0.02915953995 0.0122402581
                </coefficients>
             </correlation>
             <correlation speciesA="u" speciesB="d" size="8">
-               <coefficients id="ud" type="Array">                  
-0.4631099906 0.356399124 0.2587895287 0.1829298509 0.1233653291 0.07714708174 
+               <coefficients id="ud" type="Array">
+0.4631099906 0.356399124 0.2587895287 0.1829298509 0.1233653291 0.07714708174
 0.04145899033 0.01690645936
                </coefficients>
             </correlation>

@@ -18,7 +18,7 @@
 
 using std::string;
 
-typedef OHMMS_PRECISION real_type;
+using real_type = OHMMS_PRECISION;
 
 namespace qmcplusplus
 {

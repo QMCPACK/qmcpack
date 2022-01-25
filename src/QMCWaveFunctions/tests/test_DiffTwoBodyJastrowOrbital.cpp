@@ -39,7 +39,8 @@ public:
 
 TEST_CASE("DiffTwoBodyJastrowOrbital simple", "[wavefunction]")
 {
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
   elec.setName("e");
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
@@ -49,7 +50,8 @@ TEST_CASE("DiffTwoBodyJastrowOrbital simple", "[wavefunction]")
 
 TEST_CASE("DiffTwoBodyJastrowOrbital one species and two variables", "[wavefunction]")
 {
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
   elec.setName("e");
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
@@ -69,9 +71,9 @@ TEST_CASE("DiffTwoBodyJastrowOrbital one species and two variables", "[wavefunct
   CHECK(global_active.size_of_active() == 2);
 }
 
-ParticleSet get_two_species_particleset()
+ParticleSet get_two_species_particleset(const SimulationCell& simulation_cell)
 {
-  ParticleSet elec;
+  ParticleSet elec(simulation_cell);
   std::vector<int> ud{2, 2};
   elec.setName("e");
   elec.create(ud);
@@ -95,7 +97,8 @@ ParticleSet get_two_species_particleset()
 // Two variables, both active
 TEST_CASE("DiffTwoBodyJastrowOrbital two variables", "[wavefunction]")
 {
-  ParticleSet elec = get_two_species_particleset();
+  const SimulationCell simulation_cell;
+  ParticleSet elec = get_two_species_particleset(simulation_cell);
 
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
@@ -159,7 +162,8 @@ TEST_CASE("DiffTwoBodyJastrowOrbital two variables", "[wavefunction]")
 // "First" means the first in the function list F, which has species indices 0,0
 TEST_CASE("DiffTwoBodyJastrowOrbital variables fail", "[wavefunction]")
 {
-  ParticleSet elec = get_two_species_particleset();
+  const SimulationCell simulation_cell;
+  ParticleSet elec = get_two_species_particleset(simulation_cell);
 
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
@@ -226,7 +230,8 @@ TEST_CASE("DiffTwoBodyJastrowOrbital variables fail", "[wavefunction]")
 
 TEST_CASE("DiffTwoBodyJastrowOrbital other variables", "[wavefunction]")
 {
-  ParticleSet elec = get_two_species_particleset();
+  const SimulationCell simulation_cell;
+  ParticleSet elec = get_two_species_particleset(simulation_cell);
 
   DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
 
@@ -300,8 +305,9 @@ TEST_CASE("DiffTwoBodyJastrowOrbital other variables", "[wavefunction]")
 // particles).
 TEST_CASE("DiffTwoBodyJastrowOrbital Jastrow three particles of three types", "[wavefunction]")
 {
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);

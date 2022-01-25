@@ -629,7 +629,7 @@ if(NOT QMC_CUDA)
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "kinetic" "19.21103034 0.0005")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "potential" "-41.26295939 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "eeenergy" "-6.68405093 0.00003")
-      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "ionion" "-25.55133345 0.000001")
+      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "ionion" "-25.55133345 0.000002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "localecp" "-10.92577863 0.0002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "nonlocalecp" "1.89820362 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "flux" "-0.31336816 0.001")
@@ -639,7 +639,7 @@ if(NOT QMC_CUDA)
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "kinetic" "19.77013829 0.0005")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "potential" "-41.07144136 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "eeenergy" "-6.35883147 0.00003")
-      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "ionion" "-25.55133345 0.000001")
+      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "ionion" "-25.55133345 0.000002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "localecp" "-10.53491810 0.0002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "nonlocalecp" "1.37364166 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "flux" "-9.80945206 0.001")
@@ -650,7 +650,7 @@ if(NOT QMC_CUDA)
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "kinetic" "19.21031605 0.0005")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "potential" "-41.26295995 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "eeenergy" "-6.68405093 0.00003")
-      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "ionion" "-25.55133345 0.000001")
+      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "ionion" "-25.55133345 0.000002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "localecp" "-10.92577863 0.0002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "nonlocalecp" "1.89820306 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS1_SCALARS "flux" "-0.31142934 0.001")
@@ -660,7 +660,7 @@ if(NOT QMC_CUDA)
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "kinetic" "19.76116869 0.0005")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "potential" "-41.07144191 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "eeenergy" "-6.35883147 0.00003")
-      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "ionion" "-25.55133345 0.000001")
+      list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "ionion" "-25.55133345 0.000002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "localecp" "-10.53491810 0.0002")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "nonlocalecp" "1.37364111 0.0001")
       list(APPEND DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS "flux" "-9.79154968 0.001")
@@ -1389,10 +1389,42 @@ if(NOT QMC_CUDA)
   )
 
   qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_inverter-host_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_vmcbatch_dmcbatch_mwalkers
+    det_qmc_short_vmcbatch_dmcbatch_mwalkers_inverter_host.in.xml
+    2
+    3
+    TRUE
+    0
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
+    1
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
+    2
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
     deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
     det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
     det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
+    2
+    3
+    TRUE
+    0
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
+    1
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
+    2
+    DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_inverter-host_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers_inverter_host.in.xml
     2
     3
     TRUE

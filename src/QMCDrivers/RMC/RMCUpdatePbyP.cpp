@@ -14,7 +14,7 @@
 
 #include "RMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Configuration.h"
 #include "Particle/Reptile.h"
 #include <cmath>
@@ -40,7 +40,7 @@ using WP = WalkerProperties::Indexes;
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
-                                               RandomGenerator_t& rg,
+                                               RandomGenerator& rg,
                                                std::vector<int> act,
                                                std::vector<int> tp)
     : QMCUpdateBase(w, psi, h, rg),

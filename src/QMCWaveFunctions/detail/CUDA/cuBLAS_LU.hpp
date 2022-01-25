@@ -15,16 +15,14 @@
 #include <complex>
 #include <type_traits>
 #include "config.h"
+#include <CUDA/CUDAruntime.hpp>
 #ifndef QMC_CUDA2HIP
-#include <cuda.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
 #else
-#include <hip/hip_runtime.h>
 #include <hipblas.h>
 #include <hip/hip_complex.h>
-#include "ROCm/cuda2hip.h"
-#include "ROCm/hipBLAS.hpp"
+#include <ROCm/hipBLAS.hpp>
 #endif
 
 /** \file

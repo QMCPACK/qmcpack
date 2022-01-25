@@ -40,7 +40,7 @@ TEST_CASE("Legendre", "[numerics]")
 TEST_CASE("Spherical Harmonics", "[numerics]")
 {
   // l=0 should be 1.0 for all values
-  typedef TinyVector<double, 3> vec_t;
+  using vec_t = TinyVector<double, 3>;
   vec_t v;
   v[0]                     = 1.0;
   v[1]                     = 0.0;
@@ -88,7 +88,7 @@ TEST_CASE("Spherical Harmonics Many", "[numerics]")
   };
 #endif
 
-  typedef TinyVector<double, 3> vec_t;
+  using vec_t = TinyVector<double, 3>;
   for (int i = 0; i < N; i++)
   {
     YlmValue& v = Vals[i];

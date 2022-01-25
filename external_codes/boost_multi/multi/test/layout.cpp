@@ -10,15 +10,45 @@
 
 #include "../detail/tuple_zip.hpp"
 
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+
 #include<tuple>
 
 namespace multi = boost::multi;
 
-//BOOST_AUTO_TEST_CASE(tuple_to_extensions){
-//	std::tuple<int, int> t{3, 5};
-//	auto x = std::apply([](auto... e){return multi::extensions_t<2>{e...};}, t);
-//	BOOST_REQUIRE( x.num_elements() == 15 );
+auto second_finish(multi::extensions_t<3> x) {
+	return std::get<1>(x).finish();
+}
+
+BOOST_AUTO_TEST_CASE(extensions_3D) {
+	BOOST_REQUIRE( 20 == second_finish( multi::extensions_t<3>  { {0, 10}, {0, 20}, {0, 30} }  ) );
+	BOOST_REQUIRE( 20 == second_finish( multi::extensions_t<3>( { {0, 10}, {0, 20}, {0, 30} } )) );
+	BOOST_REQUIRE( 20 == second_finish(                         { {0, 10}, {0, 20}, {0, 30} }  ) );
+
+	multi::extensions_t<3> x3{ {0, 10}, {0, 20}, {0, 30} };
+	BOOST_REQUIRE( 20 == second_finish(x3                                                     ) );
+}
+
+//BOOST_AUTO_TEST_CASE(extensions_1D) {
+//	BOOST_REQUIRE( multi::extensions_t<1>( { {0, 10} } ) == multi::extensions_t<1>( { {0, 10} } ) );
 //}
+
+BOOST_AUTO_TEST_CASE(serialize_extensions) {
+	multi::extensions_t<3> x{51, 52, 53};
+	std::stringstream ss;
+	{
+		boost::archive::xml_oarchive xoa{ss};
+		xoa<< BOOST_SERIALIZATION_NVP(x);
+	}
+	{
+		std::cerr<< ss.str() << std::endl;
+		boost::archive::xml_iarchive xia{ss};
+		multi::extensions_t<3> x2{51, 52, 53};
+		xia>> BOOST_SERIALIZATION_NVP(x2);
+		BOOST_REQUIRE(x == x2);
+	}
+}
 
 BOOST_AUTO_TEST_CASE(linearize) {
 	multi::array<double, 3> A({10, 20, 30});
@@ -280,11 +310,12 @@ BOOST_AUTO_TEST_CASE(multi_layout_part3) {
 BOOST_AUTO_TEST_CASE(layout_to_offset) {
 	multi::layout_t<3> L({10, 20, 30});
 	multi::array<double, 3> A({10, 20, 30});
-	BOOST_REQUIRE( L[0][0][0] == &A[0][0][0] - data_elements(A) );
-	BOOST_REQUIRE( L[0][0][1] == &A[0][0][1] - data_elements(A) );
-	BOOST_REQUIRE( L[0][0][2] == &A[0][0][2] - data_elements(A) );
-	BOOST_REQUIRE( L[0][1][2] == &A[0][1][2] - data_elements(A) );
-	BOOST_REQUIRE( L[3][1][2] == &A[3][1][2] - data_elements(A) );
+	BOOST_REQUIRE( L[0][0][0] == &A[0][0][0] - A.data_elements() );
+	BOOST_REQUIRE( L[0][0][1] == &A[0][0][1] - A.data_elements() );
+	BOOST_REQUIRE( L[0][0][2] == &A[0][0][2] - A.data_elements() );
+
+	BOOST_TEST_REQUIRE( L[0][1][2] == &A[0][1][2] - A.data_elements() );
+	BOOST_TEST_REQUIRE( L[3][1][2] == &A[3][1][2] - A.data_elements() );
 }
 
 BOOST_AUTO_TEST_CASE(layout_to_offset_sub) {
@@ -352,9 +383,9 @@ BOOST_AUTO_TEST_CASE(continued_part2) {
 	BOOST_REQUIRE( offset(L) == L.offset() );
 	BOOST_REQUIRE( nelems(L) == L.nelems() );
 
-	BOOST_REQUIRE( stride(L) == 20*30 );
+	BOOST_REQUIRE( stride(L) == 20*30L );
 	BOOST_REQUIRE( offset(L) == 0 );
-	BOOST_REQUIRE( nelems(L) == 10*20*30 );
+	BOOST_REQUIRE( nelems(L) == 10*20L*30L );
 
 	BOOST_REQUIRE( L.stride(0) == stride(L) );
 	BOOST_REQUIRE( L.offset(0) == offset(L) );
@@ -362,7 +393,7 @@ BOOST_AUTO_TEST_CASE(continued_part2) {
 
 	BOOST_REQUIRE( L.stride(1) == 30 );
 	BOOST_REQUIRE( L.offset(1) == 0 );
-	BOOST_REQUIRE( L.nelems(1) == 20*30 );
+	BOOST_REQUIRE( L.nelems(1) == 20*30L );
 
 	BOOST_REQUIRE( L.stride(2) == 1 );
 	BOOST_REQUIRE( L.offset(2) == 0 );
@@ -376,7 +407,7 @@ BOOST_AUTO_TEST_CASE(continued_part3) {
 	BOOST_REQUIRE( L.size() == size(L) );
 	BOOST_REQUIRE( L.extension() == extension(L) );
 
-	BOOST_REQUIRE( num_elements(L) == 10*20*30 );
+	BOOST_REQUIRE( num_elements(L) == 10*20L*30L );
 	BOOST_REQUIRE( size(L) == 10 );
 	BOOST_REQUIRE( extension(L).first() == 0 );
 	BOOST_REQUIRE( extension(L).last() == 10 );
@@ -402,9 +433,10 @@ BOOST_AUTO_TEST_CASE(continued) {
 {
 	multi::layout_t<3> L;
 	BOOST_REQUIRE( size(L) == 0 );
-}{
+}
+{
 	multi::layout_t<3> L( {{0, 10}, {0, 20}, {0, 30}} );
-	BOOST_REQUIRE( stride(L) == 20*30 );
+	BOOST_REQUIRE( stride(L) == 20*30L );
 }
 {
 	multi::layout_t<1> L({{0, 10}});
@@ -434,18 +466,18 @@ BOOST_AUTO_TEST_CASE(continued) {
 }
 {
 	multi::layout_t<3> L({{0, 3}, {0, 5}, {10, 17}});
-	BOOST_REQUIRE( stride(L) == 5*7 );
+	BOOST_REQUIRE( stride(L) == 5*7L );
 	BOOST_REQUIRE( stride(L.sub().sub()) == 1 );
 }
 {
 	multi::layout_t<3> L({{0, 10}, {0, 20}, {0, 30}});
-	BOOST_REQUIRE( stride(L) == 20*30 );
+	BOOST_REQUIRE( stride(L) == 20*30L );
 	BOOST_REQUIRE( offset(L) == 0 );
-	BOOST_REQUIRE( nelems(L) == 10*20*30 );
+	BOOST_REQUIRE( nelems(L) == 10*20L*30L );
 }
 {
 	multi::layout_t<3> L({{10, 20}, {10, 30}, {10, 40}});
-	BOOST_REQUIRE( stride(L) == 20*30 );
+	BOOST_REQUIRE( stride(L) == 20*30L );
 }
 {
 	std::tuple<int, int, int> ttt = {1, 2, 3};
@@ -460,5 +492,63 @@ BOOST_AUTO_TEST_CASE(tuple_zip_test) {
 	auto t3 = std::make_tuple(std::string{"10"}, std::string{"20"}, std::string{"30"});
 	auto t123 = boost::multi::detail::tuple_zip(t1, t2, t3);
 	BOOST_REQUIRE( std::get<2>(std::get<0>(t123)) == std::string{"10"} );
+}
+
+BOOST_AUTO_TEST_CASE(extensions_from_linear_1d) {
+	multi::extensions_t<1> x{11};
+
+	auto ijk = x.from_linear(9);
+
+	BOOST_TEST_REQUIRE( std::get<0>(ijk) == 9 );
+
+	multi::layout_t<1> l{x};
+	BOOST_TEST_REQUIRE( l[std::get<0>(ijk)] == 9 );
+	BOOST_TEST_REQUIRE( l(std::get<0>(ijk)) == 9 );
+
+//	BOOST_TEST_REQUIRE( l(std::get<0>(l.extensions().from_linear(9))) == 9 );
+
+#if(__cplusplus >= 201703)
+//	BOOST_TEST_REQUIRE( std::apply(l, l.extensions().from_linear(9)) == 9 );
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(extensions_from_linear_2d) {
+	multi::extensions_t<2> x{3, 5};
+
+	auto ij = x.from_linear(7);
+
+	BOOST_TEST_REQUIRE( std::get<0>(ij) == 1 );
+	BOOST_TEST_REQUIRE( std::get<1>(ij) == 2 );
+
+	multi::layout_t<2> l{x};
+	BOOST_TEST_REQUIRE( l[std::get<0>(ij)][std::get<1>(ij)] == 7 );
+//	BOOST_TEST_REQUIRE( l(std::get<0>(ij), std::get<1>(ij)) == l[std::get<0>(ij)](std::get<1>(ij)) );
+//	BOOST_TEST_REQUIRE( l[std::get<0>(ij)](std::get<1>(ij)) == l[std::get<0>(ij)][std::get<1>(ij)] );
+
+//	BOOST_TEST_REQUIRE( l(std::get<0>(ij), std::get<1>(ij)) == 7 );
+
+//	BOOST_TEST_REQUIRE( l(std::get<0>(l.extensions().from_linear(7)), std::get<1>(l.extensions().from_linear(7))) == 7 );
+
+#if(__cplusplus >= 201703)
+	auto [i, j] = x.from_linear(7);
+
+	BOOST_TEST_REQUIRE( i == 1 );
+	BOOST_TEST_REQUIRE( j == 2 );
+//	BOOST_TEST_REQUIRE( std::apply(l, l.extensions().from_linear(9)) == 9 );
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(extensions_from_linear_3d) {
+	multi::extensions_t<3> x{11, 13, 17};
+
+	auto ijk = x.from_linear(19);
+
+	BOOST_TEST_REQUIRE( std::get<0>(ijk) == 0 );
+	BOOST_TEST_REQUIRE( std::get<1>(ijk) == 1 );
+	BOOST_TEST_REQUIRE( std::get<2>(ijk) == 2 );
+
+	multi::layout_t<3> l{x};
+	BOOST_TEST_REQUIRE( l[std::get<0>(ijk)][std::get<1>(ijk)][std::get<2>(ijk)] == 19 );
+//	BOOST_TEST_REQUIRE( l(std::get<0>(ijk), std::get<1>(ijk), std::get<2>(ijk)) == 19 );
 }
 

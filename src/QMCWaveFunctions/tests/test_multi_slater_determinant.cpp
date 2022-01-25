@@ -40,15 +40,16 @@ void test_LiH_msd(const std::string& spo_xml_string,
                   int test_nlpp_algorithm_batched,
                   int test_batched_api)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1, 1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   ions_.R[1]           = {0.0, 0.0, 3.0139239693};
@@ -57,6 +58,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   int HIdx             = ispecies.addSpecies("H");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2, 2});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {0.1, 0.1, 1.1};
@@ -71,12 +73,6 @@ void test_LiH_msd(const std::string& spo_xml_string,
   tspecies(massIdx, downIdx) = 1.0;
   // Necessary to set mass
   elec_.resetGroups();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
@@ -297,38 +293,6 @@ TEST_CASE("LiH multi Slater dets table_method", "[wavefunction]")
   test_LiH_msd(spo_xml_string1, "spo-up", 85, 105, true, true);
 }
 
-TEST_CASE("LiH multi Slater dets all_determinants", "[wavefunction]")
-{
-  app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd using the traditional slow method with all the determinants" << std::endl;
-  app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1_slow = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
-        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
-      </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-    </sposet_collection> \
-    <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"  algorithm=\"all_determinants\"> \
-        <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
-      </multideterminant> \
-    </determinantset> \
-</wavefunction> \
-";
-  /* NOTE: test_batched_api is set false because of unexpected failures.
-     all_determinants should pass all the existing tests. There are likely bugs.
-   */
-  test_LiH_msd(spo_xml_string1_slow, "spo-up", 85, 105, false, false);
-}
-
 TEST_CASE("LiH multi Slater dets precomputed_table_method", "[wavefunction]")
 {
   app_log() << "-----------------------------------------------------------------" << std::endl;
@@ -364,21 +328,23 @@ void test_Bi_msd(const std::string& spo_xml_string,
                  int check_spo_size,
                  int check_basisset_size)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(std::vector<int>{1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int LiIdx            = ispecies.addSpecies("Bi");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(std::vector<int>{5});
   elec_.R[0] = {1.592992772, -2.241313928, -0.7315193518};
   elec_.R[1] = {0.07621077199, 0.8497557547, 1.604678718};
@@ -399,12 +365,6 @@ void test_Bi_msd(const std::string& spo_xml_string,
   tspecies(massIdx, upIdx) = 1.0;
   // Necessary to set mass
   elec_.resetGroups();
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);

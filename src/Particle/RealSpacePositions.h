@@ -25,9 +25,9 @@ namespace qmcplusplus
 class RealSpacePositions : public DynamicCoordinates
 {
 public:
-  using ParticlePos_t = PtclOnLatticeTraits::ParticlePos_t;
-  using RealType      = QMCTraits::RealType;
-  using PosType       = QMCTraits::PosType;
+  using ParticlePos = PtclOnLatticeTraits::ParticlePos;
+  using RealType    = QMCTraits::RealType;
+  using PosType     = QMCTraits::PosType;
 
   RealSpacePositions() : DynamicCoordinates(DynamicCoordinateKind::DC_POS) {}
 
@@ -36,7 +36,7 @@ public:
   void resize(size_t n) override { RSoA.resize(n); }
   size_t size() const override { return RSoA.size(); }
 
-  void setAllParticlePos(const ParticlePos_t& R) override
+  void setAllParticlePos(const ParticlePos& R) override
   {
     resize(R.size());
     RSoA.copyIn(R);

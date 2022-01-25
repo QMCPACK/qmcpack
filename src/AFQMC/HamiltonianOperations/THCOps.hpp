@@ -707,7 +707,7 @@ public:
     Bytes /= size_t(nmo_ * nu * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     memory_needs += nwmax * nmo_ * nu;
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
+    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
                                         shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     size_t cnt(0);
@@ -859,7 +859,7 @@ public:
       memory_needs += G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       memory_needs += v.num_elements();
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
+    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
                                         shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     size_t cnt(0);
     const_sp_pointer Gptr(nullptr);

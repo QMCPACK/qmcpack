@@ -249,7 +249,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
       {
         //           BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusps[i]);
         auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
-        bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+        bsp->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
         bsp->put(funs[i]);
         if (bsp->cutoff_radius > cutOff)
           cutOff = bsp->cutoff_radius;
@@ -325,7 +325,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
         app_log() << "Adding radial component for species: " << spA << " " << spB << " " << ia << "  " << ib
                   << std::endl;
         auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
-        bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+        bsp->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
         bsp->put(cur);
         if (bsp->cutoff_radius > cutOff)
           cutOff = bsp->cutoff_radius;
@@ -399,11 +399,11 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addRPA(xmlNodePtr cur)
   //params.add(Kc,"Kc","RealType");
   //params.put(cur);
   RealType tlen =
-      std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
+      std::pow(3.0 / 4.0 / M_PI * targetPtcl.getLattice().Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
                1.0 / 3.0);
   if (Rs < 0)
   {
-    if (targetPtcl.Lattice.SuperCellEnum)
+    if (targetPtcl.getLattice().SuperCellEnum)
     {
       Rs = tlen;
     }

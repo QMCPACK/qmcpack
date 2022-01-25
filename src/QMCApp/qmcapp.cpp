@@ -273,7 +273,7 @@ void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr ro
   doc.addChild(hardware, "mpi", using_mpi);
 
   bool using_openmp = false;
-#ifdef ENABLE_OPENMP
+#ifdef _OPENMP
   using_openmp = true;
   doc.addChild(hardware, "openmp_threads", omp_get_max_threads());
 #endif

@@ -16,12 +16,11 @@
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "type_traits/complex_help.hpp"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {
-
 /** wrappers around xgetrf lapack routines 
  *  \param[in] n      rows
  *  \param[in] m      cols
@@ -135,7 +134,7 @@ class DiracMatrix
       throw std::runtime_error(msg.str());
     }
 
-    lw = std::real(tmp);
+    lw    = std::real(tmp);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
     LU_diag.resize(lda);

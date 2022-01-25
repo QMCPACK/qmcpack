@@ -327,7 +327,7 @@ attributes:
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``format``:math:`^r`        | text         | xml/table             | table                  | Select file format                               |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``algorithm``:math:`^o`     | text         | batched/non-batched   | depends                | Choose NLPP algorithm                            |
+  | ``algorithm``:math:`^o`     | text         | batched/non-batched   | batched                | Choose NLPP algorithm                            |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation       |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
@@ -359,9 +359,7 @@ Additional information:
    These elements specify individual file names and formats (both the
    FSAtom XML and CASINO tabular data formats are supported).
 
--  **algorithm** The default value is ``batched`` when OpenMP offload
-   is enabled and``non-batched`` otherwise.
-   The ``non-batched`` algorithm evaluates the ratios of
+-  **algorithm** The ``non-batched`` algorithm evaluates the ratios of
    wavefunction components together for each quadrature point and then
    one point after another. The ``batched`` algorithm evaluates the ratios
    of quadrature points together for each wavefunction component and

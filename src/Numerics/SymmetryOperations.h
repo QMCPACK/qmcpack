@@ -50,18 +50,18 @@ public:
   int getSymmetriesSize() { return nSymmetries; }
   int getClassesSize() { return nClasses; }
 
-  void TransformSinglePosition(ParticleSet::ParticlePos_t& oldPos, int symNumber, int el = 0)
+  void TransformSinglePosition(ParticleSet::ParticlePos& oldPos, int symNumber, int el = 0)
   {
-    ParticleSet::ParticlePos_t rv(1);
+    ParticleSet::ParticlePos rv(1);
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
         rv[0][i] += SymOps[symNumber][i][j] * oldPos[el][j];
     oldPos[el] = rv[0];
   }
 
-  void TransformAllPositions(ParticleSet::ParticlePos_t& oldPos, int symNumber)
+  void TransformAllPositions(ParticleSet::ParticlePos& oldPos, int symNumber)
   {
-    ParticleSet::ParticlePos_t rv(oldPos.size());
+    ParticleSet::ParticlePos rv(oldPos.size());
     for (int k = 0; k < oldPos.size(); k++)
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)

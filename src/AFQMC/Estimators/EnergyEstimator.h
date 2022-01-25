@@ -61,7 +61,7 @@ public:
     if (eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk, 3});
     if (ovlp.size(0) != nwalk)
-      ovlp.reextent(iextensions<1u>{nwalk});
+      ovlp.reextent(iextensions<1u>(nwalk));
     if (wprop.size(0) != 4 || wprop.size(1) != nwalk)
       wprop.reextent({4, nwalk});
 

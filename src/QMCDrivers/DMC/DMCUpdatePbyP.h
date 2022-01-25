@@ -26,7 +26,7 @@ public:
   DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator_t& rg);
+                                 RandomGenerator& rg);
   ///destructor
   ~DMCUpdatePbyPWithRejectionFast() override;
 

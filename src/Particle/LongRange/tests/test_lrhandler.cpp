@@ -40,8 +40,8 @@ TEST_CASE("dummy", "[lrhandler]")
   REQUIRE(Lattice.LR_rc == Approx(2.5));
   REQUIRE(Lattice.LR_kc == Approx(12));
 
-  ParticleSet ref;       // handler needs ref.SK.getKLists()
-  ref.Lattice = Lattice; // !!!! crucial for access to Volume
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
   ref.createSK();
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 

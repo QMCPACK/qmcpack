@@ -44,14 +44,14 @@
 //Returns: (E(N=infty)-E(N)) for the given simulation cell.
 
 using namespace qmcplusplus;
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::PosType PosType;
-typedef SkParserBase::Grid_t Grid_t;
+using RealType = QMCTraits::RealType;
+using PosType  = QMCTraits::PosType;
+using Grid_t   = SkParserBase::Grid_t;
 
 int main(int argc, char** argv)
 {
   OHMMS::Controller->initialize(argc, argv);
-  Random.init(0, 1, -1);
+  Random.init(-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right, std::ios::adjustfield);
   std::cout.precision(12);

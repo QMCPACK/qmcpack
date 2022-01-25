@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(array_encoded_subarray) {
 
 	static_assert( decltype(+B)::rank_v == 3 , "!");
 	BOOST_REQUIRE(( sizes(B) == decltype(sizes(B)){7, 3, 2} ));
-	BOOST_REQUIRE( B[4].num_elements() == 3*2 );
+	BOOST_REQUIRE( B[4].num_elements() == 3*2L );
 
 	BOOST_REQUIRE( &B[4][1][0] == &A[4][4] );
 	BOOST_REQUIRE( B[4][1][0] == 4.10 );
@@ -172,5 +172,25 @@ BOOST_AUTO_TEST_CASE(array_partitioned_add_to_last) {
 	BOOST_REQUIRE( A4.flatted().is_flattable() );
 
 	BOOST_REQUIRE( &A4[1][2][3][0] == &A3[1][2][3] );
+}
+
+BOOST_AUTO_TEST_CASE(array_partitioned_vs_chunked_1D) {
+	multi::array<double, 1> A = {0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11.};
+	BOOST_REQUIRE( size(A.partitioned(3)) == 3 );
+	BOOST_REQUIRE( A.partitioned(3)[1] == decltype(+A.partitioned(3)[1])({4., 5., 6., 7.}) );
+	BOOST_REQUIRE( &A.partitioned(3)[1][2] == &A[6] );
+
+	BOOST_REQUIRE( size(A.chunked(3)) == 4 );
+	BOOST_REQUIRE( A.chunked(3)[1] == decltype(+A.chunked(3)[1])({3., 4., 5.}) );
+	BOOST_REQUIRE( &A.chunked(3)[1][2] == &A[5] );
+}
+
+BOOST_AUTO_TEST_CASE(array_partitioned_vs_chunked_2D) {
+	multi::array<double, 2> A({100, 53});
+	BOOST_REQUIRE( size(A.partitioned(20)) == 20 );
+	BOOST_REQUIRE( &A.partitioned(20)[1][2] == &A[7] );
+
+	BOOST_REQUIRE( size(A.chunked(5)) == 20 );
+	BOOST_REQUIRE( &A.chunked(5)[1][2] == &A[7] );
 }
 

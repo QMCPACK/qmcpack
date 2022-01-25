@@ -17,7 +17,7 @@
 #include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -124,9 +124,9 @@ bool SpaceGrid::initialize_voronoi(std::map<std::string, Point>& points)
   bool succeeded = true;
   if (Rptcl)
   {
-    const ParticlePos_t& R = *Rptcl;
-    origin                 = points["center"];
-    ndomains               = R.size();
+    const ParticlePos& R = *Rptcl;
+    origin               = points["center"];
+    ndomains             = R.size();
     domain_volumes.resize(ndomains, 1);
     domain_centers.resize(ndomains, DIM);
     nearcell.resize(ndparticles);
@@ -517,8 +517,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<< std::endl;
   }
   Point du, uc, ubc, rc;
-  RealType vol     = 0.0;
-  RealType vscale  = std::abs(det(axes));
+  RealType vol    = 0.0;
+  RealType vscale = std::abs(det(axes));
   for (int i = 0; i < dimensions[0]; i++)
   {
     for (int j = 0; j < dimensions[1]; j++)
@@ -703,7 +703,7 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
 
 void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid, int grid_index) const
 {
-  typedef Matrix<int> iMatrix;
+  using iMatrix = Matrix<int>;
   iMatrix imat;
   std::vector<int> ng(1);
   int cshift = 1;
@@ -819,7 +819,7 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_
 #define SPACEGRID_CHECK
 
 
-void SpaceGrid::evaluate(const ParticlePos_t& R,
+void SpaceGrid::evaluate(const ParticlePos& R,
                          const Matrix<RealType>& values,
                          BufferType& buf,
                          std::vector<bool>& particles_outside,

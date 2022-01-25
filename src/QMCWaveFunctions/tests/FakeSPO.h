@@ -26,7 +26,7 @@ public:
   Vector<ValueType> v;
   Matrix<ValueType> v2;
 
-  SPOSet::GradVector_t gv;
+  SPOSet::GradVector gv;
 
   FakeSPO();
   ~FakeSPO() override {}
@@ -36,20 +36,16 @@ public:
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
 };
 
 } // namespace qmcplusplus

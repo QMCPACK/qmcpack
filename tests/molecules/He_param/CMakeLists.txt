@@ -39,7 +39,7 @@ if(NOT QMC_CUDA)
     # but we need to write a file there before that runs
     set(TDIR "${CMAKE_CURRENT_BINARY_DIR}/He_param_grad_load-1-16")
     file(MAKE_DIRECTORY ${TDIR})
-    execute_process(COMMAND ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py ${SDIR}/he_vp_opt.txt ${complex_flag} -o ${TDIR}/he_vp_opt.h5)
+    execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py ${SDIR}/he_vp_opt.txt ${complex_flag} -o ${TDIR}/he_vp_opt.h5)
 
     list(APPEND HE_BSPLINE_OPT_PARAM jud_0  0.00000124  0.0014) # scalar name, value, error
     list(APPEND HE_BSPLINE_OPT_PARAM jud_1 -0.000273    0.00097)

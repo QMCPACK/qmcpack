@@ -44,12 +44,29 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #else
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
 #endif
-  auto ions_uptr = std::make_unique<ParticleSet>(kind_selected);
-  auto elec_uptr = std::make_unique<ParticleSet>(kind_selected);
+  // diamondC_1x1x1
+  ParticleSet::ParticleLayout lattice;
+  lattice.R(0, 0)   = 3.37316115;
+  lattice.R(0, 1)   = 3.37316115;
+  lattice.R(0, 2)   = 0.0;
+  lattice.R(1, 0)   = 0.0;
+  lattice.R(1, 1)   = 3.37316115;
+  lattice.R(1, 2)   = 3.37316115;
+  lattice.R(2, 0)   = 3.37316115;
+  lattice.R(2, 1)   = 0.0;
+  lattice.R(2, 2)   = 3.37316115;
+  lattice.BoxBConds = {1, 1, 1};
+  lattice.reset();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
@@ -57,6 +74,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   std::vector<int> ud(2);
   ud[0] = ud[1] = 2;
   elec_.create(ud);
@@ -64,19 +82,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.R[1] = {0.0, 1.0, 1.0};
   elec_.R[2] = {1.0, 1.0, 0.0};
   elec_.R[3] = {1.0, 0.0, 1.0};
-
-  // diamondC_1x1x1
-  elec_.Lattice.R(0, 0)   = 3.37316115;
-  elec_.Lattice.R(0, 1)   = 3.37316115;
-  elec_.Lattice.R(0, 2)   = 0.0;
-  elec_.Lattice.R(1, 0)   = 0.0;
-  elec_.Lattice.R(1, 1)   = 3.37316115;
-  elec_.Lattice.R(1, 2)   = 3.37316115;
-  elec_.Lattice.R(2, 0)   = 3.37316115;
-  elec_.Lattice.R(2, 1)   = 0.0;
-  elec_.Lattice.R(2, 2)   = 3.37316115;
-  elec_.Lattice.BoxBConds = {1, 1, 1};
-  elec_.Lattice.reset();
 
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
@@ -88,10 +93,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
-
-  ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);
@@ -265,21 +266,21 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
-  GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
+    ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
+    GradType grad_temp;
+    ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
 #if defined(QMC_COMPLEX)
-  CHECK(r_0 == ComplexApprox(ValueType(-0.045474407700114, -0.59956233350555)));
-  CHECK(r_1 == ComplexApprox(ValueType(-0.44602867091608, -1.8105588403509)));
-  CHECK(grad_temp[0] == ComplexApprox(ValueType(-6.6139971152489, 22.82304260002)));
-  CHECK(grad_temp[1] == ComplexApprox(ValueType(8.3367501707711, -23.362154838104)));
-  CHECK(grad_temp[2] == ComplexApprox(ValueType(-2.6347597529645, 0.67383144279783)));
+    CHECK(r_0 == ComplexApprox(ValueType(-0.045474407700114, -0.59956233350555)));
+    CHECK(r_1 == ComplexApprox(ValueType(-0.44602867091608, -1.8105588403509)));
+    CHECK(grad_temp[0] == ComplexApprox(ValueType(-6.6139971152489, 22.82304260002)));
+    CHECK(grad_temp[1] == ComplexApprox(ValueType(8.3367501707711, -23.362154838104)));
+    CHECK(grad_temp[2] == ComplexApprox(ValueType(-2.6347597529645, 0.67383144279783)));
 #else
-  CHECK(r_0 == Approx(-0.4138835449));
-  CHECK(r_1 == Approx(-2.5974770159));
-  CHECK(grad_temp[0] == Approx(-17.865723259764));
-  CHECK(grad_temp[1] == Approx(19.854257889369));
-  CHECK(grad_temp[2] == Approx(-2.9669578650441));
+    CHECK(r_0 == Approx(-0.4138835449));
+    CHECK(r_1 == Approx(-2.5974770159));
+    CHECK(grad_temp[0] == Approx(-17.865723259764));
+    CHECK(grad_temp[1] == Approx(19.854257889369));
+    CHECK(grad_temp[2] == Approx(-2.9669578650441));
 #endif
   }
 
@@ -303,12 +304,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-  ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
+    ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
+    ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
-            << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
+    std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+              << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
+              << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces

@@ -70,7 +70,7 @@ public:
   using Walker_t = ParticleSet::Walker_t;
 
   ///typedef for the ParticleScalar
-  using ParticleScalar_t = ParticleSet::Scalar_t;
+  using ParticleScalar = ParticleSet::Scalar_t;
 
   ///enum to denote energy domain of operators
   enum EnergyDomains
@@ -306,8 +306,8 @@ public:
   virtual Return_t evaluateWithIonDerivs(ParticleSet& P,
                                          ParticleSet& ions,
                                          TrialWaveFunction& psi,
-                                         ParticleSet::ParticlePos_t& hf_term,
-                                         ParticleSet::ParticlePos_t& pulay_term);
+                                         ParticleSet::ParticlePos& hf_term,
+                                         ParticleSet::ParticlePos& pulay_term);
 
   /** 
    * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.
@@ -324,8 +324,8 @@ public:
   virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                                       ParticleSet& ions,
                                                       TrialWaveFunction& psi,
-                                                      ParticleSet::ParticlePos_t& hf_term,
-                                                      ParticleSet::ParticlePos_t& pulay_term);
+                                                      ParticleSet::ParticlePos& hf_term,
+                                                      ParticleSet::ParticlePos& pulay_term);
 
   /** 
    * @brief Update data associated with a particleset.
@@ -368,7 +368,7 @@ public:
    * TODO: add docs
    * @param rng 
    */
-  virtual void setRandomGenerator(RandomGenerator_t* rng);
+  virtual void setRandomGenerator(RandomGenerator* rng);
 
   /**
    * @brief TODO: add docs

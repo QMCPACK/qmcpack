@@ -30,6 +30,7 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "SimulationCell.h"
 #include "DTModes.h"
 
 namespace qmcplusplus
@@ -52,11 +53,11 @@ class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatt
 {
 public:
   /// walker type
-  typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
+  using Walker_t = Walker<QMCTraits, PtclOnLatticeTraits>;
   /// container type to store the property
-  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
+  using PropertyContainer_t = Walker_t::PropertyContainer_t;
   /// buffer type for a serialized buffer
-  typedef PooledData<RealType> Buffer_t;
+  using Buffer_t = PooledData<RealType>;
 
   enum quantum_domains
   {
@@ -69,38 +70,20 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///ParticleLayout
-  ParticleLayout_t Lattice, PrimitiveLattice;
-  ///Long-range box
-  ParticleLayout_t LRBox;
-
-  ///unique, persistent ID for each particle
-  ParticleIndex_t ID;
-  ///index to the primitice cell with tiling
-  ParticleIndex_t PCID;
-  /** ID map that reflects species group
-   *
-   * IsGrouped=true, if ID==IndirectID
-   */
-  ParticleIndex_t IndirectID;
   ///Species ID
-  ParticleIndex_t GroupID;
+  ParticleIndex GroupID;
   ///Position
-  ParticlePos_t R;
+  ParticlePos R;
   ///internal spin variables for dynamical spin calculations
-  ParticleScalar_t spins;
+  ParticleScalar spins;
   ///gradients of the particles
-  ParticleGradient_t G;
+  ParticleGradient G;
   ///laplacians of the particles
-  ParticleLaplacian_t L;
-  ///differential gradients of the particles
-  ParticleGradient_t dG;
-  ///differential laplacians of the particles
-  ParticleLaplacian_t dL;
+  ParticleLaplacian L;
   ///mass of each particle
-  ParticleScalar_t Mass;
+  ParticleScalar Mass;
   ///charge of each particle
-  ParticleScalar_t Z;
+  ParticleScalar Z;
 
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
@@ -148,7 +131,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
@@ -257,9 +240,15 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
+  inline void setCoordinates(const ParticlePos& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
+
+
+  const auto& getSimulationCell() const { return simulation_cell_; }
+  const auto& getLattice() const { return simulation_cell_.getLattice(); }
+  auto& getPrimitiveLattice() const { return const_cast<ParticleLayout&>(simulation_cell_.getPrimLattice()); }
+  const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
   inline bool isGrouped() const { return is_grouped_; }
@@ -294,14 +283,20 @@ public:
    * Evaluate the related distance table data DistanceTable::Temp.
    * If maybe_accept = false, certain operations for accepting moves will be skipped for optimal performance.
    */
-  void makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept = true);
+  void makeMove(Index_t iat, const SingleParticlePos& displ, bool maybe_accept = true);
   /// makeMove, but now includes an update to the spin variable
-  void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
+  void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
-                          const std::vector<SingleParticlePos_t>& displs);
+                          const std::vector<SingleParticlePos>& displs);
+
+  /// batched version of makeMoveWithSpin
+  static void mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
+                                  int iat,
+                                  const std::vector<SingleParticlePos>& displs,
+                                  const std::vector<Scalar_t>& sdispls);
 
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
@@ -316,9 +311,9 @@ public:
    * isValid(Lattice.toUnit(active_pos_)): invalid move, if active_pos_ goes out of the Lattice in any direction marked with open BC.
    * Note: active_pos_ and distances tables are always evaluated no matter the move is valid or not.
    */
-  bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
+  bool makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ);
   /// makeMoveAndCheck, but now includes an update to the spin variable
-  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
+  bool makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /** Handles virtual moves for all the particles to a single newpos.
    *
@@ -326,7 +321,7 @@ public:
    * acceptMove can not be used.
    * See QMCHamiltonians::MomentumEstimator as an example
    */
-  void makeVirtualMoves(const SingleParticlePos_t& newpos);
+  void makeVirtualMoves(const SingleParticlePos& newpos);
 
   /** move all the particles of a walker
    * @param awalker the walker to operate
@@ -337,22 +332,22 @@ public:
    * If big displacements or illegal positions are detected, return false.
    * If all good, R = awalker.R + dt* deltaR
    */
-  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
+  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos& deltaR, RealType dt);
 
-  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+  bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos& deltaR, const std::vector<RealType>& dt);
 
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
    */
   bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                     const ParticlePos_t& drift,
-                                     const ParticlePos_t& deltaR,
+                                     const ParticlePos& drift,
+                                     const ParticlePos& deltaR,
                                      RealType dt);
 
   bool makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                     const ParticlePos_t& drift,
-                                     const ParticlePos_t& deltaR,
+                                     const ParticlePos& drift,
+                                     const ParticlePos& deltaR,
                                      const std::vector<RealType>& dt);
 
   /** accept or reject a proposed move
@@ -399,18 +394,18 @@ public:
   //        void resetPropertyHistory( );
   //        void addPropertyHistoryPoint(int index, RealType data);
 
-  void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void convert2Unit(ParticlePos_t& pout);
-  void convert2Cart(ParticlePos_t& pout);
-  void convert2UnitInBox(const ParticlePos_t& pint, ParticlePos_t& pout);
-  void convert2CartInBox(const ParticlePos_t& pint, ParticlePos_t& pout);
+  void convert(const ParticlePos& pin, ParticlePos& pout);
+  void convert2Unit(const ParticlePos& pin, ParticlePos& pout);
+  void convert2Cart(const ParticlePos& pin, ParticlePos& pout);
+  void convert2Unit(ParticlePos& pout);
+  void convert2Cart(ParticlePos& pout);
+  void convert2UnitInBox(const ParticlePos& pint, ParticlePos& pout);
+  void convert2CartInBox(const ParticlePos& pint, ParticlePos& pout);
 
-  void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
-  void applyBC(ParticlePos_t& pos);
-  void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
-  void applyMinimumImage(ParticlePos_t& pinout);
+  void applyBC(const ParticlePos& pin, ParticlePos& pout);
+  void applyBC(ParticlePos& pos);
+  void applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last);
+  void applyMinimumImage(ParticlePos& pinout);
 
   /** load a Walker_t to the current ParticleSet
    * @param awalker the reference to the walker to be loaded
@@ -462,8 +457,8 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos_t& t) { myTwist = t; }
-  inline SingleParticlePos_t getTwist() const { return myTwist; }
+  inline void setTwist(SingleParticlePos& t) { myTwist = t; }
+  inline SingleParticlePos getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
@@ -482,16 +477,11 @@ public:
 
     R.resize(numPtcl);
     spins.resize(numPtcl);
-    ID.resize(numPtcl);
-    PCID.resize(numPtcl);
     GroupID.resize(numPtcl);
     G.resize(numPtcl);
-    dG.resize(numPtcl);
     L.resize(numPtcl);
-    dL.resize(numPtcl);
     Mass.resize(numPtcl);
     Z.resize(numPtcl);
-    IndirectID.resize(numPtcl);
 
     coordinates_->resize(numPtcl);
   }
@@ -502,16 +492,11 @@ public:
 
     R.clear();
     spins.clear();
-    ID.clear();
-    PCID.clear();
     GroupID.clear();
     G.clear();
-    dG.clear();
     L.clear();
-    dL.clear();
     Mass.clear();
     Z.clear();
-    IndirectID.clear();
 
     coordinates_->resize(0);
   }
@@ -519,14 +504,11 @@ public:
   inline void assign(const ParticleSet& ptclin)
   {
     resize(ptclin.getTotalNum());
-    Lattice          = ptclin.Lattice;
-    PrimitiveLattice = ptclin.PrimitiveLattice;
-    R.InUnit         = ptclin.R.InUnit;
-    R                = ptclin.R;
-    spins            = ptclin.spins;
-    ID               = ptclin.ID;
-    GroupID          = ptclin.GroupID;
-    is_spinor_       = ptclin.is_spinor_;
+    R.InUnit   = ptclin.R.InUnit;
+    R          = ptclin.R;
+    spins      = ptclin.spins;
+    GroupID    = ptclin.GroupID;
+    is_spinor_ = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());
@@ -561,30 +543,21 @@ public:
     R.setObjName(ParticleTags::position_tag);
     spins.setTypeName(ParticleTags::scalartype_tag);
     spins.setObjName(ParticleTags::spins_tag);
-    ID.setTypeName(ParticleTags::indextype_tag);
-    ID.setObjName(ParticleTags::id_tag);
     GroupID.setTypeName(ParticleTags::indextype_tag);
     GroupID.setObjName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
     AttribList.add(spins);
-    AttribList.add(ID);
     AttribList.add(GroupID);
 
     G.setTypeName(ParticleTags::gradtype_tag);
     L.setTypeName(ParticleTags::laptype_tag);
-    dG.setTypeName(ParticleTags::gradtype_tag);
-    dL.setTypeName(ParticleTags::laptype_tag);
 
     G.setObjName("grad");
     L.setObjName("lap");
-    dG.setObjName("dgrad");
-    dL.setObjName("dlap");
 
     AttribList.add(G);
     AttribList.add(L);
-    AttribList.add(dG);
-    AttribList.add(dL);
 
     //more particle attributes
     Mass.setTypeName(ParticleTags::scalartype_tag);
@@ -594,14 +567,6 @@ public:
     Z.setTypeName(ParticleTags::scalartype_tag);
     Z.setObjName("charge");
     AttribList.add(Z);
-
-    PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-    PCID.setObjName("pcid");
-    AttribList.add(PCID);
-
-    IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
-    IndirectID.setObjName("id1");
-    AttribList.add(IndirectID);
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
@@ -622,6 +587,9 @@ public:
   static RefVectorWithLeader<StructFact> extractSKRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
+  /// reference to global simulation cell
+  const SimulationCell& simulation_cell_;
+
   ///true if the particles are grouped
   bool is_grouped_;
   ///true if the particles have the same mass
@@ -636,7 +604,7 @@ protected:
    */
   Index_t active_ptcl_;
   ///the proposed position of active_ptcl_ during particle-by-particle moves
-  SingleParticlePos_t active_pos_;
+  SingleParticlePos active_pos_;
   ///the proposed spin of active_ptcl_ during particle-by-particle moves
   Scalar_t active_spin_val_;
 
@@ -661,7 +629,7 @@ protected:
 
   TimerList_t myTimers;
 
-  SingleParticlePos_t myTwist;
+  SingleParticlePos myTwist;
 
   std::string ParentName;
 
@@ -669,7 +637,7 @@ protected:
   size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
-  ParticleIndex_t SubPtcl;
+  ParticleIndex SubPtcl;
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
 
@@ -679,7 +647,7 @@ protected:
    * @param newpos a new particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept = true);
+  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
@@ -691,7 +659,7 @@ protected:
    */
   static void mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
                                               Index_t iat,
-                                              const std::vector<SingleParticlePos_t>& new_positions,
+                                              const std::vector<SingleParticlePos>& new_positions,
                                               bool maybe_accept = true);
 
   /** actual implemenation for accepting a proposed move in forward mode

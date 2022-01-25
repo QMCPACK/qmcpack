@@ -18,9 +18,9 @@ namespace qmcplusplus
 {
 void EwaldHandler::initBreakup(ParticleSet& ref)
 {
-  SuperCellEnum = ref.Lattice.SuperCellEnum;
-  LR_rc         = ref.Lattice.LR_rc;
-  LR_kc         = ref.Lattice.LR_kc;
+  SuperCellEnum = ref.getLattice().SuperCellEnum;
+  LR_rc         = ref.getLattice().LR_rc;
+  LR_kc         = ref.getLattice().LR_kc;
   Sigma         = 3.5;
   //determine the sigma
   while (erfc(Sigma) / LR_rc > 1e-10)
@@ -28,14 +28,14 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
     Sigma += 0.1;
   }
   app_log() << "   EwaldHandler Sigma/LR_rc = " << Sigma;
-  Sigma /= ref.Lattice.LR_rc;
+  Sigma /= ref.getLattice().LR_rc;
   app_log() << "  Sigma=" << Sigma << std::endl;
-  Volume     = ref.Lattice.Volume;
+  Volume     = ref.getLattice().Volume;
   PreFactors = 0.0;
   //See A.18
   if (SuperCellEnum == SUPERCELL_SLAB)
   {
-    Area          = std::abs(ref.Lattice.R(0, 0) * ref.Lattice.R(1, 1) - ref.Lattice.R(0, 1) * ref.Lattice.R(1, 0));
+    Area          = std::abs(ref.getLattice().R(0, 0) * ref.getLattice().R(1, 1) - ref.getLattice().R(0, 1) * ref.getLattice().R(1, 0));
     PreFactors[0] = 2.0 * M_PI / Area;                      //\f$ \frac{2\pi}{A}\f$
     PreFactors[1] = 2.0 * std::sqrt(M_PI) / (Sigma * Area); //\f$  \frac{2\pi}{A}\frac{1}{Sigma\pi}\f$
     PreFactors[2] = 1.0 / (2 * Sigma);                      //Used for the k-dependent term

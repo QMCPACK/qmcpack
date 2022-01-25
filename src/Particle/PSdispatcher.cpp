@@ -44,13 +44,25 @@ void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, b
 
 void PSdispatcher::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                  int iat,
-                                 const std::vector<SingleParticlePos_t>& displs) const
+                                 const std::vector<SingleParticlePos>& displs) const
 {
   if (use_batch_)
     ParticleSet::mw_makeMove(p_list, iat, displs);
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
       p_list[iw].makeMove(iat, displs[iw]);
+}
+
+void PSdispatcher::flex_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
+                                         int iat,
+                                         const std::vector<SingleParticlePos>& displs,
+                                         const std::vector<Scalar_t>& sdispls) const
+{
+  if (use_batch_)
+    ParticleSet::mw_makeMoveWithSpin(p_list, iat, displs, sdispls);
+  else
+    for (size_t iw = 0; iw < p_list.size(); iw++)
+      p_list[iw].makeMoveWithSpin(iat, displs[iw], sdispls[iw]);
 }
 
 void PSdispatcher::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,

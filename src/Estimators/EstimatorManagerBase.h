@@ -47,12 +47,12 @@ class EstimatorManagerBaseTest;
 class EstimatorManagerBase
 {
 public:
-  typedef QMCTraits::FullPrecRealType RealType;
+  using RealType         = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
-  typedef ScalarEstimatorBase EstimatorType;
-  typedef std::vector<RealType> BufferType;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using EstimatorType = ScalarEstimatorBase;
+  using BufferType    = std::vector<RealType>;
+  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 

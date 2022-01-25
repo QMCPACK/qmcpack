@@ -30,7 +30,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  auto elec = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell;
+  auto elec = std::make_unique<ParticleSet>(simulation_cell);
   std::vector<int> agroup(1);
   int nelec = 2;
   agroup[0] = nelec;
@@ -54,7 +55,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   WaveFunctionFactory::PtclPoolType particle_set_map;
   particle_set_map["e"] = elec.get();
 
-  auto ions = std::make_unique<ParticleSet>();
+  auto ions = std::make_unique<ParticleSet>(simulation_cell);
   ions->setName("ion0");
   ions->create(1);
   ions->R[0][0] = 0.0;
@@ -95,8 +96,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   ions->update();
   elec->update();
 
-  ParticleSet::ParticleGradient_t all_grad;
-  ParticleSet::ParticleLaplacian_t all_lap;
+  ParticleSet::ParticleGradient all_grad;
+  ParticleSet::ParticleLaplacian all_lap;
   all_grad.resize(nelec);
   all_lap.resize(nelec);
 
@@ -126,7 +127,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
 
   // Compare ratio and ratioGrad with a zero displacement
-  ParticleSet::SingleParticlePos_t zero_displ(0.0, 0.0, 0.0);
+  ParticleSet::SingleParticlePos zero_displ(0.0, 0.0, 0.0);
   iat = 0;
   elec->makeMove(iat, zero_displ);
 
@@ -157,12 +158,12 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   // Compare ratio and ratioGrad with a non-zero displacement
   // Should compare more displacements
-  ParticleSet::SingleParticlePos_t oldpos = elec->R[0];
-  ParticleSet::SingleParticlePos_t displ(0.15, 0.10, 0.21);
+  ParticleSet::SingleParticlePos oldpos = elec->R[0];
+  ParticleSet::SingleParticlePos displ(0.15, 0.10, 0.21);
   elec->R[0] = oldpos + displ;
   elec->update();
-  ParticleSet::ParticleGradient_t new_grad;
-  ParticleSet::ParticleLaplacian_t new_lap;
+  ParticleSet::ParticleGradient new_grad;
+  ParticleSet::ParticleLaplacian new_lap;
   new_grad.resize(nelec);
   new_lap.resize(nelec);
 
@@ -203,8 +204,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   example_he->resetParameters(var_param);
   REQUIRE(example_he->B == Approx(new_B));
 
-  ParticleSet::ParticleGradient_t grad_plus_h;
-  ParticleSet::ParticleLaplacian_t lap_plus_h;
+  ParticleSet::ParticleGradient grad_plus_h;
+  ParticleSet::ParticleLaplacian lap_plus_h;
   grad_plus_h.resize(nelec);
   lap_plus_h.resize(nelec);
 

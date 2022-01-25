@@ -29,6 +29,9 @@
 namespace qmcplusplus
 {
 
+//forward declaration
+class TWFFastDerivWrapper;
+
 template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
@@ -75,14 +78,14 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos,
+  DiracDeterminantBatched(std::unique_ptr<SPOSet>&& spos,
                           int first,
                           int last,
-                          int ndelay                           = 1,
+                          int ndelay                          = 1,
                           DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
-  DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
+  DiracDeterminantBatched(const DiracDeterminantBatched& s)            = delete;
   DiracDeterminantBatched& operator=(const DiracDeterminantBatched& s) = delete;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -139,8 +142,8 @@ public:
   Grad evalGradSource(ParticleSet& P,
                       ParticleSet& source,
                       int iat,
-                      TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                      TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
+                      TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                      TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
@@ -172,13 +175,13 @@ public:
    *  suspect psiMinv or other state variables may have picked up error.
    */
   LogValue evaluateLog(const ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L) override;
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
-                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
 
   void recompute(const ParticleSet& P) override;
 
@@ -191,17 +194,17 @@ public:
                     const std::vector<bool>& recompute) const override;
 
   LogValue evaluateGL(const ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& G,
-                      ParticleSet::ParticleLaplacian_t& L,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
                       bool fromscratch) override;
 
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
-                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     const RefVector<ParticleSet::ParticleGradient>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                      bool fromscratch) const override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection,
@@ -209,6 +212,7 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -216,7 +220,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 
@@ -280,7 +284,7 @@ private:
   std::unique_ptr<typename DET_ENGINE::DetInverter> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
-  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
+  void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
 
   /// single invert logdetT(psiM)
   /// as a side effect this->log_value_ gets the log determinant of logdetT
@@ -297,8 +301,8 @@ private:
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                     const RefVector<const DualMatrix<Value>>& logdetT_list,
-                     const RefVector<DualMatrix<Value>>& a_inv_lis);
+                            const RefVector<const DualMatrix<Value>>& logdetT_list,
+                            const RefVector<DualMatrix<Value>>& a_inv_lis);
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()
@@ -320,7 +324,7 @@ private:
   const int ndelay_;
 
   /// selected scheme for inversion with walker batching
-  DetMatInvertor matrix_inverter_kind_;
+  const DetMatInvertor matrix_inverter_kind_;
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;

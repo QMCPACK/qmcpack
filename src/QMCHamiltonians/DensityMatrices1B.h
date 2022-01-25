@@ -43,15 +43,15 @@ public:
     DIM = OHMMS_DIM
   };
 
-  typedef ValueType Value_t;
-  typedef GradType Grad_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef Vector<Value_t> Vector_t;
-  typedef Matrix<Value_t> Matrix_t;
-  typedef std::vector<PosType> pts_t;
-  typedef std::vector<RealType> dens_t;
+  using Value_t     = ValueType;
+  using Grad_t      = GradType;
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  using Lattice_t   = ParticleSet::ParticleLayout;
+  using Vector_t    = Vector<Value_t>;
+  using Matrix_t    = Matrix<Value_t>;
+  using pts_t       = std::vector<PosType>;
+  using dens_t      = std::vector<RealType>;
 
   enum integrators
   {
@@ -78,11 +78,11 @@ public:
   //data members
   bool energy_mat;
   CompositeSPOSet basis_functions;
-  ValueVector_t basis_values;
-  ValueVector_t basis_norms;
-  GradVector_t basis_gradients;
-  ValueVector_t basis_laplacians;
-  ValueVector_t integrated_values;
+  ValueVector basis_values;
+  ValueVector basis_norms;
+  GradVector basis_gradients;
+  ValueVector basis_laplacians;
+  ValueVector integrated_values;
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;
@@ -91,7 +91,7 @@ public:
   PosType drift;
   int nindex;
   int eindex;
-  Lattice_t& Lattice;
+  const Lattice_t& lattice_;
   TrialWaveFunction& Psi;
   ParticleSet& Pq;
   const ParticleSet* Pc;
@@ -152,7 +152,7 @@ public:
   PosType dpcur;
   RealType rhocur;
 
-  RandomGenerator_t* uniform_random;
+  RandomGenerator* uniform_random;
 
 
   //constructor/destructor
@@ -167,7 +167,7 @@ public:
 
   //optional standard interface
   void getRequiredTraces(TraceManager& tm) override;
-  void setRandomGenerator(RandomGenerator_t* rng) override;
+  void setRandomGenerator(RandomGenerator* rng) override;
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -198,9 +198,9 @@ public:
   //  sample generation
   void warmup_sampling();
   void generate_samples(RealType weight, int steps = 0);
-  void generate_uniform_grid(RandomGenerator_t& rng);
-  void generate_uniform_samples(RandomGenerator_t& rng);
-  void generate_density_samples(bool save, int steps, RandomGenerator_t& rng);
+  void generate_uniform_grid(RandomGenerator& rng);
+  void generate_uniform_samples(RandomGenerator& rng);
+  void generate_density_samples(bool save, int steps, RandomGenerator& rng);
   void diffusion(RealType sqt, PosType& diff);
   void density_only(const PosType& r, RealType& dens);
   void density_drift(const PosType& r, RealType& dens, PosType& drift);

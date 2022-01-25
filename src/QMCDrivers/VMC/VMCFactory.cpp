@@ -25,7 +25,7 @@
 //#endif
 //#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #endif
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 #ifdef QMC_CUDA
 #include "QMCDrivers/VMC/VMC_CUDA.h"

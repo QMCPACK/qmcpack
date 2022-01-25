@@ -13,7 +13,7 @@ namespace multi = boost::multi;
 
 namespace minimalistic {
 
-template<class T> class ptr : public std::iterator_traits<T*>{ // minimalistic pointer
+template<class T> class ptr : public std::iterator_traits<T*> { // minimalistic pointer
 	using underlying_type = T*;
 	underlying_type impl_;
 	template<class> friend class ptr;
@@ -28,14 +28,18 @@ template<class T> class ptr : public std::iterator_traits<T*>{ // minimalistic p
 	using typename std::iterator_traits<T*>::difference_type;
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): operator* used because this class simulates a pointer, trailing return helps
 	constexpr auto operator*() const -> reference {return *impl_;}
+
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, cppcoreguidelines-pro-bounds-pointer-arithmetic): operator+ is overloaded to simulate a pointer
 	constexpr auto operator+(difference_type n) const {return ptr{impl_ + n};}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, cppcoreguidelines-pro-bounds-pointer-arithmetic): operator+ is overloaded to simulate a pointer
+	constexpr auto operator-(difference_type n) const {return ptr{impl_ - n};}
+
 //	T& operator[](difference_type n) const{return impl_[n];} // optional
 	using default_allocator_type = std::allocator<T>;
 	template<class> friend class ptr2;
 };
 
-template<class T> class ptr2 : public std::iterator_traits<T*>{ // minimalistic pointer
+template<class T> class ptr2 : public std::iterator_traits<T*> { // minimalistic pointer
 	T* impl_;
  public:
 	constexpr explicit ptr2(T* impl) : impl_{impl} {}
@@ -47,8 +51,12 @@ template<class T> class ptr2 : public std::iterator_traits<T*>{ // minimalistic 
 	using typename std::iterator_traits<T*>::difference_type;
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): operator* used because this class simulates a pointer, trailing return helps
 	constexpr auto operator*() const -> reference {return *impl_;}
+
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, cppcoreguidelines-pro-bounds-pointer-arithmetic): operator+ is overloaded to simulate a pointer
 	constexpr auto operator+(typename ptr2::difference_type n) const {return ptr2{impl_ + n};}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, cppcoreguidelines-pro-bounds-pointer-arithmetic): operator+ is overloaded to simulate a pointer
+	constexpr auto operator-(typename ptr2::difference_type n) const {return ptr2{impl_ - n};}
+
 //	T& operator[](std::ptrdiff_t n) const{return impl_[n];} // optional
 	using default_allocator_type = std::allocator<T>;
 };
@@ -57,6 +65,7 @@ template<class T> class ptr2 : public std::iterator_traits<T*>{ // minimalistic 
 
 BOOST_AUTO_TEST_CASE(test_minimalistic_ptr) {
 	std::array<double, 400> buffer{};
+	BOOST_REQUIRE( buffer.size() == 400 );
 
 	using pointer_type = minimalistic::ptr<double>;
 	multi::array_ptr<double, 2, pointer_type> CCP(pointer_type{buffer.data()}, {20, 20});
@@ -83,6 +92,3 @@ BOOST_AUTO_TEST_CASE(test_minimalistic_ptr) {
 		static_assert( std::is_same<decltype(REF.partitioned(2).partitioned(2).base()), minimalistic::ptr<double const>>{}, "!" );
 	}
 }
-
-
-
