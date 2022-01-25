@@ -1027,11 +1027,11 @@ endif()
 # Check if GPAW is available
 #-------------------------------------------------------------------
 if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(gpaw HAVE_GPAW)
-  if(HAVE_GPAW)
-    message(STATUS "Successfully imported GPAW python modules.")
-  else()
+  check_python_reqs(gpaw "" HAVE_GPAW)
+  if(NOT ${HAVE_GPAW})
     message(STATUS "Unable to import GPAW python module. GPAW converter tests will not be run.")
+  else()
+    message(STATUS "Successfully imported GPAW python modules.")
   endif()
 endif()
 
