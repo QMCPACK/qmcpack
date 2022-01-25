@@ -170,12 +170,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
-      //Not a big difference
-      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-      //lpol[l+1]/=(l+1);
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
-      lpolprev = lpol[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
+      lpolprev    = lpol[l];
     }
 
     RealType lsum = 0.0;
@@ -371,12 +367,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
 
       //and for the derivative...
-      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
-      dlpol[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = (Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev) * Lfactor2[l];
 
       lpolprev  = lpol[l];
       dlpolprev = dlpol[l];
@@ -558,12 +552,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
 
       //and for the derivative...
-      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
-      dlpol[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = (Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev) * Lfactor2[l];
 
       lpolprev  = lpol[l];
       dlpolprev = dlpol[l];

@@ -109,9 +109,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     RealType lpolprev = 0.0;
     for (int l = 0; l < lmax; l++)
     {
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
-      lpolprev = lpol[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
+      lpolprev    = lpol[l];
     }
     for (int l = 0; l < nchannel; l++, jl++)
       Amat[jl] = lpol[angpp_m[l]];
