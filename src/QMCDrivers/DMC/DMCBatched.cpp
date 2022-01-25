@@ -103,7 +103,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   const int num_walkers = crowd.size();
 
-  MoveAbstraction<COORDS> move(ps_dispatcher, twf_dispatcher, step_context.get_random_gen(), sft.drift_modifier,
+  MoveAbstraction<COORDS> move(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
                                num_walkers, sft.population.get_num_particles());
 
   //This generates an entire steps worth of deltas.
@@ -147,7 +147,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                                    : walkers_who_have_been_on_wire[iw] = 0;
         }
 #endif
-        move.calcForwardMoveWithDrift(walker_twfs, walker_elecs, iat);
+        move.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
 
         // only DMC does this
         // TODO: rr needs a real name
@@ -164,9 +164,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         for (int i = 0; i < rr.size(); ++i)
           assert(std::isfinite(rr[i]));
 #endif
-        move.makeMove(walker_elecs, iat);
+        move.makeMove(iat);
 
-        move.updateGreensFunctionWithDrift(walker_twfs, walker_elecs, crowd, iat, ratios, log_gf, log_gb);
+        move.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
 
         auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
           if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))

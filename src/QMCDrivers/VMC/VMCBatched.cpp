@@ -78,7 +78,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  MoveAbstraction<COORDS> move(ps_dispatcher, twf_dispatcher, step_context.get_random_gen(), sft.drift_modifier,
+  MoveAbstraction<COORDS> move(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
                                num_walkers, sft.population.get_num_particles());
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
@@ -98,17 +98,17 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       for (int iat = start_index; iat < end_index; ++iat)
       {
         if (use_drift)
-          move.calcForwardMoveWithDrift(walker_twfs, walker_elecs, iat);
+          move.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
         else
           move.calcForwardMove(iat);
 
-        move.makeMove(walker_elecs, iat);
+        move.makeMove(iat);
 
         // This is inelegant
         if (use_drift)
-          move.updateGreensFunctionWithDrift(walker_twfs, walker_elecs, crowd, iat, ratios, log_gf, log_gb);
+          move.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
         else
-          move.updateGreensFunction(walker_twfs, walker_elecs, iat, ratios);
+          move.updateGreensFunction(twf_dispatcher, walker_twfs, iat, ratios);
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 

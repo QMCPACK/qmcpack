@@ -53,7 +53,7 @@ public:
    * \param[in] random_gen
    */
   MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                  const TWFdispatcher& twf_dispatcher,
+                  const RefVectorWithLeader<ParticleSet>& elecs,
                   RandomGenerator& random_gen,
                   const DriftModifierBase& drift_modifier,
                   const int num_walkers,
@@ -81,8 +81,8 @@ public:
    * using drift and diffusion. 
    * This also includes the spin drift and diffusion depending on the template parameter
    */
-  void calcForwardMoveWithDrift(const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                const RefVectorWithLeader<ParticleSet>& elecs,
+  void calcForwardMoveWithDrift(const TWFdispatcher& twf_dispatcher,
+                                const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                 const int iat);
 
   /** Calculates the forward move for all particle coordinates without drift
@@ -100,7 +100,7 @@ public:
    *
    * updates particle iat for all walkers in the crowd. This uses the PSdispatcher to use flex_ move APIs
    */
-  void makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat);
+  void makeMove(const int iat);
 
   /** calculates the greens functions for forward and reverse moves and TWF ratio, used for acceptance in QMCDrivers
    *
@@ -114,14 +114,12 @@ public:
    * \f]
    * This is the necessary data to calculate the acceptance ratio in the QMCDriver
    * also adds to the spin move component depending on the template parameter
-   * \param[in] crowd
    * \param[out] ratios ratio of trial wave functions for all walkers for particle iat
    * \param[out] log_gf log of greens function for forward move for all walkers for particle iat
    * \param[out] log_gb log of greens function for reverse move for all walkers for particle iat
    */
-  void updateGreensFunctionWithDrift(const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                     const RefVectorWithLeader<ParticleSet>& elecs,
-                                     Crowd& crowd,
+  void updateGreensFunctionWithDrift(const TWFdispatcher& twf_dispatcher,
+                                     const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                      const int iat,
                                      std::vector<PsiV>& ratios,
                                      std::vector<Real>& log_gf,
@@ -141,8 +139,8 @@ public:
    * This is the necessary data to calculate the acceptance ratio in the VMCBatched, without drift
    * \param[out] ratios ratio of trial wave functions for all walkers for particle iat
    */
-  void updateGreensFunction(const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                            const RefVectorWithLeader<ParticleSet>& elecs,
+  void updateGreensFunction(const TWFdispatcher& twf_dispatcher,
+                            const RefVectorWithLeader<TrialWaveFunction>& twfs,
                             const int iat,
                             std::vector<PsiV>& ratios);
 
@@ -175,8 +173,8 @@ private:
   std::vector<Complex> spingrads_now_, spingrads_new_;
   /// provides flex_ APIs to do select sw/mw updates of particle set
   const PSdispatcher& ps_dispatcher_;
-  /// provides flex_ APIs to do select sw/mw updates of trial wave function
-  const TWFdispatcher& twf_dispatcher_;
+  /// ParticleSets for each walker
+  const RefVectorWithLeader<ParticleSet>& elecs_;
   /// rng, provided by ContextForSteps
   RandomGenerator& random_gen_;
   /// drift modifer used to limit size of drift velocity
@@ -202,13 +200,13 @@ private:
 
 template<>
 inline MoveAbstraction<POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                   const TWFdispatcher& twf_dispatcher,
+                                                   const RefVectorWithLeader<ParticleSet>& elecs,
                                                    RandomGenerator& random_gen,
                                                    const DriftModifierBase& drift_modifier,
                                                    const int num_walkers,
                                                    const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
-      twf_dispatcher_(twf_dispatcher),
+      elecs_(elecs),
       random_gen_(random_gen),
       drift_modifier_(drift_modifier),
       num_walkers_(num_walkers)
@@ -221,13 +219,13 @@ inline MoveAbstraction<POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispat
 
 template<>
 inline MoveAbstraction<POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                         const TWFdispatcher& twf_dispatcher,
+                                                         const RefVectorWithLeader<ParticleSet>& elecs,
                                                          RandomGenerator& random_gen,
                                                          const DriftModifierBase& drift_modifier,
                                                          const int num_walkers,
                                                          const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
-      twf_dispatcher_(twf_dispatcher),
+      elecs_(elecs),
       random_gen_(random_gen),
       drift_modifier_(drift_modifier),
       num_walkers_(num_walkers)
@@ -275,14 +273,14 @@ inline void MoveAbstraction<POSITIONS_SPINS>::setTauForGroup(const QMCDriverInpu
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::calcForwardMoveWithDrift(const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                                                 const RefVectorWithLeader<ParticleSet>& elecs,
+inline void MoveAbstraction<POSITIONS>::calcForwardMoveWithDrift(const TWFdispatcher& twf_dispatcher,
+                                                                 const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                                                  const int iat)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
 
-  twf_dispatcher_.flex_evalGrad(twfs, elecs, iat, grads_now_);
+  twf_dispatcher.flex_evalGrad(twfs, elecs_, iat, grads_now_);
   drift_modifier_.getDrifts(tauovermass_, grads_now_, drifts_);
   std::transform(drifts_.begin(), drifts_.end(), delta_r_start, drifts_.begin(),
                  [st = sqrttau_](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
@@ -290,8 +288,8 @@ inline void MoveAbstraction<POSITIONS>::calcForwardMoveWithDrift(const RefVector
 
 template<>
 inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMoveWithDrift(
+    const TWFdispatcher& twf_dispatcher,
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
-    const RefVectorWithLeader<ParticleSet>& elecs,
     const int iat)
 {
   auto delta_r_start    = walker_deltas_.begin() + iat * num_walkers_;
@@ -299,7 +297,7 @@ inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMoveWithDrift(
   auto delta_spin_start = walker_spindeltas_.begin() + iat * num_walkers_;
   auto delta_spin_end   = delta_spin_start + num_walkers_;
 
-  twf_dispatcher_.flex_evalGradWithSpin(twfs, elecs, iat, grads_now_, spingrads_now_);
+  twf_dispatcher.flex_evalGradWithSpin(twfs, elecs_, iat, grads_now_, spingrads_now_);
   drift_modifier_.getDrifts(tauovermass_, grads_now_, drifts_);
   std::transform(drifts_.begin(), drifts_.end(), delta_r_start, drifts_.begin(),
                  [st = sqrttau_](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
@@ -336,22 +334,21 @@ inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMove(const int iat)
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat)
+inline void MoveAbstraction<POSITIONS>::makeMove(const int iat)
 {
-  ps_dispatcher_.flex_makeMove(elecs, iat, drifts_);
+  ps_dispatcher_.flex_makeMove(elecs_, iat, drifts_);
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat)
+inline void MoveAbstraction<POSITIONS_SPINS>::makeMove(const int iat)
 {
-  ps_dispatcher_.flex_makeMoveWithSpin(elecs, iat, drifts_, spindrifts_);
+  ps_dispatcher_.flex_makeMoveWithSpin(elecs_, iat, drifts_, spindrifts_);
 }
 
 template<>
 inline void MoveAbstraction<POSITIONS>::updateGreensFunctionWithDrift(
+    const TWFdispatcher& twf_dispatcher,
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
-    const RefVectorWithLeader<ParticleSet>& elecs,
-    Crowd& crowd,
     const int iat,
     std::vector<PsiV>& ratios,
     std::vector<Real>& log_gf,
@@ -360,14 +357,14 @@ inline void MoveAbstraction<POSITIONS>::updateGreensFunctionWithDrift(
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
 
-  twf_dispatcher_.flex_calcRatioGrad(twfs, elecs, iat, ratios, grads_new_);
+  twf_dispatcher.flex_calcRatioGrad(twfs, elecs_, iat, ratios, grads_new_);
   std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const Pos& delta_r) {
     constexpr Real mhalf(-0.5);
     return mhalf * dot(delta_r, delta_r);
   });
   drift_modifier_.getDrifts(tauovermass_, grads_new_, drifts_);
 
-  std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts_.begin(), drifts_.begin(),
+  std::transform(elecs_.begin(), elecs_.end(), drifts_.begin(), drifts_.begin(),
                  [iat](const ParticleSet& ps, const Pos& drift) { return ps.R[iat] - ps.getActivePos() - drift; });
 
   std::transform(drifts_.begin(), drifts_.end(), log_gb.begin(),
@@ -376,9 +373,8 @@ inline void MoveAbstraction<POSITIONS>::updateGreensFunctionWithDrift(
 
 template<>
 inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
+    const TWFdispatcher& twf_dispatcher,
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
-    const RefVectorWithLeader<ParticleSet>& elecs,
-    Crowd& crowd,
     const int iat,
     std::vector<PsiV>& ratios,
     std::vector<Real>& log_gf,
@@ -389,7 +385,7 @@ inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
   auto delta_spin_start = walker_spindeltas_.begin() + iat * num_walkers_;
   auto delta_spin_end   = delta_spin_start + num_walkers_;
 
-  twf_dispatcher_.flex_calcRatioGradWithSpin(twfs, elecs, iat, ratios, grads_new_, spingrads_new_);
+  twf_dispatcher.flex_calcRatioGradWithSpin(twfs, elecs_, iat, ratios, grads_new_, spingrads_new_);
   std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const Pos& delta_r) {
     constexpr Real mhalf(-0.5);
     return mhalf * dot(delta_r, delta_r);
@@ -404,9 +400,9 @@ inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
   drift_modifier_.getDrifts(tauovermass_, grads_new_, drifts_);
   drift_modifier_.getDrifts(spintauovermass_, spingrads_new_, spindrifts_);
 
-  std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts_.begin(), drifts_.begin(),
+  std::transform(elecs_.begin(), elecs_.end(), drifts_.begin(), drifts_.begin(),
                  [iat](const ParticleSet& ps, const Pos& drift) { return ps.R[iat] - ps.getActivePos() - drift; });
-  std::transform(crowd.beginElectrons(), crowd.endElectrons(), spindrifts_.begin(), spindrifts_.begin(),
+  std::transform(elecs_.begin(), elecs_.end(), spindrifts_.begin(), spindrifts_.begin(),
                  [iat](const ParticleSet& ps, const Scalar& spindrift) {
                    return ps.spins[iat] - ps.getActiveSpinVal() - spindrift;
                  });
@@ -421,12 +417,12 @@ inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
 }
 
 template<CoordsToMove COORDS>
-inline void MoveAbstraction<COORDS>::updateGreensFunction(const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                                          const RefVectorWithLeader<ParticleSet>& elecs,
+inline void MoveAbstraction<COORDS>::updateGreensFunction(const TWFdispatcher& twf_dispatcher,
+                                                          const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                                           const int iat,
                                                           std::vector<PsiV>& ratios)
 {
-  twf_dispatcher_.flex_calcRatio(twfs, elecs, iat, ratios);
+  twf_dispatcher.flex_calcRatio(twfs, elecs_, iat, ratios);
 }
 
 template<CoordsToMove COORDS>
