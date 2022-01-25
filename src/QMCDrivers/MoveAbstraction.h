@@ -25,6 +25,11 @@
 
 namespace qmcplusplus
 {
+/** abstraction class to handle particle moves in batched QMC drivers
+ *
+ * QMCDriverNew has an enum CoordsToMove
+ * Currently supports POSITIONS and POSITIONS_SPINS, which includes dynamic spins in particle moves
+ */
 template<QMCDriverNew::CoordsToMove COORDS>
 class MoveAbstraction
 {
@@ -36,6 +41,12 @@ class MoveAbstraction
   using PsiV    = TrialWaveFunction::PsiValueType;
 
 public:
+  /** Constructor
+   *
+   * uses references to dispatchers, rng, drift_modifers, etc which are used regularly for the particle moves
+   * resizes all of the vectors to be used throughout this move
+   * \param[in] random_gen
+   */
   MoveAbstraction(const PSdispatcher& ps_dispatcher,
                   const TWFdispatcher& twf_dispatcher,
                   RandomGenerator& random_gen,
@@ -43,18 +54,66 @@ public:
                   const int num_walkers,
                   const int num_particles);
 
+  /** generates an entire steps worth of displacements
+   *
+   * Uses gaussian random numbers to generate the displacements for all coordinates over all walkers
+   */
   void generateDeltas();
 
+  /** sets the timestep information for the move
+   *
+   * e.g. spatial only moves (POSITIONS) only need the spatial timestep,  whereas
+   * spin moves need a spin timestep defined by the spin mass provided by the driver input
+   */
   void setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass);
 
+  /** Calulates the forward move for all particle coordinates
+   * 
+   * updates all the walkers in the crowd for particle iat using 
+   * \f[
+   * \mathbf{r}' - \mathbf{r} = \sqrt{\tau} \eta + \tau \mathbf{v}
+   * \f] 
+   * using drift and diffusion. 
+   * This also includes the spin drift and diffusion depending on the template parameter
+   */
   void calcForwardMoveWithDrift(const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                 const RefVectorWithLeader<ParticleSet>& elecs,
                                 const int iat);
 
+  /** Calculates the forward move for all particle coordinates without drift
+   *
+   * updates all the walkers in the crowd for particle iat using 
+   * \f[
+   * \mathbf{r}' - \mathbf{r} = \sqrt{\tau}\eta 
+   * \f]
+   * i.e., diffusion only. Only used in VMCBatched
+   * This also includes the spin diffusion depending on the template parameter.
+   */
   void calcForwardMove(const int iat);
 
+  /** makes particle move
+   *
+   * updates particle iat for all walkers in the crowd. This uses the PSdispatcher to use flex_ move APIs
+   */
   void makeMove(const RefVectorWithLeader<ParticleSet>& elecs, const int iat);
 
+  /** calculates the greens functions for forward and reverse moves and TWF ratio, used for acceptance in QMCDrivers
+   *
+   * includes the drift part of the move, i.e.
+   * \f[
+   * G(\mathbf{r}'\leftarrow\mathbf{r}, \tau = \exp\left[-\frac{1}{2\tau}|\mathbf{r}'-\mathbf{r} - \tau \mathbf{v}(\mathbf{r})|^2 \right]
+   * \f]
+   * and the ratio
+   * \f[
+   * \frac{\Psi_T(\mathbf{r}')}{\Psi_T(\mathbf{r})}
+   * \f]
+   * This is the necessary data to calculate the acceptance ratio in the QMCDriver
+   * also adds to the spin move component depending on the template parameter
+   * \param[in] crowd
+   * \param[out] ratios ratio of trial wave functions for all walkers for particle iat
+   * \param[out] log_gf log of greens function for forward move for all walkers for particle iat
+   * \param[out] log_gb log of greens function for reverse move for all walkers for particle iat
+   */
   void updateGreensFunctionWithDrift(const RefVectorWithLeader<TrialWaveFunction>& twfs,
                                      const RefVectorWithLeader<ParticleSet>& elecs,
                                      Crowd& crowd,
@@ -63,30 +122,76 @@ public:
                                      std::vector<Real>& log_gf,
                                      std::vector<Real>& log_bg);
 
+  /** calculates TWF ratio, used for acceptance in QMCDrivers
+   *
+   * does not include the drift part of the move.
+   * \f[
+   * G(\mathbf{r}'\leftarrow\mathbf{r}, \tau = \exp\left[-\frac{1}{2\tau}|\mathbf{r}'-\mathbf{r}|^2 \right]
+   * \f]
+   * Therefore, in the acceptance ratio this cancels since \f$G(\mathbf{r}'\leftarrow \mathbf{r}, \tau) = G(\mathbf{r}\leftarrow\mathbf{r}',\tau)$\f. 
+   * Therefore, we only need to calculate the ratios
+   * \f[
+   * \frac{\Psi_T(\mathbf{r}')}{\Psi_T(\mathbf{r})}
+   * \f]
+   * This is the necessary data to calculate the acceptance ratio in the VMCBatched, without drift
+   * \param[out] ratios ratio of trial wave functions for all walkers for particle iat
+   */
   void updateGreensFunction(const RefVectorWithLeader<TrialWaveFunction>& twfs,
                             const RefVectorWithLeader<ParticleSet>& elecs,
                             const int iat,
                             std::vector<PsiV>& ratios);
 
+  /** accumulates the data to  help construct the effective timestep
+   *
+   * the effective timestep used in DMC algorithm is 
+   * \f[
+   * \tau_{\rm eff} = \frac{\sum R_{\rm accepted}^2}{\sum R_{\rm proposed}^2}
+   * \f]
+   * which is accumulated over all electrons in a walker
+   *
+   * rr below is the \f$r^2$\f for the current particle iat for the walkers and will be accumulated for
+   * each particle in the DMC driver.
+   * \param[out] rr
+   */
   void updaterr(const int iat, std::vector<Real>& rr);
 
 private:
+  /// spatial drift part of move for a single particle across multiple walkers
   std::vector<Pos> drifts_;
+  /// all of the spatial diffusion moves for all walkers and particles for a given step
   std::vector<Pos> walker_deltas_;
+  /// spatial gradients for a single electron across multiple walkers
   std::vector<Grad> grads_now_, grads_new_;
+  /// spin drift part of move for a single particle across multiple walkers
   std::vector<Scalar> spindrifts_;
+  /// all of the spin diffusion moves for all walkerss and particles for a given step
   std::vector<Scalar> walker_spindeltas_;
+  /// spin gradients for a single electrons across multiple walkers
   std::vector<Complex> spingrads_now_, spingrads_new_;
+  /// provides flex_ APIs to do select sw/mw updates of particle set
   const PSdispatcher& ps_dispatcher_;
+  /// provides flex_ APIs to do select sw/mw updates of trial wave function
   const TWFdispatcher& twf_dispatcher_;
+  /// rng, provided by ContextForSteps 
   RandomGenerator& random_gen_;
+  /// drift modifer used to limit size of drift velocity
   const DriftModifierBase& drift_modifier_;
+  /// spatial timestep
   Real tauovermass_;
+  /// \f$\frac{1}{2\tau}$\f, used in Green's function
   Real oneover2tau_;
+  /// \f$\sqrt{\tau}$\f, used to scale the diffusion part of move
   Real sqrttau_;
+  /** spin timestep, defined by spin mass and spatial timestep.
+   *
+   * Note that \f$\tau_{\rm spin} = \frac{\tau}{m_{\rm spin}}$\f}
+   */
   Real spintauovermass_;
+  /// \f$\frac{1}{2\tau_{\rm spin}}$\f, used in spin part of green's function
   Real oneover2spintau_;
+  /// \f$\sqrt{\tau_{\rm spin}}$\f, used to scale the diffusion part of spin move
   Real sqrtspintau_;
+  /// total number of walkers in crowd.
   const int num_walkers_;
 };
 
