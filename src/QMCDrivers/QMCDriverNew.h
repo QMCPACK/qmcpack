@@ -75,8 +75,8 @@ public:
   using RealType         = QMCTraits::RealType;
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using SpinorContext = UPtr<ContextForSteps<true>>;
-  using SpinSymContext = UPtr<ContextForSteps<false>>;
+  using SpinorContext = UPtr<ContextForSteps<MCCoordsTypes::RSSPINS>>;
+  using SpinSymContext = UPtr<ContextForSteps<MCCoordsTypes::RS>>;
   using SpinorContexts = std::vector<SpinorContext>;
   using SpinSymContexts = std::vector<SpinSymContext>;  
   using ContextsForStepsVar = std::variant<SpinorContexts, SpinSymContexts>;

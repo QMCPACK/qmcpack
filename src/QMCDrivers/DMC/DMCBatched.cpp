@@ -61,11 +61,12 @@ void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
+template<class CFS>
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
-                                ContextForSteps<>& step_context,
+                                CFS& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -205,7 +206,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 
         std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().getActivePos() - drift; });
+                       [iat](auto& elecs, auto& drift) {
+                         return elecs.get().R[iat] - elecs.get().getActivePos() - drift;
+                       });
 
         std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
                        [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
@@ -325,12 +328,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 }
 
-template<bool spin>
+template<class CONTEXTSFORSTEPS>
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             DMCTimers& dmc_timers,
-                            UPtrVector<ContextForSteps<spin>>& context_for_steps,
+                            CONTEXTSFORSTEPS& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -453,8 +456,7 @@ bool DMCBatched::run_impl(CONTEXTSFORSTEPS& step_contexts)
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
       dmc_state.step = step;
-      if(step_contexts_.index() == 1)
-        crowd_task(crowds_.size(), runDMCStep<false>, dmc_state, timers_, dmc_timers_, std::ref(std::get<1>(step_contexts_)),
+      crowd_task(crowds_.size(), runDMCStep<CONTEXTSFORSTEPS>, dmc_state, timers_, dmc_timers_, step_contexts,
                  std::ref(crowds_));
 
       {

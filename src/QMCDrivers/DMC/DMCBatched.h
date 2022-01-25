@@ -110,12 +110,12 @@ public:
   
   // This is the task body executed at crowd scope
   // it does not have access to object members by design
-  template<bool spin>
+  template<class CONTEXTSFORSTEPS>
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
                          DMCTimers& dmc_timers,
-                         UPtrVector<ContextForSteps<spin>>& move_context,
+                         CONTEXTSFORSTEPS& move_context,
                          UPtrVector<Crowd>& crowds);
 
 
@@ -136,11 +136,12 @@ private:
   ///walker controller for load-balance
   std::unique_ptr<WalkerControl> walker_controller_;
 
+  template<class CONTEXTSFORSTEPS>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
                              DMCTimers& dmc_timers,
-                             ContextForSteps<>& move_context,
+                             CONTEXTSFORSTEPS& move_context,
                              bool recompute,
                              bool accumulate_this_step);
 

@@ -282,9 +282,9 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
 void QMCDriverNew::createRngsStepContexts(int num_crowds, bool spin_coords)
 {
   if (spin_coords)
-    step_contexts_ = std::vector<UPtr<ContextForSteps<true>>>{};
+    step_contexts_ = std::vector<UPtr<ContextForSteps<MCCoordsTypes::RSSPINS>>>{};
   else
-    step_contexts_ = std::vector<UPtr<ContextForSteps<false>>>{};
+    step_contexts_ = std::vector<UPtr<ContextForSteps<MCCoordsTypes::RS>>>{};
 
   std::visit([num_crowds](auto& step_con) { step_con.resize(num_crowds); }, step_contexts_);
 

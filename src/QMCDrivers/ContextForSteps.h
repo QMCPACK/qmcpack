@@ -23,6 +23,12 @@
 namespace qmcplusplus
 {
 
+enum class MCCoordsTypes
+{
+  RS,
+  RSSPINS
+};
+
 /** Thread local context for moving walkers
  *
  *  created once per driver per crowd
@@ -31,7 +37,7 @@ namespace qmcplusplus
  *
  *  
  */
-template<bool spinor = false>
+template<MCCoordsTypes MCT = MCCoordsTypes::RS>
 class ContextForSteps
 {
 public:
@@ -39,14 +45,6 @@ public:
   using PosType           = QMCTraits::PosType;
   using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType          = QMCTraits::RealType;
-
-  enum class MCCoordsTypes
-  {
-    RS,
-    RSSPINS
-  };
-
-  static constexpr MCCoordsTypes translated_ct = spinor ? MCCoordsTypes::RSSPINS : MCCoordsTypes::RS;
 
   template<MCCoordsTypes CT = MCCoordsTypes::RS>
   struct MCCoords
@@ -94,22 +92,21 @@ public:
     }
   }
 
-  MCCoords<translated_ct>& get_walker_deltas() { return walker_deltas_; }
+  MCCoords<MCT>& get_walker_deltas() { return walker_deltas_; }
 
-  MCCIt<translated_ct> deltasBegin()
+  MCCIt<MCT> deltasBegin()
   {
     if constexpr (std::is_same<decltype(walker_deltas_), MCCoords<MCCoordsTypes::RS>>::value)
-                     return {walker_deltas_.rs.begin()};
+      return {walker_deltas_.rs.begin()};
     else
-        return {walker_deltas_.rs.begin(), walker_deltas_.spins.begin()};
-
+      return {walker_deltas_.rs.begin(), walker_deltas_.spins.begin()};
   };
 
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
 
 protected:
-  MCCoords<translated_ct> walker_deltas_;
+  MCCoords<MCT> walker_deltas_;
 
   /** indexes of start and stop of each particle group;
    *
@@ -120,8 +117,8 @@ protected:
   RandomGenerator& random_gen_;
 };
 
-extern template class ContextForSteps<true>;
-extern template class ContextForSteps<false>;
+extern template class ContextForSteps<MCCoordsTypes::RS>;
+extern template class ContextForSteps<MCCoordsTypes::RSSPINS>;
 
 } // namespace qmcplusplus
 #endif
