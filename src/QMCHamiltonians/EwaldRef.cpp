@@ -365,26 +365,33 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
     // Sum the interaction terms for all particle pairs
     ScopedTimer EwaldSumTimer(*timer_manager.createTimer("EwaldSum"));
 
-    int_t Npairs = (N * (N - 1)) / 2;
-
-    std::vector<real_t> qq(Npairs);
-    for (size_t i = 0, n = 0; i < N; ++i)
-      for (size_t j = 0; j < i; ++j, ++n)
-        qq[n] = Q[i] * Q[j];
-
-    std::vector<RealVec> rr(Npairs);
-    for (size_t i = 0, n = 0; i < N; ++i)
-      for (size_t j = 0; j < i; ++j, ++n)
+#pragma omp parallel for reduction(+ : ve)
+    for (size_t i = 1; i < N / 2 + 1; ++i)
+    {
+      for (size_t j = 0; j < i; ++j)
       {
+        real_t qq       = Q[i] * Q[j];
         RealVec reduced = dot(R[i] - R[j], inverse(a));
         for (size_t dim = 0; dim < DIM; dim++)
           reduced[dim] -= std::floor(reduced[dim]);
-        rr[n] = dot(reduced, a);
+        RealVec rr = dot(reduced, a);
+        ve += qq * ewaldSum(rr, a, tol / qq);
       }
 
-#pragma omp parallel for reduction(+ : ve)
-    for (size_t n = 0; n < Npairs; ++n)
-      ve += qq[n] * ewaldSum(rr[n], a, tol / qq[n]);
+      const size_t i_reverse = N - i;
+      if (i == i_reverse)
+        continue;
+
+      for (size_t j = 0; j < i_reverse; ++j)
+      {
+        real_t qq       = Q[i_reverse] * Q[j];
+        RealVec reduced = dot(R[i_reverse] - R[j], inverse(a));
+        for (size_t dim = 0; dim < DIM; dim++)
+          reduced[dim] -= std::floor(reduced[dim]);
+        RealVec rr = dot(reduced, a);
+        ve += qq * ewaldSum(rr, a, tol / qq);
+      }
+    }
   }
 
   return ve;

@@ -37,7 +37,29 @@ TEST_CASE("EwaldRef", "[hamiltonian]")
     R[3] = {5.05974173, 5.05974173, 1.68658058};
 
     auto Vii_ref = ewaldref::ewaldEnergy(A, R, Q);
-    CHECK(Approx(Vii_ref) == -2.5551326969e+01);
+    CHECK(Approx(Vii_ref) == -25.551326969);
+  }
+
+  SECTION("diamondC_2x1x1 fake 5 ions")
+  {
+    ewaldref::RealMat A;
+    ewaldref::PosArray R;
+    ewaldref::ChargeArray Q;
+
+    A = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+
+    const int num_centers = 5;
+    R.resize(num_centers);
+    Q.resize(num_centers, 4);
+
+    R[0] = {0.0, 0.0, 0.0};
+    R[1] = {1.68658058, 1.68658058, 1.68658058};
+    R[2] = {3.37316115, 3.37316115, 0.0};
+    R[3] = {5.05974173, 5.05974173, 1.68658058};
+    R[4] = {5.05974173, 3.37316115, 0.0};
+
+    auto Vii_ref = ewaldref::ewaldEnergy(A, R, Q);
+    CHECK(Approx(Vii_ref) == -30.9149928426);
   }
 
   SECTION("32 H2O particle outside the box")
