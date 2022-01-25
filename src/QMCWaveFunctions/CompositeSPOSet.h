@@ -28,11 +28,11 @@ public:
   ///component SPOSets
   std::vector<std::unique_ptr<SPOSet>> components;
   ///temporary storage for values
-  std::vector<ValueVector_t> component_values;
+  std::vector<ValueVector> component_values;
   ///temporary storage for gradients
-  std::vector<GradVector_t> component_gradients;
+  std::vector<GradVector> component_gradients;
   ///temporary storage for laplacians
-  std::vector<ValueVector_t> component_laplacians;
+  std::vector<ValueVector> component_laplacians;
   ///store the precomputed offsets
   std::vector<int> component_offsets;
 
@@ -52,13 +52,9 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
@@ -70,32 +66,34 @@ public:
   //methods to be implemented in the future (possibly)
   void resetParameters(const opt_variables_type& optVariables) override;
 #ifdef QMC_CUDA
-  void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi) override;
+  void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi) override;
 #endif
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& ddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet,
-                            GGGMatrix_t& dddlogdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& ddlogdet,
+                            GGGMatrix& dddlogdet) override;
 };
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
+  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory)
+      : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory)
+  {}
 
   //SPOSetBuilder interface
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;

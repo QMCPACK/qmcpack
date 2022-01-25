@@ -58,16 +58,16 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
 
 bool DMCcuda::checkBounds(const PosType& newpos)
 {
-  PosType red = W.Lattice.toUnit(newpos);
-  return W.Lattice.isValid(red);
+  PosType red = W.getLattice().toUnit(newpos);
+  return W.getLattice().isValid(red);
 }
 
 void DMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid)
 {
   for (int iw = 0; iw < newpos.size(); iw++)
   {
-    PosType red = W.Lattice.toUnit(newpos[iw]);
-    valid[iw]   = W.Lattice.isValid(red);
+    PosType red = W.getLattice().toUnit(newpos[iw]);
+    valid[iw]   = W.getLattice().isValid(red);
   }
 }
 

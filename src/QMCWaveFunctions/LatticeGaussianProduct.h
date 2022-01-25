@@ -63,8 +63,8 @@ public:
   void resetParameters(const opt_variables_type& active) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
 
@@ -84,9 +84,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  void evaluateLogAndStore(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& dG,
-                           ParticleSet::ParticleLaplacian_t& dL);
+  void evaluateLogAndStore(const ParticleSet& P, ParticleSet::ParticleGradient& dG, ParticleSet::ParticleLaplacian& dL);
 };
 } // namespace qmcplusplus
 #endif

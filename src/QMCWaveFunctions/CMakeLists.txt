@@ -57,9 +57,7 @@ set(JASTROW_SRCS
     Jastrow/RPAJastrow.cpp
     Jastrow/J2OrbitalSoA.cpp
     LatticeGaussianProduct.cpp
-    LatticeGaussianProductBuilder.cpp
-    Fermion/SPOSetProxy.cpp
-    Fermion/SPOSetProxyForMSD.cpp)
+    LatticeGaussianProductBuilder.cpp)
 
 if(ENABLE_OFFLOAD)
   set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/J2OMPTarget.cpp)
@@ -157,18 +155,17 @@ set(FERMION_SRCS
     Fermion/DiracDeterminantBatched.cpp
     Fermion/SlaterDet.cpp
     Fermion/SlaterDetBuilder.cpp
-    Fermion/MultiSlaterDeterminant.cpp
-    Fermion/MultiSlaterDeterminantFast.cpp
+    Fermion/MultiSlaterDetTableMethod.cpp
     Fermion/MultiDiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.2.cpp
     Fermion/BackflowBuilder.cpp
     Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
     Fermion/SlaterDetWithBackflow.cpp
-    Fermion/MultiSlaterDeterminantWithBackflow.cpp
     SPOSetBuilderFactory.cpp
     TrialWaveFunction.cpp
     TWFdispatcher.cpp
+    TWFFastDerivWrapper.cpp
     WaveFunctionFactory.cpp)
 
 if(ENABLE_CUDA)

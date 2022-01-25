@@ -48,7 +48,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminantFast : public WaveFunctionComponent
+class MultiSlaterDetTableMethod : public WaveFunctionComponent
 {
 public:
   void registerTimers();
@@ -59,27 +59,27 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
-  typedef SPOSet* SPOSetPtr;
-  typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
-  typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef Array<HessType, 3> HessArray_t;
-  typedef TinyVector<HessType, OHMMS_DIM> GGGType;
-  typedef Vector<GGGType> GGGVector_t;
-  typedef Matrix<GGGType> GGGMatrix_t;
-  typedef ParticleSet::Walker_t Walker_t;
+  using SPOSetPtr   = SPOSet*;
+  using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using HessMatrix  = OrbitalSetTraits<ValueType>::HessMatrix;
+  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using HessType    = OrbitalSetTraits<ValueType>::HessType;
+  using HessArray   = Array<HessType, 3>;
+  using GGGType     = TinyVector<HessType, OHMMS_DIM>;
+  using GGGVector   = Vector<GGGType>;
+  using GGGMatrix   = Matrix<GGGType>;
+  using Walker_t    = ParticleSet::Walker_t;
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
+  MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                              std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                              bool use_pre_computing);
 
   ///destructor
-  ~MultiSlaterDeterminantFast() override;
+  ~MultiSlaterDetTableMethod() override;
 
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
@@ -90,12 +90,12 @@ public:
   void buildOptVariables();
 
   LogValueType evaluate_vgl_impl(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient_t& g_tmp,
-                                 ParticleSet::ParticleLaplacian_t& l_tmp);
+                                 ParticleSet::ParticleGradient& g_tmp,
+                                 ParticleSet::ParticleLaplacian& l_tmp);
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void prepareGroup(ParticleSet& P, int ig) override;
 
@@ -130,7 +130,7 @@ public:
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
-    throw std::runtime_error(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+    throw std::runtime_error(" Need to implement MultiSlaterDetTableMethod::evaluateRatiosAlltoOne. \n");
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
@@ -174,9 +174,9 @@ public:
   Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
   Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
 
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
-  std::vector<ValueVector_t> laplSum;
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
+  std::vector<ValueVector> laplSum;
 
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
@@ -188,7 +188,7 @@ public:
   std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
   // temporary storage for evaluateDerivatives
-  ParticleSet::ParticleGradient_t gmPG;
+  ParticleSet::ParticleGradient gmPG;
   std::vector<Matrix<RealType>> dpsia, dLa;
   std::vector<Array<GradType, OHMMS_DIM>> dGa;
 

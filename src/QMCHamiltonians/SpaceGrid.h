@@ -26,14 +26,14 @@ namespace qmcplusplus
 class SpaceGrid : public QMCTraits, public PtclOnLatticeTraits
 {
 public:
-  typedef TinyVector<RealType, DIM> Point;
-  typedef PooledData<RealType> BufferType;
-  typedef Matrix<RealType> Matrix_t;
+  using Point      = TinyVector<RealType, DIM>;
+  using BufferType = PooledData<RealType>;
+  using Matrix_t   = Matrix<RealType>;
 
   SpaceGrid(int& nvalues);
   bool put(xmlNodePtr cur,
            std::map<std::string, Point>& points,
-           ParticlePos_t& R,
+           ParticlePos& R,
            std::vector<RealType>& Z,
            int ndp,
            bool is_periodic,
@@ -50,7 +50,7 @@ public:
   void write_description(std::ostream& os, std::string& indent);
   int allocate_buffer_space(BufferType& buf);
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid, int grid_index) const;
-  void evaluate(const ParticlePos_t& R,
+  void evaluate(const ParticlePos& R,
                 const Matrix<RealType>& values,
                 BufferType& buf,
                 std::vector<bool>& particles_outside,
@@ -110,7 +110,7 @@ public:
   bool periodic;
 
   //voronoi grids
-  ParticlePos_t* Rptcl;
+  ParticlePos* Rptcl;
   std::vector<RealType>* Zptcl;
   struct irpair
   {

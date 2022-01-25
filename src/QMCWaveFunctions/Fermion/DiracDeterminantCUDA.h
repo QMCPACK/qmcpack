@@ -31,14 +31,14 @@ namespace qmcplusplus
 class DiracDeterminantCUDA : public DiracDeterminantBase
 {
 public:
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef ParticleSet::Walker_t Walker_t;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using Walker_t    = ParticleSet::Walker_t;
 
-  DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last);
+  DiracDeterminantCUDA(std::unique_ptr<SPOSet>&& spos, int first, int last);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
@@ -149,15 +149,15 @@ protected:
 
 public:
   // safe-guard all CPU interfaces
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::makeCopy is illegal!");
     return nullptr;
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
     return 0;
@@ -272,7 +272,7 @@ public:
              std::vector<GradType>& grad,
              std::vector<ValueType>& lapl) override;
 
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
 
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,

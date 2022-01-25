@@ -401,8 +401,8 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     return evaluateGL(P, G, L, true);
   }
@@ -843,8 +843,8 @@ public:
   }
 
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch = false) override
   {
     if (fromscratch)
@@ -982,8 +982,8 @@ public:
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
-    ParticleSet::ParticleGradient_t tempG;
-    ParticleSet::ParticleLaplacian_t tempL;
+    ParticleSet::ParticleGradient tempG;
+    ParticleSet::ParticleLaplacian tempL;
     tempG.resize(P.getTotalNum());
     tempL.resize(P.getTotalNum());
     QTFull::RealType delta = 0.00001;
@@ -1026,11 +1026,11 @@ public:
   inline GradType evalGradSource(ParticleSet& P,
                                  ParticleSet& source,
                                  int isrc,
-                                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
+                                 TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                 TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
-    ParticleSet::ParticleGradient_t Gp, Gm, dG;
-    ParticleSet::ParticleLaplacian_t Lp, Lm, dL;
+    ParticleSet::ParticleGradient Gp, Gm, dG;
+    ParticleSet::ParticleLaplacian Lp, Lm, dL;
     Gp.resize(P.getTotalNum());
     Gm.resize(P.getTotalNum());
     dG.resize(P.getTotalNum());

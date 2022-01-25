@@ -108,8 +108,8 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
 LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
                                                                    ParticleSet& ions,
                                                                    TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos_t& hf_terms,
-                                                                   ParticleSet::ParticlePos_t& pulay_terms)
+                                                                   ParticleSet::ParticlePos& hf_terms,
+                                                                   ParticleSet::ParticlePos& pulay_terms)
 {
   const auto& d_table(P.getDistTableAB(myTableIndex));
   value_             = 0.0;

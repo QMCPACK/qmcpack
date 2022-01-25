@@ -114,8 +114,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos_t& hf_terms,
-                                                           ParticleSet::ParticlePos_t& pulay_terms)
+                                                           ParticleSet::ParticlePos& hf_terms,
+                                                           ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces)
   {
@@ -399,8 +399,8 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   //      OHMMS::Controller->abort();
   //    }
   ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > std::numeric_limits<RealType>::epsilon());
-  minkc       = std::min(PtclA.Lattice.LR_kc, P.Lattice.LR_kc);
+  kcdifferent = (std::abs(PtclA.getLattice().LR_kc - P.getLattice().LR_kc) > std::numeric_limits<RealType>::epsilon());
+  minkc       = std::min(PtclA.getLattice().LR_kc, P.getLattice().LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
   //AB = LRCoulombSingleton::getHandler(*PtclB);

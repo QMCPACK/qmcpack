@@ -33,9 +33,9 @@ namespace qmcplusplus
 class SOECPComponent : public QMCTraits
 {
 private:
-  typedef std::vector<PosType> SpherGridType;
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using SpherGridType       = std::vector<PosType>;
+  using GridType            = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///Non Local part: angular momentum, potential and grid
   int lmax;

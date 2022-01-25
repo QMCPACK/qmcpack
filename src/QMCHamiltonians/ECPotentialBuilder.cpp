@@ -71,19 +71,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format", {"table", "xml"});
-  pAttrib.add(NLPP_algo, "algorithm", {"", "batched", "non-batched"});
+  pAttrib.add(NLPP_algo, "algorithm", {"batched", "non-batched"});
   pAttrib.add(use_DLA, "DLA", {"no", "yes"});
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
   pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
   pAttrib.put(cur);
-
-  if (NLPP_algo.empty())
-#ifdef ENABLE_OFFLOAD
-    NLPP_algo = "batched";
-#else
-    NLPP_algo = "non-batched";
-#endif
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")
@@ -98,12 +91,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
 
   ///create LocalECPotential
-  bool usePBC = !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
+  bool usePBC = !(IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
 
 
   if (hasLocalPot)
   {
-    if (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
+    if (IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
 #ifdef QMC_CUDA
       std::unique_ptr<LocalECPotential_CUDA> apot = std::make_unique<LocalECPotential_CUDA>(IonConfig, targetPtcl);
@@ -353,7 +346,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     RealType rmax(0.0);
     app_log() << "  ECPotential for " << species << std::endl;
     std::unique_ptr<NonLocalECPComponent> mynnloc;
-    typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
+    using CubicSplineFuncType = OneDimCubicSpline<RealType>;
     for (int ij = 0; ij < npotentials; ij++)
     {
       int angmom, npoints;

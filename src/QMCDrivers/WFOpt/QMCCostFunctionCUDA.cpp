@@ -58,10 +58,10 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool need
   int numPtcl   = W.getTotalNum();
   std::vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
   RealMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
-  GradMatrix_t fixedG(nw, numPtcl);
-  ValueMatrix_t fixedL(nw, numPtcl);
-  GradMatrix_t newG(nw, numPtcl);
-  ValueMatrix_t newL(nw, numPtcl);
+  GradMatrix fixedG(nw, numPtcl);
+  ValueMatrix fixedL(nw, numPtcl);
+  GradMatrix newG(nw, numPtcl);
+  ValueMatrix newL(nw, numPtcl);
   if (needDerivs)
   {
     d_logpsi_dalpha.resize(nw, numParams);
@@ -201,9 +201,9 @@ void QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     dLogPsi.resize(nwtot, 0);
     d2LogPsi.resize(nwtot, 0);
     for (int i = 0; i < nwtot; ++i)
-      dLogPsi[i] = new ParticleGradient_t(nptcl);
+      dLogPsi[i] = new ParticleGradient(nptcl);
     for (int i = 0; i < nwtot; ++i)
-      d2LogPsi[i] = new ParticleLaplacian_t(nptcl);
+      d2LogPsi[i] = new ParticleLaplacian(nptcl);
   }
   PointerPool<Walker_t::cuda_Buffer_t> pool;
   // Reserve memory only for optimizable parts of the wavefunction
@@ -488,7 +488,7 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
       WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                          << MinNumWalkers * NumSamples)
+                                                                         << MinNumWalkers * NumSamples)
       IsValid = false;
     }
   }

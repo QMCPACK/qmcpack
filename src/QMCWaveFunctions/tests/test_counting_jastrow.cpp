@@ -134,11 +134,11 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   using VariableSet = optimize::VariableSet;
   using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   // initialize particle sets
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
   std::vector<int> egroup(1);
   int num_els = 4;
   egroup[0] = num_els;
@@ -152,7 +152,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     for(int k = 0; k < 3; ++k)
       elec.R[i][k] = Re[i][k];
 
-  ParticleSet ion0;
+  ParticleSet ion0(simulation_cell);
   std::vector<int> igroup(1);
   int num_ion = 4;
   igroup[0] = num_ion;

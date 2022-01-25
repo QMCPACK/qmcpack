@@ -20,7 +20,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Particle/Reptile.h"
 #include "Utilities/FairDivide.h"
@@ -28,7 +28,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 
@@ -182,7 +182,7 @@ void RMC::resetRun()
   {
     //Initialize on whatever walkers are in MCWalkerConfiguration.
     app_log() << "Using walkers from previous non-RMC run.\n";
-    std::vector<ParticlePos_t> wSamps(0);
+    std::vector<ParticlePos> wSamps(0);
     MCWalkerConfiguration::iterator wit(W.begin()), wend(W.end());
     for (IndexType sampid = 0; wit != wend && sampid < nReptiles; wit++)
       wSamps.push_back((**wit).R);
@@ -335,11 +335,11 @@ void RMC::resetReptiles(std::vector<ReptileConfig_t>& reptile_samps, RealType ta
   }
 }
 //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-void RMC::resetReptiles(std::vector<ParticlePos_t>& walker_samps, int nBeads_in, RealType tau)
+void RMC::resetReptiles(std::vector<ParticlePos>& walker_samps, int nBeads_in, RealType tau)
 {
   if (walker_samps.empty())
   {
-    APP_ABORT("RMC::resetReptiles(std::vector< ParticlePos_t > walker_samps):  No samples!\n");
+    APP_ABORT("RMC::resetReptiles(std::vector< ParticlePos > walker_samps):  No samples!\n");
   }
   else
   {

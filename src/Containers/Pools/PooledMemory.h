@@ -34,9 +34,9 @@ namespace qmcplusplus
 template<typename T_scalar, typename Alloc = aligned_allocator<char, DEFAULT_PAGE_SIZE>>
 struct PooledMemory
 {
-  typedef char T;
-  typedef T value_type;
-  typedef typename Vector<T, Alloc>::size_type size_type;
+  using T          = char;
+  using value_type = T;
+  using size_type  = typename Vector<T, Alloc>::size_type;
 
   const int scalar_multiplier;
   size_type Current, Current_scalar;
@@ -98,10 +98,7 @@ struct PooledMemory
   }
 
   ///zero the data
-  inline void zero()
-  {
-    myData.zero();
-  }
+  inline void zero() { myData.zero(); }
 
   ///allocate the data
   inline void allocate()

@@ -36,7 +36,7 @@ public:
   J2KECorrection(const ParticleSet& targetPtcl, const std::vector<FT*>& F)
       : num_groups_(targetPtcl.groups()),
         num_elecs_(targetPtcl.getTotalNum()),
-        vol(targetPtcl.Lattice.Volume),
+        vol(targetPtcl.getLattice().Volume),
         F_(F),
         SK_enabled(targetPtcl.hasSK())
   {

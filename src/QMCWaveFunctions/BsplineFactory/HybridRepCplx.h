@@ -36,15 +36,15 @@ public:
   using SingleSplineType = typename SPLINEBASE::SingleSplineType;
   using RealType         = typename SPLINEBASE::RealType;
   // types for evaluation results
-  using typename SPLINEBASE::GGGVector_t;
-  using typename SPLINEBASE::GradVector_t;
-  using typename SPLINEBASE::HessVector_t;
+  using typename SPLINEBASE::GGGVector;
+  using typename SPLINEBASE::GradVector;
+  using typename SPLINEBASE::HessVector;
   using typename SPLINEBASE::ValueType;
-  using typename SPLINEBASE::ValueVector_t;
+  using typename SPLINEBASE::ValueVector;
 
 private:
-  ValueVector_t psi_AO, d2psi_AO;
-  GradVector_t dpsi_AO;
+  ValueVector psi_AO, d2psi_AO;
+  GradVector dpsi_AO;
   Matrix<ST, aligned_allocator<ST>> multi_myV;
 
   using SPLINEBASE::myG;
@@ -89,7 +89,7 @@ public:
     HYBRIDBASE::flush_zero();
   }
 
-  void evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi) override
+  void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {
     const RealType smooth_factor = HYBRIDBASE::evaluate_v(P, iat, myV);
     const RealType cone(1);
@@ -114,8 +114,8 @@ public:
 
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
-                         ValueVector_t& psi,
-                         const ValueVector_t& psiinv,
+                         ValueVector& psi,
+                         const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override
   {
     if (VP.isOnSphere())
@@ -157,11 +157,7 @@ public:
     }
   }
 
-  void evaluateVGL(const ParticleSet& P,
-                   const int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override
+  void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     const RealType smooth_factor = HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL);
     const RealType cone(1);
@@ -188,9 +184,9 @@ public:
 
   void evaluateVGH(const ParticleSet& P,
                    const int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   HessVector_t& grad_grad_psi) override
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override
   {
     APP_ABORT("HybridRepCplx::evaluate_vgh not implemented!");
     if (HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH))
@@ -204,10 +200,10 @@ public:
 
   void evaluateVGHGH(const ParticleSet& P,
                      const int iat,
-                     ValueVector_t& psi,
-                     GradVector_t& dpsi,
-                     HessVector_t& grad_grad_psi,
-                     GGGVector_t& grad_grad_grad_psi) override
+                     ValueVector& psi,
+                     GradVector& dpsi,
+                     HessVector& grad_grad_psi,
+                     GGGVector& grad_grad_grad_psi) override
   {
     APP_ABORT("HybridRepCplx::evaluate_vghgh not implemented!");
   }

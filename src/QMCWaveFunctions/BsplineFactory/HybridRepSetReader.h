@@ -32,8 +32,8 @@ namespace qmcplusplus
 template<typename ST, typename LT>
 struct Gvectors
 {
-  typedef TinyVector<ST, 3> PosType;
-  typedef std::complex<ST> ValueType;
+  using PosType   = TinyVector<ST, 3>;
+  using ValueType = std::complex<ST>;
 
   const LT& Lattice;
   std::vector<PosType> gvecs_cart; //Cartesian.
@@ -89,7 +89,7 @@ struct Gvectors
     const ST& gv_y        = gvecs_cart[ig][1];
     const ST& gv_z        = gvecs_cart[ig][2];
 
-#pragma omp simd aligned(px, py, pz, v_r, v_i: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(px, py, pz, v_r, v_i : QMC_SIMD_ALIGNMENT)
     for (size_t iat = 0; iat < RSoA.size(); iat++)
       qmcplusplus::sincos(px[iat] * gv_x + py[iat] * gv_y + pz[iat] * gv_z, v_i + iat, v_r + iat);
   }
@@ -141,7 +141,7 @@ template<typename SA>
 class HybridRepSetReader : public SplineSetReader<SA>
 {
 public:
-  typedef SplineSetReader<SA> BaseReader;
+  using BaseReader = SplineSetReader<SA>;
 
   using BaseReader::bspline;
   using BaseReader::mybuilder;
@@ -313,7 +313,7 @@ public:
     const int gvec_last  = gvec_groups[gvec_group_comm.getGroupID() + 1];
 
     // prepare Gvecs Ylm(G)
-    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+    using UnitCellType = typename EinsplineSetBuilder::UnitCellType;
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG, gvec_first,
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
@@ -463,7 +463,7 @@ public:
                   const double* restrict ps_i_ptr = phase_shift_i[ig_local].data();
                   double cG_j_r                   = cG_r * j_lm_G[lm];
                   double cG_j_i                   = cG_i * j_lm_G[lm];
-#pragma omp simd aligned(vals_r, vals_i, ps_r_ptr, ps_i_ptr: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(vals_r, vals_i, ps_r_ptr, ps_i_ptr : QMC_SIMD_ALIGNMENT)
                   for (size_t idx = 0; idx < natoms; idx++)
                   {
                     const double ps_r = ps_r_ptr[idx];
@@ -482,7 +482,7 @@ public:
                   const double* restrict j_lm_G_ptr = j_lm_G.data();
                   double cG_ps_r = cG_r * phase_shift_r[ig_local][idx] - cG_i * phase_shift_i[ig_local][idx];
                   double cG_ps_i = cG_i * phase_shift_r[ig_local][idx] + cG_r * phase_shift_i[ig_local][idx];
-#pragma omp simd aligned(vals_r, vals_i, j_lm_G_ptr: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(vals_r, vals_i, j_lm_G_ptr : QMC_SIMD_ALIGNMENT)
                   for (size_t lm = 0; lm < lm_tot; lm++)
                   {
                     const double jlm = j_lm_G_ptr[lm];

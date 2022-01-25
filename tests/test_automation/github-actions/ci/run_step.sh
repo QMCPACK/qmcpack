@@ -68,6 +68,17 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=Debug \
               ${GITHUB_WORKSPACE}
       ;;
+      *"GCC9-NoMPI-NoOMP-"*)
+        echo 'Configure for disabling OpenMP with QMC_OMP=0'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DQMC_MPI=0 \
+              -DQMC_OMP=0 \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"GCC9-MPI-Gcov-"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
         cmake -GNinja \

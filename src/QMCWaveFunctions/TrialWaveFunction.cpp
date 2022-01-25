@@ -148,14 +148,14 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   // TrialWaveFunction now also holds G and L to move forward but they need to be copied to P.G and P.L
   // to be compatible with legacy use pattern.
   const int num_particles = p_leader.getTotalNum();
-  auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
-                                          ParticleSet::ParticleLaplacian_t& lapl) {
-    grad.resize(num_particles);
-    lapl.resize(num_particles);
-    grad           = czero;
-    lapl           = czero;
-    twf.log_real_  = czero;
-    twf.PhaseValue = czero;
+  auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
+                                          ParticleSet::ParticleLaplacian& lapl) {
+             grad.resize(num_particles);
+             lapl.resize(num_particles);
+             grad           = czero;
+             lapl           = czero;
+             twf.log_real_  = czero;
+             twf.PhaseValue = czero;
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
     initGandL(wf_list[iw], g_list[iw], l_list[iw]);
@@ -235,8 +235,8 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   //Only called for non-optimizable orbitals.
   if (recomputeall)
   {
-    ParticleSet::ParticleGradient_t dummyG(P.G);
-    ParticleSet::ParticleLaplacian_t dummyL(P.L);
+    ParticleSet::ParticleGradient dummyG(P.G);
+    ParticleSet::ParticleLaplacian dummyL(P.L);
 
     for (int i = 0; i < Z.size(); ++i)
     {
@@ -251,8 +251,8 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
                                          RealType& logpsi_fixed_r,
                                          RealType& logpsi_opt_r,
-                                         ParticleSet::ParticleGradient_t& fixedG,
-                                         ParticleSet::ParticleLaplacian_t& fixedL)
+                                         ParticleSet::ParticleGradient& fixedG,
+                                         ParticleSet::ParticleLaplacian& fixedL)
 {
   ScopedTimer local_timer(TWF_timers_[RECOMPUTE_TIMER]);
   P.G    = 0.0;
@@ -281,8 +281,8 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
                                                  const RefVectorWithLeader<ParticleSet>& p_list,
                                                  std::vector<RealType>& logpsi_fixed_list,
                                                  std::vector<RealType>& logpsi_opt_list,
-                                                 RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
-                                                 RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list)
+                                                 RefVector<ParticleSet::ParticleGradient>& fixedG_list,
+                                                 RefVector<ParticleSet::ParticleLaplacian>& fixedL_list)
 {
   auto& wf_leader = wf_list.getLeader();
   auto& p_leader  = p_list.getLeader();
@@ -292,8 +292,8 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
   const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
   const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
 
-  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
-                                          ParticleSet::ParticleLaplacian_t& lapl) {
+  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
+                                          ParticleSet::ParticleLaplacian& lapl) {
     grad.resize(num_particles);
     lapl.resize(num_particles);
     grad           = czero;
@@ -325,8 +325,8 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
 
   // Temporary workaround to have P.G/L always defined.
   // remove when KineticEnergy use WF.G/L instead of P.G/L
-  auto addAndCopyToP = [](ParticleSet& pset, TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
-                          ParticleSet::ParticleLaplacian_t& lapl) {
+  auto addAndCopyToP = [](ParticleSet& pset, TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
+                          ParticleSet::ParticleLaplacian& lapl) {
     pset.G = twf.G + grad;
     pset.L = twf.L + lapl;
   };
@@ -338,8 +338,8 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
 void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                             const RefVectorWithLeader<ParticleSet>& p_list,
                                             std::vector<RealType>& logpsi_list,
-                                            RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
-                                            RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
+                                            RefVector<ParticleSet::ParticleGradient>& dummyG_list,
+                                            RefVector<ParticleSet::ParticleLaplacian>& dummyL_list,
                                             bool recompute)
 {
   auto& p_leader  = p_list.getLeader();
@@ -351,8 +351,8 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
   const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
 
   // Initialize various members of the wavefunction, grad, and laplacian
-  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
-                                          ParticleSet::ParticleLaplacian_t& lapl) {
+  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
+                                          ParticleSet::ParticleLaplacian& lapl) {
     grad.resize(num_particles);
     lapl.resize(num_particles);
     grad           = czero;
@@ -417,13 +417,13 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
   }
 }*/
 
-void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void TrialWaveFunction::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   grad_grad_psi.resize(P.getTotalNum());
 
   for (int i = 0; i < Z.size(); i++)
   {
-    HessVector_t tmp_hess(grad_grad_psi);
+    HessVector tmp_hess(grad_grad_psi);
     tmp_hess = 0.0;
     Z[i]->evaluateHessian(P, tmp_hess);
     grad_grad_psi += tmp_hess;
@@ -600,8 +600,8 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,
     int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   GradType grad_iat = GradType();
   for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -778,9 +778,7 @@ void TrialWaveFunction::mw_calcRatioGradWithSpin(const RefVectorWithLeader<Trial
     wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
 }
 
-void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G,
-                                ParticleSet::ParticleLaplacian_t& L,
-                                std::string tag)
+void TrialWaveFunction::printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag)
 {
   std::ostringstream o;
   o << "---  reporting " << tag << std::endl << "  ---" << std::endl;
@@ -1239,7 +1237,7 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
   }
 }
 
-void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
                                                 std::vector<ValueType>& dgradlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
@@ -1322,23 +1320,39 @@ std::vector<WaveFunctionComponent*> TrialWaveFunction::extractWFCPtrList(const U
   return WFC_list;
 }
 
-RefVector<ParticleSet::ParticleGradient_t> TrialWaveFunction::extractGRefList(
+RefVector<ParticleSet::ParticleGradient> TrialWaveFunction::extractGRefList(
     const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  RefVector<ParticleSet::ParticleGradient_t> g_list;
+  RefVector<ParticleSet::ParticleGradient> g_list;
   for (TrialWaveFunction& wf : wf_list)
     g_list.push_back(wf.G);
   return g_list;
 }
 
-RefVector<ParticleSet::ParticleLaplacian_t> TrialWaveFunction::extractLRefList(
+RefVector<ParticleSet::ParticleLaplacian> TrialWaveFunction::extractLRefList(
     const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  RefVector<ParticleSet::ParticleLaplacian_t> l_list;
+  RefVector<ParticleSet::ParticleLaplacian> l_list;
   for (TrialWaveFunction& wf : wf_list)
     l_list.push_back(wf.L);
   return l_list;
 }
 
+void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  for (int i = 0; i < Z.size(); ++i)
+  {
+    if (Z[i]->is_fermionic)
+    {
+      //OK, so this is a hack only for SlaterDeterminant objects.
+      //Needs a bit of logic and protection before this reaches production.
+      //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
+      //det->registerTWFFastDerivWrapper(P, twf);
+      Z[i]->registerTWFFastDerivWrapper(P, twf);
+    }
+    else //Is Jastrow, so do nothing right now.
+    {}
+  }
+}
 
 } // namespace qmcplusplus

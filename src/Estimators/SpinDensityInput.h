@@ -31,7 +31,7 @@ class SpinDensityInput
 public:
   using Real               = QMCTraits::RealType;
   using POLT               = PtclOnLatticeTraits;
-  using Lattice            = POLT::ParticleLayout_t;
+  using Lattice            = POLT::ParticleLayout;
   using PosType            = QMCTraits::PosType;
   static constexpr int DIM = QMCTraits::DIM;
 

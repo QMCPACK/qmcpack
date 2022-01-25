@@ -411,7 +411,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
                                                                            RealType r,
                                                                            const PosType& dr,
                                                                            PosType& force_iat,
-                                                                           ParticleSet::ParticlePos_t& pulay_terms)
+                                                                           ParticleSet::ParticlePos& pulay_terms)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -438,10 +438,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
   //Now for the Pulay specific stuff...
   // $\nabla_I \Psi(...r...)/\Psi(...r...)$
-  ParticleSet::ParticlePos_t pulay_ref;
-  ParticleSet::ParticlePos_t pulaytmp_;
+  ParticleSet::ParticlePos pulay_ref;
+  ParticleSet::ParticlePos pulaytmp_;
   // $\nabla_I \Psi(...q...)/\Psi(...r...)$ for each quadrature point.
-  std::vector<ParticleSet::ParticlePos_t> pulay_quad(nknot);
+  std::vector<ParticleSet::ParticlePos> pulay_quad(nknot);
 
   //A working array for pulay stuff.
   GradType iongradtmp_(0);

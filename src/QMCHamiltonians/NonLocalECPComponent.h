@@ -32,9 +32,9 @@ namespace qmcplusplus
 class NonLocalECPComponent : public QMCTraits
 {
 private:
-  typedef std::vector<PosType> SpherGridType;
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using SpherGridType       = std::vector<PosType>;
+  using GridType            = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///Non Local part: angular momentum, potential and grid
   int lmax;
@@ -93,12 +93,12 @@ private:
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
-  ParticleSet::ParticleGradient_t dG;
-  ParticleSet::ParticleLaplacian_t dL;
+  ParticleSet::ParticleGradient dG;
+  ParticleSet::ParticleLaplacian dL;
   /// First index is knot, second is electron
   Matrix<PosType> Gnew;
   ///The gradient of the wave function w.r.t. the ion position
-  ParticleSet::ParticleGradient_t Gion;
+  ParticleSet::ParticleGradient Gion;
 
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
@@ -226,7 +226,7 @@ public:
                                  RealType r,
                                  const PosType& dr,
                                  PosType& force_iat,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
+                                 ParticleSet::ParticlePos& pulay_terms);
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   RealType evaluateValueAndDerivatives(ParticleSet& P,

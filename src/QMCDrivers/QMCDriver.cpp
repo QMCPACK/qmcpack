@@ -34,7 +34,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"

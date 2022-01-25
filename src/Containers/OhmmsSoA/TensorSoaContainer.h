@@ -29,7 +29,7 @@ struct TensorSoaContainer
 template<typename T>
 struct TensorSoaContainer<T, 3>
 {
-  typedef T Element_t;
+  using Element_t = T;
 
   ///number of elements
   int nLocal;

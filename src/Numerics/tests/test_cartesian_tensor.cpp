@@ -20,7 +20,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-typedef OHMMS_PRECISION real_type;
+using real_type = OHMMS_PRECISION;
 
 
 // Use gen_gto.py to generate the checks

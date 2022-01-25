@@ -43,8 +43,8 @@ namespace qmcplusplus
 
 struct CuspCorrectionParameters
 {
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::RealType RealType;
+  using ValueType = QMCTraits::ValueType;
+  using RealType  = QMCTraits::RealType;
 
   /// The cutoff radius
   RealType Rc;
@@ -70,12 +70,12 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
 
 class OneMolecularOrbital
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::GradType GradType;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
-  typedef SPOSet* SPOSetPtr;
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using GradType    = QMCTraits::GradType;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using SPOSetPtr   = SPOSet*;
 
 public:
   RealType phi(RealType r)
@@ -122,9 +122,9 @@ public:
 
 private:
   /// Temporary storage for real wavefunction values
-  ValueVector_t val1;
-  GradVector_t grad1;
-  ValueVector_t lap1;
+  ValueVector val1;
+  GradVector grad1;
+  ValueVector lap1;
 
   /// target ParticleSet
   ParticleSet* targetPtcl;
@@ -144,7 +144,7 @@ private:
 
 class CuspCorrection
 {
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
 public:
   inline RealType phiBar(RealType r, OneMolecularOrbital& phiMO)
@@ -202,10 +202,10 @@ void computeRadialPhiBar(ParticleSet* targetP,
                          Vector<QMCTraits::RealType>& rad_orb,
                          const CuspCorrectionParameters& data);
 
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::ValueType ValueType;
-typedef QMCTraits::GradType GradType;
-typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+using RealType    = QMCTraits::RealType;
+using ValueType   = QMCTraits::ValueType;
+using GradType    = QMCTraits::GradType;
+using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
 
 /** Ideal local energy at one point
  * @param r  input radial distance
@@ -221,11 +221,7 @@ RealType getOneIdealLocalEnergy(RealType r, RealType Z, RealType beta0);
  * @param ELorigAtRc local energy at Rc.  beta0 is adjusted to make energy continuous at Rc
  * @param ELideal - output the ideal local energy at pos values
  */
-void getIdealLocalEnergy(const ValueVector_t& pos,
-                         RealType Z,
-                         RealType Rc,
-                         RealType ELorigAtRc,
-                         ValueVector_t& ELideal);
+void getIdealLocalEnergy(const ValueVector& pos, RealType Z, RealType Rc, RealType ELorigAtRc, ValueVector& ELideal);
 
 /** Evaluate various orbital quantities that enter as constraints on the correction
  * @param valRc  orbital value at Rc
@@ -271,13 +267,13 @@ RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero);
  * @param phiMO uncorrected orbital (S-orbitals on this center only)
  * @param ELcurr output local energy at each distance in pos
  */
-void getCurrentLocalEnergy(const ValueVector_t& pos,
+void getCurrentLocalEnergy(const ValueVector& pos,
                            RealType Zeff,
                            RealType Rc,
                            RealType originalELatRc,
                            CuspCorrection& cusp,
                            OneMolecularOrbital& phiMO,
-                           ValueVector_t& ELcurr);
+                           ValueVector& ELcurr);
 
 /** Local energy from uncorrected orbital
  * @param pos input vector of radial distances
@@ -289,18 +285,18 @@ void getCurrentLocalEnergy(const ValueVector_t& pos,
  * Return is value of local energy at zero.  This is the value needed for subsequent computations.
  * The routine can be called with an empty vector of positions to get just this value.
  */
-RealType getOriginalLocalEnergy(const ValueVector_t& pos,
+RealType getOriginalLocalEnergy(const ValueVector& pos,
                                 RealType Zeff,
                                 RealType Rc,
                                 OneMolecularOrbital& phiMO,
-                                ValueVector_t& Elorig);
+                                ValueVector& Elorig);
 
 /** Sum of squares difference between the current and ideal local energies
  * This is the objective function to be minimized.
  * @param Elcurr  current local energy
  * @param Elideal  ideal local energy
  */
-RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal);
+RealType getELchi2(const ValueVector& ELcurr, const ValueVector& ELideal);
 
 
 /** Minimize chi2 with respect to phi at zero for a fixed Rc
@@ -316,9 +312,9 @@ RealType minimizeForPhiAtZero(CuspCorrection& cusp,
                               OneMolecularOrbital& phiMO,
                               RealType Z,
                               RealType eta0,
-                              ValueVector_t& pos,
-                              ValueVector_t& ELcurr,
-                              ValueVector_t& ELideal,
+                              ValueVector& pos,
+                              ValueVector& ELcurr,
+                              ValueVector& ELideal,
                               RealType start_phi0);
 
 
@@ -341,9 +337,9 @@ void minimizeForRc(CuspCorrection& cusp,
                    RealType Rc_init,
                    RealType Rc_max,
                    RealType eta0,
-                   ValueVector_t& pos,
-                   ValueVector_t& ELcurr,
-                   ValueVector_t& ELideal);
+                   ValueVector& pos,
+                   ValueVector& ELcurr,
+                   ValueVector& ELideal);
 
 
 } // namespace qmcplusplus

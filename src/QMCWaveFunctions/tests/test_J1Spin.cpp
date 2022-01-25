@@ -27,12 +27,14 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(1);
   ions_.R[0]                 = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
@@ -41,6 +43,7 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   ispecies(ichargeIdx, HIdx) = 1.0;
 
   elec_.setName("e");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1, 1});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {-0.5, -0.5, -0.5};
@@ -56,10 +59,6 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   tspecies(massIdx, downIdx) = -1.0;
   // Necessary to set mass
   elec_.resetGroups();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   ions_.update();
   elec_.addTable(elec_);

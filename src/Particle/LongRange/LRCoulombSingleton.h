@@ -34,9 +34,9 @@ struct LRCoulombSingleton
 {
   DECLARE_COULOMB_TYPES
 
-  typedef LRHandlerBase LRHandlerType;
-  typedef LinearGrid<pRealType> GridType;
-  typedef OneDimCubicSpline<pRealType> RadFunctorType;
+  using LRHandlerType  = LRHandlerBase;
+  using GridType       = LinearGrid<pRealType>;
+  using RadFunctorType = OneDimCubicSpline<pRealType>;
 
   enum lr_type
   {

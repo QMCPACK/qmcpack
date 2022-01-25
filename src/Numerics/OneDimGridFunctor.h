@@ -36,15 +36,15 @@ template<class Td, class Tg = Td, class CTd = Vector<Td>, class CTg = Vector<Tg>
 struct OneDimGridFunctor
 {
   /// the type of the value on a grid
-  typedef Td value_type;
+  using value_type = Td;
   /// the type of the grid value
-  typedef Tg point_type;
+  using point_type = Tg;
   /// the type of the containers Y, dY and d2Y
-  typedef CTd data_type;
+  using data_type = CTd;
   /// the grid type
-  typedef OneDimGridBase<Tg, CTg> grid_type;
+  using grid_type = OneDimGridBase<Tg, CTg>;
   /// the type of this class
-  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> this_type;
+  using this_type = OneDimGridFunctor<Td, Tg, CTd, CTg>;
 
   /** constructor
    *@param gt a radial grid. The pointer is treated as a reference
@@ -207,11 +207,11 @@ class OneDimConstFunctor : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
 public:
   Td ConstValue;
-  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> base_type;
-  typedef typename base_type::value_type value_type;
-  typedef typename base_type::point_type point_type;
-  typedef typename base_type::data_type data_type;
-  typedef typename base_type::grid_type grid_type;
+  using base_type  = OneDimGridFunctor<Td, Tg, CTd, CTg>;
+  using value_type = typename base_type::value_type;
+  using point_type = typename base_type::point_type;
+  using data_type  = typename base_type::data_type;
+  using grid_type  = typename base_type::grid_type;
 
 
   OneDimConstFunctor(grid_type* gt = 0) : base_type(gt), ConstValue(0.0) {}

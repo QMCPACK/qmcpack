@@ -63,9 +63,10 @@ static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj
           {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
 }
 
-ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
+ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind)
     : quantum_domain(classical),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
+      simulation_cell_(simulation_cell),
       is_grouped_(true),
       same_mass_(true),
       is_spinor_(false),
@@ -81,6 +82,7 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
+      simulation_cell_(p.simulation_cell_),
       is_grouped_(p.is_grouped_),
       same_mass_(true),
       is_spinor_(false),
@@ -107,14 +109,9 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
     addTable(p.DistTables[i]->get_origin(), p.DistTables[i]->getModes());
+
   if (p.structure_factor_)
-  {
-    LRBox             = p.LRBox;                                            //copy LRBox
-    structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_); //safe to use the copy constructor
-    //R.InUnit=p.R.InUnit;
-    //createSK();
-    //structure_factor_->DoUpdate=p.structure_factor_->DoUpdate;
-  }
+    structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_);
   setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
   myTwist = p.myTwist;
 
@@ -220,16 +217,19 @@ void ParticleSet::resetGroups()
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
     my_species_(membersize, ig) = ng[ig];
-  //orgID=ID;
-  //orgGroupID=GroupID;
+  /** ID map that reflects species group
+   *
+   * IsGrouped=true, if ID==IndirectID
+   */
+  ParticleIndex IndirectID(R.size());
   int new_id = 0;
   for (int i = 0; i < nspecies; ++i)
     for (int iat = 0; iat < GroupID.size(); ++iat)
       if (GroupID[iat] == i)
-        IndirectID[new_id++] = ID[iat];
+        IndirectID[new_id++] = iat;
   is_grouped_ = true;
-  for (int iat = 0; iat < ID.size(); ++iat)
-    is_grouped_ &= (IndirectID[iat] == ID[iat]);
+  for (int iat = 0; iat < IndirectID.size(); ++iat)
+    is_grouped_ &= (IndirectID[iat] == iat);
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
@@ -428,7 +428,7 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   }
 }
 
-void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
+void ParticleSet::makeMove(Index_t iat, const SingleParticlePos& displ, bool maybe_accept)
 {
   active_ptcl_     = iat;
   active_pos_      = R[iat] + displ;
@@ -436,7 +436,7 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool m
   computeNewPosDistTablesAndSK(iat, active_pos_, maybe_accept);
 }
 
-void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
+void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl)
 {
   makeMove(iat, displ);
   active_spin_val_ += sdispl;
@@ -444,9 +444,9 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ
 
 void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               Index_t iat,
-                              const std::vector<SingleParticlePos_t>& displs)
+                              const std::vector<SingleParticlePos>& displs)
 {
-  std::vector<SingleParticlePos_t> new_positions;
+  std::vector<SingleParticlePos> new_positions;
   new_positions.reserve(displs.size());
 
   for (int iw = 0; iw < p_list.size(); iw++)
@@ -462,7 +462,7 @@ void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
 
 void ParticleSet::mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
                                       Index_t iat,
-                                      const std::vector<SingleParticlePos_t>& displs,
+                                      const std::vector<SingleParticlePos>& displs,
                                       const std::vector<Scalar_t>& sdispls)
 {
   mw_makeMove(p_list, iat, displs);
@@ -471,19 +471,20 @@ void ParticleSet::mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_
 }
 
 
-bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
+bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ)
 {
   active_ptcl_     = iat;
   active_pos_      = R[iat] + displ;
   active_spin_val_ = spins[iat];
   bool is_valid    = true;
+  auto& Lattice    = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
       is_valid = false;
     else
     {
-      SingleParticlePos_t newRedPos = Lattice.toUnit(active_pos_);
+      SingleParticlePos newRedPos = Lattice.toUnit(active_pos_);
       if (!Lattice.isValid(newRedPos))
         is_valid = false;
     }
@@ -492,14 +493,14 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   return is_valid;
 }
 
-bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
+bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl)
 {
   bool is_valid = makeMoveAndCheck(iat, displ);
   active_spin_val_ += sdispl;
   return is_valid;
 }
 
-void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept)
+void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept)
 {
   ScopedTimer compute_newpos_scope(myTimers[PS_newpos]);
 
@@ -513,7 +514,7 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
 
 void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
                                                   Index_t iat,
-                                                  const std::vector<SingleParticlePos_t>& new_positions,
+                                                  const std::vector<SingleParticlePos>& new_positions,
                                                   bool maybe_accept)
 {
   ParticleSet& p_leader = p_list.getLeader();
@@ -547,17 +548,18 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
 }
 
 
-bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
+bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePos& deltaR, RealType dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
-      SingleParticlePos_t displ(dt * deltaR[iat]);
+      SingleParticlePos displ(dt * deltaR[iat]);
       if (Lattice.outOfBound(Lattice.toUnit(displ)))
         return false;
-      SingleParticlePos_t newpos(awalker.R[iat] + displ);
+      SingleParticlePos newpos(awalker.R[iat] + displ);
       if (!Lattice.isValid(Lattice.toUnit(newpos)))
         return false;
       R[iat] = newpos;
@@ -578,18 +580,19 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
 }
 
 bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
-                                       const ParticlePos_t& deltaR,
+                                       const ParticlePos& deltaR,
                                        const std::vector<RealType>& dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
-      SingleParticlePos_t displ(dt[iat] * deltaR[iat]);
+      SingleParticlePos displ(dt[iat] * deltaR[iat]);
       if (Lattice.outOfBound(Lattice.toUnit(displ)))
         return false;
-      SingleParticlePos_t newpos(awalker.R[iat] + displ);
+      SingleParticlePos newpos(awalker.R[iat] + displ);
       if (!Lattice.isValid(Lattice.toUnit(newpos)))
         return false;
       R[iat] = newpos;
@@ -617,19 +620,20 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
  * @return true, if all the particle moves are legal under the boundary conditions
  */
 bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                                const ParticlePos_t& drift,
-                                                const ParticlePos_t& deltaR,
+                                                const ParticlePos& drift,
+                                                const ParticlePos& deltaR,
                                                 RealType dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
-      SingleParticlePos_t displ(dt * deltaR[iat] + drift[iat]);
+      SingleParticlePos displ(dt * deltaR[iat] + drift[iat]);
       if (Lattice.outOfBound(Lattice.toUnit(displ)))
         return false;
-      SingleParticlePos_t newpos(awalker.R[iat] + displ);
+      SingleParticlePos newpos(awalker.R[iat] + displ);
       if (!Lattice.isValid(Lattice.toUnit(newpos)))
         return false;
       R[iat] = newpos;
@@ -650,19 +654,20 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
 }
 
 bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
-                                                const ParticlePos_t& drift,
-                                                const ParticlePos_t& deltaR,
+                                                const ParticlePos& drift,
+                                                const ParticlePos& deltaR,
                                                 const std::vector<RealType>& dt)
 {
-  active_ptcl_ = -1;
+  active_ptcl_  = -1;
+  auto& Lattice = simulation_cell_.getLattice();
   if (Lattice.explicitly_defined)
   {
     for (int iat = 0; iat < deltaR.size(); ++iat)
     {
-      SingleParticlePos_t displ(dt[iat] * deltaR[iat] + drift[iat]);
+      SingleParticlePos displ(dt[iat] * deltaR[iat] + drift[iat]);
       if (Lattice.outOfBound(Lattice.toUnit(displ)))
         return false;
-      SingleParticlePos_t newpos(awalker.R[iat] + displ);
+      SingleParticlePos newpos(awalker.R[iat] + displ);
       if (!Lattice.isValid(Lattice.toUnit(newpos)))
         return false;
       R[iat] = newpos;
@@ -769,7 +774,7 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
     ScopedTimer update_scope(p_leader.myTimers[PS_accept]);
 
     const auto coords_list(extractCoordsRefList(p_list));
-    std::vector<SingleParticlePos_t> new_positions;
+    std::vector<SingleParticlePos> new_positions;
     new_positions.reserve(p_list.size());
     for (const ParticleSet& pset : p_list)
       new_positions.push_back(pset.active_pos_);
@@ -845,7 +850,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bo
   }
 }
 
-void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
+void ParticleSet::makeVirtualMoves(const SingleParticlePos& newpos)
 {
   active_ptcl_ = -1;
   active_pos_  = newpos;

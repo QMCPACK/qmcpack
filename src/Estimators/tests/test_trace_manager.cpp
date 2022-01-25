@@ -72,7 +72,8 @@ TEST_CASE("TraceManager check_trace_build", "[estimators]")
   TinyVector<int, 4> shape2 = {1, 1, 0, 0};
   TinyVector<int, 4> shape3 = {1, 1, 1, 0};
   TinyVector<int, 4> shape4 = {1, 1, 1, 1};
-  ParticleSet P;
+  const SimulationCell simulation_cell;
+  ParticleSet P(simulation_cell);
   P.create(1); // zero-sized particle set not handled well by TraceManager
   TraceSample<int> tsi(domain, name, index, dim, vi);
   TraceSample<double> tsr(domain, name, index, dim, vr);

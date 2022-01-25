@@ -15,7 +15,7 @@
 
 #include "DMCFactory.h"
 #include "QMCDrivers/DMC/DMC.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 #ifdef QMC_CUDA
 #include "QMCDrivers/DMC/DMC_CUDA.h"

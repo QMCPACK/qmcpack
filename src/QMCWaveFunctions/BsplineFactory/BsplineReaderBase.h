@@ -121,7 +121,7 @@ struct BsplineReaderBase
     app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << std::endl;
 
     bspline->HalfG            = 0;
-    TinyVector<int, 3> bconds = mybuilder->TargetPtcl.Lattice.BoxBConds;
+    TinyVector<int, 3> bconds = mybuilder->TargetPtcl.getLattice().BoxBConds;
     if (!bspline->is_complex)
     {
       //no k-point folding, single special k point (G, L ...)

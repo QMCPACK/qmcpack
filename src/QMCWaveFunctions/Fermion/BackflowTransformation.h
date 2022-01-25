@@ -30,29 +30,29 @@ namespace qmcplusplus
 class BackflowTransformation
 {
 public:
-  typedef BackflowFunctionBase::WFBufferType WFBufferType;
+  using WFBufferType = BackflowFunctionBase::WFBufferType;
 
   // All BF quantities should be real, so eliminating complex (ValueType) possibility
   enum
   {
     DIM = OHMMS_DIM
   };
-  typedef OHMMS_PRECISION RealType;
-  typedef int IndexType;
-  typedef TinyVector<RealType, DIM> PosType;
-  typedef TinyVector<RealType, DIM> GradType;
-  typedef Tensor<RealType, DIM> HessType;
-  typedef Vector<IndexType> IndexVector_t;
-  typedef Vector<GradType> GradVector_t;
-  typedef Matrix<GradType> GradMatrix_t;
-  typedef Vector<HessType> HessVector_t;
-  typedef Matrix<HessType> HessMatrix_t;
+  using RealType    = OHMMS_PRECISION;
+  using IndexType   = int;
+  using PosType     = TinyVector<RealType, DIM>;
+  using GradType    = TinyVector<RealType, DIM>;
+  using HessType    = Tensor<RealType, DIM>;
+  using IndexVector = Vector<IndexType>;
+  using GradVector  = Vector<GradType>;
+  using GradMatrix  = Matrix<GradType>;
+  using HessVector  = Vector<HessType>;
+  using HessMatrix  = Matrix<HessType>;
 
-  typedef Array<HessType, 3> HessArray_t;
+  using HessArray = Array<HessType, 3>;
 
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  //typedef Array<GradType,3>       GradArray_t;
-  //typedef Array<PosType,3>        PosArray_t;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  //using GradArray_t = Array<GradType,3>      ;
+  //using PosArray_t = Array<PosType,3>       ;
 
   ///number of quantum particles
   int NumTargets;
@@ -93,26 +93,26 @@ public:
 
   // matrix of laplacians
   // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i}
-  GradVector_t Bmat;
+  GradVector Bmat;
 
-  GradMatrix_t Bmat_full, Bmat_temp;
+  GradMatrix Bmat_full, Bmat_temp;
 
   // matrix of first derivatives
   // A(i,j)[a,b] = (Grad_i)_a (x_j)_b
   //               i,j:particle index
   //               a,b=(x,y,z)
   // notice that A(i,j) is a symmetric matrix, improve later
-  HessMatrix_t Amat, Amat_temp;
+  HessMatrix Amat, Amat_temp;
 
   // \nabla_a A_{i,j}^{\alpha,\beta}
   // derivative of A matrix with respect to var. prms.
-  HessArray_t Xmat;
+  HessArray Xmat;
 
   // \sum_i \nabla_a B_{i,j}^{\alpha}
-  GradMatrix_t Ymat;
+  GradMatrix Ymat;
 
   // \nabla_a x_i^{\alpha}
-  GradMatrix_t Cmat;
+  GradMatrix Cmat;
 
   RealType *FirstOfP, *LastOfP;
   RealType *FirstOfA, *LastOfA;
@@ -130,8 +130,8 @@ public:
   std::vector<std::string> names;
 
   /// new qp coordinates for pbyp moves.
-  ParticleSet::ParticlePos_t newQP;
-  ParticleSet::ParticlePos_t oldQP;
+  ParticleSet::ParticlePos newQP;
+  ParticleSet::ParticlePos oldQP;
 
   //Vector<PosType> storeQP;
   Vector<PosType> storeQP;

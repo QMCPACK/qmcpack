@@ -31,10 +31,12 @@ target_link_libraries(qmc-extract-eshdf-kvectors PUBLIC qmcio)
 
 add_executable(qmc-get-supercell getSupercell.cpp)
 
+
 add_executable(qmc-check-affinity check-affinity.cpp)
 if(HAVE_MPI)
   target_link_libraries(qmc-check-affinity MPI::MPI_CXX)
 endif()
+
 
 add_executable(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 target_link_libraries(convertpw4qmc qmcutil Math::FFTW3)
@@ -51,8 +53,10 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(qmcfinitesize qmcparticle qmcutil)
 endif()
 
-install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize
-        RUNTIME DESTINATION bin)
+foreach(EXE_TARGET convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize)
+  add_test_target_in_output_location(${EXE_TARGET} bin)
+  install(TARGETS ${EXE_TARGET} RUNTIME DESTINATION bin)
+endforeach()
 
 add_subdirectory(ppconvert)
 

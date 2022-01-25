@@ -55,7 +55,7 @@ struct HDFVersion //: public HDFAttribIOBase
     MAJOR = 0,
     MINOR
   };
-  typedef TinyVector<int, 2> data_type;
+  using data_type = TinyVector<int, 2>;
   data_type version;
 
   inline HDFVersion() : version(QMCPACK_VERSION_MAJOR, QMCPACK_VERSION_MINOR) {}

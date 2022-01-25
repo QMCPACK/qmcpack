@@ -19,9 +19,9 @@
 
 namespace qmcplusplus
 {
-std::unique_ptr<ParticleSet> createElectronParticleSet()
+std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCell& simulation_cell)
 {
-  auto qp = std::make_unique<ParticleSet>();
+  auto qp = std::make_unique<ParticleSet>(simulation_cell);
   qp->setName("e");
   qp->create(2);
   qp->R[0][0] = 1.0;
@@ -41,15 +41,14 @@ std::unique_ptr<ParticleSet> createElectronParticleSet()
 
 TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto qp = createElectronParticleSet();
+  const SimulationCell simulation_cell;
+  auto qp = createElectronParticleSet(simulation_cell);
 
-  ParticleSet ions;
+  ParticleSet ions(simulation_cell);
   ions.setName("ion0");
   ions.create(1);
-
 
   HamiltonianFactory::PtclPoolType particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
@@ -86,12 +85,12 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto qp = createElectronParticleSet();
+  const SimulationCell simulation_cell;
+  auto qp = createElectronParticleSet(simulation_cell);
 
-  ParticleSet ions;
+  ParticleSet ions(simulation_cell);
   ions.setName("ion0");
   std::vector<int> agroup({1});
   ions.create(agroup);

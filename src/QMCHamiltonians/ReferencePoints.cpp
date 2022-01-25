@@ -28,7 +28,7 @@ bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSe
   ra.put(cur);
   for (int i = 0; i < DIM; i++)
     for (int d = 0; d < DIM; d++)
-      axes(d, i) = P.Lattice.a(i)[d];
+      axes(d, i) = P.getLattice().a(i)[d];
   Tensor_t crd;
   if (coord == "cell")
   {
@@ -82,11 +82,11 @@ bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSe
 bool ReferencePoints::put(ParticleSet& P, std::vector<ParticleSet*>& Psets)
 {
   //get axes and origin information from the ParticleSet
-  points["zero"] = 0 * P.Lattice.a(0);
-  points["a1"]   = P.Lattice.a(0);
-  points["a2"]   = P.Lattice.a(1);
-  points["a3"]   = P.Lattice.a(2);
-  //points["center"]= .5*(P.Lattice.a(0)+P.Lattice.a(1)+P.Lattice.a(2))
+  points["zero"] = 0 * P.getLattice().a(0);
+  points["a1"]   = P.getLattice().a(0);
+  points["a2"]   = P.getLattice().a(1);
+  points["a3"]   = P.getLattice().a(2);
+  //points["center"]= .5*(P.getLattice().a(0)+P.getLattice().a(1)+P.Lattice.a(2))
   //set points on face centers
   points["f1p"] = points["zero"] + .5 * points["a1"];
   points["f1m"] = points["zero"] - .5 * points["a1"];

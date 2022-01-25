@@ -50,7 +50,7 @@ struct NLjob
 class WaveFunctionComponent;
 struct DiffWaveFunctionComponent;
 class ResourceCollection;
-
+class TWFFastDerivWrapper;
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
@@ -81,14 +81,14 @@ public:
     ORB_ALLWALKER     /*!< all walkers update */
   };
 
-  typedef ParticleSet::Walker_t Walker_t;
-  typedef Walker_t::WFBuffer_t WFBufferType;
-  typedef Walker_t::Buffer_t BufferType;
-  typedef OrbitalSetTraits<RealType>::ValueMatrix_t RealMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix_t GradMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
+  using Walker_t     = ParticleSet::Walker_t;
+  using WFBufferType = Walker_t::WFBuffer_t;
+  using BufferType   = Walker_t::Buffer_t;
+  using RealMatrix_t = OrbitalSetTraits<RealType>::ValueMatrix;
+  using ValueMatrix  = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using GradMatrix   = OrbitalSetTraits<ValueType>::GradMatrix;
+  using HessType     = OrbitalSetTraits<ValueType>::HessType;
+  using HessVector   = OrbitalSetTraits<ValueType>::HessVector;
 
   // the value type for log(psi)
   using LogValueType = std::complex<QTFull::RealType>;
@@ -170,6 +170,10 @@ public:
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
 
+  /** Register the component with the TWFFastDerivWrapper wrapper.  
+   */
+  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
+
   /** evaluate the value of the WaveFunctionComponent from scratch
    * \param[in] P  active ParticleSet
    * \param[out] G Gradients, \f$\nabla\ln\Psi\f$
@@ -180,8 +184,8 @@ public:
    * move also uses this. causes complete state update in WFC's
    */
   virtual LogValueType evaluateLog(const ParticleSet& P,
-                                   ParticleSet::ParticleGradient_t& G,
-                                   ParticleSet::ParticleLaplacian_t& L) = 0;
+                                   ParticleSet::ParticleGradient& G,
+                                   ParticleSet::ParticleLaplacian& L) = 0;
 
   /** evaluate from scratch the same type WaveFunctionComponent of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
@@ -192,8 +196,8 @@ public:
    */
   virtual void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const;
+                              const RefVector<ParticleSet::ParticleGradient>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian>& L_list) const;
 
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
@@ -209,7 +213,7 @@ public:
   //   APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");
   // }
 
-  virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
+  virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
   {
     APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
   }
@@ -301,8 +305,8 @@ public:
   virtual GradType evalGradSource(ParticleSet& P,
                                   ParticleSet& source,
                                   int iat,
-                                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                                  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+                                  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
   {
     return GradType();
   }
@@ -423,8 +427,8 @@ public:
    * @return log(psi)
    */
   virtual LogValueType evaluateGL(const ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& G,
-                                  ParticleSet::ParticleLaplacian_t& L,
+                                  ParticleSet::ParticleGradient& G,
+                                  ParticleSet::ParticleLaplacian& L,
                                   bool fromscratch);
 
   /** evaluate gradients and laplacian of the same type WaveFunctionComponent of multiple walkers
@@ -436,8 +440,8 @@ public:
    */
   virtual void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
-                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             const RefVector<ParticleSet::ParticleGradient>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                              bool fromscratch) const;
 
   /** For particle-by-particle move. Requests space in the buffer
@@ -540,7 +544,7 @@ public:
       returned as dgradlogpsi.
    */
 
-  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi)
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + ClassName + " class.\n");
   }
@@ -675,7 +679,7 @@ public:
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
-  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::gradLapl for " + ClassName +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");

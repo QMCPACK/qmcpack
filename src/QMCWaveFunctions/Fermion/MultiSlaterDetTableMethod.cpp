@@ -13,16 +13,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "MultiSlaterDeterminantFast.h"
+#include "MultiSlaterDetTableMethod.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
-MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
+MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                        std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                        bool use_pre_computing)
-    : WaveFunctionComponent("MultiSlaterDeterminantFast"),
+    : WaveFunctionComponent("MultiSlaterDetTableMethod"),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
       OffloadRatioTimer(*timer_manager.createTimer(ClassName + "::offloadRatio")),
@@ -56,7 +56,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
     Last[i] = targetPtcl.last(i) - 1;
 }
 
-void MultiSlaterDeterminantFast::initialize()
+void MultiSlaterDetTableMethod::initialize()
 {
   C2node       = std::make_shared<std::vector<std::vector<size_t>>>(Dets.size());
   C            = std::make_shared<std::vector<ValueType>>();
@@ -66,15 +66,15 @@ void MultiSlaterDeterminantFast::initialize()
   myVars       = std::make_shared<opt_variables_type>();
 }
 
-MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast() = default;
+MultiSlaterDetTableMethod::~MultiSlaterDetTableMethod() = default;
 
-std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(ParticleSet& tqp) const
 {
   std::vector<std::unique_ptr<MultiDiracDeterminant>> dets_clone;
   for (auto& det : Dets)
     dets_clone.emplace_back(std::make_unique<MultiDiracDeterminant>(*det));
 
-  auto clone = std::make_unique<MultiSlaterDeterminantFast>(tqp, std::move(dets_clone), use_pre_computing_);
+  auto clone = std::make_unique<MultiSlaterDetTableMethod>(tqp, std::move(dets_clone), use_pre_computing_);
 
   clone->C2node = C2node;
   clone->C      = C;
@@ -94,17 +94,16 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantFast::makeClone(Par
   return clone;
 }
 
-/** Compute VGL of this MultiSlaterDeterminantFast
+/** Compute VGL of this MultiSlaterDetTableMethod
  *
  * THis is introduced to remove redundant code in 
  * - evaluate(P,G,L)
  * - evaluateLog(P,G,L,buf,fillbuffer)
  * Miguel's note: can this change over time??? I don't know yet
  */
-WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(
-    const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& g_tmp,
-    ParticleSet::ParticleLaplacian_t& l_tmp)
+WaveFunctionComponent::LogValueType MultiSlaterDetTableMethod::evaluate_vgl_impl(const ParticleSet& P,
+                                                                                  ParticleSet::ParticleGradient& g_tmp,
+                                                                                  ParticleSet::ParticleLaplacian& l_tmp)
 {
   const ValueType czero(0);
   psi_ratio_to_ref_det_ = czero;
@@ -134,9 +133,9 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
   return log_psi;
 }
 
-WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(const ParticleSet& P,
-                                                                            ParticleSet::ParticleGradient_t& G,
-                                                                            ParticleSet::ParticleLaplacian_t& L)
+WaveFunctionComponent::LogValueType MultiSlaterDetTableMethod::evaluateLog(const ParticleSet& P,
+                                                                            ParticleSet::ParticleGradient& G,
+                                                                            ParticleSet::ParticleLaplacian& L)
 {
   ScopedTimer local_timer(EvaluateTimer);
   for (size_t id = 0; id < Dets.size(); id++)
@@ -156,7 +155,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(cons
   return log_value_;
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl(ParticleSet& P,
                                                                               int iat,
                                                                               bool newpos,
                                                                               GradType& g_at)
@@ -168,9 +167,9 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
-  const auto& grads               = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const size_t noffset            = Dets[det_id]->getFirstIndex();
+  const auto& grads             = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const ValueVector& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const size_t noffset          = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
   // enforce full precision reduction due to numerical sensitivity
@@ -185,7 +184,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   return psi;
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin_impl(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGradWithSpin_impl(ParticleSet& P,
                                                                                       int iat,
                                                                                       bool newpos,
                                                                                       GradType& g_at,
@@ -198,10 +197,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   else
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
-  const auto& grads               = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueMatrix_t& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
-  const size_t noffset            = Dets[det_id]->getFirstIndex();
+  const auto& grads             = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const ValueVector& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const ValueMatrix& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
+  const size_t noffset          = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
   for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
@@ -215,14 +214,14 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   return psi;
 }
 
-void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                                   const RefVectorWithLeader<ParticleSet>& P_list,
                                                   int iat,
                                                   bool newpos,
                                                   std::vector<GradType>& grad_now,
                                                   std::vector<PsiValueType>& psi_list)
 {
-  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDeterminantFast>();
+  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
   auto& det_value_ptr_list = det_leader.det_value_ptr_list;
   auto& C_otherDs_ptr_list = det_leader.C_otherDs_ptr_list;
   const int det_id         = det_leader.getDetID(iat);
@@ -234,7 +233,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
   ScopedTimer local_timer(det_leader.MWEvalGradTimer);
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
-    auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det_list.push_back(*det.Dets[det_id]);
     if (newpos)
       det.Dets[det_id]->evaluateDetsAndGradsForPtclMove(P_list[iw], iat);
@@ -251,7 +250,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
 
     const size_t noffset = det.Dets[det_id]->getFirstIndex();
     const auto& grads    = (newpos) ? det.Dets[det_id]->getNewGrads() : det.Dets[det_id]->getGrads();
@@ -314,14 +313,14 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
     grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
 
     //Free Memory
-    auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     const ValueType* restrict detValues0 =
         (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().data() : det.Dets[det_id]->getRatiosToRefDet().data();
     PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])") //free memory on device
   }
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no_precompute(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl_no_precompute(ParticleSet& P,
                                                                                             int iat,
                                                                                             bool newpos,
                                                                                             GradType& g_at)
@@ -354,7 +353,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
   return psi;
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGradWithSpin_impl_no_precompute(ParticleSet& P,
                                                                                                     int iat,
                                                                                                     bool newpos,
                                                                                                     GradType& g_at,
@@ -391,7 +390,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   return psi;
 }
 
-WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDetTableMethod::evalGrad(ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(EvalGradTimer);
 
@@ -404,7 +403,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   return grad_iat;
 }
 
-WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(ParticleSet& P,
+WaveFunctionComponent::GradType MultiSlaterDetTableMethod::evalGradWithSpin(ParticleSet& P,
                                                                              int iat,
                                                                              ComplexType& spingrad)
 {
@@ -420,7 +419,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(Par
   return grad_iat;
 }
 
-void MultiSlaterDeterminantFast::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+void MultiSlaterDetTableMethod::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                              const RefVectorWithLeader<ParticleSet>& P_list,
                                              int iat,
                                              std::vector<GradType>& grad_now) const
@@ -438,7 +437,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad(const RefVectorWithLeader<WaveFunct
 }
 
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ScopedTimer local_timer(RatioGradTimer);
   UpdateMode = ORB_PBYP_PARTIAL;
@@ -455,7 +454,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
   return curRatio;
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpin(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratioGradWithSpin(ParticleSet& P,
                                                                                   int iat,
                                                                                   GradType& grad_iat,
                                                                                   ComplexType& spingrad_iat)
@@ -477,7 +476,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpi
   return curRatio;
 }
 
-void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               std::vector<WaveFunctionComponent::PsiValueType>& ratios,
@@ -489,7 +488,7 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
     return;
   }
 
-  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDeterminantFast>();
+  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
   auto& det_value_ptr_list = det_leader.det_value_ptr_list;
   auto& C_otherDs_ptr_list = det_leader.C_otherDs_ptr_list;
   const int nw             = WFC_list.size();
@@ -505,20 +504,20 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
   const int det_id = getDetID(iat);
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det                         = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     grad_new[iw] += dummy[iw];
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
   }
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl(ParticleSet& P, int iat)
 {
   const int det_id = getDetID(iat);
 
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+  const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
   PsiValueType psi = 0;
   // This function computes
@@ -532,15 +531,15 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
 }
 
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_precompute(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl_no_precompute(ParticleSet& P, int iat)
 {
   const int det_id = getDetID(iat);
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
-  const size_t* restrict det0     = (*C2node)[det_id].data();
-  const ValueType* restrict cptr  = C->data();
-  const size_t nc                 = C->size();
+  const ValueVector& detValues0  = Dets[det_id]->getNewRatiosToRefDet(); //always new
+  const size_t* restrict det0    = (*C2node)[det_id].data();
+  const ValueType* restrict cptr = C->data();
+  const size_t nc                = C->size();
 
   PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
@@ -556,7 +555,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
 }
 
 // use ci_node for this routine only
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio(ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(RatioTimer);
   UpdateMode = ORB_PBYP_RATIO;
@@ -571,7 +570,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
   return curRatio;
 }
 
-void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               std::vector<PsiValueType>& ratios) const
@@ -585,7 +584,7 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
   const int det_id = getDetID(iat);
 
   const int nw             = WFC_list.size();
-  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDeterminantFast>();
+  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
   auto& det_value_ptr_list = det_leader.det_value_ptr_list;
   auto& C_otherDs_ptr_list = det_leader.C_otherDs_ptr_list;
   const int ndets          = det_leader.Dets[det_id]->getNumDets();
@@ -596,7 +595,7 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
   det_list.reserve(WFC_list.size());
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
-    auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det_list.push_back(*det.Dets[det_id]);
   }
 
@@ -607,7 +606,7 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det      = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det      = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.UpdateMode = ORB_PBYP_RATIO;
 
     const ValueType* restrict detValues0 = det.Dets[det_id]->getNewRatiosToRefDet().data(); //always new
@@ -635,7 +634,7 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
   OffloadRatioTimer.stop();
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det                         = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
 
@@ -644,7 +643,7 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
   }
 }
 
-void MultiSlaterDeterminantFast::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   ScopedTimer local_timer(RatioTimer);
 
@@ -653,7 +652,7 @@ void MultiSlaterDeterminantFast::evaluateRatios(const VirtualParticleSet& VP, st
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
     Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
-    const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+    const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
     PsiValueType psiNew(0);
     if (use_pre_computing_)
@@ -679,7 +678,7 @@ void MultiSlaterDeterminantFast::evaluateRatios(const VirtualParticleSet& VP, st
   }
 }
 
-void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
+void MultiSlaterDetTableMethod::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // this should depend on the type of update, ratio / ratioGrad
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
@@ -692,14 +691,14 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
   Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
 }
 
-void MultiSlaterDeterminantFast::restore(int iat)
+void MultiSlaterDetTableMethod::restore(int iat)
 {
   ScopedTimer local_timer(AccRejTimer);
   Dets[getDetID(iat)]->restore(iat);
   curRatio = 1.0;
 }
 
-void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
+void MultiSlaterDetTableMethod::registerData(ParticleSet& P, WFBufferType& buf)
 {
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->registerData(P, buf);
@@ -708,7 +707,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(psi_ratio_to_ref_det_);
 }
 
-WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDetTableMethod::updateBuffer(ParticleSet& P,
                                                                              WFBufferType& buf,
                                                                              bool fromscratch)
 {
@@ -729,7 +728,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
   return log_value_;
 }
 
-void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void MultiSlaterDetTableMethod::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
@@ -739,7 +738,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 }
 
 
-void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
+void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
 {
   if (CI_Optimizable)
   {
@@ -757,7 +756,7 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
       Dets[id]->checkInVariables(active);
 }
 
-void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
+void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& active)
 {
   if (CI_Optimizable)
     myVars->getIndex(active);
@@ -775,7 +774,7 @@ void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& act
  *
  * USE_resetParameters
  */
-void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& active)
+void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active)
 {
   if (CI_Optimizable)
   {
@@ -825,10 +824,10 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
     for (size_t id = 0; id < Dets.size(); id++)
       Dets[id]->resetParameters(active);
 }
-void MultiSlaterDeterminantFast::reportStatus(std::ostream& os) {}
+void MultiSlaterDetTableMethod::reportStatus(std::ostream& os) {}
 
 
-void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
+void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
                                                      const opt_variables_type& optvars,
                                                      std::vector<ValueType>& dlogpsi,
                                                      std::vector<ValueType>& dhpsioverpsi)
@@ -909,8 +908,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
               {
                 if (id == other_id)
                   continue;
-                const ValueVector_t& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
-                size_t otherspinC                        = (*C2node)[other_id][cnt];
+                const ValueVector& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
+                size_t otherspinC                      = (*C2node)[other_id][cnt];
                 tmp *= detValues_otherspin[otherspinC];
               }
               q0 += tmp * laplSum[id][spinC];
@@ -965,7 +964,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   evaluateMultiDiracDeterminantDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
 }
 
-void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
+void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
                                                                           const opt_variables_type& optvars,
                                                                           std::vector<ValueType>& dlogpsi,
                                                                           std::vector<ValueType>& dhpsioverpsi)
@@ -980,7 +979,7 @@ void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivatives(Partic
   if (Dets.size() != 2)
   {
     throw std::runtime_error(
-        "MultiSlaterDeterminantFast::evaluateDerivatives only compatible with two quantum particle types.");
+        "MultiSlaterDetTableMethod::evaluateDerivatives only compatible with two quantum particle types.");
   }
   else
   {
@@ -995,7 +994,7 @@ void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivatives(Partic
   //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psi_ratio_to_ref_det_), *C, *C2node, id);
 }
 
-void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
+void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
                                                        const opt_variables_type& optvars,
                                                        std::vector<ValueType>& dlogpsi)
 {
@@ -1066,7 +1065,7 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
   evaluateMultiDiracDeterminantDerivativesWF(P, optvars, dlogpsi);
 }
 
-void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
+void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
                                                                             const opt_variables_type& optvars,
                                                                             std::vector<ValueType>& dlogpsi)
 {
@@ -1080,7 +1079,7 @@ void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivativesWF(Part
   if (Dets.size() != 2)
   {
     throw std::runtime_error(
-        "MultiSlaterDeterminantFast::evaluateDerivativesWF only compatible with two quantum particle types.");
+        "MultiSlaterDetTableMethod::evaluateDerivativesWF only compatible with two quantum particle types.");
   }
   else
   {
@@ -1095,13 +1094,13 @@ void MultiSlaterDeterminantFast::evaluateMultiDiracDeterminantDerivativesWF(Part
   //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psi_ratio_to_ref_det_, *C, *C2node, id);
 }
 
-void MultiSlaterDeterminantFast::buildOptVariables()
+void MultiSlaterDetTableMethod::buildOptVariables()
 {
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->buildOptVariables((*C2node)[id]);
 }
 
-void MultiSlaterDeterminantFast::registerTimers()
+void MultiSlaterDetTableMethod::registerTimers()
 {
   RatioTimer.reset();
   EvalGradTimer.reset();
@@ -1113,14 +1112,14 @@ void MultiSlaterDeterminantFast::registerTimers()
   AccRejTimer.reset();
 }
 
-void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
+void MultiSlaterDetTableMethod::prepareGroup(ParticleSet& P, int ig)
 {
   if (!use_pre_computing_)
     return;
   precomputeC_otherDs(P, ig);
 }
 
-void MultiSlaterDeterminantFast::precomputeC_otherDs(const ParticleSet& P, int ig)
+void MultiSlaterDetTableMethod::precomputeC_otherDs(const ParticleSet& P, int ig)
 {
   // This function computes
   // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]

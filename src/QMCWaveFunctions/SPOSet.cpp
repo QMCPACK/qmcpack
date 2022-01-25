@@ -33,8 +33,8 @@ SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
 }
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
-                               ValueVector_t& psi,
-                               const ValueVector_t& psiinv,
+                               ValueVector& psi,
+                               const ValueVector& psiinv,
                                std::vector<ValueType>& ratios)
 {
   assert(psi.size() == psiinv.size());
@@ -47,7 +47,7 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
 
 void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                  const RefVector<ValueVector_t>& psi_list,
+                                  const RefVector<ValueVector>& psi_list,
                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
@@ -62,10 +62,10 @@ void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
 
 void SPOSet::evaluateVGL_spin(const ParticleSet& P,
                               int iat,
-                              ValueVector_t& psi,
-                              GradVector_t& dpsi,
-                              ValueVector_t& d2psi,
-                              ValueVector_t& dspin)
+                              ValueVector& psi,
+                              GradVector& dpsi,
+                              ValueVector& d2psi,
+                              ValueVector& dspin)
 {
   throw std::runtime_error("Need specialization of SPOSet::evaluateVGL_spin");
 }
@@ -73,9 +73,9 @@ void SPOSet::evaluateVGL_spin(const ParticleSet& P,
 void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVectorWithLeader<ParticleSet>& P_list,
                             int iat,
-                            const RefVector<ValueVector_t>& psi_v_list,
-                            const RefVector<GradVector_t>& dpsi_v_list,
-                            const RefVector<ValueVector_t>& d2psi_v_list) const
+                            const RefVector<ValueVector>& psi_v_list,
+                            const RefVector<GradVector>& dpsi_v_list,
+                            const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
 #pragma omp parallel for
@@ -86,10 +86,10 @@ void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
 void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<ParticleSet>& P_list,
                                     int iat,
-                                    const RefVector<ValueVector_t>& psi_v_list,
-                                    const RefVector<GradVector_t>& dpsi_v_list,
-                                    const RefVector<ValueVector_t>& d2psi_v_list,
-                                    const RefVector<ValueVector_t>& dspin_v_list) const
+                                    const RefVector<ValueVector>& psi_v_list,
+                                    const RefVector<GradVector>& dpsi_v_list,
+                                    const RefVector<ValueVector>& d2psi_v_list,
+                                    const RefVector<ValueVector>& dspin_v_list) const
 {
   assert(this == &spo_list.getLeader());
 #pragma omp parallel for
@@ -101,7 +101,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
                                             const std::vector<const ValueType*>& invRow_ptr_list,
-                                            VGLVector_t& phi_vgl_v,
+                                            VGLVector& phi_vgl_v,
                                             std::vector<ValueType>& ratios,
                                             std::vector<GradType>& grads) const
 {
@@ -111,9 +111,9 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
 #pragma omp parallel for
   for (int iw = 0; iw < nw; iw++)
   {
-    ValueVector_t phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
-    GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
-    ValueVector_t d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
+    ValueVector phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
+    GradVector dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
+    ValueVector d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
     spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
 
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
@@ -121,7 +121,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
   }
 }
 
-void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
+void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {
   throw std::runtime_error("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
@@ -129,22 +129,22 @@ void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMa
 void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
                                        int first,
                                        int last,
-                                       ValueMatrix_t& logdet,
-                                       GradMatrix_t& dlogdet,
-                                       ValueMatrix_t& d2logdet,
-                                       ValueMatrix_t& dspinlogdet)
+                                       ValueMatrix& logdet,
+                                       GradMatrix& dlogdet,
+                                       ValueMatrix& d2logdet,
+                                       ValueMatrix& dspinlogdet)
 {
   throw std::runtime_error("Need specialization of " + className +
-            "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
+                           "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
                                      int first,
                                      int last,
-                                     const RefVector<ValueMatrix_t>& logdet_list,
-                                     const RefVector<GradMatrix_t>& dlogdet_list,
-                                     const RefVector<ValueMatrix_t>& d2logdet_list) const
+                                     const RefVector<ValueMatrix>& logdet_list,
+                                     const RefVector<GradMatrix>& dlogdet_list,
+                                     const RefVector<ValueMatrix>& d2logdet_list) const
 {
   assert(this == &spo_list.getLeader());
 #pragma omp parallel for
@@ -155,9 +155,9 @@ void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list
 void SPOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,
-                                  ValueMatrix_t& logdet,
-                                  GradMatrix_t& dlogdet,
-                                  HessMatrix_t& grad_grad_logdet)
+                                  ValueMatrix& logdet,
+                                  GradMatrix& dlogdet,
+                                  HessMatrix& grad_grad_logdet)
 {
   throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
 }
@@ -165,10 +165,10 @@ void SPOSet::evaluate_notranspose(const ParticleSet& P,
 void SPOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,
-                                  ValueMatrix_t& logdet,
-                                  GradMatrix_t& dlogdet,
-                                  HessMatrix_t& grad_grad_logdet,
-                                  GGGMatrix_t& grad_grad_grad_logdet)
+                                  ValueMatrix& logdet,
+                                  GradMatrix& dlogdet,
+                                  HessMatrix& grad_grad_logdet,
+                                  GGGMatrix& grad_grad_grad_logdet)
 {
   throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
 }
@@ -188,23 +188,21 @@ void SPOSet::basic_report(const std::string& pad) const
   app_log().flush();
 }
 
-void SPOSet::evaluateVGH(const ParticleSet& P,
-                         int iat,
-                         ValueVector_t& psi,
-                         GradVector_t& dpsi,
-                         HessVector_t& grad_grad_psi)
+void SPOSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi)
 {
-  throw std::runtime_error("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className +
+                           "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
 void SPOSet::evaluateVGHGH(const ParticleSet& P,
                            int iat,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           HessVector_t& grad_grad_psi,
-                           GGGVector_t& grad_grad_grad_psi)
+                           ValueVector& psi,
+                           GradVector& dpsi,
+                           HessVector& grad_grad_psi,
+                           GGGVector& grad_grad_grad_psi)
 {
-  throw std::runtime_error("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className +
+                           "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
 
 void SPOSet::evaluateGradSource(const ParticleSet& P,
@@ -212,7 +210,7 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 int last,
                                 const ParticleSet& source,
                                 int iat_src,
-                                GradMatrix_t& gradphi)
+                                GradMatrix& gradphi)
 {
   throw std::runtime_error("SPOSetBase::evalGradSource is not implemented");
 }
@@ -222,21 +220,22 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 int last,
                                 const ParticleSet& source,
                                 int iat_src,
-                                GradMatrix_t& grad_phi,
-                                HessMatrix_t& grad_grad_phi,
-                                GradMatrix_t& grad_lapl_phi)
+                                GradMatrix& grad_phi,
+                                HessMatrix& grad_grad_phi,
+                                GradMatrix& grad_lapl_phi)
 {
   throw std::runtime_error("SPOSetBase::evalGradSource is not implemented");
 }
 
-void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi)
+void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
-  throw std::runtime_error("Need specialization of " + className + "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
+  throw std::runtime_error("Need specialization of " + className +
+                           "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 
 #ifdef QMC_CUDA
 
-void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
+void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector& psi)
 {
   throw std::runtime_error("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }

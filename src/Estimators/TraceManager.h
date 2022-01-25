@@ -32,7 +32,7 @@
 #include "ModernStringUtils.hpp"
 #include "Message/Communicate.h"
 #include "hdf/hdf_archive.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include <map>
 #include <set>
 #include <algorithm>
@@ -42,9 +42,9 @@ namespace qmcplusplus
 //#define TRACE_CHECK
 
 const unsigned int DMAX = 4;
-typedef long TraceInt;
-typedef OHMMS_PRECISION TraceReal;
-typedef std::complex<TraceReal> TraceComp;
+using TraceInt          = long;
+using TraceReal         = OHMMS_PRECISION;
+using TraceComp         = std::complex<TraceReal>;
 
 
 struct TraceQuantity
@@ -429,7 +429,7 @@ struct TraceRequest
     for (it = quantities.begin(); it != quantities.end(); ++it)
     {
       TraceQuantity& q = it->second;
-      bool selected = false;
+      bool selected    = false;
       if (selector == "scalar_available")
         selected = q.scalar_available;
       else if (selector == "array_available")
@@ -1557,7 +1557,7 @@ public:
       bool use_scalar_defaults = scalar_defaults == "yes";
       bool use_array_defaults  = array_defaults == "yes";
       verbose                  = verbose_write == "yes";
-      format = lowerCase(format);
+      format                   = lowerCase(format);
       if (format == "hdf")
       {
         hdf_format = true;
@@ -2123,9 +2123,9 @@ public:
 
 namespace qmcplusplus
 {
-typedef long TraceInt;
-typedef double TraceReal;
-typedef std::complex<TraceReal> TraceComp;
+using TraceInt  = long;
+using TraceReal = double;
+using TraceComp = std::complex<TraceReal>;
 
 struct TraceRequest
 {

@@ -34,8 +34,9 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);
@@ -136,15 +137,16 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 // PBC case
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(5.0);
-  Lattice.LR_dim_cutoff = 25;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(5.0);
+  lattice.LR_dim_cutoff = 25;
+  lattice.reset();
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(2);
@@ -171,7 +173,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   tspecies(eChargeIdx, upIdx) = -1.0;
   tspecies(massIdx, upIdx)    = 1.0;
 
-  elec.Lattice = Lattice;
   elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -180,7 +181,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice                      = Lattice;
   ions.createSK();
 
   ions.resetGroups();
@@ -227,7 +227,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // This imitates an actual simulation, where Nelec ~= Nnuc that would also crash
 
   // ParticleSet with 3 ions
-  ParticleSet ions3;
+  ParticleSet ions3(simulation_cell);
   ions3.setName("ion");
   ions3.create(3);
   ions3.R[0]                           = {0, 0, 0};
@@ -239,7 +239,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   int p3MembersizeIdx                  = ion3_species.addAttribute("membersize");
   ion3_species(p3ChargeIdx, p3Idx)     = 1;
   ion3_species(p3MembersizeIdx, p3Idx) = 1;
-  ions3.Lattice                        = Lattice;
   ions3.createSK();
   ions3.resetGroups();
 
@@ -270,14 +269,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 // Open BC case
 TEST_CASE("Ceperley Force", "[hamiltonian]")
 {
-  //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  //Lattice.BoxBConds = false; // periodic
-  //Lattice.R.diagonal(5.0);
-  //Lattice.reset();
-
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(2);
@@ -303,7 +297,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   int eChargeIdx              = tspecies.addAttribute("charge");
   tspecies(eChargeIdx, upIdx) = -1.0;
   tspecies(massIdx, upIdx)    = 1.0;
-  //elec.Lattice = Lattice;
   //elec.createSK();
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
@@ -312,7 +305,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  //ions.Lattice = Lattice;
   //ions.createSK();
   ions.resetGroups();
 
@@ -359,8 +351,9 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 // Test construction of Coulomb forces in OBC
 TEST_CASE("Ion-ion Force", "[hamiltonian]")
 {
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ions");
   ions.create(3);
@@ -428,8 +421,9 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
 TEST_CASE("AC Force", "[hamiltonian]")
 {
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
   ions.create(1);

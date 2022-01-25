@@ -76,24 +76,23 @@ int main(int argc, char** argv)
 
   Random.init(iseed);
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
+  using RealType    = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType  = ParticleSet::TensorType;
+  using PosType     = ParticleSet::PosType;
 
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
   double t0 = 0.0, t1 = 0.0;
-  constexpr OHMMS_PRECISION scale(1);
 
   RandomGenerator random_th(11);
 
-  ParticleSet ions, els;
+  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
+  super_lattice.LR_rc = 5;
+  ParticleSet ions(super_lattice), els(super_lattice);
 
   ions.setName("ion0");
-  ions.Lattice.BoxBConds = 1;
-  ions.Lattice.LR_rc     = 5;
-  tile_cell(ions, tmat, scale);
+  tile_cell(ions, tmat);
   ions.setCoordinates(ions.R); //this needs to be handled internally
 
   const int nions = ions.getTotalNum();
@@ -101,9 +100,6 @@ int main(int argc, char** argv)
   const int nels3 = 3 * nels;
 
   { //create up/down electrons
-    els.Lattice.BoxBConds = 1;
-    els.Lattice.LR_rc     = 5;
-    els.Lattice           = ions.Lattice;
     vector<int> ud(2);
     ud[0] = nels / 2;
     ud[1] = nels - ud[0];
@@ -118,12 +114,12 @@ int main(int argc, char** argv)
   constexpr RealType eps = numeric_limits<float>::epsilon();
 
   //copy of ParticleSet for validations
-  ParticleSet::ParticlePos_t Rcopy(els.R);
+  ParticleSet::ParticlePos Rcopy(els.R);
 
   const auto& d_ee = els.getDistTableAA(els.addTable(els));
   const auto& d_ie = els.getDistTableAB(els.addTable(ions));
 
-  RealType Rsim = els.Lattice.WignerSeitzRadius;
+  RealType Rsim = els.getLattice().WignerSeitzRadius;
 
   //SoA version does not need update if PbyP
   els.update();
@@ -141,7 +137,7 @@ int main(int argc, char** argv)
   cout << "---------------------------------" << endl;
   cout << "AA SoA(upper) - SoA(lower) distances     = " << sym_err / nn << endl;
 
-  ParticlePos_t delta(nels);
+  ParticlePos delta(nels);
 
   //main particle-by-particle update
   RealType sqrttau = 0.2;

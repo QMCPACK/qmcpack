@@ -35,7 +35,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexSingle(EinsplineSetBuilde
                                                               bool hybrid_rep,
                                                               const std::string& useGPU)
 {
-  typedef OHMMS_PRECISION RealType;
+  using RealType = OHMMS_PRECISION;
   std::unique_ptr<BsplineReaderBase> aReader;
 
 #if defined(QMC_COMPLEX)

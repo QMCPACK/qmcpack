@@ -39,13 +39,13 @@ class WalkerControl : public MPIObjectBase
 {
 public:
   ///typedef of Walker_t
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
   /// distinct type for "new" walker, currently same as Walker_t
   using MCPWalker = MCPopulation::MCPWalker;
   ///typedef of FullPrecRealType
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///typedef of IndexType
-  typedef QMCTraits::IndexType IndexType;
+  using IndexType = QMCTraits::IndexType;
 
   /** default constructor
    *

@@ -50,7 +50,7 @@ public:
    * @param iat active particle
    * @param psi values of the SPO
    */
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -59,11 +59,7 @@ public:
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
    */
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -75,10 +71,10 @@ public:
    */
   void evaluateVGL_spin(const ParticleSet& P,
                         int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        ValueVector_t& d2psi,
-                        ValueVector_t& dspin) override;
+                        ValueVector& psi,
+                        GradVector& dpsi,
+                        ValueVector& d2psi,
+                        ValueVector& dspin) override;
 
   /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -92,10 +88,10 @@ public:
   void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
-                              const RefVector<ValueVector_t>& psi_v_list,
-                              const RefVector<GradVector_t>& dpsi_v_list,
-                              const RefVector<ValueVector_t>& d2psi_v_list,
-                              const RefVector<ValueVector_t>& dspin_v_list) const override;
+                              const RefVector<ValueVector>& psi_v_list,
+                              const RefVector<GradVector>& dpsi_v_list,
+                              const RefVector<ValueVector>& d2psi_v_list,
+                              const RefVector<ValueVector>& dspin_v_list) const override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
@@ -109,25 +105,25 @@ public:
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
 
   void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
                                int first,
                                int last,
-                               const RefVector<ValueMatrix_t>& logdet_list,
-                               const RefVector<GradMatrix_t>& dlogdet_list,
-                               const RefVector<ValueMatrix_t>& d2logdet_list) const override;
+                               const RefVector<ValueMatrix>& logdet_list,
+                               const RefVector<GradMatrix>& dlogdet_list,
+                               const RefVector<ValueMatrix>& d2logdet_list) const override;
 
   void evaluate_notranspose_spin(const ParticleSet& P,
                                  int first,
                                  int last,
-                                 ValueMatrix_t& logdet,
-                                 GradMatrix_t& dlogdet,
-                                 ValueMatrix_t& d2logdet,
-                                 ValueMatrix_t& dspinlogdet) override;
+                                 ValueMatrix& logdet,
+                                 GradMatrix& dlogdet,
+                                 ValueMatrix& d2logdet,
+                                 ValueMatrix& dspinlogdet) override;
   /** Evaluate the values, spin gradients, and spin laplacians of single particle spinors corresponding to electron iat.
    *  @param P current particle set.
    *  @param iat electron index.
@@ -135,7 +131,7 @@ public:
    *  @param spin gradient values. d/ds phi(r,s).
    *
    */
-  void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi) override;
+  void evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi) override;
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
@@ -145,26 +141,26 @@ private:
   std::unique_ptr<SPOSet> spo_dn;
 
   //temporary arrays for holding the values of the up and down channels respectively.
-  ValueVector_t psi_work_up;
-  ValueVector_t psi_work_down;
+  ValueVector psi_work_up;
+  ValueVector psi_work_down;
 
   //temporary arrays for holding the gradients of the up and down channels respectively.
-  GradVector_t dpsi_work_up;
-  GradVector_t dpsi_work_down;
+  GradVector dpsi_work_up;
+  GradVector dpsi_work_down;
 
   //temporary arrays for holding the laplacians of the up and down channels respectively.
-  ValueVector_t d2psi_work_up;
-  ValueVector_t d2psi_work_down;
+  ValueVector d2psi_work_up;
+  ValueVector d2psi_work_down;
 
   //Same as above, but these are the full matrices containing all spinor/particle combinations.
-  ValueMatrix_t logpsi_work_up;
-  ValueMatrix_t logpsi_work_down;
+  ValueMatrix logpsi_work_up;
+  ValueMatrix logpsi_work_down;
 
-  GradMatrix_t dlogpsi_work_up;
-  GradMatrix_t dlogpsi_work_down;
+  GradMatrix dlogpsi_work_up;
+  GradMatrix dlogpsi_work_down;
 
-  ValueMatrix_t d2logpsi_work_up;
-  ValueMatrix_t d2logpsi_work_down;
+  ValueMatrix d2logpsi_work_up;
+  ValueMatrix d2logpsi_work_down;
 };
 
 } // namespace qmcplusplus

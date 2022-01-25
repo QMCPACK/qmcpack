@@ -30,15 +30,42 @@ namespace qmcplusplus
 {
 TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout lattice;
+  // monoO
+  /*
+  lattice.R(0,0) = 5.10509515;
+  lattice.R(0,1) = -3.23993545;
+  lattice.R(0,2) = 0.0;
+  lattice.R(1,0) = 5.10509515;
+  lattice.R(1,1) = 3.23993545;
+  lattice.R(1,2) = 0.0;
+  lattice.R(2,0) = -6.49690625;
+  lattice.R(2,1) = 0.0;
+  lattice.R(2,2) = 7.08268015;
+  */
+
+  // diamondC_1x1x1
+  lattice.R(0, 0) = 3.37316115;
+  lattice.R(0, 1) = 3.37316115;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.37316115;
+  lattice.R(1, 2) = 3.37316115;
+  lattice.R(2, 0) = 3.37316115;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.37316115;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(2);
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
@@ -49,6 +76,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(2);
   elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
@@ -57,40 +85,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
 
-  // monoO
-  /*
-  elec_.Lattice.R(0,0) = 5.10509515;
-  elec_.Lattice.R(0,1) = -3.23993545;
-  elec_.Lattice.R(0,2) = 0.0;
-  elec_.Lattice.R(1,0) = 5.10509515;
-  elec_.Lattice.R(1,1) = 3.23993545;
-  elec_.Lattice.R(1,2) = 0.0;
-  elec_.Lattice.R(2,0) = -6.49690625;
-  elec_.Lattice.R(2,1) = 0.0;
-  elec_.Lattice.R(2,2) = 7.08268015;
- */
-
-  // diamondC_1x1x1
-  elec_.Lattice.R(0, 0) = 3.37316115;
-  elec_.Lattice.R(0, 1) = 3.37316115;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
-
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
@@ -114,9 +112,9 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
@@ -134,9 +132,9 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(d2psiM[1][1]) == Approx(-4.712583065));
 
   // for vgh
-  SPOSet::ValueVector_t psiV(psiM[1], spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsiV(dpsiM[1], spo->getOrbitalSetSize());
-  SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psiV(psiM[1], spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsiV(dpsiM[1], spo->getOrbitalSetSize());
+  SPOSet::HessVector ddpsiV(spo->getOrbitalSetSize());
   spo->evaluateVGH(elec_, 1, psiV, dpsiV, ddpsiV);
 
   // Catch default is 100*(float epsilson)
@@ -152,8 +150,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(ddpsiV[1](2, 1)) == Approx(0.5237969314));
   REQUIRE(std::real(ddpsiV[1](2, 2)) == Approx(-2.316497764));
 
-  SPOSet::HessMatrix_t hesspsiV(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GGGMatrix_t d3psiV(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::HessMatrix hesspsiV(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GGGMatrix d3psiV(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
 
   //The reference values for grad_grad_grad_psi.
@@ -224,7 +222,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
         elec_.R[0][1] = y;
         elec_.R[0][2] = z;
         elec_.update();
-        SPOSet::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector orbs(orbSize);
         spo->evaluate(elec_, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -240,15 +238,29 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout lattice;
+  // diamondC_2x1x1
+  lattice.R(0, 0) = 6.7463223;
+  lattice.R(0, 1) = 6.7463223;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.37316115;
+  lattice.R(1, 2) = 3.37316115;
+  lattice.R(2, 0) = 3.37316115;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.37316115;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(4);
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
@@ -265,6 +277,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(2);
   elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
@@ -273,27 +286,10 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
 
-  // diamondC_2x1x1
-  elec_.Lattice.R(0, 0) = 6.7463223;
-  elec_.Lattice.R(0, 1) = 6.7463223;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
-
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \
@@ -314,9 +310,9 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(spo);
 
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -370,16 +366,16 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
-  SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t psi_2(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi_2(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psi(spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psi_2(spo->getOrbitalSetSize());
+  SPOSet::GradVector dpsi_2(spo->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi_2(spo->getOrbitalSetSize());
 
-  RefVector<SPOSet::ValueVector_t> psi_v_list;
-  RefVector<SPOSet::GradVector_t> dpsi_v_list;
-  RefVector<SPOSet::ValueVector_t> d2psi_v_list;
+  RefVector<SPOSet::ValueVector> psi_v_list;
+  RefVector<SPOSet::GradVector> dpsi_v_list;
+  RefVector<SPOSet::ValueVector> d2psi_v_list;
 
   psi_v_list.push_back(psi);
   psi_v_list.push_back(psi_2);
@@ -428,10 +424,16 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto elec = std::make_unique<ParticleSet>();
+  ParticleSet::ParticleLayout lattice;
+  lattice.R       = 0.0;
+  lattice.R(0, 0) = 1.0;
+  lattice.R(1, 1) = 1.0;
+  lattice.R(2, 2) = 1.0;
+
+  const SimulationCell simulation_cell(lattice);
+  auto elec = std::make_unique<ParticleSet>(simulation_cell);
 
   elec->setName("elec");
   std::vector<int> agroup(2);
@@ -444,11 +446,6 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   elec->R[1][0] = 0.0;
   elec->R[1][1] = 1.0;
   elec->R[1][2] = 0.0;
-
-  elec->Lattice.R       = 0.0;
-  elec->Lattice.R(0, 0) = 1.0;
-  elec->Lattice.R(1, 1) = 1.0;
-  elec->Lattice.R(2, 2) = 1.0;
 
   EinsplineSetBuilder::PtclPoolType ptcl_map;
   ptcl_map["e"] = elec.get();

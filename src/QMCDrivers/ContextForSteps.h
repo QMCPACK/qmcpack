@@ -33,7 +33,7 @@ namespace qmcplusplus
 class ContextForSteps
 {
 public:
-  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+  using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
   using PosType           = QMCTraits::PosType;
   using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType          = QMCTraits::RealType;

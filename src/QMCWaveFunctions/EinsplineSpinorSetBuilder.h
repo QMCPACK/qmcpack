@@ -28,7 +28,7 @@ namespace qmcplusplus
 
 class EinsplineSpinorSetBuilder : public EinsplineSetBuilder
 {
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
 
 public:
   ///constructor

@@ -70,18 +70,14 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  ParticleSet ions, electrons;
-
-  XMLParticleParser parse_electrons(electrons, tmat);
+  XMLParticleParser parse_electrons(electrons);
   parse_electrons.put(part1);
   REQUIRE(electrons.getName() == "e");
 
-  XMLParticleParser parse_ions(ions, tmat);
+  XMLParticleParser parse_ions(ions);
   parse_ions.put(part2);
   REQUIRE(ions.getName() == "ion0");
 

@@ -15,7 +15,7 @@
 #include "RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Configuration.h"
 #include "Particle/Reptile.h"
 #include <cmath>
@@ -136,7 +136,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   W.reptile->saveTransProb(curhead, +1, logGf);
   W.reptile->saveAction(curhead, +1, Action_forward);
 
-  Walker_t::ParticlePos_t fromdeltaR(deltaR);
+  Walker_t::ParticlePos fromdeltaR(deltaR);
 
 
   if (scaleDrift == true)
@@ -241,7 +241,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
     MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
 
     W.saveWalker(overwriteWalker);
-    overwriteWalker.Properties(WP::LOCALENERGY)                    = eloc;
+    overwriteWalker.Properties(WP::LOCALENERGY)                = eloc;
     overwriteWalker.Properties(W.reptile->Action[forward])     = 0;
     overwriteWalker.Properties(W.reptile->Action[backward])    = W.Properties(W.reptile->Action[backward]);
     overwriteWalker.Properties(W.reptile->Action[2])           = W.Properties(W.reptile->Action[2]);
@@ -361,7 +361,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   RealType logGf = -0.5 * Dot(deltaR, deltaR);
   //W.reptile->saveTransProb(curhead,+1,logGf);
 
-  Walker_t::ParticlePos_t fromdeltaR(deltaR);
+  Walker_t::ParticlePos fromdeltaR(deltaR);
 
 
   if (scaleDrift == true)
@@ -391,7 +391,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     //app_log()<<"hit a node.  Bouncing...\n";
     return;
   }
-  RealType eloc             = H.evaluate(W);
+  RealType eloc                 = H.evaluate(W);
   W.Properties(WP::LOCALENERGY) = eloc;
   //new_headProp[Action[2]]= 0.5*Tau*eloc;
   ////////////////////////////////////////////////////////////////////////
@@ -442,7 +442,8 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
 
 
     RealType dS_0 = dS_head - dS_tail +
-        (curhead.Properties(WP::LOGPSI) + lastbead.Properties(WP::LOGPSI) - logpsi - nextlastbead.Properties(WP::LOGPSI));
+        (curhead.Properties(WP::LOGPSI) + lastbead.Properties(WP::LOGPSI) - logpsi -
+         nextlastbead.Properties(WP::LOGPSI));
 
     /// RealType dS_old = +(curhead.Properties(LOGPSI) + lastbead.Properties(LOGPSI) - logpsi - nextlastbead.Properties(LOGPSI))
     ///      + curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
@@ -490,7 +491,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
       equilToDoSteps = equilSteps;
     }
     W.saveWalker(overwriteWalker);
-    overwriteWalker.Properties(WP::LOCALENERGY)                 = eloc;
+    overwriteWalker.Properties(WP::LOCALENERGY)             = eloc;
     overwriteWalker.Properties(W.reptile->Action[forward])  = 0;
     overwriteWalker.Properties(W.reptile->Action[backward]) = W.Properties(W.reptile->Action[backward]);
     overwriteWalker.Properties(W.reptile->Action[2])        = W.Properties(W.reptile->Action[2]);

@@ -69,8 +69,8 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   max_disp_sq_ = input.get_max_disp_sq();
   if (max_disp_sq_ < 0)
   {
-    const CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>& lattice = population.get_golden_electrons()->Lattice;
-    max_disp_sq_                                              = lattice.LR_rc * lattice.LR_rc;
+    auto& lattice = population.get_golden_electrons()->getLattice();
+    max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
   }
 }
 
@@ -512,8 +512,8 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
-  std::vector<ParticleSet::ParticleGradient_t> Gs;
-  std::vector<ParticleSet::ParticleLaplacian_t> Ls;
+  std::vector<ParticleSet::ParticleGradient> Gs;
+  std::vector<ParticleSet::ParticleLaplacian> Ls;
   Gs.reserve(log_values.size());
   Ls.reserve(log_values.size());
 
