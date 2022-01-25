@@ -75,24 +75,28 @@ public:
 
   bool run() override;
 
+  template<class CFS>
+  bool run_impl(CFS& cfs);
   /** Refactor of VMCUpdatePbyP in crowd context
    *
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
+  template<class CFS>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-                             ContextForSteps& move_context,
+                             CFS& move_context,
                              bool recompute,
                              bool accumulate_this_step);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
+  template<class CFS>
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                         CFS& context_for_steps,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
   /** transitional interface on the way to better walker count adjustment handling.
@@ -107,6 +111,7 @@ public:
    *  A side effect of VMCBatched::process is that MCPopulation has created local walkers.
    */
   void enable_sample_collection();
+
 
 private:
   int prevSteps;
@@ -133,6 +138,10 @@ private:
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);
+
+extern template bool VMCBatched::run_impl<QMCDriverNew::SpinSymContexts>(QMCDriverNew::SpinSymContexts& ssc);
+extern template bool VMCBatched::run_impl<QMCDriverNew::SpinorContexts>(QMCDriverNew::SpinorContexts& ssc);
+
 } // namespace qmcplusplus
 
 #endif

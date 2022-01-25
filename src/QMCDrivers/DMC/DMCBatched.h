@@ -105,13 +105,17 @@ public:
 
   bool run() override;
 
+  template<class CONTEXTSFORSTEPS>
+  bool run_impl(CONTEXTSFORSTEPS& step_contexts);
+  
   // This is the task body executed at crowd scope
   // it does not have access to object members by design
+  template<bool spin>
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
                          DMCTimers& dmc_timers,
-                         UPtrVector<ContextForSteps>& move_context,
+                         UPtrVector<ContextForSteps<spin>>& move_context,
                          UPtrVector<Crowd>& crowds);
 
 
@@ -136,13 +140,16 @@ private:
                              Crowd& crowd,
                              DriverTimers& timers,
                              DMCTimers& dmc_timers,
-                             ContextForSteps& move_context,
+                             ContextForSteps<>& move_context,
                              bool recompute,
                              bool accumulate_this_step);
 
   friend class qmcplusplus::testing::DMCBatchedTest;
 };
 
+extern template bool DMCBatched::run_impl<QMCDriverNew::SpinSymContexts>(QMCDriverNew::SpinSymContexts& ssc);
+extern template bool DMCBatched::run_impl<QMCDriverNew::SpinorContexts>(QMCDriverNew::SpinorContexts& ssc);
+  
 } // namespace qmcplusplus
 
 #endif

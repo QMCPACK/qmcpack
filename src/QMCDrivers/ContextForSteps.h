@@ -22,6 +22,7 @@
 
 namespace qmcplusplus
 {
+
 /** Thread local context for moving walkers
  *
  *  created once per driver per crowd
@@ -30,6 +31,7 @@ namespace qmcplusplus
  *
  *  
  */
+template<bool spinor = false>
 class ContextForSteps
 {
 public:
@@ -37,6 +39,40 @@ public:
   using PosType           = QMCTraits::PosType;
   using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType          = QMCTraits::RealType;
+
+  enum class MCCoordsTypes
+  {
+    RS,
+    RSSPINS
+  };
+
+  static constexpr MCCoordsTypes translated_ct = spinor ? MCCoordsTypes::RSSPINS : MCCoordsTypes::RS;
+
+  template<MCCoordsTypes CT = MCCoordsTypes::RS>
+  struct MCCoords
+  {
+    std::vector<QMCTraits::PosType> rs;
+  };
+
+  template<>
+  struct MCCoords<MCCoordsTypes::RSSPINS>
+  {
+    std::vector<QMCTraits::PosType> rs;
+    std::vector<std::complex<double>> spins;
+  };
+
+  template<MCCoordsTypes CT = MCCoordsTypes::RS>
+  struct MCCIt
+  {
+    std::vector<QMCTraits::PosType>::iterator irs;
+  };
+
+  template<>
+  struct MCCIt<MCCoordsTypes::RSSPINS>
+  {
+    std::vector<QMCTraits::PosType>::iterator irs;
+    std::vector<std::complex<double>>::iterator spins;
+  };
 
   ContextForSteps(int num_walkers,
                   int num_particles,
@@ -46,21 +82,34 @@ public:
   int get_num_groups() const { return particle_group_indexes_.size(); }
   RandomGenerator& get_random_gen() { return random_gen_; }
 
-  void nextDeltaRs(size_t num_rs)
+  void nextDeltas(size_t num_rs)
   {
+    walker_deltas_.rs.resize(num_rs);
+    makeGaussRandomWithEngine(walker_deltas_.rs, random_gen_);
     // hate to repeat this pattern, this should never resize.
-    walker_deltas_.resize(num_rs);
-    makeGaussRandomWithEngine(walker_deltas_, random_gen_);
+    if constexpr (std::is_same<decltype(walker_deltas_), MCCoords<MCCoordsTypes::RSSPINS>>::value)
+    {
+      walker_deltas_.spins.resize(num_rs);
+      makeGaussRandomWithEngine(walker_deltas_.spins, random_gen_);
+    }
   }
 
-  std::vector<PosType>& get_walker_deltas() { return walker_deltas_; }
-  auto deltaRsBegin() { return walker_deltas_.begin(); };
+  MCCoords<translated_ct>& get_walker_deltas() { return walker_deltas_; }
+
+  MCCIt<translated_ct> deltasBegin()
+  {
+    if constexpr (std::is_same<decltype(walker_deltas_), MCCoords<MCCoordsTypes::RS>>::value)
+                     return {walker_deltas_.rs.begin()};
+    else
+        return {walker_deltas_.rs.begin(), walker_deltas_.spins.begin()};
+
+  };
 
   int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
   int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
 
 protected:
-  std::vector<PosType> walker_deltas_;
+  MCCoords<translated_ct> walker_deltas_;
 
   /** indexes of start and stop of each particle group;
    *
@@ -70,6 +119,9 @@ protected:
 
   RandomGenerator& random_gen_;
 };
+
+extern template class ContextForSteps<true>;
+extern template class ContextForSteps<false>;
 
 } // namespace qmcplusplus
 #endif

@@ -14,7 +14,9 @@
 
 namespace qmcplusplus
 {
-ContextForSteps::ContextForSteps(int num_walkers,
+
+template<bool spinor>
+ContextForSteps<spinor>::ContextForSteps(int num_walkers,
                                  int num_particles,
                                  std::vector<std::pair<int, int>> particle_group_indexes,
                                  RandomGenerator& random_gen)
@@ -29,7 +31,10 @@ ContextForSteps::ContextForSteps(int num_walkers,
     unique.reset(new typename std::remove_pointer<decltype(unique.get())>::type(num_particles));
   };
 
-  walker_deltas_.resize(num_walkers * num_particles);
+  walker_deltas_.rs.resize(num_walkers * num_particles);
 }
+
+template class ContextForSteps<true>;
+template class ContextForSteps<false>;
 
 } // namespace qmcplusplus

@@ -35,10 +35,11 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
+template<class CFS>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
-                                ContextForSteps& step_context,
+                                CFS& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -83,7 +84,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
     //This generates an entire steps worth of deltas.
-    step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
+    step_context.nextDeltas(num_walkers * sft.population.get_num_particles());
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
@@ -100,7 +101,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       {
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
         // fastest in walkers then particles
-        auto delta_r_start = step_context.deltaRsBegin() + iat * num_walkers;
+        auto delta_r_start = step_context.deltasBegin().irs + iat * num_walkers;
         auto delta_r_end   = delta_r_start + num_walkers;
 
         if (use_drift)
@@ -219,10 +220,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 /** Thread body for VMC step
  *
  */
+template<class CFS>
 void VMCBatched::runVMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
-                            std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
+                            CFS& context_for_steps,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -261,7 +263,10 @@ int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, 
   return nblocks * nsteps * local_walkers;
 }
 
-
+bool VMCBatched::run()
+{
+  return std::visit([&](auto& var) -> bool { return run_impl(var); }, step_contexts_);
+}
 /** Runs the actual VMC section
  *
  *  Dependent on base class state machine
@@ -274,7 +279,8 @@ int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, 
  *  If does consider giving more to the thread by value that should
  *  end up thread local. (I think)
  */
-bool VMCBatched::run()
+template<class CONTEXTFORSTEPS>
+bool VMCBatched::run_impl(CONTEXTFORSTEPS& step_contexts)
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
@@ -289,7 +295,8 @@ bool VMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    section_start_task(crowds_.size(), initialLogEvaluation<CONTEXTFORSTEPS>, std::ref(crowds_),
+                       step_contexts);
   }
 
   print_mem("VMCBatched after initialLogEvaluation", app_summary());
@@ -299,8 +306,8 @@ bool VMCBatched::run()
   if (qmcdriver_input_.get_warmup_steps() > 0)
   {
     // Run warm-up steps
-    auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
-                            UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
+    auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers, auto& context_for_steps,
+                            UPtrVector<Crowd>& crowds) {
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
@@ -310,7 +317,7 @@ bool VMCBatched::run()
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
-      crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
+      crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), step_contexts,
                  std::ref(crowds_));
     }
 
@@ -335,7 +342,7 @@ bool VMCBatched::run()
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
       vmc_state.step = step;
-      crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(crowds_.size(), runVMCStep<CONTEXTFORSTEPS>, vmc_state, timers_, step_contexts, std::ref(crowds_));
 
       if (collect_samples_)
       {
@@ -407,5 +414,8 @@ void VMCBatched::enable_sample_collection()
   app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << '\n';
   app_log() << "                                      total samples    = " << total_samples << '\n';
 }
+
+template bool VMCBatched::run_impl<QMCDriverNew::SpinSymContexts>(QMCDriverNew::SpinSymContexts& ssc);
+template bool VMCBatched::run_impl<QMCDriverNew::SpinorContexts>(QMCDriverNew::SpinorContexts& ssc);
 
 } // namespace qmcplusplus

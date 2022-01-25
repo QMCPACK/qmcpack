@@ -25,6 +25,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include "QMCDrivers/ContextForSteps.h"
 #include "MemoryUsage.h"
 
 namespace qmcplusplus
@@ -64,7 +65,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
-                                ContextForSteps& step_context,
+                                ContextForSteps<>& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -103,8 +104,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers = crowd.size();
 
   //This generates an entire steps worth of deltas.
-  step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
-  auto it_delta_r = step_context.deltaRsBegin();
+  step_context.nextDeltas(num_walkers * sft.population.get_num_particles());
+  auto it_delta_r = step_context.deltasBegin().irs;
 
   std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, TrialWaveFunction::GradType(0.0));
   std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, TrialWaveFunction::GradType(0.0));
@@ -324,11 +325,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 }
 
+template<bool spin>
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             DMCTimers& dmc_timers,
-                            UPtrVector<ContextForSteps>& context_for_steps,
+                            UPtrVector<ContextForSteps<spin>>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -398,6 +400,12 @@ void DMCBatched::process(xmlNodePtr node)
 
 bool DMCBatched::run()
 {
+  return std::visit([&](auto& var) -> bool { return this->run_impl(var); }, step_contexts_);
+}
+
+template<class CONTEXTSFORSTEPS>
+bool DMCBatched::run_impl(CONTEXTSFORSTEPS& step_contexts)
+{
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->startDriverRun();
@@ -410,7 +418,8 @@ bool DMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    if (step_contexts_.index() == 1)
+      section_start_task(crowds_.size(), initialLogEvaluation<CONTEXTSFORSTEPS>, std::ref(crowds_), step_contexts);
   }
 
   print_mem("DMCBatched after initialLogEvaluation", app_summary());
@@ -444,7 +453,8 @@ bool DMCBatched::run()
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
       dmc_state.step = step;
-      crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
+      if(step_contexts_.index() == 1)
+        crowd_task(crowds_.size(), runDMCStep<false>, dmc_state, timers_, dmc_timers_, std::ref(std::get<1>(step_contexts_)),
                  std::ref(crowds_));
 
       {
@@ -484,5 +494,8 @@ bool DMCBatched::run()
 
   return finalize(num_blocks, true);
 }
+
+template bool DMCBatched::run_impl<QMCDriverNew::SpinSymContexts>(QMCDriverNew::SpinSymContexts& ssc);
+template bool DMCBatched::run_impl<QMCDriverNew::SpinorContexts>(QMCDriverNew::SpinorContexts& ssc);
 
 } // namespace qmcplusplus

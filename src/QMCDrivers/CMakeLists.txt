@@ -44,7 +44,6 @@ set(QMCDRIVERS
     WaveFunctionTester.cpp
     WalkerControlBase.cpp
     CloneManager.cpp
-    ContextForSteps.cpp
     Crowd.cpp
     QMCUpdateBase.cpp
     GreenFunctionModifiers/DriftModifierBuilder.cpp
@@ -75,7 +74,8 @@ set(QMCDRIVERS
     CorrelatedSampling/CSVMC.cpp
     CorrelatedSampling/CSVMCUpdateAll.cpp
     CorrelatedSampling/CSVMCUpdatePbyP.cpp
-    CorrelatedSampling/CSUpdateBase.cpp)
+    CorrelatedSampling/CSUpdateBase.cpp
+    ContextForSteps.cpp)
 
 if(QMC_CUDA)
   set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp WFOpt/QMCCostFunctionCUDA.cpp)
