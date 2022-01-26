@@ -135,21 +135,55 @@ namespace qmcplusplus
 
   // NOw there is a problem: The spline index above is >= the true
   // number of orbitals because of padding. So rot_mat is too small!
-  // Easy fix: Make a new matrix, fill it with rot_mat, and zero otherwise.
-  
-  
+  // Easy fix: Make a new matrix, fill it with rot_mat, and zero otherwise.    
+  ValueMatrix_t tmpU;
+  tmpU.resize(BasisSetSize, BasisSetSize);
+  std::fill(tmpU.begin(), tmpU.end(), 0.0);
+  for ( auto i=0; i<rot_mat.size1(); i++ )
+    {
+      for ( auto j=0; j<rot_mat.size2(); j++ )
+	{
+	  tmpU[i][j] = rot_mat[i][j];
+	}
+    }
+  std::cerr << "tmpU= \n";
+  for ( auto i=0; i<BasisSetSize; i++ )
+    {
+      for ( auto j=0; j<BasisSetSize; j++ )
+	{
+	  std::cerr << " " << std::fixed << std::setw(12) << std::setprecision(6) << tmpU[i][j];
+	}
+      std::cerr << std::endl;
+    }
+
+  // Apply rotation
   std::cerr << "Applying the rotation...\n";
   std::cerr << "  Size of rot_mat  = " << rot_mat.size1() << " x " << rot_mat.size2() << "\n";
   std::cerr << "  Size of spl_coefs= " << OrbitalSetSize  << " x " << BasisSetSize << "\n";
+  // Dumb matrix matrix multiply b/c I can't get BLAS::gemm to work????
+  for ( auto i=0; i<OrbitalSetSize; i++ )
+    {
+      for ( auto j=0; i<BasisSetSize; i++ )
+	{
+	  const auto cur_elem = BasisSetSize*i + j;
+	  auto newval{0};
+	  for ( auto k=0; k<BasisSetSize; k++ )
+	    {
+	      const auto index = i*BasisSetSize + k;
+	      newval += *(spl_coefs + index) * tmpU[k][j];
+	    }
+	  *(spl_coefs + cur_elem) = newval;
+	}
+    }
   
-  /* 
-     Need to test:
-     1.) Are orbitals adjacent in memory? I.e. is the padding at the end?
-     2.) Can we squeeze by with a narrowing conversion on OrbitalSetSize?
+  /*
+  int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
+  int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
+  std::cerr << "  smaller_BasisSetSize = " <<   smaller_BasisSetSize << "\n";
+  std::cerr << "smaller_OrbitalSetSize = " << smaller_OrbitalSetSize << "\n";
+  BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
   */
   
-  //BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), spl_coefs, BasisSetSize, rot_mat.data(), OrbitalSetSize, RealType(0.0), spl_coefs, BasisSetSize);
-
   std::cerr << "Exited SplineR2R::applyRotation()...\n";
 }
 

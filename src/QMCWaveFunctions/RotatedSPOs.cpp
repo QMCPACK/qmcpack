@@ -134,7 +134,8 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   }
 
   //Printing the parameters
-  if (true)
+  const bool print_myvars = false;
+  if ( print_myvars )
   {
     app_log() << std::string(16, ' ') << "Parameter name" << std::string(15, ' ') << "Value\n";
     myVars.print(app_log());
