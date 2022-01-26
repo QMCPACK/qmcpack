@@ -70,7 +70,7 @@ private:
   //Array for P'_l[cos(theta)]
   std::vector<RealType> dlpol;
   //Array for v_l(r).
-  std::vector<ValueType> vrad;
+  std::vector<RealType> vrad;
   //Array for (2l+1)*v'_l(r)/r.
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
@@ -242,6 +242,7 @@ public:
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);
+  void deleteVirtualParticle();
 
   inline void setRmax(int rmax) { Rmax = rmax; }
   inline RealType getRmax() const { return Rmax; }

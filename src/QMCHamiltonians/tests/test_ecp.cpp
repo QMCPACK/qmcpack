@@ -279,6 +279,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   NonLocalECPComponent* nlpp = ecp.pp_nonloc.get();
 
+  REQUIRE(nlpp != nullptr);
+
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
   //quadrature Lattice instead...
@@ -296,18 +298,28 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   double logpsi = psi.evaluateLog(elec);
   REQUIRE(logpsi == Approx(5.1497823982));
 
-  double Value1(0.0);
-  //Using SoA distance tables, hence the guard.
-  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  auto test_evaluateOne = [&]()
   {
-    const auto& dist  = myTable.getDistRow(jel);
-    const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+    double Value1(0.0);
+    //Using SoA distance tables, hence the guard.
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
+    {
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+    }
+    //These numbers are validated against an alternate code path via wavefunction tester.
+    CHECK(Value1 == Approx(6.9015710211e-02));
+  };
+
+  {
+    test_evaluateOne();
+    nlpp->initVirtualParticle(elec);
+    test_evaluateOne();
+    nlpp->deleteVirtualParticle();
   }
-  //These numbers are validated against an alternate code path via wavefunction tester.
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
 
   opt_variables_type optvars;
   std::vector<ValueType> dlogpsi;
@@ -317,39 +329,49 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
-  dlogpsi.resize(NumOptimizables, ValueType(0));
-  dhpsioverpsi.resize(NumOptimizables, ValueType(0));
-  psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
-  REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
-  REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
-  REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
-  REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
-  REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
-
-  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
-  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
-  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
-  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
-
-  Value1 = 0.0;
-  //Using SoA distance tables, hence the guard.
-  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  auto test_evaluateValueAndDerivatives = [&]()
   {
-    const auto& dist  = myTable.getDistRow(jel);
-    const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                    dhpsioverpsi);
-  }
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
+    dlogpsi.resize(NumOptimizables, ValueType(0));
+    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+    psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+    REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
+    REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
+    REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
+    REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
+    REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
 
-  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
-  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
-  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
-  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+    REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
+    REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
+    REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
+    REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
+
+    double Value1 = 0.0;
+    //Using SoA distance tables, hence the guard.
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
+    {
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+          Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                      dhpsioverpsi);
+    }
+    CHECK(Value1 == Approx(6.9015710211e-02));
+
+    CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
+    CHECK(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
+    CHECK(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
+    CHECK(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    CHECK(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+  };
+
+  {
+    test_evaluateValueAndDerivatives();
+    nlpp->initVirtualParticle(elec);
+    test_evaluateValueAndDerivatives();
+    nlpp->deleteVirtualParticle();
+  }
 
   double Value2(0.0);
   double Value3(0.0);

@@ -85,7 +85,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
     psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
     for (int v = 0; v < dlogpsi_vp.size(); ++v)
-      dratio(v, j) = dlogpsi_vp[v];
+      dratio(v, j) = (dlogpsi_vp[v] - dlogpsi[v]);
 
     W.makeMove(iel, -deltarV[j]);
     psi.calcRatio(W, iel);
@@ -109,9 +109,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     RealType lpolprev = 0.0;
     for (int l = 0; l < lmax; l++)
     {
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
-      lpolprev = lpol[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
+      lpolprev    = lpol[l];
     }
     for (int l = 0; l < nchannel; l++, jl++)
       Amat[jl] = lpol[angpp_m[l]];
@@ -122,7 +121,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int v = 0; v < dhpsioverpsi.size(); ++v)
     {
       for (int j = 0; j < nknot; ++j)
-        dratio(v, j) = psiratio[j] * (dratio(v, j) - dlogpsi[v]);
+        dratio(v, j) = psiratio[j] * dratio(v, j);
       dhpsioverpsi[v] += vrad[0] * BLAS::dot(nknot, &Amat[0], dratio[v]);
     }
   }
@@ -133,7 +132,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int v = 0; v < dhpsioverpsi.size(); ++v)
     {
       for (int j = 0; j < nknot; ++j)
-        dratio(v, j) = psiratio[j] * (dratio(v, j) - dlogpsi[v]);
+        dratio(v, j) = psiratio[j] * dratio(v, j);
       BLAS::gemv(nknot, nchannel, &Amat[0], dratio[v], &wvec[0]);
       dhpsioverpsi[v] += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
