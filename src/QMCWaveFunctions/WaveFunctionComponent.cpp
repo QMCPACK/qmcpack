@@ -16,7 +16,6 @@
 
 
 #include "WaveFunctionComponent.h"
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
@@ -28,7 +27,6 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
-      dPsi(nullptr),
       ClassName(class_name),
       myName(obj_name),
       Bytes_in_WFBuffer(0),
@@ -164,23 +162,11 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
-void WaveFunctionComponent::setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d) { dPsi = std::move(d); }
-
-void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
-                                                const opt_variables_type& active,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi)
-{
-  if (dPsi)
-    dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
-}
-
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& active,
                                                   std::vector<ValueType>& dlogpsi)
 {
-  if (dPsi)
-    dPsi->evaluateDerivativesWF(P, active, dlogpsi);
+  throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + ClassName);
 }
 
 /*@todo makeClone should be a pure virtual function

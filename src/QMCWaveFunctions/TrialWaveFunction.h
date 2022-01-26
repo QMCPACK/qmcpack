@@ -25,7 +25,6 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/TimerManager.h"
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"

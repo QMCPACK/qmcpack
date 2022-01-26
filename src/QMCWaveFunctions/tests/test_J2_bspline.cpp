@@ -100,6 +100,26 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
 
+  opt_variables_type optvars;
+  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+
+  j2->checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  j2->checkOutVariables(optvars);
+  dlogpsi.resize(NumOptimizables);
+  dhpsioverpsi.resize(NumOptimizables);
+  j2->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+
+  std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
+  for (int iparam = 0; iparam < NumOptimizables; iparam++)
+    std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+  std::cout << std::endl;
+
+  CHECK(std::real(dlogpsi[2]) == Approx(-0.2211666667));
+  CHECK(std::real(dhpsioverpsi[3]) == Approx(0.1331717179));
+
 
   // now test evaluateHessian
   WaveFunctionComponent::HessVector grad_grad_psi;
