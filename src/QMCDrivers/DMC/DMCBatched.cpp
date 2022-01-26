@@ -187,7 +187,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         for (int iw = 0; iw < num_walkers; ++iw)
           prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
 
-        isAcepted.clear();
+        isAccepted.clear();
 
         for (int iw = 0; iw < num_walkers; ++iw)
         {
@@ -335,7 +335,7 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == max_steps);
   const bool accumulate_this_step = true;
-  const bool spin_move            = crowd.get_walker_elecs()[0].get().isSpinor();
+  const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
   if (spin_move)
     advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
                                     accumulate_this_step);
