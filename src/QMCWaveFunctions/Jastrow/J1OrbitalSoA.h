@@ -42,6 +42,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///use the same container
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
+
+  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
+  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+
   ///table index
   const int myTableID;
   ///number of ions
@@ -55,8 +59,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
-  ///number of variables this object handles
-  int NumVars;
   ///variables handled by this orbital
   opt_variables_type myVars;
 
@@ -78,10 +80,15 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
-  using WavefunctionFirstDerivativeType  = ParticleAttrib<QTFull::GradType>;
-  using WavefunctionSecondDerivativeType = ParticleAttrib<QTFull::ValueType>;
-  std::vector<WavefunctionFirstDerivativeType*> gradLogPsi;
-  std::vector<WavefunctionSecondDerivativeType*> lapLogPsi;
+  std::vector<GradDerivVec> gradLogPsi;
+  std::vector<ValueDerivVec> lapLogPsi;
+
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), GradDerivVec(Nelec));
+    lapLogPsi.resize(myVars.size(), ValueDerivVec(Nelec));
+  }
 
   J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
       : WaveFunctionComponent("J1OrbitalSoA", obj_name),
@@ -89,8 +96,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
         Nions(ions.getTotalNum()),
         Nelec(els.getTotalNum()),
         NumGroups(determineNumGroups(ions)),
-        Ions(ions),
-        NumVars(0)
+        Ions(ions)
   {
     if (myName.empty())
       throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
@@ -98,12 +104,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   }
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
-
-  ~J1OrbitalSoA() override
-  {
-    delete_iter(gradLogPsi.begin(), gradLogPsi.end());
-    delete_iter(lapLogPsi.begin(), lapLogPsi.end());
-  }
 
   /* determine NumGroups which controls the use of optimized code path using ion groups or not */
   static int determineNumGroups(const ParticleSet& ions)
@@ -230,7 +230,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
           continue;
         if (rcsingles[k])
         {
-          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(lapLogPsi[k])) - ValueType(Dot(P.G, gradLogPsi[k]));
         }
       }
     }
@@ -238,6 +238,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
   {
+    resizeWFOptVectors();
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
@@ -251,12 +252,15 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
     if (recalculate)
     {
+      const size_t NumVars = myVars.size();
+      for (int p = 0; p < NumVars; ++p)
+      {
+        gradLogPsi[p] = 0.0;
+        lapLogPsi[p]  = 0.0;
+      }
+      dLogPsi = 0.0;
+
       const auto& d_table = P.getDistTableAB(myTableID);
-      dLogPsi             = 0.0;
-      for (int p = 0; p < NumVars; ++p)
-        (*gradLogPsi[p]) = 0.0;
-      for (int p = 0; p < NumVars; ++p)
-        (*lapLogPsi[p]) = 0.0;
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
 
       constexpr RealType cone(1);
@@ -294,8 +298,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
             {
               dLogPsi[p] -= derivs[ip][0];
               RealType dudr(rinv * derivs[ip][1]);
-              (*gradLogPsi[p])[j] -= dudr * dr;
-              (*lapLogPsi[p])[j] -= derivs[ip][2] + lapfac * dudr;
+              gradLogPsi[p][j] -= dudr * dr;
+              lapLogPsi[p][j] -= derivs[ip][2] + lapfac * dudr;
             }
           }
         }
@@ -514,23 +518,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
   }
 
-  inline void setVars(const opt_variables_type& vars)
-  {
-    NumVars = vars.size();
-    if (NumVars == 0)
-      return;
-    myVars = vars;
-    dLogPsi.resize(NumVars);
-    gradLogPsi.resize(NumVars, 0);
-    lapLogPsi.resize(NumVars, 0);
-    for (int i = 0; i < NumVars; ++i)
-    {
-      gradLogPsi[i] = new WavefunctionFirstDerivativeType(Nelec);
-      lapLogPsi[i]  = new WavefunctionSecondDerivativeType(Nelec);
-    }
-  }
-
-
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
     auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp);
@@ -543,7 +530,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
         j1copy->addFunc(i, std::move(fc));
       }
     }
-    j1copy->setVars(myVars);
+    j1copy->myVars = myVars;
     j1copy->OffSet = OffSet;
     return j1copy;
   }
@@ -582,17 +569,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       }
     }
     myVars.getIndex(active);
-    NumVars = myVars.size();
-    if (NumVars && dLogPsi.size() == 0)
+    const size_t NumVars = myVars.size();
+    if (NumVars)
     {
-      dLogPsi.resize(NumVars);
-      gradLogPsi.resize(NumVars, 0);
-      lapLogPsi.resize(NumVars, 0);
-      for (int i = 0; i < NumVars; ++i)
-      {
-        gradLogPsi[i] = new WavefunctionFirstDerivativeType(Nelec);
-        lapLogPsi[i]  = new WavefunctionSecondDerivativeType(Nelec);
-      }
       OffSet.resize(J1Functors.size());
       int varoffset = myVars.Index[0];
       for (int i = 0; i < J1Functors.size(); ++i)

@@ -50,6 +50,13 @@ void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
   outputManager.resume();
 }
 
+void NonLocalECPComponent::deleteVirtualParticle()
+{
+  if (VP)
+    delete VP;
+  VP = nullptr;
+}
+
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 {
   angpp_m.push_back(l);
@@ -170,18 +177,14 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
-      //Not a big difference
-      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-      //lpol[l+1]/=(l+1);
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
-      lpolprev = lpol[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
+      lpolprev    = lpol[l];
     }
 
-    ValueType lsum = 0.0;
+    RealType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
       lsum += vrad[l] * lpol[angpp_m[l]];
-    knot_pots[j] = std::real(lsum * psiratio[j]);
+    knot_pots[j] = lsum * std::real(psiratio[j]);
     pairpot += knot_pots[j];
   }
 
@@ -371,12 +374,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
 
       //and for the derivative...
-      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
-      dlpol[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = (Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev) * Lfactor2[l];
 
       lpolprev  = lpol[l];
       dlpolprev = dlpol[l];
@@ -390,12 +391,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     for (int l = 0; l < nchannel; l++)
     {
-      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
+      lsum += vrad[l] * lpol[angpp_m[l]];
       gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
-      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
+      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
     }
-    knot_pots[j] = std::real(lsum * psiratio[j]);
+    knot_pots[j] = lsum * std::real(psiratio[j]);
     pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
@@ -558,12 +559,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
 
       //and for the derivative...
-      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
-      dlpol[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = (Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev) * Lfactor2[l];
 
       lpolprev  = lpol[l];
       dlpolprev = dlpol[l];
@@ -580,13 +579,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
+      lsum += vrad[l] * lpol[angpp_m[l]];
       gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
-      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
-      pulaytmp_ -= std::real(vrad[l]) * lpol[angpp_m[l]] * pulay_quad[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
+      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
+      pulaytmp_ -= vrad[l] * lpol[angpp_m[l]] * pulay_quad[j];
     }
-    knot_pots[j] = std::real(lsum * psiratio[j]);
+    knot_pots[j] = lsum * std::real(psiratio[j]);
     pulaytmp_ += knot_pots[j] * pulay_ref;
     pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;

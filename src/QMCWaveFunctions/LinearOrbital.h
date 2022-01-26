@@ -74,6 +74,12 @@ public:
   }
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
 };
 
 

@@ -19,7 +19,6 @@
 #include "Configuration.h"
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #endif
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -58,6 +57,9 @@ public:
   using DisplRow        = DistanceTable::DisplRow;
   using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
 
+  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
+  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+
 protected:
   ///number of particles
   size_t N;
@@ -88,6 +90,20 @@ protected:
   const int my_table_ID_;
   // helper for compute J2 Chiesa KE correction
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
+
+  /// Map indices from subcomponent variables to component variables
+  std::vector<std::pair<int, int>> OffSet;
+  Vector<RealType> dLogPsi;
+
+  std::vector<GradDerivVec> gradLogPsi;
+  std::vector<ValueDerivVec> lapLogPsi;
+
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), GradDerivVec(N));
+    lapLogPsi.resize(myVars.size(), ValueDerivVec(N));
+  }
 
 public:
   J2OrbitalSoA(const std::string& obj_name, ParticleSet& p);
@@ -173,6 +189,20 @@ public:
   inline RealType KECorrection() override { return KEcorr; }
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
+
+  // Accessors for unit testing
+  std::pair<int, int> getComponentOffset(int index) { return OffSet.at(index); }
+
+  opt_variables_type& getComponentVars() { return myVars; }
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& active,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& active,
+                             std::vector<ValueType>& dlogpsi) override;
 };
 
 } // namespace qmcplusplus

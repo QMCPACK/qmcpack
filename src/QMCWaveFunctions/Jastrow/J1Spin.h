@@ -42,6 +42,10 @@ struct J1Spin : public WaveFunctionComponent
   ///use the same container
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
+
+  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
+  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+
   ///table index
   const int myTableID;
   ///number of ions
@@ -57,8 +61,6 @@ struct J1Spin : public WaveFunctionComponent
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
-  ///number of variables this object handles
-  int NumVars;
   ///variables handled by this orbital
   opt_variables_type myVars;
 
@@ -78,10 +80,15 @@ struct J1Spin : public WaveFunctionComponent
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
-  using WavefunctionFirstDerivativeType  = ParticleAttrib<QTFull::GradType>;
-  using WavefunctionSecondDerivativeType = ParticleAttrib<QTFull::ValueType>;
-  std::vector<WavefunctionFirstDerivativeType> gradLogPsi;
-  std::vector<WavefunctionSecondDerivativeType> lapLogPsi;
+  std::vector<GradDerivVec> gradLogPsi;
+  std::vector<ValueDerivVec> lapLogPsi;
+
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), GradDerivVec(Nelec));
+    lapLogPsi.resize(myVars.size(), ValueDerivVec(Nelec));
+  }
 
   J1Spin(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
       : WaveFunctionComponent("J1Spin", obj_name),
@@ -90,8 +97,7 @@ struct J1Spin : public WaveFunctionComponent
         Nelec(els.getTotalNum()),
         NumGroups(determineNumGroups(ions)),
         NumTargetGroups(determineNumGroups(els)),
-        Ions(ions),
-        NumVars(0)
+        Ions(ions)
   {
     if (myName.empty())
       throw std::runtime_error("J1Spin object name cannot be empty!");
@@ -107,8 +113,7 @@ struct J1Spin : public WaveFunctionComponent
         Nelec(rhs.Nelec),
         NumGroups(rhs.NumGroups),
         NumTargetGroups(rhs.NumTargetGroups),
-        Ions(rhs.Ions),
-        NumVars(0)
+        Ions(rhs.Ions)
   {
     Optimizable = rhs.Optimizable;
     initialize(tqp);
@@ -119,7 +124,7 @@ struct J1Spin : public WaveFunctionComponent
           auto fc = std::make_unique<FT>(*rhs.J1UniqueFunctors[i * NumTargetGroups + j].get());
           addFunc(i, std::move(fc), j);
         }
-    setVars(rhs.myVars);
+    myVars = rhs.myVars;
     OffSet = rhs.OffSet;
   }
 
@@ -274,6 +279,8 @@ struct J1Spin : public WaveFunctionComponent
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
   {
+    resizeWFOptVectors();
+
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
@@ -287,12 +294,15 @@ struct J1Spin : public WaveFunctionComponent
     }
     if (recalculate)
     {
-      const auto& d_table = P.getDistTableAB(myTableID);
-      dLogPsi             = 0.0;
+      const size_t NumVars = myVars.size();
       for (int p = 0; p < NumVars; ++p)
+      {
         gradLogPsi[p] = 0.0;
-      for (int p = 0; p < NumVars; ++p)
-        lapLogPsi[p] = 0.0;
+        lapLogPsi[p]  = 0.0;
+      }
+      dLogPsi = 0.0;
+
+      const auto& d_table = P.getDistTableAB(myTableID);
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
 
       constexpr RealType cone(1);
@@ -566,23 +576,6 @@ struct J1Spin : public WaveFunctionComponent
     Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
   }
 
-  inline void setVars(const opt_variables_type& vars)
-  {
-    NumVars = vars.size();
-    if (NumVars == 0)
-      return;
-    myVars = vars;
-    dLogPsi.resize(NumVars);
-    gradLogPsi.resize(NumVars);
-    lapLogPsi.resize(NumVars);
-    for (int i = 0; i < NumVars; ++i)
-    {
-      gradLogPsi[i].resize(Nelec);
-      lapLogPsi[i].resize(Nelec);
-    }
-  }
-
-
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
     auto cloned_J1Spin = std::make_unique<J1Spin<FT>>(*this, tqp);
@@ -621,18 +614,10 @@ struct J1Spin : public WaveFunctionComponent
       }
     }
     myVars.getIndex(active);
-    NumVars = myVars.size();
+    const size_t NumVars = myVars.size();
     myVars.print(std::cout);
-    if (NumVars && dLogPsi.size() == 0)
+    if (NumVars)
     {
-      dLogPsi.resize(NumVars);
-      gradLogPsi.resize(NumVars);
-      lapLogPsi.resize(NumVars);
-      for (int i = 0; i < NumVars; ++i)
-      {
-        gradLogPsi[i].resize(Nelec);
-        lapLogPsi[i].resize(Nelec);
-      }
       OffSet.resize(J1UniqueFunctors.size());
       // Find first active variable for the starting offset
       int varoffset = -1;
