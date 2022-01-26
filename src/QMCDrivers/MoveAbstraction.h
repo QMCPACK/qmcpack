@@ -342,7 +342,9 @@ inline void MoveAbstraction<POSITIONS>::makeMove(const int iat)
 template<>
 inline void MoveAbstraction<POSITIONS_SPINS>::makeMove(const int iat)
 {
-  ps_dispatcher_.flex_makeMoveWithSpin(elecs_, iat, drifts_, spindrifts_);
+  ps_dispatcher_.flex_makeMove(elecs_, iat, drifts_);
+  ParticleSet& elec_leader = elecs_.getLeader();
+  elec_leader.mw_makeSpinMove(elecs_, iat, spindrifts_);
 }
 
 template<>

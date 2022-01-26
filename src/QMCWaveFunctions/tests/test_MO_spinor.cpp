@@ -206,6 +206,10 @@ void test_lcao_spinor()
   elec_.R = Rnew;
   elec_.update();
 
+  //make a spin displacement, just  set to zero for the test
+  ParticleSet::ParticleScalar dS;
+  dS.resize(1);
+
   //now create second walker
   ParticleSet elec_2(elec_);
   elec_2.R[0][0]  = -0.4;
@@ -271,8 +275,11 @@ void test_lcao_spinor()
   for (int iat = 0; iat < 1; iat++)
   {
     std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::Scalar_t> sdispls = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
+    elec_.mw_makeSpinMove(p_list, iat, sdispls);
     std::vector<bool> accept = {true, true};
+    elec_.mw_accept_rejectSpinMove(p_list, iat, accept);
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
@@ -300,7 +307,9 @@ void test_lcao_spinor()
     dspsi_work_2 = 0.0;
 
     std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::Scalar_t> sdispls = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
+    elec_.mw_makeSpinMove(p_list, iat, sdispls);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
@@ -318,6 +327,7 @@ void test_lcao_spinor()
     CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(vds2).epsilon(eps));
 
     std::vector<bool> accept = {false, false};
+    elec_.mw_accept_rejectSpinMove(p_list, iat, accept);
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
 }
@@ -511,6 +521,10 @@ void test_lcao_spinor_excited()
   elec_.R = Rnew;
   elec_.update();
 
+  //add spin displacement, just set to zero for sake of test
+  ParticleSet::ParticleScalar dS;
+  dS.resize(1);
+
   //now create second walker
   ParticleSet elec_2(elec_);
   elec_2.R[0][0]  = -0.4;
@@ -576,8 +590,11 @@ void test_lcao_spinor_excited()
   for (int iat = 0; iat < 1; iat++)
   {
     std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::Scalar_t> sdispls = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
+    elec_.mw_makeSpinMove(p_list, iat, sdispls);
     std::vector<bool> accept = {true, true};
+    elec_.mw_accept_rejectSpinMove(p_list, iat, accept);
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
@@ -605,7 +622,9 @@ void test_lcao_spinor_excited()
     dspsi_work_2 = 0.0;
 
     std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::Scalar_t> sdispls = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
+    elec_.mw_makeSpinMove(p_list, iat, sdispls);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
@@ -623,6 +642,7 @@ void test_lcao_spinor_excited()
     CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(vds2).epsilon(eps));
 
     std::vector<bool> accept = {false, false};
+    elec_.mw_accept_rejectSpinMove(p_list, iat, accept);
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
 }

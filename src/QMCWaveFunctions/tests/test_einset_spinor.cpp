@@ -445,6 +445,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.R = Rnew;
   elec_.update();
 
+  //just going to use zero displacements for particle spins in test
+  ParticleSet::ParticleScalar dS;
+  dS.resize(3);
+
   //now create second walker, with permuted particle positions
   ParticleSet elec_2(elec_);
   // permute electrons
@@ -529,8 +533,11 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   for (int iat = 0; iat < 3; iat++)
   {
     std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
+    std::vector<ParticleSet::Scalar_t> sdispls         = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
+    elec_.mw_makeSpinMove(p_list, iat, sdispls);
     std::vector<bool> accept = {true, true};
+    elec_.mw_accept_rejectSpinMove(p_list, iat, accept);
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
@@ -558,7 +565,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     dspsi_work_2 = 0.0;
 
     std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
+    std::vector<ParticleSet::Scalar_t> sdispls         = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
+    elec_.mw_makeSpinMove(p_list, iat, sdispls);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
@@ -611,6 +620,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(dspsi_v_list[1].get()[2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
 
     std::vector<bool> accept = {false, false};
+    elec_.mw_accept_rejectSpinMove(p_list, iat, accept);
     elec_.mw_accept_rejectMove(p_list, iat, accept);
   }
 }

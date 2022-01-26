@@ -71,6 +71,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       same_mass_(true),
       is_spinor_(false),
       active_ptcl_(-1),
+      active_spin_val_(0.0),
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
@@ -87,6 +88,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       same_mass_(true),
       is_spinor_(false),
       active_ptcl_(-1),
+      active_spin_val_(0.0),
       my_species_(p.getSpeciesSet()),
       myTwist(0.0),
       ParentName(p.parentName()),
@@ -451,23 +453,20 @@ void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
 
   for (int iw = 0; iw < p_list.size(); iw++)
   {
-    p_list[iw].active_ptcl_     = iat;
-    p_list[iw].active_pos_      = p_list[iw].R[iat] + displs[iw];
-    p_list[iw].active_spin_val_ = p_list[iw].spins[iat];
+    p_list[iw].active_ptcl_ = iat;
+    p_list[iw].active_pos_  = p_list[iw].R[iat] + displs[iw];
     new_positions.push_back(p_list[iw].active_pos_);
   }
 
   mw_computeNewPosDistTablesAndSK(p_list, iat, new_positions);
 }
 
-void ParticleSet::mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
-                                      Index_t iat,
-                                      const std::vector<SingleParticlePos>& displs,
-                                      const std::vector<Scalar_t>& sdispls)
+void ParticleSet::mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                  Index_t iat,
+                                  const std::vector<Scalar_t>& sdispls)
 {
-  mw_makeMove(p_list, iat, displs);
   for (int iw = 0; iw < p_list.size(); iw++)
-    p_list[iw].active_spin_val_ += sdispls[iw];
+    p_list[iw].active_spin_val_ = p_list[iw].spins[iat] + sdispls[iw];
 }
 
 
@@ -797,8 +796,7 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
         if (SK && SK->DoUpdate)
           p_list[iw].structure_factor_->acceptMove(iat, p_list[iw].GroupID[iat], p_list[iw].R[iat]);
 
-        p_list[iw].R[iat]     = p_list[iw].active_pos_;
-        p_list[iw].spins[iat] = p_list[iw].active_spin_val_;
+        p_list[iw].R[iat] = p_list[iw].active_pos_;
       }
       p_list[iw].active_ptcl_ = -1;
       assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
@@ -811,6 +809,18 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
     // disable non-forward mode cases
     if (!forward_mode)
       throw std::runtime_error("BUG calling mw_accept_rejectMove in non-forward mode");
+  }
+}
+
+void ParticleSet::mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                           Index_t iat,
+                                           const std::vector<bool>& isAccepted)
+{
+  for (int iw = 0; iw < p_list.size(); iw++)
+  {
+    assert(iat == p_list[iw].active_ptcl_);
+    if (isAccepted[iw])
+      p_list[iw].spins[iat] = p_list[iw].active_spin_val_;
   }
 }
 

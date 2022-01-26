@@ -41,11 +41,6 @@ public:
                      int iat,
                      const std::vector<SingleParticlePos>& displs) const;
 
-  void flex_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
-                             int iat,
-                             const std::vector<SingleParticlePos>& displs,
-                             const std::vector<Scalar_t>& sdispls) const;
-
   void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               int iat,
                               const std::vector<bool>& isAccepted,
