@@ -29,7 +29,7 @@ void TwoDEwaldHandler::initBreakup(ParticleSet& ref)
   Sigma /= LR_rc;
   app_log() << "  Sigma=" << Sigma << std::endl;
   Volume = ref.Lattice.Volume;
-  fillFk(ref.getSK().getKLists());
+  fillFk(ref.getSimulationCell().getKLists());
 }
 
 TwoDEwaldHandler::TwoDEwaldHandler(const TwoDEwaldHandler& aLR, ParticleSet& ref)
