@@ -147,11 +147,8 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
   myVars.getIndex(active);
 
   const size_t NumVars = myVars.size();
-  if (NumVars && dLogPsi.size() == 0)
+  if (NumVars)
   {
-    dLogPsi.resize(NumVars);
-    gradLogPsi.resize(NumVars, GradDerivVec(N));
-    lapLogPsi.resize(NumVars, ValueDerivVec(N));
     OffSet.resize(F.size());
 
     // Find first active variable for the starting offset
@@ -164,17 +161,13 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
     }
 
     for (int i = 0; i < F.size(); ++i)
-    {
       if (F[i] && F[i]->myVars.Index.size())
       {
         OffSet[i].first  = F[i]->myVars.Index.front() - varoffset;
         OffSet[i].second = F[i]->myVars.Index.size() + OffSet[i].first;
       }
       else
-      {
         OffSet[i].first = OffSet[i].second = -1;
-      }
-    }
   }
 }
 
@@ -183,12 +176,9 @@ void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
 {
   if (!Optimizable)
     return;
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->resetParameters(active);
-    ++it;
-  }
+  for (auto& [key, functor] : J2Unique)
+    functor->resetParameters(active);
+
   for (int i = 0; i < myVars.size(); ++i)
   {
     int ii = myVars.Index[i];
@@ -430,10 +420,6 @@ std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& t
 
   j2copy->myVars.clear();
   j2copy->myVars.insertFrom(myVars);
-  const size_t NumVars = myVars.size();
-  j2copy->dLogPsi.resize(NumVars);
-  j2copy->gradLogPsi.resize(NumVars, GradDerivVec(N));
-  j2copy->lapLogPsi.resize(NumVars, ValueDerivVec(N));
   j2copy->OffSet = OffSet;
 
   return j2copy;
@@ -844,6 +830,7 @@ void J2OMPTarget<FT>::evaluateDerivatives(ParticleSet& P,
 {
   if (myVars.size() == 0)
     return;
+
   evaluateDerivativesWF(P, active, dlogpsi);
   bool recalculate(false);
   std::vector<bool> rcsingles(myVars.size(), false);
@@ -878,6 +865,9 @@ void J2OMPTarget<FT>::evaluateDerivativesWF(ParticleSet& P,
 {
   if (myVars.size() == 0)
     return;
+
+  resizeWFOptVectors();
+
   bool recalculate(false);
   std::vector<bool> rcsingles(myVars.size(), false);
   for (int k = 0; k < myVars.size(); ++k)

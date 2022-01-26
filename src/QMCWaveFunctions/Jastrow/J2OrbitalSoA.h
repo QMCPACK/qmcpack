@@ -98,6 +98,13 @@ protected:
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), GradDerivVec(N));
+    lapLogPsi.resize(myVars.size(), ValueDerivVec(N));
+  }
+
 public:
   J2OrbitalSoA(const std::string& obj_name, ParticleSet& p);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;

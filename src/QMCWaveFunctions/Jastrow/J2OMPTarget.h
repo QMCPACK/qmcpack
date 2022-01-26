@@ -108,6 +108,13 @@ private:
 
   std::unique_ptr<J2OMPTargetMultiWalkerMem<RealType>> mw_mem_;
 
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), GradDerivVec(N));
+    lapLogPsi.resize(myVars.size(), ValueDerivVec(N));
+  }
+
 public:
   J2OMPTarget(const std::string& obj_name, ParticleSet& p);
   J2OMPTarget(const J2OMPTarget& rhs) = delete;
