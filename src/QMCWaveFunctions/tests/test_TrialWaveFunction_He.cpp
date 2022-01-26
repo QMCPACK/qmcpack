@@ -118,6 +118,7 @@ void setup_He_wavefunction(Communicate* c,
   REQUIRE(wff->getTWF()->size() == 2);
 }
 
+#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
@@ -216,7 +217,6 @@ UPtrVector<ParticleSet::ParticleLaplacian> create_particle_laplacian(int nelec, 
   return L_list;
 }
 
-#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
