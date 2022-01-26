@@ -290,7 +290,7 @@ bool VMCBatched::run()
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
-      const bool spin_move            = crowd.get_walker_elecs()[0].get().isSpinor();
+      const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
       if (spin_move)
         advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
                                         accumulate_this_step);
