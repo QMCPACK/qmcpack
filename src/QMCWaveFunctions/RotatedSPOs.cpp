@@ -24,10 +24,8 @@ RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
       params_supplied(false),
       nel_major_(0)
 {
-  std::cerr << "Entering RotatedSPOs::RotatedSPOs...\n";
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
-  std::cerr << "Leaving RotatedSPOs::RotatedSPOs...\n";
 }
 
 RotatedSPOs::~RotatedSPOs() {}
@@ -91,6 +89,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   {
     p = m_act_rot_inds[i].first;
     q = m_act_rot_inds[i].second;
+    /*
     std::cerr << myName << "_orb_rot_"
 	      << (p < 10 ? "0" : "")
 	      << (p < 100 ? "0" : "")
@@ -101,6 +100,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 	      << (q < 1000 ? "0" : "")
 	      << q
 	      << " = " << params[i] << "\n";
+    */
   }
   
   // This will add the orbital rotation parameters to myVars
@@ -180,7 +180,31 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     rot_mat[p][q] = -x;
   }
 
+  // JPT Look at the kappa matrix
+  std::cerr << " JPT TEST: Kappa = \n";
+  for ( auto i=0; i<nmo; i++ )
+    {
+      for ( auto j=0; j<nmo; j++ )
+	{
+	  std::cerr << std::fixed;
+	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
+	}
+      std::cerr << "\n";
+    }
+  
   exponentiate_antisym_matrix(rot_mat);
+
+  // JPT Look at the kappa matrix
+  std::cerr << " JPT TEST: U = exp(-Kappa) = \n";
+  for ( auto i=0; i<nmo; i++ )
+    {
+      for ( auto j=0; j<nmo; j++ )
+	{
+	  std::cerr << std::fixed;
+	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
+	}
+      std::cerr << "\n";
+    }
 
   Phi->applyRotation(rot_mat, use_stored_copy);
   std::cerr << "Leaving RotatedSPOs::apply_rotation()...\n";
@@ -190,7 +214,6 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
 void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
 {
-  std::cerr << "Entering RotatedSPOs::exponentiate_antisym_matrix()...\n";
   const int n = mat.rows();
   std::vector<std::complex<RealType>> mat_h(n * n, 0);
   std::vector<RealType> eval(n, 0);
@@ -249,7 +272,6 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
       }
       mat[j][i] = mat_d[i + n * j].real();
     }
-  std::cerr << "Leaving RotatedSPOs::exponentiate_antisym_matrix()...\n";
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -259,10 +281,10 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const int& FirstIndex,
                                       const int& LastIndex)
 {
-  std::cerr << "Entering RotatedSPOs::EvaluateDerivatives()...\n";
+
   const size_t nel = LastIndex - FirstIndex;
   const size_t nmo = Phi->getOrbitalSetSize();
-
+  
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
   myG_temp.resize(nel);
   myG_J.resize(nel);
@@ -354,7 +376,6 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     dlogpsi.at(kk)      = T(p, q);
     dhpsioverpsi.at(kk) = ValueType(-0.5) * Y4(p, q);
   }
-  std::cerr << "Leaving RotatedSPOs::EvaluateDerivatives()...\n";
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
@@ -384,7 +405,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const size_t NP2,
                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
-  std::cerr << "Entering RotatedSPOs::EvaluateDerivatives( big version )...\n";
+  std::cerr << "JPT: Entering RotatedSPOs::evaluateDerivatives( Multideterminant )...\n";
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -411,6 +432,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     const size_t nb  = Phi->getBasisSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
+    
     const RealType* restrict C_p = Coeff.data();
     for (int i = 0; i < Coeff.size(); i++)
     {
@@ -442,13 +464,37 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
       myL_J[iat] = (P.L[iat] + dot(P.G[iat], P.G[iat]) - myL_temp[iat]);
     }
 
-
     table_method_eval(dlogpsi, dhpsioverpsi, myL_J, myG_J, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn,
                       detValues_up, detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn,
                       B_grad, B_lapl, detData_up, N1, N2, NP1, NP2, lookup_tbl);
   }
-  std::cerr << "Leaving RotatedSPOs::EvaluateDerivatives( big version )...\n";
 
+  // JPT See contents of dlogpsi and dhpsioverpsi
+  // Looks like they are fine.
+  /*
+  app_log() << "*** JPT inside RotatedSPOs::evaluateDerivatives...\n";
+  app_log() << "dlogpsi= \n";
+  for ( auto i=0; i<dlogpsi.size(); i++ )
+    {
+      app_log() << " " << std::scientific << std::setw(12) << std::setprecision(8) << dlogpsi[i];
+      if ( i % 10 == 0 )
+	{
+	  app_log() << std::endl;
+	}
+    }
+  app_log() << std::endl;
+  app_log() << "dhpsioverpsi= \n";
+  for ( auto i=0; i<dhpsioverpsi.size(); i++ )
+    {
+      app_log() << " " << std::scientific << std::setw(12) << std::setprecision(8) << dhpsioverpsi[i];
+      if ( i % 10 == 0 )
+	{
+	  app_log() << std::endl;
+	}
+    }
+  app_log() << std::endl;
+  */
+  std::cerr << "JPT: Leaving RotatedSPOs::evaluateDerivatives( Multideterminant )...\n";
 }
 
 
@@ -468,7 +514,6 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
                                         const std::vector<int>& detData_up,
                                         const std::vector<std::vector<int>>& lookup_tbl)
 {
-  std::cerr << "Entering RotatedSPOs::EvaluateDerivativesWF()...\n";
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -487,7 +532,6 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
                         M_dn, Minv_up, Minv_dn, detData_up, lookup_tbl);
   }
-  std::cerr << "Leaving RotatedSPOs::EvaluateDerivativesWF()...\n";
 
 }
 

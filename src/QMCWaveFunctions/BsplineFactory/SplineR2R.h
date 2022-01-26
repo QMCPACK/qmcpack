@@ -104,9 +104,7 @@ public:
   int getOrbitalSetSize() const override
   {
     const int nsplines = ( SplineInst == nullptr ) ? 0 : SplineInst->num_splines();
-    std::cerr << "Entered SplineR2R::getOrbitalSetSize()...\n";
-    std::cerr << "  m_ntot_orbs = " << m_ntot_orbs << "\n";
-    std::cerr << "Exited SplineR2R::getOrbitalSetSize()...\n";
+    //std::cerr << "  m_ntot_orbs = " << m_ntot_orbs << "\n";
     return m_ntot_orbs;       
   }
   
@@ -116,9 +114,7 @@ public:
   int getBasisSetSize() const override
   {
     const int nsplines = ( SplineInst == nullptr ) ? 0 : SplineInst->num_splines();
-    std::cerr << "Entered SplineR2R::getBasisSetSize()...\n";
-    std::cerr << "  Nsplines = " << nsplines << "\n";
-    std::cerr << "Exited SplineR2R::getBasisSetSize()...\n";
+    //std::cerr << "  Nsplines = " << nsplines << "\n";
     return ( SplineInst == nullptr ) ? 0 : SplineInst->num_splines();   
   }
   

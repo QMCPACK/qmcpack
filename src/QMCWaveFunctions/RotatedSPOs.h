@@ -204,7 +204,12 @@ public:
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
-  void setOrbitalSetSize(int norbs) override { Phi->setOrbitalSetSize(norbs); }
+  void setOrbitalSetSize(int norbs) override
+  {
+    std::cerr << " Entered RotatedSPOs::setOrbitalSetSize()...\n";    
+    Phi->setOrbitalSetSize(norbs);
+    std::cerr << " Leaving RotatedSPOs::setOrbitalSetSize()...\n";
+  }
 
   //  void setBasisSet(basis_type* bs);
 
