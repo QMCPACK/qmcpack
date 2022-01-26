@@ -148,8 +148,6 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
     (*it).second->checkOutVariables(active);
     ++it;
   }
-  if (dPsi)
-    dPsi->checkOutVariables(active);
 }
 
 template<typename FT>
@@ -163,8 +161,6 @@ void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
     (*it).second->resetParameters(active);
     ++it;
   }
-  if (dPsi)
-    dPsi->resetParameters(active);
   for (int i = 0; i < myVars.size(); ++i)
   {
     int ii = myVars.Index[i];
@@ -386,8 +382,6 @@ template<typename FT>
 std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
 {
   auto j2copy = std::make_unique<J2OMPTarget<FT>>(myName, tqp);
-  if (dPsi)
-    j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)

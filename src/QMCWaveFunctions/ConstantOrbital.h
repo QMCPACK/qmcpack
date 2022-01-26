@@ -58,6 +58,12 @@ public:
   {
     return std::make_unique<ConstantOrbital>();
   }
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
 };
 
 
