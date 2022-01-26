@@ -30,12 +30,13 @@ TEST_CASE("StructFact", "[lrhandler]")
   Lattice.reset();
   REQUIRE(Approx(Lattice.Volume) == 125);
   Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
+  Lattice.printCutoffs(app_log());
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
+  Lattice.LR_dim_cutoff = 125;
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
 
   SpeciesSet& tspecies = ref.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
@@ -47,8 +48,8 @@ TEST_CASE("StructFact", "[lrhandler]")
   ref.R[2] = {0.3, 4.0, 1.4};
   ref.R[3] = {3.2, 4.7, 0.7};
 
-  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.getLRBox(), 50);
-  REQUIRE(sk.getKLists().numk == 263786);
+  REQUIRE(simulation_cell.getKLists().numk == 263786);
+  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.getLRBox(), simulation_cell.getKLists());
   sk.updateAllPart(ref);
 
   std::vector<std::complex<double>> rhok_sum_ref{-125.80618630936, 68.199075127271};
@@ -56,7 +57,7 @@ TEST_CASE("StructFact", "[lrhandler]")
   for (int i = 0; i < ref.groups(); i++)
   {
     std::complex<QMCTraits::RealType> rhok_sum, rhok_even_sum;
-    for (int ik = 0; ik < sk.getKLists().numk; ik++)
+    for (int ik = 0; ik < simulation_cell.getKLists().numk; ik++)
       rhok_sum += std::complex<QMCTraits::RealType>(sk.rhok_r[i][ik], sk.rhok_i[i][ik]);
 
     //std::cout << std::setprecision(14) << rhok_sum << std::endl;
