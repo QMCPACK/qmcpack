@@ -19,7 +19,6 @@
 #include "Configuration.h"
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #endif
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -61,6 +60,9 @@ public:
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
 
+  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
+  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+
 private:
   /** initialize storage Uat,dUat, d2Uat */
   void resizeInternalStorage();
@@ -96,6 +98,13 @@ private:
   const int my_table_ID_;
   // helper for compute J2 Chiesa KE correction
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
+
+  /// Map indices from subcomponent variables to component variables
+  std::vector<std::pair<int, int>> OffSet;
+  Vector<RealType> dLogPsi;
+
+  std::vector<GradDerivVec> gradLogPsi;
+  std::vector<ValueDerivVec> lapLogPsi;
 
   std::unique_ptr<J2OMPTargetMultiWalkerMem<RealType>> mw_mem_;
 
@@ -222,6 +231,15 @@ public:
   const std::vector<FT*>& getPairFunctions() const { return F; }
 
   QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& active,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& active,
+                             std::vector<ValueType>& dlogpsi) override;
 };
 
 } // namespace qmcplusplus

@@ -25,7 +25,7 @@ TEST_CASE("J2OrbitalSoA simple", "[wavefunction]")
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
   elec.setName("e");
-  elec.create({1});
+  elec.create({1,1});
   J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
 
   opt_variables_type active;
@@ -37,7 +37,7 @@ TEST_CASE("J2OrbitalSoA one species and two variables", "[wavefunction]")
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
   elec.setName("e");
-  elec.create({1});
+  elec.create({1,1});
   J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
 
   auto j2_uptr = std::make_unique<FakeJasFunctor>();
