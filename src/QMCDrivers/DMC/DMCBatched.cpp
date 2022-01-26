@@ -103,11 +103,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   const int num_walkers = crowd.size();
 
-  MoveAbstraction<COORDS> move(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
+  MoveAbstraction<COORDS> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
                                num_walkers, sft.population.get_num_particles());
 
   //This generates an entire steps worth of deltas.
-  move.generateDeltas();
+  mover.generateDeltas();
 
   std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
   std::vector<RealType> log_gf(num_walkers, 0.0);
@@ -130,7 +130,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
     {
-      move.setTauForGroup(sft.qmcdrv_input, sft.population.get_ptclgrp_inv_mass()[ig]);
+      mover.setTauForGroup(sft.qmcdrv_input, sft.population.get_ptclgrp_inv_mass()[ig]);
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
@@ -147,12 +147,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                                    : walkers_who_have_been_on_wire[iw] = 0;
         }
 #endif
-        move.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
+        mover.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
 
         // only DMC does this
         // TODO: rr needs a real name
         std::vector<RealType> rr(num_walkers, 0.0);
-        move.updaterr(iat, rr);
+        mover.updaterr(iat, rr);
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -164,9 +164,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         for (int i = 0; i < rr.size(); ++i)
           assert(std::isfinite(rr[i]));
 #endif
-        move.makeMove(iat);
+        mover.makeMove(iat);
 
-        move.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
+        mover.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
 
         auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
           if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
@@ -187,7 +187,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         for (int iw = 0; iw < num_walkers; ++iw)
           prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
 
-        isAccepted.clear();
+        isAcepted.clear();
 
         for (int iw = 0; iw < num_walkers; ++iw)
         {

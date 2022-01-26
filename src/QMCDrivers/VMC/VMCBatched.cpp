@@ -78,18 +78,18 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  MoveAbstraction<COORDS> move(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
+  MoveAbstraction<COORDS> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
                                num_walkers, sft.population.get_num_particles());
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
     //This generates an entire steps worth of deltas.
-    move.generateDeltas();
+    mover.generateDeltas();
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
     {
-      move.setTauForGroup(sft.qmcdrv_input, sft.population.get_ptclgrp_inv_mass()[ig]);
+      mover.setTauForGroup(sft.qmcdrv_input, sft.population.get_ptclgrp_inv_mass()[ig]);
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
@@ -98,17 +98,17 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       for (int iat = start_index; iat < end_index; ++iat)
       {
         if (use_drift)
-          move.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
+          mover.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
         else
-          move.calcForwardMove(iat);
+          mover.calcForwardMove(iat);
 
-        move.makeMove(iat);
+        mover.makeMove(iat);
 
         // This is inelegant
         if (use_drift)
-          move.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
+          mover.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
         else
-          move.updateGreensFunction(twf_dispatcher, walker_twfs, iat, ratios);
+          mover.updateGreensFunction(twf_dispatcher, walker_twfs, iat, ratios);
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 
