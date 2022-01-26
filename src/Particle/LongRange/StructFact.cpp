@@ -23,10 +23,10 @@
 namespace qmcplusplus
 {
 //Constructor - pass arguments to k_lists_' constructor
-StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, RealType kc)
+StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists)
     : DoUpdate(false),
       SuperCellEnum(SUPERCELL_BULK),
-      k_lists_(std::make_shared<KContainer>()),
+      k_lists_(k_lists),
       num_ptcls(nptcls),
       num_species(ns),
       StorePerParticle(false),
@@ -38,19 +38,11 @@ StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, RealTy
     SuperCellEnum = SUPERCELL_SLAB;
   }
 
-  updateNewCell(lattice, kc);
+  resize(k_lists_.numk);
 }
 
 //Destructor
 StructFact::~StructFact() = default;
-
-void StructFact::updateNewCell(const ParticleLayout& lattice, RealType kc)
-{
-  //Generate the lists of k-vectors
-  k_lists_->updateKLists(lattice, kc);
-  //resize any array
-  resize(k_lists_->numk);
-}
 
 void StructFact::resize(int nkpts)
 {
@@ -98,7 +90,7 @@ void StructFact::computeRhok(const ParticleSet& P)
   rhok_r = 0.0;
   rhok_i = 0.0;
   //algorithmA
-  const int nk = k_lists_->numk;
+  const int nk = k_lists_.numk;
   if (StorePerParticle)
   {
     // save per particle and species value
@@ -112,7 +104,7 @@ void StructFact::computeRhok(const ParticleSet& P)
 #pragma omp simd
       for (int ki = 0; ki < nk; ki++)
       {
-        qmcplusplus::sincos(dot(k_lists_->kpts_cart[ki], pos), &eikr_i_ptr[ki], &eikr_r_ptr[ki]);
+        qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &eikr_i_ptr[ki], &eikr_r_ptr[ki]);
         rhok_r_ptr[ki] += eikr_r_ptr[ki];
         rhok_i_ptr[ki] += eikr_i_ptr[ki];
       }
@@ -131,13 +123,13 @@ void StructFact::computeRhok(const ParticleSet& P)
       for (int ki = 0; ki < nk; ki++)
       {
         RealType s, c;
-        qmcplusplus::sincos(dot(k_lists_->kpts_cart[ki], pos), &s, &c);
+        qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &s, &c);
         rhok_r_ptr[ki] += c;
         rhok_i_ptr[ki] += s;
       }
 #else
       for (int ki = 0; ki < nk; ki++)
-        phiV[ki] = dot(k_lists_->kpts_cart[ki], pos);
+        phiV[ki] = dot(k_lists_.kpts_cart[ki], pos);
       eval_e2iphi(nk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
       for (int ki = 0; ki < nk; ki++)
       {
@@ -155,9 +147,9 @@ void StructFact::computeRhok(const ParticleSet& P)
     RealType s, c; //get sin and cos
     ComplexType* restrict eikr_ref = eikr[i];
     ComplexType* restrict rhok_ref = rhok[P.getGroupID(i)];
-    for (int ki = 0; ki < k_lists_->numk; ki++)
+    for (int ki = 0; ki < k_lists_.numk; ki++)
     {
-      qmcplusplus::sincos(dot(k_lists_->kpts_cart[ki], pos), &s, &c);
+      qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &s, &c);
       eikr_ref[ki] = ComplexType(c, s);
       rhok_ref[ki] += eikr_ref[ki];
     }
@@ -170,13 +162,13 @@ void StructFact::makeMove(int active, const PosType& pos)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
 #pragma omp simd
-  for (int ki = 0; ki < k_lists_->numk; ki++)
-    qmcplusplus::sincos(dot(k_lists_->kpts_cart[ki], pos), &eikr_i_temp[ki], &eikr_r_temp[ki]);
+  for (int ki = 0; ki < k_lists_.numk; ki++)
+    qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &eikr_i_temp[ki], &eikr_r_temp[ki]);
 #else
   RealType s, c; //get sin and cos
-  for (int ki = 0; ki < k_lists_->numk; ++ki)
+  for (int ki = 0; ki < k_lists_.numk; ++ki)
   {
-    qmcplusplus::sincos(dot(k_lists_->kpts_cart[ki], pos), &s, &c);
+    qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &s, &c);
     eikr_temp[ki] = ComplexType(c, s);
   }
 #endif
@@ -191,7 +183,7 @@ void StructFact::acceptMove(int active, int gid, const PosType& rold)
     RealType* restrict eikr_ptr_i = eikr_i[active];
     RealType* restrict rhok_ptr_r(rhok_r[gid]);
     RealType* restrict rhok_ptr_i(rhok_i[gid]);
-    for (int ki = 0; ki < k_lists_->numk; ++ki)
+    for (int ki = 0; ki < k_lists_.numk; ++ki)
     {
       rhok_ptr_r[ki] += (eikr_r_temp[ki] - eikr_ptr_r[ki]);
       rhok_ptr_i[ki] += (eikr_i_temp[ki] - eikr_ptr_i[ki]);
@@ -206,10 +198,10 @@ void StructFact::acceptMove(int active, int gid, const PosType& rold)
 
 // add the new value and subtract the old value
 #pragma omp simd
-    for (int ki = 0; ki < k_lists_->numk; ++ki)
+    for (int ki = 0; ki < k_lists_.numk; ++ki)
     {
       RealType s, c;
-      qmcplusplus::sincos(dot(k_lists_->kpts_cart[ki], rold), &s, &c);
+      qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], rold), &s, &c);
       rhok_ptr_r[ki] += eikr_r_temp[ki] - c;
       rhok_ptr_i[ki] += eikr_i_temp[ki] - s;
     }
@@ -217,7 +209,7 @@ void StructFact::acceptMove(int active, int gid, const PosType& rold)
 #else
   ComplexType* restrict eikr_ptr = eikr[active];
   ComplexType* restrict rhok_ptr(rhok[gid]);
-  for (int ki = 0; ki < k_lists_->numk; ++ki)
+  for (int ki = 0; ki < k_lists_.numk; ++ki)
   {
     rhok_ptr[ki] += (eikr_temp[ki] - eikr_ptr[ki]);
     eikr_ptr[ki] = eikr_temp[ki];
@@ -237,8 +229,8 @@ void StructFact::turnOnStorePerParticle(const ParticleSet& P)
   {
     StorePerParticle = true;
     const int nptcl  = P.getTotalNum();
-    eikr_r.resize(nptcl, k_lists_->numk);
-    eikr_i.resize(nptcl, k_lists_->numk);
+    eikr_r.resize(nptcl, k_lists_.numk);
+    eikr_i.resize(nptcl, k_lists_.numk);
     computeRhok(P);
   }
 #endif

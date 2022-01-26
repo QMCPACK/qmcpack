@@ -46,7 +46,7 @@ public:
       num_elec_in_groups_.push_back(targetPtcl.last(i) - targetPtcl.first(i));
 
     if (SK_enabled)
-      G0mag = std::sqrt(targetPtcl.getSK().getKLists().ksq[0]);
+      G0mag = std::sqrt(targetPtcl.getSimulationCell().getKLists().ksq[0]);
   }
 
   RT computeKEcorr()

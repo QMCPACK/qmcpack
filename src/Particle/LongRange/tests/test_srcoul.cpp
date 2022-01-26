@@ -47,7 +47,7 @@ TEST_CASE("srcoul", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
@@ -89,7 +89,7 @@ TEST_CASE("srcoul df", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 

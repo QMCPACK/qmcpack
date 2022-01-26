@@ -66,7 +66,7 @@ public:
   {
     NumKShells = yk.size();
     Fk         = yk;
-    NumKVecs   = P.getSK().getKLists().kshell[NumKShells + 1];
+    NumKVecs   = P.getSimulationCell().getKLists().kshell[NumKShells + 1];
     Rhok.resize(NumKVecs);
     if (Optimize)
       numParams = NumKShells;
@@ -263,8 +263,8 @@ public:
     copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
       accumulate_elements(P.getSK().rhok[spec1], P.getSK().rhok[spec1] + NumKVecs, Rhok.data());
-    const auto& Kcart(P.getSK().getKLists().kpts_cart);
-    std::vector<int>& kshell(P.getSK().getKLists().kshell);
+    const auto& Kcart(P.getSimulationCell().getKLists().kpts_cart);
+    std::vector<int>& kshell(P.getSimulationCell().getKLists().kshell);
     for (int iel = 0; iel < NumTargets; iel++)
     {
       const ComplexType* restrict eikr_ptr(P.getSK().eikr[iel]);
@@ -301,15 +301,15 @@ public:
     copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumKVecs, Rhok.data());
     for (int spec1 = 1; spec1 < NumGroups; spec1++)
       accumulate_elements(P.getSK().rhok[spec1], P.getSK().rhok[spec1] + NumKVecs, Rhok.data());
-    const auto& Kcart(P.getSK().getKLists().kpts_cart);
-    std::vector<int>& kshell(P.getSK().getKLists().kshell);
+    const auto& Kcart(P.getSimulationCell().getKLists().kpts_cart);
+    std::vector<int>& kshell(P.getSimulationCell().getKLists().kshell);
     GradType fact;
     HessType kakb;
     for (int iel = 0; iel < NumTargets; iel++)
     {
       const ComplexType* restrict eikr_ptr(P.getSK().eikr[iel]);
       const ComplexType* restrict rhok_ptr(Rhok.data());
-      const RealType* restrict ksq_ptr(P.getSK().getKLists().ksq.data());
+      const RealType* restrict ksq_ptr(P.getSimulationCell().getKLists().ksq.data());
       int ki = 0;
       for (int ks = 0; ks < NumKShells; ks++, ksq_ptr++)
       {

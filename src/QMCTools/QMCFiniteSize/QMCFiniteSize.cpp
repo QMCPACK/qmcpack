@@ -359,7 +359,7 @@ void QMCFiniteSize::initialize()
   Vol   = P->getLattice().Volume;
   rs    = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
   rho   = RealType(Ne) / Vol;
-  Klist = P->getSK().getKLists();
+  Klist = P->getSimulationCell().getKLists();
   kpts  = Klist.kpts; //These are in reduced coordinates.
                       //Easier to spline, but will have to convert
                       //for real space integration.

@@ -102,12 +102,12 @@ void CoulombPBCAB_CUDA::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 
 void CoulombPBCAB_CUDA::setupLongRangeGPU()
 {
-  const auto& SK = ElecRef.getSK();
-  Numk           = SK.getKLists().numk;
+  const auto& klists = ElecRef.getSimulationCell().getKLists();
+  Numk               = klists.numk;
   gpu::host_vector<CUDA_PRECISION_FULL> kpointsHost(OHMMS_DIM * Numk);
   for (int ik = 0; ik < Numk; ik++)
     for (int dim = 0; dim < OHMMS_DIM; dim++)
-      kpointsHost[ik * OHMMS_DIM + dim] = SK.getKLists().kpts_cart[ik][dim];
+      kpointsHost[ik * OHMMS_DIM + dim] = klists.kpts_cart[ik][dim];
   kpointsGPU = kpointsHost;
   gpu::host_vector<CUDA_PRECISION_FULL> FkHost(Numk);
   for (int ik = 0; ik < Numk; ik++)
@@ -120,7 +120,7 @@ void CoulombPBCAB_CUDA::setupLongRangeGPU()
   {
     for (int ik = 0; ik < Numk; ik++)
     {
-      PosType k                 = SK.getKLists().kpts_cart[ik];
+      PosType k                 = klists.kpts_cart[ik];
       RhokIons_host[2 * ik + 0] = 0.0;
       RhokIons_host[2 * ik + 1] = 0.0;
       for (int ion = IonFirst[sp]; ion <= IonLast[sp]; ion++)
