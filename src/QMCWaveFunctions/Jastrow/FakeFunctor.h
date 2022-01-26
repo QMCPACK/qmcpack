@@ -27,9 +27,9 @@ template<class T>
 struct FakeFunctor : public OptimizableFunctorBase
 {
   ///default constructor
-  FakeFunctor() { }
+  FakeFunctor() {}
 
-  void setCusp(real_type cusp) override { }
+  void setCusp(real_type cusp) override {}
 
   OptimizableFunctorBase* makeClone() const override { return new FakeFunctor(*this); }
 
@@ -40,14 +40,14 @@ struct FakeFunctor : public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
-    dudr = 0.0;
+    dudr   = 0.0;
     d2udr2 = 0.0;
     return 0.0;
   }
 
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
   {
-    dudr = 0.0;
+    dudr   = 0.0;
     d2udr2 = 0.0;
     d3udr3 = 0.0;
     return 0.0;
@@ -73,8 +73,7 @@ struct FakeFunctor : public OptimizableFunctorBase
                            const int dist_stride,
                            T* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-  }
+  {}
 
   inline void evaluateVGL(const int iat,
                           const int iStart,
@@ -85,8 +84,7 @@ struct FakeFunctor : public OptimizableFunctorBase
                           T* restrict laplArray,
                           T* restrict distArrayCompressed,
                           int* restrict distIndices) const
-  {
-  }
+  {}
 
   static void mw_evaluateVGL(const int iat,
                              const int num_groups,
@@ -99,15 +97,11 @@ struct FakeFunctor : public OptimizableFunctorBase
                              const T* mw_dist, // [nw][DIM+1][n_padded]
                              T* mw_cur_allu,   // [nw][3][n_padded]
                              Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-  }
+  {}
 
   inline real_type f(real_type r) override { return evaluate(r); }
 
-  inline real_type df(real_type r) override
-  {
-    return 0.0;
-  }
+  inline real_type df(real_type r) override { return 0.0; }
 
   static void mw_updateVGL(const int iat,
                            const std::vector<bool>& isAccepted,
@@ -122,8 +116,7 @@ struct FakeFunctor : public OptimizableFunctorBase
                            T* mw_allUat,     // [nw][DIM+2][n_padded]
                            T* mw_cur_allu,   // [nw][3][n_padded]
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-  }
+  {}
 
   inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs) override
   {
@@ -135,32 +128,19 @@ struct FakeFunctor : public OptimizableFunctorBase
   // inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
 
   /// compute derivatives with respect to variational parameters
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
-  {
-    return true;
-  }
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) { return true; }
 
-  bool put(xmlNodePtr cur) override
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) override { return true; }
 
 
-  void checkInVariables(opt_variables_type& active) override
-  {
-  }
+  void checkInVariables(opt_variables_type& active) override {}
 
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-  }
+  void checkOutVariables(const opt_variables_type& active) override {}
 
-  void resetParameters(const opt_variables_type& active) override
-  {
-  }
+  void resetParameters(const opt_variables_type& active) override {}
 
 
   std::vector<TinyVector<real_type, 3>> derivs_;
-
 };
 
 

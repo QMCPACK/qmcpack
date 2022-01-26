@@ -252,14 +252,15 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
     if (recalculate)
     {
-      const auto& d_table = P.getDistTableAB(myTableID);
-      dLogPsi             = 0.0;
       const size_t NumVars = myVars.size();
       for (int p = 0; p < NumVars; ++p)
       {
         gradLogPsi[p] = 0.0;
-        lapLogPsi[p] = 0.0;
+        lapLogPsi[p]  = 0.0;
       }
+      dLogPsi = 0.0;
+
+      const auto& d_table = P.getDistTableAB(myTableID);
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
 
       constexpr RealType cone(1);
