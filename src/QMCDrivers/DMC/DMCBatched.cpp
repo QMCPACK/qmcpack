@@ -61,12 +61,12 @@ void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
-template<class CFS>
+template<class MCCOORDS>
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
                                 DMCTimers& dmc_timers,
-                                CFS& step_context,
+                                ContextForSteps& step_context,
                                 bool recompute,
                                 bool accumulate_this_step)
 {
@@ -105,13 +105,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers = crowd.size();
 
   //This generates an entire steps worth of deltas.
-  step_context.nextDeltas(num_walkers * sft.population.get_num_particles());
-  auto it_delta_r = step_context.deltasBegin().irs;
+  std::size_t num_deltas = num_walkers * sft.population.get_num_particles();
 
   std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, TrialWaveFunction::GradType(0.0));
   std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, TrialWaveFunction::GradType(0.0));
   std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
-  std::vector<PosType> drifts(num_walkers, 0.0);
+  auto deltas = generateDeltas<MCCOORDS>(step_context.get_random_gen(), num_deltas);
+
   std::vector<RealType> log_gf(num_walkers, 0.0);
   std::vector<RealType> log_gb(num_walkers, 0.0);
   std::vector<RealType> prob(num_walkers, 0.0);
@@ -132,18 +132,28 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
     {
-      RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
-      RealType oneover2tau = 0.5 / (tauovermass);
-      RealType sqrttau     = std::sqrt(tauovermass);
+      auto createTaus = [&](int ig) -> Taus<RealType, MCCOORDS::mct> {
+        if constexpr (std::is_same<MCCOORDS, MCCoords<MCCoordsTypes::RSSPINS>>::value)
+        return Taus<RealType, MCCOORDS::mct>(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+                                      sft.qmcdrv_input.get_spin_mass());
+        else
+          return Taus<RealType, MCCOORDS::mct>(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig]);
+      };
+
+      Taus<RealType, MCCOORDS::mct> taus = createTaus(ig);
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
-      int start_index = step_context.getPtclGroupStart(ig);
-      int end_index   = step_context.getPtclGroupEnd(ig);
+      int start_index          = step_context.getPtclGroupStart(ig);
+      int end_index            = step_context.getPtclGroupEnd(ig);
+      std::size_t delta_offset = 0;
+      // end_index is one beyond last index to the group
+      MCCOORDS drifts;
+      drifts.resize(end_index - start_index - 1);
       for (int iat = start_index; iat < end_index; ++iat)
       {
-        auto delta_r_start = it_delta_r + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
+        auto delta_start = delta_offset + iat * num_walkers;
+        auto delta_end   = delta_start + num_walkers;
 
         //This is very useful thing to be able to look at in the debugger
 #ifndef NDEBUG
@@ -156,17 +166,22 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
         //get the displacement
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
+        sft.drift_modifier.getDrifts(taus.tauovermass, grads_now, drifts);
 
-        std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
-                       [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
+
+        // std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
+        //                [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
 
         // only DMC does this
         // TODO: rr needs a real name
         std::vector<RealType> rr(num_walkers, 0.0);
-        assert(rr.size() == delta_r_end - delta_r_start);
-        std::transform(delta_r_start, delta_r_end, rr.begin(),
-                       [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
+        assert(rr.size() == delta_end - delta_start - 1);
+        for(std::size_t ip = delta_start; ip < delta_end; ++ip)
+        {
+          rr[ip] = taus.tauovermass * dot(deltas.rs[ip], deltas.rs[ip]);
+        }
+        //std::transform(delta_start, delta_end, rr.begin(),
+        //                [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -178,7 +193,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         for (int i = 0; i < rr.size(); ++i)
           assert(std::isfinite(rr[i]));
 #endif
-        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts.rs);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
@@ -198,20 +213,25 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           rr_proposed[iw] += rr[iw];
         }
 
-        std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
+        for(std::size_t ip = delta_start; ip < delta_end; ++ip)
+        {
           constexpr RealType mhalf(-0.5);
-          return mhalf * dot(delta_r, delta_r);
-        });
+          log_gf[ip] = mhalf * dot(deltas.rs[ip], deltas.rs[ip]);
+        }
+        // std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
+        //   constexpr RealType mhalf(-0.5);
+        //   return mhalf * dot(delta_r, delta_r);
+        // });
 
-        sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
+        sft.drift_modifier.getDrifts(taus.tauovermass, grads_new, drifts);
 
-        std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
+        std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.rs.begin(), drifts.rs.begin(),
                        [iat](auto& elecs, auto& drift) {
                          return elecs.get().R[iat] - elecs.get().getActivePos() - drift;
                        });
 
-        std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
-                       [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
+        std::transform(drifts.rs.begin(), drifts.rs.end(), log_gb.begin(),
+                       [taus](auto& drift) { return -taus.oneover2tau * dot(drift, drift); });
 
         for (int iw = 0; iw < num_walkers; ++iw)
           prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
@@ -328,12 +348,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 }
 
-template<class CONTEXTSFORSTEPS>
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
                             DMCTimers& dmc_timers,
-                            CONTEXTSFORSTEPS& context_for_steps,
+                            UPtrVector<ContextForSteps>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
@@ -349,7 +368,11 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == max_steps);
   const bool accumulate_this_step = true;
-  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
+  if(sft.population.get_golden_electrons()->isSpinor())
+    advanceWalkers<MCCoords<MCCoordsTypes::RSSPINS>>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
+                 accumulate_this_step);
+  else
+    advanceWalkers<MCCoords<MCCoordsTypes::RS>>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
                  accumulate_this_step);
 }
 
@@ -403,12 +426,6 @@ void DMCBatched::process(xmlNodePtr node)
 
 bool DMCBatched::run()
 {
-  return std::visit([&](auto& var) -> bool { return this->run_impl(var); }, step_contexts_);
-}
-
-template<class CONTEXTSFORSTEPS>
-bool DMCBatched::run_impl(CONTEXTSFORSTEPS& step_contexts)
-{
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->startDriverRun();
@@ -421,8 +438,7 @@ bool DMCBatched::run_impl(CONTEXTSFORSTEPS& step_contexts)
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    if (step_contexts_.index() == 1)
-      section_start_task(crowds_.size(), initialLogEvaluation<CONTEXTSFORSTEPS>, std::ref(crowds_), step_contexts);
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), step_contexts_);
   }
 
   print_mem("DMCBatched after initialLogEvaluation", app_summary());
@@ -456,7 +472,7 @@ bool DMCBatched::run_impl(CONTEXTSFORSTEPS& step_contexts)
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
       dmc_state.step = step;
-      crowd_task(crowds_.size(), runDMCStep<CONTEXTSFORSTEPS>, dmc_state, timers_, dmc_timers_, step_contexts,
+      crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, step_contexts_,
                  std::ref(crowds_));
 
       {
@@ -496,8 +512,5 @@ bool DMCBatched::run_impl(CONTEXTSFORSTEPS& step_contexts)
 
   return finalize(num_blocks, true);
 }
-
-template bool DMCBatched::run_impl<QMCDriverNew::SpinSymContexts>(QMCDriverNew::SpinSymContexts& ssc);
-template bool DMCBatched::run_impl<QMCDriverNew::SpinorContexts>(QMCDriverNew::SpinorContexts& ssc);
 
 } // namespace qmcplusplus

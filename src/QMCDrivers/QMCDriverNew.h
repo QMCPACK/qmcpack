@@ -75,11 +75,6 @@ public:
   using RealType         = QMCTraits::RealType;
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using SpinorContext = UPtr<ContextForSteps<MCCoordsTypes::RSSPINS>>;
-  using SpinSymContext = UPtr<ContextForSteps<MCCoordsTypes::RS>>;
-  using SpinorContexts = std::vector<SpinorContext>;
-  using SpinSymContexts = std::vector<SpinSymContext>;  
-  using ContextsForStepsVar = std::variant<SpinorContexts, SpinSymContexts>;
   
   /** separate but similar to QMCModeEnum
    *  
@@ -183,7 +178,7 @@ public:
 
   void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
-  void createRngsStepContexts(int num_crowds, bool spinor_coords);
+  void createRngsStepContexts(int num_crowds);
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
@@ -234,8 +229,7 @@ public:
    */
   void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
-  template<class CONTEXTSFORSTEPS>
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, CONTEXTSFORSTEPS& step_context);
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_contexts);
 
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
@@ -387,7 +381,7 @@ protected:
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
-  ContextsForStepsVar step_contexts_;
+  UPtrVector<ContextForSteps> step_contexts_;
 
   ///Random number generators
   UPtrVector<RandomGenerator> Rng;
@@ -436,9 +430,6 @@ private:
   friend class qmcplusplus::testing::DMCBatchedTest;
   friend class qmcplusplus::testing::QMCDriverNewTestWrapper;
 };
-
-extern template void QMCDriverNew::initialLogEvaluation<QMCDriverNew::SpinorContexts>(int crowd_id, UPtrVector<Crowd>& crowds, SpinorContexts& step_contexts);
-extern template void QMCDriverNew::initialLogEvaluation<QMCDriverNew::SpinSymContexts>(int crowd_id, UPtrVector<Crowd>& crowds, SpinSymContexts& step_contexts);
 
 } // namespace qmcplusplus
 

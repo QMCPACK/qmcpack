@@ -49,6 +49,7 @@ set(QMCDRIVERS
     QMCUpdateBase.cpp
     GreenFunctionModifiers/DriftModifierBuilder.cpp
     GreenFunctionModifiers/DriftModifierUNR.cpp
+    MCCoords.cpp
     VMC/VMCUpdatePbyP.cpp
     VMC/VMCUpdateAll.cpp
     VMC/VMCFactory.cpp

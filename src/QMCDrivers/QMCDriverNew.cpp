@@ -159,7 +159,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
   population_.redistributeWalkers(crowds_);
 
   // Once they are created move contexts can be created.
-  createRngsStepContexts(crowds_.size(), population_.get_golden_electrons()->isSpinor());
+  createRngsStepContexts(crowds_.size());
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
@@ -279,15 +279,9 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
  *  This is used instead of actually passing number of threads/crowds
  *  controlling threads all over RandomNumberControl.
  */
-void QMCDriverNew::createRngsStepContexts(int num_crowds, bool spin_coords)
+void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
-  if (spin_coords)
-    step_contexts_ = std::vector<UPtr<ContextForSteps<MCCoordsTypes::RSSPINS>>>{};
-  else
-    step_contexts_ = std::vector<UPtr<ContextForSteps<MCCoordsTypes::RS>>>{};
-
-  std::visit([num_crowds](auto& step_con) { step_con.resize(num_crowds); }, step_contexts_);
-
+  step_contexts_.resize(num_crowds);
   Rng.resize(num_crowds);
 
   if (RandomNumberControl::Children.size() == 0)
@@ -300,21 +294,19 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds, bool spin_coords)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    std::visit([&](auto& step_contexts) {
-                 step_contexts[i] = std::make_unique<typename std::decay<decltype(step_contexts)>::type::value_type::element_type>(crowds_[i]->size(), population_.get_num_particles(), population_.get_particle_group_indexes(), *(Rng[i]));}, step_contexts_);
+    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(), population_.get_particle_group_indexes(), *(Rng[i]));
   }
 }
 
-template<class CONTEXTSFORSTEPS>
 void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<Crowd>& crowds,
-                                        CONTEXTSFORSTEPS& context_for_steps)
+                                        UPtrVector<ContextForSteps>& step_contexts)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   if (crowd.size() == 0)
     return;
 
-  crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  crowd.setRNGForHamiltonian(step_contexts[crowd_id]->get_random_gen());
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
@@ -579,8 +571,5 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   if (!success)
     throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
-
-template void QMCDriverNew::initialLogEvaluation<QMCDriverNew::SpinorContexts>(int crowd_id, UPtrVector<Crowd>& crowds, SpinorContexts& step_contexts);
-template void QMCDriverNew::initialLogEvaluation<QMCDriverNew::SpinSymContexts>(int crowd_id, UPtrVector<Crowd>& crowds, SpinSymContexts& step_contexts);
 
 } // namespace qmcplusplus

@@ -82,11 +82,19 @@ void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet
 #endif
 }
 
-void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>& drift) const
+void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, MCCoords<MCCoordsTypes::RS>& drift) const
 {
   for (int i = 0; i < qf.size(); ++i)
   {
-    getDrift(tau, qf[i], drift[i]);
+    getDrift(tau, qf[i], drift.rs[i]);
+  }
+}
+
+void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, MCCoords<MCCoordsTypes::RSSPINS>& drift) const
+{
+  for (int i = 0; i < qf.size(); ++i)
+  {
+    getDrift(tau, qf[i], drift.rs[i]);
   }
 }
 

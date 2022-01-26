@@ -50,6 +50,7 @@ public:
     const VMCDriverInput& vmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
+    const MCCoordsTypes mc_coord_type;
     IndexType recalculate_properties_period;
     IndexType step            = -1;
     bool is_recomputing_block = false;
@@ -58,7 +59,7 @@ public:
                    const VMCDriverInput& vmci,
                    DriftModifierBase& drift_mod,
                    MCPopulation& pop)
-        : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
+      : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop), mc_coord_type(population.get_golden_electrons()->isSpinor() ? MCCoordsTypes::RSSPINS : MCCoordsTypes::RS)
     {}
   };
 
@@ -75,29 +76,26 @@ public:
 
   bool run() override;
 
-  template<class CFS>
-  bool run_impl(CFS& cfs);
   /** Refactor of VMCUpdatePbyP in crowd context
    *
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
-  template<class CFS>
+  template<class MCOORDS>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-                             CFS& move_context,
+                             ContextForSteps& move_context,
                              bool recompute,
                              bool accumulate_this_step);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
-  template<class CFS>
   static void runVMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         CFS& context_for_steps,
-                         std::vector<std::unique_ptr<Crowd>>& crowds);
+                         UPtrVector<ContextForSteps>& context_for_steps,
+                         UPtrVector<Crowd>& crowds);
 
   /** transitional interface on the way to better walker count adjustment handling.
    *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
@@ -125,7 +123,6 @@ private:
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
 
-
   /// Storage for samples (later used in optimizer)
   SampleStack& samples_;
   /// Sample collection flag
@@ -138,9 +135,6 @@ private:
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);
-
-extern template bool VMCBatched::run_impl<QMCDriverNew::SpinSymContexts>(QMCDriverNew::SpinSymContexts& ssc);
-extern template bool VMCBatched::run_impl<QMCDriverNew::SpinorContexts>(QMCDriverNew::SpinorContexts& ssc);
 
 } // namespace qmcplusplus
 

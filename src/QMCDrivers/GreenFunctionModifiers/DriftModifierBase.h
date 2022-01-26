@@ -17,10 +17,13 @@
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "MCCoords.hpp"
 
 namespace qmcplusplus
 {
-/// this class implements drift modification
+/** this class implements drift modification
+ *  its a completely pointless type erasue.
+ */
 class DriftModifierBase
 {
 public:
@@ -38,7 +41,8 @@ public:
 
   virtual void getDrift(RealType tau, const ComplexType& qf, ParticleSet::Scalar_t& drift) const = 0;
 
-  virtual void getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>&) const = 0;
+  virtual void getDrifts(RealType tau, const std::vector<GradType>& qf, MCCoords<MCCoordsTypes::RS>&) const      = 0;
+  virtual void getDrifts(RealType tau, const std::vector<GradType>& qf, MCCoords<MCCoordsTypes::RSSPINS>&) const = 0;
 
   virtual bool parseXML(xmlNodePtr cur) { return true; }
 
