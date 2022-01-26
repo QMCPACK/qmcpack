@@ -99,8 +99,8 @@ void RPAJastrow::buildOrbital(const std::string& name,
       Rs = 100.0;
     }
   }
-  int indx      = targetPtcl.getSK().getKLists().ksq.size() - 1;
-  double Kc_max = std::pow(targetPtcl.getSK().getKLists().ksq[indx], 0.5);
+  int indx      = targetPtcl.getSimulationCell().getKLists().ksq.size() - 1;
+  double Kc_max = std::pow(targetPtcl.getSimulationCell().getKLists().ksq[indx], 0.5);
   if (Kc < 0)
   {
     Kc = 2.0 * std::pow(2.25 * M_PI, 1.0 / 3.0) / tlen;

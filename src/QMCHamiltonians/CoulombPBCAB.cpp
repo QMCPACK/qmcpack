@@ -181,10 +181,10 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         for (int s = 0; s < NumSpeciesA; s++)
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Zspec[s] * q *
-              AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i],
+              AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i],
                            RhoKB.eikr_i[i]);
 #else
-          v1 += Zspec[s] * q * AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
+          v1 += Zspec[s] * q * AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
 #endif
         Ve_samp(i) += v1;
         Vlr += v1;
@@ -196,10 +196,10 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         for (int s = 0; s < NumSpeciesB; s++)
 #if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Qspec[s] * q *
-              AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
+              AB->evaluate(P.getSimulationCell().getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
                            RhoKA.eikr_i[i]);
 #else
-          v1 += Qspec[s] * q * AB->evaluate(RhoKB.getKLists().kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
+          v1 += Qspec[s] * q * AB->evaluate(P.getSimulationCell().getKLists().kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
 #endif
         Vi_samp(i) += v1;
         Vlr += v1;
@@ -334,7 +334,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
       const int slab_dir = OHMMS_DIM - 1;
       for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
         u += Qat[jat] *
-            AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
+            AB->evaluate_slab(d_ab.dr(nn)[slab_dir], PtclA.getSimulationCell().getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
 #endif
       res += Zat[iat] * u;
     }
@@ -348,9 +348,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
         esum += Qspec[j] *
-            AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
+            AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
 #else
-        esum += Qspec[j] * AB->evaluate(RhoKA.getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
+        esum += Qspec[j] * AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
 #endif
       } //speceln
       res += Zspec[i] * esum;

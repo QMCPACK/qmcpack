@@ -39,7 +39,7 @@ void ParticleSet::createSK()
   if (Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
     app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-    structure_factor_ = std::make_unique<StructFact>(my_species_.size(), TotalNum, LRBox, LRBox.LR_kc);
+    structure_factor_ = std::make_unique<StructFact>(my_species_.size(), TotalNum, LRBox, simulation_cell_.getKLists());
   }
 
   //set the mass array

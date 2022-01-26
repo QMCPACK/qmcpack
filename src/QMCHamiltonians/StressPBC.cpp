@@ -106,10 +106,10 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     {
 #if defined(USE_REAL_STRUCT_FACTOR)
       esum += Qspec[j] *
-          AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j],
+          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j],
                              RhoKB.rhok_i[j]);
 #else
-      esum += Qspec[j] * AA->evaluateStress(RhoKA.getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
+      esum += Qspec[j] * AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
 
 #endif
     }
@@ -184,10 +184,10 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
     {
 #if !defined(USE_REAL_STRUCT_FACTOR)
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(PtclRhoK.getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
 #else
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(PtclRhoK.getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
+          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                              PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
 #endif
       if (spec2 == spec1)

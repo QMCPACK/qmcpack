@@ -73,7 +73,7 @@ public:
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLRBox())
   {
     myFunc.reset(ref);
-    fillFk(ref.getSK().getKLists());
+    fillFk(ref.getSimulationCell().getKLists());
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -84,7 +84,7 @@ public:
   void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.getLRBox(), 1);
-    fillFk(ref.getSK().getKLists());
+    fillFk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -94,7 +94,7 @@ public:
     rs = rs_ext;
     myFunc.reset(ref, rs);
     InitBreakup(ref.getLRBox(), 1);
-    fillFk(ref.getSK().getKLists());
+    fillFk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 

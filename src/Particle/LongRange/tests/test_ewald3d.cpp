@@ -36,7 +36,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
   REQUIRE(Lattice.LR_kc == Approx(12));
 
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   EwaldHandler3D handler(ref, Lattice.LR_kc);
 
@@ -83,7 +83,7 @@ TEST_CASE("ewald3d df", "[lrhandler]")
   REQUIRE(Lattice.LR_kc == Approx(12));
 
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   EwaldHandler3D handler(ref, Lattice.LR_kc);
 
