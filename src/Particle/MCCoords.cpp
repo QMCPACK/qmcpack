@@ -19,6 +19,6 @@ void MCCoords<MCT>::resize(const std::size_t size)
   positions.resize(size);
 }
 
-template struct MCCoords<CoordsType::RS>;
-template struct MCCoords<CoordsType::RSSPINS>;
+template struct MCCoords<CoordsType::POS>;
+template struct MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus

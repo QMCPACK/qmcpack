@@ -137,14 +137,14 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
                                   gauss_random_vals[3 * i + 2]) == rs[i]);
   };
 
-  MCCoords<CoordsType::RS> mc_coords_rs;
+  MCCoords<CoordsType::POS> mc_coords_rs;
   mc_coords_rs.resize(size_test);
   {
     StdRandom<double> rng;
     makeGaussRandomWithEngine(mc_coords_rs, rng);
     checkRs(mc_coords_rs.positions);
   }
-  MCCoords<CoordsType::RSSPINS> mc_coords_rsspins;
+  MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins;
   mc_coords_rsspins.resize(size_test);
   {
     StdRandom<double> rng;

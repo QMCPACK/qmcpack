@@ -21,14 +21,14 @@ namespace qmcplusplus
 TEST_CASE("MCCoords", "[Particle]")
 {
   {
-    constexpr auto mct = CoordsType::RS;
+    constexpr auto mct = CoordsType::POS;
     auto mc_coords     = MCCoords<mct>();
     REQUIRE(mc_coords.positions.size() == 0);
     mc_coords.resize(3);
     REQUIRE(mc_coords.positions.size() == 3);
   }
   {
-    constexpr auto mct = CoordsType::RSSPINS;
+    constexpr auto mct = CoordsType::POS_SPIN;
     auto mc_coords     = MCCoords<mct>();
     REQUIRE(mc_coords.spins.size() == 0);
     mc_coords.resize(3);
@@ -39,14 +39,14 @@ TEST_CASE("MCCoords", "[Particle]")
 
 TEST_CASE("Taus", "[Particle]")
 {
-  MCCoords<CoordsType::RS> mc_coords_rs;
+  MCCoords<CoordsType::POS> mc_coords_rs;
   auto tau     = 1.0;
   auto invmass = 0.2;
   auto taus_rs{makeTaus(mc_coords_rs, tau, invmass)};
   CHECK(taus_rs.tauovermass == 0.2);
   CHECK(taus_rs.oneover2tau == 2.5);
   CHECK(taus_rs.sqrttau == 0.447213595499957927703605);
-  MCCoords<CoordsType::RSSPINS> mc_coords_rsspins;
+  MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins;
   auto spin_mass    = 0.5;
   auto taus_rsspins = makeTaus(mc_coords_rsspins, tau, invmass, spin_mass);
   CHECK(taus_rsspins.spin_tauovermass == 0.4);
