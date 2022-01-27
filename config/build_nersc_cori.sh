@@ -17,7 +17,7 @@ export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load boost/1.70.0
 module load cray-hdf5-parallel
-module load cmake/3.14.4
+module load cmake
 module load gcc/7.3.0 # Make C++ 14 standard library available to the Intel compiler
 module list
 
