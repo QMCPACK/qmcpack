@@ -104,7 +104,7 @@ TEST_CASE("gaussian random input zero", "[particle_base]")
   REQUIRE(a[1] == Approx(0.0));
 }
 
-TEST_CASE("makeGaussianRandomWithEngine(std::vector<T>)", "[particle_base]")
+TEST_CASE("makeGaussianRandomWithEngine(std::vector<T>...)", "[particle_base]")
 {
   int size_test = 7;
   std::vector<double> gaussian_random_vals(14);
@@ -120,5 +120,42 @@ TEST_CASE("makeGaussianRandomWithEngine(std::vector<T>)", "[particle_base]")
   for (int i = 0; i < size_test; ++i)
     CHECK(random_complex[i] == std::complex<double>{gaussian_random_vals[2*i], gaussian_random_vals[2*i+1]}); 
 }
+
+TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[QMCDrivers]")
+{
+  int size_test = 7;
+  std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test );
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(gauss_random_vals, rng);
+  }
+
+  auto checkRs = [&](auto& rs) {
+    for (int i = 0; i < size_test; ++i)
+      CHECK(TinyVector<double, 3>(gauss_random_vals[3 * i], gauss_random_vals[3 * i + 1],
+                                  gauss_random_vals[3 * i + 2]) == rs[i]);
+  };
+
+  MCCoords<CoordsTypes::RS> mc_coords_rs;
+  mc_coords_rs.resize(size_test);
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(mc_coords_rs, rng);
+    checkRs(mc_coords_rs.positions);
+  }
+  MCCoords<CoordsTypes::RSSPINS> mc_coords_rsspins;
+  mc_coords_rsspins.resize(size_test);
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(mc_coords_rsspins, rng);
+    checkRs(mc_coords_rsspins.positions);
+    // Mod 2 is result of how gaussianDistribution is generated.
+    int offset_for_rs = ( 3 * size_test ) + (3* size_test) % 2;
+    for (int i = 0; i < size_test; ++i)
+      CHECK(typename decltype(mc_coords_rsspins.spins)::value_type{gauss_random_vals[offset_for_rs + i]} ==
+            mc_coords_rsspins.spins[i]);
+  }
+}
+
 
 } // namespace qmcplusplus
