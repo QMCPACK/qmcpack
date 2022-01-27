@@ -14,59 +14,58 @@
 
 #include "Configuration.h"
 #include "type_traits/complex_help.hpp"
-#include "ParticleBase/RandomSeqGenerator.h"
 
 #include <vector>
 
 namespace qmcplusplus
 {
 
-enum class MCCoordsTypes
+enum class CoordsTypes
 {
   RS,
   RSSPINS
 };
 
-template<MCCoordsTypes MCT = MCCoordsTypes::RS>
+template<CoordsTypes MCT = CoordsTypes::RS>
 struct MCCoords
 {
-  static constexpr MCCoordsTypes mct = MCT;
+  static constexpr CoordsTypes mct = MCT;
   // This cleans up some other code.
   void resize(const std::size_t size);
-  std::vector<QMCTraits::PosType> rs;
+  std::vector<QMCTraits::PosType> positions;
 };
 
 template<>
-struct MCCoords<MCCoordsTypes::RSSPINS>
+struct MCCoords<CoordsTypes::RSSPINS>
 {
-  static constexpr MCCoordsTypes mct = MCCoordsTypes::RSSPINS;
+  static constexpr CoordsTypes mct = CoordsTypes::RSSPINS;
   // This cleans up some other code.
   void resize(const std::size_t size)
   {
-    rs.resize(size);
+    positions.resize(size);
     spins.resize(size);
   }
-  std::vector<QMCTraits::PosType> rs;
+  std::vector<QMCTraits::PosType> positions;
   std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
-template<MCCoordsTypes CT = MCCoordsTypes::RS>
+template<CoordsTypes CT = CoordsTypes::RS>
 struct MCCIt
 {
-  std::vector<QMCTraits::PosType>::iterator irs;
+  std::vector<QMCTraits::PosType>::iterator it_positions;
 };
 
 template<>
-struct MCCIt<MCCoordsTypes::RSSPINS>
+struct MCCIt<CoordsTypes::RSSPINS>
 {
-  std::vector<QMCTraits::PosType>::iterator irs;
-  std::vector<std::complex<QMCTraits::RealType>>::iterator spins;
+  std::vector<QMCTraits::PosType>::iterator it_positions;
+  std::vector<std::complex<QMCTraits::RealType>>::iterator it_spins;
 };
 
 /** Object to encapsulate appropriate tau derived values
  *  for a particular MCCoords specialization
  */
-template<typename Real, MCCoordsTypes CT = MCCoordsTypes::RS>
+template<typename Real, CoordsTypes CT = CoordsTypes::RS>
 struct Taus
 {
   Real tauovermass;
@@ -81,9 +80,9 @@ struct Taus
 };
 
 template<typename Real>
-struct Taus<Real, MCCoordsTypes::RSSPINS> : public Taus<Real, MCCoordsTypes::RS>
+struct Taus<Real, CoordsTypes::RSSPINS> : public Taus<Real, CoordsTypes::RS>
 {
-  using Base = Taus<Real, MCCoordsTypes::RS>;
+  using Base = Taus<Real, CoordsTypes::RS>;
   Real spin_tauovermass;
   Real spin_oneover2tau;
   Real spin_sqrttau;
@@ -97,33 +96,22 @@ struct Taus<Real, MCCoordsTypes::RSSPINS> : public Taus<Real, MCCoordsTypes::RS>
 
 /** This is just one possible factory for Taus based on MCCoordsTypes
  */
-template<class MCCOORDS, typename... ARGS>
-auto makeTaus(MCCOORDS& mc_coords, const ARGS&... args)
+template<CoordsTypes CT, typename... ARGS>
+auto makeTaus(MCCoords<CT>& mc_coords, const ARGS&... args)
 {
   using Real = double;
-  constexpr MCCoordsTypes mct{std::decay_t<decltype(mc_coords)>::mct};
-  if constexpr (mct == MCCoordsTypes::RS)
+  if constexpr (CT == CoordsTypes::RS)
   {
-    return Taus<Real, mct>(args...);
+    return Taus<Real, CT>(args...);
   }
-  else if constexpr (mct == MCCoordsTypes::RSSPINS)
+  else if constexpr (CT == CoordsTypes::RSSPINS)
   {
-    return Taus<Real, mct>(args...);
-  }
-}
-
-template<class MCC, class RNG>
-void generateDeltas(RNG rng, MCC& deltas)
-{
-  makeGaussRandomWithEngine(deltas.rs, rng);
-  if constexpr (std::is_same<MCC, MCCoords<MCCoordsTypes::RSSPINS>>::value)
-  {
-    makeGaussRandomWithEngine(deltas.spins, rng);
+    return Taus<Real, CT>(args...);
   }
 }
 
-extern template struct MCCoords<MCCoordsTypes::RS>;
-extern template struct MCCoords<MCCoordsTypes::RSSPINS>;
+extern template struct MCCoords<CoordsTypes::RS>;
+extern template struct MCCoords<CoordsTypes::RSSPINS>;
 } // namespace qmcplusplus
 
 #endif

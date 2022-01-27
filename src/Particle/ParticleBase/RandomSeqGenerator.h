@@ -17,6 +17,7 @@
 #include <algorithm>
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
+#include "Particle/MCCoords.hpp"
 #include "config/stdlib/Constants.h"
 #include "type_traits/complex_help.hpp"
 
@@ -90,6 +91,16 @@ inline void makeGaussRandomWithEngine(std::vector<TinyVector<T, D>>& a, RG& rng)
   assignGaussRand(&(a[0][0]), a.size() * D, rng);
 }
 
+template<CoordsTypes CT, class RG>
+inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
+{
+  makeGaussRandomWithEngine(a.positions, rng);
+  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsTypes::RSSPINS>>::value)
+  {
+    makeGaussRandomWithEngine(a.spins, rng);
+  }
+}
+  
 template<typename T, class RG, IsReal<T> = true>
 inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
 {
@@ -107,7 +118,7 @@ inline void makeGaussRandomWithEngine(ParticleAttrib<T>& a, RG& rng)
 {
   assignGaussRand(&(a[0]), a.size(), rng);
 }
-
+  
 } // namespace qmcplusplus
 
 

@@ -13,6 +13,7 @@
 #include "MCCoords.hpp"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/StdRandom.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus
 {
@@ -21,32 +22,32 @@ namespace qmcplusplus
 TEST_CASE("MCCoords", "[QMCDrivers]")
 {
   {
-    constexpr auto mct = MCCoordsTypes::RS;
+    constexpr auto mct = CoordsTypes::RS;
     auto mc_coords     = MCCoords<mct>();
-    REQUIRE(mc_coords.rs.size() == 0);
+    REQUIRE(mc_coords.positions.size() == 0);
     mc_coords.resize(3);
-    REQUIRE(mc_coords.rs.size() == 3);
+    REQUIRE(mc_coords.positions.size() == 3);
   }
   {
-    constexpr auto mct = MCCoordsTypes::RSSPINS;
+    constexpr auto mct = CoordsTypes::RSSPINS;
     auto mc_coords     = MCCoords<mct>();
     REQUIRE(mc_coords.spins.size() == 0);
     mc_coords.resize(3);
-    REQUIRE(mc_coords.rs.size() == 3);
+    REQUIRE(mc_coords.positions.size() == 3);
     REQUIRE(mc_coords.spins.size() == 3);
   }
 }
 
 TEST_CASE("Taus", "[QMCDrivers]")
 {
-  MCCoords<MCCoordsTypes::RS> mc_coords_rs;
+  MCCoords<CoordsTypes::RS> mc_coords_rs;
   auto tau     = 1.0;
   auto invmass = 0.2;
   auto taus_rs{makeTaus(mc_coords_rs, tau, invmass)};
   CHECK(taus_rs.tauovermass == 0.2);
   CHECK(taus_rs.oneover2tau == 2.5);
   CHECK(taus_rs.sqrttau == 0.447213595499957927703605);
-  MCCoords<MCCoordsTypes::RSSPINS> mc_coords_rsspins;
+  MCCoords<CoordsTypes::RSSPINS> mc_coords_rsspins;
   auto spin_mass    = 0.5;
   auto taus_rsspins = makeTaus(mc_coords_rsspins, tau, invmass, spin_mass);
   CHECK(taus_rsspins.spin_tauovermass == 0.4);
@@ -69,20 +70,20 @@ TEST_CASE("generateDeltas", "[QMCDrivers]")
                                   gauss_random_vals[3 * i + 2]) == rs[i]);
   };
 
-  MCCoords<MCCoordsTypes::RS> mc_coords_rs;
+  MCCoords<CoordsTypes::RS> mc_coords_rs;
   mc_coords_rs.resize(size_test);
   {
     StdRandom<double> rng;
-    generateDeltas(rng, mc_coords_rs);
-    std::cout << mc_coords_rs.rs;
-    checkRs(mc_coords_rs.rs);
+    makeGaussRandomWithEngine(mc_coords_rs, rng);
+    std::cout << mc_coords_rs.positions;
+    checkRs(mc_coords_rs.positions);
   }
-  MCCoords<MCCoordsTypes::RSSPINS> mc_coords_rsspins;
+  MCCoords<CoordsTypes::RSSPINS> mc_coords_rsspins;
   mc_coords_rsspins.resize(size_test);
   {
     StdRandom<double> rng;
-    generateDeltas(rng, mc_coords_rsspins);
-    checkRs(mc_coords_rsspins.rs);
+    makeGaussRandomWithEngine(mc_coords_rsspins, rng);
+    checkRs(mc_coords_rsspins.positions);
     // Mod 2 is result of how gaussianDistribution is generated.
     int offset_for_rs = ( 3 * size_test ) + (3* size_test) % 2;
     for (int i = 0; i < size_test; ++i)

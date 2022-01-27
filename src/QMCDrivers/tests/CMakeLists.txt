@@ -75,7 +75,6 @@ if(NOT QMC_CUDA)
   set(DRIVER_TEST_SRC
       SetupPools.cpp
       test_Crowd.cpp
-      test_MCCoords.cpp
       test_MCPopulation.cpp
       test_ContextForSteps.cpp
       test_QMCDriverInput.cpp
