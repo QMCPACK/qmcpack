@@ -92,20 +92,13 @@ struct Taus<Real, CoordsType::POS_SPIN> : public Taus<Real, CoordsType::POS>
   }
 };
 
-/** This is just one possible factory for Taus based on MCCoordsTypes
+/** Factory function for Taus based on MCCoordsTypes
+ *  Note as in previous code value of tau derived values is not full precision.
  */
 template<CoordsType CT, typename... ARGS>
 auto makeTaus(MCCoords<CT>& mc_coords, const ARGS&... args)
 {
-  using Real = double;
-  if constexpr (CT == CoordsType::POS)
-  {
-    return Taus<Real, CT>(args...);
-  }
-  else if constexpr (CT == CoordsType::POS_SPIN)
-  {
-    return Taus<Real, CT>(args...);
-  }
+  return Taus<QMCTraits::RealType, CT>(args...);
 }
 
 extern template struct MCCoords<CoordsType::POS>;

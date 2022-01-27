@@ -97,9 +97,7 @@ inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
 {
   makeGaussRandomWithEngine(a.positions, rng);
   if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
-  {
     makeGaussRandomWithEngine(a.spins, rng);
-  }
 }
   
 template<typename T, class RG, IsReal<T> = true>
