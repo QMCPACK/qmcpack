@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +122,7 @@ TEST_CASE("makeGaussianRandomWithEngine(std::vector<T>...)", "[particle_base]")
     CHECK(random_complex[i] == std::complex<double>{gaussian_random_vals[2*i], gaussian_random_vals[2*i+1]}); 
 }
 
-TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[QMCDrivers]")
+TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
 {
   int size_test = 7;
   std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test );
@@ -136,14 +137,14 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[QMCDrivers]")
                                   gauss_random_vals[3 * i + 2]) == rs[i]);
   };
 
-  MCCoords<CoordsTypes::RS> mc_coords_rs;
+  MCCoords<CoordsType::RS> mc_coords_rs;
   mc_coords_rs.resize(size_test);
   {
     StdRandom<double> rng;
     makeGaussRandomWithEngine(mc_coords_rs, rng);
     checkRs(mc_coords_rs.positions);
   }
-  MCCoords<CoordsTypes::RSSPINS> mc_coords_rsspins;
+  MCCoords<CoordsType::RSSPINS> mc_coords_rsspins;
   mc_coords_rsspins.resize(size_test);
   {
     StdRandom<double> rng;

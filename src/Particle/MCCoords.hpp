@@ -20,25 +20,23 @@
 namespace qmcplusplus
 {
 
-enum class CoordsTypes
+enum class CoordsType
 {
   RS,
   RSSPINS
 };
 
-template<CoordsTypes MCT = CoordsTypes::RS>
+template<CoordsType MCT = CoordsType::RS>
 struct MCCoords
 {
-  static constexpr CoordsTypes mct = MCT;
   // This cleans up some other code.
   void resize(const std::size_t size);
   std::vector<QMCTraits::PosType> positions;
 };
 
 template<>
-struct MCCoords<CoordsTypes::RSSPINS>
+struct MCCoords<CoordsType::RSSPINS>
 {
-  static constexpr CoordsTypes mct = CoordsTypes::RSSPINS;
   // This cleans up some other code.
   void resize(const std::size_t size)
   {
@@ -49,14 +47,14 @@ struct MCCoords<CoordsTypes::RSSPINS>
   std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
-template<CoordsTypes CT = CoordsTypes::RS>
+template<CoordsType CT = CoordsType::RS>
 struct MCCIt
 {
   std::vector<QMCTraits::PosType>::iterator it_positions;
 };
 
 template<>
-struct MCCIt<CoordsTypes::RSSPINS>
+struct MCCIt<CoordsType::RSSPINS>
 {
   std::vector<QMCTraits::PosType>::iterator it_positions;
   std::vector<std::complex<QMCTraits::RealType>>::iterator it_spins;
@@ -65,7 +63,7 @@ struct MCCIt<CoordsTypes::RSSPINS>
 /** Object to encapsulate appropriate tau derived values
  *  for a particular MCCoords specialization
  */
-template<typename Real, CoordsTypes CT = CoordsTypes::RS>
+template<typename Real, CoordsType CT = CoordsType::RS>
 struct Taus
 {
   Real tauovermass;
@@ -80,9 +78,9 @@ struct Taus
 };
 
 template<typename Real>
-struct Taus<Real, CoordsTypes::RSSPINS> : public Taus<Real, CoordsTypes::RS>
+struct Taus<Real, CoordsType::RSSPINS> : public Taus<Real, CoordsType::RS>
 {
-  using Base = Taus<Real, CoordsTypes::RS>;
+  using Base = Taus<Real, CoordsType::RS>;
   Real spin_tauovermass;
   Real spin_oneover2tau;
   Real spin_sqrttau;
@@ -96,22 +94,22 @@ struct Taus<Real, CoordsTypes::RSSPINS> : public Taus<Real, CoordsTypes::RS>
 
 /** This is just one possible factory for Taus based on MCCoordsTypes
  */
-template<CoordsTypes CT, typename... ARGS>
+template<CoordsType CT, typename... ARGS>
 auto makeTaus(MCCoords<CT>& mc_coords, const ARGS&... args)
 {
   using Real = double;
-  if constexpr (CT == CoordsTypes::RS)
+  if constexpr (CT == CoordsType::RS)
   {
     return Taus<Real, CT>(args...);
   }
-  else if constexpr (CT == CoordsTypes::RSSPINS)
+  else if constexpr (CT == CoordsType::RSSPINS)
   {
     return Taus<Real, CT>(args...);
   }
 }
 
-extern template struct MCCoords<CoordsTypes::RS>;
-extern template struct MCCoords<CoordsTypes::RSSPINS>;
+extern template struct MCCoords<CoordsType::RS>;
+extern template struct MCCoords<CoordsType::RSSPINS>;
 } // namespace qmcplusplus
 
 #endif

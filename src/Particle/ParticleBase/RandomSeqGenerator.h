@@ -91,11 +91,11 @@ inline void makeGaussRandomWithEngine(std::vector<TinyVector<T, D>>& a, RG& rng)
   assignGaussRand(&(a[0][0]), a.size() * D, rng);
 }
 
-template<CoordsTypes CT, class RG>
+template<CoordsType CT, class RG>
 inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
 {
   makeGaussRandomWithEngine(a.positions, rng);
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsTypes::RSSPINS>>::value)
+  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::RSSPINS>>::value)
   {
     makeGaussRandomWithEngine(a.spins, rng);
   }
