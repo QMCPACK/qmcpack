@@ -73,7 +73,6 @@ public:
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLRBox())
   {
     myFunc.reset(ref);
-    fillFk(ref.getSimulationCell().getKLists());
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
