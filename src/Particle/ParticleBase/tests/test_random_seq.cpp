@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 #include "Utilities/FakeRandom.h"
+#include "Utilities/StdRandom.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -102,4 +103,22 @@ TEST_CASE("gaussian random input zero", "[particle_base]")
   REQUIRE(a[0] == Approx(0.0));
   REQUIRE(a[1] == Approx(0.0));
 }
+
+TEST_CASE("makeGaussianRandomWithEngine(std::vector<T>)", "[particle_base]")
+{
+  int size_test = 7;
+  std::vector<double> gaussian_random_vals(14);
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(gaussian_random_vals, rng);
+  }
+  std::vector<std::complex<double>> random_complex(7);
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(random_complex, rng);
+  }
+  for (int i = 0; i < size_test; ++i)
+    CHECK(random_complex[i] == std::complex<double>{gaussian_random_vals[2*i], gaussian_random_vals[2*i+1]}); 
+}
+
 } // namespace qmcplusplus

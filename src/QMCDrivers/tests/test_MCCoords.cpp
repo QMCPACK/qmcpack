@@ -57,7 +57,7 @@ TEST_CASE("Taus", "[QMCDrivers]")
 TEST_CASE("generateDeltas", "[QMCDrivers]")
 {
   int size_test = 7;
-  std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test * 2 );
+  std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test );
   {
     StdRandom<double> rng;
     makeGaussRandomWithEngine(gauss_random_vals, rng);
@@ -86,8 +86,7 @@ TEST_CASE("generateDeltas", "[QMCDrivers]")
     // Mod 2 is result of how gaussianDistribution is generated.
     int offset_for_rs = ( 3 * size_test ) + (3* size_test) % 2;
     for (int i = 0; i < size_test; ++i)
-      CHECK(typename decltype(mc_coords_rsspins.spins)::value_type{gauss_random_vals[offset_for_rs + i * 2],
-                                                                     gauss_random_vals[offset_for_rs + i * 2 + 1]} ==
+      CHECK(typename decltype(mc_coords_rsspins.spins)::value_type{gauss_random_vals[offset_for_rs + i]} ==
             mc_coords_rsspins.spins[i]);
   }
 }

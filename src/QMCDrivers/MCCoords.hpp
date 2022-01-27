@@ -47,7 +47,7 @@ struct MCCoords<MCCoordsTypes::RSSPINS>
     spins.resize(size);
   }
   std::vector<QMCTraits::PosType> rs;
-  std::vector<std::complex<QMCTraits::RealType>> spins;
+  std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
 template<MCCoordsTypes CT = MCCoordsTypes::RS>
