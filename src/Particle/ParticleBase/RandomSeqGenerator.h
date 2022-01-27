@@ -18,6 +18,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "config/stdlib/Constants.h"
+#include "type_traits/complex_help.hpp"
 
 /*!\fn template<class T> void assignGaussRand(T* restrict a, unsigned n)
   *\param a the starting pointer
@@ -44,6 +45,19 @@ inline void assignGaussRand(T* restrict a, unsigned n, RG& rng)
     temp1  = std::sqrt(-2.0 * std::log(1.0 - slightly_less_than_one * rng()));
     temp2  = 2.0 * M_PI * rng();
     a[nm1] = temp1 * std::cos(temp2);
+  }
+}
+
+template<class T, class RG>
+inline void assignGaussRandComplex(T* restrict a, unsigned n, RG& rng)
+{
+  OHMMS_PRECISION_FULL slightly_less_than_one = 1.0 - std::numeric_limits<OHMMS_PRECISION_FULL>::epsilon();
+  OHMMS_PRECISION_FULL temp1, temp2;
+  for (int i = 0; i < n; ++i)
+  {
+    temp1    = std::sqrt(-2.0 * std::log(1.0 - slightly_less_than_one * rng()));
+    temp2    = 2.0 * M_PI * rng();
+    a[i] = {temp1 * std::cos(temp2), temp1 * std::sin(temp2)};
   }
 }
 
@@ -74,6 +88,18 @@ template<typename T, unsigned D, class RG>
 inline void makeGaussRandomWithEngine(std::vector<TinyVector<T, D>>& a, RG& rng)
 {
   assignGaussRand(&(a[0][0]), a.size() * D, rng);
+}
+
+template<typename T, class RG, IsReal<T> = true>
+inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
+{
+  assignGaussRand(&(a[0]), a.size(), rng);
+}
+
+template<typename T, class RG, IsComplex<T> = true>
+inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
+{
+  assignGaussRandComplex(&(a[0]), a.size(), rng);
 }
 
 template<typename T, class RG>
