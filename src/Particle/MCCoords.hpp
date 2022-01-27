@@ -47,19 +47,6 @@ struct MCCoords<CoordsType::POS_SPIN>
   std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
-template<CoordsType CT = CoordsType::POS>
-struct MCCIt
-{
-  std::vector<QMCTraits::PosType>::iterator it_positions;
-};
-
-template<>
-struct MCCIt<CoordsType::POS_SPIN>
-{
-  std::vector<QMCTraits::PosType>::iterator it_positions;
-  std::vector<std::complex<QMCTraits::RealType>>::iterator it_spins;
-};
-
 /** Object to encapsulate appropriate tau derived values
  *  for a particular MCCoords specialization
  */

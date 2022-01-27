@@ -16,11 +16,11 @@
 #ifndef QMCPLUSPLUS_RANDOMSEQUENCEGENERATOR_H
 #define QMCPLUSPLUS_RANDOMSEQUENCEGENERATOR_H
 #include <algorithm>
+#include <type_traits>
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCCoords.hpp"
 #include "config/stdlib/Constants.h"
-#include "type_traits/complex_help.hpp"
 
 /*!\fn template<class T> void assignGaussRand(T* restrict a, unsigned n)
   *\param a the starting pointer
@@ -47,19 +47,6 @@ inline void assignGaussRand(T* restrict a, unsigned n, RG& rng)
     temp1  = std::sqrt(-2.0 * std::log(1.0 - slightly_less_than_one * rng()));
     temp2  = 2.0 * M_PI * rng();
     a[nm1] = temp1 * std::cos(temp2);
-  }
-}
-
-template<class T, class RG>
-inline void assignGaussRandComplex(T* restrict a, unsigned n, RG& rng)
-{
-  OHMMS_PRECISION_FULL slightly_less_than_one = 1.0 - std::numeric_limits<OHMMS_PRECISION_FULL>::epsilon();
-  OHMMS_PRECISION_FULL temp1, temp2;
-  for (int i = 0; i < n; ++i)
-  {
-    temp1    = std::sqrt(-2.0 * std::log(1.0 - slightly_less_than_one * rng()));
-    temp2    = 2.0 * M_PI * rng();
-    a[i] = {temp1 * std::cos(temp2), temp1 * std::sin(temp2)};
   }
 }
 
@@ -99,17 +86,13 @@ inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
   if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
     makeGaussRandomWithEngine(a.spins, rng);
 }
-  
-template<typename T, class RG, IsReal<T> = true>
-inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
-{
-  assignGaussRand(&(a[0]), a.size(), rng);
-}
 
-template<typename T, class RG, IsComplex<T> = true>
+template<typename T, class RG>
 inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
 {
-  assignGaussRandComplex(&(a[0]), a.size(), rng);
+  static_assert(std::is_floating_point<T>::value,
+                "makeGaussRandomWithEngine(std::vector<T>...) only implemented for floating point T");
+  assignGaussRand(&(a[0]), a.size(), rng);
 }
 
 template<typename T, class RG>
@@ -117,8 +100,6 @@ inline void makeGaussRandomWithEngine(ParticleAttrib<T>& a, RG& rng)
 {
   assignGaussRand(&(a[0]), a.size(), rng);
 }
-  
+
 } // namespace qmcplusplus
-
-
 #endif
