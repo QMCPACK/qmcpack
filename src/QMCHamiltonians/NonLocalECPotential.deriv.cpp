@@ -66,31 +66,39 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   dratio.resize(optvars.num_active_vars, nknot);
   dlogpsi_vp.resize(dlogpsi.size());
 
-  ValueType pairpot;
-  ParticleSet::ParticlePos deltarV(nknot);
+  deltaV.resize(nknot);
 
   //displacements wrt W.R[iel]
   for (int j = 0; j < nknot; j++)
-    deltarV[j] = r * rrotsgrid_m[j] - dr;
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
 
-  for (int j = 0; j < nknot; j++)
+  if (VP)
   {
-    PosType pos_now = W.R[iel];
-    W.makeMove(iel, deltarV[j]);
-    psiratio[j] = psi.calcRatio(W, iel);
-    psi.acceptMove(W, iel);
-    W.acceptMove(iel);
+    // Compute ratios with VP
+    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    psi.evaluateDerivRatios(*VP, optvars, psiratio, dratio);
+  }
+  else
+  {
+    for (int j = 0; j < nknot; j++)
+    {
+      PosType pos_now = W.R[iel];
+      W.makeMove(iel, deltaV[j]);
+      psiratio[j] = psi.calcRatio(W, iel);
+      psi.acceptMove(W, iel);
+      W.acceptMove(iel);
 
-    //use existing methods
-    std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
-    psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
-    for (int v = 0; v < dlogpsi_vp.size(); ++v)
-      dratio(v, j) = (dlogpsi_vp[v] - dlogpsi[v]);
+      //use existing methods
+      std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
+      psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
+      for (int v = 0; v < dlogpsi_vp.size(); ++v)
+        dratio(v, j) = dlogpsi_vp[v] - dlogpsi[v];
 
-    W.makeMove(iel, -deltarV[j]);
-    psi.calcRatio(W, iel);
-    psi.acceptMove(W, iel);
-    W.acceptMove(iel);
+      W.makeMove(iel, -deltaV[j]);
+      psi.calcRatio(W, iel);
+      psi.acceptMove(W, iel);
+      W.acceptMove(iel);
+    }
   }
 
   for (int j = 0; j < nknot; ++j)
@@ -115,6 +123,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int l = 0; l < nchannel; l++, jl++)
       Amat[jl] = lpol[angpp_m[l]];
   }
+
+  ValueType pairpot;
   if (nchannel == 1)
   {
     pairpot = vrad[0] * BLAS::dot(nknot, &Amat[0], &psiratio[0]);
