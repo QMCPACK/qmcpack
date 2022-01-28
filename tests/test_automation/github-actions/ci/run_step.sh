@@ -31,6 +31,15 @@ case "$1" in
       ;; 
     esac
 
+    if [[ "${GH_JOBNAME}" =~ (-CUDA) ]]
+    then
+      echo "Set CUDACXX CMake environment variable to nvcc standard location"
+      export CUDACXX=/usr/local/cuda/bin/nvcc
+        
+      # Make current environment variables available to subsequent steps
+      echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+    fi 
+
     # Sanitizer
     case "${GH_JOBNAME}" in
       *"ASan"*)
