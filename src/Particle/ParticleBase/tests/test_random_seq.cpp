@@ -116,8 +116,11 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
 
   auto checkRs = [&](auto& rs) {
     for (int i = 0; i < size_test; ++i)
-      CHECK(TinyVector<double, 3>(gauss_random_vals[3 * i], gauss_random_vals[3 * i + 1],
-                                  gauss_random_vals[3 * i + 2]) == rs[i]);
+    {
+      CHECK(Approx(gauss_random_vals[3 * i]) == rs[i][0]);
+      CHECK(Approx(gauss_random_vals[3 * i + 1]) == rs[i][1]);
+      CHECK(Approx(gauss_random_vals[3 * i + 2]) == rs[i][2]);
+    }
   };
 
   MCCoords<CoordsType::POS> mc_coords_rs;
@@ -136,8 +139,7 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
     // Mod 2 is result of how gaussianDistribution is generated.
     int offset_for_rs = ( 3 * size_test ) + (3* size_test) % 2;
     for (int i = 0; i < size_test; ++i)
-      CHECK(typename decltype(mc_coords_rsspins.spins)::value_type{gauss_random_vals[offset_for_rs + i]} ==
-            mc_coords_rsspins.spins[i]);
+      CHECK(Approx(gauss_random_vals[offset_for_rs + i]) == mc_coords_rsspins.spins[i]);
   }
 }
 
