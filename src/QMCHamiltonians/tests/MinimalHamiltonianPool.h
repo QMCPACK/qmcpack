@@ -29,7 +29,9 @@ class MinimalHamiltonianPool
   )";
 
 public:
-  static HamiltonianPool make_hamWithEE(Communicate* comm, ParticleSetPool& particle_pool, WaveFunctionPool& wavefunction_pool)
+  static HamiltonianPool make_hamWithEE(Communicate* comm,
+                                        ParticleSetPool& particle_pool,
+                                        WaveFunctionPool& wavefunction_pool)
   {
     HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
     Libxml2Document doc;

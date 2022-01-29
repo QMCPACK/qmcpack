@@ -220,10 +220,10 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset_target                  = *(particle_pool.getParticleSet("e"));
-  auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& pset_target      = *(particle_pool.getParticleSet("e"));
+  auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
 
   // Good constructor
   OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, wf_factory, pset_target);
@@ -251,7 +251,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
@@ -294,7 +294,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
@@ -331,9 +331,9 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
     throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& pset_source = *(particle_pool.getParticleSet("ion"));
@@ -432,9 +432,9 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
         InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), OBDMI::lookup_input_enum_value);
     std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
 
-    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-    auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+    auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
     wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();

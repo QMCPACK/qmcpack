@@ -54,7 +54,6 @@ public:
 
     return wp;
   }
-
 };
 
 } // namespace qmcplusplus

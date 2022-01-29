@@ -26,10 +26,12 @@ SetupPools::SetupPools()
 
   std::cout << "For purposes of multithreaded testing max threads is forced to 8" << '\n';
   Concurrency::OverrideMaxCapacity<> override(8);
-  
+
   particle_pool = std::make_unique<ParticleSetPool>(MinimalParticlePool::make_diamondC_1x1x1(comm));
-  wavefunction_pool = std::make_unique<WaveFunctionPool>(MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, *particle_pool));
-  hamiltonian_pool = std::make_unique<HamiltonianPool>(MinimalHamiltonianPool::make_hamWithEE(comm, *particle_pool, *wavefunction_pool));
+  wavefunction_pool =
+      std::make_unique<WaveFunctionPool>(MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, *particle_pool));
+  hamiltonian_pool = std::make_unique<HamiltonianPool>(
+      MinimalHamiltonianPool::make_hamWithEE(comm, *particle_pool, *wavefunction_pool));
 }
 
 } // namespace testing
