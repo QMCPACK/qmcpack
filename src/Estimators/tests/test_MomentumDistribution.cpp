@@ -77,8 +77,7 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   auto& pset                         = *(particle_pool.getParticleSet("e"));
@@ -130,8 +129,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   auto& pset                         = *(particle_pool.getParticleSet("e"));

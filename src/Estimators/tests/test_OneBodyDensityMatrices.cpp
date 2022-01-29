@@ -220,8 +220,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   auto& pset_target                  = *(particle_pool.getParticleSet("e"));
@@ -253,8 +252,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
@@ -298,8 +296,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
@@ -337,8 +334,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
     throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
@@ -440,8 +436,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
         InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), OBDMI::lookup_input_enum_value);
     std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
 
-    MinimalParticlePool mpp;
-    ParticleSetPool particle_pool = mpp(comm);
+    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
     MinimalWaveFunctionPool wfp;
     WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
     auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));

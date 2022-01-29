@@ -62,8 +62,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   qmcdriver_input.readXML(node);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(node);
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));

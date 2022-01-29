@@ -46,8 +46,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::VMC);
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
@@ -79,8 +78,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
@@ -111,8 +109,7 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::DMC);
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
@@ -143,8 +140,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
