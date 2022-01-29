@@ -221,8 +221,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   outputManager.pause();
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset_target                  = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
 
@@ -253,8 +252,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   outputManager.pause();
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
@@ -297,8 +295,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   outputManager.pause();
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
@@ -335,8 +332,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
@@ -437,8 +433,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
 
     auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-    MinimalWaveFunctionPool wfp;
-    WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
     auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
     wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     auto& pset_target = *(particle_pool.getParticleSet("e"));

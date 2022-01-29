@@ -78,8 +78,7 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset                         = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   DataLocality dl                    = DataLocality::crowd;
@@ -130,8 +129,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   comm = OHMMS::Controller;
   outputManager.pause();
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset                         = *(particle_pool.getParticleSet("e"));
   auto& wf_factory                   = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
   DataLocality dl                    = DataLocality::crowd;

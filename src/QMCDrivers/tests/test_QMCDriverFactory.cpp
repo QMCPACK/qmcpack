@@ -47,11 +47,9 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   REQUIRE(das.new_run_type == QMCRunType::VMC);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
@@ -79,11 +77,9 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
@@ -110,11 +106,9 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   REQUIRE(das.new_run_type == QMCRunType::DMC);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
@@ -141,11 +135,9 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 

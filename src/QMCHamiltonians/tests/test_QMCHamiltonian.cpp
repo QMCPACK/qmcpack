@@ -25,11 +25,9 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   comm = OHMMS::Controller;
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
   TrialWaveFunction twf;
 

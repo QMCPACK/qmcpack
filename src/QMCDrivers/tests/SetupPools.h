@@ -12,24 +12,23 @@
 #ifndef QMCPLUSPLUS_SETUP_POOLS_H
 #define QMCPLUSPLUS_SETUP_POOLS_H
 
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "type_traits/template_types.hpp"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
+
+class ParticleSetPool;
+class WaveFunctionPool;
+class HamiltonianPool;
+
 namespace testing
 {
 class SetupPools
 {
 public:
   SetupPools();
-
-  MinimalParticlePool mpp;
-  MinimalWaveFunctionPool wfp;
-  MinimalHamiltonianPool mhp;
 
   UPtr<ParticleSetPool> particle_pool;
   UPtr<WaveFunctionPool> wavefunction_pool;
