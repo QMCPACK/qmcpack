@@ -127,24 +127,24 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   ValueType pairpot;
   if (nchannel == 1)
   {
-    pairpot = vrad[0] * BLAS::dot(nknot, &Amat[0], &psiratio[0]);
+    pairpot = vrad[0] * BLAS::dot(nknot, Amat.data(), psiratio.data());
     for (int v = 0; v < dhpsioverpsi.size(); ++v)
     {
       for (int j = 0; j < nknot; ++j)
         dratio(v, j) = psiratio[j] * dratio(v, j);
-      dhpsioverpsi[v] += vrad[0] * BLAS::dot(nknot, &Amat[0], dratio[v]);
+      dhpsioverpsi[v] += vrad[0] * BLAS::dot(nknot, Amat.data(), dratio[v]);
     }
   }
   else
   {
-    BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-    pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+    BLAS::gemv(nknot, nchannel, Amat.data(), psiratio.data(), wvec.data());
+    pairpot = BLAS::dot(nchannel, vrad.data(), wvec.data());
     for (int v = 0; v < dhpsioverpsi.size(); ++v)
     {
       for (int j = 0; j < nknot; ++j)
         dratio(v, j) = psiratio[j] * dratio(v, j);
-      BLAS::gemv(nknot, nchannel, &Amat[0], dratio[v], &wvec[0]);
-      dhpsioverpsi[v] += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      BLAS::gemv(nknot, nchannel, Amat.data(), dratio[v], wvec.data());
+      dhpsioverpsi[v] += BLAS::dot(nchannel, vrad.data(), wvec.data());
     }
   }
 
