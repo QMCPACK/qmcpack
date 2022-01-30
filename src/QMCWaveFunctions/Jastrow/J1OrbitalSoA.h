@@ -626,7 +626,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     {
       const size_t NumVars = myVars.size();
       const auto& d_table  = VP.getDistTableAB(myTableID);
-      std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+      std::vector<RealType> derivs_ref(NumVars);
+      std::vector<RealType> derivs(NumVars);
 
       const size_t ns = d_table.sources();
       const size_t nt = VP.getTotalNum();
@@ -646,8 +647,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
             recalcFunc = true;
         if (recalcFunc)
         {
-          std::vector<TinyVector<RealType, 3>> derivs_ref(NumVars);
           //first calculate the old derivatives VP.refPctl.
+          std::fill(derivs_ref.begin(), derivs_ref.end(), 0);
           func->evaluateDerivatives(dist_ref[i], derivs_ref);
           for (size_t j = 0; j < nt; ++j)
           {
@@ -656,7 +657,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
             func->evaluateDerivatives(VP.getDistTableAB(myTableID).getDistRow(j)[i], derivs);
             //compute the new derivatives - old derivatives
             for (int ip = 0, p = func->myVars.Index.front(); ip < func->myVars.Index.size(); ++ip, ++p)
-              dratios[j][p] += derivs_ref[ip][0] - derivs[ip][0];
+              dratios[j][p] += derivs_ref[ip] - derivs[ip];
           }
         }
       }

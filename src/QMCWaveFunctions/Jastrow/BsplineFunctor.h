@@ -674,7 +674,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
     if (r >= cutoff_radius)
       return false;

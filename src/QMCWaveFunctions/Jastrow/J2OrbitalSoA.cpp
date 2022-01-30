@@ -703,7 +703,8 @@ void J2OrbitalSoA<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
       }
     }
     const size_t NumVars = myVars.size();
-    std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+    std::vector<RealType> derivs_ref(NumVars);
+    std::vector<RealType> derivs(NumVars);
     const auto& d_table = VP.getDistTableAB(my_table_ID_);
     const size_t n      = d_table.sources();
     const size_t nt     = VP.getTotalNum();
@@ -714,17 +715,17 @@ void J2OrbitalSoA<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
       const size_t ptype = VP.refPS.GroupID[i] * VP.refPS.groups() + VP.refPS.GroupID[VP.refPtcl];
       if (!RecalcSwitch[ptype])
         continue;
-      std::vector<TinyVector<RealType, 3>> derivs_ref(NumVars);
       const auto dist_ref = i < VP.refPtcl ? VP.refPS.getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
                                            : VP.refPS.getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
       //first calculate the old derivatives VP.refPtcl.
+      std::fill(derivs_ref.begin(), derivs_ref.end(), 0.0);
       F[ptype]->evaluateDerivatives(dist_ref, derivs_ref);
       for (size_t j = 0; j < nt; ++j)
       {
         std::fill(derivs.begin(), derivs.end(), 0.0);
         F[ptype]->evaluateDerivatives(d_table.getDistRow(j)[i], derivs);
         for (int ip = 0, p = F[ptype]->myVars.Index.front(); ip < F[ptype]->myVars.Index.size(); ++ip, ++p)
-          dratios[j][p] += derivs_ref[ip][0] - derivs[ip][0];
+          dratios[j][p] += derivs_ref[ip] - derivs[ip];
       }
     }
   }
