@@ -317,7 +317,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-
   inline valT computeU(const DistRow& dist)
   {
     valT curVat(0);
@@ -605,6 +604,65 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
   /**@} */
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override
+  {
+    evaluateRatios(VP, ratios);
+    bool recalculate(false);
+    std::vector<bool> rcsingles(myVars.size(), false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      const int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate = true;
+      rcsingles[k] = true;
+    }
+
+    if (recalculate)
+    {
+      const size_t NumVars = myVars.size();
+      const auto& d_table  = VP.getDistTableAB(myTableID);
+      std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+
+      const size_t ns = d_table.sources();
+      const size_t nt = VP.getTotalNum();
+
+      const auto& dist_ref = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl);
+
+      for (size_t i = 0; i < ns; ++i)
+      {
+        FT* func = J1Functors[i];
+        if (func == nullptr)
+          continue;
+        int first(OffSet[i].first);
+        int last(OffSet[i].second);
+        bool recalcFunc(false);
+        for (int rcs = first; rcs < last; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        if (recalcFunc)
+        {
+          std::vector<TinyVector<RealType, 3>> derivs_ref(NumVars);
+          //first calculate the old derivatives VP.refPctl.
+          func->evaluateDerivatives(dist_ref[i], derivs_ref);
+          for (size_t j = 0; j < nt; ++j)
+          {
+            std::fill(derivs.begin(), derivs.end(), 0);
+            //first calculate the new derivatives
+            func->evaluateDerivatives(VP.getDistTableAB(myTableID).getDistRow(j)[i], derivs);
+            //compute the new derivatives - old derivatives
+            for (int ip = 0, p = func->myVars.Index.front(); ip < func->myVars.Index.size(); ++ip, ++p)
+              dratios[p][j] += derivs_ref[ip][0] - derivs[ip][0];
+          }
+        }
+      }
+    }
+  }
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {

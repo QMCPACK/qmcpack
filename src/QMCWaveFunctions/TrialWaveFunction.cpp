@@ -1119,7 +1119,7 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
     }
 }
 
-void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
+void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
                                             const opt_variables_type& optvars,
                                             std::vector<ValueType>& ratios,
                                             Matrix<ValueType>& dratio)

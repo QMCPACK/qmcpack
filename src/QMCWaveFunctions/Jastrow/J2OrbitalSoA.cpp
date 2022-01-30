@@ -660,6 +660,76 @@ void J2OrbitalSoA<FT>::evaluateDerivativesWF(ParticleSet& P,
   }
 }
 
+template<typename FT>
+void J2OrbitalSoA<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                           const opt_variables_type& optvars,
+                                           std::vector<ValueType>& ratios,
+                                           Matrix<ValueType>& dratios)
+{
+  evaluateRatios(VP, ratios);
+  if (myVars.size() == 0)
+    return;
+
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (optvars.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+
+  if (recalculate)
+  {
+    ///precomputed recalculation switch
+    std::vector<bool> RecalcSwitch(F.size(), false);
+    for (int i = 0; i < F.size(); ++i)
+    {
+      if (OffSet[i].first < 0)
+      {
+        // nothing to optimize
+        RecalcSwitch[i] = false;
+      }
+      else
+      {
+        bool recalcFunc(false);
+        for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        RecalcSwitch[i] = recalcFunc;
+      }
+    }
+    const size_t NumVars = myVars.size();
+    std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+    const auto& d_table = VP.getDistTableAB(my_table_ID_);
+    const size_t n      = d_table.sources();
+    const size_t nt     = VP.getTotalNum();
+    for (size_t i = 0; i < n; ++i)
+    {
+      if (i == VP.refPtcl)
+        continue;
+      const size_t ptype = VP.refPS.GroupID[i] * VP.refPS.groups() + VP.refPS.GroupID[VP.refPtcl];
+      if (!RecalcSwitch[ptype])
+        continue;
+      std::vector<TinyVector<RealType, 3>> derivs_ref(NumVars);
+      const auto dist_ref = i < VP.refPtcl ? VP.refPS.getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
+                                           : VP.refPS.getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
+      //first calculate the old derivatives VP.refPtcl.
+      F[ptype]->evaluateDerivatives(dist_ref, derivs_ref);
+      for (size_t j = 0; j < nt; ++j)
+      {
+        std::fill(derivs.begin(), derivs.end(), 0.0);
+        F[ptype]->evaluateDerivatives(d_table.getDistRow(j)[i], derivs);
+        for (int ip = 0, p = F[ptype]->myVars.Index.front(); ip < F[ptype]->myVars.Index.size(); ++ip, ++p)
+          dratios[p][j] += derivs_ref[ip][0] - derivs[ip][0];
+      }
+    }
+  }
+}
+
 template class J2OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
