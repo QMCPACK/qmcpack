@@ -285,20 +285,19 @@ struct J1OrbitalSoA : public WaveFunctionComponent
             recalcFunc = true;
         if (recalcFunc)
         {
-          size_t nn = d_table.get_neighbors(i, func->cutoff_radius, iadj.data(), dist.data(), displ.data());
-          for (size_t nj = 0; nj < nn; ++nj)
+          for (size_t j = 0; j < nt; ++j)
           {
             std::fill(derivs.begin(), derivs.end(), 0);
-            if (!func->evaluateDerivatives(dist[nj], derivs))
+            auto dist = P.getDistTableAB(myTableID).getDistRow(j)[i];
+            if (!func->evaluateDerivatives(dist, derivs))
               continue;
-            int j = iadj[nj];
-            RealType rinv(cone / dist[nj]);
-            PosType& dr = displ[nj];
+            RealType rinv(cone / dist);
+            const PosType& dr = P.getDistTableAB(myTableID).getDisplRow(j)[i];;
             for (int p = first, ip = 0; p < last; ++p, ++ip)
             {
               dLogPsi[p] -= derivs[ip][0];
               RealType dudr(rinv * derivs[ip][1]);
-              gradLogPsi[p][j] -= dudr * dr;
+              gradLogPsi[p][j] += dudr * dr;
               lapLogPsi[p][j] -= derivs[ip][2] + lapfac * dudr;
             }
           }
