@@ -108,6 +108,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   for (int ip = 0; ip < nchannel; ip++)
     vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
 
+  RealType pairpot(0);
   const RealType rinv = RealType(1) / r;
   // Compute spherical harmonics on grid
   for (int j = 0, jl = 0; j < nknot; j++)
@@ -121,35 +122,18 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
       lpolprev    = lpol[l];
     }
-    for (int l = 0; l < nchannel; l++, jl++)
-      Amat[jl] = lpol[angpp_m[l]];
+
+    RealType lsum = 0.0;
+    for (int l = 0; l < nchannel; l++)
+      lsum += vrad[l] * lpol[angpp_m[l]];
+
+    wvec[j] = lsum * psiratio[j];
+    pairpot += std::real(wvec[j]);
   }
 
-  ValueType pairpot;
-  if (nchannel == 1)
-  {
-    pairpot = vrad[0] * BLAS::dot(nknot, Amat.data(), psiratio.data());
-    for (int v = 0; v < dhpsioverpsi.size(); ++v)
-    {
-      for (int j = 0; j < nknot; ++j)
-        dratio(j, v) = psiratio[j] * dratio(j, v);
-      dhpsioverpsi[v] += vrad[0] * BLAS::dot(nknot, Amat.data(), 1, dratio.data() + v, num_vars);
-    }
-  }
-  else
-  {
-    BLAS::gemv(nknot, nchannel, Amat.data(), psiratio.data(), wvec.data());
-    pairpot = BLAS::dot(nchannel, vrad.data(), wvec.data());
-    for (int v = 0; v < dhpsioverpsi.size(); ++v)
-    {
-      for (int j = 0; j < nknot; ++j)
-        dratio(j, v) = psiratio[j] * dratio(j, v);
-      BLAS::gemv('N', nchannel, nknot, 1.0, Amat.data(), nchannel, dratio.data() + v, num_vars, 0, wvec.data(), 1);
-      dhpsioverpsi[v] += BLAS::dot(nchannel, vrad.data(), wvec.data());
-    }
-  }
+  BLAS::gemv('N', num_vars, nknot, 1.0, dratio.data(), num_vars, wvec.data(), 1, 1.0, dhpsioverpsi.data(), 1);
 
-  return std::real(pairpot);
+  return pairpot;
 }
 
 } // namespace qmcplusplus
