@@ -63,7 +63,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  const std::vector<ValueType>& dlogpsi,
                                                                                  std::vector<ValueType>& dhpsioverpsi)
 {
-  dratio.resize(optvars.num_active_vars, nknot);
+  const size_t num_vars = optvars.num_active_vars;
+  dratio.resize(nknot, num_vars);
   dlogpsi_vp.resize(dlogpsi.size());
 
   deltaV.resize(nknot);
@@ -92,7 +93,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
       psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
       for (int v = 0; v < dlogpsi_vp.size(); ++v)
-        dratio(v, j) = dlogpsi_vp[v] - dlogpsi[v];
+        dratio(j, v) = dlogpsi_vp[v] - dlogpsi[v];
 
       W.makeMove(iel, -deltaV[j]);
       psi.calcRatio(W, iel);
@@ -131,8 +132,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int v = 0; v < dhpsioverpsi.size(); ++v)
     {
       for (int j = 0; j < nknot; ++j)
-        dratio(v, j) = psiratio[j] * dratio(v, j);
-      dhpsioverpsi[v] += vrad[0] * BLAS::dot(nknot, Amat.data(), dratio[v]);
+        dratio(j, v) = psiratio[j] * dratio(j, v);
+      dhpsioverpsi[v] += vrad[0] * BLAS::dot(nknot, Amat.data(), 1, dratio.data() + v, num_vars);
     }
   }
   else
@@ -142,8 +143,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int v = 0; v < dhpsioverpsi.size(); ++v)
     {
       for (int j = 0; j < nknot; ++j)
-        dratio(v, j) = psiratio[j] * dratio(v, j);
-      BLAS::gemv(nknot, nchannel, Amat.data(), dratio[v], wvec.data());
+        dratio(j, v) = psiratio[j] * dratio(j, v);
+      BLAS::gemv('N', nchannel, nknot, 1.0, Amat.data(), nchannel, dratio.data() + v, num_vars, 0, wvec.data(), 1);
       dhpsioverpsi[v] += BLAS::dot(nchannel, vrad.data(), wvec.data());
     }
   }

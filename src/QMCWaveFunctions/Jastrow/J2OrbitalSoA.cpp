@@ -724,7 +724,7 @@ void J2OrbitalSoA<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
         std::fill(derivs.begin(), derivs.end(), 0.0);
         F[ptype]->evaluateDerivatives(d_table.getDistRow(j)[i], derivs);
         for (int ip = 0, p = F[ptype]->myVars.Index.front(); ip < F[ptype]->myVars.Index.size(); ++ip, ++p)
-          dratios[p][j] += derivs_ref[ip][0] - derivs[ip][0];
+          dratios[j][p] += derivs_ref[ip][0] - derivs[ip][0];
       }
     }
   }

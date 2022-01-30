@@ -657,7 +657,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
             func->evaluateDerivatives(VP.getDistTableAB(myTableID).getDistRow(j)[i], derivs);
             //compute the new derivatives - old derivatives
             for (int ip = 0, p = func->myVars.Index.front(); ip < func->myVars.Index.size(); ++ip, ++p)
-              dratios[p][j] += derivs_ref[ip][0] - derivs[ip][0];
+              dratios[j][p] += derivs_ref[ip][0] - derivs[ip][0];
           }
         }
       }
