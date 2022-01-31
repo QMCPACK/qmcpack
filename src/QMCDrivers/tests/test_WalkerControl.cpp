@@ -15,6 +15,9 @@
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
+#include "ParticleSetPool.h"
+#include "WaveFunctionPool.h"
+#include "HamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
