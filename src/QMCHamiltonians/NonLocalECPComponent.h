@@ -61,7 +61,7 @@ private:
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<ValueType> wvec, Amat, dAmat;
+  std::vector<ValueType> wvec;
 
   //Position delta for virtual moves.
   std::vector<PosType> deltaV;

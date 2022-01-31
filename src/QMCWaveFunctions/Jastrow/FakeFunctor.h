@@ -125,10 +125,8 @@ struct FakeFunctor : public OptimizableFunctorBase
   }
 
 
-  // inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
-
   /// compute derivatives with respect to variational parameters
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) { return true; }
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override { return true; }
 
   bool put(xmlNodePtr cur) override { return true; }
 

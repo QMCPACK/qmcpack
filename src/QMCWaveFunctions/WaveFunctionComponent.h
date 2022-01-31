@@ -566,9 +566,9 @@ public:
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
    * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
-   * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
+   * @param dratios Nq x Num_param matrix. \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
-  virtual void evaluateDerivRatios(VirtualParticleSet& VP,
+  virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);

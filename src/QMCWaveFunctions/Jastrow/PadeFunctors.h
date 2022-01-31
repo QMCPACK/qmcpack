@@ -223,7 +223,7 @@ struct PadeFunctor : public OptimizableFunctorBase
   }
 
   /// compute derivatives with respect to A and B
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
     int i       = 0;
     real_type u = 1.0 / (1.0 + B * r);
@@ -461,7 +461,7 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   }
 
 
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
     real_type u = 1.0 / (1.0 + B * r);
     int i       = 0;
