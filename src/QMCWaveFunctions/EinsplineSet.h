@@ -62,9 +62,6 @@ public:
   /// The "Twist" variables are in reduced coords, i.e. from 0 to1.
   /// The "k" variables are in Cartesian coordinates.
   PosType TwistVector, kVector;
-  /// This stores which "true" twist vector this clone is using.
-  /// "True" indicates the physical twist angle after untiling
-  int TwistNum;
   /// metric tensor to handle generic unitcell
   Tensor<RealType, OHMMS_DIM> GGt;
 
@@ -76,7 +73,7 @@ public:
   void resetSourceParticleSet(ParticleSet& ions);
   void setOrbitalSetSize(int norbs) override;
   inline std::string Type() { return "EinsplineSet"; }
-  EinsplineSet() : TwistNum(0), NumValenceOrbs(0) { className = "EinsplineSet"; }
+  EinsplineSet() : NumValenceOrbs(0) { className = "EinsplineSet"; }
 };
 
 ////////////////////////////////////////////////////////////////////

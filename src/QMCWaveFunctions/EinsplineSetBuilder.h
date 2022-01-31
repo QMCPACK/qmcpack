@@ -135,7 +135,7 @@ public:
 
   ///This is true if we have the orbital derivatives w.r.t. the ion positions
   bool HaveOrbDerivs;
-  ///root XML node with href, sort, tilematrix, twistnum, source, precision,truncate,version
+  ///root XML node with href, sort, tilematrix, source, precision,truncate,version
   xmlNodePtr XMLRoot;
 
   std::map<H5OrbSet, SPOSet*, H5OrbSet> SPOSetMap;
@@ -154,7 +154,7 @@ public:
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
-  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks = false);
+  void set_metadata(int numOrbs, bool skipChecks = false);
 
   /** initialize with the existing SPOSet */
   std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
@@ -218,9 +218,10 @@ public:
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////
-  // This stores which "true" twist number I am using
-  int TwistNum;
+  // captured XML input twist attribute. Default [0.0, 0.0, 0.0]
   TinyVector<double, OHMMS_DIM> givenTwist;
+  // The index of twist selected from h5 based on givenTwist;
+  int TwistNum;
   std::vector<TinyVector<double, OHMMS_DIM>> TwistAngles;
   //     integer index of sym operation from the irreducible brillion zone
   std::vector<int> TwistSymmetry;

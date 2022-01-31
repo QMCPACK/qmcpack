@@ -48,7 +48,7 @@
        </attrib>
     </particleset>
    <wavefunction name="psi0" target="e">
-     <determinantset type="einspline" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" source="i"  precision="double">
+     <determinantset type="einspline" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twist="-0.1 -0.2 -0.3" meshfactor="1.0" source="i"  precision="double">
        <slaterdeterminant>
          <determinant id="updet" size="2" ref="updet">
            <occupation mode="ground" spindataset="0">

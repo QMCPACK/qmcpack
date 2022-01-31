@@ -38,7 +38,7 @@
 
 namespace qmcplusplus
 {
-void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks)
+void EinsplineSetBuilder::set_metadata(int numOrbs, bool skipChecks)
 {
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
   //  e.g. TileMatrix, use_real_splines_, DistinctTwists, MakeTwoCopies.
@@ -99,7 +99,6 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipC
     AtomicOrbitals[iat].Lattice.set(Lattice);
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed
-  TwistNum = TwistNum_inp;
   AnalyzeTwists2();
 }
 
@@ -108,9 +107,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   int numOrbs = 0;
   int sortBands(1);
-  int spinSet      = 0;
-  int TwistNum_inp = 0;
-  bool skipChecks  = false;
+  int spinSet     = 0;
+  bool skipChecks = false;
 
   std::string sourceName;
   std::string spo_prec("double");
@@ -133,7 +131,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(TileFactor, "tile");
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
-    a.add(TwistNum_inp, "twistnum");
     a.add(givenTwist, "twist");
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
@@ -248,7 +245,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   // set the internal parameters
   if (spinSet == 0)
-    set_metadata(numOrbs, TwistNum_inp, skipChecks);
+    set_metadata(numOrbs, skipChecks);
   //if (use_complex_orb == "yes") use_real_splines_ = false; // override given user input
 
   // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work

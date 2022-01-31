@@ -48,7 +48,7 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& pse
       NumCoreStates(0),
       MeshFactor(1.0),
       MeshSize(0, 0, 0),
-      TwistNum(0),
+      TwistNum(-1),
       TileFactor(1, 1, 1),
       NumMuffinTins(0),
       LastSpinSet(-1),
@@ -466,6 +466,8 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     }
     //        fprintf (stderr, "Number in irredicible twist grid: %d \n", n_tot_irred);
   }
+
+  // TwistNum has not been selected, find it in SuperTwists
   if (TwistNum < 0)
   {
     PosType gtFrac = FracPart(givenTwist);
