@@ -124,7 +124,7 @@ determinants.
   :caption: Deprecated input style.
   :name: spo.singledet.old.xml
 
-  <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+  <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" source="ion0" meshfactor="1.0" precision="double">
      <slaterdeterminant>
         <determinant id="updet" size="8">
            <occupation mode="ground" spindataset="0"/>
@@ -142,7 +142,7 @@ After updating the input style.
   :name: spo.singledet.xml
 
   <!-- all the attributes are moved from determinantset.-->
-  <sposet_collection type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+  <sposet_collection type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" source="ion0" meshfactor="1.0" precision="double">
     <!-- all the attributes and contents are moved from determinant.  Change 'id' tag to 'name' tag.
          Need only one sposet for unpolarized calculation.-->
     <sposet name="spo-ud" size="8">
@@ -221,7 +221,7 @@ The input xml block for the spline SPOs is given in :ref:`spline.spo.xml`. A lis
   :name: spline.spo.xml
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                  tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
+                  tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
                   twist="0  0  0" precision="double">
     <sposet name="spo-up" size="208">
       <occupation mode="ground" spindataset="0"/>
@@ -255,9 +255,7 @@ attribute:
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``tilematrix``              | 9 integers |                          |         | Tiling matrix used to expand supercell.   |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
-| ``twistnum``                | Integer    |                          |         | Index of the super twist.                 |
-+-----------------------------+------------+--------------------------+---------+-------------------------------------------+
-| ``twist``                   | 3 floats   |                          |         | Super twist.                              |
+| ``twist``                   | 3 floats   |                          | [0,0,0] | Super twist.                              |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``meshfactor``              | Float      | :math:`\le 1.0`          |         | Grid spacing ratio.                       |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
@@ -295,11 +293,6 @@ Additional information:
     A smaller meshfactor saves memory use but reduces accuracy. The
     effects are similar to reducing plane wave cutoff in DFT
     calculations. Use with caution!
-
-- twistnum
-    If positive, it is the index. We recommend not taking
-    this way since the indexing might show some uncertainty. If negative,
-    the super twist is referred by ``twist``.
 
 - save_coefs
     If yes, dump the real-space B-spline coefficient
@@ -637,7 +630,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :name: Listing 6
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
+                tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
   </sposet_collection>

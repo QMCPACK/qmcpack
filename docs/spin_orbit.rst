@@ -58,7 +58,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
   <?xml version="1.0"?>
   <qmcsystem>
     <wavefunction name="psi0" target="e">
-      <sposet_builder name="spo_builder" type="bspline" href="eshdf.h5" tilematrix="100010001" twistnum="0" source="ion0" size="10">
+      <sposet_builder name="spo_builder" type="bspline" href="eshdf.h5" tilematrix="100010001" source="ion0" size="10">
         <sposet type="bspline" name="myspo" size="10">
           <occupation mode="ground"/>
         </sposet>

@@ -1682,7 +1682,7 @@ Additional information:
   :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo_u spo_uv"``).
   :name: Listing 39
 
-  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="spo_uv" group="0" index_min="4" index_max="10"/>
@@ -1692,7 +1692,7 @@ Additional information:
   :caption: Example ``sposet`` initialization for density matrix use. Density matrix orbital basis created separately (``basis="dm_basis"``).
   :name: Listing 40
 
-  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="dm_basis" size="50" spindataset="0"/>
