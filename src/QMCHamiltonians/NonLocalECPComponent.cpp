@@ -75,9 +75,7 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   vrad.resize(m);
   dvrad.resize(m);
   vgrad.resize(m);
-  wvec.resize(m);
-  Amat.resize(n * m);
-  dAmat.resize(n * m);
+  wvec.resize(n);
   lpol.resize(l + 1, 1.0);
   dlpol.resize(l + 1, 0.0);
   rrotsgrid_m.resize(n);

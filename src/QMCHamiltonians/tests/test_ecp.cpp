@@ -315,10 +315,10 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   };
 
   {
-    test_evaluateOne();
     nlpp->initVirtualParticle(elec);
     test_evaluateOne();
     nlpp->deleteVirtualParticle();
+    test_evaluateOne();
   }
 
   opt_variables_type optvars;
@@ -367,10 +367,10 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   };
 
   {
-    test_evaluateValueAndDerivatives();
     nlpp->initVirtualParticle(elec);
     test_evaluateValueAndDerivatives();
     nlpp->deleteVirtualParticle();
+    test_evaluateValueAndDerivatives();
   }
 
   double Value2(0.0);

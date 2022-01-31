@@ -285,20 +285,19 @@ struct J1OrbitalSoA : public WaveFunctionComponent
             recalcFunc = true;
         if (recalcFunc)
         {
-          size_t nn = d_table.get_neighbors(i, func->cutoff_radius, iadj.data(), dist.data(), displ.data());
-          for (size_t nj = 0; nj < nn; ++nj)
+          for (size_t j = 0; j < nt; ++j)
           {
             std::fill(derivs.begin(), derivs.end(), 0);
-            if (!func->evaluateDerivatives(dist[nj], derivs))
+            auto dist = P.getDistTableAB(myTableID).getDistRow(j)[i];
+            if (!func->evaluateDerivatives(dist, derivs))
               continue;
-            int j = iadj[nj];
-            RealType rinv(cone / dist[nj]);
-            PosType& dr = displ[nj];
+            RealType rinv(cone / dist);
+            const PosType& dr = P.getDistTableAB(myTableID).getDisplRow(j)[i];;
             for (int p = first, ip = 0; p < last; ++p, ++ip)
             {
               dLogPsi[p] -= derivs[ip][0];
               RealType dudr(rinv * derivs[ip][1]);
-              gradLogPsi[p][j] -= dudr * dr;
+              gradLogPsi[p][j] += dudr * dr;
               lapLogPsi[p][j] -= derivs[ip][2] + lapfac * dudr;
             }
           }
@@ -316,7 +315,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       }
     }
   }
-
 
   inline valT computeU(const DistRow& dist)
   {
@@ -605,6 +603,66 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
   /**@} */
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override
+  {
+    evaluateRatios(VP, ratios);
+    bool recalculate(false);
+    std::vector<bool> rcsingles(myVars.size(), false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      const int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate = true;
+      rcsingles[k] = true;
+    }
+
+    if (recalculate)
+    {
+      const size_t NumVars = myVars.size();
+      const auto& d_table  = VP.getDistTableAB(myTableID);
+      std::vector<RealType> derivs_ref(NumVars);
+      std::vector<RealType> derivs(NumVars);
+
+      const size_t ns = d_table.sources();
+      const size_t nt = VP.getTotalNum();
+
+      const auto& dist_ref = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl);
+
+      for (size_t i = 0; i < ns; ++i)
+      {
+        FT* func = J1Functors[i];
+        if (func == nullptr)
+          continue;
+        int first(OffSet[i].first);
+        int last(OffSet[i].second);
+        bool recalcFunc(false);
+        for (int rcs = first; rcs < last; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        if (recalcFunc)
+        {
+          //first calculate the old derivatives VP.refPctl.
+          std::fill(derivs_ref.begin(), derivs_ref.end(), 0);
+          func->evaluateDerivatives(dist_ref[i], derivs_ref);
+          for (size_t j = 0; j < nt; ++j)
+          {
+            std::fill(derivs.begin(), derivs.end(), 0);
+            //first calculate the new derivatives
+            func->evaluateDerivatives(VP.getDistTableAB(myTableID).getDistRow(j)[i], derivs);
+            //compute the new derivatives - old derivatives
+            for (int ip = 0, p = func->myVars.Index.front(); ip < func->myVars.Index.size(); ++ip, ++p)
+              dratios[j][p] += derivs_ref[ip] - derivs[ip];
+          }
+        }
+      }
+    }
+  }
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
