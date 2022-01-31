@@ -330,7 +330,7 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset gpu="yes" href="../NiO-fcc-supertwist111-supershift000-S64.h5" meshfactor="0.9" precision="single" source="i" tilematrix="0 -5 1 2 0 4 2 3 -3" twist="0  0  0" twistnum="-1" type="einspline">
+    <determinantset gpu="yes" href="../NiO-fcc-supertwist111-supershift000-S64.h5" meshfactor="0.9" precision="single" source="i" tilematrix="0 -5 1 2 0 4 2 3 -3" twist="0  0  0" type="einspline">
       <slaterdeterminant>
         <determinant id="updet" ref="updet" size="1536">
           <occupation mode="ground" spindataset="0">

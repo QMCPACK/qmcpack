@@ -92,7 +92,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
 </tmp> \
 ";
 
@@ -293,7 +293,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
 </tmp> \
 ";
 

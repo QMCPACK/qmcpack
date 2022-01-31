@@ -87,7 +87,6 @@ void RMGParser::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
       // this just reproduces the behavior of pw2qmcpack
       xmlNewProp(detsetPtr, (const xmlChar*)"sort", (const xmlChar*)"1");
       xmlNewProp(detsetPtr, (const xmlChar*)"tilematrix", (const xmlChar*)"1 0 0 0 1 0 0 0 1");
-      xmlNewProp(detsetPtr, (const xmlChar*)"twistnum", (const xmlChar*)"0");
       xmlNewProp(detsetPtr, (const xmlChar*)"version", (const xmlChar*)"0.10");
       {
         std::ostringstream up_size, down_size;

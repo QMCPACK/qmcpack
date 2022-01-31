@@ -55,7 +55,7 @@
       </particleset>
   </qmcsystem>
       <wavefunction name="psi0" target="e">
-        <sposet_builder name="A" type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+        <sposet_builder name="A" type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
         <sposet type="bspline" name="spoA_u" size="1" spindataset="0"/>
         <sposet type="bspline" name="spoA_d" size="1" spindataset="0"/>
       </sposet_builder>
@@ -83,7 +83,7 @@
          </jastrow>
       </wavefunction>
       <wavefunction name="psi1" target="e" source="ion1">
-        <sposet_builder name="B" type="bspline" href="pwscf_dR.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion1" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+        <sposet_builder name="B" type="bspline" href="pwscf_dR.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" source="ion1" version="0.10" meshfactor="1.0" precision="float" truncate="no">
         <sposet type="bspline" name="spoB_u" size="1" spindataset="0"/>
         <sposet type="bspline" name="spoB_d" size="1" spindataset="0"/>
       </sposet_builder>

@@ -45,7 +45,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-        <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+        <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" source="ion0" meshfactor="1.0" precision="float">
             <slaterdeterminant>
                <determinant id="updet" size="1">
                   <occupation mode="ground" spindataset="0"/>

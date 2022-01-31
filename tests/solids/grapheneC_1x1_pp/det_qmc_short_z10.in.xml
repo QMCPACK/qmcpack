@@ -42,7 +42,7 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="einspline" href="Gr.pwscf_10.h5" source="i" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="yes" meshfactor="1.0" precision="double">
+    <determinantset type="einspline" href="Gr.pwscf_10.h5" source="i" tilematrix="1 0 0 0 1 0 0 0 1" gpu="yes" meshfactor="1.0" precision="double">
       <basisset/>
       <slaterdeterminant>
         <determinant id="updet" size="4" ref="updet">

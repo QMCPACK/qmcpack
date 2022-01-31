@@ -735,7 +735,6 @@ class InputXml:
                                                            "href":"{}".format(h5_path),
                                                            "source":"ion0",
                                                            "tilematrix":"{}".format(tilematrix),
-                                                           "twistnum":"0",
                                                            "meshfactor":"1.0"})
     basisset_node = etree.Element('basisset')
     determinantset_node.append(basisset_node)

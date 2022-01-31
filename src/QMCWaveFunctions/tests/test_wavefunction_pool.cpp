@@ -93,7 +93,7 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
 
 
   const char* wf_input = "<wavefunction target='e'>\
-     <determinantset type='einspline' href='diamondC_1x1x1.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'> \
+     <determinantset type='einspline' href='diamondC_1x1x1.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' source='ion' meshfactor='1.0' precision='float'> \
          <slaterdeterminant> \
             <determinant id='updet' size='4'> \
               <occupation mode='ground' spindataset='0'/>\

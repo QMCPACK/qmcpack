@@ -38,10 +38,10 @@
          </group>
       </particleset>
 <wavefunction name="psi0" target='e'>
-  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" twist="0 0 0" precision="float" truncate="no">
+  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" twist="0 0 0" precision="float" truncate="no">
     <sposet name="spo_for_dets" size="4" spindataset="0"/>
   </sposet_collection>
-  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="no" meshfactor="1.0" twist="0 0 0" precision="float" truncate="no">
+  <sposet_collection type="bspline" source="ion0" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" gpu="no" meshfactor="1.0" twist="0 0 0" precision="float" truncate="no">
     <sposet name="spo_ud" size="4" spindataset="0"/>
     <sposet name="spo_dm" index_min="4" index_max="8" spindataset="0"/>
   </sposet_collection>

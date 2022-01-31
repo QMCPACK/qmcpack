@@ -91,7 +91,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
   //BCC H
   const char* particles = "<tmp> \
-<determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
+<determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" source=\"ion\"> \
    <slaterdeterminant> \
      <determinant id=\"updet\" size=\"1\"> \
       <occupation mode=\"ground\" spindataset=\"0\"/> \
@@ -236,7 +236,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
-<determinantset type=\"PW\" href=\"LiH-arb.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
+<determinantset type=\"PW\" href=\"LiH-arb.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" source=\"ion\"> \
    <slaterdeterminant> \
      <determinant id=\"updet\" size=\"2\"> \
       <occupation mode=\"ground\" spindataset=\"0\"/> \

@@ -63,7 +63,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" size="12"> 
+   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" source="ion0" size="12"> 
      <sposet name="myspo" size="12"> 
        <occupation mode="ground"/> 
      </sposet> 

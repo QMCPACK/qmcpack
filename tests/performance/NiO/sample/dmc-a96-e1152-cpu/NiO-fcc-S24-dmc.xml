@@ -151,7 +151,7 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="einspline" source="i" href="../NiO-fcc-supertwist111-supershift000-S24.h5" tilematrix="2 0 1 1 3 1 1 3 -3" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0">
+    <determinantset type="einspline" source="i" href="../NiO-fcc-supertwist111-supershift000-S24.h5" tilematrix="2 0 1 1 3 1 1 3 -3" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0">
       <slaterdeterminant>
         <determinant id="updet" size="576" ref="updet">
           <occupation mode="ground" spindataset="0">

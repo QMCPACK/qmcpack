@@ -53,7 +53,7 @@ H
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="einspline" href="LiH-gamma.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="yes" meshfactor="1.0" source="i"  precision="single">
+    <determinantset type="einspline" href="LiH-gamma.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" gpu="yes" meshfactor="1.0" source="i"  precision="single">
 
       <sposet type="einspline" name="spo-up" size="4" source="i" group="0" optimizable="no" />
       <sposet type="einspline" name="spo-dn" size="4" source="i" group="0" optimizable="no" />

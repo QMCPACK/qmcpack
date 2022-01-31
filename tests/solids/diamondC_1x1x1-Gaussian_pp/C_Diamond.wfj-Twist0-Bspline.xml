@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset check_orb_norm="no" href="C_Diamond-Bspline.h5" meshfactor="1.0" source="ion0" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" type="einspline">
+    <determinantset check_orb_norm="no" href="C_Diamond-Bspline.h5" meshfactor="1.0" source="ion0" tilematrix="1 0 0 0 1 0 0 0 1" type="einspline">
       <basisset/>
       <slaterdeterminant>
         <determinant id="updet" size="4" ref="updet">

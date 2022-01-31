@@ -30,7 +30,7 @@ namespace qmcplusplus
  *  TO USE THIS YOU NEED TO KNOW THE NAME OF THE SPOSET(S)!!!
  *    For example, using sposet_builder the names are prominently displayed:
  * 
- *      <sposet_builder type="bspline" href="pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10">
+ *      <sposet_builder type="bspline" href="pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" source="ion0" version="0.10">
  *         <sposet type="bspline" name="spo_ud" size="2" spindataset="0"/>
  *      </sposet_builder>
  * 
