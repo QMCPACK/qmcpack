@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include <Message/UniformCommunicateError.h>
 #include "Utilities/Timer.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -107,16 +108,17 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   int numOrbs = 0;
   int sortBands(1);
-  int spinSet     = 0;
-  bool skipChecks = false;
+  int spinSet      = 0;
+  int twistnum_inp = -1;
+  bool skipChecks  = false;
 
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string skip_checks("no");
-  std::string use_einspline_set_extended(
-      "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
+  // use old spline library for high-order derivatives, e.g. needed for backflow optimization
+  std::string use_einspline_set_extended("no");
 #if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
   std::string useGPU = "yes";
 #else
@@ -131,6 +133,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(TileFactor, "tile");
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
+    // twistnum input support has been removed. Still read it for adding a trap for risky old input
+    a.add(twistnum_inp, "twistnum");
     a.add(givenTwist, "twist");
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
@@ -152,10 +156,14 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(spinSet, "spindataset");
     a.add(spinSet, "group");
     a.put(cur);
-
-    if (myName.empty())
-      myName = "einspline";
   }
+
+  // only assume -1 case may safely run
+  if (twistnum_inp != -1)
+    throw UniformCommunicateError("The support of 'twistnum' attribute has been removed. Use 'twist' instead.");
+
+  if (myName.empty())
+    myName = "einspline";
 
   if (skip_checks == "yes")
     skipChecks = true;

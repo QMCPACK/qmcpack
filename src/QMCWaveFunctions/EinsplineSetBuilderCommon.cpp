@@ -24,6 +24,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include <Message/UniformCommunicateError.h>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTable.h"
 
@@ -436,7 +437,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
       superFracs.push_back(frac);
     }
   }
-  int numSuperTwists = superFracs.size();
+  const int numSuperTwists = superFracs.size();
   app_log() << "Found " << numSuperTwists << " distinct supercell twists.\n";
   // For each supercell twist, create a list of primitive twists which
   // belong to it.
@@ -479,8 +480,16 @@ void EinsplineSetBuilder::AnalyzeTwists2()
         TwistNum = si;
     }
   }
-  // Check supertwist for this node
-  if (!myComm->rank())
+
+  if (TwistNum < 0)
+  {
+    char buf[1000];
+    snprintf(buf, 1000,
+             "AnalyzeTwists2. Input twist [ %9.5f %9.5f %9.5f] not found in the list of super twists above.\n",
+             superFracs[TwistNum][0], superFracs[TwistNum][1], superFracs[TwistNum][2]);
+    throw UniformCommunicateError(buf);
+  }
+  else
   {
     char buf[1000];
     snprintf(buf, 1000, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]\n", TwistNum, superFracs[TwistNum][0],
@@ -543,12 +552,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     }
   }
   app_log().flush();
-  if (TwistNum >= superSets.size())
-  {
-    app_error() << "Trying to use supercell twist " << TwistNum << " when only " << superSets.size() << " sets exist.\n"
-                << "Please select a twist number between 0 and " << superSets.size() - 1 << ".\n";
-    APP_ABORT_TRACE(__FILE__, __LINE__, "Invalid TwistNum");
-  }
   // Finally, record which k-points to include on this group of
   // processors, which have been assigned supercell twist TwistNum
   IncludeTwists.clear();

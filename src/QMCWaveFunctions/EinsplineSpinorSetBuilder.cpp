@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include <Message/UniformCommunicateError.h>
 #include "Utilities/Timer.h"
 #include "QMCWaveFunctions/einspline_helper.hpp"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
@@ -32,8 +33,9 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 {
   int numOrbs = 0;
   int sortBands(1);
-  int spinSet  = 0;
-  int spinSet2 = 1;
+  int spinSet      = 0;
+  int spinSet2     = 1;
+  int twistnum_inp = -1;
 
   //There have to be two "spin states"...  one for the up channel and one for the down channel.
   // We force this for spinors and manually resize states and FullBands.
@@ -55,6 +57,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(TileFactor, "tile");
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
+    // twistnum input support has been removed. Still read it for adding a trap for risky old input
+    a.add(twistnum_inp, "twistnum", {}, TagStatus::DEPRECATED);
     a.add(givenTwist, "twist");
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
@@ -70,6 +74,10 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(spinSet, "group");
     a.put(cur);
   }
+
+  // only assume -1 case may safely run
+  if (twistnum_inp != -1)
+    throw UniformCommunicateError("The support of 'twistnum' attribute has been removed. Use 'twist' instead.");
 
   auto pit(ParticleSets.find(sourceName));
   if (pit == ParticleSets.end())
