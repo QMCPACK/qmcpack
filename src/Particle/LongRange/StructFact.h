@@ -17,12 +17,13 @@
 //#define USE_REAL_STRUCT_FACTOR
 #include "ParticleSet.h"
 #include "DynamicCoordinates.h"
-#include "LongRange/KContainer.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {
+
+class KContainer;
 /** @ingroup longrange
  *\brief Calculates the structure-factor for a particle set
  *
@@ -68,14 +69,10 @@ public:
    * @param lattice long range box
    * @param kc cutoff for k
    */
-  StructFact(int nptcls, int ns, const ParticleLayout& lattice, RealType kc);
+  StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists);
   /// desructor
   ~StructFact();
 
-  /** Recompute Rhok if lattice changed
-   * @param kc cut-off K
-   */
-  void updateNewCell(const ParticleLayout& lattice, RealType kc);
   /**  Update Rhok if all particles moved
    */
   void updateAllPart(const ParticleSet& P);
@@ -109,9 +106,6 @@ public:
   /// accessor of StorePerParticle
   bool isStorePerParticle() const { return StorePerParticle; }
 
-  /// access k_lists_ read only
-  const KContainer& getKLists() const { return *k_lists_; }
-
 private:
   /// Compute all rhok elements from the start
   void computeRhok(const ParticleSet& P);
@@ -123,7 +117,7 @@ private:
   void resize(int nkpts);
 
   /// K-Vector List.
-  const std::shared_ptr<KContainer> k_lists_;
+  const KContainer& k_lists_;
   /// number of particles
   const size_t num_ptcls;
   /// number of species

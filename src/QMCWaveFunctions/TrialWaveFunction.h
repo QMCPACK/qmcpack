@@ -25,7 +25,6 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/TimerManager.h"
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"
@@ -311,7 +310,7 @@ public:
                                 ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
-  void evaluateDerivRatios(VirtualParticleSet& P,
+  void evaluateDerivRatios(const VirtualParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);

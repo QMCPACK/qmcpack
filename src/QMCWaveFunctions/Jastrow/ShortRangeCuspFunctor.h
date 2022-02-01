@@ -358,7 +358,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   /// compute derivatives of U(r) with respect to the variational parameters
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
 
     // get the ratio of the distance and the soft cutoff distance

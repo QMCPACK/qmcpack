@@ -198,6 +198,14 @@ public:
     throw std::runtime_error("Calling DiracDeterminantCUDA::copyFromBuffer is illegal!");
   }
 
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {
+    throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateDerivatives is illegal!");
+  }
+
   void update(MCWalkerConfiguration* W,
               std::vector<Walker_t*>& walkers,
               int iat,

@@ -25,7 +25,6 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
 #endif
 
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
@@ -54,7 +53,6 @@ public:
   using J1Type     = J1OrbitalSoA<RadFuncType>;
   using J1SpinType = J1Spin<RadFuncType>;
   using J2Type     = J2OrbitalSoA<RadFuncType>;
-  using DiffJ2Type = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 
 #if defined(QMC_CUDA)
@@ -66,7 +64,6 @@ public:
   using J1Type      = OneBodyJastrowOrbitalBspline<RadFuncType>;
   using J1SpinType  = void;
   using J2Type      = TwoBodyJastrowOrbitalBspline<RadFuncType>;
-  using DiffJ2Type  = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 #endif
 
@@ -77,7 +74,6 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
   using J2Type      = J2OMPTarget<RadFuncType>;
-  using DiffJ2Type  = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 #endif
 
@@ -162,13 +158,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   ReportEngine PRE(ClassName, "createJ2(xmlNodePtr)");
   using Real       = typename RadFuncType::real_type;
   using J2Type     = typename JastrowTypeHelper<RadFuncType, Implementation>::J2Type;
-  using DiffJ2Type = typename JastrowTypeHelper<RadFuncType, Implementation>::DiffJ2Type;
 
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2  = std::make_unique<J2Type>(j2name, targetPtcl);
-  auto dJ2 = std::make_unique<DiffJ2Type>(targetPtcl);
 
   std::string init_mode("0");
   {
@@ -261,13 +255,10 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
         print(*functor, os);
       }
 
-      auto functor_2 = std::unique_ptr<RadFuncType>{dynamic_cast<RadFuncType*>(functor->makeClone())};
-      J2->addFunc(ia, ib, std::move(functor_2));
-      dJ2->addFunc(ia, ib, std::move(functor));
+      J2->addFunc(ia, ib, std::move(functor));
     }
     cur = cur->next;
   }
-  J2->dPsi = std::move(dJ2);
   J2->setOptimizable(true);
 
   // compute Chiesa Correction based on the current J2 parameters
@@ -294,9 +285,9 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
     sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
     fout = fopen(fname, "w");
   }
-  for (int iG = 0; iG < targetPtcl.getSK().getKLists().ksq.size(); iG++)
+  for (int iG = 0; iG < targetPtcl.getSimulationCell().getKLists().ksq.size(); iG++)
   {
-    RealType Gmag = std::sqrt(targetPtcl.getSK().getKLists().ksq[iG]);
+    RealType Gmag = std::sqrt(targetPtcl.getSimulationCell().getKLists().ksq[iG]);
     RealType sum  = 0.0;
     RealType uk   = 0.0;
     for (int i = 0; i < targetPtcl.groups(); i++)

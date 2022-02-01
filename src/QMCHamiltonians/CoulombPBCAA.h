@@ -36,14 +36,14 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
   using mRealType      = LRHandlerType::mRealType;
 
-  /// energy-optimized long range handle
+  /// energy-optimized long range handle. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AA;
   /// energy-optimized short range pair potential
-  std::shared_ptr<RadFunctorType> rVs;
+  std::shared_ptr<const RadFunctorType> rVs;
   /// force-optimized long range handle
-  std::shared_ptr<LRHandlerType> dAA;
+  std::shared_ptr<const LRHandlerType> dAA;
   /// force-optimized short range pair potential
-  std::shared_ptr<RadFunctorType> rVsforce;
+  std::shared_ptr<const RadFunctorType> rVsforce;
 
   bool is_active;
   bool FirstTime;

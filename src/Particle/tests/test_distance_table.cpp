@@ -12,7 +12,8 @@
 
 #include "catch.hpp"
 
-
+#include <stdio.h>
+#include <string>
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Particle/ParticleSet.h"
@@ -20,9 +21,7 @@
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
-
-#include <stdio.h>
-#include <string>
+#include "MinimalParticlePool.h"
 
 using std::string;
 
@@ -653,5 +652,19 @@ TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_ta
 #if defined(ENABLE_OFFLOAD)
   test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind::DC_POS_OFFLOAD);
 #endif
+}
+
+TEST_CASE("test_distance_pbc_diamond", "[distance_table][xml]")
+{
+  auto pset_pool = MinimalParticlePool::make_diamondC_1x1x1(OHMMS::Controller);
+
+  auto& ions  = *pset_pool.getParticleSet("ion");
+  auto& elecs = *pset_pool.getParticleSet("e");
+
+  ions.addTable(ions);
+  ions.update();
+  elecs.addTable(ions);
+  elecs.addTable(elecs);
+  elecs.update();
 }
 } // namespace qmcplusplus

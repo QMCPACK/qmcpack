@@ -48,7 +48,7 @@ TEST_CASE("temp3d", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
   const SimulationCell simulation_cell(Lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.SK.getKLists()
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);
 

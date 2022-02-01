@@ -96,6 +96,12 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
+
   ///Total number of particles
   int NumPtcls;
   ///number of major spins

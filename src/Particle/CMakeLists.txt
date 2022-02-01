@@ -21,6 +21,7 @@ set(PARTICLE
     VirtualParticleSet.cpp
     ParticleSet.BC.cpp
     DynamicCoordinatesBuilder.cpp
+    MCCoords.cpp
     MCWalkerConfiguration.cpp
     WalkerConfigurations.cpp
     SpeciesSet.cpp

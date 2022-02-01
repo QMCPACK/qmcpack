@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SIMULATIONCELL_H
 
 #include "Configuration.h"
+#include "LongRange/KContainer.h"
 
 namespace qmcplusplus
 {
@@ -33,6 +34,9 @@ public:
 
   void resetLRBox();
 
+  /// access k_lists_ read only
+  const KContainer& getKLists() const { return k_lists_; }
+
 private:
   ///simulation cell lattice
   Lattice lattice_;
@@ -40,6 +44,9 @@ private:
   Lattice primative_lattice_;
   ///long-range box
   Lattice LRBox_;
+
+  /// K-Vector List.
+  KContainer k_lists_;
 
   friend class ParticleSetPool;
 };

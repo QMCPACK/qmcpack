@@ -100,7 +100,7 @@ TextureSpline::TextureSpline()
 TextureSpline::~TextureSpline() { textureInUse[MyTexture] = false; }
 
 
-void TextureSpline::set(double data[], int numPoints, double rmin, double rmax)
+void TextureSpline::set(const double data[], int numPoints, double rmin, double rmax)
 {
   rMin      = rmin;
   rMax      = rmax;

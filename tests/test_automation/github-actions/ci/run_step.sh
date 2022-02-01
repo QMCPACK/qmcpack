@@ -31,6 +31,15 @@ case "$1" in
       ;; 
     esac
 
+    if [[ "${GH_JOBNAME}" =~ (-CUDA) ]]
+    then
+      echo "Set CUDACXX CMake environment variable to nvcc standard location"
+      export CUDACXX=/usr/local/cuda/bin/nvcc
+        
+      # Make current environment variables available to subsequent steps
+      echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+    fi 
+
     # Sanitizer
     case "${GH_JOBNAME}" in
       *"ASan"*)
@@ -75,6 +84,17 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=g++ \
               -DQMC_MPI=0 \
               -DQMC_OMP=0 \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"GCC9-NoMPI-Sandbox-"*)
+        echo 'Configure for enabling sandbox (minimal) only option with gcc'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DQMC_MPI=0 \
+              -DQMC_BUILD_SANDBOX_ONLY=ON \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
@@ -256,7 +276,8 @@ case "$1" in
       echo "Enabling OpenMPI oversubscription"
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
-      if [[ "$HOST_NAME" =~ (sulfur) ]]
+      
+      if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
       then
         echo "Set the management layer to ucx"
         export OMPI_MCA_pml=ucx
@@ -302,8 +323,22 @@ case "$1" in
     then 
        source /opt/intel2020/mkl/bin/mklvars.sh intel64
     fi
+
+    # Add ctest concurrent parallel jobs 
+    # Default for Linux GitHub Action runners
+    CTEST_JOBS="2"
+    # Default for macOS GitHub Action runners
+    if [[ "${GH_OS}" =~ (macOS) ]]
+    then
+      CTEST_JOBS="3"
+    fi
+
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
+    then
+      CTEST_JOBS="16"
+    fi
     
-    ctest --output-on-failure $TEST_LABEL
+    ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS
     ;;
   
   # Generate coverage reports

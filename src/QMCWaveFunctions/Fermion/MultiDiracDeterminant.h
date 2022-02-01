@@ -100,6 +100,12 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,

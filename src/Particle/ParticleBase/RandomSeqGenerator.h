@@ -2,11 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,8 +16,10 @@
 #ifndef QMCPLUSPLUS_RANDOMSEQUENCEGENERATOR_H
 #define QMCPLUSPLUS_RANDOMSEQUENCEGENERATOR_H
 #include <algorithm>
+#include <type_traits>
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
+#include "Particle/MCCoords.hpp"
 #include "config/stdlib/Constants.h"
 
 /*!\fn template<class T> void assignGaussRand(T* restrict a, unsigned n)
@@ -76,6 +79,22 @@ inline void makeGaussRandomWithEngine(std::vector<TinyVector<T, D>>& a, RG& rng)
   assignGaussRand(&(a[0][0]), a.size() * D, rng);
 }
 
+template<CoordsType CT, class RG>
+inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
+{
+  makeGaussRandomWithEngine(a.positions, rng);
+  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+    makeGaussRandomWithEngine(a.spins, rng);
+}
+
+template<typename T, class RG>
+inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
+{
+  static_assert(std::is_floating_point<T>::value,
+                "makeGaussRandomWithEngine(std::vector<T>...) only implemented for floating point T");
+  assignGaussRand(&(a[0]), a.size(), rng);
+}
+
 template<typename T, class RG>
 inline void makeGaussRandomWithEngine(ParticleAttrib<T>& a, RG& rng)
 {
@@ -83,6 +102,4 @@ inline void makeGaussRandomWithEngine(ParticleAttrib<T>& a, RG& rng)
 }
 
 } // namespace qmcplusplus
-
-
 #endif

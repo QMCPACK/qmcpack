@@ -94,7 +94,6 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   VectorSoaContainer<valT, 9> mVGL;
 
   // Used for evaluating derivatives with respect to the parameters
-  int NumVars;
   Array<std::pair<int, int>, 3> VarOffset;
   Vector<RealType> dLogPsi;
   Array<PosType, 2> gradLogPsi;
@@ -107,6 +106,29 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   std::vector<std::vector<PosType>> dgrad_dalpha;
   std::vector<std::vector<Tensor<RealType, 3>>> dhess_dalpha;
 
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), Nelec);
+    lapLogPsi.resize(myVars.size(), Nelec);
+
+    du_dalpha.resize(J3Unique.size());
+    dgrad_dalpha.resize(J3Unique.size());
+    dhess_dalpha.resize(J3Unique.size());
+
+    int ifunc = 0;
+    for (auto& j3UniquePair : J3Unique)
+    {
+      auto functorPtr           = j3UniquePair.second.get();
+      J3UniqueIndex[functorPtr] = ifunc;
+      const int numParams       = functorPtr->getNumParameters();
+      du_dalpha[ifunc].resize(numParams);
+      dgrad_dalpha[ifunc].resize(numParams);
+      dhess_dalpha[ifunc].resize(numParams);
+      ifunc++;
+    }
+  }
+
 public:
   ///alias FuncType
   using FuncType = FT;
@@ -115,15 +137,12 @@ public:
       : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
         ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST)),
         ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)),
-        Ions(ions),
-        NumVars(0)
+        Ions(ions)
   {
     if (myName.empty())
       throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }
-
-  ~JeeIOrbitalSoA() override {}
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const override
   {
@@ -146,10 +165,6 @@ public:
     // Ye: I don't like the following memory allocated by default.
     eeIcopy->myVars.clear();
     eeIcopy->myVars.insertFrom(myVars);
-    eeIcopy->NumVars = NumVars;
-    eeIcopy->dLogPsi.resize(NumVars);
-    eeIcopy->gradLogPsi.resize(NumVars, Nelec);
-    eeIcopy->lapLogPsi.resize(NumVars, Nelec);
     eeIcopy->VarOffset   = VarOffset;
     eeIcopy->Optimizable = Optimizable;
     return eeIcopy;
@@ -195,25 +210,6 @@ public:
     DistIndice_k.resize(Nbuffer);
   }
 
-  void initUnique()
-  {
-    du_dalpha.resize(J3Unique.size());
-    dgrad_dalpha.resize(J3Unique.size());
-    dhess_dalpha.resize(J3Unique.size());
-    int ifunc = 0;
-
-    for (auto& j3UniquePair : J3Unique)
-    {
-      auto functorPtr           = j3UniquePair.second.get();
-      J3UniqueIndex[functorPtr] = ifunc;
-      const int numParams       = functorPtr->getNumParameters();
-      du_dalpha[ifunc].resize(numParams);
-      dgrad_dalpha[ifunc].resize(numParams);
-      dhess_dalpha[ifunc].resize(numParams);
-      ifunc++;
-    }
-  }
-
   void addFunc(int iSpecies, int eSpecies1, int eSpecies2, std::unique_ptr<FT> j)
   {
     if (eSpecies1 == eSpecies2)
@@ -246,7 +242,6 @@ public:
     std::stringstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
     J3Unique.emplace(aname.str(), std::move(j));
-    initUnique();
   }
 
 
@@ -331,12 +326,9 @@ public:
     }
 
     myVars.getIndex(active);
-    NumVars = myVars.size();
+    const size_t NumVars = myVars.size();
     if (NumVars)
     {
-      dLogPsi.resize(NumVars);
-      gradLogPsi.resize(NumVars, Nelec);
-      lapLogPsi.resize(NumVars, Nelec);
       VarOffset.resize(iGroups, eGroups, eGroups);
       int varoffset = myVars.Index[0];
       for (int ig = 0; ig < iGroups; ig++)
@@ -865,6 +857,8 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi) override
   {
+    resizeWFOptVectors();
+
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)

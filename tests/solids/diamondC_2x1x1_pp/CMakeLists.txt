@@ -1487,6 +1487,39 @@ if(NOT QMC_CUDA)
   )
 
 
+  if(QMC_MIXED_PRECISION)
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "totenergy" "-14.12642652 0.00001462")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "kinetic" "17.30728109 0.00001749")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "potential" "-31.43370761 0.00000912")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "eeenergy" "-5.82744511 0.00000144")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "ionion" "-25.55133371 0.00000135")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "localecp" "-2.73935358 0.00000562")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "nonlocalecp" "2.68442478 0.00000442")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "samples" "151 0.0")
+  else()
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "totenergy" "-14.12642406 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "kinetic" "17.30727697 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "potential" "-31.43370103 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "eeenergy" "-5.82744518 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "ionion" "-25.55132719 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "localecp" "-2.73935077 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "nonlocalecp" "2.68442212 0.000001")
+      list(APPEND DET_DIAMOND2_DMC_PW_SCALARS "samples" "151.00000000 0.0")
+  endif()
+
+  qmc_run_and_check(
+    deterministic-diamondC_2x1x1_pp-dmc_pw_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+    det_qmc_vmc_dmc_pw
+    det_qmc_vmc_dmc_pw.in.xml
+    1
+    1
+    TRUE
+    1
+    DET_DIAMOND2_DMC_PW_SCALARS # dMC
+  )
+
+
   # CUDA references
 else()
   # VMC runs

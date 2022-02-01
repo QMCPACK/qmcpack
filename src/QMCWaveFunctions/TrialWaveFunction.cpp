@@ -1119,15 +1119,13 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
     }
 }
 
-void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
+void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
                                             const opt_variables_type& optvars,
                                             std::vector<ValueType>& ratios,
                                             Matrix<ValueType>& dratio)
 {
-#if defined(QMC_COMPLEX)
-  APP_ABORT("TrialWaveFunction::evaluateDerivRatios not available for complex wavefunctions");
-#else
   std::fill(ratios.begin(), ratios.end(), 1.0);
+  std::fill(dratio.begin(), dratio.end(), 0.0);
   std::vector<ValueType> t(ratios.size());
   for (int i = 0; i < Z.size(); ++i)
   {
@@ -1135,7 +1133,6 @@ void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
     for (int j = 0; j < ratios.size(); ++j)
       ratios[j] *= t[j];
   }
-#endif
 }
 
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
@@ -1168,12 +1165,7 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   //     for (int j=0; j<dlogpsi.size(); j++)
   //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
   for (int i = 0; i < Z.size(); i++)
-  {
-    if (Z[i]->dPsi)
-      (Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-    else
-      Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-  }
+    Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   //orbitals do not know about mass of particle.
   for (int i = 0; i < dhpsioverpsi.size(); i++)
     dhpsioverpsi[i] *= OneOverM;
@@ -1181,12 +1173,7 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   if (project)
   {
     for (int i = 0; i < Z.size(); i++)
-    {
-      if (Z[i]->dPsi)
-        (Z[i]->dPsi)->multiplyDerivsByOrbR(dlogpsi);
-      else
-        Z[i]->multiplyDerivsByOrbR(dlogpsi);
-    }
+      Z[i]->multiplyDerivsByOrbR(dlogpsi);
     RealType psiValue = std::exp(-log_real_) * std::cos(PhaseValue);
     for (int i = 0; i < dlogpsi.size(); i++)
       dlogpsi[i] *= psiValue;
@@ -1206,12 +1193,7 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
     std::vector<ValueType> tmp_dhpsioverpsi(nparam);
     TrialWaveFunction& twf = wf_list[iw];
     for (int i = 0; i < twf.Z.size(); i++)
-    {
-      if (twf.Z[i]->dPsi)
-        (twf.Z[i]->dPsi)->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
-      else
-        twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
-    }
+      twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
 
     RealType OneOverM = twf.getReciprocalMass();
     for (int i = 0; i < nparam; i++)
@@ -1229,12 +1211,7 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
                                               std::vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
-  {
-    if (Z[i]->dPsi)
-      (Z[i]->dPsi)->evaluateDerivativesWF(P, optvars, dlogpsi);
-    else
-      Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
-  }
+    Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
 }
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,

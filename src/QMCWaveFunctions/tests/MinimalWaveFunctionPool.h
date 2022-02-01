@@ -12,6 +12,7 @@
 #ifndef QMCPLUSPLUS_MINIMALWAVEFUNCTIONPOOL_H
 #define QMCPLUSPLUS_MINIMALWAVEFUNCTIONPOOL_H
 
+#include "catch.hpp"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
@@ -20,7 +21,7 @@ namespace qmcplusplus
 {
 class MinimalWaveFunctionPool
 {
-  const char* wf_input = R"(
+  static constexpr const char* const wf_input = R"(
 <wavefunction target='e'>
   <sposet_collection type="bspline" source="ion" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="0.8" twist="0 0 0" precision="double">
     <sposet name="spo_for_dets" size="4" spindataset="0"/>
@@ -39,12 +40,9 @@ class MinimalWaveFunctionPool
   )";
 
 public:
-  MinimalWaveFunctionPool() : comm_(nullptr) {}
-
-  WaveFunctionPool operator()(Communicate* comm, ParticleSetPool& particle_pool)
+  static WaveFunctionPool make_diamondC_1x1x1(Communicate* comm, ParticleSetPool& particle_pool)
   {
-    comm_ = comm;
-    WaveFunctionPool wp(particle_pool, comm_);
+    WaveFunctionPool wp(particle_pool, comm);
 
     Libxml2Document doc;
     bool okay = doc.parseFromString(wf_input);
@@ -56,9 +54,6 @@ public:
 
     return wp;
   }
-
-private:
-  Communicate* comm_;
 };
 
 } // namespace qmcplusplus
