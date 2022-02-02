@@ -110,9 +110,10 @@ void NonLocalECPComponent::print(std::ostream& os)
   for (int l = 0; l < nchannel; l++)
     os << "       l(" << l << ")=" << angpp_m[l] << std::endl;
   os << "    Cutoff radius = " << Rmax << std::endl;
+  os << "    Number of spherical integration grid points = " << nknot << std::endl;
   if (outputManager.isActive(Verbosity::HIGH))
   {
-    os << "    Spherical grids and weights: " << std::endl;
+    os << "    Spherical grid and weights: " << std::endl;
     for (int ik = 0; ik < nknot; ik++)
       os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
   }
