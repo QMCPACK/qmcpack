@@ -489,17 +489,16 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
       return twist_num;
     };
 
-    // The magic number -10 is an initial value to indicates no value given from XML input
-    if (twist_inp[0] > -10 || twist_inp[1] > -10 || twist_inp[2] > -10)
+    if (twist_inp[0] > TWIST_NO_INPUT || twist_inp[1] > TWIST_NO_INPUT || twist_inp[2] > TWIST_NO_INPUT)
     {
-      if (twist_num_inp != -10)
+      if (twist_num_inp != TWISTNUM_NO_INPUT)
         app_warning() << "twist attribute exists. twistnum attribute ignored. "
                          "To prevent this message, remove twistnum from input."
                       << std::endl;
 
       twist_num_ = find_twist(twist_inp);
     }
-    else if (twist_num_inp != -10)
+    else if (twist_num_inp != TWISTNUM_NO_INPUT)
     {
       app_warning() << "twist attribute does't exist but twistnum attribute was found. "
                     << "This is potentially ambiguous. Specifying twist attribute is preferred." << std::endl;

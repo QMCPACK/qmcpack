@@ -319,6 +319,11 @@ protected:
    * @param twist_inp twst XML input
    */
   void AnalyzeTwists2(const int twist_num_inp, const TinyVector<double, OHMMS_DIM>& twist_inp);
+
+  /// twistnum_inp == -10 to indicate no given input after parsing XML
+  static constexpr int TWISTNUM_NO_INPUT = -10;
+  /// twist_inp[i] <= -10 to indicate no given input after parsing XML
+  static constexpr double TWIST_NO_INPUT = -10;
 };
 
 } // namespace qmcplusplus

@@ -34,9 +34,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   int sortBands(1);
   int spinSet       = 0;
   int spinSet2      = 1;
-  // twist_num_inp and twist_inp are initialized to -10 to indicate no given input after parsing XML
-  int twist_num_inp = -10;
-  TinyVector<double, OHMMS_DIM> twist_inp(-10);
+  int twist_num_inp = TWISTNUM_NO_INPUT;
+  TinyVector<double, OHMMS_DIM> twist_inp(TWIST_NO_INPUT);
 
   //There have to be two "spin states"...  one for the up channel and one for the down channel.
   // We force this for spinors and manually resize states and FullBands.
