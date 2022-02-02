@@ -41,7 +41,7 @@ public:
   {
     for (int ki = 0; ki < NumK; ki++)
     {
-      RealType k = dot(sourcePtcl->getSK().getKLists().kpts_cart[ki], sourcePtcl->getSK().getKLists().kpts_cart[ki]);
+      RealType k = dot(sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki], sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki]);
       k          = std::sqrt(k) - K_0;
       Fk[ki]     = OneOverN * V_0 * std::exp(-k * k);
       //         app_log()<<ki<<": "<<Fk[ki] << std::endl;

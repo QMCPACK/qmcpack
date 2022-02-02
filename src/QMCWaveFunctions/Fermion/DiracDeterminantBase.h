@@ -85,8 +85,16 @@ public:
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
-    APP_ABORT("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
+    throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
   }
+
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     std::vector<ValueType>& dlogpsi) override
+  {
+    // assume no orbital optimization. If implemented, override this function
+  }
+
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
   using WaveFunctionComponent::evaluateGL;

@@ -88,10 +88,10 @@ public:
   void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.getLRBox(), 1);
-    //    fillYk(ref.getSK().getKLists());
-    fillYkg(ref.getSK().getKLists());
+    //    fillYk(ref.getSimulationCell().getKLists());
+    fillYkg(ref.getSimulationCell().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.getSK().getKLists());
+    //filldFk_dk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -100,10 +100,10 @@ public:
     rs = rs_ext;
     myFunc.reset(ref, rs);
     InitBreakup(ref.getLRBox(), 1);
-    //    fillYk(ref.getSK().getKLists());
-    fillYkg(ref.getSK().getKLists());
+    //    fillYk(ref.getSimulationCell().getKLists());
+    fillYkg(ref.getSimulationCell().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.getSK().getKLists());
+    //filldFk_dk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 

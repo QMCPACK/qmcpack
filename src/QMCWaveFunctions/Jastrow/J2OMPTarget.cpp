@@ -20,6 +20,7 @@
 #include "UserFunctor.h"
 #include "SoaDistanceTableABOMPTarget.h"
 #include "ResourceCollection.h"
+#include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
@@ -127,29 +128,47 @@ void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
 template<typename FT>
 void J2OMPTarget<FT>::checkInVariables(opt_variables_type& active)
 {
-  myVars.clear();
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->checkInVariables(active);
-    (*it).second->checkInVariables(myVars);
-    ++it;
-  }
+  for (auto& [key, functor] : J2Unique)
+    functor->checkInVariables(active);
 }
 
 template<typename FT>
 void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
 {
-  myVars.getIndex(active);
-  Optimizable = myVars.is_optimizable();
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
+  myVars.clear();
+  for (auto& [key, functor] : J2Unique)
   {
-    (*it).second->checkOutVariables(active);
-    ++it;
+    functor->myVars.getIndex(active);
+    myVars.insertFrom(functor->myVars);
   }
-  if (dPsi)
-    dPsi->checkOutVariables(active);
+  // Remove inactive variables so the mappings are correct
+  myVars.removeInactive();
+
+  myVars.getIndex(active);
+
+  const size_t NumVars = myVars.size();
+  if (NumVars)
+  {
+    OffSet.resize(F.size());
+
+    // Find first active variable for the starting offset
+    int varoffset = -1;
+    for (int i = 0; i < myVars.size(); i++)
+    {
+      varoffset = myVars.Index[i];
+      if (varoffset != -1)
+        break;
+    }
+
+    for (int i = 0; i < F.size(); ++i)
+      if (F[i] && F[i]->myVars.Index.size())
+      {
+        OffSet[i].first  = F[i]->myVars.Index.front() - varoffset;
+        OffSet[i].second = F[i]->myVars.Index.size() + OffSet[i].first;
+      }
+      else
+        OffSet[i].first = OffSet[i].second = -1;
+  }
 }
 
 template<typename FT>
@@ -157,14 +176,9 @@ void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
 {
   if (!Optimizable)
     return;
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->resetParameters(active);
-    ++it;
-  }
-  if (dPsi)
-    dPsi->resetParameters(active);
+  for (auto& [key, functor] : J2Unique)
+    functor->resetParameters(active);
+
   for (int i = 0; i < myVars.size(); ++i)
   {
     int ii = myVars.Index[i];
@@ -386,8 +400,6 @@ template<typename FT>
 std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
 {
   auto j2copy = std::make_unique<J2OMPTarget<FT>>(myName, tqp);
-  if (dPsi)
-    j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)
@@ -405,6 +417,11 @@ std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& t
     }
   j2copy->KEcorr      = KEcorr;
   j2copy->Optimizable = Optimizable;
+
+  j2copy->myVars.clear();
+  j2copy->myVars.insertFrom(myVars);
+  j2copy->OffSet = OffSet;
+
   return j2copy;
 }
 
@@ -801,6 +818,211 @@ void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
       auto hess = rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
       grad_grad_psi[i] -= hess;
       grad_grad_psi[j] -= hess;
+    }
+  }
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::evaluateDerivatives(ParticleSet& P,
+                                          const opt_variables_type& active,
+                                          std::vector<ValueType>& dlogpsi,
+                                          std::vector<ValueType>& dhpsioverpsi)
+{
+  if (myVars.size() == 0)
+    return;
+
+  evaluateDerivativesWF(P, active, dlogpsi);
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (active.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+  if (recalculate)
+  {
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (rcsingles[k])
+      {
+        dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(lapLogPsi[k])) - ValueType(Dot(P.G, gradLogPsi[k]));
+      }
+    }
+  }
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::evaluateDerivativesWF(ParticleSet& P,
+                                            const opt_variables_type& active,
+                                            std::vector<ValueType>& dlogpsi)
+{
+  if (myVars.size() == 0)
+    return;
+
+  resizeWFOptVectors();
+
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (active.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+  if (recalculate)
+  {
+    ///precomputed recalculation switch
+    std::vector<bool> RecalcSwitch(F.size(), false);
+    for (int i = 0; i < F.size(); ++i)
+    {
+      if (OffSet[i].first < 0)
+      {
+        // nothing to optimize
+        RecalcSwitch[i] = false;
+      }
+      else
+      {
+        bool recalcFunc(false);
+        for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        RecalcSwitch[i] = recalcFunc;
+      }
+    }
+    dLogPsi              = 0.0;
+    const size_t NumVars = myVars.size();
+    for (int p = 0; p < NumVars; ++p)
+    {
+      gradLogPsi[p] = 0.0;
+      lapLogPsi[p]  = 0.0;
+    }
+    std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+    const auto& d_table = P.getDistTableAA(my_table_ID_);
+    constexpr RealType cone(1);
+    constexpr RealType lapfac(OHMMS_DIM - cone);
+    const size_t n  = d_table.sources();
+    const size_t ng = P.groups();
+    for (size_t i = 1; i < n; ++i)
+    {
+      const size_t ig   = P.GroupID[i] * ng;
+      const auto& dist  = d_table.getDistRow(i);
+      const auto& displ = d_table.getDisplRow(i);
+      for (size_t j = 0; j < i; ++j)
+      {
+        const size_t ptype = ig + P.GroupID[j];
+        if (RecalcSwitch[ptype])
+        {
+          std::fill(derivs.begin(), derivs.end(), 0.0);
+          if (!F[ptype]->evaluateDerivatives(dist[j], derivs))
+            continue;
+          RealType rinv(cone / dist[j]);
+          PosType dr(displ[j]);
+          for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
+          {
+            RealType dudr(rinv * derivs[ip][1]);
+            RealType lap(derivs[ip][2] + lapfac * dudr);
+            //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
+            PosType gr(dudr * dr);
+            dLogPsi[p] -= derivs[ip][0];
+            gradLogPsi[p][i] += gr;
+            gradLogPsi[p][j] -= gr;
+            lapLogPsi[p][i] -= lap;
+            lapLogPsi[p][j] -= lap;
+          }
+        }
+      }
+    }
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (rcsingles[k])
+      {
+        dlogpsi[kk] = dLogPsi[k];
+      }
+      //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(lapLogPsi[ip])-Dot(P.G,gradLogPsi[ip]));
+    }
+  }
+}
+
+template<typename FT>
+void J2OMPTarget<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                          const opt_variables_type& optvars,
+                                          std::vector<ValueType>& ratios,
+                                          Matrix<ValueType>& dratios)
+{
+  evaluateRatios(VP, ratios);
+  if (myVars.size() == 0)
+    return;
+
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (optvars.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+
+  if (recalculate)
+  {
+    ///precomputed recalculation switch
+    std::vector<bool> RecalcSwitch(F.size(), false);
+    for (int i = 0; i < F.size(); ++i)
+    {
+      if (OffSet[i].first < 0)
+      {
+        // nothing to optimize
+        RecalcSwitch[i] = false;
+      }
+      else
+      {
+        bool recalcFunc(false);
+        for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        RecalcSwitch[i] = recalcFunc;
+      }
+    }
+    const size_t NumVars = myVars.size();
+    std::vector<RealType> derivs_ref(NumVars);
+    std::vector<RealType> derivs(NumVars);
+    const auto& d_table = VP.getDistTableAB(my_table_ID_);
+    const size_t n      = d_table.sources();
+    const size_t nt     = VP.getTotalNum();
+    for (size_t i = 0; i < n; ++i)
+    {
+      if (i == VP.refPtcl)
+        continue;
+      const size_t ptype = VP.refPS.GroupID[i] * VP.refPS.groups() + VP.refPS.GroupID[VP.refPtcl];
+      if (!RecalcSwitch[ptype])
+        continue;
+      const auto dist_ref = i < VP.refPtcl ? VP.refPS.getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
+                                           : VP.refPS.getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
+      //first calculate the old derivatives VP.refPtcl.
+      std::fill(derivs_ref.begin(), derivs_ref.end(), 0.0);
+      F[ptype]->evaluateDerivatives(dist_ref, derivs_ref);
+      for (size_t j = 0; j < nt; ++j)
+      {
+        std::fill(derivs.begin(), derivs.end(), 0.0);
+        F[ptype]->evaluateDerivatives(d_table.getDistRow(j)[i], derivs);
+        for (int ip = 0, p = F[ptype]->myVars.Index.front(); ip < F[ptype]->myVars.Index.size(); ++ip, ++p)
+          dratios[j][p] += derivs_ref[ip] - derivs[ip];
+      }
     }
   }
 }

@@ -16,6 +16,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <cassert>
 #include "RefVectorWithLeader.h"
 
 namespace qmcplusplus

@@ -58,6 +58,8 @@ void SimulationCell::resetLRBox()
       LRBox_.print(app_log());
       app_log() << "--------------------------------------- " << std::endl;
     }
+
+    k_lists_.updateKLists(LRBox_, LRBox_.LR_kc);
   }
 }
 }

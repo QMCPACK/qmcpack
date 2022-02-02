@@ -41,10 +41,10 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
 
   ///source particle set
   ParticleSet& PtclA;
-  ///long-range Handler
+  ///long-range Handler. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AB;
   ///long-range derivative handler
-  std::shared_ptr<LRHandlerType> dAB;
+  std::shared_ptr<const LRHandlerType> dAB;
   ///locator of the distance table
   const int myTableIndex;
   ///number of species of A particle set
@@ -62,11 +62,11 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///radial grid
   std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
-  std::shared_ptr<RadFunctorType> V0;
+  std::shared_ptr<const RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
-  std::shared_ptr<RadFunctorType> fV0;
+  std::shared_ptr<const RadFunctorType> fV0;
   ///Radial functor for derivative of bare coulomb, optimized for forces
-  std::shared_ptr<RadFunctorType> dfV0;
+  std::shared_ptr<const RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
   int MaxGridPoints;
@@ -84,16 +84,16 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Qspec[spec] charge for the spec-th species of B
   std::vector<RealType> Qspec;
   ///Short-range potential for each ion
-  std::vector<RadFunctorType*> Vat;
+  std::vector<const RadFunctorType*> Vat;
   ///Short-range potential for each species
   std::vector<std::shared_ptr<RadFunctorType>> Vspec;
   ///Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each ion
   ///Required for force evaluations.
-  std::vector<RadFunctorType*> fVat;
-  std::vector<RadFunctorType*> fdVat;
+  std::vector<const RadFunctorType*> fVat;
+  std::vector<const RadFunctorType*> fdVat;
   ////Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each species
-  std::vector<std::shared_ptr<RadFunctorType>> fVspec;
-  std::vector<std::shared_ptr<RadFunctorType>> fdVspec;
+  std::vector<std::shared_ptr<const RadFunctorType>> fVspec;
+  std::vector<std::shared_ptr<const RadFunctorType>> fdVspec;
   /*@{
    * @brief temporary data for pbyp evaluation
    */

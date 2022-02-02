@@ -48,7 +48,6 @@ struct NLjob
 
 ///forward declaration
 class WaveFunctionComponent;
-struct DiffWaveFunctionComponent;
 class ResourceCollection;
 class TWFFastDerivWrapper;
 /**@defgroup WaveFunctionComponent group
@@ -107,11 +106,6 @@ public:
 
   /** current update mode */
   int UpdateMode;
-  /** Pointer to the differential WaveFunctionComponent of this object
-   *
-   * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
-   */
-  std::shared_ptr<DiffWaveFunctionComponent> dPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
   const std::string ClassName;
@@ -143,9 +137,6 @@ public:
   virtual ~WaveFunctionComponent();
 
   inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
-
-  ///assign a differential WaveFunctionComponent
-  virtual void setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d);
 
   ///assembles the full value
   PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
@@ -514,7 +505,7 @@ public:
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi);
+                                   std::vector<ValueType>& dhpsioverpsi) = 0;
 
   /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
    *  parameters
@@ -575,9 +566,9 @@ public:
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
    * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
-   * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
+   * @param dratios Nq x Num_param matrix. \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
-  virtual void evaluateDerivRatios(VirtualParticleSet& VP,
+  virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);

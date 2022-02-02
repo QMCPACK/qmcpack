@@ -186,7 +186,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.14.0. Most
+minimum required version of CMake is 3.15.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 

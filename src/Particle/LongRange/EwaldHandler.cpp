@@ -40,7 +40,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
     PreFactors[1] = 2.0 * std::sqrt(M_PI) / (Sigma * Area); //\f$  \frac{2\pi}{A}\frac{1}{Sigma\pi}\f$
     PreFactors[2] = 1.0 / (2 * Sigma);                      //Used for the k-dependent term
   }
-  fillFk(ref.getSK().getKLists());
+  fillFk(ref.getSimulationCell().getKLists());
 }
 
 EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
