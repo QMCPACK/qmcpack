@@ -517,7 +517,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
       twist_num_ = find_twist({0, 0, 0});
     }
 
-    assert(twist_num_ >= 0 && twist_num_ < twist_num_inp);
+    assert(twist_num_ >= 0 && twist_num_ < numSuperTwists);
 
     char buf[1000];
     snprintf(buf, 1000, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]", twist_num_, superFracs[twist_num_][0],

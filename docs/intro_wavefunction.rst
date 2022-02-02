@@ -643,7 +643,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :name: Listing 6
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
+                tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
   </sposet_collection>
