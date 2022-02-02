@@ -365,7 +365,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       for (int iorb = 0, num = 0; iorb < NumDistinctOrbitals; iorb++)
       {
         int ti                               = (*FullBands[spinSet])[iorb].TwistIndex;
-        temp_OrbitalSet->kPoints[iorb]       = PrimCell.k_cart(TwistAngles[ti]);
+        temp_OrbitalSet->kPoints[iorb]       = PrimCell.k_cart(-TwistAngles[ti]);
         temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
         num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }

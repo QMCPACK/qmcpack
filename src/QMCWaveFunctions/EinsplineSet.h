@@ -262,7 +262,10 @@ protected:
 
   // True if we should unpack this orbital into two copies
   std::vector<bool> MakeTwoCopies;
-  // k-points for each orbital
+  /** kpoints for each unique orbitals.
+   * Note: for historic reason, this sign is opposite to what was used in DFT when orbitals were generated.
+   * Changing the sign requires updating all the evaluation code.
+   */
   Vector<TinyVector<double, OHMMS_DIM>> kPoints;
 
   ///////////////////
