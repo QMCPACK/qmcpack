@@ -110,10 +110,11 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   int numOrbs = 0;
   int sortBands(1);
-  int spinSet       = 0;
+  int spinSet     = 0;
+  bool skipChecks = false;
+  // twist_num_inp and twist_inp are initialized to -10 to indicate no given input after parsing XML
   int twist_num_inp = -10;
   TinyVector<double, OHMMS_DIM> twist_inp(-10);
-  bool skipChecks = false;
 
   std::string sourceName;
   std::string spo_prec("double");

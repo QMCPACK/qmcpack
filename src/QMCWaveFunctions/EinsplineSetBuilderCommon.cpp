@@ -489,6 +489,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
       return twist_num;
     };
 
+    // The magic number -10 is an initial value to indicates no value given from XML input
     if (twist_inp[0] > -10 || twist_inp[1] > -10 || twist_inp[2] > -10)
     {
       if (twist_num_inp != -10)
