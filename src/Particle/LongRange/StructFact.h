@@ -37,13 +37,6 @@ class StructFact : public QMCTraits
 public:
   //Typedef for the lattice-type
   using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
-  /** false, if the structure factor is not actively updated
-   *
-   * Default is false. Particle-by-particle update functions, makeMove,
-   * acceptMove and rejectMove are costly and do not need to be performed
-   * unless Hamiltonian uses pbyp.
-   */
-  bool DoUpdate;
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
@@ -80,23 +73,6 @@ public:
   static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
                                const RefVectorWithLeader<ParticleSet>& p_list);
 
-  /** evaluate eikr_temp for eikr for the proposed move
-   * @param active index of the moved particle
-   * @param pos proposed position
-   */
-  void makeMove(int active, const PosType& pos);
-  /** update eikr and rhok with eikr_temp
-   * @param active index of the moved particle
-   * @param gid group id of the active particle
-   */
-  void acceptMove(int active, int gid, const PosType& rold);
-  /** discard any temporary data
-   * @param active index of the moved particle
-   * @param gid group id of the active particle
-   *
-   * Do nothing
-   */
-  void rejectMove(int active, int gid);
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
    * if StorePerParticle was true, this function is no-op
