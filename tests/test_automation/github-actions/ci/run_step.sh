@@ -144,14 +144,15 @@ case "$1" in
       ;;
       *"Clang14Dev-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
-              "with llvm development commit 01d59c0de822, need built-from-source OpenBLAS due to bug in rpm"
+              "with llvm development commit bafb6f3e9cc7, need built-from-source OpenBLAS due to bug in rpm"
+
               # TODO: upgrade to llvm14 clang14 when available
-        export OMPI_CC=/opt/llvm/01d59c0de822/bin/clang
-        export OMPI_CXX=/opt/llvm/01d59c0de822/bin/clang++
+        export OMPI_CC=/opt/llvm/bafb6f3e9cc7/bin/clang
+        export OMPI_CXX=/opt/llvm/bafb6f3e9cc7/bin/clang++
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/llvm/01d59c0de822/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/llvm/01d59c0de822/bin/clang++" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/llvm/bafb6f3e9cc7/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/bafb6f3e9cc7/bin/clang++" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -311,7 +312,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/bafb6f3e9cc7/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
