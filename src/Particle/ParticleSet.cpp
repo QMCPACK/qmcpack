@@ -433,7 +433,7 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos& displ, bool may
   active_ptcl_     = iat;
   active_pos_      = R[iat] + displ;
   active_spin_val_ = spins[iat];
-  computeNewPosDistTablesAndSK(iat, active_pos_, maybe_accept);
+  computeNewPosDistTables(iat, active_pos_, maybe_accept);
 }
 
 void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl)
@@ -457,7 +457,7 @@ void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
     new_positions.push_back(p_list[iw].active_pos_);
   }
 
-  mw_computeNewPosDistTablesAndSK(p_list, iat, new_positions);
+  mw_computeNewPosDistTables(p_list, iat, new_positions);
 }
 
 void ParticleSet::mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
@@ -489,7 +489,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ)
         is_valid = false;
     }
   }
-  computeNewPosDistTablesAndSK(iat, active_pos_, true);
+  computeNewPosDistTables(iat, active_pos_, true);
   return is_valid;
 }
 
@@ -500,22 +500,18 @@ bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos&
   return is_valid;
 }
 
-void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept)
+void ParticleSet::computeNewPosDistTables(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept)
 {
   ScopedTimer compute_newpos_scope(myTimers[PS_newpos]);
 
   for (int i = 0; i < DistTables.size(); ++i)
     DistTables[i]->move(*this, newpos, iat, maybe_accept);
-  //Do not change SK: 2007-05-18
-  //Change SK only if DoUpdate is true: 2008-09-12
-  if (structure_factor_ && structure_factor_->DoUpdate)
-    structure_factor_->makeMove(iat, newpos);
 }
 
-void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                  Index_t iat,
-                                                  const std::vector<SingleParticlePos>& new_positions,
-                                                  bool maybe_accept)
+void ParticleSet::mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleSet>& p_list,
+                                             Index_t iat,
+                                             const std::vector<SingleParticlePos>& new_positions,
+                                             bool maybe_accept)
 {
   ParticleSet& p_leader = p_list.getLeader();
   ScopedTimer compute_newpos_scope(p_leader.myTimers[PS_newpos]);
@@ -537,13 +533,6 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
 
     // DistTables mw_move calls are asynchronous. Wait for them before return.
     PRAGMA_OFFLOAD("omp taskwait")
-  }
-  auto& SK = p_leader.structure_factor_;
-  if (SK && SK->DoUpdate)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < p_list.size(); iw++)
-      p_list[iw].structure_factor_->makeMove(iat, new_positions[iw]);
   }
 }
 
@@ -705,10 +694,6 @@ void ParticleSet::acceptMove(Index_t iat)
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->update(iat);
 
-  //Do not change SK: 2007-05-18
-  if (structure_factor_ && structure_factor_->DoUpdate)
-    structure_factor_->acceptMove(iat, GroupID[iat], R[iat]);
-
   R[iat]       = active_pos_;
   spins[iat]   = active_spin_val_;
   active_ptcl_ = -1;
@@ -722,10 +707,6 @@ void ParticleSet::acceptMoveForwardMode(Index_t iat)
   coordinates_->setOneParticlePos(active_pos_, iat);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->updatePartial(iat, true);
-
-  //Do not change SK: 2007-05-18
-  if (structure_factor_ && structure_factor_->DoUpdate)
-    structure_factor_->acceptMove(iat, GroupID[iat], R[iat]);
 
   R[iat]       = active_pos_;
   spins[iat]   = active_spin_val_;
@@ -792,11 +773,6 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
       assert(iat == p_list[iw].active_ptcl_);
       if (isAccepted[iw])
       {
-        //Do not change SK: 2007-05-18
-        auto& SK = p_leader.structure_factor_;
-        if (SK && SK->DoUpdate)
-          p_list[iw].structure_factor_->acceptMove(iat, p_list[iw].GroupID[iat], p_list[iw].R[iat]);
-
         p_list[iw].R[iat]     = p_list[iw].active_pos_;
         p_list[iw].spins[iat] = p_list[iw].active_spin_val_;
       }
@@ -818,7 +794,7 @@ void ParticleSet::donePbyP(bool skipSK)
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
   coordinates_->donePbyP();
-  if (!skipSK && structure_factor_ && !structure_factor_->DoUpdate)
+  if (!skipSK && structure_factor_)
     structure_factor_->updateAllPart(*this);
   for (size_t i = 0; i < DistTables.size(); ++i)
     DistTables[i]->finalizePbyP(*this);
@@ -836,7 +812,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bo
     pset.active_ptcl_ = -1;
   }
 
-  if (!skipSK && p_leader.structure_factor_ && !p_leader.structure_factor_->DoUpdate)
+  if (!skipSK && p_leader.structure_factor_)
   {
     auto sk_list = extractSKRefList(p_list);
     StructFact::mw_updateAllPart(sk_list, p_list);
@@ -874,9 +850,6 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
     for (int i = 0; i < DistTables.size(); i++)
       if (DistTables[i]->getModes() & DTModes::NEED_FULL_TABLE_ANYTIME)
         DistTables[i]->evaluate(*this);
-    //computed so that other objects can use them, e.g., kSpaceJastrow
-    if (structure_factor_ && structure_factor_->DoUpdate)
-      structure_factor_->updateAllPart(*this);
   }
 
   active_ptcl_ = -1;
@@ -907,13 +880,6 @@ void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
     {
       const auto dt_list(extractDTRefList(p_list, i));
       dts[i]->mw_recompute(dt_list, p_list, recompute);
-    }
-
-    if (p_leader.structure_factor_ && p_leader.structure_factor_->DoUpdate)
-    {
-#pragma omp parallel for
-      for (int iw = 0; iw < p_list.size(); iw++)
-        p_list[iw].structure_factor_->updateAllPart(p_list[iw]);
     }
   }
 }
