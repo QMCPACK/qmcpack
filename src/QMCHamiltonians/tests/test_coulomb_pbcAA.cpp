@@ -27,6 +27,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 {
+  double vmad_sc = -1.4186487397403098;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -59,17 +60,23 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   REQUIRE(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(ions);
-  //cout << "val = " << val << std::endl;
-  REQUIRE(val == Approx(-1.418648723)); // not validated
+  //std::cout << "val = " << val << std::endl;
+  REQUIRE(val == Approx(vmad_sc));
+
+  // supercell Madelung energy
+  val = caa.MC0;
+  REQUIRE(val == Approx(vmad_sc));
 }
 
 TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 {
+  double alat = 3.77945227;
+  double vmad_sc = -1.4186487397403098/alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
-  lattice.R.diagonal(3.77945227);
+  lattice.R.diagonal(alat);
   lattice.reset();
 
   const SimulationCell simulation_cell(lattice);
@@ -101,8 +108,12 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   REQUIRE(consts == Approx(-1.675229452)); // not validated
 
   double val = caa.evaluate(elec);
-  //cout << "BCC H val = " << val << std::endl;
+  //std::cout << "BCC H val = " << val << std::endl;
   REQUIRE(val == Approx(-0.9628996199)); // not validated
+
+  // supercell Madelung energy
+  val = caa.MC0;
+  REQUIRE(val == Approx(vmad_sc));
 }
 
 TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
@@ -143,8 +154,52 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
   REQUIRE(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(elec);
-  //cout << "val = " << val << std::endl;
   REQUIRE(val == Approx(-1.418648723)); // not validated
+}
+
+TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
+{
+  double alat = 1.0;
+  double vmad_bcc = -1.819616724754322/alat;
+  LRCoulombSingleton::CoulombHandler = 0;
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R = 0.5*alat;
+  lattice.R(0, 0) = -0.5*alat;
+  lattice.R(1, 1) = -0.5*alat;
+  lattice.R(2, 2) = -0.5*alat;
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet elec(simulation_cell);
+
+  elec.setName("elec");
+  elec.create(1);
+  elec.R[0][0] = 0.0;
+  elec.R[0][1] = 0.0;
+  elec.R[0][2] = 0.0;
+
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  int pMembersizeIdx           = tspecies.addAttribute("membersize");
+  tspecies(pMembersizeIdx, upIdx)   = 1;
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(massIdx, upIdx)     = 1.0;
+
+  elec.createSK();
+  elec.update();
+
+
+  CoulombPBCAA caa = CoulombPBCAA(elec, false);
+
+  double val = caa.evaluate(elec);
+  REQUIRE(val == Approx(vmad_bcc));
+
+  val = caa.MC0;
+  REQUIRE(val == Approx(vmad_bcc));
 }
 
 
