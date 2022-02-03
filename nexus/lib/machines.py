@@ -1574,7 +1574,13 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
             if out is None:
-                extra = ' --me'
+                if isinstance(self.user,bool) and self.user==False:
+                    extra = ''
+                elif self.user is not None:
+                    extra = ' -u {}'.format(self.user)
+                else:
+                    extra = ' --user=$USER'
+                #end if
                 out,err,rc = execute('squeue'+extra)
             #end if
             lines = out.splitlines()
