@@ -228,6 +228,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   const int nw             = WFC_list.size();
   const int ndets          = det_leader.Dets[det_id]->getNumDets();
 
+
   RefVectorWithLeader<MultiDiracDeterminant> det_list(*det_leader.Dets[det_id]);
   det_list.reserve(WFC_list.size());
   ScopedTimer local_timer(det_leader.MWEvalGradTimer);
@@ -235,11 +236,11 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   {
     auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det_list.push_back(*det.Dets[det_id]);
-    if (newpos)
-      det.Dets[det_id]->evaluateDetsAndGradsForPtclMove(P_list[iw], iat);
   }
 
-  if (!newpos)
+  if (newpos)
+    det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat);
+  else 
     det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat);
 
   det_value_ptr_list.resize(nw);

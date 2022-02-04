@@ -28,6 +28,7 @@
 #include "CPU/math.hpp"
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -230,6 +231,20 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
 {
   //use BLAS dot since the stride is not uniform
   return simd::dot(Minv.cols(), Minv.data() + colchanged, Minv.cols(), newv.data(), 1);
+}
+
+/** determinant ratio with a column substitution
+ * @param Minv inverse matrix
+ * @param newv column vector
+ * @param colchanged column index to be replaced
+ * @return \f$ M^{new}/M\f$
+ */
+template<typename MatA, typename VecB>
+inline void mw_DetRatioByColumn(const int nw,std::vector<typename MatA::value_type> &curRatio_list, const RefVector<MatA>& Minv_list, const RefVector<VecB>& newv_list, int colchanged)
+{
+  //use BLAS dot since the stride is not uniform
+  for (size_t iw=0; iw<nw;iw++)
+	  curRatio_list[iw]=simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged, Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
 }
 
 /** update a inverse matrix by a row substitution
