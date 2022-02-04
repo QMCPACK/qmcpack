@@ -98,7 +98,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << value_ << std::endl;
+  app_log() << "\n    e-e Madelung Const. =" << std::setprecision(8) << MC0 << "\n    Vtot     =" << value_ << std::endl;
 }
 
 CoulombPBCAA::~CoulombPBCAA() = default;
@@ -415,13 +415,13 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
-  //Compute Madelung constant: this is not correct for general cases
+  //Neutraling background term
+  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
+  //Compute Madelung constant
   MC0 = 0.0;
   for (int i = 0; i < AA->Fk.size(); i++)
     MC0 += AA->Fk[i];
-  MC0 = 0.5 * (MC0 - vl_r0);
-  //Neutraling background term
-  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
+  MC0 = 0.5 * (MC0 - vl_r0 - vs_k0);
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = 0.0;
@@ -435,7 +435,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA total constant " << Consts << std::endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return Consts;
 }
 
