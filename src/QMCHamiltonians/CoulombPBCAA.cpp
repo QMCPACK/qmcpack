@@ -434,9 +434,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
     Consts += v1;
   }
   if (report)
-  {
     app_log() << "   PBCAA total constant " << Consts << std::endl;
-  }
   return Consts;
 }
 

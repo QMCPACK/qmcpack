@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 {
-  double vmad_sc = -1.4186487397403098;
+  const double vmad_sc = -1.4186487397403098;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -70,8 +70,8 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 {
-  double alat = 3.77945227;
-  double vmad_sc = -1.4186487397403098/alat;
+  const double alat = 3.77945227;
+  const double vmad_sc = -1.4186487397403098/alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -108,7 +108,6 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   REQUIRE(consts == Approx(-1.675229452)); // not validated
 
   double val = caa.evaluate(elec);
-  //std::cout << "BCC H val = " << val << std::endl;
   REQUIRE(val == Approx(-0.9628996199)); // not validated
 
   // supercell Madelung energy
@@ -159,8 +158,8 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
 {
-  double alat = 1.0;
-  double vmad_bcc = -1.819616724754322/alat;
+  const double alat = 1.0;
+  const double vmad_bcc = -1.819616724754322/alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -176,18 +175,16 @@ TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create(1);
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
+  elec.R[0] = {0.0, 0.0, 0.0};
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  int pMembersizeIdx           = tspecies.addAttribute("membersize");
-  tspecies(pMembersizeIdx, upIdx)   = 1;
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies            = elec.getSpeciesSet();
+  int upIdx                       = tspecies.addSpecies("u");
+  int chargeIdx                   = tspecies.addAttribute("charge");
+  int massIdx                     = tspecies.addAttribute("mass");
+  int pMembersizeIdx              = tspecies.addAttribute("membersize");
+  tspecies(pMembersizeIdx, upIdx) = 1;
+  tspecies(chargeIdx, upIdx)      = -1;
+  tspecies(massIdx, upIdx)        = 1.0;
 
   elec.createSK();
   elec.update();
