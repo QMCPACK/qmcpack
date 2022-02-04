@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 {
-  const double vmad_sc = -1.4186487397403098;
+  const double vmad_sc               = -1.4186487397403098;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -70,8 +70,8 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 {
-  const double alat = 3.77945227;
-  const double vmad_sc = -1.4186487397403098/alat;
+  const double alat                  = 3.77945227;
+  const double vmad_sc               = -1.4186487397403098 / alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -133,14 +133,14 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
   elec.R[0][1] = 0.5;
   elec.R[0][2] = 0.0;
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  int pMembersizeIdx           = tspecies.addAttribute("membersize");
-  tspecies(pMembersizeIdx, upIdx)   = 1;
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies            = elec.getSpeciesSet();
+  int upIdx                       = tspecies.addSpecies("u");
+  int chargeIdx                   = tspecies.addAttribute("charge");
+  int massIdx                     = tspecies.addAttribute("mass");
+  int pMembersizeIdx              = tspecies.addAttribute("membersize");
+  tspecies(pMembersizeIdx, upIdx) = 1;
+  tspecies(chargeIdx, upIdx)      = -1;
+  tspecies(massIdx, upIdx)        = 1.0;
 
   elec.createSK();
   elec.update();
@@ -158,16 +158,16 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
 {
-  const double alat = 1.0;
-  const double vmad_bcc = -1.819616724754322/alat;
+  const double alat                  = 1.0;
+  const double vmad_bcc              = -1.819616724754322 / alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
-  lattice.R = 0.5*alat;
-  lattice.R(0, 0) = -0.5*alat;
-  lattice.R(1, 1) = -0.5*alat;
-  lattice.R(2, 2) = -0.5*alat;
+  lattice.R         = 0.5 * alat;
+  lattice.R(0, 0)   = -0.5 * alat;
+  lattice.R(1, 1)   = -0.5 * alat;
+  lattice.R(2, 2)   = -0.5 * alat;
   lattice.reset();
 
   const SimulationCell simulation_cell(lattice);
