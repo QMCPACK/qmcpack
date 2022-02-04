@@ -236,10 +236,17 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
 }
 
 /** evaluate everything before optimization */
+/*
+  JPT 12.01.2022
+  Current problem is that the hamiltonian and overlap matrices contain NaN's.
+  I suspect orbopt derivs are to blame.
+ */
 void QMCCostFunction::checkConfigurations()
 {
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
+
+  // Get the data across all threads accumulated in the VMC run
 #pragma omp parallel reduction(+ : et_tot, e2_tot)
   {
     int ip = omp_get_thread_num();
@@ -295,14 +302,26 @@ void QMCCostFunction::checkConfigurations()
 
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
-
+	
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
-        for (int i = 0; i < NumOptimizables; i++)
-        {
-          rDsaved[i]  = std::real(Dsaved[i]);
-          rHDsaved[i] = std::real(HDsaved[i]);
-        }
+
+	// @JPT Print out the derivative results to the output file.
+	// Seems to be ok as of 12.01.2022
+	// @JPT Dsaved = "dlogpsi", HDsaved = "dhpsioverpsi"
+	// app_log() << "JPT DEBUG\n";
+	// app_log() << "rDsaved   rHDsaved\n";
+        // for (int i = 0; i < NumOptimizables; i++)
+        // {
+        //   rDsaved[i]  = std::real(Dsaved[i]);
+        //   rHDsaved[i] = std::real(HDsaved[i]);
+	//   app_log() << std::scientific << std::setw(12) << std::setprecision(8) << rDsaved[i]
+	// 	    << "  " << std::scientific << std::setw(12) << std::setprecision(8) << rHDsaved[i]
+	// 	    << "\n";
+        // }
+	// app_log() << "JPT DEBUG\n";
+	// app_log() << "\n";
+		
         copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
         copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
       }
@@ -667,6 +686,11 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
 }
 
 
+/*
+  Builds the hamiltonian and overlap matrices required for parameter optimization
+  within the "linear method" as described in Toulouse et al., 2007.
+  I think that "Left" = Hamiltonian matrix, and "Right" = Overlap matrix.
+ */
 QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                            Matrix<Return_rt>& Right)
 {
@@ -722,6 +746,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
       Return_rt eloc_new              = saved[ENERGY_NEW];
       const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
       const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
+
 #pragma omp parallel for
       for (int pm = 0; pm < getNumParams(); pm++)
       {
@@ -760,11 +785,13 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
+  
+  
+  
   Left(0, 0)  = (1 - b2) * curAvg_w + b2 * V_avg;
   Right(0, 0) = 1.0 + b1 * H2_avg * V_avg;
   if (GEVType == "H2")
     return H2_avg;
-
   return 1.0;
 }
 } // namespace qmcplusplus

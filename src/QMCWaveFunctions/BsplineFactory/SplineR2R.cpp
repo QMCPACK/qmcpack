@@ -22,11 +22,8 @@
 
 namespace qmcplusplus
 {
-
-  /*
-    @TODO (JPT) 20.09.2021
-    Set the number of orbitals to include in the rotations
-   */
+  // Sets the size of the orbital basis. Typically this corresponds
+  // to the number of SPOs in the wfn.h5 file.
   template<typename ST>
   inline void SplineR2R<ST>::setOrbitalSetSize( int norbs )
   {
@@ -37,19 +34,14 @@ namespace qmcplusplus
     this->checkObject();
   }
 
+  // Sanity checks:
+  // If no virtuals, ensure that the number of occupied SPOs = total number of SPOs
   template <typename ST>
   void SplineR2R<ST>::checkObject() const
   {
-    // If no rotations, ensure the number of electrons = number of orbitals
-    if (Identity)
-      {
-	if ( m_ntot_orbs != m_nocc_orbs )
-	  throw std::runtime_error("SplineR2R::checkObject() Norbs and Nelec must be equal if Identity = true!");
-      }
-    else
-      {
-	std::cerr << "SplineR2R::checkObject() case Identity = false is not implemented!\n";
-      }
+    // If no rotation, ensure the number of electrons = number of orbitals
+    if (Identity && m_ntot_orbs != m_nocc_orbs )
+      throw std::runtime_error("SplineR2R::checkObject() Norbs and Nelec must be equal if Identity = true!");
   }
   // End function
 
@@ -79,8 +71,6 @@ namespace qmcplusplus
   template <typename ST>
   void SplineR2R<ST>::applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy)
 {
-  std::cerr << "Entered SplineR2R::applyRotation()...\n";
-
   // Get the underlying spline coefs via pointer.
   // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
   auto spline_ptr = SplineInst->getSplinePtr();
@@ -139,28 +129,19 @@ namespace qmcplusplus
   ValueMatrix_t tmpU;
   tmpU.resize(BasisSetSize, BasisSetSize);
   std::fill(tmpU.begin(), tmpU.end(), 0.0);
+  app_log() << "\n\nJPT Rotation Matrix= \n";
   for ( auto i=0; i<rot_mat.size1(); i++ )
     {
       for ( auto j=0; j<rot_mat.size2(); j++ )
 	{
 	  tmpU[i][j] = rot_mat[i][j];
+  	  app_log() << " " << std::fixed << std::setw(12) << std::setprecision(6) << tmpU[i][j];
 	}
+      app_log() << "\n";
     }
-  std::cerr << "tmpU= \n";
-  for ( auto i=0; i<BasisSetSize; i++ )
-    {
-      for ( auto j=0; j<BasisSetSize; j++ )
-	{
-	  std::cerr << " " << std::fixed << std::setw(12) << std::setprecision(6) << tmpU[i][j];
-	}
-      std::cerr << std::endl;
-    }
-
-  // Apply rotation
-  std::cerr << "Applying the rotation...\n";
-  std::cerr << "  Size of rot_mat  = " << rot_mat.size1() << " x " << rot_mat.size2() << "\n";
-  std::cerr << "  Size of spl_coefs= " << OrbitalSetSize  << " x " << BasisSetSize << "\n";
-  // Dumb matrix matrix multiply b/c I can't get BLAS::gemm to work????
+  app_log() << "\n";
+  
+  // Apply rotation the dumb way b/c I can't get BLAS::gemm to work
   for ( auto i=0; i<OrbitalSetSize; i++ )
     {
       for ( auto j=0; i<BasisSetSize; i++ )
@@ -177,14 +158,13 @@ namespace qmcplusplus
     }
   
   /*
-  int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
-  int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
-  std::cerr << "  smaller_BasisSetSize = " <<   smaller_BasisSetSize << "\n";
-  std::cerr << "smaller_OrbitalSetSize = " << smaller_OrbitalSetSize << "\n";
-  BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
-  */
-  
-  std::cerr << "Exited SplineR2R::applyRotation()...\n";
+    Here is my attempt to use gemm... but it doesn't work!?
+    int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
+    int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
+    std::cerr << "  smaller_BasisSetSize = " <<   smaller_BasisSetSize << "\n";
+    std::cerr << "smaller_OrbitalSetSize = " << smaller_OrbitalSetSize << "\n";
+    BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
+  */  
 }
 
 

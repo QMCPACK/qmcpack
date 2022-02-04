@@ -32,7 +32,6 @@ RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
-  std::cerr << "Entering RotatedSPOs::buildOptVariables(const size_t nel)...\n";
 #if !defined(QMC_COMPLEX)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
@@ -55,34 +54,24 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
     buildOptVariables(created_m_act_rot_inds);
   }
 #endif
-  std::cerr << "Leaving RotatedSPOs::buildOptVariables(const size_t nel)...\n";
 }
 
 
-  /* 
-     @TODO (JPT) 28.09.2021
-     What does this function do?
-  */
 void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
 {
-  std::cerr << "Entered RotatedSPOs::buildOptVariables( vector rotations )...\n";
 
 #if !defined(QMC_COMPLEX)   // @TODO generalize for complex case
 
   // nmo = Number of electrons = size of Slater Det
   const size_t nmo = Phi->getOrbitalSetSize();
   //const size_t nb  = Phi->getBasisSetSize();
-  std::cerr << "  Phi = " << Phi->getName() << "\n";
-  std::cerr << "  nmo = " << nmo << "\n";
+  //JPT DEBUG
+  //std::cerr << "  Phi = " << Phi->getName() << "\n";
+  //std::cerr << "  nmo = " << nmo << "\n";
   
   // create active rotations
   m_act_rot_inds = rotations;
 
-  /* 
-     @DEBUG (JPT) 29.09.2021
-     nparams_active != to the number of values inside the <opt_vars> xml tag
-     So what's it holding?
-   */
   int p, q;
   int nparams_active = m_act_rot_inds.size();
   for (int i = 0; i < nparams_active; i++)
@@ -105,7 +94,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   
   // This will add the orbital rotation parameters to myVars
   // and will also read in initial parameter values supplied in input file
-  std::cerr << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
+  //std::cerr << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
 
   app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
   if (params_supplied)
@@ -133,17 +122,18 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     }
   }
 
+  std::vector<RealType> param(m_act_rot_inds.size());
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+    param[i] = myVars[i];
+
   //Printing the parameters
-  const bool print_myvars = false;
+  const bool print_myvars = true; // JPT Set this to false once everything works...
   if ( print_myvars )
   {
     app_log() << std::string(16, ' ') << "Parameter name" << std::string(15, ' ') << "Value\n";
     myVars.print(app_log());
   }
-
-  std::vector<RealType> param(m_act_rot_inds.size());
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-    param[i] = myVars[i];
+  
   apply_rotation(param, false);
 
   if (!Optimizable)
@@ -156,14 +146,11 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     myVars.Recompute.erase(myVars.Recompute.begin(), myVars.Recompute.end());
   }
 #endif
-  std::cerr << "Exited RotatedSPOs::buildOptVariables( vector rotations )...\n";
 }
 
 
 void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
 {
-  std::cerr << "Entering RotatedSPOs::apply_rotation()...\n";
-  
   assert(param.size() == m_act_rot_inds.size());
 
   const size_t nmo = Phi->getOrbitalSetSize();
@@ -181,34 +168,33 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     rot_mat[p][q] = -x;
   }
 
-  // JPT Look at the kappa matrix
-  std::cerr << " JPT TEST: Kappa = \n";
-  for ( auto i=0; i<nmo; i++ )
-    {
-      for ( auto j=0; j<nmo; j++ )
-	{
-	  std::cerr << std::fixed;
-	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
-	}
-      std::cerr << "\n";
-    }
+  // // JPT Look at the kappa matrix
+  // std::cerr << " JPT TEST: Kappa = \n";
+  // for ( auto i=0; i<nmo; i++ )
+  //   {
+  //     for ( auto j=0; j<nmo; j++ )
+  // 	{
+  // 	  std::cerr << std::fixed;
+  // 	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
+  // 	}
+  //     std::cerr << "\n";
+  //   }
   
   exponentiate_antisym_matrix(rot_mat);
 
-  // JPT Look at the kappa matrix
-  std::cerr << " JPT TEST: U = exp(-Kappa) = \n";
-  for ( auto i=0; i<nmo; i++ )
-    {
-      for ( auto j=0; j<nmo; j++ )
-	{
-	  std::cerr << std::fixed;
-	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
-	}
-      std::cerr << "\n";
-    }
+  // // JPT Look at the kappa matrix
+  // std::cerr << " JPT TEST: U = exp(-Kappa) = \n";
+  // for ( auto i=0; i<nmo; i++ )
+  //   {
+  //     for ( auto j=0; j<nmo; j++ )
+  // 	{
+  // 	  std::cerr << std::fixed;
+  // 	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
+  // 	}
+  //     std::cerr << "\n";
+  //   }
 
   Phi->applyRotation(rot_mat, use_stored_copy);
-  std::cerr << "Leaving RotatedSPOs::apply_rotation()...\n";
 }
 
 
@@ -406,7 +392,6 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const size_t NP2,
                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
-  std::cerr << "JPT: Entering RotatedSPOs::evaluateDerivatives( Multideterminant )...\n";
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
   {
@@ -495,7 +480,6 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     }
   app_log() << std::endl;
   */
-  std::cerr << "JPT: Leaving RotatedSPOs::evaluateDerivatives( Multideterminant )...\n";
 }
 
 

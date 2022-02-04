@@ -88,7 +88,6 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     abort();
 #else
     // create sposet with rotation
-    std::cerr << "Going to make a RotatedSPOs wave function...\n";
     auto& sposet_ref = *sposet;
     auto rot_spo    = std::make_unique<RotatedSPOs>(std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -102,7 +101,6 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       }
       tcur = tcur->next;
     }
-    std::cerr << "Got this far!...\n";
     
     // pass sposet name and rename sposet before rotation
     if (!sposet_ref.getName().empty())

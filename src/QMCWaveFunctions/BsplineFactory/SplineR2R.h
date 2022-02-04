@@ -64,10 +64,9 @@ private:
 protected:
   // Stuff for orbital rotations
   // Norbs_tot = Norbs-virt + Norbs_real
-  // @TODO (JPT) 27.09.2021 Can I make these const?
   IndexType m_ntot_orbs;   // The total number of splined SPOs
   IndexType m_nvir_orbs;   // The number of virtual SPOs
-  IndexType m_nocc_orbs;   // The number of electrons in the SD
+  IndexType m_nocc_orbs;   // The number of electrons
 
   // True if no rotation
   bool Identity;
@@ -89,22 +88,15 @@ public:
     KeyWord    = "SplineR2R";
   }
 
-  /*
-    @TODO (JPT) 20.09.2021
-    
-   */
   void setOrbitalSetSize(int norbs) override;
 
   void checkObject() const override;
 
   
-  // @TODO (JPT) 28.09.2021 Cross check w/ LCAO
   // Gives the number of splined SPOs
-  // This is implemented already in SPOSet.h....
   int getOrbitalSetSize() const override
   {
-    const int nsplines = ( SplineInst == nullptr ) ? 0 : SplineInst->num_splines();
-    //std::cerr << "  m_ntot_orbs = " << m_ntot_orbs << "\n";
+    //const int nsplines = ( SplineInst == nullptr ) ? 0 : SplineInst->num_splines();
     return m_ntot_orbs;       
   }
   
@@ -117,11 +109,10 @@ public:
     //std::cerr << "  Nsplines = " << nsplines << "\n";
     return ( SplineInst == nullptr ) ? 0 : SplineInst->num_splines();   
   }
-  
+
+  // Accumulate the total rotation
   void storeParamsBeforeRotation() override
   {
-    // @TODO (JPT) 27.09.2021 Is this needed?
-    //C_copy = *C;
     std::cerr << "Function SplineR2R::storeParamsBeforeRotation() not implemented!\n";
   }
   

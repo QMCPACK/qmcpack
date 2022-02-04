@@ -1222,20 +1222,17 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // get number of optimizable parameters
   numParams = optTarget->getNumParams();
 
+  
   // get dimension of the linear method matrices
   N = numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<RealType> currentParameters(numParams, 0.0);
-
-  // initialize the initial and current parameter vectors
-  for (int i = 0; i < numParams; i++)
-    currentParameters.at(i) = std::real(optTarget->Params(i));
+  std::vector<RealType> currentParameters(numParams, 0.0);  
 
   // prepare vectors to hold the parameter update directions for each shift
   std::vector<RealType> parameterDirections;
   parameterDirections.assign(N, 0.0);
-
+  
   // compute the initial cost
 #ifdef QMC_CUDA
   // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
@@ -1265,6 +1262,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
+  // JPT 02.02.2022: This is supposed to print the
+  // hamiltonian and overlap matrices, but doesn't seem to work
   if (do_output_matrices_)
   {
     output_overlap_.output(ovlMat);
@@ -1311,8 +1310,13 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // prepare to use the middle shift's update as the guiding function for a new sample
   if (!freeze_parameters_)
   {
+    app_log() << "JPT: currentParameters:\n";
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+      {
+	optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+	app_log() << "  p[ " << i << "]= " << std::fixed << std::setw(16) << std::setprecision(8) << optTarget->Params(i) << "\n";
+      }
+    app_log() << std::endl;
   }
 
   RealType largestChange(0);
