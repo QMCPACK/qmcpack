@@ -77,13 +77,13 @@ The following is a summary of the jobs run in the CI process required for a PR:
 +----------------------------------------------+----------+---------------+------+----------+
 | Intel19-MPI-CUDA-AFQMC-Complex               | sulfur   | deterministic | 6    | manual   |
 +----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed       | nitrogen | deterministic | 6    | manual   |
+| ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed       | nitrogen | deterministic | 10   | manual   |
 +----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Real             | nitrogen | deterministic | 6    | manual   |
+| ROCm-Clang13-NoMPI-CUDA2HIP-Real             | nitrogen | deterministic | 12   | manual   |
 +----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed    | nitrogen | deterministic | 6    | manual   |
+| ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed    | nitrogen | deterministic | 10   | manual   |
 +----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Complex          | nitrogen | deterministic | 6    | manual   |
+| ROCm-Clang13-NoMPI-CUDA2HIP-Complex          | nitrogen | deterministic | 12   | manual   |
 +----------------------------------------------+----------+---------------+------+----------+
 
 Jobs running on GitHub hosted runners are triggered automatically. Permission from an admin is required to run jobs on self-hosted runners (e.g. sulfur) for security reasons. In addition, jobs running on GitHub hosted runners run automatically in parallel and the time each job takes may vary depending on system utilization. For information on the underlying hardware see the GitHub Actions `docs on the topic <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>`_.  
