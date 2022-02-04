@@ -57,15 +57,15 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.1151210154));
+  CHECK(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(ions);
   //std::cout << "val = " << val << std::endl;
-  REQUIRE(val == Approx(vmad_sc));
+  CHECK(val == Approx(vmad_sc));
 
   // supercell Madelung energy
   val = caa.MC0;
-  REQUIRE(val == Approx(vmad_sc));
+  CHECK(val == Approx(vmad_sc));
 }
 
 TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
@@ -105,14 +105,14 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-1.675229452)); // not validated
+  CHECK(consts == Approx(-1.675229452)); // not validated
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-0.9628996199)); // not validated
+  CHECK(val == Approx(-0.9628996199)); // not validated
 
   // supercell Madelung energy
   val = caa.MC0;
-  REQUIRE(val == Approx(vmad_sc));
+  CHECK(val == Approx(vmad_sc));
 }
 
 TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
@@ -150,10 +150,10 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.1151210154));
+  CHECK(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-1.418648723)); // not validated
+  CHECK(val == Approx(-1.418648723)); // not validated
 }
 
 TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
@@ -193,10 +193,10 @@ TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
   CoulombPBCAA caa = CoulombPBCAA(elec, false);
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(vmad_bcc));
+  CHECK(val == Approx(vmad_bcc));
 
   val = caa.MC0;
-  REQUIRE(val == Approx(vmad_bcc));
+  CHECK(val == Approx(vmad_bcc));
 }
 
 
