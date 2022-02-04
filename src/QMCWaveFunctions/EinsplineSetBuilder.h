@@ -151,11 +151,6 @@ public:
    */
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
-  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
-   * @param cur the current xml node
-   */
-  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks = false);
-
   /** initialize with the existing SPOSet */
   std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
 
@@ -218,9 +213,8 @@ public:
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////
-  // This stores which "true" twist number I am using
-  int TwistNum;
-  TinyVector<double, OHMMS_DIM> givenTwist;
+  // The "true" twist number after analyzing twistnum, twist XML input and h5
+  int twist_num_;
   std::vector<TinyVector<double, OHMMS_DIM>> TwistAngles;
   //     integer index of sym operation from the irreducible brillion zone
   std::vector<int> TwistSymmetry;
@@ -244,8 +238,6 @@ public:
   inline bool TwistPair(PosType a, PosType b);
   // This maps a 3-integer twist index into the twist number in the file
   std::map<TinyVector<int, OHMMS_DIM>, int, Int3less> TwistMap;
-  //void AnalyzeTwists();
-  void AnalyzeTwists2();
   void TileIons();
   void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
@@ -306,12 +298,32 @@ public:
   int particle_hole_pairs;
   bool makeRotations;
 
+protected:
   /** broadcast SortBands
    * @param N number of state
    * @param root true if it is the i/o node
    * @return true, if core is found
    */
   bool bcastSortBands(int splin, int N, bool root);
+
+  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
+   * @param cur the current xml node
+   */
+  void set_metadata(int numOrbs,
+                    int twist_num_inp,
+                    const TinyVector<double, OHMMS_DIM>& twist_inp,
+                    bool skipChecks = false);
+
+  /** analyze twists of orbitals in h5 and determinine twist_num_
+   * @param twist_num_inp twistnum XML input
+   * @param twist_inp twst XML input
+   */
+  void AnalyzeTwists2(const int twist_num_inp, const TinyVector<double, OHMMS_DIM>& twist_inp);
+
+  /// twistnum_inp == -9999 to indicate no given input after parsing XML
+  static constexpr int TWISTNUM_NO_INPUT = -9999;
+  /// twist_inp[i] <= -9999 to indicate no given input after parsing XML
+  static constexpr double TWIST_NO_INPUT = -9999;
 };
 
 } // namespace qmcplusplus
