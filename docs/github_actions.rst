@@ -524,6 +524,233 @@ gpu-cuda (Clang14Dev-MPI-CUDA-AFQMC-Offload-Real)
 +---------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 
+gpu-cuda (Intel19-MPI-CUDA-AFQMC-Real-Mixed)
+""""""""""""""""""""""""""""""""""""""""""""
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | Intel                                                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `export OMPI_CC=icc && \                                                                                               |
+|               | export OMPI_CXX=icpc && \                                                                                              |
+|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                        |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                                   |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                                   |
+|               | -DBUILD_AFQMC=ON \                                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                                     |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                             |
+|               | -DQMC_COMPLEX=0 \                                                                                                      |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                                              |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                               |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \                       |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                            |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \                      |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                                                   |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with mixed single/double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex-Mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | Intel                                                                                                                     |
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `export OMPI_CC=icc && \                                                                                                  |
+|               | export OMPI_CXX=icpc && \                                                                                                 |
+|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                           |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                                      |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                                      |
+|               | -DBUILD_AFQMC=ON \                                                                                                        |
+|               | -DENABLE_CUDA=ON \                                                                                                        |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                                |
+|               | -DQMC_COMPLEX=1 \                                                                                                         |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                                                 |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                                     |
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                                  |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \                          |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                               |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \                         |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                                                      |
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Complex) with mixed single/double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled |
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                                                |
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (Intel19-MPI-CUDA-AFQMC-Real)
+""""""""""""""""""""""""""""""""""""""
++---------------+----------------------------------------------------------------------------------------------------------------+
+| Compiler      | Intel                                                                                                          |
++---------------+----------------------------------------------------------------------------------------------------------------+
+| Build Command | `export OMPI_CC=icc && \                                                                                       |
+|               | export OMPI_CXX=icpc && \                                                                                      |
+|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                           |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                           |
+|               | -DBUILD_AFQMC=ON \                                                                                             |
+|               | -DENABLE_CUDA=ON \                                                                                             |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                     |
+|               | -DQMC_COMPLEX=0 \                                                                                              |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                                      |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                          |
++---------------+----------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                       |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \               |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                    |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \              |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                                           |
++---------------+----------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with full double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled |
++---------------+----------------------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                                     |
++---------------+----------------------------------------------------------------------------------------------------------------+
+
+
+gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex)
+"""""""""""""""""""""""""""""""""""""""""
++---------------+-------------------------------------------------------------------------------------------------------------------+
+| Compiler      | Intel                                                                                                             |
++---------------+-------------------------------------------------------------------------------------------------------------------+
+| Build Command | `export OMPI_CC=icc && \                                                                                          |
+|               | export OMPI_CXX=icpc && \                                                                                         |
+|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                   |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                              |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                              |
+|               | -DBUILD_AFQMC=ON \                                                                                                |
+|               | -DENABLE_CUDA=ON \                                                                                                |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                        |
+|               | -DQMC_COMPLEX=1 \                                                                                                 |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                             |
++---------------+-------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \                  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \                 |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                                              |
++---------------+-------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Complex) with full double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled |
++---------------+-------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                                        |
++---------------+-------------------------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=0 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Real) with mixed single/double floating point precision                            |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~10 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=0 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Real) with full double floating point precision                                    |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~12 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=1 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Complex) with mixed single/double floating point precision                         |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~10 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=1 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Complex) with full double floating point precision                                 |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~12 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
 
 Workflow Steps
 ==============
