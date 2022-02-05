@@ -47,7 +47,7 @@ endif(OHMMS_DIM MATCHES 2)
 
 set(PARTICLEIO
     ParticleTags.cpp
-    ParticleIO/ParticleLayoutIO.cpp
+    ParticleIO/LatticeIO.cpp
     ParticleIO/XMLParticleIO.cpp
     HDFWalkerOutput.cpp
     HDFWalkerInput_0_4.cpp)

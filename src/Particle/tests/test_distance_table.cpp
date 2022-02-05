@@ -18,7 +18,7 @@
 #include "OhmmsPETE/Tensor.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
 #include "MinimalParticlePool.h"

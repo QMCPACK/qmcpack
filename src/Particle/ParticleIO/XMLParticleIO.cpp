@@ -21,7 +21,7 @@
 #include "OhmmsData/FileUtility.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "XMLParticleIO.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Utilities/ProgressReportEngine.h"
