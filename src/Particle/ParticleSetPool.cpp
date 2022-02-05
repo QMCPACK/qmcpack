@@ -25,6 +25,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/InitMolecularSystem.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include <Message/UniformCommunicateError.h>
 
 namespace qmcplusplus
 {
@@ -161,8 +162,17 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);
 
     myPool[id] = pTemp;
-    XMLParticleParser pread(*pTemp);
-    bool success = pread.readXML(cur);
+
+    try
+    {
+      XMLParticleParser pread(*pTemp);
+      pread.readXML(cur);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
+
     //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())
     {
@@ -175,7 +185,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     pTemp->setSpinor(spinor == "yes");
     app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
     app_summary() << std::endl;
-    return success;
+    return true;
   }
   else
   {

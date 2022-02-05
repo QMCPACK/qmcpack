@@ -25,6 +25,7 @@
 #include "XMLParticleIO.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Utilities/ProgressReportEngine.h"
+#include <Message/UniformCommunicateError.h>
 
 namespace qmcplusplus
 {
@@ -105,16 +106,12 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
   int ntot = 0;
   int ng = 0, ng_in = 0;
   std::vector<int> nat_group;
-  std::vector<xmlNodePtr> atom_ptr;
   //pre-process the nodes to count the number of particles to be added
   while (cur0 != NULL)
   {
     std::string cname((const char*)cur0->name);
     if (cname == "atom")
-    {
-      ntot++;
-      atom_ptr.push_back(cur0);
-    }
+      throw UniformCommunicateError("XML element node atom is not supported");
     else if (cname == "group")
     {
       int nat_per_group = 0;
