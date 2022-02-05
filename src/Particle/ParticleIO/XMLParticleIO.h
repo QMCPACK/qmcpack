@@ -117,8 +117,6 @@ class XMLParticleParser : public ParticleTags
   Particle_t& ref_;
   AttribListType ref_AttribList;
 
-  bool putSpecial(xmlNodePtr cur);
-
   /** read the data of a particle attribute
    *@param cur the xmlnode
    *@param nat the number of particle attributes to be read
@@ -133,10 +131,7 @@ public:
    */
   XMLParticleParser(Particle_t& aptcl, bool donotresize = false);
 
-  ///reading from a file
-  bool put(const std::string& fname_in, const std::string& fext_in);
-
-  bool put(xmlNodePtr cur);
+  bool readXML(xmlNodePtr cur);
 
   /** reset the properties of a particle set
    */

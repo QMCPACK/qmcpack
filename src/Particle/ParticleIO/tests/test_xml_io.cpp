@@ -63,7 +63,7 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 
   XMLParticleParser parse_ions(ions);
   xmlNodePtr part1 = xmlFirstElementChild(root);
-  parse_ions.put(part1);
+  parse_ions.readXML(part1);
 
   REQUIRE(ions.groups() == 1);
   REQUIRE(ions.R.size() == 1);
@@ -74,7 +74,7 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 
   XMLParticleParser parse_electrons(electrons);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
-  parse_electrons.put(part2);
+  parse_electrons.readXML(part2);
 
   REQUIRE(electrons.groups() == 2);
   REQUIRE(electrons.R.size() == 2);
@@ -120,7 +120,7 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
   ParticleSet electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   REQUIRE(electrons.groups() == 1);
 

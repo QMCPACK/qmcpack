@@ -61,7 +61,7 @@ void test_C_diamond()
     XMLParticleParser parse_ions(ions);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
-    parse_ions.put(particleset_ion[0]);
+    parse_ions.readXML(particleset_ion[0]);
 
     REQUIRE(ions.groups() == 1);
     REQUIRE(ions.R.size() == 2);
@@ -71,7 +71,7 @@ void test_C_diamond()
     XMLParticleParser parse_elec(elec);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
-    parse_elec.put(particleset_elec[0]);
+    parse_elec.readXML(particleset_elec[0]);
 
     REQUIRE(elec.groups() == 2);
     REQUIRE(elec.R.size() == 8);

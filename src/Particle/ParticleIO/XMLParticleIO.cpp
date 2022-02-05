@@ -82,93 +82,11 @@ XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize) : Assi
   ref_.createAttributeList(ref_AttribList);
 }
 
-/**reading particleset node from a file
- *@param fname_in a file name to open
- *@param pformat_in the format of the file, not used
- *@return true, if successful
- *
- *Check the type of the external source to work on.
- *The external source itself can be an xml file.
- */
-bool XMLParticleParser::put(const std::string& fname_in, const std::string& fext_in)
-{
-  xmlDocPtr doc = NULL;
-  // build an XML tree from a the file;
-  doc = xmlParseFile(fname_in.c_str());
-  if (doc == NULL)
-  {
-    ERRORMSG(fname_in << " does not exist")
-    return false;
-  }
-  ///using XPath instead of recursive search
-  xmlXPathContextPtr context;
-  xmlXPathObjectPtr result;
-  context = xmlXPathNewContext(doc);
-  result  = xmlXPathEvalExpression((const xmlChar*)"//particleset", context);
-  if (xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    app_error() << fname_in << " does not contain any ParticleSet" << std::endl;
-  }
-  else
-  {
-    xmlNodePtr cur = result->nodesetval->nodeTab[0];
-    std::string fname, pformat;
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(fname, "src");
-    pAttrib.add(fname, "href");
-    pAttrib.add(pformat, "srctype");
-    pAttrib.put(cur);
-    if (fname.size())
-      pformat = getExtension(fname);
-    if (pformat.empty())
-      putSpecial(cur);
-    //else
-    //{
-    //  if(pformat == "h5") {
-    //    HDFParticleParser ahandle(ref_);
-    //    ahandle.put(cur);
-    //  } else {
-    //    app_error() << "  Unknown file extension " << pformat << std::endl;
-    //  }
-    //}
-  }
-  //free local objects
-  xmlXPathFreeObject(result);
-  xmlXPathFreeContext(context);
-  xmlFreeDoc(doc);
-  return true;
-}
-
-/** process xmlnode &lt;particleset/&gt;
- *@param cur the xmlnode to work on
- *
- *If the node has src or href attribute, use an external file.
- */
-bool XMLParticleParser::put(xmlNodePtr cur)
-{
-  ///process attributes: type or format
-  std::string fname, pformat("xml");
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(fname, "src");
-  pAttrib.add(fname, "href");
-  pAttrib.add(pformat, "srctype");
-  pAttrib.put(cur);
-  if (fname.empty())
-    return putSpecial(cur);
-  else
-  {
-    //overwrite the format
-    pformat = getExtension(fname);
-    return put(fname, pformat);
-  }
-}
-
-
 /** process xmlnode &lt;particleset/&gt; which contains everything about the particle set to initialize
  *@param cur the xmlnode to work on
  *
  */
-bool XMLParticleParser::putSpecial(xmlNodePtr cur)
+bool XMLParticleParser::readXML(xmlNodePtr cur)
 {
   ReportEngine PRE("XMLParticleParser", "putSpecial");
   std::string pname("none");

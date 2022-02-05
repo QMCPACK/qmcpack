@@ -162,7 +162,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp);
-    bool success = pread.put(cur);
+    bool success = pread.readXML(cur);
     //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())
     {

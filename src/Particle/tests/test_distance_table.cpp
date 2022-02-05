@@ -77,10 +77,10 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -171,10 +171,10 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -262,10 +262,10 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -397,10 +397,10 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 
   // read particle set
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
