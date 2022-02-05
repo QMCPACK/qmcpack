@@ -275,6 +275,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.begin());
   kpts.resize(numk);
   kpts_cart.resize(numk);
+  kpts_cart_soa_.resize(numk);
   ksq.resize(numk);
   kshell.resize(kpts_sorted.size() + 1, 0);
   int ok = 0, ish = 0;
@@ -286,6 +287,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
       int ik        = (*vit);
       kpts[ok]      = kpts_tmp[ik];
       kpts_cart[ok] = kpts_cart_tmp[ik];
+      kpts_cart_soa_(ok) = kpts_cart_tmp[ik];
       ksq[ok]       = ksq_tmp[ik];
       ++vit;
       ++ok;
@@ -294,6 +296,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
     ++it;
     ++ish;
   }
+  kpts_cart_soa_.updateTo();
   it = kpts_sorted.begin();
   std::map<long long, std::vector<int>*>::iterator e_it(kpts_sorted.end());
   while (it != e_it)
