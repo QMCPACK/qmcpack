@@ -113,7 +113,6 @@ class XMLParticleParser : public ParticleTags
   using ParticlePos    = Particle_t::ParticlePos;
   using ParticleTensor = Particle_t::ParticleTensor;
 
-  bool AssignmentOnly;
   Particle_t& ref_;
   AttribListType ref_AttribList;
 
@@ -127,9 +126,8 @@ class XMLParticleParser : public ParticleTags
 public:
   /**constructor
    *@param aptcl the particleset to be initialized
-   *@param donotresize if true, only assignment is done
    */
-  XMLParticleParser(Particle_t& aptcl, bool donotresize = false);
+  XMLParticleParser(Particle_t& aptcl);
 
   bool readXML(xmlNodePtr cur);
 

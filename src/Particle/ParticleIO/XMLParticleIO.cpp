@@ -77,7 +77,7 @@ void setSpeciesProperty(SpeciesSet& tspecies, int sid, xmlNodePtr cur)
 }
 
 
-XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize) : AssignmentOnly(donotresize), ref_(aptcl)
+XMLParticleParser::XMLParticleParser(Particle_t& aptcl) : ref_(aptcl)
 {
   //add ref particle attributes
   ref_.createAttributeList(ref_AttribList);
@@ -144,12 +144,6 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
   ntot += nat;
   ref_.setName(pname.c_str());
   int nloc = ref_.getTotalNum();
-  //treat assignment only differently
-  if (AssignmentOnly)
-  {
-    ntot = 0;
-    nloc = 0;
-  }
   if (ntot)
   {
     if (ng_in)
