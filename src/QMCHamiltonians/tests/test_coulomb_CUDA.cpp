@@ -188,10 +188,10 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.R[1][2] = 1.88972614;
   ions.createWalkers(1);
 
-  SpeciesSet& ion_species              = ions.getSpeciesSet();
-  int pIdx                             = ion_species.addSpecies("H");
-  int pChargeIdx                       = ion_species.addAttribute("charge");
-  ion_species(pChargeIdx, pIdx)        = 1;
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
   ions.createSK();
   ions.update();
 

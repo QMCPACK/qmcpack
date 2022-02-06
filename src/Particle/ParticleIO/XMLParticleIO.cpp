@@ -197,7 +197,7 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
         {
           std::ostringstream msg;
           msg << "The total number of particles deterimined previously was " << nat
-              << "but the 'size' atttribute found on the '" << ParticleTags::attrib_tag << "' XML element nodes named '"
+              << " but the 'size' atttribute found on the '" << ParticleTags::attrib_tag << "' XML element nodes named '"
               << sname << "' is " << size_att << ". Please check the 'particleset' XML element node!" << std::endl;
           throw UniformCommunicateError(msg.str());
         }

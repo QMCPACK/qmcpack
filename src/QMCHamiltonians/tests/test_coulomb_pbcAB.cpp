@@ -45,10 +45,10 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
-  SpeciesSet& ion_species           = ions.getSpeciesSet();
-  int pIdx                          = ion_species.addSpecies("H");
-  int pChargeIdx                    = ion_species.addAttribute("charge");
-  ion_species(pChargeIdx, pIdx)     = 1;
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
   ions.createSK();
   ions.update();
 
@@ -59,12 +59,12 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
 
-  SpeciesSet& tspecies           = elec.getSpeciesSet();
-  int upIdx                      = tspecies.addSpecies("u");
-  int chargeIdx                  = tspecies.addAttribute("charge");
-  int massIdx                    = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)     = -1;
-  tspecies(massIdx, upIdx)       = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   elec.resetGroups();
   elec.createSK();
@@ -112,10 +112,10 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   ions.R[1][1] = 1.88972614;
   ions.R[1][2] = 1.88972614;
 
-  SpeciesSet& ion_species           = ions.getSpeciesSet();
-  int pIdx                          = ion_species.addSpecies("H");
-  int pChargeIdx                    = ion_species.addAttribute("charge");
-  ion_species(pChargeIdx, pIdx)     = 1;
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
   ions.createSK();
   ions.update();
 
@@ -128,12 +128,12 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   elec.R[1][1] = 0.5;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies           = elec.getSpeciesSet();
-  int upIdx                      = tspecies.addSpecies("u");
-  int chargeIdx                  = tspecies.addAttribute("charge");
-  int massIdx                    = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)     = -1;
-  tspecies(massIdx, upIdx)       = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   elec.resetGroups();
   elec.createSK();
