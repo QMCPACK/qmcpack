@@ -16,6 +16,7 @@
 #include "KContainer.h"
 #include "Utilities/qmc_common.h"
 #include <map>
+#include <cstdint>
 
 namespace qmcplusplus
 {
@@ -177,18 +178,18 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
 
   //Update a record of the number of k vectors
   numk = kpts_tmp.size();
-  std::map<long long, std::vector<int>*> kpts_sorted;
+  std::map<int64_t, std::vector<int>*> kpts_sorted;
   //create the map: use simple integer with resolution of 0.00000001 in ksq
   for (int ik = 0; ik < numk; ik++)
   {
 #ifdef MIXED_PRECISION
-    long long k_ind = static_cast<long long>(ksq_tmp[ik] * 1000);
+    int64_t k_ind = static_cast<int64_t>(ksq_tmp[ik] * 1000);
 #else
     //This is a workaround for ewald bug (Issue #2105) for FULL PRECISION ONLY.  Basically, 1e-7 is the resolution of |k|^2 for doubles,
     //so we jack up the tolerance to match that.
-    long long k_ind = static_cast<long long>(ksq_tmp[ik] * 10000000);
+    int64_t k_ind = static_cast<int64_t>(ksq_tmp[ik] * 10000000);
 #endif
-    std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
+    std::map<int64_t, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
     if (it == kpts_sorted.end())
     {
       std::vector<int>* newSet = new std::vector<int>;
@@ -200,7 +201,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
       (*it).second->push_back(ik);
     }
   }
-  std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.begin());
+  std::map<int64_t, std::vector<int>*>::iterator it(kpts_sorted.begin());
   kpts.resize(numk);
   kpts_cart.resize(numk);
   kpts_cart_soa_.resize(numk);
@@ -226,7 +227,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   }
   kpts_cart_soa_.updateTo();
   it = kpts_sorted.begin();
-  std::map<long long, std::vector<int>*>::iterator e_it(kpts_sorted.end());
+  std::map<int64_t, std::vector<int>*>::iterator e_it(kpts_sorted.end());
   while (it != e_it)
   {
     delete it->second;
@@ -244,15 +245,15 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   minusk.resize(numk);
 
   //Assigns a unique hash value to each kpoint.
-  auto getHashOfVec = [](const auto& inpv, int hashparam) -> long long {
-    long long hash = 0; // this will cause integral promotion below
+  auto getHashOfVec = [](const auto& inpv, int hashparam) -> int64_t {
+    int64_t hash = 0; // this will cause integral promotion below
     for (int i = 0; i < inpv.Size; ++i)
       hash += inpv[i] + hash * hashparam;
     return hash;
   };
 
   // Create a map from the hash value for each k vector to the index
-  std::map<long long, int> hashToIndex;
+  std::map<int64_t, int> hashToIndex;
   for (int ki = 0; ki < numk; ki++)
   {
     hashToIndex[getHashOfVec(kpts[ki], numk)] = ki;
