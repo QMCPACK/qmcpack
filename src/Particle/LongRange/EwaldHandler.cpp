@@ -132,8 +132,10 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
   }
 
   EwaldHandler::mRealType EwaldHandler::evaluate_slab(pRealType z, const std::vector<int>& kshell,
-                                                      const pComplexType* restrict eikr_i,
-                                                      const pComplexType* restrict eikr_j) const
+                                                      const pRealType* restrict rk1_r,
+                                                      const pRealType* restrict rk1_i,
+                                                      const pRealType* restrict rk2_r,
+                                                      const pRealType* restrict rk2_i) const
   {
     mRealType zp = z * Sigma;
     mRealType vk = -SlabFunc0(z, zp);
@@ -141,8 +143,8 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
       mRealType u = 0; //\sum Real (e^ikr_i e^(-ikr_j))
-      for (; ki < kshell[ks + 1]; ki++, eikr_i++, eikr_j++)
-        u += ((*eikr_i).real() * (*eikr_j).real() + (*eikr_i).imag() * (*eikr_j).imag());
+      for (; ki < kshell[ks + 1]; ki++)
+        u += (*rk1_r++) * (*rk2_r++) + (*rk1_i++) * (*rk2_i++);
       vk += u * Fk_symm[ks] * SlabFuncK(ks, z, zp);
     }
     return vk;
