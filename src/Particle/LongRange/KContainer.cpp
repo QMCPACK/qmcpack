@@ -23,7 +23,6 @@ namespace qmcplusplus
 void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere)
 {
   kcutoff = kc;
-  kcut2   = kc * kc;
   if (kcutoff <= 0.0)
   {
     APP_ABORT("  Illegal cutoff for KContainer");
@@ -105,6 +104,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   // reserve the space for memory efficiency
   if (useSphere)
   {
+    const RealType kcut2 = kcutoff * kcutoff;
     //Loop over guesses for valid k-points.
     for (int i = -mmax[0]; i <= mmax[0]; i++)
     {
@@ -182,14 +182,10 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   //create the map: use simple integer with resolution of 0.00000001 in ksq
   for (int ik = 0; ik < numk; ik++)
   {
-#ifdef MIXED_PRECISION
-    int64_t k_ind = static_cast<int64_t>(ksq_tmp[ik] * 1000);
-#else
-    //This is a workaround for ewald bug (Issue #2105) for FULL PRECISION ONLY.  Basically, 1e-7 is the resolution of |k|^2 for doubles,
+    //This is a workaround for ewald bug (Issue #2105).  Basically, 1e-7 is the resolution of |k|^2 for doubles,
     //so we jack up the tolerance to match that.
-    int64_t k_ind = static_cast<int64_t>(ksq_tmp[ik] * 10000000);
-#endif
-    std::map<int64_t, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
+    const int64_t k_ind = static_cast<int64_t>(ksq_tmp[ik] * 10000000);
+    auto it(kpts_sorted.find(k_ind));
     if (it == kpts_sorted.end())
     {
       std::vector<int>* newSet = new std::vector<int>;

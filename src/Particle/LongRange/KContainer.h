@@ -31,8 +31,6 @@ class KContainer : public QMCTraits
 private:
   /// The cutoff up to which k-vectors are generated.
   RealType kcutoff;
-  /// kcutoff*kcutoff
-  RealType kcut2;
 
 public:
   //Typedef for the lattice-type

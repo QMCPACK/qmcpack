@@ -41,11 +41,11 @@ TEST_CASE("temp3d", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Approx(Lattice.Volume) == 125);
+  CHECK(Approx(Lattice.Volume) == 125);
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
-  REQUIRE(Approx(Lattice.LR_kc) == 12);
+  CHECK(Approx(Lattice.LR_rc) == 2.5);
+  CHECK(Approx(Lattice.LR_kc) == 12);
 
   const SimulationCell simulation_cell(Lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
@@ -53,9 +53,11 @@ TEST_CASE("temp3d", "[lrhandler]")
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);
 
   handler.initBreakup(ref);
-  REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(Approx(handler.LR_rc) == 2.5);
-  REQUIRE(Approx(handler.LR_kc) == 12);
+#if !defined(MIXED_PRECISION)
+  CHECK(handler.MaxKshell == 78);
+#endif
+  CHECK(Approx(handler.LR_rc) == 2.5);
+  CHECK(Approx(handler.LR_kc) == 12);
 
   mRealType r, dr, rinv;
   mRealType vsr, vlr;
@@ -69,9 +71,9 @@ TEST_CASE("temp3d", "[lrhandler]")
     vlr  = handler.evaluateLR(r);
     // short-range part must vanish after rcut
     if (r > 2.5)
-      REQUIRE(Approx(vsr) == 0.0);
+      CHECK(Approx(vsr) == 0.0);
     // sum must recover the Coulomb potential
-    REQUIRE(vsr + vlr == Approx(rinv));
+    CHECK(vsr + vlr == Approx(rinv));
   }
 }
 

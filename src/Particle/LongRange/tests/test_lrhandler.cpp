@@ -34,11 +34,11 @@ TEST_CASE("dummy", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Lattice.Volume == Approx(125));
+  CHECK(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  CHECK(Lattice.LR_rc == Approx(2.5));
+  CHECK(Lattice.LR_kc == Approx(12));
 
   const SimulationCell simulation_cell(Lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
@@ -46,9 +46,11 @@ TEST_CASE("dummy", "[lrhandler]")
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
   handler.initBreakup(ref);
-  REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_kc == Approx(12));
-  REQUIRE(handler.LR_rc == Approx(0));
+#if !defined(MIXED_PRECISION)
+  CHECK(handler.MaxKshell == 78);
+#endif
+  CHECK(handler.LR_kc == Approx(12));
+  CHECK(handler.LR_rc == Approx(0));
 
   std::vector<pRealType> rhok1(handler.MaxKshell);
   std::vector<pRealType> rhok2(handler.MaxKshell);
@@ -61,7 +63,7 @@ TEST_CASE("dummy", "[lrhandler]")
     int ik           = ref.getSimulationCell().getKLists().kshell[ish];
     double k2        = ref.getSimulationCell().getKLists().ksq[ik];
     double fk_expect = fk(k2);
-    REQUIRE(handler.Fk_symm[ish] == Approx(norm * fk_expect));
+    CHECK(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }
   // ?? cannot access base class method, too many overloads?
   // handler.evaluate(SK->getKLists().kshell, rhok1.data(), rhok2.data());
