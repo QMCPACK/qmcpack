@@ -29,17 +29,15 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c),
-    simulation_cell_(std::make_unique<SimulationCell>())
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), simulation_cell_(std::make_unique<SimulationCell>())
 {
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
 
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
-    : MPIObjectBase(other.myComm),
-      simulation_cell_(std::move(other.simulation_cell_)),
-      myPool(std::move(other.myPool))
+    : MPIObjectBase(other.myComm), simulation_cell_(std::move(other.simulation_cell_)), myPool(std::move(other.myPool))
 {
   ClassName = other.ClassName;
   myName    = other.myName;
@@ -183,7 +181,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     }
     pTemp->setName(id);
     pTemp->setSpinor(spinor == "yes");
-    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
+    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << "   Groups : " << pTemp->groups() << std::endl;
     app_summary() << std::endl;
     return true;
   }
