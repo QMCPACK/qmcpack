@@ -76,11 +76,11 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 
   // Background charge term
   double consts = cab.evalConsts(elec);
-  REQUIRE(consts == Approx(0.0));
+  CHECK(consts == Approx(2 * 0.0506238028));
 
   double val = cab.evaluate(elec);
   //cout << "CUDA val = " << val << std::endl;
-  REQUIRE(val == Approx(-0.005314032183)); // not validated
+  CHECK(val == Approx(-0.005314032183 + 2 * 0.0506238028)); // not validated
 }
 
 TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
@@ -144,11 +144,11 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 
   // Background charge term
   double consts = cab.evalConsts(elec);
-  REQUIRE(consts == Approx(0.0));
+  CHECK(consts == Approx(0.0267892759 * 4));
 
   double val = cab.evaluate(elec);
   //cout << "CUDA BCC H val = " << val << std::endl;
-  REQUIRE(val == Approx(-2.219665062)); // not validated
+  CHECK(val == Approx(-2.219665062 + 0.0267892759 * 4)); // not validated
 
   // actual code path use addEnergy
   std::vector<double> local_energy(1);
@@ -158,7 +158,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   // not validated, which means it is just copied from the QMCPACK output, and has not been
   // computed independently.  It should be the same as results of the call to 'evaluate' above,
   //  which use the CPU code path.
-  REQUIRE(local_energy[0] == Approx(-2.219665062));
+  CHECK(local_energy[0] == Approx(-2.219665062 + 0.0267892759 * 4));
 }
 
 TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
@@ -205,17 +205,17 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
 
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-1.6752294515)); // not validated
+  CHECK(consts == Approx(-1.6752294515)); // not validated
 
   double val = caa.evaluate(ions);
   //cout << "CUDA BCC A-A ion H val = " << val << std::endl;
-  REQUIRE(val == Approx(-0.9628996199)); // not validated
+  CHECK(val == Approx(-0.9628996199)); // not validated
 
   // actual code path uses addEnergy
   std::vector<double> local_energy(1);
   caa.addEnergy(ions, local_energy);
   //cout << "addEnergy = " << local_energy[0] << std::endl;
-  REQUIRE(local_energy[0] == Approx(-0.9628996199)); // not validated
+  CHECK(local_energy[0] == Approx(-0.9628996199)); // not validated
 }
 
 
