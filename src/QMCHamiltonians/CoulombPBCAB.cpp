@@ -365,9 +365,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
   SpeciesSet& tspeciesB(P.getSpeciesSet());
   int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-  int MemberAttribIndxA = tspeciesA.addAttribute("membersize");
   int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-  int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
   NptclA                = PtclA.getTotalNum();
   NptclB                = P.getTotalNum();
   NumSpeciesA           = tspeciesA.TotalNum;
@@ -382,12 +380,12 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
     Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
-    NofSpeciesA[spec] = static_cast<int>(tspeciesA(MemberAttribIndxA, spec));
+    NofSpeciesA[spec] = PtclA.groupsize(spec);
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
     Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
-    NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB, spec));
+    NofSpeciesB[spec] = P.groupsize(spec);
   }
   for (int iat = 0; iat < NptclA; iat++)
     Zat[iat] = Zspec[PtclA.GroupID[iat]];

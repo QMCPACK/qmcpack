@@ -302,11 +302,8 @@ void DensityMatrices1B::initialize()
   nparticles          = Pq.getTotalNum();
   nspecies            = species.size();
   int natt            = species.numAttributes();
-  int isize           = species.addAttribute("membersize");
-  if (isize == natt)
-    APP_ABORT("DensityMatrices1B::set_state  Species set does not have the required attribute 'membersize'");
   for (int s = 0; s < nspecies; ++s)
-    species_size.push_back(species(isize, s));
+    species_size.push_back(Pq.groupsize(s));
   for (int s = 0; s < nspecies; ++s)
     species_name.push_back(species.speciesName[s]);
 

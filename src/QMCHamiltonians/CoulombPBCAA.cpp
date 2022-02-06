@@ -279,7 +279,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   SpeciesSet& tspecies(P.getSpeciesSet());
   //Things that don't change with lattice are done here instead of InitBreakup()
   ChargeAttribIndx = tspecies.addAttribute("charge");
-  MemberAttribIndx = tspecies.addAttribute("membersize");
   NumCenters       = P.getTotalNum();
   NumSpecies       = tspecies.TotalNum;
 
@@ -293,7 +292,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   for (int spec = 0; spec < NumSpecies; spec++)
   {
     Zspec[spec]      = tspecies(ChargeAttribIndx, spec);
-    NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx, spec));
+    NofSpecies[spec] = P.groupsize(spec);
   }
   SpeciesID.resize(NumCenters);
   for (int iat = 0; iat < NumCenters; iat++)
