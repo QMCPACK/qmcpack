@@ -67,7 +67,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(2);
+  ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   ions_.update();

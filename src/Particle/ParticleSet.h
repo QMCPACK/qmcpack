@@ -139,10 +139,6 @@ public:
   ///default destructor
   ~ParticleSet() override;
 
-  /** create  particles
-   * @param n number of particles
-   */
-  void create(int n);
   /** create grouped particles
    * @param agroup number of particles per group
    */
@@ -471,21 +467,6 @@ public:
 
   inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(size_t numPtcl)
-  {
-    TotalNum = numPtcl;
-
-    R.resize(numPtcl);
-    spins.resize(numPtcl);
-    GroupID.resize(numPtcl);
-    G.resize(numPtcl);
-    L.resize(numPtcl);
-    Mass.resize(numPtcl);
-    Z.resize(numPtcl);
-
-    coordinates_->resize(numPtcl);
-  }
-
   inline void clear()
   {
     TotalNum = 0;
@@ -672,6 +653,22 @@ protected:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMoveForwardMode(Index_t iat);
+
+  /// resize internal storage
+  inline void resize(size_t numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    spins.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    L.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+
+    coordinates_->resize(numPtcl);
+  }
 };
 
 } // namespace qmcplusplus

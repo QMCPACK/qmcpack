@@ -36,7 +36,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   ParticleSet ions(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -76,7 +76,7 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -118,7 +118,7 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   elec.setName("elec");
-  elec.create(1);
+  elec.create({1});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.5;
   elec.R[0][2] = 0.0;

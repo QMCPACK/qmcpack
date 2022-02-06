@@ -39,13 +39,13 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -149,7 +149,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -158,7 +158,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ions.R[1][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -229,7 +229,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // ParticleSet with 3 ions
   ParticleSet ions3(simulation_cell);
   ions3.setName("ion");
-  ions3.create(3);
+  ions3.create({3});
   ions3.R[0]                           = {0, 0, 0};
   ions3.R[1]                           = {1, 1, 1};
   ions3.R[2]                           = {2, 2, 2};
@@ -274,7 +274,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -283,7 +283,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ions.R[1][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -356,7 +356,7 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ions");
-  ions.create(3);
+  ions.create({3});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -369,7 +369,7 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
   // Add elec
   elec.setName("elec");
-  elec.create(3);
+  elec.create({3});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -426,13 +426,13 @@ TEST_CASE("AC Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;

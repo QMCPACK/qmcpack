@@ -49,7 +49,7 @@ void test_He(bool transform)
 
     ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int heIdx            = ispecies.addSpecies("He");
@@ -163,7 +163,7 @@ void test_Ne(bool transform)
 
     ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0][0]         = 0.0;
     ions.R[0][1]         = 0.0;
     ions.R[0][2]         = 0.0;

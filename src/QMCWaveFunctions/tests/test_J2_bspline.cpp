@@ -44,7 +44,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0][0] = 2.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;

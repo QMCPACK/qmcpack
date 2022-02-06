@@ -121,14 +121,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
 
 ParticleSet::~ParticleSet() = default;
 
-void ParticleSet::create(int numPtcl)
-{
-  resize(numPtcl);
-  SubPtcl.resize(2);
-  SubPtcl[0] = 0;
-  SubPtcl[1] = numPtcl;
-}
-
 void ParticleSet::create(const std::vector<int>& agroup)
 {
   SubPtcl.resize(agroup.size() + 1);
@@ -140,10 +132,8 @@ void ParticleSet::create(const std::vector<int>& agroup)
   TotalNum = nsum;
   int loc  = 0;
   for (int i = 0; i < agroup.size(); i++)
-  {
     for (int j = 0; j < agroup[i]; j++, loc++)
       GroupID[loc] = i;
-  }
 }
 
 void ParticleSet::setQuantumDomain(quantum_domains qdomain)

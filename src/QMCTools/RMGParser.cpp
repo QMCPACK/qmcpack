@@ -189,7 +189,7 @@ void RMGParser::parse(const std::string& fname)
   std::cout << "Number of atoms: " << NumberOfAtoms << std::endl;
   getCell(fname);
 
-  IonSystem.create(NumberOfAtoms);
+  IonSystem.create({NumberOfAtoms});
   GroupName.resize(NumberOfAtoms);
   Matrix<double> IonPos(NumberOfAtoms, 3);
   //atomic numbers

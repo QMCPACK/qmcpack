@@ -74,7 +74,7 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create(3);
+  elec.create({3});
   ddb.recompute(elec);
 
   Matrix<ValueType> b;
@@ -178,7 +178,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create(4);
+  elec.create({4});
   ddb.recompute(elec);
 
   Matrix<ValueType> orig_a;
@@ -317,7 +317,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create(4);
+  elec.create({4});
   ddc.recompute(elec);
 
   Matrix<ValueType> orig_a;
@@ -485,7 +485,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   ParticleSet ions_(simulation_cell);
   ParticleSet elec_(simulation_cell);
   ions_.setName("ion");
-  ions_.create(2);
+  ions_.create({2});
 
   ions_.R[0][0] = 0.00000000;
   ions_.R[0][1] = 0.00000000;
@@ -495,7 +495,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   ions_.R[1][2] = -1.08659253;
 
   elec_.setName("elec");
-  elec_.create(3);
+  elec_.create({3});
   elec_.R[0][0] = 0.1;
   elec_.R[0][1] = -0.3;
   elec_.R[0][2] = 1.0;

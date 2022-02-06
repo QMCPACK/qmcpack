@@ -83,7 +83,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(4);
+  ions_.create({4});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;

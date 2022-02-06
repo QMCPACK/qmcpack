@@ -35,13 +35,13 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -110,7 +110,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;

@@ -69,7 +69,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
   // Need 1 electron and 1 proton, somehow
   ions_.setName("ion");
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -137,7 +137,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   ions_.setName("ion0");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0]                 = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int HIdx                   = ispecies.addSpecies("H");
