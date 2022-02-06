@@ -247,7 +247,6 @@ public:
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
-  inline bool isGrouped() const { return is_grouped_; }
   inline bool isSpinor() const { return is_spinor_; }
   inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
 
@@ -571,8 +570,6 @@ protected:
   /// reference to global simulation cell
   const SimulationCell& simulation_cell_;
 
-  ///true if the particles are grouped
-  bool is_grouped_;
   ///true if the particles have the same mass
   bool same_mass_;
   ///true is a dynamic spin calculation
