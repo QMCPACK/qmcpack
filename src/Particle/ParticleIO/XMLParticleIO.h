@@ -121,7 +121,9 @@ class XMLParticleParser : public ParticleTags
    *@param nat the number of particle attributes to be read
    *@param nloc the current local count to which nat particle attributes are added.
    */
-  void getPtclAttrib(xmlNodePtr cur, int nat, int nloc);
+  void getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_size, int out_offset);
+
+  void checkGrouping(int nat, const std::vector<int>& nat_group) const;
 
 public:
   /**constructor
