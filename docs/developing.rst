@@ -780,6 +780,29 @@ needs to be transferred to the structure-of-arrays (SoA) storage in
 ``RSoA``. This is done by the ``update`` method. In the future the
 interface may change to use functions to set and retrieve positions so
 the SoA transformation of the particle data can happen automatically.
+For now, it is crucial to call either ``P.update()``, or ``P.setCoordinates(P.R)`` to populate ``RSoA``. Otherwise, the distance tables associated with ``R`` will be uninitialized or out-of-date.
+
+::
+  const SimulationCell sc;
+  ParticleSet elec(sc), ions(sc);
+  elec.setName("e");
+  ions.setName("ion0");
+
+  // initialize ions
+  ions.create(2);
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {0.5, 0.5, 0.5};
+  ions.setCoordinates(ions.R); // transfer to RSoA
+
+  // initialize elec
+  elec.create(2);
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.25, 0.0};
+  const int itab = elec.addTable(ions);
+  elec.update(); // update RSoA and distance tables
+
+  const auto& d_table = elec.getDistTableAB(itab);
+  // d_table is an electron-ion distance table
 
 A particular distance table is retrieved with ``getDistTable``. Use
 ``addTable`` to add a ``ParticleSet`` and return the index of the
