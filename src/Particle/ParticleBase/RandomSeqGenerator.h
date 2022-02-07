@@ -101,11 +101,5 @@ inline void makeGaussRandomWithEngine(ParticleAttrib<T>& a, RG& rng)
   assignGaussRand(&(a[0]), a.size(), rng);
 }
 
-template<typename T, class RG>
-inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
-{
-  assignGaussRand(&(a[0]), a.size(), rng);
-}
-
 } // namespace qmcplusplus
 #endif
