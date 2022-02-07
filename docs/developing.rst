@@ -792,7 +792,8 @@ For now, it is crucial to call either ``P.update()``, or ``P.setCoordinates(P.R)
   ions.create(2);
   ions.R[0] = {0.0, 0.0, 0.0};
   ions.R[1] = {0.5, 0.5, 0.5};
-  ions.setCoordinates(ions.R); // transfer to RSoA
+  ions.update(); // transfer to RSoA
+  //ions.setCoordinates(ions.R); // avoid public API with internal data
 
   // initialize elec
   elec.create(2);
