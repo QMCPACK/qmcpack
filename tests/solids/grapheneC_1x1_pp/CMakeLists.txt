@@ -18,7 +18,7 @@ qmc_run_and_check(
 # Q.E. References
 #  LIST(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60597872 0.000001")
 
-list(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60576396 0.000002")
+list(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60576396 0.000006")
 
 qmc_run_and_check(
   deterministic-grapheneC_1x1_pp-vmc_sdj_z30
