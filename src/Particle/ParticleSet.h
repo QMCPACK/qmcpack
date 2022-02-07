@@ -240,10 +240,8 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
-
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
