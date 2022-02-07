@@ -240,10 +240,8 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
-
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
@@ -656,7 +654,7 @@ protected:
    * @param newpos a new particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
+  void computeNewPosDistTables(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
@@ -666,10 +664,10 @@ protected:
    * @param new_positions new particle positions
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
-                                              Index_t iat,
-                                              const std::vector<SingleParticlePos>& new_positions,
-                                              bool maybe_accept = true);
+  static void mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleSet>& p_list,
+                                         Index_t iat,
+                                         const std::vector<SingleParticlePos>& new_positions,
+                                         bool maybe_accept = true);
 
   /** actual implemenation for accepting a proposed move in forward mode
    *

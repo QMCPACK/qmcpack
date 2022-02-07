@@ -47,7 +47,10 @@ protected:
   TinyVector<int, D> HalfG;
   ///flags to unpack sin/cos
   std::vector<bool> MakeTwoCopies;
-  ///kpoints for each unique orbitals
+  /** kpoints for each unique orbitals.
+   * Note: for historic reason, this sign is opposite to what was used in DFT when orbitals were generated.
+   * Changing the sign requires updating all the evaluation code.
+   */
   std::vector<SPOSet::PosType> kPoints;
   ///remap splines to orbitals
   aligned_vector<int> BandIndexMap;

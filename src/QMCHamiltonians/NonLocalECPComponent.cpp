@@ -105,14 +105,18 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
 
 void NonLocalECPComponent::print(std::ostream& os)
 {
-  os << "    Maximum angular mementum = " << lmax << std::endl;
+  os << "    Maximum angular momentum = " << lmax << std::endl;
   os << "    Number of non-local channels = " << nchannel << std::endl;
   for (int l = 0; l < nchannel; l++)
     os << "       l(" << l << ")=" << angpp_m[l] << std::endl;
   os << "    Cutoff radius = " << Rmax << std::endl;
-  os << "    Spherical grids and weights: " << std::endl;
-  for (int ik = 0; ik < nknot; ik++)
-    os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
+  os << "    Number of spherical integration grid points = " << nknot << std::endl;
+  if (outputManager.isActive(Verbosity::HIGH))
+  {
+    os << "    Spherical grid and weights: " << std::endl;
+    for (int ik = 0; ik < nknot; ik++)
+      os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
+  }
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
