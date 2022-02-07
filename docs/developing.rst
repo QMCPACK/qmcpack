@@ -783,6 +783,7 @@ the SoA transformation of the particle data can happen automatically.
 For now, it is crucial to call either ``P.update()``, or ``P.setCoordinates(P.R)`` to populate ``RSoA``. Otherwise, the distance tables associated with ``R`` will be uninitialized or out-of-date.
 
 ::
+
   const SimulationCell sc;
   ParticleSet elec(sc), ions(sc);
   elec.setName("e");
@@ -793,7 +794,6 @@ For now, it is crucial to call either ``P.update()``, or ``P.setCoordinates(P.R)
   ions.R[0] = {0.0, 0.0, 0.0};
   ions.R[1] = {0.5, 0.5, 0.5};
   ions.update(); // transfer to RSoA
-  //ions.setCoordinates(ions.R); // avoid public API with internal data
 
   // initialize elec
   elec.create(2);
@@ -802,8 +802,8 @@ For now, it is crucial to call either ``P.update()``, or ``P.setCoordinates(P.R)
   const int itab = elec.addTable(ions);
   elec.update(); // update RSoA and distance tables
 
-  const auto& d_table = elec.getDistTableAB(itab);
   // d_table is an electron-ion distance table
+  const auto& d_table = elec.getDistTableAB(itab);
 
 A particular distance table is retrieved with ``getDistTable``. Use
 ``addTable`` to add a ``ParticleSet`` and return the index of the
