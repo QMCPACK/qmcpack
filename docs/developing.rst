@@ -790,13 +790,13 @@ For now, it is crucial to call ``P.update()`` to populate ``RSoA`` anytime ``P.R
   ions.setName("ion0");
 
   // initialize ions
-  ions.create(2);
+  ions.create({2});
   ions.R[0] = {0.0, 0.0, 0.0};
   ions.R[1] = {0.5, 0.5, 0.5};
   ions.update(); // transfer to RSoA
 
   // initialize elec
-  elec.create(2);
+  elec.create({1,1});
   elec.R[0] = {0.0, 0.0, 0.0};
   elec.R[1] = {0.0, 0.25, 0.0};
   const int itab = elec.addTable(ions);

@@ -101,9 +101,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 2;
-  elec_.create(ud);
+  elec_.create({2,2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 1.0};
   elec_.R[2] = {1.0, 1.0, 0.0};
