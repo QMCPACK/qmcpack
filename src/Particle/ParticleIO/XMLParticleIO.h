@@ -118,8 +118,9 @@ class XMLParticleParser : public ParticleTags
 
   /** read the data of a particle attribute
    *@param cur the xmlnode
-   *@param nat the number of particle attributes to be read
-   *@param nloc the current local count to which nat particle attributes are added.
+   *@param in_offset the location offset to read from XML element node body.
+   *@param copy_size the number of particle attributes to be read
+   *@param out_offset the current local count to which copy_size particle attributes are added.
    */
   void getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_size, int out_offset);
 
