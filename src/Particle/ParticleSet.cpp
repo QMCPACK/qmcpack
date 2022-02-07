@@ -411,7 +411,7 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   ScopedTimer update_scope(p_leader.myTimers[PS_update]);
 
   for (ParticleSet& pset : p_list)
-    pset.setCoordinates(pset.R);
+    pset.coordinates_->setAllParticlePos(pset.R);
 
   auto& dts = p_leader.DistTables;
   for (int i = 0; i < dts.size(); ++i)
