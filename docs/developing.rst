@@ -780,7 +780,7 @@ needs to be transferred to the structure-of-arrays (SoA) storage in
 ``RSoA``. This is done by the ``update`` method. In the future the
 interface may change to use functions to set and retrieve positions so
 the SoA transformation of the particle data can happen automatically.
-For now, it is crucial to call either ``P.update()``, or ``P.setCoordinates(P.R)`` to populate ``RSoA``. Otherwise, the distance tables associated with ``R`` will be uninitialized or out-of-date.
+For now, it is crucial to call ``P.update()`` to populate ``RSoA`` anytime ``P.R`` is changed. Otherwise, the distance tables associated with ``R`` will be uninitialized or out-of-date.
 
 ::
 
