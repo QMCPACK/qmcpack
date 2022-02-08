@@ -114,9 +114,11 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
   ref_.setName(pname.c_str());
 
   if (nat != 0)
+  {
     app_debug() << "Set the total size " << nat
                 << " by the 'size' attribute found in 'particleset' XML element node named '" << pname << "'."
                 << std::endl;
+  }
 
   bool ionid_found = false;
   { // parse all the 'group's to obtain or verify the total number of particles

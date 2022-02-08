@@ -71,13 +71,10 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.setCoordinates(ions_.R);
-  //ions_.resetGroups();
+  ions_.update();
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 2;
-  elec_.create(ud);
+  elec_.create({2,2});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
