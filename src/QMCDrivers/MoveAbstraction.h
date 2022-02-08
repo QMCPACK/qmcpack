@@ -173,22 +173,8 @@ private:
   RandomGenerator& random_gen_;
   /// drift modifer used to limit size of drift velocity
   const DriftModifierBase& drift_modifier_;
-  /// spatial timestep
-  Real tauovermass_;
-  /// \f$\frac{1}{2\tau}$\f, used in Green's function
-  Real oneover2tau_;
-  /// \f$\sqrt{\tau}$\f, used to scale the diffusion part of move
-  Real sqrttau_;
-  /** spin timestep, defined by spin mass and spatial timestep.
-   *
-   * Note that \f$\tau_{\rm spin} = \frac{\tau}{m_{\rm spin}}$\f}
-   */
-  Real spintauovermass_;
-  /// \f$\frac{1}{2\tau_{\rm spin}}$\f, used in spin part of green's function
-  Real oneover2spintau_;
-  /// \f$\sqrt{\tau_{\rm spin}}$\f, used to scale the diffusion part of spin move
-  Real sqrtspintau_;
-  /// total number of walkers in crowd.
+  /// timesteps
+  std::unique_ptr<Taus<Real,CT>> taus_;
   const int num_walkers_;
 };
 
@@ -203,6 +189,7 @@ inline MoveAbstraction<CoordsType::POS>::MoveAbstraction(const PSdispatcher& ps_
       elecs_(elecs),
       random_gen_(random_gen),
       drift_modifier_(drift_modifier),
+      taus_(nullptr),
       num_walkers_(num_walkers)
 {
   drifts_.resize(num_walkers_);
@@ -222,6 +209,7 @@ inline MoveAbstraction<CoordsType::POS_SPIN>::MoveAbstraction(const PSdispatcher
       elecs_(elecs),
       random_gen_(random_gen),
       drift_modifier_(drift_modifier),
+      taus_(nullptr),
       num_walkers_(num_walkers)
 {
   drifts_.resize(num_walkers_);
@@ -250,21 +238,14 @@ inline void MoveAbstraction<CoordsType::POS_SPIN>::generateDeltas()
 template<>
 inline void MoveAbstraction<CoordsType::POS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
 {
-  tauovermass_ = qmcdrv_input.get_tau() * invmass;
-  oneover2tau_ = 0.5 / tauovermass_;
-  sqrttau_     = std::sqrt(tauovermass_);
+    taus_ = std::make_unique<Taus<Real,CoordsType::POS>>(qmcdrv_input.get_tau(), invmass);
 }
 
 template<>
 inline void MoveAbstraction<CoordsType::POS_SPIN>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
                                                                   const Real& invmass)
 {
-  tauovermass_     = qmcdrv_input.get_tau() * invmass;
-  oneover2tau_     = 0.5 / tauovermass_;
-  sqrttau_         = std::sqrt(tauovermass_);
-  spintauovermass_ = tauovermass_ / qmcdrv_input.get_spin_mass();
-  oneover2spintau_ = 0.5 / spintauovermass_;
-  sqrtspintau_     = std::sqrt(spintauovermass_);
+    taus_ = std::make_unique<Taus<Real,CoordsType::POS_SPIN>>(qmcdrv_input.get_tau(), invmass, qmcdrv_input.get_spin_mass());
 }
 
 template<>
@@ -277,9 +258,9 @@ inline void MoveAbstraction<CoordsType::POS>::calcForwardMoveWithDrift(
   auto delta_r_end   = delta_r_start + num_walkers_;
 
   twf_dispatcher.flex_evalGrad(twfs, elecs_, iat, grads_now_);
-  drift_modifier_.getDrifts(tauovermass_, grads_now_, drifts_);
+  drift_modifier_.getDrifts(taus_->tauovermass, grads_now_, drifts_);
   std::transform(drifts_.begin(), drifts_.end(), delta_r_start, drifts_.begin(),
-                 [st = sqrttau_](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
+                 [st = taus_->sqrttau](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
 }
 
 template<>
@@ -294,13 +275,13 @@ inline void MoveAbstraction<CoordsType::POS_SPIN>::calcForwardMoveWithDrift(
   auto delta_spin_end   = delta_spin_start + num_walkers_;
 
   twf_dispatcher.flex_evalGradWithSpin(twfs, elecs_, iat, grads_now_, spingrads_now_);
-  drift_modifier_.getDrifts(tauovermass_, grads_now_, drifts_);
+  drift_modifier_.getDrifts(taus_->tauovermass, grads_now_, drifts_);
   std::transform(drifts_.begin(), drifts_.end(), delta_r_start, drifts_.begin(),
-                 [st = sqrttau_](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
+                 [st = taus_->sqrttau](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
   //spin part of forward move
-  drift_modifier_.getDrifts(spintauovermass_, spingrads_now_, spindrifts_);
+  drift_modifier_.getDrifts(taus_->spin_tauovermass, spingrads_now_, spindrifts_);
   std::transform(spindrifts_.begin(), spindrifts_.end(), delta_spin_start, spindrifts_.begin(),
-                 [st = sqrtspintau_](const Scalar& spindrift, const Scalar& delta_spin) {
+                 [st = taus_->spin_sqrttau](const Scalar& spindrift, const Scalar& delta_spin) {
                    return spindrift + (st * delta_spin);
                  });
 }
@@ -312,7 +293,7 @@ inline void MoveAbstraction<CoordsType::POS>::calcForwardMove(const int iat)
   auto delta_r_end   = delta_r_start + num_walkers_;
 
   std::transform(delta_r_start, delta_r_end, drifts_.begin(),
-                 [st = sqrttau_](const Pos& delta_r) { return st * delta_r; });
+                 [st = taus_->sqrttau](const Pos& delta_r) { return st * delta_r; });
 }
 
 template<>
@@ -324,9 +305,9 @@ inline void MoveAbstraction<CoordsType::POS_SPIN>::calcForwardMove(const int iat
   auto delta_spin_end   = delta_spin_start + num_walkers_;
 
   std::transform(delta_r_start, delta_r_end, drifts_.begin(),
-                 [st = sqrttau_](const Pos& delta_r) { return st * delta_r; });
+                 [st = taus_->sqrttau](const Pos& delta_r) { return st * delta_r; });
   std::transform(delta_spin_start, delta_spin_end, spindrifts_.begin(),
-                 [st = sqrtspintau_](const Scalar& delta_spin) { return st * delta_spin; });
+                 [st = taus_->spin_sqrttau](const Scalar& delta_spin) { return st * delta_spin; });
 }
 
 template<>
@@ -360,13 +341,13 @@ inline void MoveAbstraction<CoordsType::POS>::updateGreensFunctionWithDrift(
     constexpr Real mhalf(-0.5);
     return mhalf * dot(delta_r, delta_r);
   });
-  drift_modifier_.getDrifts(tauovermass_, grads_new_, drifts_);
+  drift_modifier_.getDrifts(taus_->tauovermass, grads_new_, drifts_);
 
   std::transform(elecs_.begin(), elecs_.end(), drifts_.begin(), drifts_.begin(),
                  [iat](const ParticleSet& ps, const Pos& drift) { return ps.R[iat] - ps.getActivePos() - drift; });
 
   std::transform(drifts_.begin(), drifts_.end(), log_gb.begin(),
-                 [halfovertau = oneover2tau_](const Pos& drift) { return -halfovertau * dot(drift, drift); });
+                 [halfovertau = taus_->oneover2tau](const Pos& drift) { return -halfovertau * dot(drift, drift); });
 }
 
 template<>
@@ -395,8 +376,8 @@ inline void MoveAbstraction<CoordsType::POS_SPIN>::updateGreensFunctionWithDrift
                    return loggf + mhalf * delta_spin * delta_spin;
                  });
 
-  drift_modifier_.getDrifts(tauovermass_, grads_new_, drifts_);
-  drift_modifier_.getDrifts(spintauovermass_, spingrads_new_, spindrifts_);
+  drift_modifier_.getDrifts(taus_->tauovermass, grads_new_, drifts_);
+  drift_modifier_.getDrifts(taus_->spin_tauovermass, spingrads_new_, spindrifts_);
 
   std::transform(elecs_.begin(), elecs_.end(), drifts_.begin(), drifts_.begin(),
                  [iat](const ParticleSet& ps, const Pos& drift) { return ps.R[iat] - ps.getActivePos() - drift; });
@@ -406,10 +387,10 @@ inline void MoveAbstraction<CoordsType::POS_SPIN>::updateGreensFunctionWithDrift
                  });
 
   std::transform(drifts_.begin(), drifts_.end(), log_gb.begin(),
-                 [halfovertau = oneover2tau_](const Pos& drift) { return -halfovertau * dot(drift, drift); });
+                 [halfovertau = taus_->oneover2tau](const Pos& drift) { return -halfovertau * dot(drift, drift); });
   //add spin part to greens function
   std::transform(spindrifts_.begin(), spindrifts_.end(), log_gb.begin(), log_gb.begin(),
-                 [halfovertau = oneover2spintau_](const Scalar& spindrift, const Real& loggb) {
+                 [halfovertau = taus_->spin_oneover2tau](const Scalar& spindrift, const Real& loggb) {
                    return loggb - halfovertau * spindrift * spindrift;
                  });
 }
@@ -430,7 +411,7 @@ inline void MoveAbstraction<CT>::updaterr(const int iat, std::vector<Real>& rr)
   auto delta_r_end   = delta_r_start + num_walkers_;
   assert(rr.size() == delta_r_end - delta_r_start);
   std::transform(delta_r_start, delta_r_end, rr.begin(),
-                 [t = tauovermass_](auto& delta_r) { return t * dot(delta_r, delta_r); });
+                 [t = taus_->tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 }
 
 } // namespace qmcplusplus
