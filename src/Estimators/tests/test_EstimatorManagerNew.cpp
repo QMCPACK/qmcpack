@@ -50,10 +50,8 @@ TEST_CASE("EstimatorManagerNew::ConstructFromEstimatorManagerInput", "[estimator
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
