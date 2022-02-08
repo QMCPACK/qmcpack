@@ -18,6 +18,7 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "QMCDrivers/MoveAbstraction.h"
+#include "Particle/MCCoords.hpp"
 
 namespace qmcplusplus
 {
@@ -133,7 +134,7 @@ private:
   ///walker controller for load-balance
   std::unique_ptr<WalkerControl> walker_controller_;
 
-  template<CoordsToMove COORDS>
+  template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,

@@ -35,7 +35,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
-template<CoordsToMove COORDS>
+template<CoordsType CT>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
@@ -78,8 +78,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  MoveAbstraction<COORDS> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
-                               num_walkers, sft.population.get_num_particles());
+  MoveAbstraction<CT> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier, num_walkers,
+                            sft.population.get_num_particles());
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
@@ -182,19 +182,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   //  check if all moves failed
 }
 
-template void VMCBatched::advanceWalkers<POSITIONS>(const StateForThread& sft,
-                                                    Crowd& crowd,
-                                                    QMCDriverNew::DriverTimers& timers,
-                                                    ContextForSteps& step_context,
-                                                    bool recompute,
-                                                    bool accumulate_this_step);
-
-template void VMCBatched::advanceWalkers<POSITIONS_SPINS>(const StateForThread& sft,
+template void VMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& sft,
                                                           Crowd& crowd,
                                                           QMCDriverNew::DriverTimers& timers,
                                                           ContextForSteps& step_context,
                                                           bool recompute,
                                                           bool accumulate_this_step);
+
+template void VMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThread& sft,
+                                                               Crowd& crowd,
+                                                               QMCDriverNew::DriverTimers& timers,
+                                                               ContextForSteps& step_context,
+                                                               bool recompute,
+                                                               bool accumulate_this_step);
 
 /** Thread body for VMC step
  *
@@ -215,11 +215,11 @@ void VMCBatched::runVMCStep(int crowd_id,
   const bool accumulate_this_step = true;
   const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
   if (spin_move)
-    advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
-                                    accumulate_this_step);
+    advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                                         accumulate_this_step);
   else
-    advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
-                              accumulate_this_step);
+    advanceWalkers<CoordsType::POS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                                    accumulate_this_step);
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -292,10 +292,11 @@ bool VMCBatched::run()
       const bool accumulate_this_step = false;
       const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
       if (spin_move)
-        advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
-                                        accumulate_this_step);
+        advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
+                                             accumulate_this_step);
       else
-        advanceWalkers<POSITIONS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
+        advanceWalkers<CoordsType::POS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
+                                        accumulate_this_step);
     };
 
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)

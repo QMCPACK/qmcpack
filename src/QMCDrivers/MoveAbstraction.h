@@ -20,22 +20,16 @@
 #include "QMCDriverInput.h"
 #include "type_traits/RefVectorWithLeader.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "Crowd.h"
+#include "Particle/MCCoords.hpp"
 
 namespace qmcplusplus
 {
-enum CoordsToMove
-{
-  POSITIONS,
-  POSITIONS_SPINS,
-};
-
 /** abstraction class to handle particle moves in batched QMC drivers
  *
- * Templated on enum CoordsToMove
- * Currently supports POSITIONS and POSITIONS_SPINS, which includes dynamic spins in particle moves
+ * Templated on CoordsType defined in MC
+ * Currently supports CoordsType::POS and CoordsType::POS_SPIN, which includes dynamic spins in particle moves
  */
-template<CoordsToMove COORDS>
+template<CoordsType CT>
 class MoveAbstraction
 {
   using Pos     = ParticleSet::PosType;
@@ -67,7 +61,7 @@ public:
 
   /** sets the timestep information for the move
    *
-   * e.g. spatial only moves (POSITIONS) only need the spatial timestep,  whereas
+   * e.g. spatial only moves (CoordsType::POS) only need the spatial timestep,  whereas
    * spin moves need a spin timestep defined by the spin mass provided by the driver input
    */
   void setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass);
@@ -199,12 +193,12 @@ private:
 };
 
 template<>
-inline MoveAbstraction<POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                   const RefVectorWithLeader<ParticleSet>& elecs,
-                                                   RandomGenerator& random_gen,
-                                                   const DriftModifierBase& drift_modifier,
-                                                   const int num_walkers,
-                                                   const int num_particles)
+inline MoveAbstraction<CoordsType::POS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
+                                                         const RefVectorWithLeader<ParticleSet>& elecs,
+                                                         RandomGenerator& random_gen,
+                                                         const DriftModifierBase& drift_modifier,
+                                                         const int num_walkers,
+                                                         const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
       elecs_(elecs),
       random_gen_(random_gen),
@@ -218,12 +212,12 @@ inline MoveAbstraction<POSITIONS>::MoveAbstraction(const PSdispatcher& ps_dispat
 }
 
 template<>
-inline MoveAbstraction<POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
-                                                         const RefVectorWithLeader<ParticleSet>& elecs,
-                                                         RandomGenerator& random_gen,
-                                                         const DriftModifierBase& drift_modifier,
-                                                         const int num_walkers,
-                                                         const int num_particles)
+inline MoveAbstraction<CoordsType::POS_SPIN>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
+                                                              const RefVectorWithLeader<ParticleSet>& elecs,
+                                                              RandomGenerator& random_gen,
+                                                              const DriftModifierBase& drift_modifier,
+                                                              const int num_walkers,
+                                                              const int num_particles)
     : ps_dispatcher_(ps_dispatcher),
       elecs_(elecs),
       random_gen_(random_gen),
@@ -241,20 +235,20 @@ inline MoveAbstraction<POSITIONS_SPINS>::MoveAbstraction(const PSdispatcher& ps_
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::generateDeltas()
+inline void MoveAbstraction<CoordsType::POS>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_, random_gen_);
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::generateDeltas()
+inline void MoveAbstraction<CoordsType::POS_SPIN>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_, random_gen_);
   makeGaussRandomWithEngine(walker_spindeltas_, random_gen_);
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
+inline void MoveAbstraction<CoordsType::POS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
 {
   tauovermass_ = qmcdrv_input.get_tau() * invmass;
   oneover2tau_ = 0.5 / tauovermass_;
@@ -262,7 +256,8 @@ inline void MoveAbstraction<POSITIONS>::setTauForGroup(const QMCDriverInput& qmc
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
+inline void MoveAbstraction<CoordsType::POS_SPIN>::setTauForGroup(const QMCDriverInput& qmcdrv_input,
+                                                                  const Real& invmass)
 {
   tauovermass_     = qmcdrv_input.get_tau() * invmass;
   oneover2tau_     = 0.5 / tauovermass_;
@@ -273,9 +268,10 @@ inline void MoveAbstraction<POSITIONS_SPINS>::setTauForGroup(const QMCDriverInpu
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::calcForwardMoveWithDrift(const TWFdispatcher& twf_dispatcher,
-                                                                 const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                                                 const int iat)
+inline void MoveAbstraction<CoordsType::POS>::calcForwardMoveWithDrift(
+    const TWFdispatcher& twf_dispatcher,
+    const RefVectorWithLeader<TrialWaveFunction>& twfs,
+    const int iat)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
@@ -287,7 +283,7 @@ inline void MoveAbstraction<POSITIONS>::calcForwardMoveWithDrift(const TWFdispat
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMoveWithDrift(
+inline void MoveAbstraction<CoordsType::POS_SPIN>::calcForwardMoveWithDrift(
     const TWFdispatcher& twf_dispatcher,
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const int iat)
@@ -310,7 +306,7 @@ inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMoveWithDrift(
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::calcForwardMove(const int iat)
+inline void MoveAbstraction<CoordsType::POS>::calcForwardMove(const int iat)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;
@@ -320,7 +316,7 @@ inline void MoveAbstraction<POSITIONS>::calcForwardMove(const int iat)
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMove(const int iat)
+inline void MoveAbstraction<CoordsType::POS_SPIN>::calcForwardMove(const int iat)
 {
   auto delta_r_start    = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end      = delta_r_start + num_walkers_;
@@ -334,13 +330,13 @@ inline void MoveAbstraction<POSITIONS_SPINS>::calcForwardMove(const int iat)
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::makeMove(const int iat)
+inline void MoveAbstraction<CoordsType::POS>::makeMove(const int iat)
 {
   ps_dispatcher_.flex_makeMove(elecs_, iat, drifts_);
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::makeMove(const int iat)
+inline void MoveAbstraction<CoordsType::POS_SPIN>::makeMove(const int iat)
 {
   ps_dispatcher_.flex_makeMove(elecs_, iat, drifts_);
   ParticleSet& elec_leader = elecs_.getLeader();
@@ -348,7 +344,7 @@ inline void MoveAbstraction<POSITIONS_SPINS>::makeMove(const int iat)
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS>::updateGreensFunctionWithDrift(
+inline void MoveAbstraction<CoordsType::POS>::updateGreensFunctionWithDrift(
     const TWFdispatcher& twf_dispatcher,
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const int iat,
@@ -374,7 +370,7 @@ inline void MoveAbstraction<POSITIONS>::updateGreensFunctionWithDrift(
 }
 
 template<>
-inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
+inline void MoveAbstraction<CoordsType::POS_SPIN>::updateGreensFunctionWithDrift(
     const TWFdispatcher& twf_dispatcher,
     const RefVectorWithLeader<TrialWaveFunction>& twfs,
     const int iat,
@@ -418,17 +414,17 @@ inline void MoveAbstraction<POSITIONS_SPINS>::updateGreensFunctionWithDrift(
                  });
 }
 
-template<CoordsToMove COORDS>
-inline void MoveAbstraction<COORDS>::updateGreensFunction(const TWFdispatcher& twf_dispatcher,
-                                                          const RefVectorWithLeader<TrialWaveFunction>& twfs,
-                                                          const int iat,
-                                                          std::vector<PsiV>& ratios)
+template<CoordsType CT>
+inline void MoveAbstraction<CT>::updateGreensFunction(const TWFdispatcher& twf_dispatcher,
+                                                      const RefVectorWithLeader<TrialWaveFunction>& twfs,
+                                                      const int iat,
+                                                      std::vector<PsiV>& ratios)
 {
   twf_dispatcher.flex_calcRatio(twfs, elecs_, iat, ratios);
 }
 
-template<CoordsToMove COORDS>
-inline void MoveAbstraction<COORDS>::updaterr(const int iat, std::vector<Real>& rr)
+template<CoordsType CT>
+inline void MoveAbstraction<CT>::updaterr(const int iat, std::vector<Real>& rr)
 {
   auto delta_r_start = walker_deltas_.begin() + iat * num_walkers_;
   auto delta_r_end   = delta_r_start + num_walkers_;

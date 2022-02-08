@@ -1,4 +1,3 @@
-
 //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
@@ -60,7 +59,7 @@ void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
-template<CoordsToMove COORDS>
+template<CoordsType CT>
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
@@ -103,8 +102,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   const int num_walkers = crowd.size();
 
-  MoveAbstraction<COORDS> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier,
-                               num_walkers, sft.population.get_num_particles());
+  MoveAbstraction<CT> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier, num_walkers,
+                            sft.population.get_num_particles());
 
   //This generates an entire steps worth of deltas.
   mover.generateDeltas();
@@ -299,21 +298,21 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 }
 
-template void DMCBatched::advanceWalkers<POSITIONS>(const StateForThread& sft,
-                                                    Crowd& crowd,
-                                                    DriverTimers& timers,
-                                                    DMCTimers& dmc_timers,
-                                                    ContextForSteps& step_context,
-                                                    bool recompute,
-                                                    bool accumulate_this_step);
-
-template void DMCBatched::advanceWalkers<POSITIONS_SPINS>(const StateForThread& sft,
+template void DMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& sft,
                                                           Crowd& crowd,
                                                           DriverTimers& timers,
                                                           DMCTimers& dmc_timers,
                                                           ContextForSteps& step_context,
                                                           bool recompute,
                                                           bool accumulate_this_step);
+
+template void DMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThread& sft,
+                                                               Crowd& crowd,
+                                                               DriverTimers& timers,
+                                                               DMCTimers& dmc_timers,
+                                                               ContextForSteps& step_context,
+                                                               bool recompute,
+                                                               bool accumulate_this_step);
 
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
@@ -337,11 +336,11 @@ void DMCBatched::runDMCStep(int crowd_id,
   const bool accumulate_this_step = true;
   const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
   if (spin_move)
-    advanceWalkers<POSITIONS_SPINS>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
-                                    accumulate_this_step);
+    advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id],
+                                         recompute_this_step, accumulate_this_step);
   else
-    advanceWalkers<POSITIONS>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
-                              accumulate_this_step);
+    advanceWalkers<CoordsType::POS>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step,
+                                    accumulate_this_step);
 }
 
 void DMCBatched::process(xmlNodePtr node)
