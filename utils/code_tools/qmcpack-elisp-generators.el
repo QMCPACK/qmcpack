@@ -80,7 +80,6 @@ The getter functions are written on starting on the line after the REGION."
           (insert "\n")
           (insert getters))))))
 
-
 (defun qmcp-add-setters()
   "For each C++ variable declaration in REGION write setter.
 The getter functions are written on starting on the line after the REGION."

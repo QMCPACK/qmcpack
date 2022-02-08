@@ -102,7 +102,7 @@ protected:
 
   /** @}
    */
-  
+
 public:
   int get_store_config_period() const { return store_config_period_; }
   int get_recalculate_properties_period() const { return recalculate_properties_period_; }
