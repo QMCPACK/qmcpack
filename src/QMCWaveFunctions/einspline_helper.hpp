@@ -95,7 +95,7 @@ inline void fix_phase_rotate_c2r(Array<std::complex<T>, 3>& in,
       for (int iz = 0; iz < nz; iz++)
       {
         T ruz = static_cast<T>(iz) * nz_i * twist[2];
-        qmcplusplus::sincos(two_pi * (rux + ruy + ruz), &s, &c);
+        qmcplusplus::sincos(-two_pi * (rux + ruy + ruz), &s, &c);
         std::complex<T> eikr(c, s);
         *in_ptr *= eikr;
         rNorm += in_ptr->real() * in_ptr->real();
@@ -259,7 +259,7 @@ inline void compute_phase(const Array<std::complex<T>, 3>& in, const TinyVector<
       for (size_t iz = 0; iz < nz; ++iz)
       {
         const T ruz = static_cast<T>(iz) * nz_i * twist[2];
-        qmcplusplus::sincos(two_pi * (rux + ruy + ruz), &s, &c);
+        qmcplusplus::sincos(-two_pi * (rux + ruy + ruz), &s, &c);
         const T re = c * in_ptr[iz].real() - s * in_ptr[iz].imag();
         const T im = s * in_ptr[iz].real() + c * in_ptr[iz].imag();
         rsum += re * re;

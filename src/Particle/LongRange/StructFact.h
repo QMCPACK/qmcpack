@@ -14,7 +14,6 @@
 #ifndef QMCPLUSPLUS_STRUCTFACT_H
 #define QMCPLUSPLUS_STRUCTFACT_H
 
-//#define USE_REAL_STRUCT_FACTOR
 #include "ParticleSet.h"
 #include "DynamicCoordinates.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -37,13 +36,6 @@ class StructFact : public QMCTraits
 public:
   //Typedef for the lattice-type
   using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
-  /** false, if the structure factor is not actively updated
-   *
-   * Default is false. Particle-by-particle update functions, makeMove,
-   * acceptMove and rejectMove are costly and do not need to be performed
-   * unless Hamiltonian uses pbyp.
-   */
-  bool DoUpdate;
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
@@ -52,17 +44,9 @@ public:
   ///1-D container for the phase
   Vector<RealType> phiV;
   ///2-D container for the phase
-#if defined(USE_REAL_STRUCT_FACTOR)
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
   Vector<RealType> eikr_r_temp, eikr_i_temp;
-#else
-  Matrix<ComplexType> rhok;
-  ///eikr[particle-index][K]
-  Matrix<ComplexType> eikr;
-  ///eikr[K] for a proposed move
-  Vector<ComplexType> eikr_temp;
-#endif
   /** Constructor - copy ParticleSet and init. k-shells
    * @param nptcls number of particles
    * @param ns number of species
@@ -80,23 +64,6 @@ public:
   static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
                                const RefVectorWithLeader<ParticleSet>& p_list);
 
-  /** evaluate eikr_temp for eikr for the proposed move
-   * @param active index of the moved particle
-   * @param pos proposed position
-   */
-  void makeMove(int active, const PosType& pos);
-  /** update eikr and rhok with eikr_temp
-   * @param active index of the moved particle
-   * @param gid group id of the active particle
-   */
-  void acceptMove(int active, int gid, const PosType& rold);
-  /** discard any temporary data
-   * @param active index of the moved particle
-   * @param gid group id of the active particle
-   *
-   * Do nothing
-   */
-  void rejectMove(int active, int gid);
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
    * if StorePerParticle was true, this function is no-op
@@ -110,8 +77,6 @@ private:
   /// Compute all rhok elements from the start
   void computeRhok(const ParticleSet& P);
   /** resize the internal data
-   * @param np number of species
-   * @param nptcl number of particles
    * @param nkpts
    */
   void resize(int nkpts);

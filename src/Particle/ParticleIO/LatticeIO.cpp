@@ -20,7 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include "OhmmsData/FileUtility.h"
-#include "ParticleLayoutIO.h"
+#include "LatticeIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "LongRange/LRCoulombSingleton.h"

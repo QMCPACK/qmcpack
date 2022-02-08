@@ -44,7 +44,7 @@ void expandSuperCell(const ParticleSet& in, const Tensor<int, OHMMS_DIM>& tmat, 
 
   const auto& primPos(in.R);
   const auto& primTypes(in.GroupID);
-  out.create(natoms * numCopies);
+  out.create({natoms * numCopies});
   const int maxCopies = 10;
   int index           = 0;
   //set the unit to the Cartesian!

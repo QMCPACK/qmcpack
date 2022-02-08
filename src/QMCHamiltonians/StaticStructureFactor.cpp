@@ -20,9 +20,6 @@ namespace qmcplusplus
 {
 StaticStructureFactor::StaticStructureFactor(ParticleSet& P) : Pinit(P)
 {
-#ifndef USE_REAL_STRUCT_FACTOR
-  APP_ABORT("StaticStructureFactor: please recompile with USE_REAL_STRUCT_FACTOR=1");
-#endif
   if (P.getLattice().SuperCellEnum == SUPERCELL_OPEN)
     APP_ABORT("StaticStructureFactor is incompatible with open boundary conditions");
 

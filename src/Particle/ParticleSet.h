@@ -139,10 +139,6 @@ public:
   ///default destructor
   ~ParticleSet() override;
 
-  /** create  particles
-   * @param n number of particles
-   */
-  void create(int n);
   /** create grouped particles
    * @param agroup number of particles per group
    */
@@ -240,10 +236,8 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
-
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
@@ -251,7 +245,6 @@ public:
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
-  inline bool isGrouped() const { return is_grouped_; }
   inline bool isSpinor() const { return is_spinor_; }
   inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
 
@@ -471,21 +464,6 @@ public:
 
   inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(size_t numPtcl)
-  {
-    TotalNum = numPtcl;
-
-    R.resize(numPtcl);
-    spins.resize(numPtcl);
-    GroupID.resize(numPtcl);
-    G.resize(numPtcl);
-    L.resize(numPtcl);
-    Mass.resize(numPtcl);
-    Z.resize(numPtcl);
-
-    coordinates_->resize(numPtcl);
-  }
-
   inline void clear()
   {
     TotalNum = 0;
@@ -590,8 +568,6 @@ protected:
   /// reference to global simulation cell
   const SimulationCell& simulation_cell_;
 
-  ///true if the particles are grouped
-  bool is_grouped_;
   ///true if the particles have the same mass
   bool same_mass_;
   ///true is a dynamic spin calculation
@@ -647,7 +623,7 @@ protected:
    * @param newpos a new particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
+  void computeNewPosDistTables(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
@@ -657,10 +633,10 @@ protected:
    * @param new_positions new particle positions
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
-                                              Index_t iat,
-                                              const std::vector<SingleParticlePos>& new_positions,
-                                              bool maybe_accept = true);
+  static void mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleSet>& p_list,
+                                         Index_t iat,
+                                         const std::vector<SingleParticlePos>& new_positions,
+                                         bool maybe_accept = true);
 
   /** actual implemenation for accepting a proposed move in forward mode
    *
@@ -672,6 +648,22 @@ protected:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMoveForwardMode(Index_t iat);
+
+  /// resize internal storage
+  inline void resize(size_t numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    spins.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    L.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+
+    coordinates_->resize(numPtcl);
+  }
 };
 
 } // namespace qmcplusplus

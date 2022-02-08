@@ -113,30 +113,26 @@ class XMLParticleParser : public ParticleTags
   using ParticlePos    = Particle_t::ParticlePos;
   using ParticleTensor = Particle_t::ParticleTensor;
 
-  bool AssignmentOnly;
   Particle_t& ref_;
   AttribListType ref_AttribList;
 
-  bool putSpecial(xmlNodePtr cur);
-
   /** read the data of a particle attribute
    *@param cur the xmlnode
-   *@param nat the number of particle attributes to be read
-   *@param nloc the current local count to which nat particle attributes are added.
+   *@param in_offset the location offset to read from XML element node body.
+   *@param copy_size the number of particle attributes to be read
+   *@param out_offset the current local count to which copy_size particle attributes are added.
    */
-  void getPtclAttrib(xmlNodePtr cur, int nat, int nloc);
+  void getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_size, int out_offset);
+
+  void checkGrouping(int nat, const std::vector<int>& nat_group) const;
 
 public:
   /**constructor
    *@param aptcl the particleset to be initialized
-   *@param donotresize if true, only assignment is done
    */
-  XMLParticleParser(Particle_t& aptcl, bool donotresize = false);
+  XMLParticleParser(Particle_t& aptcl);
 
-  ///reading from a file
-  bool put(const std::string& fname_in, const std::string& fext_in);
-
-  bool put(xmlNodePtr cur);
+  bool readXML(xmlNodePtr cur);
 
   /** reset the properties of a particle set
    */

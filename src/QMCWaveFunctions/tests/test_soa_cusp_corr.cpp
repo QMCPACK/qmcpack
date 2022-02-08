@@ -76,7 +76,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
-  parse_ions.put(particleset_ion[0]);
+  parse_ions.readXML(particleset_ion[0]);
 
   REQUIRE(ions.groups() == 3);
   REQUIRE(ions.R.size() == 3);
@@ -86,7 +86,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
-  parse_elec.put(particleset_elec[0]);
+  parse_elec.readXML(particleset_elec[0]);
 
   REQUIRE(elec.groups() == 2);
   REQUIRE(elec.R.size() == 14);
@@ -245,7 +245,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
-  parse_ions.put(particleset_ion[0]);
+  parse_ions.readXML(particleset_ion[0]);
 
   REQUIRE(ions.groups() == 3);
   REQUIRE(ions.R.size() == 3);
@@ -255,7 +255,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
-  parse_elec.put(particleset_elec[0]);
+  parse_elec.readXML(particleset_elec[0]);
 
   REQUIRE(elec.groups() == 2);
   REQUIRE(elec.R.size() == 14);
@@ -417,7 +417,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
-  parse_ions.put(particleset_ion[0]);
+  parse_ions.readXML(particleset_ion[0]);
 
   REQUIRE(ions.groups() == 3);
   REQUIRE(ions.R.size() == 9);
@@ -427,7 +427,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
-  parse_elec.put(particleset_elec[0]);
+  parse_elec.readXML(particleset_elec[0]);
 
   REQUIRE(elec.groups() == 2);
   REQUIRE(elec.R.size() == 26);

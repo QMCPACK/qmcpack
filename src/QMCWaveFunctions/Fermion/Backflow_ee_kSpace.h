@@ -256,32 +256,8 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP) override
   {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    APP_ABORT("Backflow_ee_kSpace::evaluate");
-#else
-    //memcopy if necessary but this is not so critcal
-    copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumKVecs, Rhok.data());
-    for (int spec1 = 1; spec1 < NumGroups; spec1++)
-      accumulate_elements(P.getSK().rhok[spec1], P.getSK().rhok[spec1] + NumKVecs, Rhok.data());
-    const auto& Kcart(P.getSimulationCell().getKLists().kpts_cart);
-    std::vector<int>& kshell(P.getSimulationCell().getKLists().kshell);
-    for (int iel = 0; iel < NumTargets; iel++)
-    {
-      const ComplexType* restrict eikr_ptr(P.getSK().eikr[iel]);
-      const ComplexType* restrict rhok_ptr(Rhok.data());
-      int ki = 0;
-      for (int ks = 0; ks < NumKShells; ks++)
-      {
-        // don't understand factor of 2, ask Markus!!!
-        RealType pre = 2.0 * Fk[ks];
-        for (; ki < kshell[ks + 1]; ki++, eikr_ptr++, rhok_ptr++)
-        {
-          RealType ii = ((*eikr_ptr).real() * (*rhok_ptr).imag() - (*eikr_ptr).imag() * (*rhok_ptr).real());
-          QP.R[iel] -= pre * Kcart[ki] * ii;
-        }
-      }
-    }
-#endif
+    throw std::runtime_error("Backflow_ee_kSpace::evaluate not implemented. There was an implementation with"
+                             " complex-valued storage that may be resurrected using real-valued storage.");
   }
 
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector& Bmat, HessMatrix& Amat)
@@ -294,58 +270,8 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix& Bmat_full, HessMatrix& Amat) override
   {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    APP_ABORT("Backflow_ee_kSpace::evaluate");
-#else
-    //memcopy if necessary but this is not so critcal
-    copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumKVecs, Rhok.data());
-    for (int spec1 = 1; spec1 < NumGroups; spec1++)
-      accumulate_elements(P.getSK().rhok[spec1], P.getSK().rhok[spec1] + NumKVecs, Rhok.data());
-    const auto& Kcart(P.getSimulationCell().getKLists().kpts_cart);
-    std::vector<int>& kshell(P.getSimulationCell().getKLists().kshell);
-    GradType fact;
-    HessType kakb;
-    for (int iel = 0; iel < NumTargets; iel++)
-    {
-      const ComplexType* restrict eikr_ptr(P.getSK().eikr[iel]);
-      const ComplexType* restrict rhok_ptr(Rhok.data());
-      const RealType* restrict ksq_ptr(P.getSimulationCell().getKLists().ksq.data());
-      int ki = 0;
-      for (int ks = 0; ks < NumKShells; ks++, ksq_ptr++)
-      {
-        // don't understand factor of 2, ask Markus!!!
-        RealType pre = 2.0 * Fk[ks];
-        RealType k2  = *ksq_ptr;
-        for (; ki < kshell[ks + 1]; ki++, eikr_ptr++, rhok_ptr++)
-        {
-          RealType rr = ((*eikr_ptr).real() * (*rhok_ptr).real() + (*eikr_ptr).imag() * (*rhok_ptr).imag());
-          RealType ii = ((*eikr_ptr).real() * (*rhok_ptr).imag() - (*eikr_ptr).imag() * (*rhok_ptr).real());
-          // quasiparticle
-          QP.R[iel] -= pre * Kcart[ki] * ii;
-          // B matrix
-          convert(k2 * pre * Kcart[ki], fact);
-          convert(pre * outerProduct(Kcart[ki], Kcart[ki]), kakb);
-          Bmat_full(iel, iel) += fact * (ii - 1.0);
-          // I can use symmetry to do only i<j, and then symmetrize
-          // A matrix
-          Amat(iel, iel) += kakb * (rr - 1.0);
-          // I can use symmetry to do only i<j, and then symmetrize
-          for (int j = 0; j < iel; j++)
-          {
-            ComplexType& eikrj = P.getSK().eikr[j][ki];
-            Bmat_full(iel, j) += fact * ((*eikr_ptr).real() * (eikrj).imag() - (*eikr_ptr).imag() * (eikrj).real());
-            Amat(iel, j) -= kakb * ((*eikr_ptr).real() * (eikrj).real() + (*eikr_ptr).imag() * (eikrj).imag());
-          }
-          for (int j = iel + 1; j < NumTargets; j++)
-          {
-            ComplexType& eikrj = P.getSK().eikr[j][ki];
-            Bmat_full(iel, j) += fact * ((*eikr_ptr).real() * (eikrj).imag() - (*eikr_ptr).imag() * (eikrj).real());
-            Amat(iel, j) -= kakb * ((*eikr_ptr).real() * (eikrj).real() + (*eikr_ptr).imag() * (eikrj).imag());
-          }
-        }
-      }
-    }
-#endif
+    throw std::runtime_error("Backflow_ee_kSpace::evaluate not implemented. There was an implementation with"
+                             " complex-valued storage that may be resurrected using real-valued storage.");
   }
 
   /** calculate quasi-particle coordinates after pbyp move

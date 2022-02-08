@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-using mycomplex = qmcplusplus::LRHandlerBase::pComplexType;
+using pRealType = qmcplusplus::LRHandlerBase::pRealType;
 
 struct CoulombF2
 {
@@ -34,11 +34,11 @@ TEST_CASE("dummy", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Lattice.Volume == Approx(125));
+  CHECK(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Lattice.LR_rc == Approx(2.5));
-  REQUIRE(Lattice.LR_kc == Approx(12));
+  CHECK(Lattice.LR_rc == Approx(2.5));
+  CHECK(Lattice.LR_kc == Approx(12));
 
   const SimulationCell simulation_cell(Lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
@@ -46,14 +46,15 @@ TEST_CASE("dummy", "[lrhandler]")
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
   handler.initBreakup(ref);
-  REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(handler.LR_kc == Approx(12));
-  REQUIRE(handler.LR_rc == Approx(0));
 
-  std::vector<mycomplex> rhok1(handler.MaxKshell);
-  std::vector<mycomplex> rhok2(handler.MaxKshell);
-  std::fill(rhok1.begin(), rhok1.end(), 1.0);
-  std::fill(rhok2.begin(), rhok2.end(), 1.0);
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 124 && handler.MaxKshell <= 126 ));
+  CHECK(handler.LR_kc == Approx(12));
+  CHECK(handler.LR_rc == Approx(0));
+
+  std::vector<pRealType> rhok1(handler.MaxKshell);
+  std::vector<pRealType> rhok2(handler.MaxKshell);
   CoulombF2 fk;
   double norm = 4 * M_PI / Lattice.Volume;
   // no actual LR breakup happened in DummyLRHandler,
@@ -63,7 +64,7 @@ TEST_CASE("dummy", "[lrhandler]")
     int ik           = ref.getSimulationCell().getKLists().kshell[ish];
     double k2        = ref.getSimulationCell().getKLists().ksq[ik];
     double fk_expect = fk(k2);
-    REQUIRE(handler.Fk_symm[ish] == Approx(norm * fk_expect));
+    CHECK(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }
   // ?? cannot access base class method, too many overloads?
   // handler.evaluate(SK->getKLists().kshell, rhok1.data(), rhok2.data());

@@ -44,7 +44,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -61,7 +61,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -133,7 +133,7 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -149,7 +149,7 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -232,7 +232,7 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(3);
+  ions.create({3});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -250,7 +250,7 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   ions.createSK();
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;

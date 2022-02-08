@@ -126,7 +126,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix, 0, ns);
+  vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, ns);
   vals.selectBands(fullband, 0, ns, false);
 
   return create_spline_set(spin, vals);
@@ -151,7 +151,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
+  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
                                         input_info.min_index(), input_info.max_index());
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
@@ -193,7 +193,7 @@ void BsplineReaderBase::initialize_spo2band(int spin,
   if (comm->rank())
     return;
 
-  std::string aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
+  std::string aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
                                              comm->getGroupID());
   aname += ".bandinfo.dat";
 

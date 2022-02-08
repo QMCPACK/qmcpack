@@ -98,7 +98,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << value_ << std::endl;
+  app_log() << "\n    e-e Madelung Const. =" << std::setprecision(8) << MC0 << "\n    Vtot     =" << value_ << std::endl;
 }
 
 CoulombPBCAA::~CoulombPBCAA() = default;
@@ -222,7 +222,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     else
     {
       assert(PtclRhoK.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
-      //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
+      //jtk mark: needs optimizations
       RealType v1; //single particle energy
       RealType z;
       for (int i = 0; i < NumCenters; i++)
@@ -230,15 +230,9 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         z  = .5 * Zat[i];
         v1 = 0.0;
         for (int s = 0; s < NumSpecies; ++s)
-        {
-#if defined(USE_REAL_STRUCT_FACTOR)
           v1 += z * Zspec[s] *
               AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
                            PtclRhoK.eikr_i[i]);
-#else
-          v1 += z * Zspec[s] * AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok[s], PtclRhoK.eikr[i]);
-#endif
-        }
         V_samp(i) += v1;
         Vlr += v1;
       }
@@ -279,7 +273,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   SpeciesSet& tspecies(P.getSpeciesSet());
   //Things that don't change with lattice are done here instead of InitBreakup()
   ChargeAttribIndx = tspecies.addAttribute("charge");
-  MemberAttribIndx = tspecies.addAttribute("membersize");
   NumCenters       = P.getTotalNum();
   NumSpecies       = tspecies.TotalNum;
 
@@ -293,7 +286,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   for (int spec = 0; spec < NumSpecies; spec++)
   {
     Zspec[spec]      = tspecies(ChargeAttribIndx, spec);
-    NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx, spec));
+    NofSpecies[spec] = P.groupsize(spec);
   }
   SpeciesID.resize(NumCenters);
   for (int iat = 0; iat < NumCenters; iat++)
@@ -415,13 +408,13 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
-  //Compute Madelung constant: this is not correct for general cases
+  //Neutraling background term
+  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
+  //Compute Madelung constant
   MC0 = 0.0;
   for (int i = 0; i < AA->Fk.size(); i++)
     MC0 += AA->Fk[i];
-  MC0 = 0.5 * (MC0 - vl_r0);
-  //Neutraling background term
-  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
+  MC0 = 0.5 * (MC0 - vl_r0 - vs_k0);
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = 0.0;
@@ -435,7 +428,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA total constant " << Consts << std::endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return Consts;
 }
 
@@ -473,23 +465,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
-  {
-    const auto& d_aa(P.getDistTableAA(d_aa_ID));
-    //distance table handles jat<iat
-    for (int iat = 1; iat < NumCenters; ++iat)
-    {
-      mRealType u = 0;
-#if !defined(USE_REAL_STRUCT_FACTOR)
-      const int slab_dir              = OHMMS_DIM - 1;
-      const RealType* restrict d_slab = d_aa.Displacements[iat].data(slab_dir);
-      for (int jat = 0; jat < iat; ++jat)
-        u += Zat[jat] *
-            AA->evaluate_slab(-d_slab[jat], //JK: Could be wrong. Check the SIGN
-                              P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
-#endif
-      res += Zat[iat] * u;
-    }
-  }
+    throw std::runtime_error("CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an implementation with complex-valued storage that may be resurrected using real-valued storage.");
   else
   {
     for (int spec1 = 0; spec1 < NumSpecies; spec1++)
@@ -497,12 +473,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       mRealType Z1 = Zspec[spec1];
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
-#if defined(USE_REAL_STRUCT_FACTOR)
         mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                                       PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
-#else
-        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
-#endif
         if (spec2 == spec1)
           temp *= 0.5;
         res += Z1 * Zspec[spec2] * temp;

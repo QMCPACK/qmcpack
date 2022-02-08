@@ -24,8 +24,7 @@ namespace qmcplusplus
 {
 //Constructor - pass arguments to k_lists_' constructor
 StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists)
-    : DoUpdate(false),
-      SuperCellEnum(SUPERCELL_BULK),
+    : SuperCellEnum(SUPERCELL_BULK),
       k_lists_(k_lists),
       num_ptcls(nptcls),
       num_species(ns),
@@ -47,7 +46,6 @@ StructFact::~StructFact() = default;
 void StructFact::resize(int nkpts)
 {
   phiV.resize(nkpts);
-#if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r.resize(num_species, nkpts);
   rhok_i.resize(num_species, nkpts);
   if (StorePerParticle)
@@ -57,11 +55,6 @@ void StructFact::resize(int nkpts)
   }
   eikr_r_temp.resize(nkpts);
   eikr_i_temp.resize(nkpts);
-#else
-  rhok.resize(num_species, nkpts);
-  eikr.resize(num_ptcls, nkpts);
-  eikr_temp.resize(nkpts);
-#endif
 }
 
 
@@ -86,7 +79,6 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
 void StructFact::computeRhok(const ParticleSet& P)
 {
   int npart = P.getTotalNum();
-#if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r = 0.0;
   rhok_i = 0.0;
   //algorithmA
@@ -139,92 +131,10 @@ void StructFact::computeRhok(const ParticleSet& P)
 #endif
     }
   }
-#else
-  rhok = 0.0;
-  for (int i = 0; i < npart; i++)
-  {
-    PosType pos(P.R[i]);
-    RealType s, c; //get sin and cos
-    ComplexType* restrict eikr_ref = eikr[i];
-    ComplexType* restrict rhok_ref = rhok[P.getGroupID(i)];
-    for (int ki = 0; ki < k_lists_.numk; ki++)
-    {
-      qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &s, &c);
-      eikr_ref[ki] = ComplexType(c, s);
-      rhok_ref[ki] += eikr_ref[ki];
-    }
-  }
-#endif
-}
-
-
-void StructFact::makeMove(int active, const PosType& pos)
-{
-#if defined(USE_REAL_STRUCT_FACTOR)
-#pragma omp simd
-  for (int ki = 0; ki < k_lists_.numk; ki++)
-    qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &eikr_i_temp[ki], &eikr_r_temp[ki]);
-#else
-  RealType s, c; //get sin and cos
-  for (int ki = 0; ki < k_lists_.numk; ++ki)
-  {
-    qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &s, &c);
-    eikr_temp[ki] = ComplexType(c, s);
-  }
-#endif
-}
-
-void StructFact::acceptMove(int active, int gid, const PosType& rold)
-{
-#if defined(USE_REAL_STRUCT_FACTOR)
-  if (StorePerParticle)
-  {
-    RealType* restrict eikr_ptr_r = eikr_r[active];
-    RealType* restrict eikr_ptr_i = eikr_i[active];
-    RealType* restrict rhok_ptr_r(rhok_r[gid]);
-    RealType* restrict rhok_ptr_i(rhok_i[gid]);
-    for (int ki = 0; ki < k_lists_.numk; ++ki)
-    {
-      rhok_ptr_r[ki] += (eikr_r_temp[ki] - eikr_ptr_r[ki]);
-      rhok_ptr_i[ki] += (eikr_i_temp[ki] - eikr_ptr_i[ki]);
-      eikr_ptr_r[ki] = eikr_r_temp[ki];
-      eikr_ptr_i[ki] = eikr_i_temp[ki];
-    }
-  }
-  else
-  {
-    RealType* restrict rhok_ptr_r(rhok_r[gid]);
-    RealType* restrict rhok_ptr_i(rhok_i[gid]);
-
-// add the new value and subtract the old value
-#pragma omp simd
-    for (int ki = 0; ki < k_lists_.numk; ++ki)
-    {
-      RealType s, c;
-      qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], rold), &s, &c);
-      rhok_ptr_r[ki] += eikr_r_temp[ki] - c;
-      rhok_ptr_i[ki] += eikr_i_temp[ki] - s;
-    }
-  }
-#else
-  ComplexType* restrict eikr_ptr = eikr[active];
-  ComplexType* restrict rhok_ptr(rhok[gid]);
-  for (int ki = 0; ki < k_lists_.numk; ++ki)
-  {
-    rhok_ptr[ki] += (eikr_temp[ki] - eikr_ptr[ki]);
-    eikr_ptr[ki] = eikr_temp[ki];
-  }
-#endif
-}
-
-void StructFact::rejectMove(int active, int gid)
-{
-  //do nothing
 }
 
 void StructFact::turnOnStorePerParticle(const ParticleSet& P)
 {
-#if defined(USE_REAL_STRUCT_FACTOR)
   if (!StorePerParticle)
   {
     StorePerParticle = true;
@@ -233,7 +143,6 @@ void StructFact::turnOnStorePerParticle(const ParticleSet& P)
     eikr_i.resize(nptcl, k_lists_.numk);
     computeRhok(P);
   }
-#endif
 }
 
 } // namespace qmcplusplus

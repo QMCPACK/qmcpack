@@ -138,6 +138,8 @@ public:
     }
     return -1;
   }
+
+  inline const std::string& getSpeciesName(int index) const { return speciesName[index]; }
 };
 } // namespace qmcplusplus
 #endif

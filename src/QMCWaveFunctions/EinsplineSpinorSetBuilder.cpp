@@ -32,9 +32,10 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 {
   int numOrbs = 0;
   int sortBands(1);
-  int spinSet      = 0;
-  int spinSet2     = 1;
-  int TwistNum_inp = 0;
+  int spinSet       = 0;
+  int spinSet2      = 1;
+  int twist_num_inp = TWISTNUM_NO_INPUT;
+  TinyVector<double, OHMMS_DIM> twist_inp(TWIST_NO_INPUT);
 
   //There have to be two "spin states"...  one for the up channel and one for the down channel.
   // We force this for spinors and manually resize states and FullBands.
@@ -56,8 +57,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(TileFactor, "tile");
     a.add(sortBands, "sort");
     a.add(TileMatrix, "tilematrix");
-    a.add(TwistNum_inp, "twistnum");
-    a.add(givenTwist, "twist");
+    a.add(twist_num_inp, "twistnum");
+    a.add(twist_inp, "twist");
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
     a.add(hybrid_rep, "hybridrep");
@@ -144,7 +145,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   //than Einspline on what the data means...
   bool skipChecks = true;
 
-  set_metadata(numOrbs, TwistNum_inp, skipChecks);
+  set_metadata(numOrbs, twist_num_inp, twist_inp, skipChecks);
 
   //////////////////////////////////
   // Create the OrbitalSet object
@@ -159,7 +160,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   // safeguard for a removed feature
   if (truncate == "yes")
-    myComm->barrier_and_abort("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
+    myComm->barrier_and_abort(
+        "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
   std::string useGPU("no");
 #if !defined(QMC_COMPLEX)
@@ -192,12 +194,12 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
-  HasCoreOrbs = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
+  HasCoreOrbs       = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   auto bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  HasCoreOrbs = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
+  HasCoreOrbs       = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
   auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
 
   //register with spin set and we're off to the races.

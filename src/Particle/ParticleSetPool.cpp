@@ -19,26 +19,25 @@
 #include "ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/InitMolecularSystem.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include <Message/UniformCommunicateError.h>
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c),
-    simulation_cell_(std::make_unique<SimulationCell>())
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), simulation_cell_(std::make_unique<SimulationCell>())
 {
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
 
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
-    : MPIObjectBase(other.myComm),
-      simulation_cell_(std::move(other.simulation_cell_)),
-      myPool(std::move(other.myPool))
+    : MPIObjectBase(other.myComm), simulation_cell_(std::move(other.simulation_cell_)), myPool(std::move(other.myPool))
 {
   ClassName = other.ClassName;
   myName    = other.myName;
@@ -161,8 +160,17 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);
 
     myPool[id] = pTemp;
-    XMLParticleParser pread(*pTemp);
-    bool success = pread.put(cur);
+
+    try
+    {
+      XMLParticleParser pread(*pTemp);
+      pread.readXML(cur);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
+
     //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())
     {
@@ -173,9 +181,9 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     }
     pTemp->setName(id);
     pTemp->setSpinor(spinor == "yes");
-    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
+    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << "   Groups : " << pTemp->groups() << std::endl;
     app_summary() << std::endl;
-    return success;
+    return true;
   }
   else
   {

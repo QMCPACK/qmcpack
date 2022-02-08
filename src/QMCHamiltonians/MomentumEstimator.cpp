@@ -214,9 +214,9 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       for (int k = -kgrid; k < (kgrid + 1); k++)
       {
         PosType ikpt, kpt;
-        ikpt[0] = i - twist[0];
-        ikpt[1] = j - twist[1];
-        ikpt[2] = k - twist[2];
+        ikpt[0] = i + twist[0];
+        ikpt[1] = j + twist[1];
+        ikpt[2] = k + twist[2];
         //convert to Cartesian: note that 2Pi is multiplied
         kpt               = lattice_.k_cart(ikpt);
         bool not_recorded = true;

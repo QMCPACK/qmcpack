@@ -62,7 +62,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(2);
+  ions_.create({2});
 
   ions_.R[0][0] = 0.00000000;
   ions_.R[0][1] = 0.00000000;
@@ -73,7 +73,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create(3);
+  elec_.create({3});
   elec_.R[0][0] = 0.1;
   elec_.R[0][1] = -0.3;
   elec_.R[0][2] = 1.0;

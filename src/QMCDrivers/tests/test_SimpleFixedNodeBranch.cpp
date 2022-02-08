@@ -54,7 +54,7 @@ public:
     mcwc_ = std::make_unique<MCWalkerConfiguration>(simulation_cell);
     mcwc_->setName("electrons");
 
-    mcwc_->create(1);
+    mcwc_->create({1});
     mcwc_->R[0][0] = 0.0;
     mcwc_->R[0][1] = 1.0;
     mcwc_->R[0][2] = 2.0;
