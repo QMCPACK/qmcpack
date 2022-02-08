@@ -50,6 +50,8 @@ if(QMC_OMP)
         message(WARNING "We don't know how to handle OFFLOAD_ARCH=${OFFLOAD_ARCH} for OFFLOAD_TARGET=${OFFLOAD_TARGET}. Got ignored.")
       endif()
     endif()
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -foffload=disable")
   endif()
 endif(QMC_OMP)
 
