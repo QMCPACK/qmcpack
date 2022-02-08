@@ -1024,6 +1024,18 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 endif()
 
 #-------------------------------------------------------------------
+# Check if GPAW is available
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  check_python_reqs(gpaw "" HAVE_GPAW)
+  if(NOT ${HAVE_GPAW})
+    message(STATUS "Unable to import GPAW python module. GPAW converter tests will not be run.")
+  else()
+    message(STATUS "Successfully imported GPAW python modules.")
+  endif()
+endif()
+
+#-------------------------------------------------------------------
 # Check if QE executables available at QE_BIN or on the PATH
 #-------------------------------------------------------------------
 if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
