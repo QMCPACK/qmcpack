@@ -70,7 +70,7 @@ private:
   template<typename T, typename... Args>
   void appendEstimatorInput(Args&&... args)
   {
-    estimator_input_storage.push_back(std::make_unique<T>(std::forward<T>(args)...));
+    estimator_input_storage.push_back(std::make_unique<T>(std::forward<Args>(args)...));
     estimator_inputs.push_back(static_cast<T&>(*estimator_input_storage.back()));
   }
 
