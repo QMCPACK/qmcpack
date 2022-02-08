@@ -903,7 +903,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 #-------------------------------------------------------------------
 # add definitions DO NOT EXPAND
 #-------------------------------------------------------------------
-add_definitions(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
+add_definitions(-DHAVE_CONFIG_H -DADD_)
 
 #-------------------------------------------------------------------
 # qmcpack.settings

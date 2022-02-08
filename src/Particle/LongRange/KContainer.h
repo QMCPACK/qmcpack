@@ -16,8 +16,9 @@
 #define QMCPLUSPLUS_KCONTAINER_H
 
 #include "Configuration.h"
-#include "Pools/PooledData.h"
-#include "Utilities/IteratorUtility.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+
 namespace qmcplusplus
 {
 /** Container for k-points
@@ -75,6 +76,7 @@ public:
    */
   void updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere = true);
 
+  const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
@@ -82,6 +84,10 @@ private:
   void FindApproxMMax(const ParticleLayout& lattice);
   /** construct the container for k-vectors */
   void BuildKLists(const ParticleLayout& lattice, bool useSphere);
+
+  /** K-vector in Cartesian coordinates in SoA layout
+   */
+  VectorSoaContainer<RealType, DIM, OffloadAllocator<RealType>> kpts_cart_soa_;
 };
 
 } // namespace qmcplusplus

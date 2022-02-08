@@ -170,8 +170,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     {
       assert(RhoKA.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
       assert(RhoKB.isStorePerParticle());
-      //jtk mark: needs optimizations for USE_REAL_STRUCT_FACTOR
-      //          will likely require new function definitions
+      //jtk mark: needs optimizations. will likely require new function definitions
       RealType v1; //single particle energy
       RealType q;
       for (int i = 0; i < P.getTotalNum(); ++i)
@@ -179,13 +178,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         q  = .5 * Qat[i];
         v1 = 0.0;
         for (int s = 0; s < NumSpeciesA; s++)
-#if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Zspec[s] * q *
               AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i],
                            RhoKB.eikr_i[i]);
-#else
-          v1 += Zspec[s] * q * AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
-#endif
         Ve_samp(i) += v1;
         Vlr += v1;
       }
@@ -194,13 +189,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         q  = .5 * Zat[i];
         v1 = 0.0;
         for (int s = 0; s < NumSpeciesB; s++)
-#if defined(USE_REAL_STRUCT_FACTOR)
           v1 += Qspec[s] * q *
               AB->evaluate(P.getSimulationCell().getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
                            RhoKA.eikr_i[i]);
-#else
-          v1 += Qspec[s] * q * AB->evaluate(P.getSimulationCell().getKLists().kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
-#endif
         Vi_samp(i) += v1;
         Vlr += v1;
       }
@@ -325,34 +316,15 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
   const StructFact& RhoKA(PtclA.getSK());
   const StructFact& RhoKB(P.getSK());
   if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
-  {
-    const auto& d_ab(P.getDistTableAB(myTableIndex));
-    for (int iat = 0; iat < NptclA; ++iat)
-    {
-      mRealType u = 0;
-#if !defined(USE_REAL_STRUCT_FACTOR)
-      const int slab_dir = OHMMS_DIM - 1;
-      for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-        u += Qat[jat] *
-            AB->evaluate_slab(d_ab.dr(nn)[slab_dir], PtclA.getSimulationCell().getKLists().kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
-#endif
-      res += Zat[iat] * u;
-    }
-  }
+    throw std::runtime_error("CoulombPBCAB::evalLR RhoKA.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an implementation with complex-valued storage that may be resurrected using real-valued storage.");
   else
   {
     for (int i = 0; i < NumSpeciesA; i++)
     {
       mRealType esum = 0.0;
       for (int j = 0; j < NumSpeciesB; j++)
-      {
-#if defined(USE_REAL_STRUCT_FACTOR)
         esum += Qspec[j] *
             AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
-#else
-        esum += Qspec[j] * AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
-#endif
-      } //speceln
       res += Zspec[i] * esum;
     }
   } //specion

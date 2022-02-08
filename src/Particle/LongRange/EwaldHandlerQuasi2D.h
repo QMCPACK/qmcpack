@@ -30,7 +30,7 @@ namespace qmcplusplus
  * It is possible to use 3D Ewald but for the bulk system, the optimal breakup method
  * is used.
  */
-class EwaldHandler : public LRHandlerBase
+class EwaldHandlerQuasi2D : public LRHandlerBase
 {
 public:
   ///type of supercell
@@ -53,9 +53,9 @@ public:
   ///store |k|
   std::vector<mRealType> kMag;
   /// Constructor
-  EwaldHandler(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in)
+  EwaldHandlerQuasi2D(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in)
   {
-    LRHandlerBase::ClassName = "EwaldHandler";
+    LRHandlerBase::ClassName = "EwaldHandlerQuasi2D";
     Sigma = LR_kc = ref.getLattice().LR_kc;
   }
 
@@ -66,9 +66,9 @@ public:
    * Copy the content of aLR
    * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
-  EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref);
+  EwaldHandlerQuasi2D(const EwaldHandlerQuasi2D& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new EwaldHandler(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new EwaldHandlerQuasi2D(*this, ref); }
 
   void initBreakup(ParticleSet& ref) override;
 
@@ -101,8 +101,10 @@ public:
    */
   mRealType evaluate_slab(pRealType z,
                           const std::vector<int>& kshell,
-                          const pComplexType* restrict rk1,
-                          const pComplexType* restrict rk2) const override;
+                          const pRealType* restrict rk1_r,
+                          const pRealType* restrict rk1_i,
+                          const pRealType* restrict rk2_r,
+                          const pRealType* restrict rk2_i) const override;
 
   /** evaluate k=0 term at z
    * @param z distance in the slab direction

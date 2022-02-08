@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-using mycomplex = qmcplusplus::LRHandlerBase::pComplexType;
+using pRealType = qmcplusplus::LRHandlerBase::pRealType;
 
 struct CoulombF2
 {
@@ -50,10 +50,8 @@ TEST_CASE("dummy", "[lrhandler]")
   REQUIRE(handler.LR_kc == Approx(12));
   REQUIRE(handler.LR_rc == Approx(0));
 
-  std::vector<mycomplex> rhok1(handler.MaxKshell);
-  std::vector<mycomplex> rhok2(handler.MaxKshell);
-  std::fill(rhok1.begin(), rhok1.end(), 1.0);
-  std::fill(rhok2.begin(), rhok2.end(), 1.0);
+  std::vector<pRealType> rhok1(handler.MaxKshell);
+  std::vector<pRealType> rhok2(handler.MaxKshell);
   CoulombF2 fk;
   double norm = 4 * M_PI / Lattice.Volume;
   // no actual LR breakup happened in DummyLRHandler,
