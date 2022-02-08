@@ -46,9 +46,10 @@ TEST_CASE("dummy", "[lrhandler]")
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
   handler.initBreakup(ref);
-#if !defined(MIXED_PRECISION)
-  CHECK(handler.MaxKshell == 78);
-#endif
+
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 124 && handler.MaxKshell <= 126 ));
   CHECK(handler.LR_kc == Approx(12));
   CHECK(handler.LR_rc == Approx(0));
 

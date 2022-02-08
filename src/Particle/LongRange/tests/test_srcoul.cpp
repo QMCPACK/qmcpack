@@ -52,9 +52,10 @@ TEST_CASE("srcoul", "[lrhandler]")
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
-#if !defined(MIXED_PRECISION)
-  CHECK(handler.MaxKshell == 78);
-#endif
+
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 124 && handler.MaxKshell <= 126 ));
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);
 
@@ -96,9 +97,10 @@ TEST_CASE("srcoul df", "[lrhandler]")
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
-#if !defined(MIXED_PRECISION)
-  CHECK(handler.MaxKshell == 78);
-#endif
+
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 124 && handler.MaxKshell <= 126 ));
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);
 
