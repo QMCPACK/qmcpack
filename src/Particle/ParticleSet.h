@@ -139,10 +139,6 @@ public:
   ///default destructor
   ~ParticleSet() override;
 
-  /** create  particles
-   * @param n number of particles
-   */
-  void create(int n);
   /** create grouped particles
    * @param agroup number of particles per group
    */
@@ -249,7 +245,6 @@ public:
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
-  inline bool isGrouped() const { return is_grouped_; }
   inline bool isSpinor() const { return is_spinor_; }
   inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
 
@@ -469,21 +464,6 @@ public:
 
   inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(size_t numPtcl)
-  {
-    TotalNum = numPtcl;
-
-    R.resize(numPtcl);
-    spins.resize(numPtcl);
-    GroupID.resize(numPtcl);
-    G.resize(numPtcl);
-    L.resize(numPtcl);
-    Mass.resize(numPtcl);
-    Z.resize(numPtcl);
-
-    coordinates_->resize(numPtcl);
-  }
-
   inline void clear()
   {
     TotalNum = 0;
@@ -588,8 +568,6 @@ protected:
   /// reference to global simulation cell
   const SimulationCell& simulation_cell_;
 
-  ///true if the particles are grouped
-  bool is_grouped_;
   ///true if the particles have the same mass
   bool same_mass_;
   ///true is a dynamic spin calculation
@@ -670,6 +648,22 @@ protected:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMoveForwardMode(Index_t iat);
+
+  /// resize internal storage
+  inline void resize(size_t numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    spins.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    L.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+
+    coordinates_->resize(numPtcl);
+  }
 };
 
 } // namespace qmcplusplus

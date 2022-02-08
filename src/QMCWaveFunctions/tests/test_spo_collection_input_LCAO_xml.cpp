@@ -50,7 +50,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   ions.setName("ion0");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions.create(1);
+  ions.create({1});
   ions.R[0]            = 0.0;
   SpeciesSet& ispecies = ions.getSpeciesSet();
   int heIdx            = ispecies.addSpecies("He");

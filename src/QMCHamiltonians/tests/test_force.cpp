@@ -39,13 +39,13 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -69,9 +69,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
   int pChargeIdx                    = ion_species.addAttribute("charge");
-  int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
-  ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
   // Must update ions first in SoA so ions.coordinates_ is valid
@@ -149,7 +147,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -158,7 +156,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ions.R[1][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -178,9 +176,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
   int pChargeIdx                    = ion_species.addAttribute("charge");
-  int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
-  ion_species(pMembersizeIdx, pIdx) = 1;
   ions.createSK();
 
   ions.resetGroups();
@@ -229,16 +225,14 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // ParticleSet with 3 ions
   ParticleSet ions3(simulation_cell);
   ions3.setName("ion");
-  ions3.create(3);
+  ions3.create({3});
   ions3.R[0]                           = {0, 0, 0};
   ions3.R[1]                           = {1, 1, 1};
   ions3.R[2]                           = {2, 2, 2};
   SpeciesSet& ion3_species             = ions3.getSpeciesSet();
   int p3Idx                            = ion3_species.addSpecies("H");
   int p3ChargeIdx                      = ion3_species.addAttribute("charge");
-  int p3MembersizeIdx                  = ion3_species.addAttribute("membersize");
   ion3_species(p3ChargeIdx, p3Idx)     = 1;
-  ion3_species(p3MembersizeIdx, p3Idx) = 1;
   ions3.createSK();
   ions3.resetGroups();
 
@@ -274,7 +268,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -283,7 +277,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ions.R[1][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -302,9 +296,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
   int pChargeIdx                    = ion_species.addAttribute("charge");
-  int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
-  ion_species(pMembersizeIdx, pIdx) = 1;
   //ions.createSK();
   ions.resetGroups();
 
@@ -356,7 +348,7 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ions");
-  ions.create(3);
+  ions.create({3});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -369,7 +361,7 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
   // Add elec
   elec.setName("elec");
-  elec.create(3);
+  elec.create({3});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -383,8 +375,6 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   SpeciesSet& ionSpecies           = ions.getSpeciesSet();
   int HIdx                         = ionSpecies.addSpecies("H");
   int HChargeIdx                   = ionSpecies.addAttribute("charge");
-  int HMembersizeIdx               = ionSpecies.addAttribute("membersize");
-  ionSpecies(HMembersizeIdx, HIdx) = 2;
   ionSpecies(HChargeIdx, HIdx)     = 1;
   ions.resetGroups();
 
@@ -392,10 +382,8 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   int upIdx                          = elecSpecies.addSpecies("u");
   int massIdx                        = elecSpecies.addAttribute("mass");
   int eChargeIdx                     = elecSpecies.addAttribute("charge");
-  int uMembersizeIdx                 = elecSpecies.addAttribute("membersize");
   elecSpecies(eChargeIdx, upIdx)     = -1.0;
   elecSpecies(massIdx, upIdx)        = 1.0;
-  elecSpecies(uMembersizeIdx, upIdx) = 2;
   elec.resetGroups();
 
   CoulombPotential<OperatorBase::Return_t> ionForce(ions, false, true);
@@ -426,13 +414,13 @@ TEST_CASE("AC Force", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -456,9 +444,7 @@ TEST_CASE("AC Force", "[hamiltonian]")
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
   int pChargeIdx                    = ion_species.addAttribute("charge");
-  int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
-  ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
   // Must update ions first in SoA so ions.coordinates_ is valid

@@ -127,7 +127,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
     }
   }
   //allocate everything here
-  IonSystem.create(NumberOfAtoms);
+  IonSystem.create({NumberOfAtoms});
   GroupName.resize(NumberOfAtoms);
   gBound.resize(NumberOfAtoms + 1);
   gShell.resize(ng);

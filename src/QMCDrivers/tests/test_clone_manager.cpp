@@ -51,7 +51,7 @@ TEST_CASE("QMCUpdate", "[drivers]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration elec(simulation_cell);
   elec.setName("e");
-  elec.create(1);
+  elec.create({1});
   elec.createWalkers(1);
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();

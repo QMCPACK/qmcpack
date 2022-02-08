@@ -184,7 +184,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -469,7 +469,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion0");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -485,7 +485,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   elec.setName("e");
-  elec.create(1);
+  elec.create({1});
   elec.R[0][0]  = 0.138;
   elec.R[0][1]  = -0.24;
   elec.R[0][2]  = 0.216;

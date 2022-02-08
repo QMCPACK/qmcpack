@@ -23,7 +23,7 @@ std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCell& sim
 {
   auto qp = std::make_unique<ParticleSet>(simulation_cell);
   qp->setName("e");
-  qp->create(2);
+  qp->create({2});
   qp->R[0][0] = 1.0;
   qp->R[0][1] = 2.0;
   qp->R[0][2] = 3.0;
@@ -48,7 +48,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
   ParticleSet ions(simulation_cell);
   ions.setName("ion0");
-  ions.create(1);
+  ions.create({1});
 
   HamiltonianFactory::PtclPoolType particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;

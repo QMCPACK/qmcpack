@@ -47,7 +47,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
@@ -127,7 +127,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
@@ -213,7 +213,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");

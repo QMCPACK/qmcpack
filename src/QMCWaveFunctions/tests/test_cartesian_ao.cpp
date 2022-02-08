@@ -46,7 +46,7 @@ void test_cartesian_ao()
 
     ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int hIdx             = ispecies.addSpecies("H");
@@ -113,7 +113,7 @@ void test_dirac_ao()
 
     ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int hIdx             = ispecies.addSpecies("H");

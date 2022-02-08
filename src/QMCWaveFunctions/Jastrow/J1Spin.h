@@ -95,8 +95,8 @@ struct J1Spin : public WaveFunctionComponent
         myTableID(els.addTable(ions)),
         Nions(ions.getTotalNum()),
         Nelec(els.getTotalNum()),
-        NumGroups(determineNumGroups(ions)),
-        NumTargetGroups(determineNumGroups(els)),
+        NumGroups(ions.groups()),
+        NumTargetGroups(els.groups()),
         Ions(ions)
   {
     if (myName.empty())
@@ -126,18 +126,6 @@ struct J1Spin : public WaveFunctionComponent
         }
     myVars = rhs.myVars;
     OffSet = rhs.OffSet;
-  }
-
-  /* determine NumGroups which controls the use of optimized code path using ion groups or not */
-  static int determineNumGroups(const ParticleSet& ions)
-  {
-    const int num_species = ions.getSpeciesSet().getTotalNum();
-    if (num_species == 1)
-      return 1;
-    else if (num_species > 1 && !ions.isGrouped())
-      return 0;
-    else
-      return num_species;
   }
 
   /* initialize storage */
@@ -335,7 +323,7 @@ struct J1Spin : public WaveFunctionComponent
             if (!func->evaluateDerivatives(dist, derivs))
               continue;
             RealType rinv(cone / dist);
-            const PosType& dr = P.getDistTableAB(myTableID).getDisplRow(j)[i];;
+            const PosType& dr = P.getDistTableAB(myTableID).getDisplRow(j)[i];
             for (int p = first, ip = 0; p < last; ++p, ++ip)
             {
               dLogPsi[p] -= derivs[ip][0];
@@ -363,24 +351,12 @@ struct J1Spin : public WaveFunctionComponent
   inline valT computeU(const ParticleSet& P, int iat, const DistRow& dist)
   {
     valT curVat(0);
-    if (NumGroups > 0)
+    for (int jg = 0; jg < NumGroups; ++jg)
     {
-      for (int jg = 0; jg < NumGroups; ++jg)
-      {
-        auto gid = jg * NumTargetGroups + P.getGroupID(iat);
-        if (J1UniqueFunctors[gid])
-          curVat +=
-              J1UniqueFunctors[gid]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
-      }
-    }
-    else
-    {
-      for (int c = 0; c < Nions; ++c)
-      {
-        auto gid = Ions.getGroupID(c) * NumTargetGroups + P.getGroupID(iat);
-        if (J1UniqueFunctors[gid])
-          curVat += J1UniqueFunctors[gid]->evaluate(dist[c]);
-      }
+      auto gid = jg * NumTargetGroups + P.getGroupID(iat);
+      if (J1UniqueFunctors[gid])
+        curVat +=
+            J1UniqueFunctors[gid]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
     }
     return curVat;
   }
@@ -389,29 +365,14 @@ struct J1Spin : public WaveFunctionComponent
   {
     const auto& dist = P.getDistTableAB(myTableID).getTempDists();
     curAt            = valT(0);
-    if (NumGroups > 0)
+    for (int ig = 0; ig < NumGroups; ++ig)
     {
-      for (int ig = 0; ig < NumGroups; ++ig)
+      for (int jg = 0; jg < NumTargetGroups; ++jg)
       {
-        for (int jg = 0; jg < NumTargetGroups; ++jg)
-        {
-          auto gid = ig * NumTargetGroups + jg;
-          if (J1UniqueFunctors[gid] != nullptr)
-            curAt +=
-                J1UniqueFunctors[gid]->evaluateV(-1, Ions.first(ig), Ions.last(ig), dist.data(), DistCompressed.data());
-        }
-      }
-    }
-    else
-    {
-      for (int ig = 0; ig < Nions; ++ig)
-      {
-        for (int jg = 0; jg < NumTargetGroups; ++jg)
-        {
-          auto gid = Ions.getGroupID(ig) * NumTargetGroups + jg;
-          if (J1UniqueFunctors[gid] != nullptr)
-            curAt += J1UniqueFunctors[gid]->evaluate(dist[ig]);
-        }
+        auto gid = ig * NumTargetGroups + jg;
+        if (J1UniqueFunctors[gid] != nullptr)
+          curAt +=
+              J1UniqueFunctors[gid]->evaluateV(-1, Ions.first(ig), Ions.last(ig), dist.data(), DistCompressed.data());
       }
     }
 
@@ -463,32 +424,17 @@ struct J1Spin : public WaveFunctionComponent
    */
   inline void computeU3(const ParticleSet& P, int iat, const DistRow& dist)
   {
-    if (NumGroups > 0)
-    { //ions are grouped
-      constexpr valT czero(0);
-      std::fill_n(U.data(), Nions, czero);
-      std::fill_n(dU.data(), Nions, czero);
-      std::fill_n(d2U.data(), Nions, czero);
+    constexpr valT czero(0);
+    std::fill_n(U.data(), Nions, czero);
+    std::fill_n(dU.data(), Nions, czero);
+    std::fill_n(d2U.data(), Nions, czero);
 
-      for (int jg = 0; jg < NumGroups; ++jg)
-      {
-        auto gid = NumTargetGroups * jg + P.getGroupID(iat);
-        if (J1UniqueFunctors[gid])
-          J1UniqueFunctors[gid]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(),
-                                             d2U.data(), DistCompressed.data(), DistIndice.data());
-      }
-    }
-    else
+    for (int jg = 0; jg < NumGroups; ++jg)
     {
-      for (int c = 0; c < Nions; ++c)
-      {
-        auto gid = Ions.getGroupID(c) * NumTargetGroups + P.getGroupID(iat);
-        if (J1UniqueFunctors[gid])
-        {
-          U[c] = J1UniqueFunctors[gid]->evaluate(dist[c], dU[c], d2U[c]);
-          dU[c] /= dist[c];
-        }
-      }
+      auto gid = NumTargetGroups * jg + P.getGroupID(iat);
+      if (J1UniqueFunctors[gid])
+        J1UniqueFunctors[gid]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(),
+                                           d2U.data(), DistCompressed.data(), DistIndice.data());
     }
   }
 

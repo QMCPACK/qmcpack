@@ -67,7 +67,6 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
     : quantum_domain(classical),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
       simulation_cell_(simulation_cell),
-      is_grouped_(true),
       same_mass_(true),
       is_spinor_(false),
       active_ptcl_(-1),
@@ -83,7 +82,6 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
       simulation_cell_(p.simulation_cell_),
-      is_grouped_(p.is_grouped_),
       same_mass_(true),
       is_spinor_(false),
       active_ptcl_(-1),
@@ -121,29 +119,19 @@ ParticleSet::ParticleSet(const ParticleSet& p)
 
 ParticleSet::~ParticleSet() = default;
 
-void ParticleSet::create(int numPtcl)
-{
-  resize(numPtcl);
-  SubPtcl.resize(2);
-  SubPtcl[0] = 0;
-  SubPtcl[1] = numPtcl;
-}
-
 void ParticleSet::create(const std::vector<int>& agroup)
 {
   SubPtcl.resize(agroup.size() + 1);
   SubPtcl[0] = 0;
   for (int is = 0; is < agroup.size(); is++)
     SubPtcl[is + 1] = SubPtcl[is] + agroup[is];
-  size_t nsum = SubPtcl[agroup.size()];
+  const size_t nsum = SubPtcl[agroup.size()];
   resize(nsum);
   TotalNum = nsum;
   int loc  = 0;
   for (int i = 0; i < agroup.size(); i++)
-  {
     for (int j = 0; j < agroup[i]; j++, loc++)
       GroupID[loc] = i;
-  }
 }
 
 void ParticleSet::setQuantumDomain(quantum_domains qdomain)
@@ -156,7 +144,7 @@ void ParticleSet::setQuantumDomain(quantum_domains qdomain)
 
 void ParticleSet::resetGroups()
 {
-  int nspecies = my_species_.getTotalNum();
+  const int nspecies = my_species_.getTotalNum();
   // Usually an empty ParticleSet indicates an error in the input file,
   // but in some cases it is useful.  Allow an empty ParticleSet if it
   // has the special name "empty".
@@ -192,44 +180,13 @@ void ParticleSet::resetGroups()
     app_log() << "  Distinctive masses for each species " << std::endl;
   for (int iat = 0; iat < Mass.size(); iat++)
     Mass[iat] = my_species_(massind, GroupID[iat]);
-  std::vector<int> ng(nspecies, 0);
-  for (int iat = 0; iat < GroupID.size(); iat++)
-  {
-    if (GroupID[iat] < nspecies)
-      ng[GroupID[iat]]++;
-    else
-      throw std::runtime_error("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
-  }
-  // safety check if any group of particles has size 0, instruct users to fix the input.
-  for (int group_id = 0; group_id < nspecies; group_id++)
-    if (ng[group_id] == 0 && getName() != "empty")
-    {
-      std::ostringstream err_msg;
-      err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
-              << "has group '" << my_species_.speciesName[group_id] << "' containing 0 particles. "
-              << "Remove this group from input!" << std::endl;
-      throw std::runtime_error(err_msg.str());
-    }
-  SubPtcl.resize(nspecies + 1);
-  SubPtcl[0] = 0;
-  for (int i = 0; i < nspecies; ++i)
-    SubPtcl[i + 1] = SubPtcl[i] + ng[i];
+
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
-    my_species_(membersize, ig) = ng[ig];
-  /** ID map that reflects species group
-   *
-   * IsGrouped=true, if ID==IndirectID
-   */
-  ParticleIndex IndirectID(R.size());
-  int new_id = 0;
-  for (int i = 0; i < nspecies; ++i)
-    for (int iat = 0; iat < GroupID.size(); ++iat)
-      if (GroupID[iat] == i)
-        IndirectID[new_id++] = iat;
-  is_grouped_ = true;
-  for (int iat = 0; iat < IndirectID.size(); ++iat)
-    is_grouped_ &= (IndirectID[iat] == iat);
+    my_species_(membersize, ig) = SubPtcl[ig + 1] - SubPtcl[ig];
+
+  for (int iat = 0; iat < GroupID.size(); iat++)
+    assert(GroupID[iat] < nspecies);
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
@@ -317,9 +274,6 @@ bool ParticleSet::get(std::ostream& os) const
   if (SubPtcl.size() > 0)
     for (int i = 0; i < SubPtcl.size() - 1; i++)
       os << " " << my_species_.speciesName[i] << "(" << SubPtcl[i + 1] - SubPtcl[i] << ")";
-  os << std::endl;
-  if (!is_grouped_)
-    os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
   os << std::endl;
 
   const size_t maxParticlesToPrint = 10;

@@ -21,10 +21,11 @@
 #include "OhmmsData/FileUtility.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "XMLParticleIO.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Utilities/ProgressReportEngine.h"
+#include <Message/UniformCommunicateError.h>
 
 namespace qmcplusplus
 {
@@ -76,217 +77,233 @@ void setSpeciesProperty(SpeciesSet& tspecies, int sid, xmlNodePtr cur)
 }
 
 
-XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize) : AssignmentOnly(donotresize), ref_(aptcl)
+XMLParticleParser::XMLParticleParser(Particle_t& aptcl) : ref_(aptcl)
 {
   //add ref particle attributes
   ref_.createAttributeList(ref_AttribList);
 }
 
-/**reading particleset node from a file
- *@param fname_in a file name to open
- *@param pformat_in the format of the file, not used
- *@return true, if successful
- *
- *Check the type of the external source to work on.
- *The external source itself can be an xml file.
- */
-bool XMLParticleParser::put(const std::string& fname_in, const std::string& fext_in)
-{
-  xmlDocPtr doc = NULL;
-  // build an XML tree from a the file;
-  doc = xmlParseFile(fname_in.c_str());
-  if (doc == NULL)
-  {
-    ERRORMSG(fname_in << " does not exist")
-    return false;
-  }
-  ///using XPath instead of recursive search
-  xmlXPathContextPtr context;
-  xmlXPathObjectPtr result;
-  context = xmlXPathNewContext(doc);
-  result  = xmlXPathEvalExpression((const xmlChar*)"//particleset", context);
-  if (xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    app_error() << fname_in << " does not contain any ParticleSet" << std::endl;
-  }
-  else
-  {
-    xmlNodePtr cur = result->nodesetval->nodeTab[0];
-    std::string fname, pformat;
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(fname, "src");
-    pAttrib.add(fname, "href");
-    pAttrib.add(pformat, "srctype");
-    pAttrib.put(cur);
-    if (fname.size())
-      pformat = getExtension(fname);
-    if (pformat.empty())
-      putSpecial(cur);
-    //else
-    //{
-    //  if(pformat == "h5") {
-    //    HDFParticleParser ahandle(ref_);
-    //    ahandle.put(cur);
-    //  } else {
-    //    app_error() << "  Unknown file extension " << pformat << std::endl;
-    //  }
-    //}
-  }
-  //free local objects
-  xmlXPathFreeObject(result);
-  xmlXPathFreeContext(context);
-  xmlFreeDoc(doc);
-  return true;
-}
-
-/** process xmlnode &lt;particleset/&gt;
- *@param cur the xmlnode to work on
- *
- *If the node has src or href attribute, use an external file.
- */
-bool XMLParticleParser::put(xmlNodePtr cur)
-{
-  ///process attributes: type or format
-  std::string fname, pformat("xml");
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(fname, "src");
-  pAttrib.add(fname, "href");
-  pAttrib.add(pformat, "srctype");
-  pAttrib.put(cur);
-  if (fname.empty())
-    return putSpecial(cur);
-  else
-  {
-    //overwrite the format
-    pformat = getExtension(fname);
-    return put(fname, pformat);
-  }
-}
-
-
 /** process xmlnode &lt;particleset/&gt; which contains everything about the particle set to initialize
  *@param cur the xmlnode to work on
  *
  */
-bool XMLParticleParser::putSpecial(xmlNodePtr cur)
+bool XMLParticleParser::readXML(xmlNodePtr cur)
 {
-  ReportEngine PRE("XMLParticleParser", "putSpecial");
-  std::string pname("none");
-  //xmlDocPtr doc = cur->doc;
-  //the number of particles that are initialized by <attrib/>
+  ReportEngine PRE("XMLParticleParser", "readXML");
+
+  if (ref_.getTotalNum())
+    throw UniformCommunicateError("The ParticleSet object to load XML input was not empty. Report a bug!");
+
+  SpeciesSet& tspecies(ref_.getSpeciesSet());
+  if (tspecies.size() != 0)
+    throw UniformCommunicateError("The SpeciesSet object to load XML input was not empty. Report a bug!");
+
+  // the total number of particles, once it is set non-zero, always check against it.
   int nat = 0;
+  // the number of particles by group, once it is constructed, always check against it.
+  std::vector<int> nat_group;
+
+  std::string pname("none");
   std::string randomizeR("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(randomizeR, "random");
   pAttrib.add(nat, "size");
   pAttrib.add(pname, "name");
   pAttrib.put(cur);
-  ///count the number of atom added one by one
-  xmlNodePtr cur0 = cur->xmlChildrenNode;
-  //total count of the particles to be created
-  int ntot = 0;
-  int ng = 0, ng_in = 0;
-  std::vector<int> nat_group;
-  std::vector<xmlNodePtr> atom_ptr;
-  //pre-process the nodes to count the number of particles to be added
-  while (cur0 != NULL)
-  {
-    std::string cname((const char*)cur0->name);
-    if (cname == "atom")
-    {
-      ntot++;
-      atom_ptr.push_back(cur0);
-    }
-    else if (cname == "group")
-    {
-      int nat_per_group = 0;
-      OhmmsAttributeSet gAttrib;
-      gAttrib.add(nat_per_group, "size");
-      gAttrib.put(cur0);
-      nat_group.push_back(nat_per_group);
-      ng_in += nat_per_group;
-      ntot += nat_per_group;
-      ng++;
-    }
-    else if (cname == attrib_tag)
-    {
-      int size_att = 0;
-      OhmmsAttributeSet aAttrib;
-      aAttrib.add(size_att, "size");
-      aAttrib.put(cur0);
-      if (size_att)
-      {
-        if (size_att != nat)
-        {
-          app_warning() << "\tOverwriting the size of the particle by //particleset/attrib/@size=" << size_att
-                        << std::endl;
-          nat = size_att;
-        }
-      }
-    }
-    cur0 = cur0->next;
-  }
-  ntot += nat;
+
   ref_.setName(pname.c_str());
-  int nloc = ref_.getTotalNum();
-  //treat assignment only differently
-  if (AssignmentOnly)
+
+  if (nat != 0)
   {
-    ntot = 0;
-    nloc = 0;
+    app_debug() << "Set the total size " << nat
+                << " by the 'size' attribute found in 'particleset' XML element node named '" << pname << "'."
+                << std::endl;
   }
-  if (ntot)
-  {
-    if (ng_in)
-    {
-      ref_.create(nat_group);
-    }
-    else
-    {
-      ref_.create(ntot);
-    }
-  }
-  //TinyVector<int,OHMMS_DIM> uc_grid(1);
-  SpeciesSet& tspecies(ref_.getSpeciesSet()); //SpeciesCollection::getSpecies();
-  cur = cur->xmlChildrenNode;
-  //reset the group counter
-  ng = 0;
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname.find("ell") < cname.size()) //accept UnitCell, unitcell, supercell
-      throw std::runtime_error("Constructing cell inside particleset is illegal!");
-    else if (cname == attrib_tag)
-    {
-      getPtclAttrib(cur, nat, nloc);
-    }
-    else if (cname == "group")
-    //found group
-    {
-      std::string sname;
-      OhmmsAttributeSet gAttrib;
-      gAttrib.add(sname, "name");
-      gAttrib.put(cur);
-      if (sname.size()) //only if name is found
+
+  bool ionid_found = false;
+  { // parse all the 'group's to obtain or verify the total number of particles
+    //total count of the particles to be created
+    int ntot               = 0;
+    int num_non_zero_group = 0;
+    bool group_found       = false;
+
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+      if (cname == "atom")
+        throw UniformCommunicateError("XML element node atom is no more supported");
+      else if (cname.find("ell") < cname.size()) //accept UnitCell, unitcell, supercell
+        throw UniformCommunicateError("Constructing cell inside particleset is illegal!");
+      else if (cname == "group")
       {
-        int sid = tspecies.addSpecies(sname);
-        setSpeciesProperty(tspecies, sid, cur);
-        xmlNodePtr tcur = cur->xmlChildrenNode;
-        while (tcur != NULL)
+        group_found       = true;
+        std::string sname = getXMLAttributeValue(element, "name");
+        if (sname.empty())
+          throw UniformCommunicateError("'group' element node must include a name attribute!");
+        else
         {
-          std::string tcname((const char*)tcur->name);
-          if (nat_group[ng] && tcname == attrib_tag)
-          {
-            getPtclAttrib(tcur, nat_group[ng], nloc);
-          }
-          tcur = tcur->next;
+          const int sid = tspecies.addSpecies(sname);
+          setSpeciesProperty(tspecies, sid, element);
         }
-        for (int iat = 0; iat < nat_group[ng]; iat++, nloc++)
-          ref_.GroupID[nloc] = sid;
-        ng++;
+
+        int nat_per_group = 0;
+        OhmmsAttributeSet gAttrib;
+        gAttrib.add(nat_per_group, "size");
+        gAttrib.put(element);
+
+        nat_group.push_back(nat_per_group);
+        ntot += nat_per_group;
+        if (nat_per_group > 0)
+          num_non_zero_group++;
       }
+      else if (cname == attrib_tag && getXMLAttributeValue(element, "name") == ionid_tag)
+        ionid_found = true;
+    });
+
+    if (!group_found)
+      throw UniformCommunicateError("No 'group' XML element node was found. Check XML input!");
+
+    if (nat != 0 && ntot != 0 && nat != ntot)
+    {
+      std::ostringstream msg;
+      msg << "The total number of particles deterimined previously was " << nat
+          << "but the sum of the sizes from all the 'group' XML element nodes is " << ntot
+          << ". Please check the 'particleset' XML element node!" << std::endl;
+      throw UniformCommunicateError(msg.str());
     }
-    cur = cur->next;
+
+    if (nat == 0 && ntot != 0)
+    {
+      nat = ntot;
+      app_debug() << "Set the total size " << nat << " by the sum of the 'size's on all the 'group' XML element nodes."
+                  << std::endl;
+    }
+
+    if (ntot > 0 && num_non_zero_group != nat_group.size())
+      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute!");
+  }
+
+  { // parse all the 'attrib's to obtain or verify the total number of particles
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+      if (cname == attrib_tag)
+      {
+        std::string sname = getXMLAttributeValue(element, "name");
+        if (sname.empty())
+          throw UniformCommunicateError("'" + ParticleTags::attrib_tag +
+                                        "' XML element node must include a name attribute!");
+
+        int size_att = 0;
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(size_att, "size");
+        aAttrib.put(element);
+
+        if (nat != 0 && size_att != 0 && nat != size_att)
+        {
+          std::ostringstream msg;
+          msg << "The total number of particles deterimined previously was " << nat
+              << " but the 'size' atttribute found on the '" << ParticleTags::attrib_tag << "' XML element nodes named '"
+              << sname << "' is " << size_att << ". Please check the 'particleset' XML element node!" << std::endl;
+          throw UniformCommunicateError(msg.str());
+        }
+
+        if (nat == 0 && size_att != 0)
+        {
+          nat = size_att;
+          app_debug() << "Set the total size " << nat << " by the 'size' on the '" << ParticleTags::attrib_tag
+                      << "' XML element node named '" << sname << "'." << std::endl;
+        }
+      }
+    });
+  }
+
+  if (nat == 0)
+    throw UniformCommunicateError("Failed in figuring out the total number of particles. Check XML input!");
+
+  if (ionid_found)
+  { // parse ionid and construct input order to stored order
+    std::vector<int> map_storage_to_input(nat);
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+      if (cname == attrib_tag && getXMLAttributeValue(element, "name") == ionid_tag)
+      {
+        std::string datatype = getXMLAttributeValue(element, datatype_tag);
+        if (datatype != stringtype_tag)
+          throw UniformCommunicateError("'ionid' only supports datatype=\"" + stringtype_tag + "\"");
+        std::vector<std::string> d_in(nat);
+        putContent(d_in, element);
+        int storage_index = 0;
+        for (int ig = 0; ig < nat_group.size(); ig++)
+        {
+          const auto& group_species_name = tspecies.getSpeciesName(ig);
+          int count_group_size           = 0;
+          for (int iat = 0; iat < nat; iat++)
+          {
+            const int element_index = tspecies.findSpecies(d_in[iat]);
+            if (element_index == tspecies.size())
+              throw UniformCommunicateError("Element " + d_in[iat] +
+                                            " doesn't match any species from 'group' XML element nodes.");
+            if (element_index == ig)
+            {
+              count_group_size++;
+              map_storage_to_input[storage_index++] = iat;
+            }
+          }
+
+          if (count_group_size == 0)
+            throw UniformCommunicateError("Element '" + group_species_name + "' not found in 'ionid'.");
+
+          if (nat_group[ig] == 0)
+            nat_group[ig] = count_group_size;
+          else if (nat_group[ig] != count_group_size)
+          {
+            std::ostringstream msg;
+            msg << "The number of particles of element '" << group_species_name << "' from 'group' XML elment node was "
+                << nat_group[ig] << " but 'ionid' contains " << count_group_size << " entries." << std::endl;
+            throw UniformCommunicateError(msg.str());
+          }
+        }
+      }
+    });
+
+    checkGrouping(nat, nat_group);
+    ref_.create(nat_group);
+
+    for (int iat = 0; iat < nat; iat++)
+    {
+      processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+        if (cname == attrib_tag && getXMLAttributeValue(element, "name") != ionid_tag)
+          getPtclAttrib(element, map_storage_to_input[iat], 1, iat);
+      });
+    }
+  }
+  else
+  {
+    // fix old input with positions outside 'group'
+    if (nat_group.size() == 1 && nat_group[0] == 0)
+      nat_group[0] = nat;
+
+    checkGrouping(nat, nat_group);
+    ref_.create(nat_group);
+
+    // obtain 'attrib' inside 'group'
+    size_t start = 0;
+    size_t ig    = 0;
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr child) {
+      if (cname == "group")
+      {
+        processChildren(child, [&](const std::string& cname, const xmlNodePtr element) {
+          if (cname == attrib_tag)
+            getPtclAttrib(element, 0, nat_group[ig], start);
+        });
+        start += nat_group[ig];
+        ig++;
+      }
+      else if (cname == attrib_tag)
+      {
+        if (nat_group.size() > 1)
+          throw UniformCommunicateError("An 'attrib' XML element node was found outside 'group'"
+                                        " without XML element node named 'ionid'."
+                                        " Cannot map particles to more than one species. Check XML input!");
+        getPtclAttrib(child, 0, nat, 0);
+      }
+    });
   }
 
   if (ref_.getLattice().SuperCellEnum)
@@ -310,6 +327,22 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   ref_.createSK();
 
   return true;
+}
+
+void XMLParticleParser::checkGrouping(int nat, const std::vector<int>& nat_group) const
+{
+  app_debug() << "There are " << nat << " particles in " << nat_group.size() << " species containing:" << std::endl;
+  for (int ig = 0; ig < nat_group.size(); ig++)
+  {
+    const auto& group_species_name = ref_.getSpeciesSet().getSpeciesName(ig);
+    if (nat_group[ig] == 0)
+      throw UniformCommunicateError("Element '" + group_species_name + "' was provided but never referenced.");
+    app_debug() << "    " << nat_group[ig] << " '" << group_species_name << "'" << std::endl;
+  }
+
+  if (std::accumulate(nat_group.begin(), nat_group.end(), 0) != nat)
+    throw UniformCommunicateError(
+        "The total number of particles doesn't match the sum of the particle counts of all the species.");
 }
 
 /** process xmlnode to reset the properties of a particle set
@@ -360,17 +393,24 @@ struct ParticleAttribXmlNode
 
   inline ParticleAttribXmlNode(PAT& a, PosUnit utype) : ref_(a) { ref_.InUnit = utype; }
 
-  inline bool put(xmlNodePtr cur, int n_in, int start)
+  inline bool put(xmlNodePtr cur, int in_offset, int copy_size, int out_offset)
   {
     using data_type = typename PAT::Type_t;
-    std::vector<data_type> data_in(n_in);
+    std::vector<data_type> data_in;
     putContent(data_in, cur);
-    copy(data_in.begin(), data_in.end(), ref_.begin() + start);
+    if (data_in.size() < in_offset + copy_size)
+    {
+      std::ostringstream msg;
+      msg << "Insufficient data to copy from XML input which holds " << data_in.size() << " entries."
+          << " Need to copy from [" << in_offset << ", " << in_offset + copy_size << ")." << std::endl;
+      throw UniformCommunicateError(msg.str());
+    }
+    std::copy_n(data_in.begin() + in_offset, copy_size, ref_.begin() + out_offset);
     return true;
   }
 };
 
-void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
+void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_size, int out_offset)
 {
   std::string oname, otype;
   int utype   = 0;
@@ -390,23 +430,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
   int t_id = ref_AttribList.getAttribType(otype);
 
   if (oname == ionid_tag)
-  {
-    if (otype == stringtype_tag)
-    {
-      int nloci = nloc;
-      std::vector<std::string> d_in(nat);
-      putContent(d_in, cur);
-      for (int iat = 0; iat < d_in.size(); iat++, nloci++)
-      {
-        ref_.GroupID[nloci] = ref_.getSpeciesSet().addSpecies(d_in[iat]);
-      }
-    }
-    else
-    {
-      ParticleAttribXmlNode<ParticleIndex> a(ref_.GroupID, static_cast<PosUnit>(utype));
-      a.put(cur, nat, nloc);
-    }
-  }
+    throw UniformCommunicateError("'ionid' should not be parsed by getPtclAttrib.");
   else
   {
     //very permissive in that a unregistered attribute will be created and stored by ParticleSet
@@ -416,28 +440,28 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
       ParticleIndex* obj = nullptr;
       obj                = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticleIndex> a(*obj, static_cast<PosUnit>(utype));
-      a.put(cur, nat, nloc);
+      a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_ScalarType)
     {
       ParticleScalar* obj = nullptr;
       obj                 = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticleScalar> a(*obj, static_cast<PosUnit>(utype));
-      a.put(cur, nat, nloc);
+      a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_PositionType)
     {
       ParticlePos* obj = nullptr;
       obj              = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticlePos> a(*obj, static_cast<PosUnit>(utype));
-      a.put(cur, nat, nloc);
+      a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_TensorType)
     {
       ParticleTensor* obj = nullptr;
       obj                 = ref_AttribList.getAttribute(otype, oname, obj);
       ParticleAttribXmlNode<ParticleTensor> a(*obj, static_cast<PosUnit>(utype));
-      a.put(cur, nat, nloc);
+      a.put(cur, in_offset, copy_size, out_offset);
     }
   }
 }

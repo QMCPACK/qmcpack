@@ -790,13 +790,13 @@ For now, it is crucial to call ``P.update()`` to populate ``RSoA`` anytime ``P.R
   ions.setName("ion0");
 
   // initialize ions
-  ions.create(2);
+  ions.create({2});
   ions.R[0] = {0.0, 0.0, 0.0};
   ions.R[1] = {0.5, 0.5, 0.5};
   ions.update(); // transfer to RSoA
 
   // initialize elec
-  elec.create(2);
+  elec.create({1,1});
   elec.R[0] = {0.0, 0.0, 0.0};
   elec.R[1] = {0.0, 0.25, 0.0};
   const int itab = elec.addTable(ions);
@@ -818,22 +818,13 @@ Groups
 ^^^^^^
 
 Particles can belong to different groups. For electrons, the groups are
-up and down spins. For ions, the groups are the atomic element. The
+up and down spins. For ions, the groups are the atomic elements. The
 group type for each particle can be accessed through the ``GroupID``
 member. The number of groups is returned from ``groups()``. The total
 number particles is accessed with ``getTotalNum()``. The number of
 particles in a group is ``groupsize(int igroup)``.
-
 The particle indices for each group are found with ``first(int igroup)``
-and ``last(int igroup)``. These functions only work correctly if the
-particles are packed according to group. The flag, ``IsGrouped``,
-indicates if the particles are grouped or not. The particles will not be
-grouped if the elements are not grouped together in the input file. This
-ordering is usually the responsibility of the converters.
-
-Code can be written to only handle the grouped case, but put an assert
-or failure check if the particles are not grouped. Otherwise the code
-will give wrong answers and it can be time-consuming to debug.
+and ``last(int igroup)``.
 
 Distance tables
 ~~~~~~~~~~~~~~~

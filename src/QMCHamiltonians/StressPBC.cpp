@@ -58,9 +58,7 @@ void StressPBC::initBreakup(ParticleSet& P)
   SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
   SpeciesSet& tspeciesB(P.getSpeciesSet());
   int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-  int MemberAttribIndxA = tspeciesA.addAttribute("membersize");
   int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-  int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
   NptclA                = PtclA.getTotalNum();
   NptclB                = P.getTotalNum();
   NumSpeciesA           = tspeciesA.TotalNum;
@@ -75,12 +73,12 @@ void StressPBC::initBreakup(ParticleSet& P)
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
     Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
-    NofSpeciesA[spec] = static_cast<int>(tspeciesA(MemberAttribIndxA, spec));
+    NofSpeciesA[spec] = PtclA.groupsize(spec);
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
     Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
-    NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB, spec));
+    NofSpeciesB[spec] = P.groupsize(spec);
   }
 
   for (int spec = 0; spec < NumSpeciesA; spec++) {}
@@ -163,7 +161,6 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
   SymTensor<RealType, OHMMS_DIM> stress_aa;
   const StructFact& PtclRhoK(P.getSK());
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
-  int MemberAttribIndx = P.getSpeciesSet().getAttribute("membersize");
 
   std::vector<int> NofSpecies;
   std::vector<int> Zmyspec;
@@ -173,7 +170,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
   for (int spec = 0; spec < NumSpecies; spec++)
   {
     Zmyspec[spec]    = P.getSpeciesSet()(ChargeAttribIndx, spec);
-    NofSpecies[spec] = static_cast<int>(P.getSpeciesSet()(MemberAttribIndx, spec));
+    NofSpecies[spec] = P.groupsize(spec);
   }
 
   SymTensor<RealType, OHMMS_DIM> temp;
@@ -236,7 +233,6 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   RealType v1; //single particle energy
 
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
-  int MemberAttribIndx = P.getSpeciesSet().getAttribute("membersize");
 
   std::vector<int> NofSpecies;
   std::vector<int> Zmyspec;
@@ -246,7 +242,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   for (int spec = 0; spec < NumSpecies; spec++)
   {
     Zmyspec[spec]    = P.getSpeciesSet()(ChargeAttribIndx, spec);
-    NofSpecies[spec] = static_cast<int>(P.getSpeciesSet()(MemberAttribIndx, spec));
+    NofSpecies[spec] = P.groupsize(spec);
   }
 
   SymTensor<RealType, OHMMS_DIM> vl_r0 = AA->evaluateLR_r0_dstrain();

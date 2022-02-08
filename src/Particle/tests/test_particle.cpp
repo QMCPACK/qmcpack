@@ -74,7 +74,7 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
   source.setName("electrons");
 
-  source.create(2);
+  source.create({2});
   source.R[0][0] = 0.0;
   source.R[0][1] = 1.0;
   source.R[0][2] = 2.0;
@@ -112,7 +112,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   source.setName("electrons");
 
-  source.create(4);
+  source.create({4});
   source.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
   source.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   source.R[2] = ParticleSet::PosType(3.37316115, 3.37316115, 0.00000000);
