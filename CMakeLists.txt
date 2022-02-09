@@ -903,7 +903,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 #-------------------------------------------------------------------
 # add definitions DO NOT EXPAND
 #-------------------------------------------------------------------
-add_definitions(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
+add_definitions(-DHAVE_CONFIG_H -DADD_)
 
 #-------------------------------------------------------------------
 # qmcpack.settings
@@ -1020,6 +1020,18 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
   else()
     message(STATUS "Successfully imported PySCF python module.")
+  endif()
+endif()
+
+#-------------------------------------------------------------------
+# Check if GPAW is available
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  check_python_reqs(gpaw "" HAVE_GPAW)
+  if(NOT ${HAVE_GPAW})
+    message(STATUS "Unable to import GPAW python module. GPAW converter tests will not be run.")
+  else()
+    message(STATUS "Successfully imported GPAW python modules.")
   endif()
 endif()
 

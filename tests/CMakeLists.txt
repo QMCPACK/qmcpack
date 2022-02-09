@@ -66,6 +66,7 @@ if(HAVE_PYSCF)
     endif()
   endif()
 endif()
+
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

@@ -42,7 +42,7 @@ void tile_cell(ParticleSet& ions, Tensor<int, 3>& tmat)
   // using lattice coordinates
   prim_ions.R.InUnit = PosUnit::Lattice;
 
-  prim_ions.create(4);
+  prim_ions.create({4});
   prim_ions.R[0] = {0.0, 0.0, 0.0};
   prim_ions.R[1] = {0.0, 2.68525, 0.0};
   prim_ions.R[2] = {0.0, 0.0, 6.33805};

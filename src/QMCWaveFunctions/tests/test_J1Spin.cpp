@@ -35,7 +35,7 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 
   ions_.setName("ion0");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0]                 = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int HIdx                   = ispecies.addSpecies("H");

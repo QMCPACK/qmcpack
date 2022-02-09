@@ -55,7 +55,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(2);
+  ions_.create({2});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -75,7 +75,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create(2);
+  elec_.create({2});
   elec_.R[0][0] = 0.4;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -179,7 +179,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(4);
+  ions_.create({4});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -205,7 +205,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create(2);
+  elec_.create({2});
   elec_.R[0][0] = 0.4;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;

@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/LatticeGaussianProduct.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 
 #include <stdio.h>
 #include <string>
@@ -67,7 +67,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
-  ions_.create(2);
+  ions_.create({2});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -76,10 +76,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   ions_.R[1][2] = 0.0;
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = 2;
-  ud[1] = 0;
-  elec_.create(ud);
+  elec_.create({2,0});
   elec_.R[0][0] = -0.28;
   elec_.R[0][1] = 0.0225;
   elec_.R[0][2] = -2.709;

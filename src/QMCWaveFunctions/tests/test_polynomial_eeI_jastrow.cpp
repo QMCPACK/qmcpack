@@ -50,7 +50,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
-  ions_.create(2);
+  ions_.create({2});
   ions_.R[0][0] = 2.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -62,9 +62,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.update();
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 2;
-  elec_.create(ud);
+  elec_.create({2,2});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;

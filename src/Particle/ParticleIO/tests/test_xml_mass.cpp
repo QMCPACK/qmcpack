@@ -74,11 +74,11 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
   REQUIRE(electrons.getName() == "e");
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
   REQUIRE(ions.getName() == "ion0");
 
   REQUIRE(ions.isSameMass());

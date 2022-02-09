@@ -328,9 +328,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           apot->put(cur);
           targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) estimator" << std::endl;
-#if defined(USE_REAL_STRUCT_FACTOR)
-          app_log() << "S(k) estimator using Real S(k)" << std::endl;
-#endif
         }
       }
 #if OHMMS_DIM == 3

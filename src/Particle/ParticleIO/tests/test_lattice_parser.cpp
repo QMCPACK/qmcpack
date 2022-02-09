@@ -16,7 +16,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Particle/ParticleSet.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 
 #include <stdio.h>
 #include <string>

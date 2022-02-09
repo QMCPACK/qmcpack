@@ -59,9 +59,8 @@ TEST_CASE("J2OrbitalSoA one species and two variables", "[wavefunction]")
 ParticleSet get_two_species_particleset(const SimulationCell& simulation_cell)
 {
   ParticleSet elec(simulation_cell);
-  std::vector<int> ud{2, 2};
   elec.setName("e");
-  elec.create(ud);
+  elec.create({2, 2});
 
   elec.R[0] = {1.0, 0.0, 0.0};
   elec.R[1] = {1.1, 1.0, 0.1};
@@ -289,17 +288,13 @@ TEST_CASE("J2OrbitalSoA Jastrow three particles of three types", "[wavefunction]
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  std::vector<int> udp(3);
-  udp[0] = 1;
-  udp[1] = 1;
-  udp[2] = 1;
-  elec.create(udp);
+  elec.create({1,1,1});
   elec.R[0][0] = -0.28;
   elec.R[0][1] = 0.0225;
   elec.R[0][2] = -2.709;

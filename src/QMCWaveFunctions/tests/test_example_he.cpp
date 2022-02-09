@@ -57,7 +57,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   auto ions = std::make_unique<ParticleSet>(simulation_cell);
   ions->setName("ion0");
-  ions->create(1);
+  ions->create({1});
   ions->R[0][0] = 0.0;
   ions->R[0][1] = 0.0;
   ions->R[0][2] = 0.0;

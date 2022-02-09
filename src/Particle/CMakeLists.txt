@@ -33,7 +33,7 @@ set(PARTICLE
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
+    LongRange/EwaldHandlerQuasi2D.cpp
     LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp)
 
@@ -41,13 +41,9 @@ if(ENABLE_OFFLOAD)
   set(PARTICLE ${PARTICLE} createDistanceTableAAOMPTarget.cpp createDistanceTableABOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
-if(OHMMS_DIM MATCHES 2)
-  set(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-endif(OHMMS_DIM MATCHES 2)
-
 set(PARTICLEIO
     ParticleTags.cpp
-    ParticleIO/ParticleLayoutIO.cpp
+    ParticleIO/LatticeIO.cpp
     ParticleIO/XMLParticleIO.cpp
     HDFWalkerOutput.cpp
     HDFWalkerInput_0_4.cpp)

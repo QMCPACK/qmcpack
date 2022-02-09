@@ -49,7 +49,7 @@ void test_He(bool transform)
 
     ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int heIdx            = ispecies.addSpecies("He");
@@ -163,7 +163,7 @@ void test_Ne(bool transform)
 
     ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0][0]         = 0.0;
     ions.R[0][1]         = 0.0;
     ions.R[0][2]         = 0.0;
@@ -278,7 +278,7 @@ void test_HCN(bool transform)
     XMLParticleParser parse_ions(ions);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
-    parse_ions.put(particleset_ion[0]);
+    parse_ions.readXML(particleset_ion[0]);
 
     REQUIRE(ions.groups() == 3);
     REQUIRE(ions.R.size() == 3);
@@ -288,7 +288,7 @@ void test_HCN(bool transform)
     XMLParticleParser parse_elec(elec);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
-    parse_elec.put(particleset_elec[0]);
+    parse_elec.readXML(particleset_elec[0]);
 
     REQUIRE(elec.groups() == 2);
     REQUIRE(elec.R.size() == 14);

@@ -14,7 +14,6 @@
 #ifndef QMCPLUSPLUS_STRUCTFACT_H
 #define QMCPLUSPLUS_STRUCTFACT_H
 
-//#define USE_REAL_STRUCT_FACTOR
 #include "ParticleSet.h"
 #include "DynamicCoordinates.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -45,17 +44,9 @@ public:
   ///1-D container for the phase
   Vector<RealType> phiV;
   ///2-D container for the phase
-#if defined(USE_REAL_STRUCT_FACTOR)
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
   Vector<RealType> eikr_r_temp, eikr_i_temp;
-#else
-  Matrix<ComplexType> rhok;
-  ///eikr[particle-index][K]
-  Matrix<ComplexType> eikr;
-  ///eikr[K] for a proposed move
-  Vector<ComplexType> eikr_temp;
-#endif
   /** Constructor - copy ParticleSet and init. k-shells
    * @param nptcls number of particles
    * @param ns number of species
@@ -86,8 +77,6 @@ private:
   /// Compute all rhok elements from the start
   void computeRhok(const ParticleSet& P);
   /** resize the internal data
-   * @param np number of species
-   * @param nptcl number of particles
    * @param nkpts
    */
   void resize(int nkpts);
