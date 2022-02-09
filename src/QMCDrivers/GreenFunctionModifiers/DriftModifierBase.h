@@ -17,6 +17,8 @@
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCWaveFunctions/TWFGrads.hpp"
+#include "Particle/MCCoords.hpp"
 
 namespace qmcplusplus
 {
@@ -44,6 +46,9 @@ public:
                          const std::vector<ComplexType>& qf,
                          std::vector<ParticleSet::Scalar_t>&) const = 0;
 
+  template<CoordsType CT>
+  void getDrifts(const Taus<RealType, CT>& taus, const TWFGrads<CT>& qf, MCCoords<CT>& drifts) const;
+
   virtual bool parseXML(xmlNodePtr cur) { return true; }
 
   virtual ~DriftModifierBase() {}
@@ -52,6 +57,14 @@ protected:
   // modifer name
   std::string ClassName;
 };
+
+template<CoordsType CT>
+void DriftModifierBase::getDrifts(const Taus<RealType, CT>& taus, const TWFGrads<CT>& qf, MCCoords<CT>& drifts) const
+{
+  getDrifts(taus.tauovermass, qf.grads_positions, drifts.positions);
+  if constexpr (CT == CoordsType::POS_SPIN)
+    getDrifts(taus.spin_tauovermass, qf.grads_spins, drifts.spins);
+}
 
 } // namespace qmcplusplus
 

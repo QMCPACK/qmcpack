@@ -25,6 +25,7 @@
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
 #include "MemoryUsage.h"
+#include "QMCWaveFunctions/TWFGrads.hpp"
 
 namespace qmcplusplus
 {
@@ -100,13 +101,18 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_mask);
   }
 
-  const int num_walkers = crowd.size();
+  const int num_walkers   = crowd.size();
+  const int num_particles = sft.population.get_num_particles();
 
-  MoveAbstraction<CT> mover(ps_dispatcher, walker_elecs, step_context.get_random_gen(), sft.drift_modifier, num_walkers,
-                            sft.population.get_num_particles());
+  MCCoords<CT> drifts, walker_deltas;
+  TWFGrads<CT> grads_now, grads_new;
+  drifts.resize(num_walkers);
+  walker_deltas.resize(num_walkers * num_particles);
+  grads_now.resize(num_walkers);
+  grads_new.resize(num_walkers);
 
   //This generates an entire steps worth of deltas.
-  mover.generateDeltas();
+  makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
 
   std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
   std::vector<RealType> log_gf(num_walkers, 0.0);
@@ -129,7 +135,16 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
     {
-      mover.setTauForGroup(sft.qmcdrv_input, sft.population.get_ptclgrp_inv_mass()[ig]);
+      //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
+      auto getTaus = [&](const int ig) {
+        if constexpr (CT == CoordsType::POS_SPIN)
+          return Taus<RealType, CT>(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+                                    sft.qmcdrv_input.get_spin_mass());
+        else
+          return Taus<RealType, CT>(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig]);
+      };
+
+      Taus<RealType, CT> taus = getTaus(ig);
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
@@ -146,12 +161,33 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                                    : walkers_who_have_been_on_wire[iw] = 0;
         }
 #endif
-        mover.calcForwardMoveWithDrift(twf_dispatcher, walker_twfs, iat);
+        twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+        //need to abstract this next bit of code
+        auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
+        auto delta_r_end   = delta_r_start + num_walkers;
+        std::transform(drifts.positions.begin(), drifts.positions.end(), delta_r_start, drifts.positions.begin(),
+                       [st = taus.sqrttau](const PosType& drift, const PosType& delta_r) {
+                         return drift + (st * delta_r);
+                       });
+        //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
+        if constexpr (CT == CoordsType::POS_SPIN)
+        {
+          auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
+          auto delta_spin_end   = delta_spin_start + num_walkers;
+          std::transform(drifts.spins.begin(), drifts.spins.end(), delta_spin_start, drifts.spins.begin(),
+                         [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& spindrift,
+                                                  const ParticleSet::Scalar_t& delta_spin) {
+                           return spindrift + (st * delta_spin);
+                         });
+        }
 
         // only DMC does this
         // TODO: rr needs a real name
         std::vector<RealType> rr(num_walkers, 0.0);
-        mover.updaterr(iat, rr);
+        assert(rr.size() == delta_r_end - delta_r_start);
+        std::transform(delta_r_start, delta_r_end, rr.begin(),
+                       [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -163,9 +199,47 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         for (int i = 0; i < rr.size(); ++i)
           assert(std::isfinite(rr[i]));
 #endif
-        mover.makeMove(iat);
 
-        mover.updateGreensFunctionWithDrift(twf_dispatcher, walker_twfs, iat, ratios, log_gf, log_gb);
+        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+
+        twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
+
+        std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const PosType& delta_r) {
+          constexpr RealType mhalf(-0.5);
+          return mhalf * dot(delta_r, delta_r);
+        });
+
+        sft.drift_modifier.getDrifts(taus, grads_new, drifts);
+        std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.positions.begin(), drifts.positions.begin(),
+                       [iat](const ParticleSet& ps, const PosType& drift) {
+                         return ps.R[iat] - ps.getActivePos() - drift;
+                       });
+
+        std::transform(drifts.positions.begin(), drifts.positions.end(), log_gb.begin(),
+                       [halfovertau = taus.oneover2tau](const PosType& drift) {
+                         return -halfovertau * dot(drift, drift);
+                       });
+
+        //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
+        if constexpr (CT == CoordsType::POS_SPIN)
+        {
+          auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
+          auto delta_spin_end   = delta_spin_start + num_walkers;
+          std::transform(delta_spin_start, delta_spin_end, log_gf.begin(), log_gf.begin(),
+                         [](const ParticleSet::Scalar_t& delta_spin, const RealType& loggf) {
+                           constexpr RealType mhalf(-0.5);
+                           return loggf + mhalf * delta_spin * delta_spin;
+                         });
+          std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.spins.begin(), drifts.spins.begin(),
+                         [iat](const ParticleSet& ps, const ParticleSet::Scalar_t& spindrift) {
+                           return ps.spins[iat] - ps.getActiveSpinVal() - spindrift;
+                         });
+          std::transform(drifts.spins.begin(), drifts.spins.end(), log_gb.begin(), log_gb.begin(),
+                         [halfovertau = taus.spin_oneover2tau](const ParticleSet::Scalar_t& spindrift,
+                                                               const RealType& loggb) {
+                           return loggb - halfovertau * spindrift * spindrift;
+                         });
+        }
 
         auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
           if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))

@@ -72,6 +72,18 @@ void TWFdispatcher::flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunctio
       wf_list[iw].prepareGroup(p_list[iw], ig);
 }
 
+template<CoordsType CT>
+void TWFdispatcher::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  int iat,
+                                  TWFGrads<CT>& grads) const
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    flex_evalGradWithSpin(wf_list, p_list, iat, grads.grads_positions, grads.grads_spins);
+  else
+    flex_evalGrad(wf_list, p_list, iat, grads.grads_positions);
+}
+
 void TWFdispatcher::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                   const RefVectorWithLeader<ParticleSet>& p_list,
                                   int iat,
@@ -106,6 +118,19 @@ void TWFdispatcher::flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFun
     for (size_t iw = 0; iw < num_wf; iw++)
       grad_now[iw] = wf_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
   }
+}
+
+template<CoordsType CT>
+void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                       int iat,
+                                       std::vector<PsiValueType>& ratios,
+                                       TWFGrads<CT>& grads) const
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    flex_calcRatioGradWithSpin(wf_list, p_list, iat, ratios, grads.grads_positions, grads.grads_spins);
+  else
+    flex_calcRatioGrad(wf_list, p_list, iat, ratios, grads.grads_positions);
 }
 
 void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -199,5 +224,25 @@ void TWFdispatcher::flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunct
     for (size_t iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].evaluateRatios(vp_list[iw], ratios_list[iw], ct);
 }
+
+template void TWFdispatcher::flex_evalGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                                            int iat,
+                                                            TWFGrads<CoordsType::POS>& grads) const;
+template void TWFdispatcher::flex_evalGrad<CoordsType::POS_SPIN>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 int iat,
+                                                                 TWFGrads<CoordsType::POS_SPIN>& grads) const;
+template void TWFdispatcher::flex_calcRatioGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 int iat,
+                                                                 std::vector<PsiValueType>& ratios,
+                                                                 TWFGrads<CoordsType::POS>& grads) const;
+template void TWFdispatcher::flex_calcRatioGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS_SPIN>& grads) const;
 
 } // namespace qmcplusplus

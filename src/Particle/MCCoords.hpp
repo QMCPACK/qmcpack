@@ -43,7 +43,7 @@ struct MCCoords<CoordsType::POS_SPIN>
     spins.resize(size);
   }
   std::vector<QMCTraits::PosType> positions;
-  std::vector<PtclOnLatticeTraits::Scalar_t> spins;
+  std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
 /** Object to encapsulate appropriate tau derived values
