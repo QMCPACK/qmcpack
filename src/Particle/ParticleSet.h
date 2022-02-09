@@ -283,12 +283,7 @@ public:
 
   /// batched version of makeMove
   template<CoordsType CT>
-  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs)
-  {
-    mw_makeMove(p_list, iat, displs.positions);
-    if constexpr (CT == CoordsType::POS_SPIN)
-      mw_makeSpinMove(p_list, iat, displs.spins);
-  }
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs);
 
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
@@ -381,6 +376,14 @@ public:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMove(Index_t iat);
+
+  /// batched version of acceptMove and rejectMove fused, templated on CoordsType
+  template<CoordsType CT>
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
+
   /// batched version of acceptMove and rejectMove fused
   static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                    Index_t iat,

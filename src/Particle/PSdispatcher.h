@@ -40,6 +40,7 @@ public:
   template<CoordsType CT>
   void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs) const;
 
+  template<CoordsType CT>
   void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               int iat,
                               const std::vector<bool>& isAccepted,

@@ -129,7 +129,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-        ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
+        ps_dispatcher.flex_accept_rejectMove<CT>(walker_elecs, iat, isAccepted);
       }
     }
     twf_dispatcher.flex_completeUpdates(walker_twfs);

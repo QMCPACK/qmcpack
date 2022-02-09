@@ -398,6 +398,14 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, 
   active_spin_val_ += sdispl;
 }
 
+template<CoordsType CT>
+void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, Index_t iat, const MCCoords<CT>& displs)
+{
+  mw_makeMove(p_list, iat, displs.positions);
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_makeSpinMove(p_list, iat, displs.spins);
+}
+
 void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               Index_t iat,
                               const std::vector<SingleParticlePos>& displs)
@@ -697,6 +705,18 @@ void ParticleSet::rejectMoveForwardMode(Index_t iat)
   active_ptcl_ = -1;
 }
 
+template<CoordsType CT>
+void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                       Index_t iat,
+                                       const std::vector<bool>& isAccepted,
+                                       bool forward_mode)
+{
+  mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
+  if (CT == CoordsType::POS_SPIN)
+    mw_accept_rejectSpinMove(p_list, iat, isAccepted);
+}
+
+
 void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                        Index_t iat,
                                        const std::vector<bool>& isAccepted,
@@ -979,5 +999,21 @@ RefVectorWithLeader<StructFact> ParticleSet::extractSKRefList(const RefVectorWit
     sk_list.push_back(*p.structure_factor_);
   return sk_list;
 }
+
+//explicit instantiations
+template void ParticleSet::mw_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                        Index_t iat,
+                                                        const MCCoords<CoordsType::POS>& displs);
+template void ParticleSet::mw_makeMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                             Index_t iat,
+                                                             const MCCoords<CoordsType::POS_SPIN>& displs);
+template void ParticleSet::mw_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 Index_t iat,
+                                                                 const std::vector<bool>& isAccepted,
+                                                                 bool forward_mode);
+template void ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                      Index_t iat,
+                                                                      const std::vector<bool>& isAccepted,
+                                                                      bool forward_mode);
 
 } // namespace qmcplusplus
