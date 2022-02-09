@@ -263,12 +263,7 @@ inline void MoveAbstraction<CT>::calcForwardMove(const int iat)
 template<CoordsType CT>
 inline void MoveAbstraction<CT>::makeMove(const int iat)
 {
-  ps_dispatcher_.flex_makeMove(elecs_, iat, drifts_.positions);
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
-  {
-    ParticleSet& elec_leader = elecs_.getLeader();
-    elec_leader.mw_makeSpinMove(elecs_, iat, drifts_.spins);
-  }
+  ps_dispatcher_.flex_makeMove(elecs_, iat, drifts_);
 }
 
 

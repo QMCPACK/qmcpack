@@ -31,6 +31,7 @@
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
 #include "SimulationCell.h"
+#include "MCCoords.hpp"
 #include "DTModes.h"
 
 namespace qmcplusplus
@@ -281,6 +282,14 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
+  template<CoordsType CT>
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs)
+  {
+    mw_makeMove(p_list, iat, displs.positions);
+    if constexpr (CT == CoordsType::POS_SPIN)
+      mw_makeSpinMove(p_list, iat, displs.spins);
+  }
+
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           const std::vector<SingleParticlePos>& displs);
