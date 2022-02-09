@@ -17,7 +17,6 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "QMCDrivers/MoveAbstraction.h"
 #include "Particle/MCCoords.hpp"
 
 namespace qmcplusplus
