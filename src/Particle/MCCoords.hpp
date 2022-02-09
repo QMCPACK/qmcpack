@@ -19,7 +19,6 @@
 
 namespace qmcplusplus
 {
-
 enum class CoordsType
 {
   POS,
@@ -44,7 +43,7 @@ struct MCCoords<CoordsType::POS_SPIN>
     spins.resize(size);
   }
   std::vector<QMCTraits::PosType> positions;
-  std::vector<QMCTraits::FullPrecRealType> spins;
+  std::vector<PtclOnLatticeTraits::Scalar_t> spins;
 };
 
 /** Object to encapsulate appropriate tau derived values
