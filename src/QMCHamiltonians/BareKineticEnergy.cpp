@@ -279,6 +279,50 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, TWFFastDerivWrap
   }
 }
 
+void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                       ParticleSet& source,
+                                       TWFFastDerivWrapper& psi,
+                                       int iat,
+                                       std::vector<std::vector<ValueMatrix>>& Bforce)
+{
+
+  IndexType ngroups = P.groups();
+  assert(Bforce.size() == OHMMS_DIM);
+  assert(Bforce[0].size() == ngroups);
+  std::vector<ValueMatrix> mtmp;
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType norbs  = psi.numOrbitals(ig);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+
+    ValueMatrix zeromat;
+    GradMatrix zerogradmat;
+
+    zeromat.resize(nptcls, norbs);
+    zerogradmat.resize(nptcls, norbs);
+
+    mtmp.push_back(zeromat);
+  }
+
+  std::vector<std::vector<ValueMatrix>> dm, dlapl;
+  dm.push_back(mtmp);
+  dm.push_back(mtmp);
+  dm.push_back(mtmp);
+
+  dlapl.push_back(mtmp);
+  dlapl.push_back(mtmp);
+  dlapl.push_back(mtmp);
+
+  psi.getIonGradIonGradELaplM(P, source, iat, dm, dlapl);
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int ig = 0; ig < ngroups; ig++)
+    {
+      dlapl[idim][ig] *= MinusOver2M[ig];
+      Bforce[idim][ig] += dlapl[idim][ig];
+    }
+}
 
 #if !defined(REMOVE_TRACEMANAGER)
 Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)

@@ -110,6 +110,13 @@ public:
   void evaluateOneBodyOpMatrix(ParticleSet& P, 
                                TWFFastDerivWrapper& psi, 
                                std::vector<ValueMatrix>& B) override;
+
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         ParticleSet& source,
+                                         TWFFastDerivWrapper& psi,
+                                         int iat,
+                                         std::vector<std::vector<ValueMatrix>>& Bforce) override;
+  
 #if !defined(REMOVE_TRACEMANAGER)
   Return_t evaluate_sp(ParticleSet& P);
 #endif

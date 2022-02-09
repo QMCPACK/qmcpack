@@ -892,7 +892,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     }
 
     twf.getIonGradM(elec, ions, ionid, dM);
-    //    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
@@ -910,19 +910,19 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   convertToReal(keval, keobs);
   CHECK(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
-//  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
-//  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
-//  CHECK(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
-//  CHECK(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
-//  CHECK(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
-//  CHECK(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
+  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
+  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
+  CHECK(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
+  CHECK(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
+  CHECK(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
+  CHECK(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
 #else
-//  CHECK(fkin[0][0] == Approx(1.0852823603357820));
-//  CHECK(fkin[0][1] == Approx(24.2154119471038562));
-//  CHECK(fkin[0][2] == Approx(111.8849364775797852));
-//  CHECK(fkin[1][0] == Approx(2.1572063443997536));
-//  CHECK(fkin[1][1] == Approx(-3.3743242489947529));
-//  CHECK(fkin[1][2] == Approx(7.5625192454964454));
+  CHECK(fkin[0][0] == Approx(1.0852823603357820));
+  CHECK(fkin[0][1] == Approx(24.2154119471038562));
+  CHECK(fkin[0][2] == Approx(111.8849364775797852));
+  CHECK(fkin[1][0] == Approx(2.1572063443997536));
+  CHECK(fkin[1][1] == Approx(-3.3743242489947529));
+  CHECK(fkin[1][2] == Approx(7.5625192454964454));
 #endif
 
   app_log() << " KEVal = " << keval << std::endl;
@@ -933,9 +933,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
-  //  twf.wipeMatrices(B);
-  //  twf.wipeMatrices(B_gs);
-  //  twf.wipeMatrices(X);
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(X);
   //  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
   //  twf.getGSMatrices(B, B_gs);
   //  twf.buildX(minv, B_gs, X);
