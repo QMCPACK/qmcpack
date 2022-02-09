@@ -711,9 +711,9 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
                                        const std::vector<bool>& isAccepted,
                                        bool forward_mode)
 {
-  mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
   if (CT == CoordsType::POS_SPIN)
     mw_accept_rejectSpinMove(p_list, iat, isAccepted);
+  mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
 }
 
 
