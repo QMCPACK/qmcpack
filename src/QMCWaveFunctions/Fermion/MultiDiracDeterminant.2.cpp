@@ -157,9 +157,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(int nw, int re
                                                                const std::vector<std::pair<int, int>>& pairs,
                                                                const std::vector<RealType> &sign)
 {
-  //for (size_t iw=0;iw<nw;iw++)
-	//BuildDotProductsAndCalculateRatios_impl(ref, ratios_list[iw].get()[ref], ratios_list[iw].get().data(), psiinv_list[iw].get(), psi_list[iw].get(), dotProducts_list[iw].get(), data, pairs, sign);
-
   RefVector<ValueType> det0_list;
   det0_list.reserve(nw);
 
@@ -743,35 +740,87 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
+  const int WorkingIndex = iat - det_leader.FirstIndex;
+
+
+
+  RefVector<ValueVector> psiV_temp_list,workV1_list, workV2_list;
+  RefVector<ValueMatrix> dpsiMinv_list,psiMinv_list,psiM_list, TpsiM_list,dotProducts_list;
+  RefVector<GradMatrix> dpsiM_list;
+  RefVector<GradMatrix>grads_list;
+  RefVector<ValueVector> WorkSpace_list;
+  std::vector<ValueType> ratioG_list;
+
+
+  psiMinv_list.reserve(nw);
+  dpsiMinv_list.reserve(nw);
+  workV1_list.reserve(nw);
+  workV2_list.reserve(nw);
+  dpsiM_list.reserve(nw);
+  psiV_temp_list.reserve(nw);
+  grads_list.reserve(nw);
+  dotProducts_list.reserve(nw);
+  TpsiM_list.reserve(nw);
+  psiM_list.reserve(nw);
+  WorkSpace_list.reserve(nw);
+
+  ratioG_list.resize(nw);
+
+
+
+
+
+
+
+
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
-    const int WorkingIndex     = iat - det.FirstIndex;
-    const auto& confgList      = *det.ciConfigList;
+    psiMinv_list.push_back(det.psiMinv);
+    dpsiMinv_list.push_back(det.dpsiMinv);
+    psiV_temp_list.push_back(det.psiV_temp);
+    workV1_list.push_back(det.workV1);
+    workV2_list.push_back(det.workV2);
+    dpsiM_list.push_back(det.dpsiM);
+    grads_list.push_back(det.grads);
+    TpsiM_list.push_back(det.TpsiM);
+    psiM_list.push_back(det.psiM);
+    dotProducts_list.push_back(det.dotProducts); 
+    WorkSpace_list.push_back(det.WorkSpace);
+  }
 
-    for (size_t idim = 0; idim < OHMMS_DIM; idim++)
+  for (size_t idim = 0; idim < OHMMS_DIM; idim++)
+  {
+    for (size_t iw = 0; iw < nw; iw++)
     {
-      //dpsiMinv = psiMinv_temp;
-      det.dpsiMinv     = det.psiMinv;
-      auto it          = confgList[det.ReferenceDeterminant].occup.begin();
-      ValueType ratioG = 0.0;
+      MultiDiracDeterminant& det = (det_list[iw]);
+      const auto& confgList = *det.ciConfigList;
+      auto it          = confgList[det_leader.ReferenceDeterminant].occup.begin();
+ 
+      dpsiMinv_list[iw].get()      = psiMinv_list[iw].get();
+
+      ratioG_list[iw]=0.0;
       for (size_t i = 0; i < det_leader.NumPtcls; i++)
       {
-        det.psiV_temp[i] = det.dpsiM(WorkingIndex, *it)[idim];
-        ratioG += det.psiMinv(i, WorkingIndex) * det.dpsiM(WorkingIndex, *it)[idim];
+        psiV_temp_list[iw].get()[i] = dpsiM_list[iw].get()(WorkingIndex, *it)[idim];
+        ratioG_list[iw] += psiMinv_list[iw].get()(i, WorkingIndex) * dpsiM_list[iw].get()(WorkingIndex, *it)[idim];
         it++;
       }
-      det.grads(det.ReferenceDeterminant, WorkingIndex)[idim] = ratioG;
-      InverseUpdateByColumn(det.dpsiMinv, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, ratioG);
-      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-        det.TpsiM(i, WorkingIndex) = det.dpsiM(WorkingIndex, i)[idim];
-      det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, WorkingIndex, det.grads, det.dpsiMinv, det.TpsiM,
-                                             det.dotProducts, *det.detData, *det.uniquePairs, *det.DetSigns, idim);
+      grads_list[iw].get()(det_leader.ReferenceDeterminant, WorkingIndex)[idim] = ratioG_list[iw];
     }
 
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, i);
+    mw_InverseUpdateByColumn(nw,dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex, ratioG_list);
+
+    for (size_t iw = 0; iw < nw; iw++)
+      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
+        TpsiM_list[iw].get()(i, WorkingIndex) = dpsiM_list[iw].get()(WorkingIndex, i)[idim];
+
+      det_leader.mw_BuildDotProductsAndCalculateRatios(nw,det_leader.ReferenceDeterminant, WorkingIndex, grads_list, dpsiMinv_list, TpsiM_list, dotProducts_list, *det_leader.detData, *det_leader.uniquePairs, *det_leader.DetSigns, idim,WorkSpace_list,det_leader.getNumDets());
+     
+    for (size_t iw = 0; iw < nw; iw++)
+      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
+        TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
   }
 }
 
