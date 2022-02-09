@@ -547,6 +547,9 @@ public:
     AttribList.add(Z);
   }
 
+  inline void setMapStorageToInput(const std::vector<int>& mapping) { map_storage_to_input_ = mapping; }
+  inline const std::vector<int>& get_map_storage_to_input() const { return map_storage_to_input_; }
+
   inline int getNumDistTables() const { return DistTables.size(); }
 
   /// initialize a shared resource and hand it to a collection
@@ -583,6 +586,14 @@ protected:
   SingleParticlePos active_pos_;
   ///the proposed spin of active_ptcl_ during particle-by-particle moves
   Scalar_t active_spin_val_;
+
+  /** Map storage index to the input index.
+   * If not empty, particles were reordered by groups when being loaded from XML input.
+   * When other input data are affected by reordering, its builder should query this mapping.
+   * map_storage_to_input_[5] = 2 means the index 5(6th) particle in this ParticleSet was read from
+   * the index 2(3th) particle in the XML input
+   */
+  std::vector<int> map_storage_to_input_;
 
   ///SpeciesSet of particles
   SpeciesSet my_species_;
