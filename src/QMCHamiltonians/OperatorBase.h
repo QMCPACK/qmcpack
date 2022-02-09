@@ -64,6 +64,7 @@ public:
   /** For fast derivative evaluation
    */ 
   using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix = SPOSet::GradMatrix;
 
   /** typedef for the serialized buffer
    *

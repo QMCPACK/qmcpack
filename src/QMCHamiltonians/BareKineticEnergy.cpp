@@ -20,6 +20,7 @@
 #include "BareKineticHelper.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -244,6 +245,38 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
 
   pulay_terms += pulaytmpreal_;
   return value_;
+}
+
+void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B)
+{
+  IndexType ngroups = P.groups();
+  assert(B.size() == ngroups);
+  std::vector<ValueMatrix> M;
+  std::vector<GradMatrix> grad_M;
+  std::vector<ValueMatrix> lapl_M;
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType norbs    = psi.numOrbitals(ig);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+    ValueMatrix zeromat;
+    GradMatrix zerogradmat;
+
+    zeromat.resize(nptcls, norbs);
+    zerogradmat.resize(nptcls, norbs);
+
+    M.push_back(zeromat);
+    grad_M.push_back(zerogradmat);
+    lapl_M.push_back(zeromat);
+  }
+
+  psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    lapl_M[ig] *= MinusOver2M[ig];
+    B[ig] += lapl_M[ig];
+  }
 }
 
 

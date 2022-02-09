@@ -837,7 +837,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 
-  //  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+    kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
 
   std::vector<ValueMatrix> minv;
@@ -908,7 +908,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   RealType keobs  = 0.0;
   keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
-//  CHECK(keobs == Approx(9.1821937928e+00));
+  CHECK(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
 //  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
 //  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
