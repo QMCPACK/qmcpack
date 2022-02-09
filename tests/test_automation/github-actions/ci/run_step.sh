@@ -66,6 +66,12 @@ case "$1" in
         IS_MIXED_PRECISION=0
       ;;
     esac
+
+    # Path to QMC_DATA in self-hosted CI system
+    if [[ "$HOST_NAME" =~ (sulfur) ]]
+    then
+      QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
+    fi
     
     case "${GH_JOBNAME}" in
       *"GCC9-NoMPI-Debug-"*)
@@ -166,6 +172,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"Intel19-MPI-CUDA-AFQMC"*)
@@ -191,6 +198,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
@@ -229,6 +237,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC8-NoMPI-MKL-"*)
@@ -242,6 +251,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"macOS-GCC11-NoMPI-Real"*)
