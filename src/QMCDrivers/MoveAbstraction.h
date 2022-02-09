@@ -192,7 +192,7 @@ inline MoveAbstraction<CT>::MoveAbstraction(const PSdispatcher& ps_dispatcher,
   walker_deltas_.resize(num_walkers_ * num_particles);
   grads_now_.resize(num_walkers_);
   grads_new_.resize(num_walkers_);
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
   {
     spingrads_now_.resize(num_walkers_);
     spingrads_new_.resize(num_walkers_);
@@ -203,14 +203,14 @@ template<CoordsType CT>
 inline void MoveAbstraction<CT>::generateDeltas()
 {
   makeGaussRandomWithEngine(walker_deltas_.positions, random_gen_);
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
     makeGaussRandomWithEngine(walker_deltas_.spins, random_gen_);
 }
 
 template<CoordsType CT>
 inline void MoveAbstraction<CT>::setTauForGroup(const QMCDriverInput& qmcdrv_input, const Real& invmass)
 {
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
     taus_ = std::make_unique<Taus<Real, CoordsType::POS_SPIN>>(qmcdrv_input.get_tau(), invmass,
                                                                qmcdrv_input.get_spin_mass());
   else
@@ -230,7 +230,7 @@ inline void MoveAbstraction<CT>::calcForwardMoveWithDrift(const TWFdispatcher& t
   std::transform(drifts_.positions.begin(), drifts_.positions.end(), delta_r_start, drifts_.positions.begin(),
                  [st = taus_->sqrttau](const Pos& drift, const Pos& delta_r) { return drift + (st * delta_r); });
 
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
   {
     auto delta_spin_start = walker_deltas_.spins.begin() + iat * num_walkers_;
     auto delta_spin_end   = delta_spin_start + num_walkers_;
@@ -251,7 +251,7 @@ inline void MoveAbstraction<CT>::calcForwardMove(const int iat)
   std::transform(delta_r_start, delta_r_end, drifts_.positions.begin(),
                  [st = taus_->sqrttau](const Pos& delta_r) { return st * delta_r; });
 
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
   {
     auto delta_spin_start = walker_deltas_.spins.begin() + iat * num_walkers_;
     auto delta_spin_end   = delta_spin_start + num_walkers_;
@@ -275,7 +275,7 @@ inline void MoveAbstraction<CT>::updateGreensFunctionWithDrift(const TWFdispatch
                                                                std::vector<Real>& log_gf,
                                                                std::vector<Real>& log_gb)
 {
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
     twf_dispatcher.flex_calcRatioGradWithSpin(twfs, elecs_, iat, ratios, grads_new_, spingrads_new_);
   else
     twf_dispatcher.flex_calcRatioGrad(twfs, elecs_, iat, ratios, grads_new_);
@@ -296,7 +296,7 @@ inline void MoveAbstraction<CT>::updateGreensFunctionWithDrift(const TWFdispatch
   std::transform(drifts_.positions.begin(), drifts_.positions.end(), log_gb.begin(),
                  [halfovertau = taus_->oneover2tau](const Pos& drift) { return -halfovertau * dot(drift, drift); });
 
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
+  if constexpr (CT == CoordsType::POS_SPIN)
   {
     auto delta_spin_start = walker_deltas_.spins.begin() + iat * num_walkers_;
     auto delta_spin_end   = delta_spin_start + num_walkers_;
