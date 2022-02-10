@@ -837,7 +837,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 
-    kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
 
   std::vector<ValueMatrix> minv;
@@ -947,7 +947,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   app_log() << "NLPP = " << nlpp << std::endl;
 
-    CHECK(nlpp_obs == Approx(1.3849558361e+01));
+  CHECK(nlpp_obs == Approx(1.3849558361e+01));
 
   ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
@@ -955,36 +955,36 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      //      twf.wipeMatrices(dB[idim]);
-      //      twf.wipeMatrices(dM[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
     }
 
-    //    twf.getIonGradM(elec, ions, ionid, dM);
-    //    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    twf.getIonGradM(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      //      twf.getGSMatrices(dB[idim], dB_gs[idim]);
-      //      twf.getGSMatrices(dM[idim], dM_gs[idim]);
-      //      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
   }
 
 #if defined(MIXED_PRECISION)
-//  CHECK(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
-//  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
-//  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
-//  CHECK(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
-//  CHECK(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
-//  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
+  CHECK(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
+  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
+  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
+  CHECK(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
+  CHECK(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
+  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
 #else
-//  CHECK(fnlpp[0][0] == Approx(24.2239540340527491));
-//  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263));
-//  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159));
-//  CHECK(fnlpp[1][0] == Approx(2.5105943834091704));
-//  CHECK(fnlpp[1][1] == Approx(1.1345766918857692));
-//  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989));
+  CHECK(fnlpp[0][0] == Approx(24.2239540340527491));
+  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263));
+  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159));
+  CHECK(fnlpp[1][0] == Approx(2.5105943834091704));
+  CHECK(fnlpp[1][1] == Approx(1.1345766918857692));
+  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989));
 #endif
 }
 

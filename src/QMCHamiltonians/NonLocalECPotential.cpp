@@ -543,8 +543,8 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
- //         PP[iat]->evaluateOneBodyOpMatrixdRContribution(P, source, iat, iat_source, psi, jel, dist[iat], -displ[iat],
-   //                                                      Bforce);
+          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P, source, iat, iat_source, psi, jel, dist[iat], -displ[iat],
+                                                         Bforce);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
