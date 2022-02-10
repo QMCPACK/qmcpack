@@ -37,10 +37,10 @@ private:
   using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   /** For fast derivative evaluation
-   */ 
+   */
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradMatrix = SPOSet::GradMatrix;
-  
+  using GradMatrix  = SPOSet::GradMatrix;
+
   ///Non Local part: angular momentum, potential and grid
   int lmax;
   ///the number of non-local channels

@@ -481,7 +481,9 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   }
 }
 
-void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B)
+void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
+                                                  const TWFFastDerivWrapper& psi,
+                                                  std::vector<ValueMatrix>& B)
 {
   bool keepGrid = true;
   for (int ipp = 0; ipp < PPset.size(); ipp++)

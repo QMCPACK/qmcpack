@@ -247,7 +247,9 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   return value_;
 }
 
-void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B)
+void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
+                                                const TWFFastDerivWrapper& psi,
+                                                std::vector<ValueMatrix>& B)
 {
   IndexType ngroups = P.groups();
   assert(B.size() == ngroups);
@@ -275,19 +277,18 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDer
   psi.getEGradELaplM(P, M, grad_M, lapl_M);
   for (int ig = 0; ig < ngroups; ig++)
   {
-    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType sid = psi.getTWFGroupIndex(ig);
     lapl_M[ig] *= MinusOver2M[ig];
     B[sid] += lapl_M[ig];
   }
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                       const ParticleSet& source,
-                                       const TWFFastDerivWrapper& psi,
-                                       const int iat,
-                                       std::vector<std::vector<ValueMatrix>>& Bforce)
+                                                          const ParticleSet& source,
+                                                          const TWFFastDerivWrapper& psi,
+                                                          const int iat,
+                                                          std::vector<std::vector<ValueMatrix>>& Bforce)
 {
-
   IndexType ngroups = P.groups();
   assert(Bforce.size() == OHMMS_DIM);
   assert(Bforce[0].size() == ngroups);

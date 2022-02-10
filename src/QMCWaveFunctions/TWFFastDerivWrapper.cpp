@@ -14,7 +14,6 @@
 #include <iostream>
 namespace qmcplusplus
 {
-
 TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid) const
 {
   IndexType return_group_index(-1);
@@ -244,7 +243,9 @@ void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::
 }
 
 
-TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val) const
+TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P,
+                                                            const IndexType iel,
+                                                            ValueVector& val) const
 {
   IndexType gid = P.getGroupID(iel);
   IndexType sid = getTWFGroupIndex(gid);

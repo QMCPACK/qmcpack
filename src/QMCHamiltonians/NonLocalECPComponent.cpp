@@ -609,7 +609,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
   using ValueVector = SPOSet::ValueVector;
   //Some initial computation to find out the species and row number of electron.
   IndexType gid        = W.getGroupID(iel);
-  IndexType sid      = psi.getTWFGroupIndex(gid);
+  IndexType sid        = psi.getTWFGroupIndex(gid);
   IndexType firstIndex = W.first(gid);
   IndexType thisIndex  = iel - firstIndex;
 
@@ -671,9 +671,8 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
                                                                  const PosType& dr,
                                                                  std::vector<std::vector<ValueMatrix>>& dB)
 {
-
   using ValueVector = SPOSet::ValueVector;
-  using GradVector = SPOSet::GradVector;
+  using GradVector  = SPOSet::GradVector;
   // ScopedTimer dBnlpptimer(*timer_manager.createTimer("NEW::NLPP::dB"));
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -703,7 +702,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   IndexType gid        = W.getGroupID(iel);
   IndexType sid        = psi.getTWFGroupIndex(gid);
   IndexType thisEIndex = iel - W.first(gid);
-  IndexType numptcls   = W.last(gid)-W.first(gid);
+  IndexType numptcls   = W.last(gid) - W.first(gid);
   IndexType norbs      = psi.numOrbitals(sid);
   SPOSet* spo          = psi.getSPOSet(sid);
 
@@ -859,8 +858,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     {
       for (int iorb = 0; iorb < norbs; iorb++)
       {
-        dB[idim][sid][thisEIndex][iorb] +=
-            RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
+        dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
       }
     }
   }

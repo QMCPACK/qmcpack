@@ -62,9 +62,9 @@ public:
   using Return_t = FullPrecRealType;
 
   /** For fast derivative evaluation
-   */ 
+   */
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradMatrix = SPOSet::GradMatrix;
+  using GradMatrix  = SPOSet::GradMatrix;
 
   /** typedef for the serialized buffer
    *
@@ -341,7 +341,10 @@ public:
    * @param[in,out] B.  List of B matrices for each species.  
    * @return Void
    */
-  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) {}
+  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P,
+                                              const TWFFastDerivWrapper& psi,
+                                              std::vector<ValueMatrix>& B)
+  {}
 
   /** 
    * @brief Evaluate "dB/dR" matrices for observable.  Filippi scheme for computing fast derivatives.
