@@ -12,11 +12,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "EwaldHandler.h"
+#include "EwaldHandlerQuasi2D.h"
 
 namespace qmcplusplus
 {
-void EwaldHandler::initBreakup(ParticleSet& ref)
+void EwaldHandlerQuasi2D::initBreakup(ParticleSet& ref)
 {
   SuperCellEnum = ref.getLattice().SuperCellEnum;
   LR_rc         = ref.getLattice().LR_rc;
@@ -27,7 +27,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
   {
     Sigma += 0.1;
   }
-  app_log() << "   EwaldHandler Sigma/LR_rc = " << Sigma;
+  app_log() << "   EwaldHandlerQuasi2D Sigma/LR_rc = " << Sigma;
   Sigma /= ref.getLattice().LR_rc;
   app_log() << "  Sigma=" << Sigma << std::endl;
   Volume     = ref.getLattice().Volume;
@@ -43,7 +43,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
   fillFk(ref.getSimulationCell().getKLists());
 }
 
-EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
+EwaldHandlerQuasi2D::EwaldHandlerQuasi2D(const EwaldHandlerQuasi2D& aLR, ParticleSet& ref)
     : LRHandlerBase(aLR), Sigma(aLR.Sigma), Volume(aLR.Volume), Area(aLR.Area), PreFactors(aLR.PreFactors)
 {
   SuperCellEnum = aLR.SuperCellEnum;
@@ -51,7 +51,7 @@ EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref)
     kMag = aLR.kMag;
 }
 
-void EwaldHandler::fillFk(const KContainer& KList)
+void EwaldHandlerQuasi2D::fillFk(const KContainer& KList)
 {
   Fk.resize(KList.kpts_cart.size());
   const std::vector<int>& kshell(KList.kshell);
@@ -77,19 +77,6 @@ void EwaldHandler::fillFk(const KContainer& KList)
   }
   else
   {
-#if OHMMS_DIM == 2
-    mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
-    mRealType knorm  = 2 * M_PI / Volume;
-    for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
-    {
-      mRealType t2e = KList.ksq[ki] * kgauss;
-      mRealType uk  = knorm * std::exp(-t2e) / KList.ksq[ki];
-      Fk_symm[ks]   = uk;
-      while (ki < KList.kshell[ks + 1] && ki < Fk.size())
-        Fk[ki++] = uk;
-    }
-    PreFactors[3] = 0.0;
-#elif OHMMS_DIM == 3
     mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
     mRealType knorm  = 4 * M_PI / Volume;
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
@@ -101,12 +88,11 @@ void EwaldHandler::fillFk(const KContainer& KList)
         Fk[ki++] = uk;
     }
     PreFactors[3] = 0.0;
-#endif
   }
   app_log().flush();
 }
 
-EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
+EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::evaluate_vlr_k(mRealType k) const
 {
   mRealType uk = 0.0;
   if (SuperCellEnum == SUPERCELL_SLAB)
@@ -116,24 +102,19 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
   }
   else
   {
-#if OHMMS_DIM == 2
-    mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
-    mRealType knorm  = 2 * M_PI / Volume;
-    mRealType k2     = k * k;
-    uk               = knorm * std::exp(-k2 * kgauss) / k2;
-#elif OHMMS_DIM == 3
     mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
     mRealType knorm  = 4 * M_PI / Volume;
     mRealType k2     = k * k;
     uk               = knorm * std::exp(-k2 * kgauss) / k2;
   }
-#endif
     return uk;
   }
 
-  EwaldHandler::mRealType EwaldHandler::evaluate_slab(pRealType z, const std::vector<int>& kshell,
-                                                      const pComplexType* restrict eikr_i,
-                                                      const pComplexType* restrict eikr_j) const
+  EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::evaluate_slab(pRealType z, const std::vector<int>& kshell,
+                                                      const pRealType* restrict rk1_r,
+                                                      const pRealType* restrict rk1_i,
+                                                      const pRealType* restrict rk2_r,
+                                                      const pRealType* restrict rk2_i) const
   {
     mRealType zp = z * Sigma;
     mRealType vk = -SlabFunc0(z, zp);
@@ -141,8 +122,8 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k) const
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
       mRealType u = 0; //\sum Real (e^ikr_i e^(-ikr_j))
-      for (; ki < kshell[ks + 1]; ki++, eikr_i++, eikr_j++)
-        u += ((*eikr_i).real() * (*eikr_j).real() + (*eikr_i).imag() * (*eikr_j).imag());
+      for (; ki < kshell[ks + 1]; ki++)
+        u += (*rk1_r++) * (*rk2_r++) + (*rk1_i++) * (*rk2_i++);
       vk += u * Fk_symm[ks] * SlabFuncK(ks, z, zp);
     }
     return vk;

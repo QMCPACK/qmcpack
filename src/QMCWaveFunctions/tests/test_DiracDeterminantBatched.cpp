@@ -47,7 +47,7 @@ void test_DiracDeterminantBatched_first()
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create(3);
+  elec.create({3});
   ddb.recompute(elec);
 
   Matrix<ValueType> b;
@@ -149,7 +149,7 @@ void test_DiracDeterminantBatched_second()
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create(4);
+  elec.create({4});
   ddb.recompute(elec);
 
   Matrix<ValueType> orig_a;
@@ -284,7 +284,7 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create(4);
+  elec.create({4});
   ddc.recompute(elec);
 
   Matrix<ValueType> orig_a;

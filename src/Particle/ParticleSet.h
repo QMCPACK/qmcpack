@@ -139,10 +139,6 @@ public:
   ///default destructor
   ~ParticleSet() override;
 
-  /** create  particles
-   * @param n number of particles
-   */
-  void create(int n);
   /** create grouped particles
    * @param agroup number of particles per group
    */
@@ -240,10 +236,8 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
-
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
@@ -251,7 +245,6 @@ public:
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
-  inline bool isGrouped() const { return is_grouped_; }
   inline bool isSpinor() const { return is_spinor_; }
   inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
 
@@ -471,21 +464,6 @@ public:
 
   inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(size_t numPtcl)
-  {
-    TotalNum = numPtcl;
-
-    R.resize(numPtcl);
-    spins.resize(numPtcl);
-    GroupID.resize(numPtcl);
-    G.resize(numPtcl);
-    L.resize(numPtcl);
-    Mass.resize(numPtcl);
-    Z.resize(numPtcl);
-
-    coordinates_->resize(numPtcl);
-  }
-
   inline void clear()
   {
     TotalNum = 0;
@@ -569,6 +547,9 @@ public:
     AttribList.add(Z);
   }
 
+  inline void setMapStorageToInput(const std::vector<int>& mapping) { map_storage_to_input_ = mapping; }
+  inline const std::vector<int>& get_map_storage_to_input() const { return map_storage_to_input_; }
+
   inline int getNumDistTables() const { return DistTables.size(); }
 
   /// initialize a shared resource and hand it to a collection
@@ -590,8 +571,6 @@ protected:
   /// reference to global simulation cell
   const SimulationCell& simulation_cell_;
 
-  ///true if the particles are grouped
-  bool is_grouped_;
   ///true if the particles have the same mass
   bool same_mass_;
   ///true is a dynamic spin calculation
@@ -607,6 +586,14 @@ protected:
   SingleParticlePos active_pos_;
   ///the proposed spin of active_ptcl_ during particle-by-particle moves
   Scalar_t active_spin_val_;
+
+  /** Map storage index to the input index.
+   * If not empty, particles were reordered by groups when being loaded from XML input.
+   * When other input data are affected by reordering, its builder should query this mapping.
+   * map_storage_to_input_[5] = 2 means the index 5(6th) particle in this ParticleSet was read from
+   * the index 2(3th) particle in the XML input
+   */
+  std::vector<int> map_storage_to_input_;
 
   ///SpeciesSet of particles
   SpeciesSet my_species_;
@@ -647,7 +634,7 @@ protected:
    * @param newpos a new particle position
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
+  void computeNewPosDistTables(Index_t iat, const SingleParticlePos& newpos, bool maybe_accept = true);
 
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
@@ -657,10 +644,10 @@ protected:
    * @param new_positions new particle positions
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
-                                              Index_t iat,
-                                              const std::vector<SingleParticlePos>& new_positions,
-                                              bool maybe_accept = true);
+  static void mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleSet>& p_list,
+                                         Index_t iat,
+                                         const std::vector<SingleParticlePos>& new_positions,
+                                         bool maybe_accept = true);
 
   /** actual implemenation for accepting a proposed move in forward mode
    *
@@ -672,6 +659,22 @@ protected:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMoveForwardMode(Index_t iat);
+
+  /// resize internal storage
+  inline void resize(size_t numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    spins.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    L.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+
+    coordinates_->resize(numPtcl);
+  }
 };
 
 } // namespace qmcplusplus

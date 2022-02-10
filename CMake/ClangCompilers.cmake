@@ -12,6 +12,9 @@ endif()
 
 # Enable OpenMP
 if(QMC_OMP)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+
   if(ENABLE_OFFLOAD)
     if (QMC_CUDA2HIP)
       set(OFFLOAD_TARGET_DEFAULT "amdgcn-amd-amdhsa")
@@ -53,8 +56,6 @@ if(QMC_OMP)
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-unknown-cuda-version")
     endif()
   endif()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif(QMC_OMP)
 
 # Set clang specific flags (which we always want)

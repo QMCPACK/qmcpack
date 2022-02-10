@@ -247,6 +247,11 @@ public:
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& active,
                              std::vector<ValueType>& dlogpsi) override;
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
 };
 
 } // namespace qmcplusplus

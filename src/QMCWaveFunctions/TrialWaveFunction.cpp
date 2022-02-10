@@ -1119,15 +1119,13 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
     }
 }
 
-void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
+void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
                                             const opt_variables_type& optvars,
                                             std::vector<ValueType>& ratios,
                                             Matrix<ValueType>& dratio)
 {
-#if defined(QMC_COMPLEX)
-  APP_ABORT("TrialWaveFunction::evaluateDerivRatios not available for complex wavefunctions");
-#else
   std::fill(ratios.begin(), ratios.end(), 1.0);
+  std::fill(dratio.begin(), dratio.end(), 0.0);
   std::vector<ValueType> t(ratios.size());
   for (int i = 0; i < Z.size(); ++i)
   {
@@ -1135,7 +1133,6 @@ void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
     for (int j = 0; j < ratios.size(); ++j)
       ratios[j] *= t[j];
   }
-#endif
 }
 
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }

@@ -377,28 +377,6 @@ public:
       std::copy_n(temp_dr_.data(idim), num_sources_, displacements_[iat].data(idim));
   }
 
-  size_t get_neighbors(int iat,
-                       RealType rcut,
-                       int* restrict jid,
-                       RealType* restrict dist,
-                       PosType* restrict displ) const override
-  {
-    constexpr T cminus(-1);
-    size_t nn = 0;
-    for (int jat = 0; jat < num_targets_; ++jat)
-    {
-      const RealType rij = distances_[jat][iat];
-      if (rij < rcut)
-      { //make the compact list
-        jid[nn]   = jat;
-        dist[nn]  = rij;
-        displ[nn] = cminus * displacements_[jat][iat];
-        nn++;
-      }
-    }
-    return nn;
-  }
-
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     RealType min_dist = std::numeric_limits<RealType>::max();
@@ -433,21 +411,6 @@ public:
     }
     assert(index >= 0 && index < num_sources_);
     return index;
-  }
-
-  size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
-  {
-    size_t nn = 0;
-    for (int jat = 0; jat < num_targets_; ++jat)
-    {
-      const RealType rij = distances_[jat][iat];
-      if (rij < rcut)
-      { //make the compact list
-        dist[nn] = rij;
-        nn++;
-      }
-    }
-    return nn;
   }
 
 private:

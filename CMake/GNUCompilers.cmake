@@ -7,11 +7,51 @@ endif()
 if(QMC_OMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+
   if(ENABLE_OFFLOAD)
+    message(WARNING "QMCPACK OpenMP offload is not ready for GCC compiler.")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.0)
+      message(WARNING "GCC OpenMP offload feature requires 12.0 or higher.")
+    endif()
+
+    if (QMC_CUDA2HIP)
+      set(OFFLOAD_TARGET_DEFAULT "amdgcn-amdhsa")
+    else()
+      set(OFFLOAD_TARGET_DEFAULT "nvptx-none")
+    endif()
     set(OFFLOAD_TARGET
-        "nvptx-none"
+        ${OFFLOAD_TARGET_DEFAULT}
         CACHE STRING "Offload target architecture")
-    set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-foffload=${OFFLOAD_TARGET} -foffload=\"-lm -latomic\"")
+    set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-foffload=${OFFLOAD_TARGET} -foffload-options=\"-lm -latomic\"")
+
+    if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "amdgcn-amdhsa")
+      set(OFFLOAD_ARCH gfx906)
+    endif()
+
+    if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "nvptx-none" AND DEFINED CMAKE_CUDA_ARCHITECTURES)
+      list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)
+      if(NUMBER_CUDA_ARCHITECTURES EQUAL "1")
+        set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
+      else()
+        message(FATAL_ERROR "GCC does not yet support offload to multiple architectures! "
+                            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
+                            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
+      endif()
+    endif()
+
+    if(DEFINED OFFLOAD_ARCH)
+      if(OFFLOAD_TARGET MATCHES "amdgcn-amdhsa")
+        set(OPENMP_OFFLOAD_COMPILE_OPTIONS
+            "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -foffload-options=${OFFLOAD_TARGET}=\"-march=${OFFLOAD_ARCH}\"")
+      elseif(OFFLOAD_TARGET MATCHES "nvptx-none")
+        set(OPENMP_OFFLOAD_COMPILE_OPTIONS
+            "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -foffload-options=${OFFLOAD_TARGET}=\"-misa=${OFFLOAD_ARCH}\"")
+      else()
+        message(WARNING "We don't know how to handle OFFLOAD_ARCH=${OFFLOAD_ARCH} for OFFLOAD_TARGET=${OFFLOAD_TARGET}. Got ignored.")
+      endif()
+    endif()
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -foffload=disable")
   endif()
 endif(QMC_OMP)
 

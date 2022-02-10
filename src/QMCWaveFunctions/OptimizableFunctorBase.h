@@ -112,6 +112,11 @@ struct OptimizableFunctorBase
     return false;
   }
 
+  virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  {
+    return false;
+  }
+
   // mmorales: don't know how to solve a template problem for cusp correction,
   //           so for now I do this
   virtual void setGridManager(bool willmanage) {}

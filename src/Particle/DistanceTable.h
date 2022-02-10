@@ -197,23 +197,6 @@ public:
       dt_list[iw].finalizePbyP(p_list[iw]);
   }
 
-  /** build a compact list of a neighbor for the iat source
-   * @param iat source particle id
-   * @param rcut cutoff radius
-   * @param jid compressed index
-   * @param dist compressed distance
-   * @param displ compressed displacement
-   * @return number of target particles within rcut
-   */
-  virtual size_t get_neighbors(int iat,
-                               RealType rcut,
-                               int* restrict jid,
-                               RealType* restrict dist,
-                               PosType* restrict displ) const
-  {
-    return 0;
-  }
-
   /** find the first nearest neighbor
    * @param iat source particle id
    * @param r distance

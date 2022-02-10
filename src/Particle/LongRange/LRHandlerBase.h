@@ -69,28 +69,6 @@ struct LRHandlerBase
   //return k cutoff
   inline mRealType get_kc() const { return LR_kc; }
 
-  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
-   * @param kshell degeneracies of the vectors
-   * @param rk1 starting address of \f$\rho^1_{{\bf k}}\f$
-   * @param rk2 starting address of \f$\rho^2_{{\bf k}}\f$
-   *
-   * Valid for the strictly ordered k and \f$F_{k}\f$.
-   */
-  inline mRealType evaluate(const std::vector<int>& kshell,
-                            const pComplexType* restrict rk1,
-                            const pComplexType* restrict rk2) const
-  {
-    mRealType vk = 0.0;
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++, rk1++, rk2++)
-        u += ((*rk1).real() * (*rk2).real() + (*rk1).imag() * (*rk2).imag());
-      vk += Fk_symm[ks] * u;
-    }
-    return vk;
-  }
-
   inline mRealType evaluate_w_sk(const std::vector<int>& kshell, const pRealType* restrict sk) const
   {
     mRealType vk = 0.0;
@@ -104,6 +82,13 @@ struct LRHandlerBase
     return vk;
   }
 
+  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
+   * @param kshell degeneracies of the vectors
+   * @param rk1_r/i starting address of \f$\rho^1_{{\bf k}}\f$
+   * @param rk2_r/i starting address of \f$\rho^2_{{\bf k}}\f$
+   *
+   * Valid for the strictly ordered k and \f$F_{k}\f$.
+   */
   inline mRealType evaluate(const std::vector<int>& kshell,
                             const pRealType* restrict rk1_r,
                             const pRealType* restrict rk1_i,
@@ -124,52 +109,12 @@ struct LRHandlerBase
   /** Evaluate the long-range potential with the open BC for the D-1 direction */
   virtual mRealType evaluate_slab(pRealType z,
                                   const std::vector<int>& kshell,
-                                  const pComplexType* restrict eikr_i,
-                                  const pComplexType* restrict eikr_j) const
+                                  const pRealType* restrict rk1_r,
+                                  const pRealType* restrict rk1_i,
+                                  const pRealType* restrict rk2_r,
+                                  const pRealType* restrict rk2_i) const
   {
     return 0.0;
-  }
-
-  inline mRealType evaluate(const std::vector<int>& kshell,
-                            int iat,
-                            const pComplexType* restrict rk2,
-                            ParticleSet& P) const
-  {
-    mRealType vk = 0.0;
-#if !defined(USE_REAL_STRUCT_FACTOR)
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++, rk2++)
-      {
-        pComplexType eikr = P.getSK().eikr(iat, ki);
-        u += eikr.real() * (*rk2).real() + eikr.imag() * (*rk2).imag();
-      }
-      vk += Fk_symm[ks] * u;
-    }
-#endif
-    return vk;
-  }
-
-  inline mRealType evaluate(const std::vector<int>& kshell,
-                            int iat,
-                            const pRealType* restrict rk2_r,
-                            const pRealType* restrict rk2_i,
-                            ParticleSet& P) const
-  {
-    mRealType vk = 0.0;
-#if defined(USE_REAL_STRUCT_FACTOR)
-    const pRealType* restrict eikr_r = P.getSK().eikr_r[iat];
-    const pRealType* restrict eikr_i = P.getSK().eikr_i[iat];
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++)
-        u += eikr_r[ki] * (*rk2_r++) + eikr_i[ki] * (*rk2_i++);
-      vk += Fk_symm[ks] * u;
-    }
-#endif
-    return vk;
   }
 
   /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
@@ -186,21 +131,6 @@ struct LRHandlerBase
                            std::vector<pRealType>& Zat,
                            std::vector<TinyVector<pRealType, OHMMS_DIM>>& grad1) const
   {
-#if !defined(USE_REAL_STRUCT_FACTOR)
-    const Matrix<pComplexType>& e2ikrA = A.getSK().eikr;
-    const pComplexType* rhokB          = B.getSK().rhok[specB];
-    const std::vector<PosType>& kpts   = A.getSimulationCell().getKLists().kpts_cart;
-    for (int ki = 0; ki < Fk.size(); ki++)
-    {
-      PosType k = kpts[ki];
-      for (int iat = 0; iat < Zat.size(); iat++)
-      {
-        grad1[iat] -= Zat[iat] * k * Fkg[ki] *
-            (e2ikrA(iat, ki).real() * rhokB[ki].imag() - e2ikrA(iat, ki).imag() * rhokB[ki].real());
-      }
-    }
-#else
-
     const Matrix<pRealType>& e2ikrA_r = A.getSK().eikr_r;
     const Matrix<pRealType>& e2ikrA_i = A.getSK().eikr_i;
     const pRealType* rhokB_r          = B.getSK().rhok_r[specB];
@@ -214,7 +144,6 @@ struct LRHandlerBase
         grad1[iat] -= Zat[iat] * k * Fkg[ki] * (e2ikrA_r(iat, ki) * rhokB_i[ki] - e2ikrA_i(iat, ki) * rhokB_r[ki]);
       }
     }
-#endif
   }
 
   ///FIX_PRECISION
@@ -230,19 +159,6 @@ struct LRHandlerBase
       stress += (rhokA_r[ki] * rhokB_r[ki] + rhokA_i[ki] * rhokB_i[ki]) * dFk_dstrain[ki];
     }
 
-    return stress;
-  }
-
-  ///FIX_PRECISION
-  inline SymTensor<pRealType, OHMMS_DIM> evaluateStress(const std::vector<int>& kshell,
-                                                        const pComplexType* rhokA,
-                                                        const pComplexType* rhokB) const
-  {
-    SymTensor<pRealType, OHMMS_DIM> stress;
-    for (int ki = 0; ki < dFk_dstrain.size(); ki++)
-    {
-      stress += (rhokA[ki].real() * rhokB[ki].real() + rhokA[ki].imag() * rhokB[ki].imag()) * dFk_dstrain[ki];
-    }
     return stress;
   }
 

@@ -92,23 +92,20 @@ int main(int argc, char** argv)
   ParticleSet ions(super_lattice), els(super_lattice);
 
   ions.setName("ion0");
+  els.setName("e");
   tile_cell(ions, tmat);
-  ions.setCoordinates(ions.R); //this needs to be handled internally
+  ions.update();
 
   const int nions = ions.getTotalNum();
   const int nels  = count_electrons(ions);
   const int nels3 = 3 * nels;
 
   { //create up/down electrons
-    vector<int> ud(2);
-    ud[0] = nels / 2;
-    ud[1] = nels - ud[0];
-    els.create(ud);
+    els.create({nels / 2, nels - nels / 2});
     els.R.InUnit = PosUnit::Lattice;
     std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
     els.convert2Cart(els.R);   // convert to Cartiesian
-    els.setCoordinates(els.R); //this needs to be handled internally
-    els.setName("e");
+    els.update();
   }
 
   constexpr RealType eps = numeric_limits<float>::epsilon();

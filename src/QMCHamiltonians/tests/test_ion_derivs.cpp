@@ -78,10 +78,10 @@ void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part1);
+  parse_ions.readXML(part1);
 
   XMLParticleParser parse_electrons(elec);
-  parse_electrons.put(part2);
+  parse_electrons.readXML(part2);
 
   elec.addTable(elec);
   elec.addTable(ions);

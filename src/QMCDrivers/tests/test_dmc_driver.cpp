@@ -47,7 +47,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
   MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -133,7 +133,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;

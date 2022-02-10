@@ -65,13 +65,31 @@ void SoaLocalizedBasisSet<COT, ORBT>::setBasisSetSize(int nbs)
   if (BasisSetSize > 0 && nbs == BasisSetSize)
     return;
 
-  //evaluate the total basis dimension and offset for each center
-  BasisOffset[0] = 0;
-  for (int c = 0; c < NumCenters; c++)
+  if (auto& mapping = ions_.get_map_storage_to_input(); mapping.empty())
   {
-    BasisOffset[c + 1] = BasisOffset[c] + LOBasisSet[IonID[c]]->getBasisSetSize();
+    //evaluate the total basis dimension and offset for each center
+    BasisOffset[0] = 0;
+    for (int c = 0; c < NumCenters; c++)
+      BasisOffset[c + 1] = BasisOffset[c] + LOBasisSet[IonID[c]]->getBasisSetSize();
+    BasisSetSize = BasisOffset[NumCenters];
   }
-  BasisSetSize = BasisOffset[NumCenters];
+  else
+  {
+    // when particles are reordered due to grouping, AOs need to restore the input order to match MOs.
+    std::vector<int> map_input_to_storage(mapping.size());
+    for (int c = 0; c < NumCenters; c++)
+      map_input_to_storage[mapping[c]] = c;
+
+    std::vector<size_t> basis_offset_input_order(BasisOffset.size(), 0);
+    for (int c = 0; c < NumCenters; c++)
+      basis_offset_input_order[c + 1] =
+          basis_offset_input_order[c] + LOBasisSet[IonID[map_input_to_storage[c]]]->getBasisSetSize();
+
+    for (int c = 0; c < NumCenters; c++)
+      BasisOffset[c] = basis_offset_input_order[mapping[c]];
+
+    BasisSetSize = basis_offset_input_order[NumCenters];
+  }
 }
 
 template<class COT, typename ORBT>

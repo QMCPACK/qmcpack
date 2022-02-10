@@ -203,7 +203,7 @@ void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunc
     wfc_list[iw].evaluateRatios(vp_list[iw], ratios[iw]);
 }
 
-void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
+void WaveFunctionComponent::evaluateDerivRatios(const VirtualParticleSet& VP,
                                                 const opt_variables_type& optvars,
                                                 std::vector<ValueType>& ratios,
                                                 Matrix<ValueType>& dratios)

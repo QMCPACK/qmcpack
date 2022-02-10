@@ -40,7 +40,7 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -58,7 +58,7 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   ions.update();
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.4;
   elec.R[0][1] = 0.4;
   elec.R[0][2] = 0.4;
