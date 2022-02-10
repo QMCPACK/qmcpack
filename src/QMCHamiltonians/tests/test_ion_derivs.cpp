@@ -936,13 +936,13 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   twf.wipeMatrices(B);
   twf.wipeMatrices(B_gs);
   twf.wipeMatrices(X);
-  //  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
-  //  twf.getGSMatrices(B, B_gs);
-  //  twf.buildX(minv, B_gs, X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(minv, B_gs, X);
 
   ValueType nlpp    = 0.0;
   RealType nlpp_obs = 0.0;
-  //  nlpp              = twf.trAB(minv, B_gs);
+  nlpp              = twf.trAB(minv, B_gs);
   convertToReal(nlpp, nlpp_obs);
 
   app_log() << "NLPP = " << nlpp << std::endl;
