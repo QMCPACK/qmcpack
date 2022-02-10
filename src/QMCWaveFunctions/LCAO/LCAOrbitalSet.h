@@ -193,6 +193,12 @@ public:
                           HessMatrix& grad_grad_phi,
                           GradMatrix& grad_lapl_phi) override;
 
+  void evaluateGradSourceRow(const ParticleSet& P,
+                             int iel,
+                             const ParticleSet& source,
+                             int iat_src,
+                             GradVector& grad_phi) override;
+
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
 
 protected:
@@ -267,6 +273,10 @@ private:
                                   GradMatrix& dlogdet,
                                   HessMatrix& dglogdet,
                                   GradMatrix& dllogdet) const;
+  
+  //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.
+  void evaluate_ionderiv_v_row_impl(const vgl_type& temp, GradVector& dlogdet) const;
+
 };
 } // namespace qmcplusplus
 #endif

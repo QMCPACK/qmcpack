@@ -227,6 +227,15 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
   throw std::runtime_error("SPOSetBase::evalGradSource is not implemented");
 }
 
+void SPOSet::evaluateGradSourceRow(const ParticleSet& P,
+                                   int iel,
+                                   const ParticleSet& source,
+                                   int iat_src,
+                                   GradVector& gradphi)
+{
+  throw std::runtime_error("SPOSetBase::evalGradSourceRow is not implemented");
+}
+
 void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
   throw std::runtime_error("Need specialization of " + className +

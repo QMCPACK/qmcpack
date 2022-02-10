@@ -448,6 +448,12 @@ public:
                                   HessMatrix& grad_grad_phi,
                                   GradMatrix& grad_lapl_phi);
 
+  virtual void evaluateGradSourceRow(const ParticleSet& P,
+                                     int iel,
+                                     const ParticleSet& source,
+                                     int iat_src,
+                                     GradVector& gradphi);
+
   /** access the k point related to the given orbital */
   virtual PosType get_k(int orb) { return PosType(); }
 
