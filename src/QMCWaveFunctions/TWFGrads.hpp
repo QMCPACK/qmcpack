@@ -21,7 +21,7 @@ namespace qmcplusplus
 template<CoordsType CT = CoordsType::POS>
 struct TWFGrads
 {
-  void resize(const std::size_t size) { grads_positions.resize(size); }
+  void resize(const std::size_t size);
   std::vector<QMCTraits::GradType> grads_positions;
 };
 
