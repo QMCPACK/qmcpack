@@ -666,33 +666,33 @@ void test_HCN(bool transform)
 
     sposet->evaluateGradSourceRow(elec,0,ions,0,dionpsivec);
     //============== Ion  0  Component  0 ===================
-    REQUIRE(dionpsivec[0][0] == Approx(0.0453112082));
-    REQUIRE(dionpsivec[1][0] == Approx(-0.0006473819623));
-    REQUIRE(dionpsivec[2][0] == Approx(0.265578336));
-    REQUIRE(dionpsivec[3][0] == Approx(-0.06444305979));
-    REQUIRE(dionpsivec[4][0] == Approx(0.1454357726));
-    REQUIRE(dionpsivec[5][0] == Approx(-0.04329985085));
-    REQUIRE(dionpsivec[6][0] == Approx(0.01207541177));
+    CHECK(dionpsivec[0][0] == Approx(0.0453112082));
+    CHECK(dionpsivec[1][0] == Approx(-0.0006473819623));
+    CHECK(dionpsivec[2][0] == Approx(0.265578336));
+    CHECK(dionpsivec[3][0] == Approx(-0.06444305979));
+    CHECK(dionpsivec[4][0] == Approx(0.1454357726));
+    CHECK(dionpsivec[5][0] == Approx(-0.04329985085));
+    CHECK(dionpsivec[6][0] == Approx(0.01207541177));
 
     sposet->evaluateGradSourceRow(elec,0,ions,1,dionpsivec);
     //============== Ion  1  Component  1 ===================
-    REQUIRE(dionpsivec[0][1] == Approx(0.0001412373768));
-    REQUIRE(dionpsivec[1][1] == Approx(-0.01029290716));
-    REQUIRE(dionpsivec[2][1] == Approx(-0.0230872583));
-    REQUIRE(dionpsivec[3][1] == Approx(0.01850231814));
-    REQUIRE(dionpsivec[4][1] == Approx(-0.02136209962));
-    REQUIRE(dionpsivec[5][1] == Approx(-0.1942343714));
-    REQUIRE(dionpsivec[6][1] == Approx(-0.03930992259));
+    CHECK(dionpsivec[0][1] == Approx(0.0001412373768));
+    CHECK(dionpsivec[1][1] == Approx(-0.01029290716));
+    CHECK(dionpsivec[2][1] == Approx(-0.0230872583));
+    CHECK(dionpsivec[3][1] == Approx(0.01850231814));
+    CHECK(dionpsivec[4][1] == Approx(-0.02136209962));
+    CHECK(dionpsivec[5][1] == Approx(-0.1942343714));
+    CHECK(dionpsivec[6][1] == Approx(-0.03930992259));
     
     sposet->evaluateGradSourceRow(elec,0,ions,2,dionpsivec);
     //============== Ion  2  Component  2 ===================
-    REQUIRE(dionpsivec[0][2] == Approx(1.302648961e-06));
-    REQUIRE(dionpsivec[1][2] == Approx(3.248738084e-07));
-    REQUIRE(dionpsivec[2][2] == Approx(3.264249981e-06));
-    REQUIRE(dionpsivec[3][2] == Approx(0.0001288974413));
-    REQUIRE(dionpsivec[4][2] == Approx(-7.300043903e-05));
-    REQUIRE(dionpsivec[5][2] == Approx(2.910525987e-06));
-    REQUIRE(dionpsivec[6][2] == Approx(-1.56074936e-05));
+    CHECK(dionpsivec[0][2] == Approx(1.302648961e-06));
+    CHECK(dionpsivec[1][2] == Approx(3.248738084e-07));
+    CHECK(dionpsivec[2][2] == Approx(3.264249981e-06));
+    CHECK(dionpsivec[3][2] == Approx(0.0001288974413));
+    CHECK(dionpsivec[4][2] == Approx(-7.300043903e-05));
+    CHECK(dionpsivec[5][2] == Approx(2.910525987e-06));
+    CHECK(dionpsivec[6][2] == Approx(-1.56074936e-05));
   }
   
 }
