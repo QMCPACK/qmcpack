@@ -504,7 +504,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
     {
       const auto& dist               = myTable.getDistRow(jel);
       const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      auto& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
@@ -541,7 +541,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
     {
       const auto& dist               = myTable.getDistRow(jel);
       const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      auto& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
