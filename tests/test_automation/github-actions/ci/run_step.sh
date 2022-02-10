@@ -68,7 +68,7 @@ case "$1" in
     esac
 
     # Path to QMC_DATA in self-hosted CI system
-    if [[ "$HOST_NAME" =~ (sulfur) ]]
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
     then
       QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
     fi
@@ -213,6 +213,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC8-MPI-CUDA-AFQMC"*)
@@ -227,6 +228,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC8-NoMPI-Legacy-CUDA"*)
