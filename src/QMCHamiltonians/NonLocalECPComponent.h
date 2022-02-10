@@ -244,6 +244,19 @@ public:
                                        const std::vector<ValueType>& dlogpsi,
                                        std::vector<ValueType>& dhpsioverpsi);
 
+  /** 
+   * @brief Evaluate contribution to B of election iel and ion iat.  Filippi scheme for computing fast derivatives.
+   *        Sum over ions and electrons occurs at the NonLocalECPotential level.  
+
+   * @param[in] P, target particle set (electrons)
+   * @param[in] iat, ion ID
+   * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
+   * @param[in] iel, electron ID
+   * @param[in] r, distance between iat and iel. 
+   * @param[in] dr, displacement vector between iat and iel. 
+   * @param[in,out] B. Adds the contribution of iel and iat to the B matrix.   
+   * @return Void
+   */
   void evaluateOneBodyOpMatrixContribution(ParticleSet& P,
                                            const int iat,
                                            const TWFFastDerivWrapper& psi,
@@ -252,6 +265,21 @@ public:
                                            const PosType& dr,
                                            std::vector<ValueMatrix>& B);
 
+  /** 
+   * @brief Evaluate contribution to dB/dR of election iel and ion iat.  Filippi scheme for computing fast derivatives.
+   *        Sum over ions and electrons occurs at the NonLocalECPotential level.  
+
+   * @param[in] P, target particle set (electrons)
+   * @param[in] source, ion particle set
+   * @param[in] iat, ion ID
+   * @param[in] iat_src, this is the ion ID w.r.t. which the ion derivatives are taken.  NOT ALWAYS EQUAL TO IAT
+   * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
+   * @param[in] iel, electron ID
+   * @param[in] r, distance between iat and iel. 
+   * @param[in] dr, displacement vector between iat and iel. 
+   * @param[in,out] dB. Adds the contribution of iel and iat to the dB/dR_iat_src matrix.   
+   * @return Void
+   */
   void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P,
                                              const ParticleSet& source,
                                              const int iat,
