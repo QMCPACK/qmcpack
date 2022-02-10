@@ -68,7 +68,7 @@ case "$1" in
     esac
 
     # Path to QMC_DATA in self-hosted CI system
-    if [[ "$HOST_NAME" =~ (sulfur) ]]
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
     then
       QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
     fi
