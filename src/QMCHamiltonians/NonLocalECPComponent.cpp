@@ -598,10 +598,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 }
 
 void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
-                                                               int iat,
-                                                               TWFFastDerivWrapper& psi,
-                                                               int iel,
-                                                               RealType r,
+                                                               const int iat,
+                                                               const TWFFastDerivWrapper& psi,
+                                                               const int iel,
+                                                               const RealType r,
                                                                const PosType& dr,
                                                                std::vector<ValueMatrix>& B)
 
@@ -662,12 +662,12 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
 }
 
 void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
-                                                                 ParticleSet& ions,
-                                                                 int iat,
-                                                                 int iat_src,
-                                                                 TWFFastDerivWrapper& psi,
-                                                                 int iel,
-                                                                 RealType r,
+                                                                 const ParticleSet& ions,
+                                                                 const int iat,
+                                                                 const int iat_src,
+                                                                 const TWFFastDerivWrapper& psi,
+                                                                 const int iel,
+                                                                 const RealType r,
                                                                  const PosType& dr,
                                                                  std::vector<std::vector<ValueMatrix>>& dB)
 {

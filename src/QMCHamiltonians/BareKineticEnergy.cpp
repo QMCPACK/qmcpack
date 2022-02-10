@@ -247,7 +247,7 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   return value_;
 }
 
-void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B)
+void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B)
 {
   IndexType ngroups = P.groups();
   assert(B.size() == ngroups);
@@ -256,7 +256,8 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, TWFFastDerivWrap
   std::vector<ValueMatrix> lapl_M;
   for (int ig = 0; ig < ngroups; ig++)
   {
-    const IndexType norbs    = psi.numOrbitals(ig);
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
     const IndexType first  = P.first(ig);
     const IndexType last   = P.last(ig);
     const IndexType nptcls = last - first;
@@ -274,15 +275,16 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P, TWFFastDerivWrap
   psi.getEGradELaplM(P, M, grad_M, lapl_M);
   for (int ig = 0; ig < ngroups; ig++)
   {
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
     lapl_M[ig] *= MinusOver2M[ig];
-    B[ig] += lapl_M[ig];
+    B[sid] += lapl_M[ig];
   }
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                       ParticleSet& source,
-                                       TWFFastDerivWrapper& psi,
-                                       int iat,
+                                       const ParticleSet& source,
+                                       const TWFFastDerivWrapper& psi,
+                                       const int iat,
                                        std::vector<std::vector<ValueMatrix>>& Bforce)
 {
 
@@ -292,7 +294,8 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
   std::vector<ValueMatrix> mtmp;
   for (int ig = 0; ig < ngroups; ig++)
   {
-    const IndexType norbs  = psi.numOrbitals(ig);
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
     const IndexType first  = P.first(ig);
     const IndexType last   = P.last(ig);
     const IndexType nptcls = last - first;
@@ -319,8 +322,9 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
   for (int idim = 0; idim < OHMMS_DIM; idim++)
     for (int ig = 0; ig < ngroups; ig++)
     {
+      const IndexType sid = psi.getTWFGroupIndex(ig);
       dlapl[idim][ig] *= MinusOver2M[ig];
-      Bforce[idim][ig] += dlapl[idim][ig];
+      Bforce[idim][sid] += dlapl[idim][ig];
     }
 }
 

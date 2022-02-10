@@ -341,7 +341,7 @@ public:
    * @param[in,out] B.  List of B matrices for each species.  
    * @return Void
    */
-  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P, TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) {}
+  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) {}
 
   /** 
    * @brief Evaluate "dB/dR" matrices for observable.  Filippi scheme for computing fast derivatives.
@@ -354,9 +354,9 @@ public:
    * @return Void
    */
   inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                                        ParticleSet& source,
-                                                        TWFFastDerivWrapper& psi,
-                                                        int iat,
+                                                        const ParticleSet& source,
+                                                        const TWFFastDerivWrapper& psi,
+                                                        const int iat,
                                                         std::vector<std::vector<ValueMatrix>>& Bforce)
   {}
   /** 

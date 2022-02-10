@@ -70,13 +70,13 @@ public:
                                               ParticleSet::ParticlePos& pulay_terms) override;
 
   void evaluateOneBodyOpMatrix(ParticleSet& P, 
-                               TWFFastDerivWrapper& psi, 
+                               const TWFFastDerivWrapper& psi, 
                                std::vector<ValueMatrix>& B) override;
 
   void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                         ParticleSet& source,
-                                         TWFFastDerivWrapper& psi,
-                                         int iat,
+                                         const ParticleSet& source,
+                                         const TWFFastDerivWrapper& psi,
+                                         const int iat,
                                          std::vector<std::vector<ValueMatrix>>& Bforce) override;
   
 
