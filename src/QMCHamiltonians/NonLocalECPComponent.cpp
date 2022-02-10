@@ -77,7 +77,9 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   vgrad.resize(m);
   wvec.resize(n);
   lpol.resize(l + 1, 1.0);
-  dlpol.resize(l + 1, 0.0);
+  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.  
+  //This +2 guards against l=0 case.
+  dlpol.resize(l + 2, 0.0);
   rrotsgrid_m.resize(n);
   nchannel = nlpp_m.size();
   nknot    = sgridxyz_m.size();
