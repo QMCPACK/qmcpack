@@ -240,11 +240,16 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
  * @return \f$ M^{new}/M\f$
  */
 template<typename MatA, typename VecB>
-inline void mw_DetRatioByColumn(const int nw,RefVector<typename MatA::value_type> &curRatio_list, const RefVector<MatA>& Minv_list, const RefVector<VecB>& newv_list, int colchanged)
+inline void mw_DetRatioByColumn(const int nw,
+                                RefVector<typename MatA::value_type>& curRatio_list,
+                                const RefVector<MatA>& Minv_list,
+                                const RefVector<VecB>& newv_list,
+                                int colchanged)
 {
   //use BLAS dot since the stride is not uniform
-  for (size_t iw=0; iw<nw;iw++)
-	  curRatio_list[iw].get()=simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged, Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
+  for (size_t iw = 0; iw < nw; iw++)
+    curRatio_list[iw].get() = simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged,
+                                        Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
 }
 
 /** update a inverse matrix by a row substitution
@@ -299,32 +304,34 @@ inline void InverseUpdateByColumn(MatA& Minv,
 }
 
 template<typename MatA, typename VecT>
-inline void mw_InverseUpdateByColumn(const int nw,RefVector<MatA>& Minv_list,
-                                  RefVector<VecT>& newcol_list,
-                                  RefVector<VecT>& rvec_list,
-                                  RefVector<VecT>& rvecinv_list,
-                                  int colchanged,
-                                  RefVector<typename MatA::value_type> c_ratio_list)
+inline void mw_InverseUpdateByColumn(const int nw,
+                                     RefVector<MatA>& Minv_list,
+                                     RefVector<VecT>& newcol_list,
+                                     RefVector<VecT>& rvec_list,
+                                     RefVector<VecT>& rvecinv_list,
+                                     int colchanged,
+                                     RefVector<typename MatA::value_type> c_ratio_list)
 {
 #pragma omp parallel for
-    for (size_t iw=0;iw<nw;iw++)
-	det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged, c_ratio_list[iw].get(), rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
-
+  for (size_t iw = 0; iw < nw; iw++)
+    det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,
+                   c_ratio_list[iw].get(), rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
 }
 
 
 template<typename MatA, typename VecT>
-inline void mw_InverseUpdateByColumn(const int nw,RefVector<MatA>& Minv_list,
-                                  RefVector<VecT>& newcol_list,
-                                  RefVector<VecT>& rvec_list,
-                                  RefVector<VecT>& rvecinv_list,
-                                  int colchanged,
-	                          std::vector<typename MatA::value_type> ratioGradReflistIdim)
+inline void mw_InverseUpdateByColumn(const int nw,
+                                     RefVector<MatA>& Minv_list,
+                                     RefVector<VecT>& newcol_list,
+                                     RefVector<VecT>& rvec_list,
+                                     RefVector<VecT>& rvecinv_list,
+                                     int colchanged,
+                                     std::vector<typename MatA::value_type> ratioGradReflistIdim)
 {
 #pragma omp parallel for
-    for (size_t iw=0;iw<nw;iw++)
-	det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged, ratioGradReflistIdim[iw], rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
-
+  for (size_t iw = 0; iw < nw; iw++)
+    det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,
+                   ratioGradReflistIdim[iw], rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
 }
 } // namespace qmcplusplus
 #endif

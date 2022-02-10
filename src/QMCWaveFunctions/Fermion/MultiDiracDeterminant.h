@@ -295,15 +295,16 @@ public:
     return 0.0;
   }
 
-  void mw_BuildDotProductsAndCalculateRatios_impl(int nw, int ref,
-                                               RefVector<ValueType> det0_list,
-                                               const RefVector<ValueVector>& restrict ratios_list,
-                                               const RefVector<ValueMatrix>& psiinv_list,
-                                               const RefVector<ValueMatrix>& psi_list,
-                                               RefVector<ValueMatrix>& dotProducts_list,
-                                               const std::vector<int>& data,
-                                               const std::vector<std::pair<int, int>>& pairs,
-                                               const std::vector<RealType>& sign);
+  void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
+                                                  int ref,
+                                                  RefVector<ValueType> det0_list,
+                                                  const RefVector<ValueVector>& restrict ratios_list,
+                                                  const RefVector<ValueMatrix>& psiinv_list,
+                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  RefVector<ValueMatrix>& dotProducts_list,
+                                                  const std::vector<int>& data,
+                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const std::vector<RealType>& sign);
 
   void BuildDotProductsAndCalculateRatios_impl(int ref,
                                                ValueType det0,
@@ -324,14 +325,15 @@ public:
                                           const std::vector<std::pair<int, int>>& pairs,
                                           const std::vector<RealType>& sign);
 
-  void mw_BuildDotProductsAndCalculateRatios(int nw, int ref,
-                                          RefVector<ValueVector>& ratios_list,
-                                          const RefVector<ValueMatrix>& psiinv_list,
-                                          const RefVector<ValueMatrix>& psi_list,
-                                          RefVector<ValueMatrix>& dotProducts_list,
-                                          const std::vector<int> &data,
-                                          const std::vector<std::pair<int, int>>& pairs,
-                                          const std::vector<RealType> &sign);
+  void mw_BuildDotProductsAndCalculateRatios(int nw,
+                                             int ref,
+                                             RefVector<ValueVector>& ratios_list,
+                                             const RefVector<ValueMatrix>& psiinv_list,
+                                             const RefVector<ValueMatrix>& psi_list,
+                                             RefVector<ValueMatrix>& dotProducts_list,
+                                             const std::vector<int>& data,
+                                             const std::vector<std::pair<int, int>>& pairs,
+                                             const std::vector<RealType>& sign);
 
   void BuildDotProductsAndCalculateRatios(int ref,
                                           int iat,
@@ -344,16 +346,19 @@ public:
                                           std::vector<RealType>& sign,
                                           int dx);
 
-  void mw_BuildDotProductsAndCalculateRatios(int nw,int ref,
-                                          int iat,
-                                          RefVector<GradMatrix>& ratios_list,
-                                          RefVector<ValueMatrix>& psiinv_list,
-                                          RefVector<ValueMatrix>& psi_list,
-                                          RefVector<ValueMatrix>& dotProducts_list,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign,
-                                          int dx,RefVector<ValueVector>& WorkSpace_list,int getNumDets);
+  void mw_BuildDotProductsAndCalculateRatios(int nw,
+                                             int ref,
+                                             int iat,
+                                             RefVector<GradMatrix>& ratios_list,
+                                             RefVector<ValueMatrix>& psiinv_list,
+                                             RefVector<ValueMatrix>& psi_list,
+                                             RefVector<ValueMatrix>& dotProducts_list,
+                                             std::vector<int>& data,
+                                             std::vector<std::pair<int, int>>& pairs,
+                                             std::vector<RealType>& sign,
+                                             int dx,
+                                             RefVector<ValueVector>& WorkSpace_list,
+                                             int getNumDets);
 
   void BuildDotProductsAndCalculateRatios(int ref,
                                           int iat,
@@ -365,15 +370,16 @@ public:
                                           std::vector<std::pair<int, int>>& pairs,
                                           std::vector<RealType>& sign);
 
-  void mw_BuildDotProductsAndCalculateRatios(int nw,int ref,
-                                          int iat,
-                                          RefVector<ValueMatrix>& ratios_list,
-                                          RefVector<ValueMatrix>& psiinv_list,
-                                          RefVector<ValueMatrix>& psi_list,
-                                          RefVector<ValueMatrix>& dotProducts_list,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign);
+  void mw_BuildDotProductsAndCalculateRatios(int nw,
+                                             int ref,
+                                             int iat,
+                                             RefVector<ValueMatrix>& ratios_list,
+                                             RefVector<ValueMatrix>& psiinv_list,
+                                             RefVector<ValueMatrix>& psi_list,
+                                             RefVector<ValueMatrix>& dotProducts_list,
+                                             std::vector<int>& data,
+                                             std::vector<std::pair<int, int>>& pairs,
+                                             std::vector<RealType>& sign);
 
   //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,

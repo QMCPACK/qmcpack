@@ -83,6 +83,17 @@ void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
     spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
+void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector>& psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
+}
+
 void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<ParticleSet>& P_list,
                                     int iat,
