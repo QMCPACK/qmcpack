@@ -701,7 +701,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   IndexType thisEIndex = iel - W.first(gid);
   IndexType numptcls   = W.last(gid) - W.first(gid);
   IndexType norbs      = psi.numOrbitals(sid);
-  SPOSet* spo          = psi.getSPOSet(sid);
+  SPOSet& spo(*psi.getSPOSet(sid));
 
   RealType pairpot = 0;
   // Compute spherical harmonics on grid
@@ -749,14 +749,14 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
     W.makeMove(iel, deltaV[j], false);
     iongrad_phi = 0.0;
-    spo->evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
+    spo.evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
     for (int iorb = 0; iorb < norbs; iorb++)
       iongrad_phimat[j][iorb] = iongrad_phi[iorb];
     
     if (iat == iat_src)
     {
       ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
-      spo->evaluateVGL(W, iel, phi, gradphi, laplphi);
+      spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         phimat[j][iorb]     = phi[iorb];
