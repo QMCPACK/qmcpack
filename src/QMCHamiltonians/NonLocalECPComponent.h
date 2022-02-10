@@ -36,6 +36,11 @@ private:
   using GridType            = OneDimGridBase<RealType>;
   using RadialPotentialType = OneDimCubicSpline<RealType>;
 
+  /** For fast derivative evaluation
+   */ 
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix = SPOSet::GradMatrix;
+  
   ///Non Local part: angular momentum, potential and grid
   int lmax;
   ///the number of non-local channels
@@ -238,6 +243,24 @@ public:
                                        const opt_variables_type& optvars,
                                        const std::vector<ValueType>& dlogpsi,
                                        std::vector<ValueType>& dhpsioverpsi);
+
+  void evaluateOneBodyOpMatrixContribution(ParticleSet& P,
+                                           int iat,
+                                           TWFFastDerivWrapper& psi,
+                                           int iel,
+                                           RealType r,
+                                           const PosType& dr,
+                                           std::vector<ValueMatrix>& B);
+
+  void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P,
+                                             ParticleSet& source,
+                                             int iat,
+                                             int iat_src,
+                                             TWFFastDerivWrapper& psi,
+                                             int iel,
+                                             RealType r,
+                                             const PosType& dr,
+                                             std::vector<std::vector<ValueMatrix>>& dB);
 
   void print(std::ostream& os);
 

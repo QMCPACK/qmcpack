@@ -597,6 +597,83 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   return pairpot;
 }
 
+void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+                                                               int iat,
+                                                               TWFFastDerivWrapper& psi,
+                                                               int iel,
+                                                               RealType r,
+                                                               const PosType& dr,
+                                                               std::vector<ValueMatrix>& B)
+
+{
+  using ValueVector = SPOSet::ValueVector;
+  //Some initial computation to find out the species and row number of electron.
+  IndexType gid        = W.getGroupID(iel);
+  IndexType sid      = psi.getTWFGroupIndex(gid);
+  IndexType firstIndex = W.first(gid);
+  IndexType thisIndex  = iel - firstIndex;
+
+  IndexType numOrbs = psi.numOrbitals(sid);
+  ValueVector phi_row; //phi_0(r), phi_1(r), ...
+  ValueVector temp_row;
+
+  phi_row.resize(numOrbs);
+  temp_row.resize(numOrbs);
+
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
+
+
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  const RealType rinv = cone / r;
+
+  for (int ip = 0; ip < nchannel; ip++)
+    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
+
+  for (int j = 0; j < nknot; j++)
+  {
+    W.makeMove(iel, deltaV[j], false); //Update distance tables.
+    psi.getRowM(W, iel, phi_row);
+    W.rejectMove(iel);
+
+    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
+    // Forming the Legendre polynomials
+    lpol[0]           = cone;
+    RealType lpolprev = czero;
+    for (int l = 0; l < lmax; l++)
+    {
+      //Not a big difference
+      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+      //lpol[l+1]/=(l+1);
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+      lpolprev = lpol[l];
+    }
+
+    ValueType lsum = 0.0;
+    for (int l = 0; l < nchannel; l++)
+    {
+      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * phi_row;
+      for (int iorb = 0; iorb < numOrbs; iorb++)
+        B[sid][thisIndex][iorb] += temp_row[iorb];
+    }
+  }
+}
+
+void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
+                                                                 ParticleSet& ions,
+                                                                 int iat,
+                                                                 int iat_src,
+                                                                 TWFFastDerivWrapper& psi,
+                                                                 int iel,
+                                                                 RealType r,
+                                                                 const PosType& dr,
+                                                                 std::vector<std::vector<ValueMatrix>>& dB)
+{
+
+}
+
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 {

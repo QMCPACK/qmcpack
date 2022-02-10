@@ -947,7 +947,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   app_log() << "NLPP = " << nlpp << std::endl;
 
-  //  CHECK(nlpp_obs == Approx(1.3849558361e+01));
+    CHECK(nlpp_obs == Approx(1.3849558361e+01));
 
   ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
