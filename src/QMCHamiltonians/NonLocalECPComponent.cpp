@@ -645,11 +645,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
-      //Not a big difference
-      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-      //lpol[l+1]/=(l+1);
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = Lfactor2[l]*(Lfactor1[l] * zz * lpol[l] - l * lpolprev);
       lpolprev = lpol[l];
     }
 
