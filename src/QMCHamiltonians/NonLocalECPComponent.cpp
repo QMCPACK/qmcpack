@@ -753,14 +753,10 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
     W.makeMove(iel, deltaV[j], false);
     iongrad_phi = 0.0;
-    {
-      ScopedTimer evalgsourcetimer(*timer_manager.createTimer("NLPP::dB::evalGradSourceRow"));
-      spo->evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
-    }
+    spo->evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
     for (int iorb = 0; iorb < norbs; iorb++)
-    {
       iongrad_phimat[j][iorb] = iongrad_phi[iorb];
-    }
+    
     if (iat == iat_src)
     {
       ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
@@ -823,16 +819,11 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
 
   for (int j = 0; j < nknot; j++)
-  {
     for (int iorb = 0; iorb < norbs; iorb++)
-    {
       gwfn[iorb] += nlpp_prefactor[j] * (iongrad_phimat[j][iorb]);
-    }
-  }
 
   if (iat == iat_src)
     for (int j = 0; j < nknot; j++)
-    {
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //this is for diagonal case.
@@ -842,17 +833,10 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
         glpoly[iorb] += dlpoly_prefactor[j] * phimat[j][iorb];
         gwfn[iorb] += nlpp_prefactor[j] * (wfgradmat[j][iorb]);
       }
-    }
 
-  {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
-    {
       for (int iorb = 0; iorb < norbs; iorb++)
-      {
         dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
-      }
-    }
-  }
 }
 
 ///Randomly rotate sgrid_m
