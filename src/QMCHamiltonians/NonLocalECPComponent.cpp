@@ -673,7 +673,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 {
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
-  // ScopedTimer dBnlpptimer(*timer_manager.createTimer("NEW::NLPP::dB"));
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
@@ -825,14 +824,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   {
     for (int iorb = 0; iorb < norbs; iorb++)
     {
-      //      ScopedTimer stitchtimer(*timer_manager.createTimer("NLPP::dB::component_comp"));
-      //      if (iat==iat_src)
-      //      {
-      //        gpot[iorb]  += dvdr_prefactor[j]*phimat[j][iorb];
-      //        glpoly[iorb]+= dlpoly_prefactor[j] * phimat[j][iorb];
-      //        gwfn[iorb]  +=  nlpp_prefactor[j]*(wfgradmat[j][iorb]);
-      //     }
-
       gwfn[iorb] += nlpp_prefactor[j] * (iongrad_phimat[j][iorb]);
     }
   }
@@ -840,7 +831,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   if (iat == iat_src)
     for (int j = 0; j < nknot; j++)
     {
-      //  ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::udot_and_wfgradrow"));
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //this is for diagonal case.
@@ -853,7 +843,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     }
 
   {
-    //  ScopedTimer copypastetimer(*timer_manager.createTimer("NLPP::dB::copypaste"));
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       for (int iorb = 0; iorb < norbs; iorb++)
