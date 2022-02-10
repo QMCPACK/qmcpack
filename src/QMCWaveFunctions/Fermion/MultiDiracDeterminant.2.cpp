@@ -373,7 +373,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
       psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[*(it++)];
   }
 
-  mw_DetRatioByColumn(nw, curRatio_list, psiMinv_temp_list, psiV_temp_list, WorkingIndex);
+  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
 
@@ -641,7 +641,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     det_leader.ExtraStuffTimer.stop();
   }
 
-  mw_DetRatioByColumn(nw, curRatio_list, psiMinv_temp_list, psiV_temp_list, WorkingIndex);
+  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
 
   for (size_t iw = 0; iw < nw; iw++)
   {

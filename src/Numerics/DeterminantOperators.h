@@ -241,10 +241,11 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
  */
 template<typename MatA, typename VecB>
 inline void mw_DetRatioByColumn(const int nw,
-                                RefVector<typename MatA::value_type>& curRatio_list,
+                                int colchanged,
                                 const RefVector<MatA>& Minv_list,
                                 const RefVector<VecB>& newv_list,
-                                int colchanged)
+                                RefVector<typename MatA::value_type>& curRatio_list)
+
 {
   //use BLAS dot since the stride is not uniform
   for (size_t iw = 0; iw < nw; iw++)
