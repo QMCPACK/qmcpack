@@ -254,7 +254,7 @@ public:
    * @param[in] iel, electron ID
    * @param[in] r, distance between iat and iel. 
    * @param[in] dr, displacement vector between iat and iel. 
-   * @param[in,out] B. Adds the contribution of iel and iat to the B matrix.   
+   * @param[in,out] B. Adds the contribution of iel and iat to the B matrix. Dimensions:  [group][particle][orb] 
    * @return Void
    */
   void evaluateOneBodyOpMatrixContribution(ParticleSet& P,
@@ -277,7 +277,7 @@ public:
    * @param[in] iel, electron ID
    * @param[in] r, distance between iat and iel. 
    * @param[in] dr, displacement vector between iat and iel. 
-   * @param[in,out] dB. Adds the contribution of iel and iat to the dB/dR_iat_src matrix.   
+   * @param[in,out] dB. Adds the contribution of iel and iat to the dB/dR_iat_src matrix. Dimension [xyz_component][group][particle][orb]   
    * @return Void
    */
   void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P,
