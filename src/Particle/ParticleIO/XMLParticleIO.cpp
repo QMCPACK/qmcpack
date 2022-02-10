@@ -199,8 +199,9 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
         {
           std::ostringstream msg;
           msg << "The total number of particles deterimined previously was " << nat
-              << " but the 'size' atttribute found on the '" << ParticleTags::attrib_tag << "' XML element nodes named '"
-              << sname << "' is " << size_att << ". Please check the 'particleset' XML element node!" << std::endl;
+              << " but the 'size' atttribute found on the '" << ParticleTags::attrib_tag
+              << "' XML element nodes named '" << sname << "' is " << size_att
+              << ". Please check the 'particleset' XML element node!" << std::endl;
           throw UniformCommunicateError(msg.str());
         }
 
@@ -264,6 +265,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
 
     checkGrouping(nat, nat_group);
     ref_.create(nat_group);
+    // save map_storage_to_input
+    ref_.setMapStorageToInput(map_storage_to_input);
 
     for (int iat = 0; iat < nat; iat++)
     {
