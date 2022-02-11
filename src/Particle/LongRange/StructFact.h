@@ -41,12 +41,9 @@ public:
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
    */
   int SuperCellEnum;
-  ///1-D container for the phase
-  Vector<RealType> phiV;
   ///2-D container for the phase
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
-  Vector<RealType> eikr_r_temp, eikr_i_temp;
   /** Constructor - copy ParticleSet and init. k-shells
    * @param nptcls number of particles
    * @param ns number of species

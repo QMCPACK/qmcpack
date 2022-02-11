@@ -45,7 +45,6 @@ StructFact::~StructFact() = default;
 
 void StructFact::resize(int nkpts)
 {
-  phiV.resize(nkpts);
   rhok_r.resize(num_species, nkpts);
   rhok_i.resize(num_species, nkpts);
   if (StorePerParticle)
@@ -53,8 +52,6 @@ void StructFact::resize(int nkpts)
     eikr_r.resize(num_ptcls, nkpts);
     eikr_i.resize(num_ptcls, nkpts);
   }
-  eikr_r_temp.resize(nkpts);
-  eikr_i_temp.resize(nkpts);
 }
 
 
@@ -120,13 +117,23 @@ void StructFact::computeRhok(const ParticleSet& P)
         rhok_i_ptr[ki] += s;
       }
 #else
-      for (int ki = 0; ki < nk; ki++)
-        phiV[ki] = dot(k_lists_.kpts_cart[ki], pos);
-      eval_e2iphi(nk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
-      for (int ki = 0; ki < nk; ki++)
+      // make the compute over nk by blocks
+      constexpr size_t kblock_size = 512;
+      const size_t num_kblocks = (nk + kblock_size) / kblock_size;
+      RealType phiV[kblock_size], eikr_r_temp[kblock_size], eikr_i_temp[kblock_size];
+
+      for(int ib = 0; ib < num_kblocks; ib++)
       {
-        rhok_r_ptr[ki] += eikr_r_temp[ki];
-        rhok_i_ptr[ki] += eikr_i_temp[ki];
+        const size_t offset = ib * kblock_size;
+        const size_t this_block_size = std::min(kblock_size, nk - offset);
+        for (int ki = 0; ki < this_block_size; ki++)
+          phiV[ki] = dot(k_lists_.kpts_cart[ki + offset], pos);
+        eval_e2iphi(this_block_size, phiV, eikr_r_temp, eikr_i_temp);
+        for (int ki = 0; ki < this_block_size; ki++)
+        {
+          rhok_r_ptr[ki + offset] += eikr_r_temp[ki];
+          rhok_i_ptr[ki + offset] += eikr_i_temp[ki];
+        }
       }
 #endif
     }
