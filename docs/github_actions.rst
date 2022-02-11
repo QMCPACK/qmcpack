@@ -17,74 +17,48 @@ Summary of Test Jobs
 
 The following is a summary of the jobs run in the CI process required for a PR:
 
-+----------------------------------------------+----------+---------------+------+----------+
-| Job Name with                                | Runner   | Tests         | Time | Trigger  |
-| Build Info                                   | Host     | ctest -L      | min  | event    |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC9-MPI-Gcov-Real*                          | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC9-MPI-Gcov-Complex*                       | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC9-NoMPI-Debug-Real                        | GitHub   | deterministic | 17   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC11-NoMPI-Werror-Real                      | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC11-NoMPI-Werror-Complex                   | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| Clang10-NoMPI-ASan-Real                      | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| Clang10-NoMPI-ASan-Complex                   | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| Clang10-NoMPI-UBSan-Real                     | GitHub   | deterministic | 60   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| Clang12-NoMPI-Offload-Real                   | GitHub   | unit          | 35   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| macOS-GCC11-NoMPI-Real                       | GitHub   | deterministic | 27   | PR/merge |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-Legacy-CUDA-Real-Mixed            | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-Legacy-CUDA-Complex-Mixed         | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-Legacy-CUDA-Real                  | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-Legacy-CUDA-Complex               | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-MKL-Real-Mixed                    | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-MKL-Complex-Mixed                 | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-MKL-Real                          | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-NoMPI-MKL-Complex                       | sulfur   | deterministic | 2    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-MPI-CUDA-AFQMC-Real-Mixed               | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-MPI-CUDA-AFQMC-Complex-Mixed            | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-MPI-CUDA-AFQMC-Real                     | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| GCC8-MPI-CUDA-AFQMC-Complex                  | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real       | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| Intel19-MPI-CUDA-AFQMC-Real-Mixed            | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| Intel19-MPI-CUDA-AFQMC-Complex-Mixed         | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| Intel19-MPI-CUDA-AFQMC-Real                  | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| Intel19-MPI-CUDA-AFQMC-Complex               | sulfur   | deterministic | 6    | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed       | nitrogen | deterministic | 10   | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Real             | nitrogen | deterministic | 12   | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed    | nitrogen | deterministic | 10   | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-Complex          | nitrogen | deterministic | 12   | manual   |
-+----------------------------------------------+----------+---------------+------+----------+
++---------------------------------------------------+----------+---------------+----------+----------+
+| Job Name with                                     | Runner   | Tests         | Time     | Trigger  |
+| Build Info                                        | Host     | ctest -L      | min      | event    |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC9-MPI-Gcov-(Real*, Complex*)                   | GitHub   | deterministic | (60, 60) | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC9-NoMPI-Debug-Real                             | GitHub   | deterministic | 17       | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC11-NoMPI-Werror-(Real, Complex)                | GitHub   | deterministic | (60, 60) | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Clang10-NoMPI-ASan-(Real, Complex)                | GitHub   | deterministic | (60, 60) | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Clang10-NoMPI-UBSan-Real                          | GitHub   | deterministic | 60       | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Clang12-NoMPI-Offload-Real                        | GitHub   | unit          | 35       | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| macOS-GCC11-NoMPI-Real                            | GitHub   | deterministic | 27       | PR/merge |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-Legacy-CUDA-(Real, Complex)-Mixed      | sulfur   | deterministic | (2, 2)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-Legacy-CUDA-(Real, Complex)            | sulfur   | deterministic | (2 ,2)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-MKL-(Real, Complex)-Mixed              | sulfur   | deterministic | (2, 2)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-MKL-(Real, Complex)                    | sulfur   | deterministic | (2, 2)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-MPI-CUDA-AFQMC-(Real, Complex)-Mixed         | sulfur   | deterministic | (6, 6)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-MPI-CUDA-AFQMC-(Real, Complex)               | sulfur   | deterministic | (6, 6)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed      | sulfur   | deterministic | 6        | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real            | sulfur   | deterministic | 6        | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Intel19-MPI-CUDA-AFQMC-(Real, Complex)-Mixed      | sulfur   | deterministic | (6, 6)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| Intel19-MPI-CUDA-AFQMC-(Real, Complex)            | sulfur   | deterministic | (6, 6)   | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| ROCm-Clang13-NoMPI-CUDA2HIP-(Real, Complex)-Mixed | nitrogen | deterministic | (10, 10) | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
+| ROCm-Clang13-NoMPI-CUDA2HIP-(Real, Complex)       | nitrogen | deterministic | (12, 12) | manual   |
++---------------------------------------------------+----------+---------------+----------+----------+
 
 Jobs running on GitHub hosted runners are triggered automatically. Permission from an admin is required to run jobs on self-hosted runners (e.g. sulfur) for security reasons. In addition, jobs running on GitHub hosted runners run automatically in parallel and the time each job takes may vary depending on system utilization. For information on the underlying hardware see the GitHub Actions `docs on the topic <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>`_.  
 
