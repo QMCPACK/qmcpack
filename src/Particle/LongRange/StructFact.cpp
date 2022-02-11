@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 //Constructor - pass arguments to k_lists_' constructor
-StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists)
+StructFact::StructFact(int ns, int nptcls, const ParticleLayout& lattice, const KContainer& k_lists)
     : SuperCellEnum(SUPERCELL_BULK),
       k_lists_(k_lists),
       num_ptcls(nptcls),
@@ -36,8 +36,6 @@ StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const 
     app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum = SUPERCELL_SLAB;
   }
-
-  resize(k_lists_.numk);
 }
 
 //Destructor
@@ -75,10 +73,11 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
  */
 void StructFact::computeRhok(const ParticleSet& P)
 {
-  int npart = P.getTotalNum();
+  resize(k_lists_.numk);
+
   rhok_r = 0.0;
   rhok_i = 0.0;
-  //algorithmA
+  const int npart = P.getTotalNum();
   const int nk = k_lists_.numk;
   if (StorePerParticle)
   {
@@ -145,9 +144,6 @@ void StructFact::turnOnStorePerParticle(const ParticleSet& P)
   if (!StorePerParticle)
   {
     StorePerParticle = true;
-    const int nptcl  = P.getTotalNum();
-    eikr_r.resize(nptcl, k_lists_.numk);
-    eikr_i.resize(nptcl, k_lists_.numk);
     computeRhok(P);
   }
 }

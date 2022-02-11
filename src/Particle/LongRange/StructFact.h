@@ -45,12 +45,12 @@ public:
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
   /** Constructor - copy ParticleSet and init. k-shells
-   * @param nptcls number of particles
    * @param ns number of species
+   * @param nptcls number of particles
    * @param lattice long range box
    * @param kc cutoff for k
    */
-  StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists);
+  StructFact(int ns, int nptcls, const ParticleLayout& lattice, const KContainer& k_lists);
   /// desructor
   ~StructFact();
 
