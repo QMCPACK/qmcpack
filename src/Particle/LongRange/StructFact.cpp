@@ -23,11 +23,9 @@
 namespace qmcplusplus
 {
 //Constructor - pass arguments to k_lists_' constructor
-StructFact::StructFact(int ns, int nptcls, const ParticleLayout& lattice, const KContainer& k_lists)
+StructFact::StructFact(const ParticleLayout& lattice, const KContainer& k_lists)
     : SuperCellEnum(SUPERCELL_BULK),
       k_lists_(k_lists),
-      num_ptcls(nptcls),
-      num_species(ns),
       StorePerParticle(false),
       update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
@@ -41,7 +39,7 @@ StructFact::StructFact(int ns, int nptcls, const ParticleLayout& lattice, const 
 //Destructor
 StructFact::~StructFact() = default;
 
-void StructFact::resize(int nkpts)
+void StructFact::resize(int nkpts, int num_species, int num_ptcls)
 {
   rhok_r.resize(num_species, nkpts);
   rhok_i.resize(num_species, nkpts);
@@ -73,16 +71,17 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
  */
 void StructFact::computeRhok(const ParticleSet& P)
 {
-  resize(k_lists_.numk);
+  const size_t num_ptcls   = P.getTotalNum();
+  const size_t num_species = P.groups();
+  const size_t nk          = k_lists_.numk;
+  resize(nk, num_species, num_ptcls);
 
   rhok_r = 0.0;
   rhok_i = 0.0;
-  const int npart = P.getTotalNum();
-  const int nk = k_lists_.numk;
   if (StorePerParticle)
   {
     // save per particle and species value
-    for (int i = 0; i < npart; ++i)
+    for (int i = 0; i < num_ptcls; ++i)
     {
       const auto& pos           = P.R[i];
       auto* restrict eikr_r_ptr = eikr_r[i];
@@ -101,7 +100,7 @@ void StructFact::computeRhok(const ParticleSet& P)
   else
   {
     // save per species value
-    for (int i = 0; i < npart; ++i)
+    for (int i = 0; i < num_ptcls; ++i)
     {
       const auto& pos           = P.R[i];
       auto* restrict rhok_r_ptr = rhok_r[P.getGroupID(i)];
@@ -118,12 +117,12 @@ void StructFact::computeRhok(const ParticleSet& P)
 #else
       // make the compute over nk by blocks
       constexpr size_t kblock_size = 512;
-      const size_t num_kblocks = (nk + kblock_size) / kblock_size;
+      const size_t num_kblocks     = (nk + kblock_size) / kblock_size;
       RealType phiV[kblock_size], eikr_r_temp[kblock_size], eikr_i_temp[kblock_size];
 
-      for(int ib = 0; ib < num_kblocks; ib++)
+      for (int ib = 0; ib < num_kblocks; ib++)
       {
-        const size_t offset = ib * kblock_size;
+        const size_t offset          = ib * kblock_size;
         const size_t this_block_size = std::min(kblock_size, nk - offset);
         for (int ki = 0; ki < this_block_size; ki++)
           phiV[ki] = dot(k_lists_.kpts_cart[ki + offset], pos);
