@@ -43,9 +43,9 @@ The following is a summary of the jobs run in the CI process required for a PR:
 +---------------------------------------------------+----------+---------------+----------+----------+
 | GCC8-NoMPI-MKL-(Real, Complex)                    | sulfur   | deterministic | (2, 2)   | manual   |
 +---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-MPI-CUDA-AFQMC-(Real, Complex)-Mixed         | sulfur   | deterministic | (6, 6)   | manual   |
+| GCC8-MPI-CUDA-AFQMC-(Real, Complex)-Mixed         | nitrogen | deterministic | (6, 6)   | manual   |
 +---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-MPI-CUDA-AFQMC-(Real, Complex)               | sulfur   | deterministic | (6, 6)   | manual   |
+| GCC8-MPI-CUDA-AFQMC-(Real, Complex)               | nitrogen | deterministic | (6, 6)   | manual   |
 +---------------------------------------------------+----------+---------------+----------+----------+
 | Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed      | sulfur   | deterministic | 6        | manual   |
 +---------------------------------------------------+----------+---------------+----------+----------+
