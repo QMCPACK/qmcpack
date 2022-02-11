@@ -25,23 +25,22 @@ enum class CoordsType
   POS_SPIN
 };
 
-template<CoordsType MCT = CoordsType::POS>
-struct MCCoords
+template<CoordsType MCT>
+struct MCCoords;
+
+template<>
+struct MCCoords<CoordsType::POS>
 {
-  // This cleans up some other code.
   void resize(const std::size_t size);
+
   std::vector<QMCTraits::PosType> positions;
 };
 
 template<>
 struct MCCoords<CoordsType::POS_SPIN>
 {
-  // This cleans up some other code.
-  void resize(const std::size_t size)
-  {
-    positions.resize(size);
-    spins.resize(size);
-  }
+  void resize(const std::size_t size);
+
   std::vector<QMCTraits::PosType> positions;
   std::vector<QMCTraits::FullPrecRealType> spins;
 };

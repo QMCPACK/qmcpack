@@ -18,21 +18,22 @@
 
 namespace qmcplusplus
 {
-template<CoordsType CT = CoordsType::POS>
-struct TWFGrads
+template<CoordsType CT>
+struct TWFGrads;
+
+template<>
+struct TWFGrads<CoordsType::POS>
 {
   void resize(const std::size_t size);
+
   std::vector<QMCTraits::GradType> grads_positions;
 };
 
 template<>
 struct TWFGrads<CoordsType::POS_SPIN>
 {
-  void resize(const std::size_t size)
-  {
-    grads_positions.resize(size);
-    grads_spins.resize(size);
-  }
+  void resize(const std::size_t size);
+
   std::vector<QMCTraits::GradType> grads_positions;
   std::vector<QMCTraits::ComplexType> grads_spins;
 };

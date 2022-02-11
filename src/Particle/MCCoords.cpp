@@ -13,12 +13,13 @@
 
 namespace qmcplusplus
 {
-template<CoordsType MCT>
-void MCCoords<MCT>::resize(const std::size_t size)
+void MCCoords<CoordsType::POS>::resize(const std::size_t size) { positions.resize(size); }
+
+void MCCoords<CoordsType::POS_SPIN>::resize(const std::size_t size)
 {
   positions.resize(size);
+  spins.resize(size);
 }
-
 template struct MCCoords<CoordsType::POS>;
 template struct MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus
