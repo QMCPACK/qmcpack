@@ -19,17 +19,6 @@ ContextForSteps::ContextForSteps(int num_walkers,
                                  std::vector<std::pair<int, int>> particle_group_indexes,
                                  RandomGenerator& random_gen)
     : particle_group_indexes_(particle_group_indexes), random_gen_(random_gen)
-{
-  /** glambda to create type T with constructor T(int) and put in it unique_ptr
-   *
-   *  captures num_particles to use as argument to constructor
-   *  gets T for type unique_ptr unique is templated on
-   */
-  auto constructT = [num_particles](auto& unique) {
-    unique.reset(new typename std::remove_pointer<decltype(unique.get())>::type(num_particles));
-  };
-
-  walker_deltas_.resize(num_walkers * num_particles);
-}
+{}
 
 } // namespace qmcplusplus
