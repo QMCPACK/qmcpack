@@ -26,6 +26,7 @@
 #include "QMCDrivers/SFNBranch.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
+#include "TauParams.hpp"
 
 namespace qmcplusplus
 {
@@ -135,16 +136,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
     {
-      //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-      auto getTaus = [&](const int ig) {
-        if constexpr (CT == CoordsType::POS_SPIN)
-          return Taus<RealType, CT>(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
-                                    sft.qmcdrv_input.get_spin_mass());
-        else
-          return Taus<RealType, CT>(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig]);
-      };
-
-      Taus<RealType, CT> taus = getTaus(ig);
+      TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+                                   sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
