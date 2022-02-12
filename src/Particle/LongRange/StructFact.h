@@ -71,8 +71,6 @@ public:
   /// accessor of StorePerParticle
   bool isStorePerParticle() const { return StorePerParticle; }
 
-  bool determineOffloadActive(DynamicCoordinateKind kind) const { return kind == DynamicCoordinateKind::DC_POS_OFFLOAD && !StorePerParticle; }
-
 private:
   /// Compute all rhok elements from the start
   void computeRhok(const ParticleSet& P);

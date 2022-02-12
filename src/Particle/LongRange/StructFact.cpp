@@ -66,7 +66,10 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
   auto& sk_leader = sk_list.getLeader();
   auto& p_leader  = p_list.getLeader();
   ScopedTimer local(sk_leader.update_all_timer_);
-  if (sk_leader.determineOffloadActive(p_leader.getCoordinates().getKind()))
+  if (p_leader.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD || sk_leader.StorePerParticle)
+    for (int iw = 0; iw < sk_list.size(); iw++)
+      sk_list[iw].computeRhok(p_list[iw]);
+  else
   {
     const size_t nw          = p_list.size();
     const size_t num_species = p_leader.groups();
@@ -126,9 +129,6 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
         std::copy_n(mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride + 1], nk, sk_list[iw].rhok_i[is]);
       }
   }
-  else
-    for (int iw = 0; iw < sk_list.size(); iw++)
-      sk_list[iw].computeRhok(p_list[iw]);
 }
 
 
