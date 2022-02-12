@@ -19,6 +19,7 @@
 #include "CPU/SIMD/vmath.hpp"
 #include "CPU/BLAS.hpp"
 #include "Utilities/qmc_common.h"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -58,12 +59,70 @@ void StructFact::updateAllPart(const ParticleSet& P)
 }
 
 void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
-                                  const RefVectorWithLeader<ParticleSet>& p_list)
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  SKMultiWalkerMem& mw_mem)
 {
   auto& sk_leader = sk_list.getLeader();
+  auto& p_leader  = p_list.getLeader();
   ScopedTimer local(sk_leader.update_all_timer_);
-  for (int iw = 0; iw < sk_list.size(); iw++)
-    sk_list[iw].computeRhok(p_list[iw]);
+  if (p_leader.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD || sk_leader.StorePerParticle)
+    for (int iw = 0; iw < sk_list.size(); iw++)
+      sk_list[iw].computeRhok(p_list[iw]);
+  else
+  {
+    const size_t nw          = p_list.size();
+    const size_t num_species = p_leader.groups();
+    const size_t nk          = sk_leader.k_lists_.numk;
+    const size_t nk_padded   = getAlignedSize<RealType>(nk);
+    const auto& kpts_cart    = sk_leader.k_lists_.get_kpts_cart_soa();
+
+    constexpr size_t cplx_stride = 2;
+    mw_mem.nw_rhok.resize(nw * num_species * cplx_stride, nk_padded);
+
+    // make the compute over nk by blocks
+    constexpr size_t kblock_size = 512;
+    const size_t num_kblocks     = (nk + kblock_size) / kblock_size;
+
+    for (int iw = 0; iw < nw; iw++)
+      for (int ib = 0; ib < num_kblocks; ib++)
+      {
+        const size_t offset          = ib * kblock_size;
+        const size_t this_block_size = std::min(kblock_size, nk - offset);
+
+        RealType eikr_r_temp[kblock_size], eikr_i_temp[kblock_size];
+
+        for (int is = 0; is < num_species; is++)
+        {
+          for (int ik = 0; ik < this_block_size; ik++)
+            eikr_r_temp[ik] = eikr_i_temp[ik] = 0;
+
+          for (int ip = p_leader.first(is); ip < p_leader.last(is); ip++)
+            for (int ik = 0; ik < this_block_size; ik++)
+            {
+              RealType s, c;
+              qmcplusplus::sincos(dot(kpts_cart[ik + offset], p_list[iw].R[ip]), &s, &c);
+              eikr_r_temp[ik] += c;
+              eikr_i_temp[ik] += s;
+            }
+
+          auto* restrict rhok_r = mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride] + offset;
+          auto* restrict rhok_i = mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride + 1] + offset;
+
+          for (int ik = 0; ik < this_block_size; ik++)
+          {
+            rhok_r[ik] = eikr_r_temp[ik];
+            rhok_i[ik] = eikr_i_temp[ik];
+          }
+        }
+      }
+
+    for (int iw = 0; iw < nw; iw++)
+      for (int is = 0; is < num_species; is++)
+      {
+        std::copy_n(mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride], nk, sk_list[iw].rhok_r[is]);
+        std::copy_n(mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride + 1], nk, sk_list[iw].rhok_i[is]);
+      }
+  }
 }
 
 

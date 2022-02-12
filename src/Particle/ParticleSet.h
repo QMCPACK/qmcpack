@@ -41,6 +41,7 @@ class DistanceTableAA;
 class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
+struct SKMultiWalkerMem;
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -600,6 +601,9 @@ protected:
 
   ///Structure factor
   std::unique_ptr<StructFact> structure_factor_;
+
+  ///multi walker structure factor data
+  std::unique_ptr<SKMultiWalkerMem> mw_structure_factor_data_;
 
   /** map to handle distance tables
    *
