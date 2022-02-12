@@ -284,7 +284,7 @@ bool ParticleSet::get(std::ostream& os) const
   if (auto& group_offsets(*group_offsets_); group_offsets.size() > 0)
     for (int i = 0; i < group_offsets.size() - 1; i++)
       os << " " << my_species_.speciesName[i] << "(" << group_offsets[i + 1] - group_offsets[i] << ")";
-  os << std::endl;
+  os << std::endl << std::endl;
 
   const size_t maxParticlesToPrint = 10;
   size_t numToPrint                = std::min(TotalNum, maxParticlesToPrint);
