@@ -21,6 +21,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -259,9 +260,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
           auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
-          const int first      = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const size_t first   = ChunkSizePerTeam * team_id;
+          const size_t last    = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           { // temp
             auto* r_iw_ptr  = r_dr_ptr + iw * stride_size;
