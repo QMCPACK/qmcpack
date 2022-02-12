@@ -204,6 +204,9 @@ public:
   void createSK();
 
   bool hasSK() const { return bool(structure_factor_); }
+
+  bool isSKOffloadActive() const;
+
   /** return Structure Factor
    */
   const StructFact& getSK() const

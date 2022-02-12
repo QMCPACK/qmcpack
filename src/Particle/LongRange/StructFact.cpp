@@ -66,10 +66,7 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
   auto& sk_leader = sk_list.getLeader();
   auto& p_leader  = p_list.getLeader();
   ScopedTimer local(sk_leader.update_all_timer_);
-  if (p_leader.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD || sk_leader.StorePerParticle)
-    for (int iw = 0; iw < sk_list.size(); iw++)
-      sk_list[iw].computeRhok(p_list[iw]);
-  else
+  if (sk_leader.determineOffloadActive(p_leader.getCoordinates().getKind()))
   {
     const size_t nw          = p_list.size();
     const size_t num_species = p_leader.groups();
@@ -93,8 +90,7 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
     auto* mw_rhok_ptr   = mw_mem.nw_rhok.data();
     auto* group_offsets = p_leader.get_group_offsets().data();
 
-#if 1
-#pragma omp target teams distribute collapse(2) map(always, from : mw_rhok_ptr[:mw_mem.nw_rhok.size()])
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) map(always, from : mw_rhok_ptr[:mw_mem.nw_rhok.size()])")
     for (int iw = 0; iw < nw; iw++)
       for (int ib = 0; ib < num_kblocks; ib++)
       {
@@ -102,7 +98,7 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
         const size_t this_block_size = std::min(kblock_size, nk - offset);
         const auto* rsoa_ptr         = mw_rsoa_ptr[iw];
 
-#pragma omp parallel for
+        PRAGMA_OFFLOAD("omp parallel for")
         for (int ik = 0; ik < this_block_size; ik++)
           for (int is = 0; is < num_species; is++)
           {
@@ -122,46 +118,7 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
             mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + nk_padded + offset + ik] = rhok_i;
           }
       }
-#else
-#pragma omp target teams distribute collapse(2) map(always, from : mw_rhok_ptr[:mw_mem.nw_rhok.size()])
-    for (int iw = 0; iw < nw; iw++)
-      for (int ib = 0; ib < num_kblocks; ib++)
-      {
-        const size_t offset          = ib * kblock_size;
-        const size_t this_block_size = std::min(kblock_size, nk - offset);
-        const auto* rsoa_ptr         = mw_rsoa_ptr[iw];
 
-        RealType rhok_r[kblock_size], rhok_i[kblock_size];
-#pragma omp parallel
-        {
-          for (int is = 0; is < num_species; is++)
-          {
-#pragma omp for nowait
-            for (int ik = 0; ik < this_block_size; ik++)
-              rhok_r[ik] = rhok_i[ik] = 0;
-
-            for (int ip = group_offsets[is]; ip < group_offsets[is + 1]; ip++)
-#pragma omp for nowait
-              for (int ik = 0; ik < this_block_size; ik++)
-              {
-                RealType s, c, phase(0);
-                for (int idim = 0; idim < DIM; idim++)
-                  phase += kpts_cart_ptr[ik + offset + nk_padded * idim] * rsoa_ptr[ip + idim * np_padded];
-                omptarget::sincos(phase, &s, &c);
-                rhok_r[ik] += c;
-                rhok_i[ik] += s;
-              }
-
-#pragma omp for nowait
-            for (int ik = 0; ik < this_block_size; ik++)
-            {
-              mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + offset + ik]             = rhok_r[ik];
-              mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + nk_padded + offset + ik] = rhok_i[ik];
-            }
-          }
-        }
-      }
-#endif
     for (int iw = 0; iw < nw; iw++)
       for (int is = 0; is < num_species; is++)
       {
@@ -169,6 +126,9 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
         std::copy_n(mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride + 1], nk, sk_list[iw].rhok_i[is]);
       }
   }
+  else
+    for (int iw = 0; iw < sk_list.size(); iw++)
+      sk_list[iw].computeRhok(p_list[iw]);
 }
 
 

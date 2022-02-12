@@ -277,6 +277,8 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
   }
 }
 
+bool ParticleSet::isSKOffloadActive() const { return structure_factor_ && structure_factor_->determineOffloadActive(coordinates_->getKind()); }
+
 ///write to a std::ostream
 bool ParticleSet::get(std::ostream& os) const
 {
