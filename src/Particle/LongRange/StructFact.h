@@ -18,6 +18,7 @@
 #include "DynamicCoordinates.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Resource.h"
 
 namespace qmcplusplus
 {
@@ -36,6 +37,7 @@ class StructFact : public QMCTraits
 public:
   //Typedef for the lattice-type
   using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
@@ -57,7 +59,8 @@ public:
   void updateAllPart(const ParticleSet& P);
 
   static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
-                               const RefVectorWithLeader<ParticleSet>& p_list);
+                               const RefVectorWithLeader<ParticleSet>& p_list,
+                               SKMultiWalkerMem& mw_mem);
 
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
@@ -88,6 +91,22 @@ private:
   /// timer for updateAllPart
   NewTimer& update_all_timer_;
 };
+
+///multi walker shared memory buffer
+struct SKMultiWalkerMem : public Resource
+{
+  using RealType = StructFact::RealType;
+
+  ///dist displ for temporary and old pairs
+  Matrix<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_rhok;
+
+  SKMultiWalkerMem() : Resource("SKMultiWalkerMem") {}
+
+  SKMultiWalkerMem(const SKMultiWalkerMem&) : SKMultiWalkerMem() {}
+
+  Resource* makeClone() const override { return new SKMultiWalkerMem(*this); }
+};
+
 } // namespace qmcplusplus
 
 #endif
