@@ -20,6 +20,7 @@
 #include "CPU/BLAS.hpp"
 #include "Utilities/qmc_common.h"
 #include "OMPTarget/OMPTargetMath.hpp"
+#include "RealSpacePositionsOMPTarget.h"
 
 namespace qmcplusplus
 {
@@ -72,9 +73,13 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
   {
     const size_t nw          = p_list.size();
     const size_t num_species = p_leader.groups();
-    const size_t nk          = sk_leader.k_lists_.numk;
-    const size_t nk_padded   = getAlignedSize<RealType>(nk);
     const auto& kpts_cart    = sk_leader.k_lists_.get_kpts_cart_soa();
+    const size_t nk          = sk_leader.k_lists_.numk;
+    const size_t nk_padded   = kpts_cart.capacity();
+
+    auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(p_leader.getCoordinates());
+    auto& mw_rsoa_dev_ptrs   = coordinates_leader.getMultiWalkerRSoADevicePtrs();
+    const size_t np_padded   = p_leader.getCoordinates().getAllParticlePos().capacity();
 
     constexpr size_t cplx_stride = 2;
     mw_mem.nw_rhok.resize(nw * num_species * cplx_stride, nk_padded);
@@ -83,39 +88,80 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
     constexpr size_t kblock_size = 512;
     const size_t num_kblocks     = (nk + kblock_size) / kblock_size;
 
+    auto* mw_rsoa_ptr   = mw_rsoa_dev_ptrs.data();
+    auto* kpts_cart_ptr = kpts_cart.data();
+    auto* mw_rhok_ptr   = mw_mem.nw_rhok.data();
+    auto* group_offsets = p_leader.get_group_offsets().data();
+
+#if 1
+#pragma omp target teams distribute collapse(2) map(always, from : mw_rhok_ptr[:mw_mem.nw_rhok.size()])
     for (int iw = 0; iw < nw; iw++)
       for (int ib = 0; ib < num_kblocks; ib++)
       {
         const size_t offset          = ib * kblock_size;
         const size_t this_block_size = std::min(kblock_size, nk - offset);
+        const auto* rsoa_ptr         = mw_rsoa_ptr[iw];
 
-        RealType eikr_r_temp[kblock_size], eikr_i_temp[kblock_size];
+#pragma omp parallel for
+        for (int ik = 0; ik < this_block_size; ik++)
+          for (int is = 0; is < num_species; is++)
+          {
+            RealType rhok_r(0), rhok_i(0);
 
-        for (int is = 0; is < num_species; is++)
-        {
-          for (int ik = 0; ik < this_block_size; ik++)
-            eikr_r_temp[ik] = eikr_i_temp[ik] = 0;
-
-          for (int ip = p_leader.first(is); ip < p_leader.last(is); ip++)
-            for (int ik = 0; ik < this_block_size; ik++)
+            for (int ip = group_offsets[is]; ip < group_offsets[is + 1]; ip++)
             {
-              RealType s, c;
-              qmcplusplus::sincos(dot(kpts_cart[ik + offset], p_list[iw].R[ip]), &s, &c);
-              eikr_r_temp[ik] += c;
-              eikr_i_temp[ik] += s;
+              RealType s, c, phase(0);
+              for (int idim = 0; idim < DIM; idim++)
+                phase += kpts_cart_ptr[ik + offset + nk_padded * idim] * rsoa_ptr[ip + idim * np_padded];
+              omptarget::sincos(phase, &s, &c);
+              rhok_r += c;
+              rhok_i += s;
             }
 
-          auto* restrict rhok_r = mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride] + offset;
-          auto* restrict rhok_i = mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride + 1] + offset;
+            mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + offset + ik]             = rhok_r;
+            mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + nk_padded + offset + ik] = rhok_i;
+          }
+      }
+#else
+#pragma omp target teams distribute collapse(2) map(always, from : mw_rhok_ptr[:mw_mem.nw_rhok.size()])
+    for (int iw = 0; iw < nw; iw++)
+      for (int ib = 0; ib < num_kblocks; ib++)
+      {
+        const size_t offset          = ib * kblock_size;
+        const size_t this_block_size = std::min(kblock_size, nk - offset);
+        const auto* rsoa_ptr         = mw_rsoa_ptr[iw];
 
-          for (int ik = 0; ik < this_block_size; ik++)
+        RealType rhok_r[kblock_size], rhok_i[kblock_size];
+#pragma omp parallel
+        {
+          for (int is = 0; is < num_species; is++)
           {
-            rhok_r[ik] = eikr_r_temp[ik];
-            rhok_i[ik] = eikr_i_temp[ik];
+#pragma omp for nowait
+            for (int ik = 0; ik < this_block_size; ik++)
+              rhok_r[ik] = rhok_i[ik] = 0;
+
+            for (int ip = group_offsets[is]; ip < group_offsets[is + 1]; ip++)
+#pragma omp for nowait
+              for (int ik = 0; ik < this_block_size; ik++)
+              {
+                RealType s, c, phase(0);
+                for (int idim = 0; idim < DIM; idim++)
+                  phase += kpts_cart_ptr[ik + offset + nk_padded * idim] * rsoa_ptr[ip + idim * np_padded];
+                omptarget::sincos(phase, &s, &c);
+                rhok_r[ik] += c;
+                rhok_i[ik] += s;
+              }
+
+#pragma omp for nowait
+            for (int ik = 0; ik < this_block_size; ik++)
+            {
+              mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + offset + ik]             = rhok_r[ik];
+              mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + nk_padded + offset + ik] = rhok_i[ik];
+            }
           }
         }
       }
-
+#endif
     for (int iw = 0; iw < nw; iw++)
       for (int is = 0; is < num_species; is++)
       {
