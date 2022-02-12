@@ -480,29 +480,14 @@ public:
     coordinates_->resize(0);
   }
 
-  inline void assign(const ParticleSet& ptclin)
-  {
-    resize(ptclin.getTotalNum());
-    R.InUnit   = ptclin.R.InUnit;
-    R          = ptclin.R;
-    spins      = ptclin.spins;
-    GroupID    = ptclin.GroupID;
-    is_spinor_ = ptclin.is_spinor_;
-    if (ptclin.group_offset_->size())
-    {
-      group_offset_->resize(ptclin.group_offset_->size());
-      *group_offset_ = *ptclin.group_offset_;
-    }
-  }
-
   ///return the number of groups
-  inline int groups() const { return group_offset_->size() - 1; }
+  inline int groups() const { return group_offsets_->size() - 1; }
 
   ///return the first index of a group i
-  inline int first(int igroup) const { return (*group_offset_)[igroup]; }
+  inline int first(int igroup) const { return (*group_offsets_)[igroup]; }
 
   ///return the last index of a group i
-  inline int last(int igroup) const { return (*group_offset_)[igroup + 1]; }
+  inline int last(int igroup) const { return (*group_offsets_)[igroup + 1]; }
 
   ///return the group id of a given particle in the particle set.
   inline int getGroupID(int iat) const
@@ -512,7 +497,7 @@ public:
   }
 
   ///return the size of a group
-  inline int groupsize(int igroup) const { return (*group_offset_)[igroup + 1] - (*group_offset_)[igroup]; }
+  inline int groupsize(int igroup) const { return (*group_offsets_)[igroup + 1] - (*group_offsets_)[igroup]; }
 
   ///add attributes to list for IO
   template<typename ATList>
@@ -553,7 +538,7 @@ public:
 
   inline int getNumDistTables() const { return DistTables.size(); }
 
-  inline auto& get_group_offset() const { return *group_offset_; }
+  inline auto& get_group_offsets() const { return *group_offsets_; }
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
@@ -630,7 +615,7 @@ protected:
   size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
-  std::shared_ptr<Vector<int, OMPallocator<int>>> group_offset_;
+  std::shared_ptr<Vector<int, OMPallocator<int>>> group_offsets_;
 
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;

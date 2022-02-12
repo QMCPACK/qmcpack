@@ -72,7 +72,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
-      group_offset_(std::make_shared<Vector<int, OMPallocator<int>>>()),
+      group_offsets_(std::make_shared<Vector<int, OMPallocator<int>>>()),
       coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
@@ -88,11 +88,18 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       my_species_(p.getSpeciesSet()),
       myTwist(0.0),
       ParentName(p.parentName()),
-      group_offset_(p.group_offset_),
+      group_offsets_(p.group_offsets_),
       coordinates_(p.coordinates_->makeClone())
 {
   setQuantumDomain(p.quantum_domain);
-  assign(p); //only the base is copied, assumes that other properties are not assignable
+
+  resize(p.getTotalNum());
+  R.InUnit   = p.R.InUnit;
+  R          = p.R;
+  spins      = p.spins;
+  GroupID    = p.GroupID;
+  is_spinor_ = p.is_spinor_;
+
   //need explicit copy:
   Mass = p.Mass;
   Z    = p.Z;
@@ -122,12 +129,13 @@ ParticleSet::~ParticleSet() = default;
 
 void ParticleSet::create(const std::vector<int>& agroup)
 {
-  auto& group_offset(*group_offset_);
-  group_offset.resize(agroup.size() + 1);
-  group_offset[0] = 0;
+  auto& group_offsets(*group_offsets_);
+  group_offsets.resize(agroup.size() + 1);
+  group_offsets[0] = 0;
   for (int is = 0; is < agroup.size(); is++)
-    group_offset[is + 1] = group_offset[is] + agroup[is];
-  const size_t nsum = group_offset[agroup.size()];
+    group_offsets[is + 1] = group_offsets[is] + agroup[is];
+  group_offsets.updateTo();
+  const size_t nsum = group_offsets[agroup.size()];
   resize(nsum);
   TotalNum = nsum;
   int loc  = 0;
@@ -273,9 +281,9 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
 bool ParticleSet::get(std::ostream& os) const
 {
   os << "  ParticleSet '" << getName() << "' contains " << TotalNum << " particles : ";
-  if (auto& group_offset(*group_offset_); group_offset.size() > 0)
-    for (int i = 0; i < group_offset.size() - 1; i++)
-      os << " " << my_species_.speciesName[i] << "(" << group_offset[i + 1] - group_offset[i] << ")";
+  if (auto& group_offsets(*group_offsets_); group_offsets.size() > 0)
+    for (int i = 0; i < group_offsets.size() - 1; i++)
+      os << " " << my_species_.speciesName[i] << "(" << group_offsets[i + 1] - group_offsets[i] << ")";
   os << std::endl;
 
   const size_t maxParticlesToPrint = 10;
