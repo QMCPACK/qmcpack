@@ -488,21 +488,21 @@ public:
     spins      = ptclin.spins;
     GroupID    = ptclin.GroupID;
     is_spinor_ = ptclin.is_spinor_;
-    if (ptclin.SubPtcl.size())
+    if (ptclin.group_offset_->size())
     {
-      SubPtcl.resize(ptclin.SubPtcl.size());
-      SubPtcl = ptclin.SubPtcl;
+      group_offset_->resize(ptclin.group_offset_->size());
+      *group_offset_ = *ptclin.group_offset_;
     }
   }
 
   ///return the number of groups
-  inline int groups() const { return SubPtcl.size() - 1; }
+  inline int groups() const { return group_offset_->size() - 1; }
 
   ///return the first index of a group i
-  inline int first(int igroup) const { return SubPtcl[igroup]; }
+  inline int first(int igroup) const { return (*group_offset_)[igroup]; }
 
   ///return the last index of a group i
-  inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
+  inline int last(int igroup) const { return (*group_offset_)[igroup + 1]; }
 
   ///return the group id of a given particle in the particle set.
   inline int getGroupID(int iat) const
@@ -512,7 +512,7 @@ public:
   }
 
   ///return the size of a group
-  inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
+  inline int groupsize(int igroup) const { return (*group_offset_)[igroup + 1] - (*group_offset_)[igroup]; }
 
   ///add attributes to list for IO
   template<typename ATList>
@@ -552,6 +552,8 @@ public:
   inline const std::vector<int>& get_map_storage_to_input() const { return map_storage_to_input_; }
 
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  inline auto& get_group_offset() const { return *group_offset_; }
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
@@ -628,7 +630,8 @@ protected:
   size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
-  ParticleIndex SubPtcl;
+  std::shared_ptr<Vector<int, OMPallocator<int>>> group_offset_;
+
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
 
