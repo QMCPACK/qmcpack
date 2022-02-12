@@ -49,8 +49,13 @@ TEST_CASE("StructFact", "[lrhandler]")
   ref.R[3] = {3.2, 4.7, 0.7};
 
   REQUIRE(simulation_cell.getKLists().numk == 263786);
-  StructFact sk(tspecies.size(), ref.getTotalNum(), ref.getLRBox(), simulation_cell.getKLists());
+  StructFact sk(ref.getLRBox(), simulation_cell.getKLists());
   sk.updateAllPart(ref);
+
+  CHECK(sk.rhok_r.rows() == ref.groups());
+  CHECK(sk.rhok_i.rows() == ref.groups());
+  CHECK(sk.rhok_r.cols() == simulation_cell.getKLists().numk);
+  CHECK(sk.rhok_i.cols() == simulation_cell.getKLists().numk);
 
   std::vector<std::complex<double>> rhok_sum_ref{-125.80618630936, 68.199075127271};
 

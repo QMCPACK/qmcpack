@@ -41,19 +41,14 @@ public:
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
    */
   int SuperCellEnum;
-  ///1-D container for the phase
-  Vector<RealType> phiV;
   ///2-D container for the phase
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
-  Vector<RealType> eikr_r_temp, eikr_i_temp;
   /** Constructor - copy ParticleSet and init. k-shells
-   * @param nptcls number of particles
-   * @param ns number of species
    * @param lattice long range box
    * @param kc cutoff for k
    */
-  StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists);
+  StructFact(const ParticleLayout& lattice, const KContainer& k_lists);
   /// desructor
   ~StructFact();
 
@@ -78,15 +73,13 @@ private:
   void computeRhok(const ParticleSet& P);
   /** resize the internal data
    * @param nkpts
+   * @param num_species number of species
+   * @param num_ptcls number of particles
    */
-  void resize(int nkpts);
+  void resize(int nkpts, int num_species, int num_ptcls);
 
   /// K-Vector List.
   const KContainer& k_lists_;
-  /// number of particles
-  const size_t num_ptcls;
-  /// number of species
-  const size_t num_species;
   /** Whether intermediate data is stored per particle. default false
    * storing data per particle needs significant amount of memory but some calculation may request it.
    * storing data per particle specie is more cost-effective
