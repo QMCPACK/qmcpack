@@ -925,7 +925,8 @@ void ParticleSet::createResource(ResourceCollection& collection) const
   coordinates_->createResource(collection);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->createResource(collection);
-  collection.addResource(std::make_unique<SKMultiWalkerMem>());
+  if (structure_factor_)
+    collection.addResource(std::make_unique<SKMultiWalkerMem>());
 }
 
 void ParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
@@ -935,10 +936,13 @@ void ParticleSet::acquireResource(ResourceCollection& collection, const RefVecto
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
 
-  auto res_ptr = dynamic_cast<SKMultiWalkerMem*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("ParticleSet::acquireResource SKMultiWalkerMem dynamic_cast failed");
-  p_list.getLeader().mw_structure_factor_data_.reset(res_ptr);
+  if (ps_leader.structure_factor_)
+  {
+    auto res_ptr = dynamic_cast<SKMultiWalkerMem*>(collection.lendResource().release());
+    if (!res_ptr)
+      throw std::runtime_error("ParticleSet::acquireResource SKMultiWalkerMem dynamic_cast failed");
+    p_list.getLeader().mw_structure_factor_data_.reset(res_ptr);
+  }
 }
 
 void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
@@ -948,7 +952,8 @@ void ParticleSet::releaseResource(ResourceCollection& collection, const RefVecto
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
 
-  collection.takebackResource(std::move(p_list.getLeader().mw_structure_factor_data_));
+  if (ps_leader.structure_factor_)
+    collection.takebackResource(std::move(p_list.getLeader().mw_structure_factor_data_));
 }
 
 RefVectorWithLeader<DistanceTable> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id)
