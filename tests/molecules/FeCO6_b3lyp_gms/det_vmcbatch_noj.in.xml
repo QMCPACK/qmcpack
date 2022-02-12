@@ -14,7 +14,7 @@
     </pairpot>
   </hamiltonian>
   <qmc method="vmc_batch" move="pbyp">
-      <parameter name="total_walkers"       >    16               </parameter>
+      <parameter name="total_walkers"       >    1               </parameter>
       <parameter name="blocks"              >    3              </parameter>
       <parameter name="steps"               >    3               </parameter>
       <parameter name="subSteps"            >    2               </parameter>
