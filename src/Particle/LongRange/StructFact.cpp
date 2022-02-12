@@ -23,11 +23,9 @@
 namespace qmcplusplus
 {
 //Constructor - pass arguments to k_lists_' constructor
-StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists)
+StructFact::StructFact(const ParticleLayout& lattice, const KContainer& k_lists)
     : SuperCellEnum(SUPERCELL_BULK),
       k_lists_(k_lists),
-      num_ptcls(nptcls),
-      num_species(ns),
       StorePerParticle(false),
       update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
@@ -36,16 +34,13 @@ StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const 
     app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum = SUPERCELL_SLAB;
   }
-
-  resize(k_lists_.numk);
 }
 
 //Destructor
 StructFact::~StructFact() = default;
 
-void StructFact::resize(int nkpts)
+void StructFact::resize(int nkpts, int num_species, int num_ptcls)
 {
-  phiV.resize(nkpts);
   rhok_r.resize(num_species, nkpts);
   rhok_i.resize(num_species, nkpts);
   if (StorePerParticle)
@@ -53,8 +48,6 @@ void StructFact::resize(int nkpts)
     eikr_r.resize(num_ptcls, nkpts);
     eikr_i.resize(num_ptcls, nkpts);
   }
-  eikr_r_temp.resize(nkpts);
-  eikr_i_temp.resize(nkpts);
 }
 
 
@@ -78,15 +71,17 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
  */
 void StructFact::computeRhok(const ParticleSet& P)
 {
-  int npart = P.getTotalNum();
+  const size_t num_ptcls   = P.getTotalNum();
+  const size_t num_species = P.groups();
+  const size_t nk          = k_lists_.numk;
+  resize(nk, num_species, num_ptcls);
+
   rhok_r = 0.0;
   rhok_i = 0.0;
-  //algorithmA
-  const int nk = k_lists_.numk;
   if (StorePerParticle)
   {
     // save per particle and species value
-    for (int i = 0; i < npart; ++i)
+    for (int i = 0; i < num_ptcls; ++i)
     {
       const auto& pos           = P.R[i];
       auto* restrict eikr_r_ptr = eikr_r[i];
@@ -105,7 +100,7 @@ void StructFact::computeRhok(const ParticleSet& P)
   else
   {
     // save per species value
-    for (int i = 0; i < npart; ++i)
+    for (int i = 0; i < num_ptcls; ++i)
     {
       const auto& pos           = P.R[i];
       auto* restrict rhok_r_ptr = rhok_r[P.getGroupID(i)];
@@ -120,13 +115,23 @@ void StructFact::computeRhok(const ParticleSet& P)
         rhok_i_ptr[ki] += s;
       }
 #else
-      for (int ki = 0; ki < nk; ki++)
-        phiV[ki] = dot(k_lists_.kpts_cart[ki], pos);
-      eval_e2iphi(nk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
-      for (int ki = 0; ki < nk; ki++)
+      // make the compute over nk by blocks
+      constexpr size_t kblock_size = 512;
+      const size_t num_kblocks     = (nk + kblock_size) / kblock_size;
+      RealType phiV[kblock_size], eikr_r_temp[kblock_size], eikr_i_temp[kblock_size];
+
+      for (int ib = 0; ib < num_kblocks; ib++)
       {
-        rhok_r_ptr[ki] += eikr_r_temp[ki];
-        rhok_i_ptr[ki] += eikr_i_temp[ki];
+        const size_t offset          = ib * kblock_size;
+        const size_t this_block_size = std::min(kblock_size, nk - offset);
+        for (int ki = 0; ki < this_block_size; ki++)
+          phiV[ki] = dot(k_lists_.kpts_cart[ki + offset], pos);
+        eval_e2iphi(this_block_size, phiV, eikr_r_temp, eikr_i_temp);
+        for (int ki = 0; ki < this_block_size; ki++)
+        {
+          rhok_r_ptr[ki + offset] += eikr_r_temp[ki];
+          rhok_i_ptr[ki + offset] += eikr_i_temp[ki];
+        }
       }
 #endif
     }
@@ -138,9 +143,6 @@ void StructFact::turnOnStorePerParticle(const ParticleSet& P)
   if (!StorePerParticle)
   {
     StorePerParticle = true;
-    const int nptcl  = P.getTotalNum();
-    eikr_r.resize(nptcl, k_lists_.numk);
-    eikr_i.resize(nptcl, k_lists_.numk);
     computeRhok(P);
   }
 }
