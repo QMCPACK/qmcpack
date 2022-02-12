@@ -14,8 +14,7 @@
 #include <iostream>
 namespace qmcplusplus
 {
-
-TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid)
+TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid) const
 {
   IndexType return_group_index(-1);
   for (IndexType i = 0; i < groups_.size(); i++)
@@ -36,7 +35,7 @@ void TWFFastDerivWrapper::addGroup(const ParticleSet& P, const IndexType gid, SP
   }
 }
 
-void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& mvec)
+void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& mvec) const
 {
   IndexType ngroups = spos_.size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -57,7 +56,7 @@ void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& m
 void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
                                          std::vector<ValueMatrix>& mvec,
                                          std::vector<GradMatrix>& gmat,
-                                         std::vector<ValueMatrix>& lmat)
+                                         std::vector<ValueMatrix>& lmat) const
 {
   IndexType ngroups = mvec.size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -74,7 +73,7 @@ void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
 void TWFFastDerivWrapper::getIonGradM(const ParticleSet& P,
                                       const ParticleSet& source,
                                       const int iat,
-                                      std::vector<std::vector<ValueMatrix>>& dmvec)
+                                      std::vector<std::vector<ValueMatrix>>& dmvec) const
 {
   IndexType ngroups = dmvec[0].size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -104,7 +103,7 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
                                                   const ParticleSet& source,
                                                   int iat,
                                                   std::vector<std::vector<ValueMatrix>>& dmvec,
-                                                  std::vector<std::vector<ValueMatrix>>& dlmat)
+                                                  std::vector<std::vector<ValueMatrix>>& dlmat) const
 {
   IndexType ngroups = dmvec[0].size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -138,7 +137,7 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
 TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const std::vector<ValueMatrix>& Minv,
                                                                         const std::vector<ValueMatrix>& X,
                                                                         const std::vector<ValueMatrix>& dM,
-                                                                        const std::vector<ValueMatrix>& dB)
+                                                                        const std::vector<ValueMatrix>& dB) const
 {
   IndexType nspecies = Minv.size();
   ValueType dval     = 0.0;
@@ -229,7 +228,7 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::trAB(const std::vector<Value
   return val;
 }
 
-void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice)
+void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice) const
 {
   IndexType nspecies = A.size();
   Aslice.resize(nspecies);
@@ -244,7 +243,9 @@ void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::
 }
 
 
-TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val)
+TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P,
+                                                            const IndexType iel,
+                                                            ValueVector& val) const
 {
   IndexType gid = P.getGroupID(iel);
   IndexType sid = getTWFGroupIndex(gid);

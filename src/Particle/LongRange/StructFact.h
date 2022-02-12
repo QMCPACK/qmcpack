@@ -18,6 +18,7 @@
 #include "DynamicCoordinates.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Resource.h"
 
 namespace qmcplusplus
 {
@@ -36,24 +37,20 @@ class StructFact : public QMCTraits
 public:
   //Typedef for the lattice-type
   using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
    */
   int SuperCellEnum;
-  ///1-D container for the phase
-  Vector<RealType> phiV;
   ///2-D container for the phase
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
-  Vector<RealType> eikr_r_temp, eikr_i_temp;
   /** Constructor - copy ParticleSet and init. k-shells
-   * @param nptcls number of particles
-   * @param ns number of species
    * @param lattice long range box
    * @param kc cutoff for k
    */
-  StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists);
+  StructFact(const ParticleLayout& lattice, const KContainer& k_lists);
   /// desructor
   ~StructFact();
 
@@ -62,7 +59,8 @@ public:
   void updateAllPart(const ParticleSet& P);
 
   static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
-                               const RefVectorWithLeader<ParticleSet>& p_list);
+                               const RefVectorWithLeader<ParticleSet>& p_list,
+                               SKMultiWalkerMem& mw_mem);
 
   /** @brief switch on the storage per particle
    * if StorePerParticle was false, this function allocates memory and precompute data
@@ -78,15 +76,13 @@ private:
   void computeRhok(const ParticleSet& P);
   /** resize the internal data
    * @param nkpts
+   * @param num_species number of species
+   * @param num_ptcls number of particles
    */
-  void resize(int nkpts);
+  void resize(int nkpts, int num_species, int num_ptcls);
 
   /// K-Vector List.
   const KContainer& k_lists_;
-  /// number of particles
-  const size_t num_ptcls;
-  /// number of species
-  const size_t num_species;
   /** Whether intermediate data is stored per particle. default false
    * storing data per particle needs significant amount of memory but some calculation may request it.
    * storing data per particle specie is more cost-effective
@@ -95,6 +91,22 @@ private:
   /// timer for updateAllPart
   NewTimer& update_all_timer_;
 };
+
+///multi walker shared memory buffer
+struct SKMultiWalkerMem : public Resource
+{
+  using RealType = StructFact::RealType;
+
+  ///dist displ for temporary and old pairs
+  Matrix<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_rhok;
+
+  SKMultiWalkerMem() : Resource("SKMultiWalkerMem") {}
+
+  SKMultiWalkerMem(const SKMultiWalkerMem&) : SKMultiWalkerMem() {}
+
+  Resource* makeClone() const override { return new SKMultiWalkerMem(*this); }
+};
+
 } // namespace qmcplusplus
 
 #endif

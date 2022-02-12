@@ -107,6 +107,14 @@ public:
                                  ParticleSet::ParticlePos& hf_terms,
                                  ParticleSet::ParticlePos& pulay_terms) override;
 
+  void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
+
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         const ParticleSet& source,
+                                         const TWFFastDerivWrapper& psi,
+                                         const int iat,
+                                         std::vector<std::vector<ValueMatrix>>& Bforce) override;
+
 #if !defined(REMOVE_TRACEMANAGER)
   Return_t evaluate_sp(ParticleSet& P);
 #endif

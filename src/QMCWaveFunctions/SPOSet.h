@@ -448,6 +448,21 @@ public:
                                   HessMatrix& grad_grad_phi,
                                   GradMatrix& grad_lapl_phi);
 
+  /** @brief Returns a row of d/dR_iat phi_j(r) evaluated at position r.  
+   *
+   *  @param[in] P particle set.
+   *  @param[in] iel The electron at which to evaluate phi(r_iel)
+   *  @param[in] source ion particle set.
+   *  @param[in] iat_src ion ID w.r.t. which to take derivative.
+   *  @param[in,out] gradphi Vector of d/dR_iat phi_j(r).
+   *  @return Void
+   */
+  virtual void evaluateGradSourceRow(const ParticleSet& P,
+                                     int iel,
+                                     const ParticleSet& source,
+                                     int iat_src,
+                                     GradVector& gradphi);
+
   /** access the k point related to the given orbital */
   virtual PosType get_k(int orb) { return PosType(); }
 
