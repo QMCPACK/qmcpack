@@ -98,7 +98,7 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
       for (int ib = 0; ib < num_kblocks; ib++)
       {
         const size_t offset          = ib * kblock_size;
-        const size_t this_block_size = std::min(kblock_size, nk - offset);
+        const size_t this_block_size = omptarget::min(kblock_size, nk - offset);
         const auto* rsoa_ptr         = mw_rsoa_ptr[iw];
 
         PRAGMA_OFFLOAD("omp parallel for")

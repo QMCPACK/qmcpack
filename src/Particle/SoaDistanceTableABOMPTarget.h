@@ -20,6 +20,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -214,8 +215,7 @@ public:
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
           const int first = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const int last  = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           T pos[D];
           for (int idim = 0; idim < D; idim++)
@@ -324,8 +324,7 @@ public:
           auto* dr_iat_ptr     = r_dr_ptr + iat * num_padded * (D + 1) + num_padded;
 
           const int first = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const int last  = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           T pos[D];
           for (int idim = 0; idim < D; idim++)
