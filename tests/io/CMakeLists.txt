@@ -99,6 +99,23 @@ run_restart_and_check(
   true)
 
 run_restart_and_check(
+restart_batch
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
+  qmc_short_batch
+  8
+  2
+  check_batch.sh
+  false)
+run_restart_and_check(
+restart_batch
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
+  qmc_short_batch
+  1
+  16
+  check_batch.sh
+  true)
+
+run_restart_and_check(
   save_coefs
   "${qmcpack_SOURCE_DIR}/tests/io/save_coefs"
   qmc_short
