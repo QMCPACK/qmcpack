@@ -139,6 +139,10 @@ public:
         num_accepted++;
       }
 
+    // early return to avoid OpenMP runtime mishandling of size 0 in transfer/compute.
+    if (num_accepted == 0)
+      return;
+
     //offload to GPU
     auto* restrict mw_pos_ptr  = mw_new_pos.data();
     auto* restrict mw_rosa_ptr = mw_rsoa_ptrs.data();
