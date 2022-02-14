@@ -478,6 +478,9 @@ inline void rotateHijkl(std::string& type,
       if (M_split[nn + nn0 + 1] == M_split[nn + nn0])
         continue;
       int nblk = Qknum[nn];
+#ifndef NDEBUG
+      long ntermscum = 0;
+#endif
       for (int bi = 0; bi < nblk; bi++, nb++)
       {
         int nterms = Qksizes[2 * nb];     // number of terms in block
@@ -522,6 +525,10 @@ inline void rotateHijkl(std::string& type,
             comm.broadcast_n(to_address(SptQk.non_zero_indices2_data()), nterms, nn);
           }
           TG.node_barrier();
+#ifndef NDEBUG
+          // for safety, keep track of sum
+          ntermscum += static_cast<long>(nterms);
+#endif
         }
         else
         {
@@ -596,6 +603,9 @@ inline void rotateHijkl(std::string& type,
     if (M_split[nn + nn0 + 1] == M_split[nn + nn0])
       continue;
     int nblk = Qknum[nn];
+#ifndef NDEBUG
+    long ntermscum = 0;
+#endif
     for (int bi = 0; bi < nblk; bi++, nb++)
     {
       int nterms = Qksizes[2 * nb];     // number of terms in block
@@ -640,6 +650,10 @@ inline void rotateHijkl(std::string& type,
           comm.broadcast_n(to_address(SptQk.non_zero_indices2_data()), nterms, nn);
         }
         TG.node_barrier();
+#ifndef NDEBUG
+        // for safety, keep track of sum
+        ntermscum += static_cast<long>(nterms);
+#endif
       }
       else
       {
