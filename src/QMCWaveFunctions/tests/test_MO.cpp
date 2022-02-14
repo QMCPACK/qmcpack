@@ -657,7 +657,44 @@ void test_HCN(bool transform)
     REQUIRE(dionpsi[0][4][2] == Approx(-7.300043903e-05));
     REQUIRE(dionpsi[0][5][2] == Approx(2.910525987e-06));
     REQUIRE(dionpsi[0][6][2] == Approx(-1.56074936e-05));
+
+
+    //Finally, going to test evaluateGradSourceRow.  Same template and reference
+    //values as above.  
+    SPOSet::GradVector dionpsivec;
+    dionpsivec.resize(7);
+
+    sposet->evaluateGradSourceRow(elec,0,ions,0,dionpsivec);
+    //============== Ion  0  Component  0 ===================
+    CHECK(dionpsivec[0][0] == Approx(0.0453112082));
+    CHECK(dionpsivec[1][0] == Approx(-0.0006473819623));
+    CHECK(dionpsivec[2][0] == Approx(0.265578336));
+    CHECK(dionpsivec[3][0] == Approx(-0.06444305979));
+    CHECK(dionpsivec[4][0] == Approx(0.1454357726));
+    CHECK(dionpsivec[5][0] == Approx(-0.04329985085));
+    CHECK(dionpsivec[6][0] == Approx(0.01207541177));
+
+    sposet->evaluateGradSourceRow(elec,0,ions,1,dionpsivec);
+    //============== Ion  1  Component  1 ===================
+    CHECK(dionpsivec[0][1] == Approx(0.0001412373768));
+    CHECK(dionpsivec[1][1] == Approx(-0.01029290716));
+    CHECK(dionpsivec[2][1] == Approx(-0.0230872583));
+    CHECK(dionpsivec[3][1] == Approx(0.01850231814));
+    CHECK(dionpsivec[4][1] == Approx(-0.02136209962));
+    CHECK(dionpsivec[5][1] == Approx(-0.1942343714));
+    CHECK(dionpsivec[6][1] == Approx(-0.03930992259));
+    
+    sposet->evaluateGradSourceRow(elec,0,ions,2,dionpsivec);
+    //============== Ion  2  Component  2 ===================
+    CHECK(dionpsivec[0][2] == Approx(1.302648961e-06));
+    CHECK(dionpsivec[1][2] == Approx(3.248738084e-07));
+    CHECK(dionpsivec[2][2] == Approx(3.264249981e-06));
+    CHECK(dionpsivec[3][2] == Approx(0.0001288974413));
+    CHECK(dionpsivec[4][2] == Approx(-7.300043903e-05));
+    CHECK(dionpsivec[5][2] == Approx(2.910525987e-06));
+    CHECK(dionpsivec[6][2] == Approx(-1.56074936e-05));
   }
+  
 }
 
 TEST_CASE("ReadMolecularOrbital GTO HCN", "[wavefunction]") { test_HCN(false); }

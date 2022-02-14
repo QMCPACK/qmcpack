@@ -69,6 +69,14 @@ public:
                                               ParticleSet::ParticlePos& hf_terms,
                                               ParticleSet::ParticlePos& pulay_terms) override;
 
+  void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
+
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         const ParticleSet& source,
+                                         const TWFFastDerivWrapper& psi,
+                                         const int iat,
+                                         std::vector<std::vector<ValueMatrix>>& Bforce) override;
+
 
   /** set non local moves options
    * @param cur the xml input

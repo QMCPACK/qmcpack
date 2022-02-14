@@ -48,7 +48,7 @@ inline void assign_v(ST x,
 
   const ST val_r        = val[jr];
   const ST val_i        = val[ji];
-  const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
+  const size_t psiIndex = first_spo + index + omptarget::min(index, nComplexBands);
   psi_s[psiIndex]       = val_r * c - val_i * s;
   if (index < nComplexBands)
     psi_s[psiIndex + 1] = val_i * c + val_r * s;
@@ -131,7 +131,7 @@ inline void assign_vgl(ST x,
   const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
   const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-  const size_t psiIndex  = first_spo + index + (index < nComplexBands ? index : nComplexBands);
+  const size_t psiIndex  = first_spo + index + omptarget::min(index, nComplexBands);
   psi[psiIndex]          = c * val_r - s * val_i;
   d2psi[psiIndex]        = c * lap_r - s * lap_i;
   dpsi[psiIndex * 3]     = c * gX_r - s * gX_i;
@@ -238,8 +238,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
   }
   else
   {
-    const int ChunkSizePerTeam = 128;
-    const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const size_t ChunkSizePerTeam = 128;
+    const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     const auto padded_size = myV.size();
     offload_scratch.resize(padded_size);
@@ -251,10 +251,10 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     auto* psi_ptr             = psi.data();
     const auto x = r[0], y = r[1], z = r[2];
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
-    const auto myKcart_padded_size = myKcart->capacity();
-    auto* myKcart_ptr              = myKcart->data();
-    const size_t first_spo_local   = first_spo;
-    const int nComplexBands_local  = nComplexBands;
+    const auto myKcart_padded_size   = myKcart->capacity();
+    auto* myKcart_ptr                = myKcart->data();
+    const size_t first_spo_local     = first_spo;
+    const size_t nComplexBands_local = nComplexBands;
 
     {
       ScopedTimer offload(offload_timer_);
@@ -262,8 +262,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
                   map(always, from: psi_ptr[0:orb_size])")
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
 
         int ix, iy, iz;
         ST a[4], b[4], c[4];
@@ -273,8 +273,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first,
                                              index);
-        const int first_cplx = first / 2;
-        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
+        const size_t first_cplx = first / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
@@ -310,8 +310,8 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     pos_scratch[iat * 6 + 5] = ru[2];
   }
 
-  const int ChunkSizePerTeam = 128;
-  const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const size_t ChunkSizePerTeam = 128;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   ratios_private.resize(nVP, NumTeams);
   const auto padded_size = myV.size();
   offload_scratch.resize(padded_size * nVP);
@@ -319,15 +319,15 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   results_scratch.resize(orb_size * nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* offload_scratch_ptr      = offload_scratch.data();
-  auto* results_scratch_ptr      = results_scratch.data();
-  const auto myKcart_padded_size = myKcart->capacity();
-  auto* myKcart_ptr              = myKcart->data();
-  auto* psiinv_ptr               = psiinv_pos_copy.data();
-  auto* ratios_private_ptr       = ratios_private.data();
-  const size_t first_spo_local   = first_spo;
-  const int nComplexBands_local  = nComplexBands;
+  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  auto* offload_scratch_ptr        = offload_scratch.data();
+  auto* results_scratch_ptr        = results_scratch.data();
+  const auto myKcart_padded_size   = myKcart->capacity();
+  auto* myKcart_ptr                = myKcart->data();
+  auto* psiinv_ptr                 = psiinv_pos_copy.data();
+  auto* ratios_private_ptr         = ratios_private.data();
+  const size_t first_spo_local     = first_spo;
+  const size_t nComplexBands_local = nComplexBands;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -337,8 +337,9 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     for (int iat = 0; iat < nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
+
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* restrict pos_scratch             = psiinv_ptr + orb_size;
@@ -352,16 +353,16 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
-        const int first_cplx = first / 2;
-        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
+        const size_t first_cplx = first / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, index);
 
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const size_t first_real = first_cplx + omptarget::min(nComplexBands_local, first_cplx);
+        const size_t last_real  = last_cplx + omptarget::min(nComplexBands_local, last_cplx);
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_real; i < last_real; i++)
@@ -432,23 +433,23 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     }
   }
 
-  const int ChunkSizePerTeam = 128;
-  const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const size_t ChunkSizePerTeam = 128;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   mw_ratios_private.resize(mw_nVP, NumTeams);
   const auto padded_size = myV.size();
   mw_offload_scratch.resize(padded_size * mw_nVP);
   mw_results_scratch.resize(orb_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* offload_scratch_ptr      = mw_offload_scratch.data();
-  auto* results_scratch_ptr      = mw_results_scratch.data();
-  const auto myKcart_padded_size = myKcart->capacity();
-  auto* myKcart_ptr              = myKcart->data();
-  auto* buffer_H2D_ptr           = det_ratios_buffer_H2D.data();
-  auto* ratios_private_ptr       = mw_ratios_private.data();
-  const size_t first_spo_local   = first_spo;
-  const int nComplexBands_local  = nComplexBands;
+  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  auto* offload_scratch_ptr        = mw_offload_scratch.data();
+  auto* results_scratch_ptr        = mw_results_scratch.data();
+  const auto myKcart_padded_size   = myKcart->capacity();
+  auto* myKcart_ptr                = myKcart->data();
+  auto* buffer_H2D_ptr             = det_ratios_buffer_H2D.data();
+  auto* ratios_private_ptr         = mw_ratios_private.data();
+  const size_t first_spo_local     = first_spo;
+  const size_t nComplexBands_local = nComplexBands;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -458,8 +459,9 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
+
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
@@ -475,16 +477,16 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
-        const int first_cplx = first / 2;
-        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
+        const size_t first_cplx = first / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, index);
 
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const size_t first_real = first_cplx + omptarget::min(nComplexBands_local, first_cplx);
+        const size_t last_real  = last_cplx + omptarget::min(nComplexBands_local, last_cplx);
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_real; i < last_real; i++)
@@ -637,8 +639,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
 
-  const int ChunkSizePerTeam = 128;
-  const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const size_t ChunkSizePerTeam = 128;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
   const auto padded_size = myV.size();
   // for V(1)G(3)H(6) intermediate result
@@ -653,13 +655,13 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   auto* results_scratch_ptr = results_scratch.data();
   const auto x = r[0], y = r[1], z = r[2];
   const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
-  const auto myKcart_padded_size = myKcart->capacity();
-  auto* mKK_ptr                  = mKK->data();
-  auto* GGt_ptr                  = GGt_offload->data();
-  auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
-  auto* myKcart_ptr              = myKcart->data();
-  const size_t first_spo_local   = first_spo;
-  const int nComplexBands_local  = nComplexBands;
+  const auto myKcart_padded_size   = myKcart->capacity();
+  auto* mKK_ptr                    = mKK->data();
+  auto* GGt_ptr                    = GGt_offload->data();
+  auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
+  auto* myKcart_ptr                = myKcart->data();
+  const size_t first_spo_local     = first_spo;
+  const size_t nComplexBands_local = nComplexBands;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -667,8 +669,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
                 map(always, from: results_scratch_ptr[0:orb_size*5])")
     for (int team_id = 0; team_id < NumTeams; team_id++)
     {
-      const int first = ChunkSizePerTeam * team_id;
-      const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+      const size_t first = ChunkSizePerTeam * team_id;
+      const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
 
       int ix, iy, iz;
       ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
@@ -685,8 +687,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
         spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
                                              offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
                                              offload_scratch_ptr + padded_size * 4 + first, padded_size, first, index);
-      const int first_cplx = first / 2;
-      const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
+      const size_t first_cplx = first / 2;
+      const size_t last_cplx  = omptarget::min(last / 2, orb_size);
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
         C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
@@ -712,10 +714,10 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                                                  const RefVector<GradVector>& dpsi_v_list,
                                                  const RefVector<ValueVector>& d2psi_v_list) const
 {
-  const size_t num_pos       = psi_v_list.size();
-  const int ChunkSizePerTeam = 128;
-  const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  const auto padded_size     = myV.size();
+  const size_t num_pos          = psi_v_list.size();
+  const size_t ChunkSizePerTeam = 128;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const auto padded_size        = myV.size();
   // for V(1)G(3)H(6) intermediate result
   offload_scratch.resize(padded_size * num_pos * 10);
   const auto orb_size = psi_v_list[0].get().size();
@@ -723,17 +725,17 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   results_scratch.resize(orb_size * num_pos * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* pos_copy_ptr             = multi_pos.data();
-  auto* offload_scratch_ptr      = offload_scratch.data();
-  auto* results_scratch_ptr      = results_scratch.data();
-  const auto myKcart_padded_size = myKcart->capacity();
-  auto* mKK_ptr                  = mKK->data();
-  auto* GGt_ptr                  = GGt_offload->data();
-  auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
-  auto* myKcart_ptr              = myKcart->data();
-  const size_t first_spo_local   = first_spo;
-  const int nComplexBands_local  = nComplexBands;
+  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  auto* pos_copy_ptr               = multi_pos.data();
+  auto* offload_scratch_ptr        = offload_scratch.data();
+  auto* results_scratch_ptr        = results_scratch.data();
+  const auto myKcart_padded_size   = myKcart->capacity();
+  auto* mKK_ptr                    = mKK->data();
+  auto* GGt_ptr                    = GGt_offload->data();
+  auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
+  auto* myKcart_ptr                = myKcart->data();
+  const size_t first_spo_local     = first_spo;
+  const size_t nComplexBands_local = nComplexBands;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -743,8 +745,9 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
+
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
 
@@ -766,8 +769,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                                                offload_scratch_iw_ptr + padded_size + first,
                                                offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
                                                index);
-        const int first_cplx = first / 2;
-        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
+        const size_t first_cplx = first / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
@@ -872,10 +875,10 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
     invRow_ptr       = invRow_ptr_list[iw];
   }
 
-  const size_t num_pos       = nwalkers;
-  const int ChunkSizePerTeam = 128;
-  const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  const auto padded_size     = myV.size();
+  const size_t num_pos          = nwalkers;
+  const size_t ChunkSizePerTeam = 128;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const auto padded_size        = myV.size();
   // for V(1)G(3)H(6) intermediate result
   mw_offload_scratch.resize(padded_size * num_pos * 10);
   const auto orb_size = phi_vgl_v.size() / num_pos;
@@ -885,21 +888,21 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* buffer_H2D_ptr           = buffer_H2D.data();
-  auto* offload_scratch_ptr      = mw_offload_scratch.data();
-  auto* results_scratch_ptr      = mw_results_scratch.data();
-  const auto myKcart_padded_size = myKcart->capacity();
-  auto* mKK_ptr                  = mKK->data();
-  auto* GGt_ptr                  = GGt_offload->data();
-  auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
-  auto* myKcart_ptr              = myKcart->data();
-  auto* phi_vgl_ptr              = phi_vgl_v.data();
-  auto* rg_private_ptr           = rg_private.data();
-  const size_t buffer_H2D_stride = buffer_H2D.cols();
-  const size_t first_spo_local   = first_spo;
-  const size_t phi_vgl_stride    = phi_vgl_v.capacity();
-  const int nComplexBands_local  = nComplexBands;
+  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  auto* buffer_H2D_ptr             = buffer_H2D.data();
+  auto* offload_scratch_ptr        = mw_offload_scratch.data();
+  auto* results_scratch_ptr        = mw_results_scratch.data();
+  const auto myKcart_padded_size   = myKcart->capacity();
+  auto* mKK_ptr                    = mKK->data();
+  auto* GGt_ptr                    = GGt_offload->data();
+  auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
+  auto* myKcart_ptr                = myKcart->data();
+  auto* phi_vgl_ptr                = phi_vgl_v.data();
+  auto* rg_private_ptr             = rg_private.data();
+  const size_t buffer_H2D_stride   = buffer_H2D.cols();
+  const size_t first_spo_local     = first_spo;
+  const size_t phi_vgl_stride      = phi_vgl_v.capacity();
+  const size_t nComplexBands_local = nComplexBands;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -909,8 +912,9 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
+
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
@@ -935,8 +939,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                offload_scratch_iw_ptr + padded_size + first,
                                                offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
                                                index);
-        const int first_cplx = first / 2;
-        const int last_cplx  = last / 2 < orb_size ? last / 2 : orb_size;
+        const size_t first_cplx = first / 2;
+        const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
@@ -951,8 +955,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         ValueType* restrict out_phi_g = phi_vgl_ptr + phi_vgl_stride + iw * orb_size * 3;
         ValueType* restrict out_phi_l = phi_vgl_ptr + phi_vgl_stride * 4 + iw * orb_size;
 
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const size_t first_real = first_cplx + omptarget::min(nComplexBands_local, first_cplx);
+        const size_t last_real  = last_cplx + omptarget::min(nComplexBands_local, last_cplx);
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
         for (size_t j = first_real; j < last_real; j++)

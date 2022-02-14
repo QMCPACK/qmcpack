@@ -307,6 +307,24 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
   }
 }
 
+inline void LCAOrbitalSet::evaluate_ionderiv_v_row_impl(const vgl_type& temp, GradVector& dpsi) const
+{
+  const size_t output_size     = dpsi.size();
+  const ValueType* restrict gx = temp.data(1);
+  const ValueType* restrict gy = temp.data(2);
+  const ValueType* restrict gz = temp.data(3);
+
+  for (size_t j = 0; j < output_size; j++)
+  {
+    //As mentioned in SoaLocalizedBasisSet, LCAO's have a nice property that
+    // for an atomic center, the ion gradient is the negative of the elecron gradient.
+    // Hence minus signs for each of these.
+    dpsi[j][0] = -gx[j];
+    dpsi[j][1] = -gy[j];
+    dpsi[j][2] = -gz[j];
+  }
+}
+
 
 void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
@@ -635,6 +653,25 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P,
       evaluate_ionderiv_vgl_impl(Tempghv, i, grad_phi, grad_grad_phi, grad_lapl_phi);
       //  evaluate_vghgh_impl(Tempghv, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
     }
+  }
+}
+
+void LCAOrbitalSet::evaluateGradSourceRow(const ParticleSet& P,
+                                          int iel,
+                                          const ParticleSet& source,
+                                          int iat_src,
+                                          GradVector& gradphi)
+{
+  if (Identity)
+  {
+    myBasisSet->evaluateGradSourceV(P, iel, source, iat_src, Temp);
+    evaluate_ionderiv_v_row_impl(Temp, gradphi);
+  }
+  else
+  {
+    myBasisSet->evaluateGradSourceV(P, iel, source, iat_src, Temp);
+    Product_ABt(Temp, *C, Tempv);
+    evaluate_ionderiv_v_row_impl(Tempv, gradphi);
   }
 }
 
