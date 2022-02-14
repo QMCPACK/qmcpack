@@ -98,7 +98,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =" << std::setprecision(8) << MC0 << "\n    Vtot     =" << value_ << std::endl;
+  app_log() << "\n    e-e Madelung Const. =" << std::setprecision(8) << MC0 << "\n    Vtot     =" << value_
+            << std::endl;
 }
 
 CoulombPBCAA::~CoulombPBCAA() = default;
@@ -174,6 +175,35 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
   return value_;
 }
 
+void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const
+{
+  auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
+  auto& p_leader = p_list.getLeader();
+  assert(this == &o_list.getLeader());
+
+  if (!o_leader.is_active)
+    return;
+
+  if (p_leader.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
+  {
+    if (o_leader.streaming_particles_)
+      throw std::runtime_error("Streaming particles is not supported when offloading in CoulombPBCAA");
+
+    auto short_range_results = mw_evalSR_offload(o_list, p_list);
+
+    for (int iw = 0; iw < o_list.size(); iw++)
+    {
+      auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
+      coulomb_aa.value_ = coulomb_aa.evalLR(p_list[iw]) + short_range_results[iw] + myConst;
+    }
+  }
+  else
+    for (int iw = 0; iw < o_list.size(); iw++)
+      o_list[iw].evaluate(p_list[iw]);
+}
+
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
@@ -231,8 +261,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpecies; ++s)
           v1 += z * Zspec[s] *
-              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
-                           PtclRhoK.eikr_i[i]);
+              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+                           PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
         V_samp(i) += v1;
         Vlr += v1;
       }
@@ -459,13 +489,29 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
   return SR;
 }
 
+std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                                    const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  std::vector<Return_t> values(o_list.size());
+
+  for (int iw = 0; iw < o_list.size(); iw++)
+  {
+    auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
+    values[iw]       = coulomb_aa.evalSR(p_list[iw]);
+  }
+
+  return values;
+}
+
 CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
 {
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
-    throw std::runtime_error("CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an implementation with complex-valued storage that may be resurrected using real-valued storage.");
+    throw std::runtime_error(
+        "CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an "
+        "implementation with complex-valued storage that may be resurrected using real-valued storage.");
   else
   {
     for (int spec1 = 0; spec1 < NumSpecies; spec1++)
@@ -473,8 +519,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       mRealType Z1 = Zspec[spec1];
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
-        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
-                                      PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
+        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1],
+                                      PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
         if (spec2 == spec1)
           temp *= 0.5;
         res += Z1 * Zspec[spec2] * temp;

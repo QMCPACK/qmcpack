@@ -84,6 +84,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P) override;
 
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
+
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
@@ -112,6 +116,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 #endif
 
   Return_t evalSR(ParticleSet& P);
+
+  static std::vector<Return_t> mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list);
+
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
