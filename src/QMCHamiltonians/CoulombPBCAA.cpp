@@ -492,14 +492,66 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
 std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
                                                                     const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  std::vector<Return_t> values(o_list.size());
+  const size_t nw = o_list.size();
+  std::vector<Return_t> values(nw);
+  auto& p_leader   = p_list.getLeader();
+  auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
 
-  for (int iw = 0; iw < o_list.size(); iw++)
+  RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(caa_leader.d_aa_ID));
+  dt_list.reserve(p_list.size());
+  for (ParticleSet& p : p_list)
+    dt_list.push_back(p.getDistTable(caa_leader.d_aa_ID));
+
+  auto& dtaa_leader = dynamic_cast<DistanceTableAA&>(p_leader.getDistTable(caa_leader.d_aa_ID));
+
+  const size_t chunk_size = dtaa_leader.get_num_particls_stored();
+  if (chunk_size == 0)
+    throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
+
+  const size_t total_num      = p_leader.getTotalNum();
+  const size_t total_num_half = (total_num + 1) / 2;
+  const size_t num_padded     = getAlignedSize<RealType>(total_num);
+  const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
+  for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
+  {
+    const size_t first           = ichunk * chunk_size;
+    const size_t last            = std::min(first + chunk_size, total_num_half);
+    const size_t this_chunk_size = last - first;
+
+    //std::cout << "ichunk = " << ichunk << " first " << first << ", " << last << std::endl;
+    auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
+
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      mRealType SR = 0.0;
+      for (size_t irow = first; irow < last; irow++)
+      {
+        const RealType* dist = mw_dist + num_padded * (irow - first + iw * this_chunk_size);
+        for (size_t jcol = 0; jcol < total_num; jcol++)
+        {
+          if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
+            continue;
+
+          const size_t i = irow > jcol ? irow : p_leader.getTotalNum() - 1 - irow;
+          const size_t j = irow > jcol ? jcol : p_leader.getTotalNum() - 1 - jcol;
+
+          //std::cout << "R["<< i << "] = " << p_list[iw].R[i]
+          //          << ", R["<< j << "] = " << p_list[iw].R[j] << ", dist = " << dist[jcol] << std::endl;
+          SR += caa_leader.Zat[i] * caa_leader.Zat[j] * caa_leader.rVs->splint(dist[jcol]) / dist[jcol];
+        }
+      }
+      values[iw] += SR;
+    }
+  }
+  /*
+  for (int iw = 0; iw < nw; iw++)
   {
     auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
-    values[iw]       = coulomb_aa.evalSR(p_list[iw]);
+    auto ref = coulomb_aa.evalSR(p_list[iw]);
+    std::cout << "check iw = " << iw << " value = " << values[iw] << " ref " << ref << std::endl;
+    values[iw]       = ref;
   }
-
+*/
   return values;
 }
 
