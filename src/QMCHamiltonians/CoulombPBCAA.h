@@ -86,7 +86,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
 
   /** constructor */
-  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
+  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload);
 
   ~CoulombPBCAA() override;
 
@@ -152,11 +152,13 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   }
 
 private:
-  // AA table ID
+  /// if true use offload
+  const bool use_offload_;
+  /// AA table ID
   const int d_aa_ID;
-  // Timer for long range
+  /// Timer for long range
   NewTimer& evalLR_timer_;
-  // Timer for long range
+  /// Timer for long range
   NewTimer& evalSR_timer_;
 };
 

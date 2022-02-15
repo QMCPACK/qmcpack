@@ -51,7 +51,7 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   ions.createSK();
 
 
-  CoulombPBCAA caa = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa = CoulombPBCAA(ions, false, false, false);
 
   // Background charge term
   double consts = caa.evalConsts();
@@ -97,7 +97,7 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   ions.createSK();
 
 
-  CoulombPBCAA caa = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa = CoulombPBCAA(ions, false, false, false);
 
   // Background charge term
   double consts = caa.evalConsts();
@@ -140,7 +140,7 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
   elec.update();
 
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, false);
+  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
@@ -182,7 +182,7 @@ TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
   elec.update();
 
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, false);
+  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
 
   double val = caa.evaluate(elec);
   CHECK(val == Approx(vmad_bcc));

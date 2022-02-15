@@ -23,18 +23,22 @@
 
 namespace qmcplusplus
 {
-CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
+CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload)
     : ForceBase(ref, ref),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
       Ps(ref),
+      use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref)),
       evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
       evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine))
 
 {
+  if (use_offload_)
+    assert(ref.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);
+
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
@@ -187,7 +191,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
   if (!o_leader.is_active)
     return;
 
-  if (p_leader.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
+  if (use_offload_)
   {
     if (o_leader.streaming_particles_)
       throw std::runtime_error("Streaming particles is not supported when offloading in CoulombPBCAA");
