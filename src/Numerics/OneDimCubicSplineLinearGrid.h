@@ -20,6 +20,10 @@
 namespace qmcplusplus
 {
 /** combined OneDimCubicSpline and LinearGrid
+ * OneDimCubicSpline contains OneDimGridBase pointer and calls its virtual function members. This doesn't work well on a GPU.
+ * Since the use case is OneDimCubicSpline with LinearGrid. We fuse both classes and avoid any virtual functions.
+ * There are two splint functions. The one with one paramemter r is intended for testing or being called on the CPU.
+ * The static one with many parameters is intended to be used(inlined) inside a GPU kernel.
  */
 template<class T>
 class OneDimCubicSplineLinearGrid
