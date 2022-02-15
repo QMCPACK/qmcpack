@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 
 template<class T>
-struct OneDimCubicSplineLinearGrid;
+class OneDimCubicSplineLinearGrid;
 
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
