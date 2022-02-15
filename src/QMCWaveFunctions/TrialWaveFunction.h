@@ -29,6 +29,7 @@
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "TWFGrads.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -351,6 +352,18 @@ public:
   /** batched version of ratioGrad
    *
    *  all vector sizes must match
+   *  implements switch between normal and WithSpin version
+   */
+  template<CoordsType CT>
+  static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list,
+                               int iat,
+                               std::vector<PsiValueType>& ratios,
+                               TWFGrads<CT>& grads);
+
+  /** batched version of ratioGrad
+   *
+   *  all vector sizes must match
    */
   static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
@@ -395,6 +408,18 @@ public:
    *
    */
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad);
+
+  /** batched version of evalGrad
+    *
+    * This is static because it should have no direct access
+    * to any TWF.
+    * implements switch between normal and WithSpin version
+    */
+  template<CoordsType CT>
+  static void mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          TWFGrads<CT>& grads);
 
   /** batched version of evalGrad
     *
