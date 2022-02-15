@@ -160,6 +160,8 @@ private:
   NewTimer& evalLR_timer_;
   /// Timer for long range
   NewTimer& evalSR_timer_;
+  /// Timer for offload part
+  NewTimer& offload_timer_;
 };
 
 } // namespace qmcplusplus

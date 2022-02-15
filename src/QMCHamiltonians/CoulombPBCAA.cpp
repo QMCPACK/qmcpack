@@ -33,8 +33,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref)),
       evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
-      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine))
-
+      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
+      offload_timer_(*timer_manager.createTimer("CoulombPBCAA::offload", timer_level_fine))
 {
   if (use_offload_)
     assert(ref.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);
@@ -331,7 +331,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   {
     SpeciesID[iat] = P.GroupID[iat];
     Zat[iat]       = Zspec[P.GroupID[iat]];
-    Zat_ref[iat] = Zat[iat];
+    Zat_ref[iat]   = Zat[iat];
   }
   Zat_ref.updateTo();
 
@@ -511,6 +511,8 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   auto& p_leader   = p_list.getLeader();
   auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
 
+  ScopedTimer local_timer(caa_leader.evalSR_timer_);
+
   RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(caa_leader.d_aa_ID));
   dt_list.reserve(p_list.size());
   for (ParticleSet& p : p_list)
@@ -527,67 +529,56 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
   const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
 
-  const auto m_Y  = caa_leader.rVs_offload->get_m_Y().data();
-  const auto m_Y2 = caa_leader.rVs_offload->get_m_Y2().data();
+  const auto m_Y         = caa_leader.rVs_offload->get_m_Y().data();
+  const auto m_Y2        = caa_leader.rVs_offload->get_m_Y2().data();
   const auto first_deriv = caa_leader.rVs_offload->get_first_deriv();
   const auto const_value = caa_leader.rVs_offload->get_const_value();
-  const auto r_min = caa_leader.rVs_offload->get_r_min();
-  const auto r_max = caa_leader.rVs_offload->get_r_max();
-  const auto X = caa_leader.rVs_offload->get_X().data();
-  const auto delta_inv = caa_leader.rVs_offload->get_delta_inv();
-  const auto Zat = caa_leader.Zat_offload->data();
+  const auto r_min       = caa_leader.rVs_offload->get_r_min();
+  const auto r_max       = caa_leader.rVs_offload->get_r_max();
+  const auto X           = caa_leader.rVs_offload->get_X().data();
+  const auto delta_inv   = caa_leader.rVs_offload->get_delta_inv();
+  const auto Zat         = caa_leader.Zat_offload->data();
 
   auto value_ptr = values_offload.data();
 
   {
-  values_offload.updateTo();
-
-  for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
-  {
-    const size_t first           = ichunk * chunk_size;
-    const size_t last            = std::min(first + chunk_size, total_num_half);
-    const size_t this_chunk_size = last - first;
-
-    //std::cout << "ichunk = " << ichunk << " first " << first << ", " << last << std::endl;
-    auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
-
-    #pragma omp target teams distribute num_teams(nw)
-    for (size_t iw = 0; iw < nw; iw++)
+    values_offload.updateTo();
+    for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
-      mRealType SR = 0.0;
-      #pragma omp parallel for reduction(+:SR)
-      for (size_t jcol = 0; jcol < total_num; jcol++)
-        for (size_t irow = first; irow < last; irow++)
-        {
-          const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
-          if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
-            continue;
+      const size_t first           = ichunk * chunk_size;
+      const size_t last            = std::min(first + chunk_size, total_num_half);
+      const size_t this_chunk_size = last - first;
 
-          const size_t i = irow > jcol ? irow : total_num - 1 - irow;
-          const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
+      auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
 
-          //std::cout << "R["<< i << "] = " << p_list[iw].R[i]
-          //          << ", R["<< j << "] = " << p_list[iw].R[j] << ", dist = " << dist[jcol] << std::endl;
-          SR += Zat[i] * Zat[j] * 
-             OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-        }
-      value_ptr[iw] += SR;
+      ScopedTimer offload_scope(caa_leader.offload_timer_);
+
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
+      for (size_t iw = 0; iw < nw; iw++)
+      {
+        mRealType SR = 0.0;
+        PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
+        for (size_t jcol = 0; jcol < total_num; jcol++)
+          for (size_t irow = first; irow < last; irow++)
+          {
+            const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
+            if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
+              continue;
+
+            const size_t i = irow > jcol ? irow : total_num - 1 - irow;
+            const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
+
+            SR += Zat[i] * Zat[j] *
+                OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
+          }
+        value_ptr[iw] += SR;
+      }
     }
-  }
 
-  values_offload.updateFrom();
-  for (int iw = 0; iw < nw; iw++)
-    values[iw] = values_offload[iw];
+    values_offload.updateFrom();
+    for (int iw = 0; iw < nw; iw++)
+      values[iw] = values_offload[iw];
   }
-/*
-  for (int iw = 0; iw < nw; iw++)
-  {
-    auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
-    auto ref = coulomb_aa.evalSR(p_list[iw]);
-    std::cout << "check iw = " << iw << " value = " << values[iw] << " ref " << ref << std::endl;
-    values[iw]       = ref;
-  }
-*/
   return values;
 }
 
