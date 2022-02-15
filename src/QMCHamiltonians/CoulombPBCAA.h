@@ -62,7 +62,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
+
   std::vector<RealType> Zat, Zspec;
+  std::shared_ptr<Vector<RealType, OffloadPinnedAllocator<RealType>>> Zat_offload;
+
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
 

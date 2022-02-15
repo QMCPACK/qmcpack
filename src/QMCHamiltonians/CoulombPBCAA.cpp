@@ -311,7 +311,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   V_const.resize(NumCenters);
 #endif
 
-  Zat.resize(NumCenters);
   Zspec.resize(NumSpecies);
   NofSpecies.resize(NumSpecies);
   for (int spec = 0; spec < NumSpecies; spec++)
@@ -319,12 +318,19 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     Zspec[spec]      = tspecies(ChargeAttribIndx, spec);
     NofSpecies[spec] = P.groupsize(spec);
   }
+
   SpeciesID.resize(NumCenters);
+  Zat.resize(NumCenters);
+  Zat_offload = std::make_shared<Vector<RealType, OffloadPinnedAllocator<RealType>>>(NumCenters);
+  auto& Zat_ref(*Zat_offload);
   for (int iat = 0; iat < NumCenters; iat++)
   {
     SpeciesID[iat] = P.GroupID[iat];
     Zat[iat]       = Zspec[P.GroupID[iat]];
+    Zat_ref[iat] = Zat[iat];
   }
+  Zat_ref.updateTo();
+
   AA = LRCoulombSingleton::getHandler(P);
   //AA->initBreakup(*PtclRef);
   myConst = evalConsts();
@@ -497,6 +503,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
 {
   const size_t nw = o_list.size();
   std::vector<Return_t> values(nw);
+  Vector<Return_t, OffloadPinnedAllocator<Return_t>> values_offload(nw);
   auto& p_leader   = p_list.getLeader();
   auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
 
@@ -515,6 +522,22 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
   const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
+
+  const auto m_Y  = caa_leader.rVs_offload->m_Y_.data();
+  const auto m_Y2 = caa_leader.rVs_offload->m_Y2_.data();
+  const auto first_deriv = caa_leader.rVs_offload->first_deriv_;
+  const auto const_value = caa_leader.rVs_offload->const_value_;
+  const auto r_min = caa_leader.rVs_offload->r_min_;
+  const auto r_max = caa_leader.rVs_offload->r_max_;
+  const auto X = caa_leader.rVs_offload->X_.data();
+  const auto delta_inv = caa_leader.rVs_offload->delta_inv_;
+  const auto Zat = caa_leader.Zat_offload->data();
+
+  auto value_ptr = values_offload.data();
+
+  {
+  values_offload.updateTo();
+
   for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
   {
     const size_t first           = ichunk * chunk_size;
@@ -524,29 +547,35 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
     //std::cout << "ichunk = " << ichunk << " first " << first << ", " << last << std::endl;
     auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
 
+    #pragma omp target teams distribute num_teams(nw)
     for (size_t iw = 0; iw < nw; iw++)
     {
       mRealType SR = 0.0;
-      for (size_t irow = first; irow < last; irow++)
-      {
-        const RealType* dist = mw_dist + num_padded * (irow - first + iw * this_chunk_size);
-        for (size_t jcol = 0; jcol < total_num; jcol++)
+      #pragma omp parallel for reduction(+:SR)
+      for (size_t jcol = 0; jcol < total_num; jcol++)
+        for (size_t irow = first; irow < last; irow++)
         {
+          const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
           if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
             continue;
 
-          const size_t i = irow > jcol ? irow : p_leader.getTotalNum() - 1 - irow;
-          const size_t j = irow > jcol ? jcol : p_leader.getTotalNum() - 1 - jcol;
+          const size_t i = irow > jcol ? irow : total_num - 1 - irow;
+          const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
 
           //std::cout << "R["<< i << "] = " << p_list[iw].R[i]
           //          << ", R["<< j << "] = " << p_list[iw].R[j] << ", dist = " << dist[jcol] << std::endl;
-          SR += caa_leader.Zat[i] * caa_leader.Zat[j] * caa_leader.rVs->splint(dist[jcol]) / dist[jcol];
+          SR += Zat[i] * Zat[j] * 
+             OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
         }
-      }
-      values[iw] += SR;
+      value_ptr[iw] += SR;
     }
   }
-  /*
+
+  values_offload.updateFrom();
+  for (int iw = 0; iw < nw; iw++)
+    values[iw] = values_offload[iw];
+  }
+/*
   for (int iw = 0; iw < nw; iw++)
   {
     auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);

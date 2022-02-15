@@ -215,8 +215,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto* dist_ranged       = mw_mem.mw_distances_subset.data();
     {
       ScopedTimer offload(dt_leader.offload_timer_);
-      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
-                      map(always, from: dist_ranged[:subset_size * nw * num_padded])")
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams)")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
