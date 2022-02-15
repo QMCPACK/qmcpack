@@ -523,14 +523,14 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
   const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
 
-  const auto m_Y  = caa_leader.rVs_offload->m_Y_.data();
-  const auto m_Y2 = caa_leader.rVs_offload->m_Y2_.data();
-  const auto first_deriv = caa_leader.rVs_offload->first_deriv_;
-  const auto const_value = caa_leader.rVs_offload->const_value_;
-  const auto r_min = caa_leader.rVs_offload->r_min_;
-  const auto r_max = caa_leader.rVs_offload->r_max_;
-  const auto X = caa_leader.rVs_offload->X_.data();
-  const auto delta_inv = caa_leader.rVs_offload->delta_inv_;
+  const auto m_Y  = caa_leader.rVs_offload->get_m_Y().data();
+  const auto m_Y2 = caa_leader.rVs_offload->get_m_Y2().data();
+  const auto first_deriv = caa_leader.rVs_offload->get_first_deriv();
+  const auto const_value = caa_leader.rVs_offload->get_const_value();
+  const auto r_min = caa_leader.rVs_offload->get_r_min();
+  const auto r_max = caa_leader.rVs_offload->get_r_max();
+  const auto X = caa_leader.rVs_offload->get_X().data();
+  const auto delta_inv = caa_leader.rVs_offload->get_delta_inv();
   const auto Zat = caa_leader.Zat_offload->data();
 
   auto value_ptr = values_offload.data();
