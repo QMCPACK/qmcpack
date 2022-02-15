@@ -39,9 +39,10 @@ struct OneDimCubicSplineLinearGrid
   OneDimCubicSplineLinearGrid(const OneDimCubicSpline<T>& cublis_spliner)
   {
     auto& grid = dynamic_cast<const LinearGrid<T>&>(cublis_spliner.grid());
-    r_min_ = grid.rmin();
-    r_max_ = grid.rmax();
+    r_min_     = grid.rmin();
+    r_max_     = grid.rmax();
     delta_inv_ = grid.DeltaInv;
+
     const size_t num_points = grid.size();
     X_.resize(num_points);
     for (size_t i = 0; i < num_points; i++)
@@ -53,7 +54,7 @@ struct OneDimCubicSplineLinearGrid
     m_Y2_.resize(num_points);
     for (size_t i = 0; i < num_points; i++)
     {
-      m_Y_[i] = cublis_spliner.m_Y[i];
+      m_Y_[i]  = cublis_spliner.m_Y[i];
       m_Y2_[i] = cublis_spliner.m_Y2[i];
     }
     X_.updateTo();
@@ -66,7 +67,15 @@ struct OneDimCubicSplineLinearGrid
     return splint(r_min_, r_max_, X_.data(), delta_inv_, m_Y_.data(), m_Y2_.data(), first_deriv_, const_value_, r);
   }
 
-  static T splint(T r_min, T r_max, const T* X, T delta_inv, const T* m_Y, const T* m_Y2, T first_deriv, T const_value, T r)
+  static T splint(T r_min,
+                  T r_max,
+                  const T* X,
+                  T delta_inv,
+                  const T* m_Y,
+                  const T* m_Y2,
+                  T first_deriv,
+                  T const_value,
+                  T r)
   {
     if (r < r_min)
     {
@@ -78,12 +87,12 @@ struct OneDimCubicSplineLinearGrid
     }
 
     const size_t loc = std::floor((r - r_min) * delta_inv);
-    const T dist = r - X[loc];
-    const T delta = X[loc + 1] - X[loc];
+    const T dist     = r - X[loc];
+    const T delta    = X[loc + 1] - X[loc];
     CubicSplineEvaluator<T> eval(dist, delta);
     return eval.cubicInterpolate(m_Y[loc], m_Y[loc + 1], m_Y2[loc], m_Y2[loc + 1]);
   }
 };
 
-}
+} // namespace qmcplusplus
 #endif
