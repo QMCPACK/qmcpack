@@ -80,7 +80,7 @@ struct OneDimCubicSplineLinearGrid
     const size_t loc = std::floor((r - r_min) * delta_inv);
     const T dist = r - X[loc];
     const T delta = X[loc + 1] - X[loc];
-    CubicSplineEvaluator<value_type> eval(dist, delta);
+    CubicSplineEvaluator<T> eval(dist, delta);
     return eval.cubicInterpolate(m_Y[loc], m_Y[loc + 1], m_Y2[loc], m_Y2[loc + 1]);
   }
 };
