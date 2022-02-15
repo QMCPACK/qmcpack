@@ -187,7 +187,8 @@ struct J1Spin : public WaveFunctionComponent
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override
   {
-    return evaluateGL(P, G, L, true);
+    recompute(P);
+    return log_value_ = computeGL(G, L);
   }
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override
@@ -380,19 +381,23 @@ struct J1Spin : public WaveFunctionComponent
       ratios[i] = std::exp(Vat[i] - curAt);
   }
 
+  /// compute G and L from internally stored data
+  inline QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const
+  {
+    for (size_t iat = 0; iat < Nelec; ++iat)
+    {
+      G[iat] += Grad[iat];
+      L[iat] -= Lap[iat];
+    }
+    return -simd::accumulate_n(Vat.data(), Nelec, QTFull::RealType());
+  }
+
   inline LogValueType evaluateGL(const ParticleSet& P,
                                  ParticleSet::ParticleGradient& G,
                                  ParticleSet::ParticleLaplacian& L,
                                  bool fromscratch = false) override
   {
-    if (fromscratch)
-      recompute(P);
-
-    for (size_t iat = 0; iat < Nelec; ++iat)
-      G[iat] += Grad[iat];
-    for (size_t iat = 0; iat < Nelec; ++iat)
-      L[iat] -= Lap[iat];
-    return log_value_ = -simd::accumulate_n(Vat.data(), Nelec, valT());
+    return log_value_ = computeGL(G, L);
   }
 
   /** compute gradient and lap
@@ -502,7 +507,7 @@ struct J1Spin : public WaveFunctionComponent
 
   inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
-    evaluateGL(P, P.G, P.L, false);
+    log_value_ = computeGL(P.G, P.L);
     buf.forward(Bytes_in_WFBuffer);
     return log_value_;
   }
