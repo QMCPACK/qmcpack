@@ -487,8 +487,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                        const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     // if the distance table is not updated by mw_move during p-by-p, needs to recompute the whole table
-    // before being used by Hamiltonian.
-    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
+    // before being used by Hamiltonian if requested
+    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST) && (modes_ & DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP))
       mw_evaluate(dt_list, p_list);
   }
 
