@@ -23,6 +23,10 @@
 
 namespace qmcplusplus
 {
+
+template<class T>
+class OneDimCubicSplineLinearGrid;
+
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
@@ -35,11 +39,14 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   using GridType       = LRCoulombSingleton::GridType;
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
   using mRealType      = LRHandlerType::mRealType;
+  using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
   /// energy-optimized long range handle. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AA;
   /// energy-optimized short range pair potential
   std::shared_ptr<const RadFunctorType> rVs;
+  /// the same as rVs but can be used inside OpenMP offload regions
+  std::shared_ptr<const OffloadSpline> rVs_offload;
   /// force-optimized long range handle
   std::shared_ptr<const LRHandlerType> dAA;
   /// force-optimized short range pair potential
