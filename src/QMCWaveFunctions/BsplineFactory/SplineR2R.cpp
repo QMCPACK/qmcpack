@@ -144,10 +144,10 @@ namespace qmcplusplus
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work
   for ( auto i=0; i<OrbitalSetSize; i++ )
     {
-      for ( auto j=0; i<BasisSetSize; i++ )
+      for ( auto j=0; j<BasisSetSize; j++ )
 	{
 	  const auto cur_elem = BasisSetSize*i + j;
-	  auto newval{0};
+	  auto newval{0.};
 	  for ( auto k=0; k<BasisSetSize; k++ )
 	    {
 	      const auto index = i*BasisSetSize + k;
