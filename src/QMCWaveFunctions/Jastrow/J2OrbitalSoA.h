@@ -105,6 +105,9 @@ protected:
     lapLogPsi.resize(myVars.size(), ValueDerivVec(N));
   }
 
+  /// compute G and L from internally stored data
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
+
 public:
   J2OrbitalSoA(const std::string& obj_name, ParticleSet& p);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;

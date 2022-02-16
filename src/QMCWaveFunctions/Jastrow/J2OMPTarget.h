@@ -115,6 +115,9 @@ private:
     lapLogPsi.resize(myVars.size(), ValueDerivVec(N));
   }
 
+  /// compute G and L from internally stored data
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
+
 public:
   J2OMPTarget(const std::string& obj_name, ParticleSet& p);
   J2OMPTarget(const J2OMPTarget& rhs) = delete;
@@ -236,8 +239,6 @@ public:
   inline RealType KECorrection() override { return KEcorr; }
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
-
-  QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
