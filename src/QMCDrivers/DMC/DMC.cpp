@@ -25,7 +25,7 @@
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Utilities/Timer.h"
 #include "Utilities/RunTimeManager.h"
 #include "RandomNumberControl.h"
@@ -35,7 +35,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 namespace qmcplusplus
@@ -65,9 +65,10 @@ void DMC::resetUpdateEngines()
   ReportEngine PRE("DMC", "resetUpdateEngines");
   bool fixW = (Reconfiguration == "runwhileincorrect");
   if (Reconfiguration != "no" && Reconfiguration != "runwhileincorrect")
-    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove "
-              "the reconfiguration option from the DMC input section. To run performance tests, please set "
-              "reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
+                             "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
+                             "option from the DMC input section. If accessing the broken reconfiguration code path "
+                             "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
   makeClones(W, Psi, H);
   Timer init_timer;
   bool spinor = false;
@@ -122,10 +123,10 @@ void DMC::resetUpdateEngines()
 #ifdef USE_FAKE_RNG
       Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip].get());
 #endif
-      if (W.is_spinor_)
+      if (W.isSpinor())
       {
         spinor = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])

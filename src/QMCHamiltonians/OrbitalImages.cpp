@@ -110,7 +110,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "sposets")
         putContent(sposet_names, element);
       else if (name == "batch_size")
@@ -161,7 +161,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       for (int i = 0; i < sposet_names.size(); ++i)
         if (name == sposet_names[i])
           putContent((*sposet_indices)[i], element);
@@ -242,7 +242,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
       APP_ABORT("OrbitalImages::put  must provide corner or center");
   }
   else
-    cell = Peln->Lattice;
+    cell = Peln->getLattice();
 
   //calculate the cell corner in the case that the cell center is provided
   if (have_center)
@@ -499,11 +499,8 @@ void OrbitalImages::write_orbital_xsf(const std::string& sponame,
   //get the cell containing the ion positions
   //  assume the evaluation cell if any boundaries are open
   ParticleSet& Pc = *Pion;
-  Lattice_t* Lbox;
-  if (Peln->Lattice.SuperCellEnum == SUPERCELL_BULK)
-    Lbox = &Peln->Lattice; //periodic
-  else
-    Lbox = &cell; //at least partially open
+  const Lattice_t& Lbox = Peln->getLattice().SuperCellEnum == SUPERCELL_BULK ?
+                         Peln->getLattice() : cell;
 
   //open the file
   std::ofstream file;
@@ -526,7 +523,7 @@ void OrbitalImages::write_orbital_xsf(const std::string& sponame,
   {
     file << " ";
     for (int d = 0; d < DIM; ++d)
-      file << "  " << convert(Lbox->Rv[i][d], B, A);
+      file << "  " << convert(Lbox.Rv[i][d], B, A);
     file << std::endl;
   }
   file << " PRIMCOORD" << std::endl;

@@ -28,7 +28,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::shared_ptr<SPOSet>&& spos,
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::unique_ptr<SPOSet>&& spos,
                                                            BackflowTransformation& BF,
                                                            int first,
                                                            int last)
@@ -82,18 +82,16 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
 }
 
 /** replace of SPOSet::evaluate function with the removal of t_logpsi */
-void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet,
-                                                GradMatrix_t& dlogdet,
-                                                HessMatrix_t& grad_grad_logdet)
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
 
-void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet,
-                                                GradMatrix_t& dlogdet,
-                                                HessMatrix_t& grad_grad_logdet,
-                                                GGGMatrix_t& grad_grad_grad_logdet)
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet,
+                                                GradMatrix& dlogdet,
+                                                HessMatrix& grad_grad_logdet,
+                                                GGGMatrix& grad_grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,
                             grad_grad_grad_logdet);
@@ -254,8 +252,8 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
     ParticleSet& P,
     ParticleSet& source,
     int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evalGradSource() \n");
   return GradType();
@@ -271,7 +269,7 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
   UpdateMode                        = ORB_PBYP_PARTIAL;
   std::vector<int>::iterator it     = BFTrans_.indexQP.begin();
   std::vector<int>::iterator it_end = BFTrans_.indexQP.end();
-  ParticleSet::ParticlePos_t dr;
+  ParticleSet::ParticlePos dr;
   while (it != it_end)
   {
     if (*it < FirstIndex || *it >= LastIndex)
@@ -308,11 +306,11 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGr
 
 void DiracDeterminantWithBackflow::testL(ParticleSet& P)
 {
-  GradMatrix_t Fmat_p, Fmat_m;
-  GradVector_t Fdiag_p, Fdiag_m;
-  HessMatrix_t Kij, Qij; // finite difference and analytic derivative of Fmat
-  typedef Tensor<RealType, OHMMS_DIM> HessType_0;
-  typedef TinyVector<RealType, DIM> GradType_0;
+  GradMatrix Fmat_p, Fmat_m;
+  GradVector Fdiag_p, Fdiag_m;
+  HessMatrix Kij, Qij; // finite difference and analytic derivative of Fmat
+  using HessType_0 = Tensor<RealType, OHMMS_DIM>;
+  using GradType_0 = TinyVector<RealType, DIM>;
   Matrix<GradType_0> Bij, dAij;
   Matrix<HessType_0> Aij_p, Aij_m;
   Fdiag_p.resize(NumOrbitals);
@@ -482,10 +480,9 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
-    const ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(const ParticleSet& P,
+                                                                                     ParticleSet::ParticleGradient& G,
+                                                                                     ParticleSet::ParticleLaplacian& L)
 {
   //testGG(P);
   //testL(P);
@@ -731,11 +728,11 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 #if defined(QMC_COMPLEX)
     //dlogpsi[kk] += real(dpsia);
     dlogpsi[kk] += dpsia;
-    //dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
-    dhpsioverpsi[kk] -= 0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp);
+    //dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue>(dLa) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= 0.5 * static_cast<ParticleSet::SingleParticleValue>(dLa) + Dot(P.G, Gtemp);
 #else
     dlogpsi[kk] += dpsia;
-    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue_t>(dLa) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue>(dLa) + Dot(P.G, Gtemp));
 #endif
   }
 }
@@ -872,7 +869,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for (int k = 0; k < num; k++)
       dG(offset, pa, k) =
-          Gtemp[k] + myG[k] * static_cast<ParticleSet::SingleParticleValue_t>(dpsia); // (\nabla_pa \nabla_i D) / D
+          Gtemp[k] + myG[k] * static_cast<ParticleSet::SingleParticleValue>(dpsia); // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -880,8 +877,8 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                        const opt_variables_type& active,
                                                        std::vector<RealType>& dlogpsi,
                                                        std::vector<RealType>& dhpsioverpsi,
-                                                       ParticleSet::ParticleGradient_t* G0,
-                                                       ParticleSet::ParticleLaplacian_t* L0,
+                                                       ParticleSet::ParticleGradient* G0,
+                                                       ParticleSet::ParticleLaplacian* L0,
                                                        int pa)
 {
   evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
@@ -986,30 +983,31 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = pa; //BFTrans_.optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk] += real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue_t>(La1 + La2 + La3) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= real(0.5 * static_cast<ParticleSet::SingleParticleValue>(La1 + La2 + La3) + Dot(P.G, Gtemp));
 #else
     dlogpsi[kk] += dpsia;
-    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue_t>(La1 + La2 + La3) + Dot(P.G, Gtemp));
+    dhpsioverpsi[kk] -= (0.5 * static_cast<ParticleSet::SingleParticleValue>(La1 + La2 + La3) + Dot(P.G, Gtemp));
 #endif
     *G0 += Gtemp;
     (*L0)[0] += La1 + La2 + La3;
   }
 }
 
-std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(std::shared_ptr<SPOSet>&& spo,
-                                                                           BackflowTransformation& BF) const
+std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(
+    std::unique_ptr<SPOSet>&& spo,
+    BackflowTransformation& BF) const
 {
   return std::make_unique<DiracDeterminantWithBackflow>(std::move(spo), BF, FirstIndex, LastIndex);
 }
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {
-  ParticleSet::ParticlePos_t qp_0;
+  ParticleSet::ParticlePos qp_0;
   qp_0.resize(BFTrans_.QP.getTotalNum());
-  ValueMatrix_t psiM_1, psiM_2;
-  ValueMatrix_t psiM_3, psiM_4;
-  GradMatrix_t dpsiM_1, dpsiM_2;
-  HessMatrix_t dgM, ggM, ggM0;
+  ValueMatrix psiM_1, psiM_2;
+  ValueMatrix psiM_3, psiM_4;
+  GradMatrix dpsiM_1, dpsiM_2;
+  HessMatrix dgM, ggM, ggM0;
   psiM_1.resize(NumPtcls, NumOrbitals);
   psiM_2.resize(NumPtcls, NumOrbitals);
   psiM_3.resize(NumPtcls, NumOrbitals);
@@ -1108,18 +1106,18 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 
 void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 {
-  ParticleSet::ParticlePos_t qp_0;
+  ParticleSet::ParticlePos qp_0;
   qp_0.resize(BFTrans_.QP.getTotalNum());
-  ValueMatrix_t psiM_1, psiM_2;
-  GradMatrix_t dpsiM_1, dpsiM_2;
-  HessMatrix_t ggM_1, ggM_2;
+  ValueMatrix psiM_1, psiM_2;
+  GradMatrix dpsiM_1, dpsiM_2;
+  HessMatrix ggM_1, ggM_2;
   psiM_1.resize(NumPtcls, NumOrbitals);
   psiM_2.resize(NumPtcls, NumOrbitals);
   dpsiM_1.resize(NumPtcls, NumOrbitals);
   dpsiM_2.resize(NumPtcls, NumOrbitals);
   ggM_1.resize(NumPtcls, NumOrbitals);
   ggM_2.resize(NumPtcls, NumOrbitals);
-  GGGMatrix_t ggg_psiM1, ggg_psiM2;
+  GGGMatrix ggg_psiM1, ggg_psiM2;
   ggg_psiM1.resize(NumPtcls, NumOrbitals);
   ggg_psiM2.resize(NumPtcls, NumOrbitals);
   const RealType dh = 0.000001; //PREC_WARNING
@@ -1181,7 +1179,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   BFTrans_.checkOutVariables(wfVars);
   int Nvars   = wfVars.size();
   wfvar_prime = wfVars;
-  GradMatrix_t dpsiM_1, dpsiM_2, dpsiM_0;
+  GradMatrix dpsiM_1, dpsiM_2, dpsiM_0;
   dpsiM_0.resize(NumPtcls, NumOrbitals);
   dpsiM_1.resize(NumPtcls, NumOrbitals);
   dpsiM_2.resize(NumPtcls, NumOrbitals);

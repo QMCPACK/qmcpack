@@ -178,7 +178,7 @@ else()
       message(VERBOSE "Skipping NiO_a4_e48 L2 tests for CUDA build (QMC_CUDA=1)")
     endif()
 
-    # Hybridrep is not implemented in legacy CUDA but should be error trapped. J3 also not implemented.    
+    # Hybridrep is not implemented in legacy CUDA but should be error trapped. J3 also not implemented.
     qmc_run_and_check(
       short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
@@ -279,7 +279,7 @@ else()
        list(APPEND DET_NIO_A4_E48_SCALARS "kinetic"  "227.02819132 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "potential" "-595.04206774 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "eeenergy" "81.17849017 0.003")
-       list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29802876 0.00001") 
+       list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29802876 0.00001")
        list(APPEND DET_NIO_A4_E48_SCALARS "localecp" "-383.12865240 0.01")
        list(APPEND DET_NIO_A4_E48_SCALARS "nonlocalecp" "-53.79387674 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "samples" "9 0.0")
@@ -321,7 +321,7 @@ else()
        list(APPEND DET_NIO_A4_E48_SCALARS "kinetic"  "265.55211345 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "potential" "-640.02858828 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "eeenergy" "95.18226407 0.003")
-       list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29785436 0.00001") 
+       list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.297920516 0.000015")
        list(APPEND DET_NIO_A4_E48_SCALARS "localecp" "-443.93228655 0.01")
        list(APPEND DET_NIO_A4_E48_SCALARS "nonlocalecp" "-51.98071144 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "samples" "9 0.0")
@@ -330,7 +330,7 @@ else()
        list(APPEND DET_NIO_A4_E48_SCALARS "kinetic" "265.55149051 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "potential" "-640.02817578 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "eeenergy" "95.18251725 0.003")
-       list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29785436 0.00001")
+       list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.297920516 0.000015")
        list(APPEND DET_NIO_A4_E48_SCALARS "localecp" "-443.93261163 0.01")
        list(APPEND DET_NIO_A4_E48_SCALARS "nonlocalecp" "-51.98022703 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "samples" "9 0.0")
@@ -354,8 +354,8 @@ else()
        list(APPEND DET_NIO_A4_E48_SCALARS "localecp" "-392.26503661 0.001")
        list(APPEND DET_NIO_A4_E48_SCALARS "nonlocalecp" "-109.13501158 0.02")
        list(APPEND DET_NIO_A4_E48_SCALARS "samples" "9 0.0")
-      endif() 
-     endif()    
+      endif()
+     endif()
     endif()
 
     qmc_run_and_check(
@@ -368,7 +368,7 @@ else()
       TRUE
       1
       DET_NIO_A4_E48_SCALARS # VMC
-      )   
+      )
 
     if (NOT QMC_CUDA)
      if (QMC_MIXED_PRECISION)
@@ -377,7 +377,7 @@ else()
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "kinetic"  "248.14256182 0.02")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "potential" "-619.33379702 0.02")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "eeenergy" "75.55927802 0.003")
-       list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.29785436 0.00001") 
+       list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.297920516 0.000015")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "localecp" "-391.88851928 0.01")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "nonlocalecp" "-63.70670140 0.02")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "samples" "9 0.0")
@@ -386,7 +386,7 @@ else()
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "kinetic" "248.14277081 0.02")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "potential" "-619.33419103 0.02")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "eeenergy" "75.55880181 0.003")
-       list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.29785436 0.00001")
+       list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.297920516 0.000015")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "localecp" "-391.88748382 0.01")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "nonlocalecp" "-63.70765466 0.02")
        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "samples" "9 0.0")
@@ -416,7 +416,7 @@ else()
      qmc_run_and_check(
        deterministic-NiO_a4_e48_pp-vmc_sdj_batched
        "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-       det_NiO-batched-fcc-S1-vmc 
+       det_NiO-batched-fcc-S1-vmc
        det_NiO-batched-vmc.in.xml
        1
        1

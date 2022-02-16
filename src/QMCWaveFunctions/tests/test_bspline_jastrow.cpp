@@ -56,14 +56,14 @@ TEST_CASE("BSpline functor one", "[wavefunction]")
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0][0] = 2.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -76,9 +76,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   ions_.update();
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 1;
-  elec_.create(ud);
+  elec_.create({1,1});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -115,7 +113,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_, ions_);
 
-  typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
+  using J1Type = J1OrbitalSoA<BsplineFunctor<RealType>>;
   auto j1_uptr = jastrow.buildComponent(jas1);
   J1Type* j1   = dynamic_cast<J1Type*>(j1_uptr.get());
   REQUIRE(j1);
@@ -128,8 +126,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   //Ionic Derivative Test.
   QMCTraits::GradType gsource(0.0);
-  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
-  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad_source;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad_source;
   int nelecs = elec_.getTotalNum();
 
   for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -179,7 +177,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
 
   // now test evaluateHessian
-  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
@@ -270,8 +268,8 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   }
 #endif
 
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);

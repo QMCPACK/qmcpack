@@ -1526,17 +1526,17 @@ private:
   //Cholesky Tensor Lik[Q][nk][i][k][n]
   std::vector<shmSpMatrix> LQKikn;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<LQKankMatrix> LQKank;
   const bool needs_copy;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKakn;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKbnl;
 
-  // half-tranformed Cholesky tensor
+  // half-transformed Cholesky tensor
   std::vector<shmSpMatrix> LQKbln;
 
   // number of Q vectors that satisfy Q==-Q

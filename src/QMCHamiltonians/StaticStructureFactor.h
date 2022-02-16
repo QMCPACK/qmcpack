@@ -21,9 +21,9 @@ namespace qmcplusplus
 class StaticStructureFactor : public OperatorBase
 {
 public:
-  typedef std::vector<RealType> k2_t;
-  typedef std::vector<RealType> dens_t;
-  typedef std::vector<PosType> pts_t;
+  using k2_t   = std::vector<RealType>;
+  using dens_t = std::vector<RealType>;
+  using pts_t  = std::vector<PosType>;
 
   //data members
   int nspecies;

@@ -72,7 +72,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
       psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
-  PBCType   = targetPtcl.Lattice.SuperCellEnum;
+  PBCType   = targetPtcl.getLattice().SuperCellEnum;
   ClassName = "HamiltonianFactory";
   myName    = hName;
   targetPtcl.set_quantum();
@@ -328,9 +328,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           apot->put(cur);
           targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) estimator" << std::endl;
-#if defined(USE_REAL_STRUCT_FACTOR)
-          app_log() << "S(k) estimator using Real S(k)" << std::endl;
-#endif
         }
       }
 #if OHMMS_DIM == 3

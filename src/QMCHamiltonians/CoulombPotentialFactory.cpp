@@ -71,7 +71,7 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 
 void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 {
-  typedef QMCHamiltonian::FullPrecRealType Return_t;
+  using Return_t = QMCHamiltonian::FullPrecRealType;
   std::string targetInp(targetPtcl.getName());
   std::string sourceInp(targetPtcl.getName());
   std::string title("ElecElec"), pbc("yes");

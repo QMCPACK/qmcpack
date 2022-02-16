@@ -99,13 +99,4 @@ protected:
   std::string myName;
 };
 
-//add tolower function here
-
-inline void tolower(std::string& s)
-{
-  for (int i = 0; i < s.size(); ++i)
-    s[i] = tolower(s[i]);
-  //std::transform(s.begin(), s.end(), s.begin(), std::tolower);
-}
-
 #endif

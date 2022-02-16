@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "SplineR2R.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -49,7 +49,7 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
 }
 
 template<typename ST>
-inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, ValueVector_t& psi, int first, int last)
+inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, ValueVector& psi, int first, int last)
     const
 {
   // protect last
@@ -62,7 +62,7 @@ inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, Val
 }
 
 template<typename ST>
-void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi)
+void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru;
@@ -80,8 +80,8 @@ void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 
 template<typename ST>
 void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
-                                      ValueVector_t& psi,
-                                      const ValueVector_t& psiinv,
+                                      ValueVector& psi,
+                                      const ValueVector& psiinv,
                                       std::vector<TT>& ratios)
 {
   const bool need_resize = ratios_private.rows() < VP.getTotalNum();
@@ -123,9 +123,9 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
 template<typename ST>
 inline void SplineR2R<ST>::assign_vgl(int bc_sign,
-                                      ValueVector_t& psi,
-                                      GradVector_t& dpsi,
-                                      ValueVector_t& d2psi,
+                                      ValueVector& psi,
+                                      GradVector& dpsi,
+                                      ValueVector& d2psi,
                                       int first,
                                       int last) const
 {
@@ -163,7 +163,7 @@ inline void SplineR2R<ST>::assign_vgl(int bc_sign,
 /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
 template<typename ST>
-inline void SplineR2R<ST>::assign_vgl_from_l(int bc_sign, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+inline void SplineR2R<ST>::assign_vgl_from_l(int bc_sign, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   const ST signed_one   = (bc_sign & 1) ? -1 : 1;
   const ST* restrict g0 = myG.data(0);
@@ -185,9 +185,9 @@ inline void SplineR2R<ST>::assign_vgl_from_l(int bc_sign, ValueVector_t& psi, Gr
 template<typename ST>
 void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
                                 const int iat,
-                                ValueVector_t& psi,
-                                GradVector_t& dpsi,
-                                ValueVector_t& d2psi)
+                                ValueVector& psi,
+                                GradVector& dpsi,
+                                ValueVector& d2psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru;
@@ -205,9 +205,9 @@ void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
 
 template<typename ST>
 void SplineR2R<ST>::assign_vgh(int bc_sign,
-                               ValueVector_t& psi,
-                               GradVector_t& dpsi,
-                               HessVector_t& grad_grad_psi,
+                               ValueVector& psi,
+                               GradVector& dpsi,
+                               HessVector& grad_grad_psi,
                                int first,
                                int last) const
 {
@@ -268,9 +268,9 @@ void SplineR2R<ST>::assign_vgh(int bc_sign,
 template<typename ST>
 void SplineR2R<ST>::evaluateVGH(const ParticleSet& P,
                                 const int iat,
-                                ValueVector_t& psi,
-                                GradVector_t& dpsi,
-                                HessVector_t& grad_grad_psi)
+                                ValueVector& psi,
+                                GradVector& dpsi,
+                                HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru;
@@ -288,10 +288,10 @@ void SplineR2R<ST>::evaluateVGH(const ParticleSet& P,
 
 template<typename ST>
 void SplineR2R<ST>::assign_vghgh(int bc_sign,
-                                 ValueVector_t& psi,
-                                 GradVector_t& dpsi,
-                                 HessVector_t& grad_grad_psi,
-                                 GGGVector_t& grad_grad_grad_psi,
+                                 ValueVector& psi,
+                                 GradVector& dpsi,
+                                 HessVector& grad_grad_psi,
+                                 GGGVector& grad_grad_grad_psi,
                                  int first,
                                  int last) const
 {
@@ -445,10 +445,10 @@ void SplineR2R<ST>::assign_vghgh(int bc_sign,
 template<typename ST>
 void SplineR2R<ST>::evaluateVGHGH(const ParticleSet& P,
                                   const int iat,
-                                  ValueVector_t& psi,
-                                  GradVector_t& dpsi,
-                                  HessVector_t& grad_grad_psi,
-                                  GGGVector_t& grad_grad_grad_psi)
+                                  ValueVector& psi,
+                                  GradVector& dpsi,
+                                  HessVector& grad_grad_psi,
+                                  GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru;

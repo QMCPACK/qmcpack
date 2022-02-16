@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/LatticeGaussianProduct.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 
 #include <stdio.h>
 #include <string>
@@ -28,7 +28,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType = QMCTraits::RealType;
+using RealType     = QMCTraits::RealType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 
 TEST_CASE("lattice gaussian", "[wavefunction]")
@@ -36,40 +36,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
-
-  ions_.setName("ion");
-  ions_.create(2);
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 0.0;
-  ions_.R[1][1] = 0.0;
-  ions_.R[1][2] = 0.0;
-
-  elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = 2;
-  ud[1] = 0;
-  elec_.create(ud);
-  elec_.R[0][0] = -0.28;
-  elec_.R[0][1] = 0.0225;
-  elec_.R[0][2] = -2.709;
-  elec_.R[1][0] = -1.08389;
-  elec_.R[1][1] = 1.9679;
-  elec_.R[1][2] = -0.0128914;
-
-  std::map<string, ParticleSet*> pp;
-  pp["ion"] = &ions_;
-
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
-
+  ParticleSet::ParticleLayout lattice;
   // initialize simulationcell for kvectors
   const char* xmltext = "<tmp> \
   <simulationcell>\
@@ -91,11 +58,42 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // read lattice
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
-  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
-  LatticeParser lp(*SimulationCell);
+
+  LatticeParser lp(lattice);
   lp.put(part1);
-  SimulationCell->print(app_log(), 0);
-  elec_.Lattice = *SimulationCell;
+  lattice.print(app_log(), 0);
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
+
+  ions_.setName("ion");
+  ions_.create({2});
+  ions_.R[0][0] = 0.0;
+  ions_.R[0][1] = 0.0;
+  ions_.R[0][2] = 0.0;
+  ions_.R[1][0] = 0.0;
+  ions_.R[1][1] = 0.0;
+  ions_.R[1][2] = 0.0;
+
+  elec_.setName("elec");
+  elec_.create({2,0});
+  elec_.R[0][0] = -0.28;
+  elec_.R[0][1] = 0.0225;
+  elec_.R[0][2] = -2.709;
+  elec_.R[1][0] = -1.08389;
+  elec_.R[1][1] = 1.9679;
+  elec_.R[1][2] = -0.0128914;
+
+  std::map<string, ParticleSet*> pp;
+  pp["ion"] = &ions_;
+
+  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+
   // initialize SK
   elec_.createSK();
 
@@ -103,7 +101,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   <ionwf name=\"ionwf\" source=\"ion\" width=\"0.5 0.5\"/> \
 </tmp> \
 ";
-  okay = doc.parseFromString(particles);
+  okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
   root = doc.getRoot();
@@ -113,10 +111,10 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   LatticeGaussianProductBuilder jastrow(c, elec_, pp);
   auto LGP_uptr = jastrow.buildComponent(jas1);
   auto LGP      = dynamic_cast<LatticeGaussianProduct*>(LGP_uptr.get());
-  double width = 0.5;
-  double alpha = 1./(2*width*width);
+  double width  = 0.5;
+  double alpha  = 1. / (2 * width * width);
   // check initialization. Nope, cannot access Psi.Z
-  for (int i=0; i<2; i++)
+  for (int i = 0; i < 2; i++)
   {
     REQUIRE(LGP->ParticleAlpha[i] == Approx(alpha));
   }
@@ -127,8 +125,8 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   LogValueType logpsi = LGP->evaluateLog(elec_, elec_.G, elec_.L);
   // check answer
-  RealType r2 = Dot(elec_.R, elec_.R);
-  double wfval = std::exp(-alpha*r2);
+  RealType r2  = Dot(elec_.R, elec_.R);
+  double wfval = std::exp(-alpha * r2);
   REQUIRE(logpsi == ComplexApprox(std::log(wfval)));
 }
 } // namespace qmcplusplus

@@ -43,14 +43,14 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
-  ions_.create(2);
+  ions_.create({2});
   ions_.R[0][0] = 2.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -59,13 +59,10 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.setCoordinates(ions_.R);
-  //ions_.resetGroups();
+  ions_.update();
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 2;
-  elec_.create(ud);
+  elec_.create({2,2});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -109,7 +106,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   eeI_JastrowBuilder jastrow(c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
-  typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
+  using J3Type              = JeeIOrbitalSoA<PolynomialFunctor3D>;
   auto j3_uptr              = jastrow.buildComponent(jas_eeI);
   WaveFunctionComponent* j3 = dynamic_cast<J3Type*>(j3_uptr.get());
   REQUIRE(j3 != nullptr);
@@ -123,8 +120,8 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
 
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);

@@ -16,18 +16,18 @@
 
 #include "VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 
 namespace qmcplusplus
 {
 /// Constructor
-VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg),
       buffer_timer_(*timer_manager.createTimer("VMCUpdatePbyP::Buffer", timer_level_medium)),
       movepbyp_timer_(*timer_manager.createTimer("VMCUpdatePbyP::MovePbyP", timer_level_medium)),
@@ -85,7 +85,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           GradType grad_new;
           prob = std::norm(Psi.calcRatioGrad(W, iat, grad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr             = W.R[iat] - W.activePos - dr;
+          dr             = W.R[iat] - W.getActivePos() - dr;
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
           prob *= std::exp(logGb - logGf);

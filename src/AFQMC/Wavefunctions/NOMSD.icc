@@ -338,7 +338,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
 {
   using std::copy_n;
   using std::fill_n;
-  auto Gsize   = size_t(dm_size(false));
+  auto Gsize   = dm_size(false);
   const int nw = SM.size(0);
   assert(G.stride(1) == 1);
   assert(Ov.stride(0) == 1);
@@ -456,7 +456,7 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
   TG.local_barrier();
   double LogOverlapFactor(wset.getLogOverlapFactor());
-  auto Gsize = size_t(dm_size(not compact));
+  auto Gsize = dm_size(not compact);
 
   if (walker_type != COLLINEAR)
   {
@@ -580,7 +580,7 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   stdCVector hvec(iextensions<1u>{2 * nbatch__});
   TG.local_barrier();
   auto GAdims = dm_dims(not compact, Alpha);
-  auto Gsize  = size_t(GAdims.first * GAdims.second);
+  auto Gsize  = GAdims.first * GAdims.second;
   std::vector<CMatrix_ptr> Ai;
   Ai.reserve(nbatch__);
   std::vector<decltype(&RefA)> Oia;
@@ -810,7 +810,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
   TG.local_barrier();
-  auto Gsize    = size_t(dm_size(not compact));
+  auto Gsize    = dm_size(not compact);
   auto wlk_dims = wset.walker_dims();
   if (walker_type != COLLINEAR)
   {
@@ -1078,7 +1078,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   stdCVector Ovl(iextensions<1u>{nw});
   fill_n(Ovl.origin(), nw, ComplexType(0.0));
   TG.local_barrier();
-  auto Gsize = size_t(dm_size(not compact));
+  auto Gsize = dm_size(not compact);
   std::vector<CMatrix_ptr> Ai;
   Ai.reserve(nbatch__);
   std::vector<decltype(&OrbMats[0])> Oi;
@@ -1473,7 +1473,7 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared(const WlkSet& wset,
   const int nwalk = wset.size();
   const int ndet  = ci.size();
   bool compact    = false;
-  auto Gsize      = size_t(dm_size(not compact));
+  auto Gsize      = dm_size(not compact);
   int nrow        = NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1);
   int ncol        = NAEA + ((walker_type == CLOSED) ? 0 : NAEB);
   assert(wgt.size(0) >= nwalk);
@@ -1662,7 +1662,7 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
   const int ndet  = ci.size();
   assert(ndet == 1);
   bool compact = false;
-  auto Gsize   = size_t(dm_size(not compact));
+  auto Gsize   = dm_size(not compact);
   int nrow     = NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1);
   int ncol     = NAEA + ((walker_type == CLOSED) ? 0 : NAEB);
   assert(wgt.size(0) >= nwalk);
@@ -1886,7 +1886,7 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_batched(const WlkSet& wset,
     }
     stdCVector hvec(iextensions<1u>{2*nbatch__});
     TG.local_barrier();
-    auto Gsize = size_t(dm_size(not compact));
+    auto Gsize = dm_size(not compact);
     if(localGbuff.size() < nbatch__*Gsize+1)
       localGbuff.reextent(iextensions<1u>{nbatch__*Gsize+1});
     pointer ov_(localGbuff.origin()+nbatch__*Gsize);  
@@ -2230,7 +2230,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
   }
   else
   {
-    size_t Gsize = dm_size(true);
+    auto Gsize = dm_size(true);
     auto Gdims   = dm_dims(true, Alpha);
     CVector G1D(iextensions<1u>{Gsize});
     fill_n(G1D.origin(), G1D.num_elements(), ComplexType(0));
@@ -2291,7 +2291,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
           {
             found = true;
             app_warning() << " WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field "
-                             "substraction potential is potentially wrong. ! \n";
+                             "subtraction potential is potentially wrong. ! \n";
             //              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q],PsiT,
             //                                G_.sliced(0,NMO),false);
           }
@@ -2300,7 +2300,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
           {
             found = true;
             app_warning() << " WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field "
-                             "substraction potential is potentially wrong. ! \n";
+                             "subtraction potential is potentially wrong. ! \n";
             //              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q+1],PsiTB,
             //                                G_.sliced(NMO,2*NMO),false);
           }
@@ -2352,7 +2352,7 @@ inline void NOMSD<devPsiT>::recompute_ci()
   }
   else
   {
-    size_t nt = (1 + dm_size(false) + NMO * NAEA);
+    auto nt = (1 + dm_size(false) + NMO * NAEA);
     StaticSHMVector shmbuff(iextensions<1u>{nt},
                             shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 

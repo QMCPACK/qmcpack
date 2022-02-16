@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_CONSERVEDENERGY_H
 
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef QMC_CUDA

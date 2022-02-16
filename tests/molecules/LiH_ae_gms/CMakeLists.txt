@@ -43,8 +43,7 @@ if(NOT QMC_CUDA)
 
     # estimator tests
     include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-    set(stat_python_reqs numpy;h5py)
-    check_python_reqs(stat_python_reqs diamond-estimator add_tests)
+    check_python_reqs("numpy;h5py" diamond-estimator add_tests)
     if(add_tests)
       simple_run_and_check(
         short-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi

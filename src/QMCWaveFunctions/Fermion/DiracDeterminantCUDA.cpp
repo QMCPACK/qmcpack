@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-DiracDeterminantCUDA::DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first, int last)
+DiracDeterminantCUDA::DiracDeterminantCUDA(std::unique_ptr<SPOSet>&& spos, int first, int last)
     : DiracDeterminantBase("DiracDeterminantCUDA", std::move(spos), first, last),
       UpdateJobList_d("DiracDeterminant::UpdateJobList_d"),
       srcList_d("DiracDeterminant::srcList_d"),
@@ -95,28 +95,14 @@ void DiracDeterminantCUDA::det_lookahead(MCWalkerConfiguration& W,
     cudaEventRecord(gpu::syncEvent, gpu::kernelStream);
     cudaEventSynchronize(gpu::syncEvent);
     // calculate new lemma matrix
-    cublas_lemma_mats(gpu::cublasHandle,
-                      AinvList_d.data(),
-                      newRowList_d.data(),
-                      LemmaList_d.data(),
-                      AinvUList_d.data(),
-                      kd,
-                      W.getkstart(),
-                      NumPtcls,
-                      nw,
-                      RowStride);
+    cublas_lemma_mats(gpu::cublasHandle, AinvList_d.data(), newRowList_d.data(), LemmaList_d.data(), AinvUList_d.data(),
+                      kd, W.getkstart(), NumPtcls, nw, RowStride);
   }
   auto& walkers = W.WalkerList;
   // copy lemma (since it's only calculated once every k blocks) to lemma_lu (for an updated LU decomposition)
   // and copy the k-th row of the A inverse matrix into Ainvcolk (apart from the name that's the place to put it)
-  copy_delayed(LemmaLUList_d.data(),
-               LemmaList_d.data(),
-               AinvColkList_d.data(),
-               AinvDeltaList_d.data(),
-               k,
-               kd,
-               RowStride,
-               nw);
+  copy_delayed(LemmaLUList_d.data(), LemmaList_d.data(), AinvColkList_d.data(), AinvDeltaList_d.data(), k, kd,
+               RowStride, nw);
   // Calculate k-th row of updated A^-1
   if (k > 0)
   {
@@ -128,32 +114,17 @@ void DiracDeterminantCUDA::det_lookahead(MCWalkerConfiguration& W,
       AinvWorkList[iw] = &(walkers[iw]->cuda_DataSet.data()[curr_ainvu_row]); // don't want to overwrite AinvU list
     AinvWorkList_d.asyncCopy(AinvWorkList);
 #endif // use_trsm
-    cublas_smw_update(gpu::cublasHandle,
-                      AinvDeltaList_d.data(),
-                      AinvColkList_d.data(),
-                      AinvWorkList_d.data(),
+    cublas_smw_update(gpu::cublasHandle, AinvDeltaList_d.data(), AinvColkList_d.data(), AinvWorkList_d.data(),
                       AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
                       LemmaInvList_d.data(),
                       LemmaLUList_d.data(), // <- LemmaInv is not needed for USE_TRSM
                       NULL,
                       infoArray_d.data(), // <- important not to use pivoting here
-                      k + 1,
-                      kd,
-                      1,
-                      NumPtcls,
-                      nw,
-                      RowStride);
+                      k + 1, kd, 1, NumPtcls, nw, RowStride);
   }
   // calculate and collect ratios, gradients, and laplacians
-  calc_gradlapl_and_collect(LemmaLUList_d.data(),
-                            AinvColkList_d.data(),
-                            &(newGradLaplList_d.data()[k * nw]),
-                            ratio_d.data(),
-                            k,
-                            kd,
-                            NumPtcls,
-                            RowStride,
-                            nw);
+  calc_gradlapl_and_collect(LemmaLUList_d.data(), AinvColkList_d.data(), &(newGradLaplList_d.data()[k * nw]),
+                            ratio_d.data(), k, kd, NumPtcls, RowStride, nw);
   if (klinear)
   {
     // Copy back to host
@@ -196,9 +167,9 @@ void DiracDeterminantCUDA::update(MCWalkerConfiguration* W,
   if (kdelay > 1)
   {
     auto& allwalkers = W->WalkerList;
-    int nw = acc->size();
-    int kstart = W->getkstart();
-    int kupdate = W->getkupdate();
+    int nw           = acc->size();
+    int kstart       = W->getkstart();
+    int kupdate      = W->getkupdate();
 
     if (UpdateList.size() < nw)
       UpdateList.resize(nw);
@@ -221,50 +192,21 @@ void DiracDeterminantCUDA::update(MCWalkerConfiguration* W,
     UpdateList_d = UpdateList;
     // kernel containing behavior for acceptance and rejection, side benefit: no memory copying needed anymore
     // -> also updates A^-1*dU * lemma^-1 for next round's gradient in "linear" (aka w/ drift) case
-    update_onemove(UpdateList_d.data(),
-                   newRowOffset + k * RowStride,
-                   AOffset + (kstart + k) * RowStride,
-                   newGradLaplOffset + 4 * k * RowStride,
-                   gradLaplOffset + 4 * (kstart + k) * RowStride,
-                   AinvUOffset,
-                   LemmaOffset + k * kdelay,
-                   LemmaInvOffset,
-                   (W->getklinear() && (k < kupdate)) * AWorkOffset,
-                   accepted,
-                   k,
-                   kstart,
-                   kdelay,
-                   RowStride,
-                   ws);
+    update_onemove(UpdateList_d.data(), newRowOffset + k * RowStride, AOffset + (kstart + k) * RowStride,
+                   newGradLaplOffset + 4 * k * RowStride, gradLaplOffset + 4 * (kstart + k) * RowStride, AinvUOffset,
+                   LemmaOffset + k * kdelay, LemmaInvOffset, (W->getklinear() && (k < kupdate)) * AWorkOffset, accepted,
+                   k, kstart, kdelay, RowStride, ws);
     if (k + 1 == kupdate) // time to update the inverse
     {
 #ifndef USE_TRSM
       multi_copy(LemmaLUList_d.data(), LemmaList_d.data(), kupdate * kdelay, nw);
 #else // using the triangular solver should be the default
-      copy_update_block(LemmaLUList_d.data(),
-                        LemmaList_d.data(),
-                        AWorkList_d.data(),
-                        AinvDeltaList_d.data(),
-                        k,
-                        kdelay,
-                        RowStride,
-                        nw);
+      copy_update_block(LemmaLUList_d.data(), LemmaList_d.data(), AWorkList_d.data(), AinvDeltaList_d.data(), k, kdelay,
+                        RowStride, nw);
 #endif
-      cublas_smw_update(gpu::cublasHandle,
-                        AinvDeltaList_d.data(),
-                        AinvList_d.data(),
-                        AinvUList_d.data(),
-                        AWorkList_d.data(),
-                        LemmaInvList_d.data(),
-                        LemmaLUList_d.data(),
-                        PivotArray_d.data(),
-                        infoArray_d.data(),
-                        kupdate,
-                        kdelay,
-                        NumPtcls,
-                        NumPtcls,
-                        nw,
-                        RowStride);
+      cublas_smw_update(gpu::cublasHandle, AinvDeltaList_d.data(), AinvList_d.data(), AinvUList_d.data(),
+                        AWorkList_d.data(), LemmaInvList_d.data(), LemmaLUList_d.data(), PivotArray_d.data(),
+                        infoArray_d.data(), kupdate, kdelay, NumPtcls, NumPtcls, nw, RowStride);
     }
   }
   else
@@ -274,16 +216,8 @@ void DiracDeterminantCUDA::update(MCWalkerConfiguration* W,
     for (int iw = 0; iw < walkers.size(); iw++)
       UpdateList[iw] = walkers[iw]->cuda_DataSet.data();
     UpdateList_d.asyncCopy(UpdateList);
-    update_inverse_cuda(UpdateList_d.data(),
-                        iat - FirstIndex,
-                        AOffset,
-                        AinvOffset,
-                        newRowOffset,
-                        AinvDeltaOffset,
-                        AinvColkOffset,
-                        NumPtcls,
-                        RowStride,
-                        walkers.size());
+    update_inverse_cuda(UpdateList_d.data(), iat - FirstIndex, AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
+                        AinvColkOffset, NumPtcls, RowStride, walkers.size());
     // Copy temporary gradients and laplacians into matrix
     int gradoff = 4 * (iat - FirstIndex) * RowStride;
     multi_copy(UpdateList_d.data(), gradLaplOffset + gradoff, newGradLaplOffset, 4 * RowStride, walkers.size());
@@ -402,16 +336,8 @@ void DiracDeterminantCUDA::update(const std::vector<Walker_t*>& walkers, const s
   iatList_d    = iatList;
   srcList_d    = srcList;
   destList_d   = destList;
-  update_inverse_cuda(UpdateList_d.data(),
-                      iatList_d.data(),
-                      AOffset,
-                      AinvOffset,
-                      newRowOffset,
-                      AinvDeltaOffset,
-                      AinvColkOffset,
-                      NumPtcls,
-                      RowStride,
-                      walkers.size());
+  update_inverse_cuda(UpdateList_d.data(), iatList_d.data(), AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
+                      AinvColkOffset, NumPtcls, RowStride, walkers.size());
   // Copy temporary gradients and laplacians into matrix
   multi_copy(destList_d.data(), srcList_d.data(), 4 * RowStride, walkers.size());
   // if (AList.size() < walkers.size())
@@ -505,7 +431,7 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
 {
   std::vector<Walker_t*> walkers;
   walkers.reserve(W.WalkerList.size());
-  for(auto& walker_uptr : W.WalkerList)
+  for (auto& walker_uptr : W.WalkerList)
     walkers.push_back(walker_uptr.get());
   // HACK HACK HACK
   //     app_log() << "Before recompute:\n";
@@ -583,17 +509,8 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
 
   // Invert
   bool useDoublePrecision = true;
-  cublas_inverse(gpu::cublasHandle,
-                 AList_d.data(),
-                 AinvList_d.data(),
-                 AWorkList_d.data(),
-                 AinvWorkList_d.data(),
-                 PivotArray_d.data(),
-                 infoArray_d.data(),
-                 NumPtcls,
-                 RowStride,
-                 walkers.size(),
-                 useDoublePrecision);
+  cublas_inverse(gpu::cublasHandle, AList_d.data(), AinvList_d.data(), AWorkList_d.data(), AinvWorkList_d.data(),
+                 PivotArray_d.data(), infoArray_d.data(), NumPtcls, RowStride, walkers.size(), useDoublePrecision);
 
   // checking inversion status
   infoArray_host = infoArray_d;
@@ -602,10 +519,7 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
     if (infoArray_host[iw] != 0 || infoArray_host[iw + walkers.size()] != 0)
     {
       failed = true;
-      fprintf(stderr,
-              "cublas_inverse failed on walker %d, getrf error %d, getri error %d.\n",
-              iw,
-              infoArray_host[iw],
+      fprintf(stderr, "cublas_inverse failed on walker %d, getrf error %d, getri error %d.\n", iw, infoArray_host[iw],
               infoArray_host[iw + walkers.size()]);
       char name[1000];
       gethostname(name, 1000);
@@ -691,7 +605,7 @@ void DiracDeterminantCUDA::addLog(MCWalkerConfiguration& W, std::vector<RealType
 {
   std::vector<Walker_t*> walkers;
   walkers.reserve(W.WalkerList.size());
-  for(auto& walker_uptr : W.WalkerList)
+  for (auto& walker_uptr : W.WalkerList)
     walkers.push_back(walker_uptr.get());
   if (AList.size() < walkers.size())
     resizeLists(walkers.size());
@@ -760,8 +674,8 @@ void DiracDeterminantCUDA::addLog(MCWalkerConfiguration& W, std::vector<RealType
 void DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad)
 {
   auto& walkers = W.WalkerList;
-  int kd = W.getkDelay();
-  int kstk = 0;
+  int kd        = W.getkDelay();
+  int kstk      = 0;
   if (kd)
     kstk = iat - FirstIndex;
   int nw = walkers.size();
@@ -792,14 +706,8 @@ void DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration& W, int iat, int k
     {
       // just copy the k-th row of the (just updated) A inverse matrix into Ainvcolk (apart from the name that's the place to put it)
       multi_row_copy(AinvColkList_d.data(), AinvList_d.data(), RowStride, kstk, 1, RowStride, nw);
-      cublas_ainv_row(gpu::cublasHandle,
-                      AinvDeltaList_d.data(),
-                      AWorkList_d.data(),
-                      AinvColkList_d.data(),
-                      k,
-                      NumPtcls,
-                      nw,
-                      RowStride);
+      cublas_ainv_row(gpu::cublasHandle, AinvDeltaList_d.data(), AWorkList_d.data(), AinvColkList_d.data(), k, NumPtcls,
+                      nw, RowStride);
     }
     // calculate and collect gradients only
     calc_gradient_delayed(AinvColkList_d.data(), GLList_d.data(), ratio_d.data(), NumPtcls, RowStride, nw);
@@ -858,7 +766,7 @@ void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W, int iat, std::vector<
 {
   std::vector<Walker_t*> walkers;
   walkers.reserve(W.WalkerList.size());
-  for(auto& walker_uptr : W.WalkerList)
+  for (auto& walker_uptr : W.WalkerList)
     walkers.push_back(walker_uptr.get());
   if (AList.size() < walkers.size())
     resizeLists(walkers.size());
@@ -873,12 +781,7 @@ void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W, int iat, std::vector<
   AinvList_d   = AinvList;
   Phi->evaluate(walkers, W.Rnew, newRowList_d);
   // Now evaluate ratios
-  determinant_ratios_cuda(AinvList_d.data(),
-                          newRowList_d.data(),
-                          ratio_d.data(),
-                          NumPtcls,
-                          RowStride,
-                          iat - FirstIndex,
+  determinant_ratios_cuda(AinvList_d.data(), newRowList_d.data(), ratio_d.data(), NumPtcls, RowStride, iat - FirstIndex,
                           walkers.size());
   // Copy back to host
   ratio_host = ratio_d;
@@ -900,13 +803,13 @@ void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W,
                                  std::vector<GradType>& grad,
                                  std::vector<ValueType>& lapl)
 {
-  const int N = W.Rnew.size();
-  const int kd = W.getkDelay();
+  const int N      = W.Rnew.size();
+  const int kd     = W.getkDelay();
   const int kstart = W.getkstart();
-  const int nw = W.WalkerList.size();
+  const int nw     = W.WalkerList.size();
   std::vector<Walker_t*> walkers;
   walkers.reserve(nw);
-  for(auto& walker_uptr : W.WalkerList)
+  for (auto& walker_uptr : W.WalkerList)
     walkers.push_back(walker_uptr.get());
   if (AinvList.size() < N)
     resizeLists(nw, W.getkblocksize());
@@ -956,10 +859,7 @@ void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W,
     LemmaList_d.asyncCopy(LemmaList);
     LemmaLUList_d.asyncCopy(LemmaLUList);
     LemmaInvList_d.asyncCopy(LemmaInvList);
-    Phi->evaluate(walkers,
-                  W.Rnew,
-                  newRowList_d,
-                  newGradLaplList_d,
+    Phi->evaluate(walkers, W.Rnew, newRowList_d, newGradLaplList_d,
                   RowStride); // works with k-delayed positions as well
     // further evaluation (determinant look-ahead) happens in TrialWaveFunction class, copy memory needed later
   }
@@ -986,21 +886,13 @@ void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W,
         //if (std::abs(host_vec[newRowOffset+iorb]-testPhi[iorb]) > 1.0e-6)
         //   fprintf (stderr, "CUDA = %1.8e    CPU = %1.8e\n",
         // 	   host_vec[newRowOffset+iorb], testPhi[iorb]);
-        fprintf(stderr,
-                "CUDA = %1.8e    CPU = %1.8e\n",
-                host_vec[newGradLaplOffset + 2 * NumOrbitals + iorb],
+        fprintf(stderr, "CUDA = %1.8e    CPU = %1.8e\n", host_vec[newGradLaplOffset + 2 * NumOrbitals + iorb],
                 testGrad[iorb][2]);
       }
     }
 #endif
-    determinant_ratios_grad_lapl_cuda(AinvList_d.data(),
-                                      newRowList_d.data(),
-                                      newGradLaplList_d.data(),
-                                      ratio_d.data(),
-                                      NumPtcls,
-                                      RowStride,
-                                      iat - FirstIndex,
-                                      walkers.size());
+    determinant_ratios_grad_lapl_cuda(AinvList_d.data(), newRowList_d.data(), newGradLaplList_d.data(), ratio_d.data(),
+                                      NumPtcls, RowStride, iat - FirstIndex, walkers.size());
     // Copy back to host
     ratio_host = ratio_d;
 #ifdef CUDA_DEBUG
@@ -1055,12 +947,12 @@ void DiracDeterminantCUDA::calcRatio(MCWalkerConfiguration& W,
 {
   std::vector<Walker_t*> walkers;
   walkers.reserve(W.WalkerList.size());
-  for(auto& walker_uptr : W.WalkerList)
+  for (auto& walker_uptr : W.WalkerList)
     walkers.push_back(walker_uptr.get());
-  int nw        = walkers.size();
-  int kd        = W.getkDelay();
-  int kstart    = W.getkstart();
-  int k         = W.getkcurr() - (kd > 1);
+  int nw     = walkers.size();
+  int kd     = W.getkDelay();
+  int kstart = W.getkstart();
+  int k      = W.getkcurr() - (kd > 1);
   if (k < 0)
     k += W.getkupdate();
 #ifdef DEBUG_DELAYED
@@ -1109,16 +1001,8 @@ void DiracDeterminantCUDA::calcRatio(MCWalkerConfiguration& W,
   }
   Phi->evaluate(walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride, k, W.getklinear());
   if (kd && W.getklinear())
-    calc_lemma_column(AinvList_d.data(),
-                      newRowList_d.data(),
-                      LemmaList_d.data(),
-                      AinvUList_d.data(),
-                      k,
-                      kd,
-                      W.getkstart(),
-                      NumPtcls,
-                      RowStride,
-                      nw);
+    calc_lemma_column(AinvList_d.data(), newRowList_d.data(), LemmaList_d.data(), AinvUList_d.data(), k, kd,
+                      W.getkstart(), NumPtcls, RowStride, nw);
 #ifdef CUDA_DEBUG2
   Vector<ValueType> testPhi(NumOrbitals), testLapl(NumOrbitals);
   Vector<GradType> testGrad(NumOrbitals);
@@ -1132,23 +1016,15 @@ void DiracDeterminantCUDA::calcRatio(MCWalkerConfiguration& W,
     Phi->evaluate(P, iat - FirstIndex, testPhi, testGrad, testLapl);
     for (int iorb = 0; iorb < NumOrbitals; iorb++)
     {
-      fprintf(stderr,
-              "CUDA = %1.8e    CPU = %1.8e\n",
-              host_vec[newGradLaplOffset + 2 * NumOrbitals + iorb],
+      fprintf(stderr, "CUDA = %1.8e    CPU = %1.8e\n", host_vec[newGradLaplOffset + 2 * NumOrbitals + iorb],
               testGrad[iorb][2]);
     }
   }
 #endif
   if (kd == 0)
   {
-    determinant_ratios_grad_lapl_cuda(AinvList_d.data(),
-                                      newRowList_d.data(),
-                                      newGradLaplList_d.data(),
-                                      ratio_d.data(),
-                                      NumPtcls,
-                                      RowStride,
-                                      iat - FirstIndex,
-                                      walkers.size());
+    determinant_ratios_grad_lapl_cuda(AinvList_d.data(), newRowList_d.data(), newGradLaplList_d.data(), ratio_d.data(),
+                                      NumPtcls, RowStride, iat - FirstIndex, walkers.size());
     gpu::streamsSynchronize();
     // Copy back to host
     ratio_host.asyncCopy(ratio_d);
@@ -1196,14 +1072,8 @@ void DiracDeterminantCUDA::addRatio(MCWalkerConfiguration& W,
     grad[iw] += g;
     lapl[iw] += ratio_host[5 * iw + 0];
 #ifdef DEBUG_DELAYED
-    fprintf(stderr,
-            "-> walker %i: ratio = %f ; grad = (%f,%f,%f) ; lapl = %f\n",
-            iw,
-            psi_ratios[iw],
-            grad[iw][0],
-            grad[iw][1],
-            grad[iw][2],
-            lapl[iw]);
+    fprintf(stderr, "-> walker %i: ratio = %f ; grad = (%f,%f,%f) ; lapl = %f\n", iw, psi_ratios[iw], grad[iw][0],
+            grad[iw][1], grad[iw][2], lapl[iw]);
 #endif
   }
 #ifdef CUDA_DEBUG
@@ -1253,14 +1123,8 @@ void DiracDeterminantCUDA::ratio(std::vector<Walker_t*>& walkers,
   AinvList_d        = AinvList;
   iatList_d         = iatList;
   Phi->evaluate(walkers, rNew, newRowList_d, newGradLaplList_d, RowStride);
-  determinant_ratios_grad_lapl_cuda(AinvList_d.data(),
-                                    newRowList_d.data(),
-                                    newGradLaplList_d.data(),
-                                    ratio_d.data(),
-                                    NumPtcls,
-                                    RowStride,
-                                    iatList_d.data(),
-                                    walkers.size());
+  determinant_ratios_grad_lapl_cuda(AinvList_d.data(), newRowList_d.data(), newGradLaplList_d.data(), ratio_d.data(),
+                                    NumPtcls, RowStride, iatList_d.data(), walkers.size());
   // Copy back to host
   ratio_host = ratio_d;
   // Calculate ratio, gradient and laplacian
@@ -1273,10 +1137,10 @@ void DiracDeterminantCUDA::ratio(std::vector<Walker_t*>& walkers,
   }
 }
 
-void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
 {
   auto& walkers = W.WalkerList;
-  int nw = walkers.size();
+  int nw        = walkers.size();
 #ifdef DEBUG_DELAYED
   fprintf(stderr, "grad/lapl, nw = %i\n", nw);
 #endif
@@ -1300,8 +1164,7 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
   {
     for (int iat = 0; iat < NumPtcls; iat++)
     {
-      GradType g(gradLapl_host[4 * (iw * RowStride + iat) + 0],
-                 gradLapl_host[4 * (iw * RowStride + iat) + 1],
+      GradType g(gradLapl_host[4 * (iw * RowStride + iat) + 0], gradLapl_host[4 * (iw * RowStride + iat) + 1],
                  gradLapl_host[4 * (iw * RowStride + iat) + 2]);
       grads(iw, iat + FirstIndex) += g;
 #ifdef QMC_COMPLEX
@@ -1333,22 +1196,14 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
           for (int j = 0; j < NumPtcls; j++)
           {
 #ifdef QMC_COMPLEX
-            fprintf(Amat,
-                    "%14.8e+%14.8ei ",
-                    host_data[AOffset + i * RowStride + j].real(),
+            fprintf(Amat, "%14.8e+%14.8ei ", host_data[AOffset + i * RowStride + j].real(),
                     host_data[AOffset + i * RowStride + j].imag());
-            fprintf(Ainv,
-                    "%14.8e+%14.8ei ",
-                    host_data[AinvOffset + i * RowStride + j].real(),
+            fprintf(Ainv, "%14.8e+%14.8ei ", host_data[AinvOffset + i * RowStride + j].real(),
                     host_data[AinvOffset + i * RowStride + j].imag());
-            fprintf(Lmat,
-                    "%14.8e+%14.8ei ",
-                    host_data[gradLaplOffset + (4 * i + 3) * RowStride + j].real(),
+            fprintf(Lmat, "%14.8e+%14.8ei ", host_data[gradLaplOffset + (4 * i + 3) * RowStride + j].real(),
                     host_data[gradLaplOffset + (4 * i + 3) * RowStride + j].imag());
             for (int k = 0; k < 3; k++)
-              fprintf(Gmat,
-                      "%14.8e+%14.8ei ",
-                      host_data[gradLaplOffset + (4 * i + k) * RowStride + j].real(),
+              fprintf(Gmat, "%14.8e+%14.8ei ", host_data[gradLaplOffset + (4 * i + k) * RowStride + j].real(),
                       host_data[gradLaplOffset + (4 * i + k) * RowStride + j].imag());
 #else
             fprintf(Amat, "%14.8e ", host_data[AOffset + i * RowStride + j]);
@@ -1374,15 +1229,11 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
                   << "  grad = " << grads(iw, iat + FirstIndex)
                   << "  lapl = " << gradLapl_host[4 * (iw * RowStride + iat) + 3] << std::endl;
         fprintf(stderr, "grad-lapl row:\n");
-        fprintf(stderr,
-                "r = %1.8f %1.8f %1.8f\n",
-                walkers[iw]->R[iat + FirstIndex][0],
-                walkers[iw]->R[iat + FirstIndex][1],
-                walkers[iw]->R[iat + FirstIndex][2]);
+        fprintf(stderr, "r = %1.8f %1.8f %1.8f\n", walkers[iw]->R[iat + FirstIndex][0],
+                walkers[iw]->R[iat + FirstIndex][1], walkers[iw]->R[iat + FirstIndex][2]);
         for (int orb = 0; orb < NumPtcls; orb++)
 #ifdef QMC_COMPLEX
-          fprintf(stderr,
-                  "%1.10e+%1.10ei %1.10e+%1.10ei %1.10e+%1.10ei %1.10e+%1.10ei \n",
+          fprintf(stderr, "%1.10e+%1.10ei %1.10e+%1.10ei %1.10e+%1.10ei %1.10e+%1.10ei \n",
                   host_data[gradLaplOffset + (4 * iat + 0) * RowStride + orb].real(),
                   host_data[gradLaplOffset + (4 * iat + 0) * RowStride + orb].imag(),
                   host_data[gradLaplOffset + (4 * iat + 1) * RowStride + orb].real(),
@@ -1392,9 +1243,7 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
                   host_data[gradLaplOffset + (4 * iat + 3) * RowStride + orb].real(),
                   host_data[gradLaplOffset + (4 * iat + 3) * RowStride + orb].imag());
 #else
-          fprintf(stderr,
-                  "%1.10e %1.10e %1.10e %1.10e \n",
-                  host_data[gradLaplOffset + (4 * iat + 0) * RowStride + orb],
+          fprintf(stderr, "%1.10e %1.10e %1.10e %1.10e \n", host_data[gradLaplOffset + (4 * iat + 0) * RowStride + orb],
                   host_data[gradLaplOffset + (4 * iat + 1) * RowStride + orb],
                   host_data[gradLaplOffset + (4 * iat + 2) * RowStride + orb],
                   host_data[gradLaplOffset + (4 * iat + 3) * RowStride + orb]);
@@ -1405,8 +1254,8 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
 #ifdef CUDA_DEBUG
   // Now do it on the CPU
   gpu::host_vector<CTS::ValueType> host_data;
-  GradMatrix_t cpu_grads(grads.rows(), grads.cols());
-  ValueMatrix_t cpu_lapl(grads.rows(), grads.cols());
+  GradMatrix cpu_grads(grads.rows(), grads.cols());
+  ValueMatrix cpu_lapl(grads.rows(), grads.cols());
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     fprintf(stderr, "walker #%i:\n", iw);
@@ -1420,9 +1269,7 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grad
         cpu_lapl(iw, iat + FirstIndex) += host_data[AinvOffset + NumPtcls * iorb + iat] *
             host_data[gradLaplOffset + (4 * iat + 3) * NumOrbitals + iorb];
       }
-      fprintf(stderr,
-              "CPU lapl = %10.6e   GPU lapl = %10.6e\n",
-              cpu_lapl(iw, iat + FirstIndex),
+      fprintf(stderr, "CPU lapl = %10.6e   GPU lapl = %10.6e\n", cpu_lapl(iw, iat + FirstIndex),
               lapl(iw, iat + FirstIndex));
     }
   }
@@ -1437,7 +1284,7 @@ void DiracDeterminantCUDA::NLratios_CPU(MCWalkerConfiguration& W,
   // Phi->evaluate needs to be replaced
   APP_ABORT("DiracDeterminantCUDA::NLratios_CPU is currently disabled.\n");
   auto& walkers = W.WalkerList;
-  std::vector<ValueMatrix_t> Ainv_host;
+  std::vector<ValueMatrix> Ainv_host;
   int nw = walkers.size();
   Ainv_host.resize(nw);
   int mat_size = NumOrbitals * NumOrbitals * sizeof(CTS::ValueType);
@@ -1550,14 +1397,8 @@ void DiracDeterminantCUDA::NLratios(MCWalkerConfiguration& W,
       NLelecList_d.asyncCopy(NLelecList_host[counter]);
       NLratioList_d.asyncCopy(NLratioList_host[counter]);
       RatioRowList_d.asyncCopy(RatioRowList_host[counter]);
-      calc_many_ratios(NLAinvList_d.data(),
-                       RatioRowList_d.data(),
-                       NLratioList_d.data(),
-                       NLnumRatioList_d.data(),
-                       NumOrbitals,
-                       RowStride,
-                       NLelecList_d.data(),
-                       numJobs);
+      calc_many_ratios(NLAinvList_d.data(), RatioRowList_d.data(), NLratioList_d.data(), NLnumRatioList_d.data(),
+                       NumOrbitals, RowStride, NLelecList_d.data(), numJobs);
       // Write ratios out output vector
       rowIndex = 0;
       numJobs  = 0;
@@ -1630,14 +1471,8 @@ void DiracDeterminantCUDA::NLratios(MCWalkerConfiguration& W,
     NLelecList_d.asyncCopy(NLelecList_host[counter]);
     NLratioList_d.asyncCopy(NLratioList_host[counter]);
     RatioRowList_d.asyncCopy(RatioRowList_host[counter]);
-    calc_many_ratios(NLAinvList_d.data(),
-                     RatioRowList_d.data(),
-                     NLratioList_d.data(),
-                     NLnumRatioList_d.data(),
-                     NumOrbitals,
-                     RowStride,
-                     NLelecList_d.data(),
-                     numJobs);
+    calc_many_ratios(NLAinvList_d.data(), RatioRowList_d.data(), NLratioList_d.data(), NLnumRatioList_d.data(),
+                     NumOrbitals, RowStride, NLelecList_d.data(), numJobs);
     // Write ratios out output vector
     NLratios_host = NLratios_d[counter];
     for (int i = 0; i < ratio_pointers[counter].size(); i++)

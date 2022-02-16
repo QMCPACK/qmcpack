@@ -12,17 +12,16 @@
 
 #include "catch.hpp"
 
-
+#include <stdio.h>
+#include <string>
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
-
-#include <stdio.h>
-#include <string>
+#include "MinimalParticlePool.h"
 
 using std::string;
 
@@ -73,24 +72,20 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   // read particle set
-  ParticleSet ions, electrons;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
-  parse_electrons.put(part1);
+  XMLParticleParser parse_electrons(electrons);
+  parse_electrons.readXML(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
-  parse_ions.put(part2);
+  XMLParticleParser parse_ions(ions);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
@@ -171,24 +166,20 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   // read particle set
-  ParticleSet ions, electrons;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
-  parse_electrons.put(part1);
+  XMLParticleParser parse_electrons(electrons);
+  parse_electrons.readXML(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
-  parse_ions.put(part2);
+  XMLParticleParser parse_ions(ions);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
@@ -266,24 +257,20 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
-
   // read particle set
-  ParticleSet ions, electrons;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
-  XMLParticleParser parse_electrons(electrons, tmat);
-  parse_electrons.put(part1);
+  XMLParticleParser parse_electrons(electrons);
+  parse_electrons.readXML(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
-  parse_ions.put(part2);
+  XMLParticleParser parse_ions(ions);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 
   // calculate particle distances
   const int tid = electrons.addTable(ions);
@@ -326,7 +313,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
 } // TEST_CASE distance_open_species_deviation
 
-void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
+SimulationCell parse_pbc_lattice()
 {
   const char* particles = "<tmp> \
   <simulationcell>\
@@ -340,6 +327,28 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
      </parameter>\
      <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
   </simulationcell>\
+</tmp> \
+";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root  = doc.getRoot();
+  xmlNodePtr part1 = xmlFirstElementChild(root);
+
+  // read lattice
+  ParticleSet::ParticleLayout lattice;
+  LatticeParser lp(lattice);
+  lp.put(part1);
+  lattice.print(app_log(), 0);
+
+  return SimulationCell(lattice);
+}
+
+void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
+{
+  const char* particles = "<tmp> \
   <particleset name=\"e\">\
      <group name=\"u\" size=\"2\" mass=\"1.0\">\
         <parameter name=\"charge\"              >    -1                    </parameter>\
@@ -385,34 +394,18 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
-  xmlNodePtr part3 = xmlNextElementSibling(part2);
-
-  // read lattice
-  ParticleSet::ParticleLayout_t SimulationCell;
-  LatticeParser lp(SimulationCell);
-  lp.put(part1);
-  SimulationCell.print(app_log(), 0);
 
   // read particle set
-  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
+  XMLParticleParser parse_electrons(electrons);
+  parse_electrons.readXML(part1);
 
-  // enforce global Lattice on ions and electrons
-  ions.Lattice      = SimulationCell;
-  electrons.Lattice = SimulationCell;
-
-  XMLParticleParser parse_electrons(electrons, tmat);
-  parse_electrons.put(part2);
-
-  XMLParticleParser parse_ions(ions, tmat);
-  parse_ions.put(part3);
+  XMLParticleParser parse_ions(ions);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
-  REQUIRE(ions.SameMass);
-  REQUIRE(electrons.SameMass);
+  REQUIRE(ions.isSameMass());
+  REQUIRE(electrons.isSameMass());
 }
 
 TEST_CASE("distance_pbc_z", "[distance_table][xml]")
@@ -420,8 +413,8 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
 
-  ParticleSet ions, electrons;
-
+  const SimulationCell simulation_cell(parse_pbc_lattice());
+  ParticleSet ions(simulation_cell), electrons(simulation_cell);
   parse_electron_ion_pbc_z(ions, electrons);
 
   // calculate particle distances
@@ -451,7 +444,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   }
 
   // move a particle by a lattice vector
-  ParticleSet::SingleParticlePos_t disp(6.0, 0, 0);
+  ParticleSet::SingleParticlePos disp(6.0, 0, 0);
   electrons.makeMove(0, disp); // temporary change written in distance table
   electrons.acceptMove(0);     // update distance table with temporary change
 
@@ -477,7 +470,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   electrons.update();
 
   // shift electron 0 a bit to avoid box edges.
-  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
   electrons.makeMove(0, shift);
   electrons.acceptMove(0);
 
@@ -542,7 +535,8 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
 
-  ParticleSet ions, electrons(test_kind);
+  const SimulationCell simulation_cell(parse_pbc_lattice());
+  ParticleSet ions(simulation_cell), electrons(simulation_cell, test_kind);
   parse_electron_ion_pbc_z(ions, electrons);
 
   // calculate particle distances
@@ -554,7 +548,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   electrons.update();
 
   // shift electron 0 a bit to avoid box edges.
-  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
   electrons.makeMove(0, shift);
   electrons.accept_rejectMove(0, true, false);
   electrons.donePbyP();
@@ -568,7 +562,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   electrons.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
+  std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
   ParticleSet::mw_makeMove(p_list, 0, disp);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
@@ -595,7 +589,8 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
 
-  ParticleSet ions, electrons(test_kind);
+  const SimulationCell simulation_cell(parse_pbc_lattice());
+  ParticleSet ions(simulation_cell), electrons(simulation_cell, test_kind);
   parse_electron_ion_pbc_z(ions, electrons);
 
   // calculate particle distances
@@ -607,7 +602,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   electrons.update();
 
   // shift electron 0 a bit to avoid box edges.
-  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
   electrons.makeMove(0, shift);
   electrons.accept_rejectMove(0, true, false);
   electrons.donePbyP();
@@ -621,7 +616,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   electrons.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
+  std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
   ParticleSet::mw_makeMove(p_list, 0, disp);
   CHECK(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
@@ -657,5 +652,19 @@ TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_ta
 #if defined(ENABLE_OFFLOAD)
   test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind::DC_POS_OFFLOAD);
 #endif
+}
+
+TEST_CASE("test_distance_pbc_diamond", "[distance_table][xml]")
+{
+  auto pset_pool = MinimalParticlePool::make_diamondC_1x1x1(OHMMS::Controller);
+
+  auto& ions  = *pset_pool.getParticleSet("ion");
+  auto& elecs = *pset_pool.getParticleSet("e");
+
+  ions.addTable(ions);
+  ions.update();
+  elecs.addTable(ions);
+  elecs.addTable(elecs);
+  elecs.update();
 }
 } // namespace qmcplusplus

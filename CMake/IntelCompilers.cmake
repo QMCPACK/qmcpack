@@ -10,14 +10,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
 elseif(INTEL_ONEAPI_COMPILER_FOUND)
   # in this case, the version string reported based on Clang, not accurate enough. just skip check.
 else()
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.0.0.20190206)
-    message(FATAL_ERROR "Requires Intel 19 update 3 (19.0.0.20190206) or higher!")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.1.0)
+    message(FATAL_ERROR "Requires Intel classic compiler 19.1 or higher!")
   endif()
 endif()
 
 # Enable OpenMP
 if(QMC_OMP)
-  set(ENABLE_OPENMP 1)
   if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND)
     if(ENABLE_OFFLOAD)
       set(OFFLOAD_TARGET

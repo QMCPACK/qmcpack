@@ -15,9 +15,7 @@ https://sourceforge.net/p/einspline/code/443/ .
 The CPU part. Then following head files should be included by QMC subroutines on demand
 ```
 bspline.h		single unifrom bspline
-nubspline.h		single nonunifrom bspline
 multi_bspline.h		multiple unifrom bspline
-multi_nubspline.h	multiple nonunifrom bspline
 ```
 
 suffix

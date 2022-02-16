@@ -24,7 +24,7 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
+#if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
 
@@ -40,13 +40,13 @@ protected:
   void resize(int nel, int morb);
 
 public:
-  using ValueVector_t = SPOSet::ValueVector_t;
-  using ValueMatrix_t = SPOSet::ValueMatrix_t;
-  using GradVector_t  = SPOSet::GradVector_t;
-  using GradMatrix_t  = SPOSet::GradMatrix_t;
-  using HessMatrix_t  = SPOSet::HessMatrix_t;
-  using HessVector_t  = SPOSet::HessVector_t;
-  using HessType      = SPOSet::HessType;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
+  using HessVector  = SPOSet::HessVector;
+  using HessType    = SPOSet::HessType;
 
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
@@ -57,10 +57,14 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first, int last, int ndelay = 1);
+  DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
+                   int first,
+                   int last,
+                   int ndelay                          = 1,
+                   DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
   // copy constructor and assign operator disabled
-  DiracDeterminant(const DiracDeterminant& s) = delete;
+  DiracDeterminant(const DiracDeterminant& s)            = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -70,11 +74,15 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L);
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
+
+  /** Finds the SPOSet associated with this determinant, and registers it with WFN wrapper
+   */
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const final;
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
@@ -115,8 +123,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
@@ -149,27 +157,29 @@ public:
 
   ///evaluate log of a determinant for a particle set
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& wfc_list,
   //                    const std::vector<ParticleSet*>& p_list,
-  //                    const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-  //                    const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
+  //                    const std::vector<ParticleSet::ParticleGradient*>& G_list,
+  //                    const std::vector<ParticleSet::ParticleLaplacian*>& L_list) override;
 
   void recompute(const ParticleSet& P) override;
 
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch) override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
 
   /** cloning function
    * @param tqp target particleset
@@ -178,51 +188,51 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
 #ifndef NDEBUG
   /// return  for testing
-  ValueMatrix_t& getPsiMinv() override { return psiM; }
+  ValueMatrix& getPsiMinv() override { return psiM; }
 #else
-  ValueMatrix_t& getPsiMinv() { return psiM; }
+  ValueMatrix& getPsiMinv() { return psiM; }
 #endif
 
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM_temp;
+  ValueMatrix psiM_temp;
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM;
+  ValueMatrix psiM;
 
   /// temporary container for testing
-  ValueMatrix_t psiMinv;
+  ValueMatrix psiMinv;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM;
+  GradMatrix dpsiM;
 
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM;
+  ValueMatrix d2psiM;
 
   /// Used for force computations
-  GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
-  HessMatrix_t grad_grad_source_psiM;
+  GradMatrix grad_source_psiM, grad_lapl_source_psiM;
+  HessMatrix grad_grad_source_psiM;
 
-  GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
-  ValueMatrix_t lapl_phi_Minv;
-  HessMatrix_t grad_phi_alpha_Minv;
+  GradMatrix phi_alpha_Minv, grad_phi_Minv;
+  ValueMatrix lapl_phi_Minv;
+  HessMatrix grad_phi_alpha_Minv;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
-  ValueVector_t dspin_psiV;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
+  ValueVector psiV;
+  ValueVector dspin_psiV;
+  GradVector dpsiV;
+  ValueVector d2psiV;
 
   /// delayed update engine
   DU_TYPE updateEng;
 
   /// the row of up-to-date inverse matrix
-  ValueVector_t invRow;
+  ValueVector invRow;
 
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
    *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
@@ -236,8 +246,14 @@ public:
   ValueType* LastAddressOfdV;
 
 private:
+  /// slow but doesn't consume device memory
+  DiracMatrix<QMCTraits::QTFull::ValueType> host_inverter_;
+
+  /// selected scheme for inversion
+  const DetMatInvertor matrix_inverter_kind_;
+
   /// invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
+  void invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
@@ -247,7 +263,7 @@ private:
 };
 
 extern template class DiracDeterminant<>;
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
+#if defined(ENABLE_CUDA)
 extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

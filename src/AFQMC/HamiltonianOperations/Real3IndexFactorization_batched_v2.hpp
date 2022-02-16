@@ -409,7 +409,7 @@ public:
       Xmem = X.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    StaticVector SPBuff(iextensions<1u>{Xmem + vmem},
+    StaticVector SPBuff(iextensions<1u>(Xmem + vmem),
                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Xptr(nullptr);
@@ -476,7 +476,7 @@ public:
       Gmem = G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    StaticVector SPBuff(iextensions<1u>{Gmem + vmem},
+    StaticVector SPBuff(iextensions<1u>(Gmem + vmem),
                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Gptr(nullptr);
@@ -878,7 +878,7 @@ private:
   //Cholesky Tensor Lik[i][k][n]
   shmSpRMatrix Likn;
 
-  // permuted half-tranformed Cholesky tensor
+  // permuted half-transformed Cholesky tensor
   // Lnak[ 2*idet + ispin ]
   std::vector<shmSpC3Tensor> Lnak;
 

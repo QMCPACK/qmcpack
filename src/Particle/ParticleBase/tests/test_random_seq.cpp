@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -13,6 +14,7 @@
 #include "catch.hpp"
 
 #include "Utilities/FakeRandom.h"
+#include "Utilities/StdRandom.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -102,4 +104,44 @@ TEST_CASE("gaussian random input zero", "[particle_base]")
   REQUIRE(a[0] == Approx(0.0));
   REQUIRE(a[1] == Approx(0.0));
 }
+
+TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
+{
+  int size_test = 7;
+  std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test );
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(gauss_random_vals, rng);
+  }
+
+  auto checkRs = [&](auto& rs) {
+    for (int i = 0; i < size_test; ++i)
+    {
+      CHECK(Approx(gauss_random_vals[3 * i]) == rs[i][0]);
+      CHECK(Approx(gauss_random_vals[3 * i + 1]) == rs[i][1]);
+      CHECK(Approx(gauss_random_vals[3 * i + 2]) == rs[i][2]);
+    }
+  };
+
+  MCCoords<CoordsType::POS> mc_coords_rs;
+  mc_coords_rs.resize(size_test);
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(mc_coords_rs, rng);
+    checkRs(mc_coords_rs.positions);
+  }
+  MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins;
+  mc_coords_rsspins.resize(size_test);
+  {
+    StdRandom<double> rng;
+    makeGaussRandomWithEngine(mc_coords_rsspins, rng);
+    checkRs(mc_coords_rsspins.positions);
+    // Mod 2 is result of how gaussianDistribution is generated.
+    int offset_for_rs = ( 3 * size_test ) + (3* size_test) % 2;
+    for (int i = 0; i < size_test; ++i)
+      CHECK(Approx(gauss_random_vals[offset_for_rs + i]) == mc_coords_rsspins.spins[i]);
+  }
+}
+
+
 } // namespace qmcplusplus

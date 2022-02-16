@@ -15,10 +15,11 @@
 #include <cstring>
 #include "QMCDrivers/WalkerProperties.h"
 #include "Configuration.h"
-#include "Particle/MCWalkerConfiguration.h"
+#include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "type_traits/template_types.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -54,29 +55,21 @@ TEST_CASE("walker HDF read and write", "[particle]")
 {
   Communicate* c = OHMMS::Controller;
 
-  MCPWalker w1(1);
+  const size_t num_ptcls = 1;
+  MCPWalker w1(num_ptcls);
   w1.R[0] = 1.0;
 
-  MCPWalker w2(1);
+  MCPWalker w2(num_ptcls);
   w2.R[0] = 0.5;
-
-  MCWalkerConfiguration W;
-
-
-  W.setName("electrons");
-
-  W.create(1);
-  W.R[0][0] = 0.0;
-  W.R[0][1] = 1.0;
-  W.R[0][2] = 2.0;
 
   // This method sets ownership to false so class does not attempt to
   // free the walker elements.
-  W.createWalkers(2);
-  W[0]->R = w1.R;
-  W[1]->R = w2.R;
+  WalkerConfigurations wc_list;
+  wc_list.createWalkers(2, num_ptcls);
+  wc_list[0]->R = w1.R;
+  wc_list[1]->R = w2.R;
 
-  REQUIRE(W.getActiveWalkers() == 2);
+  REQUIRE(wc_list.getActiveWalkers() == 2);
 
   std::vector<int> walker_offset(c->size() + 1);
 
@@ -88,28 +81,26 @@ TEST_CASE("walker HDF read and write", "[particle]")
     offset += 2;
   }
 
-  W.setWalkerOffsets(walker_offset);
+  wc_list.setWalkerOffsets(walker_offset);
 
   c->setName("walker_test");
-  HDFWalkerOutput hout(W, "this string apparently does nothing", c);
-  hout.dump(W, 0);
+  HDFWalkerOutput hout(num_ptcls, "this string apparently does nothing", c);
+  hout.dump(wc_list, 0);
 
   c->barrier();
 
-  MCWalkerConfiguration W2;
-  W2.setName("electrons");
-  W2.create(1);
+  WalkerConfigurations wc_list2;
 
   HDFVersion version(0, 4);
-  HDFWalkerInput_0_4 hinp(W2, c, version);
+  HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, c, version);
   bool okay = hinp.read_hdf5("walker_test");
   REQUIRE(okay);
 
-  REQUIRE(W2.getActiveWalkers() == 2);
+  REQUIRE(wc_list2.getActiveWalkers() == 2);
   for (int i = 0; i < 3; i++)
   {
-    REQUIRE(W2[0]->R[0][i] == w1.R[0][i]);
-    REQUIRE(W2[1]->R[0][i] == w2.R[0][i]);
+    REQUIRE(wc_list2[0]->R[0][i] == w1.R[0][i]);
+    REQUIRE(wc_list2[1]->R[0][i] == w2.R[0][i]);
   }
 }
 

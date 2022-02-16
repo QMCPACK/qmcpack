@@ -57,8 +57,10 @@ TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
     ParallelExecutor<Executor::OPENMP> test_block2;
     test_block2(num_threads, TestTaskOMP, std::ref(my_count));
   };
+#ifdef _OPENMP
   REQUIRE_THROWS_WITH(test_block(num_threads, nested_tasks, std::ref(count)),
                       Catch::Contains("ParallelExecutor should not be used for nested openmp threading"));
+#endif
 }
 
 } // namespace qmcplusplus

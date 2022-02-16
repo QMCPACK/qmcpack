@@ -20,6 +20,7 @@
 #include "BareKineticHelper.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -146,28 +147,28 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
 Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
                                                   ParticleSet& ions,
                                                   TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos_t& hf_terms,
-                                                  ParticleSet::ParticlePos_t& pulay_terms)
+                                                  ParticleSet::ParticlePos& hf_terms,
+                                                  ParticleSet::ParticlePos& pulay_terms)
 {
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  using ParticlePos       = ParticleSet::ParticlePos;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
 
   int Nions = ions.getTotalNum();
   int Nelec = P.getTotalNum();
 
   //These are intermediate arrays for potentially complex math.
-  ParticleLaplacian_t term2_(Nelec);
-  ParticleGradient_t term4_(Nelec);
+  ParticleLaplacian term2_(Nelec);
+  ParticleGradient term4_(Nelec);
 
   //Potentially complex temporary array for \partial \psi/\psi and \nabla^2 \partial \psi / \psi
-  ParticleGradient_t iongradpsi_(Nions), pulaytmp_(Nions);
+  ParticleGradient iongradpsi_(Nions), pulaytmp_(Nions);
   //temporary arrays that will be explicitly real.
-  ParticlePos_t pulaytmpreal_(Nions), iongradpsireal_(Nions);
+  ParticlePos pulaytmpreal_(Nions), iongradpsireal_(Nions);
 
 
-  TinyVector<ParticleGradient_t, OHMMS_DIM> iongrad_grad_;
-  TinyVector<ParticleLaplacian_t, OHMMS_DIM> iongrad_lapl_;
+  TinyVector<ParticleGradient, OHMMS_DIM> iongrad_grad_;
+  TinyVector<ParticleLaplacian, OHMMS_DIM> iongrad_lapl_;
 
   for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
   {
@@ -246,6 +247,87 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   return value_;
 }
 
+void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
+                                                const TWFFastDerivWrapper& psi,
+                                                std::vector<ValueMatrix>& B)
+{
+  IndexType ngroups = P.groups();
+  assert(B.size() == ngroups);
+  std::vector<ValueMatrix> M;
+  std::vector<GradMatrix> grad_M;
+  std::vector<ValueMatrix> lapl_M;
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+    ValueMatrix zeromat;
+    GradMatrix zerogradmat;
+
+    zeromat.resize(nptcls, norbs);
+    zerogradmat.resize(nptcls, norbs);
+
+    M.push_back(zeromat);
+    grad_M.push_back(zerogradmat);
+    lapl_M.push_back(zeromat);
+  }
+
+  psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType sid = psi.getTWFGroupIndex(ig);
+    lapl_M[ig] *= MinusOver2M[ig];
+    B[sid] += lapl_M[ig];
+  }
+}
+
+void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                          const ParticleSet& source,
+                                                          const TWFFastDerivWrapper& psi,
+                                                          const int iat,
+                                                          std::vector<std::vector<ValueMatrix>>& Bforce)
+{
+  IndexType ngroups = P.groups();
+  assert(Bforce.size() == OHMMS_DIM);
+  assert(Bforce[0].size() == ngroups);
+  std::vector<ValueMatrix> mtmp;
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+
+    ValueMatrix zeromat;
+    GradMatrix zerogradmat;
+
+    zeromat.resize(nptcls, norbs);
+    zerogradmat.resize(nptcls, norbs);
+
+    mtmp.push_back(zeromat);
+  }
+
+  std::vector<std::vector<ValueMatrix>> dm, dlapl;
+  dm.push_back(mtmp);
+  dm.push_back(mtmp);
+  dm.push_back(mtmp);
+
+  dlapl.push_back(mtmp);
+  dlapl.push_back(mtmp);
+  dlapl.push_back(mtmp);
+
+  psi.getIonGradIonGradELaplM(P, source, iat, dm, dlapl);
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int ig = 0; ig < ngroups; ig++)
+    {
+      const IndexType sid = psi.getTWFGroupIndex(ig);
+      dlapl[idim][ig] *= MinusOver2M[ig];
+      Bforce[idim][sid] += dlapl[idim][ig];
+    }
+}
 
 #if !defined(REMOVE_TRACEMANAGER)
 Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)

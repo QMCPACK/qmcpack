@@ -236,10 +236,8 @@ struct UserFunctor : public OptimizableFunctorBase
   }
 
 
-  // inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
-
   /// compute derivatives with respect to variational parameters
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
     int i = 0;
 

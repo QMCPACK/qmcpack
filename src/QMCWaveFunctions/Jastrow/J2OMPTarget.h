@@ -19,7 +19,6 @@
 #include "Configuration.h"
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #endif
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -61,6 +60,9 @@ public:
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
 
+  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
+  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+
 private:
   /** initialize storage Uat,dUat, d2Uat */
   void resizeInternalStorage();
@@ -97,7 +99,21 @@ private:
   // helper for compute J2 Chiesa KE correction
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
+  /// Map indices from subcomponent variables to component variables
+  std::vector<std::pair<int, int>> OffSet;
+  Vector<RealType> dLogPsi;
+
+  std::vector<GradDerivVec> gradLogPsi;
+  std::vector<ValueDerivVec> lapLogPsi;
+
   std::unique_ptr<J2OMPTargetMultiWalkerMem<RealType>> mw_mem_;
+
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), GradDerivVec(N));
+    lapLogPsi.resize(myVars.size(), ValueDerivVec(N));
+  }
 
 public:
   J2OMPTarget(const std::string& obj_name, ParticleSet& p);
@@ -135,14 +151,14 @@ public:
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
-                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
 
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(const ParticleSet& P) override;
@@ -184,13 +200,13 @@ public:
   /** compute G and L after the sweep
    */
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch = false) override;
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
-                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     const RefVector<ParticleSet::ParticleGradient>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                      bool fromscratch) const override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
@@ -221,7 +237,21 @@ public:
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
 
-  QTFull::RealType computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& active,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& active,
+                             std::vector<ValueType>& dlogpsi) override;
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
 };
 
 } // namespace qmcplusplus

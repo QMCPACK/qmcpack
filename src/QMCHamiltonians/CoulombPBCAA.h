@@ -31,19 +31,19 @@ namespace qmcplusplus
  */
 struct CoulombPBCAA : public OperatorBase, public ForceBase
 {
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-  typedef LRCoulombSingleton::GridType GridType;
-  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  typedef LRHandlerType::mRealType mRealType;
+  using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+  using GridType       = LRCoulombSingleton::GridType;
+  using RadFunctorType = LRCoulombSingleton::RadFunctorType;
+  using mRealType      = LRHandlerType::mRealType;
 
-  /// energy-optimized long range handle
+  /// energy-optimized long range handle. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AA;
   /// energy-optimized short range pair potential
-  std::shared_ptr<RadFunctorType> rVs;
+  std::shared_ptr<const RadFunctorType> rVs;
   /// force-optimized long range handle
-  std::shared_ptr<LRHandlerType> dAA;
+  std::shared_ptr<const LRHandlerType> dAA;
   /// force-optimized short range pair potential
-  std::shared_ptr<RadFunctorType> rVsforce;
+  std::shared_ptr<const RadFunctorType> rVsforce;
 
   bool is_active;
   bool FirstTime;
@@ -87,8 +87,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
   void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
@@ -136,6 +136,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 private:
   // AA table ID
   const int d_aa_ID;
+  // Timer for long range
+  NewTimer& evalLR_timer_;
+  // Timer for long range
+  NewTimer& evalSR_timer_;
 };
 
 } // namespace qmcplusplus

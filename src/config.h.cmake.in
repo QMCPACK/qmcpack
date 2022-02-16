@@ -32,9 +32,6 @@
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
 
-/* Enable OpenMP parallelization. */
-#cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
-
 /* Enable OpenMP offload. */
 #cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
 

@@ -168,6 +168,10 @@ class QMCDensityRadialProcessor(QDRBase):
                           default='None',
                           help='Location of DMC+err to be used for resampling (default=%default).'
                           )
+        parser.add_option('--seed',dest='random_seed',
+                          default='None',
+                          help='Random seed used for re-sampling. (default=%default).'
+                          )
         parser.add_option('-n','--nsamples',dest='nsamples',
                           default='50',
                           help='Number of samples for resampling (default=%default).'
@@ -248,6 +252,21 @@ class QMCDensityRadialProcessor(QDRBase):
                 self.error('radii must be a list of values and must be the same length as species list\nyou provided: {0}'.format(rad))
             #end if
         #end if
+
+        #   --seed option
+        if opt.random_seed is not None:
+            opt_failed = False
+            rseed = opt.random_seed
+            try:
+                opt.random_seed = int(opt.random_seed)
+            except:
+                opt_failed = True
+            #end try
+            if opt_failed:
+                self.error('seed must be an integer\nyou provided: {0}'.format(rseed))
+            #end if
+        #end if
+
 
     #end def read_command_line(self)
 
@@ -336,6 +355,10 @@ class QMCDensityRadialProcessor(QDRBase):
             sum_dict = {}
             sum_sq_dict = {}
             std_dict = {}
+
+            if opt.random_seed is not None:
+                np.random.seed(opt.random_seed)
+            #end if
 
             nsamples = opt.nsamples
             self.log('Will compute {} samples...'.format(nsamples))

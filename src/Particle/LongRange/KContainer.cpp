@@ -16,13 +16,13 @@
 #include "KContainer.h"
 #include "Utilities/qmc_common.h"
 #include <map>
+#include <cstdint>
 
 namespace qmcplusplus
 {
 void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere)
 {
   kcutoff = kc;
-  kcut2   = kc * kc;
   if (kcutoff <= 0.0)
   {
     APP_ABORT("  Illegal cutoff for KContainer");
@@ -83,14 +83,8 @@ void KContainer::FindApproxMMax(const ParticleLayout& lattice)
   if (qmc_common.use_ewald)
   {
     app_log() << "  Using Ewald sum for the slab " << std::endl;
-#if OHMMS_DIM == 3
     if (lattice.SuperCellEnum == SUPERCELL_SLAB)
       mmax[2] = 0;
-//  if(lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
-//#elif OHMMS_DIM==2
-//  if(lattice.SuperCellEnum == SUPERCELL_WIRE)
-//    mmax[1]=0;
-#endif
   }
 
   mmax[DIM] = mmax[0];
@@ -108,9 +102,9 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   std::vector<PosType> kpts_cart_tmp;
   std::vector<RealType> ksq_tmp;
   // reserve the space for memory efficiency
-#if OHMMS_DIM == 3
   if (useSphere)
   {
+    const RealType kcut2 = kcutoff * kcutoff;
     //Loop over guesses for valid k-points.
     for (int i = -mmax[0]; i <= mmax[0]; i++)
     {
@@ -181,86 +175,17 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
     TempActualMax[1] = mmax[1];
     TempActualMax[2] = mmax[2];
   }
-#elif OHMMS_DIM == 2
-  if (useSphere)
-  {
-    //Loop over guesses for valid k-points.
-    for (int i = -mmax[0]; i <= mmax[0]; i++)
-    {
-      kvec[0] = i;
-      for (int j = -mmax[1]; j <= mmax[1]; j++)
-      {
-        kvec[1] = j;
-        //Do not include k=0 in evaluations.
-        if (i == 0 && j == 0)
-          continue;
-        //Convert kvec to Cartesian
-        kvec_cart = lattice.k_cart(kvec);
-        //Find modk
-        modk2 = dot(kvec_cart, kvec_cart);
-        if (modk2 > kcut2)
-          continue; //Inside cutoff?
-        //This k-point should be added to the list
-        kpts_tmp.push_back(kvec);
-        kpts_cart_tmp.push_back(kvec_cart);
-        ksq_tmp.push_back(modk2);
-        //Update record of the allowed maximum translation.
-        for (int idim = 0; idim < 3; idim++)
-          if (std::abs(kvec[idim]) > TempActualMax[idim])
-            TempActualMax[idim] = std::abs(kvec[idim]);
-      }
-    }
-  }
-  else
-  {
-    // Loop over all k-points in the parallelpiped and add them to kcontainer
-    // note layout is for interfacing with fft, so for each dimension, the
-    // positive indexes come first then the negative indexes backwards
-    // e.g.    0, 1, .... mmax, -mmax+1, -mmax+2, ... -1
-    const int idimsize = mmax[0] * 2;
-    const int jdimsize = mmax[1] * 2;
-    for (int i = 0; i < idimsize; i++)
-    {
-      kvec[0] = i;
-      if (kvec[0] > mmax[0])
-        kvec[0] -= idimsize;
-      for (int j = 0; j < jdimsize; j++)
-      {
-        kvec[1] = j;
-        if (kvec[1] > mmax[1])
-          kvec[1] -= jdimsize;
-        // get cartesian location and modk2
-        kvec_cart = lattice.k_cart(kvec);
-        modk2     = dot(kvec_cart, kvec_cart);
-        // add k-point to lists
-        kpts_tmp.push_back(kvec);
-        kpts_cart_tmp.push_back(kvec_cart);
-        ksq_tmp.push_back(modk2);
-      }
-    }
-    // set allowed maximum translation
-    TempActualMax[0] = mmax[0];
-    TempActualMax[1] = mmax[1];
-  }
-//#elif OHMMS_DIM == 1
-//add one-dimension
-#else
-#error "OHMMS_DIM != 2 || OHMMS_DIM != 3"
-#endif
+
   //Update a record of the number of k vectors
   numk = kpts_tmp.size();
-  std::map<long long, std::vector<int>*> kpts_sorted;
+  std::map<int64_t, std::vector<int>*> kpts_sorted;
   //create the map: use simple integer with resolution of 0.00000001 in ksq
   for (int ik = 0; ik < numk; ik++)
   {
-#ifdef MIXED_PRECISION
-    long long k_ind = static_cast<long long>(ksq_tmp[ik] * 1000);
-#else
-    //This is a workaround for ewald bug (Issue #2105) for FULL PRECISION ONLY.  Basically, 1e-7 is the resolution of |k|^2 for doubles,
+    //This is a workaround for ewald bug (Issue #2105).  Basically, 1e-7 is the resolution of |k|^2 for doubles,
     //so we jack up the tolerance to match that.
-    long long k_ind = static_cast<long long>(ksq_tmp[ik] * 10000000);
-#endif
-    std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
+    const int64_t k_ind = static_cast<int64_t>(ksq_tmp[ik] * 10000000);
+    auto it(kpts_sorted.find(k_ind));
     if (it == kpts_sorted.end())
     {
       std::vector<int>* newSet = new std::vector<int>;
@@ -272,9 +197,10 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
       (*it).second->push_back(ik);
     }
   }
-  std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.begin());
+  std::map<int64_t, std::vector<int>*>::iterator it(kpts_sorted.begin());
   kpts.resize(numk);
   kpts_cart.resize(numk);
+  kpts_cart_soa_.resize(numk);
   ksq.resize(numk);
   kshell.resize(kpts_sorted.size() + 1, 0);
   int ok = 0, ish = 0;
@@ -286,6 +212,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
       int ik        = (*vit);
       kpts[ok]      = kpts_tmp[ik];
       kpts_cart[ok] = kpts_cart_tmp[ik];
+      kpts_cart_soa_(ok) = kpts_cart_tmp[ik];
       ksq[ok]       = ksq_tmp[ik];
       ++vit;
       ++ok;
@@ -294,8 +221,9 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
     ++it;
     ++ish;
   }
+  kpts_cart_soa_.updateTo();
   it = kpts_sorted.begin();
-  std::map<long long, std::vector<int>*>::iterator e_it(kpts_sorted.end());
+  std::map<int64_t, std::vector<int>*>::iterator e_it(kpts_sorted.end());
   while (it != e_it)
   {
     delete it->second;
@@ -313,15 +241,15 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
   minusk.resize(numk);
 
   //Assigns a unique hash value to each kpoint.
-  auto getHashOfVec = [](const auto& inpv, int hashparam) -> long long {
-    long long hash = 0; // this will cause integral promotion below
+  auto getHashOfVec = [](const auto& inpv, int hashparam) -> int64_t {
+    int64_t hash = 0; // this will cause integral promotion below
     for (int i = 0; i < inpv.Size; ++i)
       hash += inpv[i] + hash * hashparam;
     return hash;
   };
 
   // Create a map from the hash value for each k vector to the index
-  std::map<long long, int> hashToIndex;
+  std::map<int64_t, int> hashToIndex;
   for (int ki = 0; ki < numk; ki++)
   {
     hashToIndex[getHashOfVec(kpts[ki], numk)] = ki;

@@ -24,7 +24,6 @@ set(WFBASE_SRCS
     VariableSet.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
-    DiffWaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
     SPOSetBuilder.cpp
     SPOInfo.cpp
@@ -57,9 +56,7 @@ set(JASTROW_SRCS
     Jastrow/RPAJastrow.cpp
     Jastrow/J2OrbitalSoA.cpp
     LatticeGaussianProduct.cpp
-    LatticeGaussianProductBuilder.cpp
-    Fermion/SPOSetProxy.cpp
-    Fermion/SPOSetProxyForMSD.cpp)
+    LatticeGaussianProductBuilder.cpp)
 
 if(ENABLE_OFFLOAD)
   set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/J2OMPTarget.cpp)
@@ -113,7 +110,6 @@ if(OHMMS_DIM MATCHES 3)
         ${FERMION_SRCS}
         EinsplineSetBuilderCommon.cpp
         EinsplineSetBuilderOld.cpp
-        MuffinTin.cpp
         AtomicOrbital.cpp
         EinsplineSetBuilderReadBands_ESHDF.cpp
         EinsplineSetBuilderESHDF.fft.cpp
@@ -158,18 +154,17 @@ set(FERMION_SRCS
     Fermion/DiracDeterminantBatched.cpp
     Fermion/SlaterDet.cpp
     Fermion/SlaterDetBuilder.cpp
-    Fermion/MultiSlaterDeterminant.cpp
-    Fermion/MultiSlaterDeterminantFast.cpp
+    Fermion/MultiSlaterDetTableMethod.cpp
     Fermion/MultiDiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.2.cpp
     Fermion/BackflowBuilder.cpp
     Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
     Fermion/SlaterDetWithBackflow.cpp
-    Fermion/MultiSlaterDeterminantWithBackflow.cpp
     SPOSetBuilderFactory.cpp
     TrialWaveFunction.cpp
     TWFdispatcher.cpp
+    TWFFastDerivWrapper.cpp
     WaveFunctionFactory.cpp)
 
 if(ENABLE_CUDA)
@@ -191,18 +186,17 @@ if(QMC_CUDA OR ENABLE_CUDA)
     add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
   else()
     hip_add_library(qmcwfs_cuda ${WFSSRCS_CUDA})
-    target_link_libraries(qmcwfs_cuda PUBLIC platform_LA)
   endif(NOT QMC_CUDA2HIP)
   if(QMC_CUDA)
-    target_include_directories(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
-    target_link_libraries(qmcwfs_cuda PUBLIC qmcparticle platform_LA)
+    target_link_libraries(qmcwfs_cuda PRIVATE qmcparticle)
   endif()
+  target_link_libraries(qmcwfs_cuda PRIVATE platform_LA qmc_external_thrust)
   target_include_directories(qmcwfs_cuda PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
 endif(QMC_CUDA OR ENABLE_CUDA)
 
 target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcwfs PUBLIC qmcparticle platform_runtime)
+target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime)
 target_link_libraries(qmcwfs PRIVATE einspline platform_LA Math::FFTW3)
 
 # do not merge with qmcwfs target unless all qmcwfs unit tests pass santitizers.

@@ -33,7 +33,7 @@ class MomentumDistributionTests;
 class MomentumDistribution : public OperatorEstBase
 {
 public:
-  using LatticeType = PtclOnLatticeTraits::ParticleLayout_t;
+  using LatticeType = PtclOnLatticeTraits::ParticleLayout;
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;
@@ -100,7 +100,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator_t& rng) override;
+                  RandomGenerator& rng) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of MomentumDistribution's data.

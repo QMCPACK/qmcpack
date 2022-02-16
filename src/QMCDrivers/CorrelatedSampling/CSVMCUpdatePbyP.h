@@ -28,7 +28,7 @@ public:
   CSVMCUpdatePbyP(MCWalkerConfiguration& w,
                   std::vector<TrialWaveFunction*>& psi,
                   std::vector<QMCHamiltonian*>& h,
-                  RandomGenerator_t& rg);
+                  RandomGenerator& rg);
 
   ~CSVMCUpdatePbyP() override;
 
@@ -47,7 +47,7 @@ public:
   CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
                                std::vector<TrialWaveFunction*>& psi,
                                std::vector<QMCHamiltonian*>& h,
-                               RandomGenerator_t& rg);
+                               RandomGenerator& rg);
 
   ~CSVMCUpdatePbyPWithDriftFast() override;
 

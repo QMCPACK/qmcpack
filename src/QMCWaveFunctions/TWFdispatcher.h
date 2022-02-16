@@ -17,7 +17,6 @@
 
 namespace qmcplusplus
 {
-
 /** Wrappers for dispatching to TrialWaveFunction single walker APIs or mw_ APIs.
  * This should be only used by QMC drivers.
  * member function names must match mw_ APIs in TrialWaveFunction
@@ -29,6 +28,7 @@ public:
   using ComputeType  = TrialWaveFunction::ComputeType;
   using ValueType    = TrialWaveFunction::ValueType;
   using GradType     = TrialWaveFunction::GradType;
+  using Complex      = TrialWaveFunction::ComplexType;
 
   TWFdispatcher(bool use_batch);
 
@@ -54,11 +54,24 @@ public:
                      int iat,
                      std::vector<GradType>& grad_now) const;
 
+  void flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
+                             int iat,
+                             std::vector<GradType>& grad_now,
+                             std::vector<Complex>& spingrad_now) const;
+
   void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                           const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           std::vector<PsiValueType>& ratios,
                           std::vector<GradType>& grad_new) const;
+
+  void flex_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  int iat,
+                                  std::vector<PsiValueType>& ratios,
+                                  std::vector<GradType>& grad_new,
+                                  std::vector<Complex>& spingrad_new) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,

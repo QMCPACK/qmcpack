@@ -149,7 +149,7 @@ public:
 
 #endif
 
-  void setRng(RefVector<RandomGenerator_t> r);
+  void setRng(RefVector<RandomGenerator> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
@@ -271,8 +271,8 @@ protected:
   std::string RootName;
 
   ///Random number generators
-  UPtrVector<RandomGenerator_t> RngSaved;
-  std::vector<RandomGenerator_t*> MoverRng;
+  UPtrVector<RandomGenerator> RngSaved;
+  std::vector<RandomGenerator*> MoverRng;
   std::string includeNonlocalH;
 
 
@@ -292,18 +292,20 @@ protected:
   //vector<std::vector<vector<Return_t> >* > DerivRecords;
   //vector<std::vector<vector<Return_t> >* > HDerivRecords;
 
-  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-  typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  using ParticleGradient  = ParticleSet::ParticleGradient;
+  using ParticleLaplacian = ParticleSet::ParticleLaplacian;
   ///** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */
-  std::vector<ParticleGradient_t*> dLogPsi;
+  std::vector<ParticleGradient*> dLogPsi;
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
-  std::vector<ParticleLaplacian_t*> d2LogPsi;
+  std::vector<ParticleLaplacian*> d2LogPsi;
   ///stream for debug
   std::ostream* debug_stream;
 
   bool checkParameters();
   void updateXmlNodes();
 
+  /// Flag on whether the variational parameter override is output to the new wavefunction
+  bool do_override_output;
 
   virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
 

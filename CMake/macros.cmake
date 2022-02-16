@@ -119,6 +119,14 @@ function(
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   set(QMC_APP $<TARGET_FILE:qmcpack>)
   set(TEST_ADDED_TEMP FALSE)
+
+  if(NOT QMC_OMP)
+    if(${THREADS} GREATER 1)
+      message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
+      return()
+    endif()
+  endif()
+
   if(HAVE_MPI)
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
       message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
@@ -400,7 +408,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
               #MESSAGE("check command = ${CHECK_CMD}")
               add_test(
                 NAME ${TEST_NAME}
-                COMMAND ${CHECK_CMD}
+                COMMAND ${Python3_EXECUTABLE} ${CHECK_CMD}
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
               set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
               set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
@@ -528,7 +536,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
             ${SCALAR_ERROR})
         add_test(
           NAME ${TEST_NAME}
-          COMMAND ${CHECK_CMD}
+          COMMAND ${Python3_EXECUTABLE} ${CHECK_CMD}
           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
         set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
         set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
@@ -587,7 +595,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     add_test(
       NAME "${test_name}"
-      COMMAND ${check_cmd} ${ARGN}
+      COMMAND ${Python3_EXECUTABLE} ${check_cmd} ${ARGN}
       WORKING_DIRECTORY "${work_dir}")
 
     # make test depend on the run

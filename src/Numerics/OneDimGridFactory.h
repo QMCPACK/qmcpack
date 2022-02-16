@@ -24,7 +24,7 @@ namespace qmcplusplus
 struct OneDimGridFactory : public QMCTraits
 {
   ///typedef of the one-dimensional grid
-  typedef OneDimGridBase<RealType> GridType;
+  using GridType = OneDimGridBase<RealType>;
 
   /** return a GridType*
    * @param cur xmlnode for the grid definition

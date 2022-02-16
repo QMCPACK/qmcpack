@@ -20,6 +20,11 @@ using fftw_complex = double[2];
 void fftw_plan_dft(
 	int rank, const int *n,
 	fftw_complex *in, fftw_complex *out, int sign, unsigned flags
+);
+
+void fftw_plan_dft(
+	int rank, const int *n,
+	fftw_complex *in, fftw_complex *out, int sign, unsigned flags
 ) {
 	(void)rank, (void)n, (void)in, (void)out, (void)sign, (void)flags;
 }
@@ -83,6 +88,8 @@ BOOST_AUTO_TEST_CASE(array_legacy_c) {
 		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
 	}
 }
+
+auto f2(multi::array_ref<double, 1>&& R) -> double&;
 
 auto f2(multi::array_ref<double, 1>&& R) -> double& {
 	return R[2];

@@ -16,7 +16,6 @@
 
 
 #include "WaveFunctionComponent.h"
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
@@ -28,7 +27,6 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
-      dPsi(nullptr),
       ClassName(class_name),
       myName(obj_name),
       Bytes_in_WFBuffer(0),
@@ -42,8 +40,8 @@ WaveFunctionComponent::~WaveFunctionComponent() = default;
 
 void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                           const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                                           const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
+                                           const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                           const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
 #pragma omp parallel for
@@ -53,8 +51,8 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
 
 void WaveFunctionComponent::recompute(const ParticleSet& P)
 {
-  ParticleSet::ParticleGradient_t temp_G(P.getTotalNum());
-  ParticleSet::ParticleLaplacian_t temp_L(P.getTotalNum());
+  ParticleSet::ParticleGradient temp_G(P.getTotalNum());
+  ParticleSet::ParticleLaplacian temp_L(P.getTotalNum());
 
   evaluateLog(P, temp_G, temp_L);
 }
@@ -145,8 +143,8 @@ void WaveFunctionComponent::mw_completeUpdates(const RefVectorWithLeader<WaveFun
 }
 
 WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L,
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L,
                                                                       bool fromscratch)
 {
   return evaluateLog(P, G, L);
@@ -154,8 +152,8 @@ WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(const Part
 
 void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                          const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                                          const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                          const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                          const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                                           bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
@@ -164,23 +162,11 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
-void WaveFunctionComponent::setDiffOrbital(std::unique_ptr<DiffWaveFunctionComponent> d) { dPsi = std::move(d); }
-
-void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
-                                                const opt_variables_type& active,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi)
-{
-  if (dPsi)
-    dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
-}
-
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& active,
                                                   std::vector<ValueType>& dlogpsi)
 {
-  if (dPsi)
-    dPsi->evaluateDerivativesWF(P, active, dlogpsi);
+  throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + ClassName);
 }
 
 /*@todo makeClone should be a pure virtual function
@@ -217,13 +203,20 @@ void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunc
     wfc_list[iw].evaluateRatios(vp_list[iw], ratios[iw]);
 }
 
-void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
+void WaveFunctionComponent::evaluateDerivRatios(const VirtualParticleSet& VP,
                                                 const opt_variables_type& optvars,
                                                 std::vector<ValueType>& ratios,
                                                 Matrix<ValueType>& dratios)
 {
   //default is only ratios and zero derivatives
   evaluateRatios(VP, ratios);
+}
+
+void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  std::ostringstream o;
+  o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
+  APP_ABORT(o.str());
 }
 
 } // namespace qmcplusplus

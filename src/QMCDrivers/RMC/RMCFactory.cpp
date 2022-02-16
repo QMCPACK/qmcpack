@@ -13,14 +13,11 @@
 
 #include "RMCFactory.h"
 #include "QMCDrivers/RMC/RMC.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
-QMCDriver* RMCFactory::create(MCWalkerConfiguration& w,
-                              TrialWaveFunction& psi,
-                              QMCHamiltonian& h,
-                              Communicate* comm)
+QMCDriver* RMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
 {
   int np = omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)

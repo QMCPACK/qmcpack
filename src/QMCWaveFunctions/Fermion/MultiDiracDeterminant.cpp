@@ -267,7 +267,7 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
                                                                         WFBufferType& buf,
                                                                         bool fromscratch)
 {
-  assert(P.is_spinor_ == is_spinor_);
+  assert(P.isSpinor() == is_spinor_);
   if (is_spinor_)
     evaluateForWalkerMoveWithSpin(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
   else
@@ -290,7 +290,7 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
 
 void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
-  assert(P.is_spinor_ == is_spinor_);
+  assert(P.isSpinor() == is_spinor_);
   buf.get(psiM.first_address(), psiM.last_address());
   buf.get(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.get(d2psiM.first_address(), d2psiM.last_address());
@@ -319,7 +319,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
 {
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
-  assert(P.is_spinor_ == is_spinor_);
+  assert(P.isSpinor() == is_spinor_);
   log_value_ref_det_ += convertValueToLog(curRatio);
   curRatio = ValueType(1);
   switch (UpdateMode)
@@ -469,7 +469,7 @@ MultiDiracDeterminant::~MultiDiracDeterminant() = default;
 
 void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  assert(P.is_spinor_ == is_spinor_);
+  assert(P.isSpinor() == is_spinor_);
 
   //extra pointers
   FirstAddressOfGrads = &(grads(0, 0)[0]);

@@ -186,7 +186,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.14.0. Most
+minimum required version of CMake is 3.15.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 
@@ -1085,7 +1085,7 @@ of:
   not catch the most recent compiler-CUDA conflicts.
 
 * The Intel compiler must find a recent and compatible GCC
-  compiler in its path or one must be explicity set with the
+  compiler in its path or one must be explicitly set with the
   ``-gcc-name`` and ``-gxx-name`` flags in your ``compilers.yaml``.
 
 * Cross-compilation is non-intuitive. If the host OS and target OS are the same,
@@ -1129,7 +1129,7 @@ to add one:
 
   your-laptop> spack compiler add <path-to-compiler>
 
-The Intel ("classic") compiler and other commerical compilers may
+The Intel ("classic") compiler and other commercial compilers may
 require extra environment variables to work properly. If you have an
 module environment set-up by your system administrators, it is
 recommended that you set the module name in
@@ -1351,7 +1351,7 @@ parameter otherwise, it will default to ``cuda_arch=61``.
 
 Due to limitations in the Spack CUDA package, if your compiler and
 CUDA combination conflict, you will need to set a
-specific verison of CUDA that is compatible with your compiler on the
+specific version of CUDA that is compatible with your compiler on the
 command line. For example,
 
 ::
@@ -1361,7 +1361,7 @@ command line. For example,
 Loading QMCPACK into your environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you already have modules set-up in your enviroment, the Spack
+If you already have modules set-up in your environment, the Spack
 modules will be detected automatically. Otherwise, Spack will not
 automatically find the additional packages. A few additional steps are
 needed.  Please see the main Spack documentation for additional details: https://spack.readthedocs.io/en/latest/module_file_support.html.

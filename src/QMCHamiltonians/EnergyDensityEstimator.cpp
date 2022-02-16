@@ -65,7 +65,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   //collect particle sets
   if (!Pdynamic)
     Pdynamic = get_particleset(dyn);
-  if (Pdynamic->SK)
+  if (Pdynamic->hasSK())
     Pdynamic->turnOnPerParticleSK();
   nparticles = Pdynamic->getTotalNum();
   std::vector<ParticleSet*> Pref;
@@ -77,7 +77,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   else
   {
     Pstatic = get_particleset(stat);
-    if (Pstatic->SK)
+    if (Pstatic->hasSK())
       Pstatic->turnOnPerParticleSK();
     dtable_index = Pdynamic->addTable(*Pstatic);
     Pref.resize(1);
@@ -131,7 +131,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
     stop               = stop || !ref_succeeded;
   }
   //initialize grids or other cell partitions
-  bool periodic = Pdynamic->Lattice.SuperCellEnum != SUPERCELL_OPEN;
+  bool periodic = Pdynamic->getLattice().SuperCellEnum != SUPERCELL_OPEN;
   bool grid_succeeded;
   element     = cur->children;
   int nvalues = (int)nEDValues;
@@ -181,7 +181,7 @@ void EnergyDensityEstimator::set_ptcl()
   Rptcl.resize(P.R.size());
   for (int i = 0; i < P.R.size(); i++)
     Rptcl[i] = P.R[i];
-  if (P.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (P.getLattice().SuperCellEnum != SUPERCELL_OPEN)
     P.applyMinimumImage(Rptcl);
 }
 
@@ -263,7 +263,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     //Collect positions from ParticleSets
     int p = 0;
     {
-      const ParticlePos_t& Rs = Pdynamic->R;
+      const ParticlePos& Rs = Pdynamic->R;
       for (int i = 0; i < Rs.size(); i++)
       {
         R[p] = Rs[i];
@@ -272,14 +272,14 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     }
     if (Pstatic && !ion_points)
     {
-      const ParticlePos_t& Rs = Pstatic->R;
+      const ParticlePos& Rs = Pstatic->R;
       for (int i = 0; i < Rs.size(); i++)
       {
         R[p] = Rs[i];
         p++;
       }
     }
-    if (P.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+    if (P.getLattice().SuperCellEnum != SUPERCELL_OPEN)
       P.applyMinimumImage(R);
     //Convert information accumulated in ParticleSets into EnergyDensity quantities
     RealType w = w_trace->sample[0];
@@ -480,7 +480,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 
 void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t g = H5Gcreate(gid, name_.c_str(), 0);
+  hid_t g = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5desc.emplace_back("variables");
   auto& oh = h5desc.back();
   oh.open(g);

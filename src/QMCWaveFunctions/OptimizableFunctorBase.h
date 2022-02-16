@@ -44,11 +44,11 @@
 struct OptimizableFunctorBase
 {
   ///typedef for real values
-  typedef optimize::VariableSet::real_type real_type;
+  using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
-  typedef optimize::VariableSet opt_variables_type;
+  using opt_variables_type = optimize::VariableSet;
   ///typedef for name-value lists
-  typedef optimize::VariableSet::variable_map_type variable_map_type;
+  using variable_map_type = optimize::VariableSet::variable_map_type;
   ///maximum cutoff
   real_type cutoff_radius = 0.0;
   ///set of variables to be optimized
@@ -108,6 +108,11 @@ struct OptimizableFunctorBase
   virtual void setPeriodic(bool periodic) {}
 
   virtual inline bool evaluateDerivatives(real_type r, std::vector<qmcplusplus::TinyVector<real_type, 3>>& derivs)
+  {
+    return false;
+  }
+
+  virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
   {
     return false;
   }

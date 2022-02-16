@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <libxml/xmlwriter.h>
 #include "Configuration.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 

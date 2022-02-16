@@ -323,7 +323,7 @@ public:
     // temporary variables
     for (int I = 0; I < num_regions; ++I)
     {
-      C[I]->evaluateLog(P.activePos, Lval_t[I], Lgrad_t[I], Llap_t[I]);
+      C[I]->evaluateLog(P.getActivePos(), Lval_t[I], Lgrad_t[I], Llap_t[I]);
       if (Lval_t[I] > Lmax_t)
         Lmax_t = Lval_t[I];
     }
@@ -387,7 +387,7 @@ public:
     static int mnd = max_num_derivs();
     dLval_t.resize(mnd);
 
-    C[I]->evaluateLogTempDerivatives(P.activePos, dLval_t);
+    C[I]->evaluateLogTempDerivatives(P.getActivePos(), dLval_t);
     for (int J = 0; J < num_regions; ++J)
     {
       for (int p = 0; p < num_derivs; ++p)

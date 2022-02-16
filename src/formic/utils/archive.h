@@ -27,13 +27,13 @@ namespace formic {
 
     protected:
 
-      typedef formic::Matrix<                 int  >   i_mat;
-      typedef formic::Matrix<              double  >   d_mat;
-      typedef formic::Matrix< std::complex<double> >   c_mat;
+      using i_mat = formic::Matrix<                 int  >  ;
+      using d_mat = formic::Matrix<              double  >  ;
+      using c_mat = formic::Matrix< std::complex<double> >  ;
 
-      typedef formic::ConstMatrix<                 int  >   i_const_mat;
-      typedef formic::ConstMatrix<              double  >   d_const_mat;
-      typedef formic::ConstMatrix< std::complex<double> >   c_const_mat;
+      using i_const_mat = formic::ConstMatrix<                 int  >  ;
+      using d_const_mat = formic::ConstMatrix<              double  >  ;
+      using c_const_mat = formic::ConstMatrix< std::complex<double> >  ;
 
       /// \brief  returns true if the internal stream is in a bad state (for example if the last io operation failed) and false otherwise
       virtual bool fail() const = 0;

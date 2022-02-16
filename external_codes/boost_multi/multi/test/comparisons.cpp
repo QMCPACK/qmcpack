@@ -26,7 +26,7 @@ using complex = std::complex<double>;
 	BOOST_REQUIRE( A[1][1] == B[1][1] );
 	BOOST_REQUIRE( A == B );
 	BOOST_REQUIRE( B == A );
-	BOOST_REQUIRE( std::equal(A[1].begin(), A[1].end(), begin(B[1])) );
+	BOOST_REQUIRE( std::equal(A[1].begin(), A[1].end(), begin(B[1]), end(B[1])) );
 }
 }
 

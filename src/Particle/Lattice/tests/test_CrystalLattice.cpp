@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-typedef TinyVector<double, 3> vec_t;
+using vec_t = TinyVector<double, 3>;
 
 /** Lattice is defined but Open BC is also used.
  */

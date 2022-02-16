@@ -36,7 +36,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
@@ -454,7 +454,7 @@ bool QMCMain::validateXML()
     else if (cname == "include")
     {
       //file is provided
-      const XMLAttrString include_name(cur, "href");
+      const std::string include_name(getXMLAttributeValue(cur, "href"));
       if (!include_name.empty())
       {
         bool success = pushDocument(include_name);
@@ -534,12 +534,11 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     if (cname == "simulationcell")
     {
       inputnode = true;
-      ptclPool->putLattice(cur);
+      ptclPool->readSimulationCellXML(cur);
     }
     else if (cname == "particleset")
     {
       inputnode = true;
-      ptclPool->putTileMatrix(cur_root);
       ptclPool->put(cur);
     }
     else if (cname == "wavefunction")

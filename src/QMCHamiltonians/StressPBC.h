@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 struct StressPBC : public OperatorBase, public ForceBase
 {
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+  using LRHandlerType = LRCoulombSingleton::LRHandlerType;
 
   SymTensor<RealType, OHMMS_DIM> stress_ee_const;
   SymTensor<RealType, OHMMS_DIM> stress_eI_const;

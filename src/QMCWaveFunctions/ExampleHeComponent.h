@@ -43,8 +43,8 @@ public:
   void reportStatus(std::ostream& os) override {}
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 

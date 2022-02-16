@@ -22,9 +22,9 @@
 template<class T, unsigned GRIDTYPE, unsigned BC>
 struct CubicBspline : public CubicBsplineGrid<T, GRIDTYPE, BC>
 {
-  typedef typename CubicBsplineGrid<T, GRIDTYPE, BC>::point_type point_type;
-  typedef typename CubicBsplineGrid<T, GRIDTYPE, BC>::value_type value_type;
-  typedef typename CubicBsplineGrid<T, GRIDTYPE, BC>::container_type container_type;
+  using point_type     = typename CubicBsplineGrid<T, GRIDTYPE, BC>::point_type;
+  using value_type     = typename CubicBsplineGrid<T, GRIDTYPE, BC>::value_type;
+  using container_type = typename CubicBsplineGrid<T, GRIDTYPE, BC>::container_type;
 
   using CubicBsplineGrid<T, GRIDTYPE, BC>::tp;
   using CubicBsplineGrid<T, GRIDTYPE, BC>::GridDeltaInv;

@@ -67,11 +67,7 @@ protected:
   /** 1.0/degenracy for a kshell */
   std::vector<RealType> OneOverDnk;
   /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
-#if defined(USE_REAL_STRUCT_FACTOR)
   Vector<RealType> RhokTot_r, RhokTot_i;
-#else
-  Vector<ComplexType> RhokTot;
-#endif
   Vector<RealType> values;
   /** resize the internal data
    *

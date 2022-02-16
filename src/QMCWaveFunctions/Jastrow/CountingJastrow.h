@@ -210,8 +210,8 @@ public:
 
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     evaluateExponents(P);
     for (int i = 0; i < num_els; ++i)
@@ -395,7 +395,7 @@ public:
       FClap(I, iat)  = FClap_t[I];
     }
     // update exponent values to that at proposed position
-    Jval     = Jval_t;
+    Jval       = Jval_t;
     log_value_ = Jval;
     for (int i = 0; i < num_els; ++i)
     {

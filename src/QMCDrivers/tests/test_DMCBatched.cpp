@@ -45,6 +45,7 @@ private:
 /** Since we check the DMC only feature of reserve walkers perhaps this should be
  *  a DMC integration test.
  */
+#ifdef _OPENMP
 TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
@@ -61,14 +62,11 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   qmcdriver_input.readXML(node);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(node);
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   SampleStack samples;
   WalkerConfigurations walker_confs;
   ProjectData test_project;
@@ -95,6 +93,6 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   CHECK(reserved_walkers == 10);
   // What else should we expect after process
 }
-
+#endif
 
 } // namespace qmcplusplus

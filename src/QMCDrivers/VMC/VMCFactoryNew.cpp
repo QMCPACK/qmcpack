@@ -15,7 +15,6 @@
 
 #include "VMCFactoryNew.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
-//#include "Message/OpenMP.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus

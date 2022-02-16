@@ -132,8 +132,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "basisset")
     {
-      XMLAttrString basisset_name_input(element, "name");
-      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
+      std::string basisset_name_input(getXMLAttributeValue(element, "name"));
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
       if (basisset_map_.find(basisset_name) != basisset_map_.end())
       {
         std::ostringstream err_msg;
@@ -491,7 +491,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     // Create a temporary particle set to use for cusp initialization.
-    // The particle coordinates left at the end are unsuitable for futher computations.
+    // The particle coordinates left at the end are unsuitable for further computations.
     // The coordinates get set to nuclear positions, which leads to zero e-N distance,
     // which causes a NaN in SoaAtomicBasisSet.h
     // This problem only appears when the electron positions are specified in the input.
@@ -850,7 +850,7 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   }
   else
   {
-    const XMLAttrString o(occ_ptr, "mode");
+    const std::string o(getXMLAttributeValue(occ_ptr, "mode"));
     if (!o.empty())
       occ_mode = o;
   }

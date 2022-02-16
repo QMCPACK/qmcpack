@@ -60,14 +60,22 @@ public:
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
   Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                               ParticleSet& ions,
                                               TrialWaveFunction& psi,
-                                              ParticleSet::ParticlePos_t& hf_terms,
-                                              ParticleSet::ParticlePos_t& pulay_terms) override;
+                                              ParticleSet::ParticlePos& hf_terms,
+                                              ParticleSet::ParticlePos& pulay_terms) override;
+
+  void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
+
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         const ParticleSet& source,
+                                         const TWFFastDerivWrapper& psi,
+                                         const int iat,
+                                         std::vector<std::vector<ValueMatrix>>& Bforce) override;
 
 
   /** set non local moves options
@@ -121,7 +129,7 @@ public:
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
    */
-  void setRandomGenerator(RandomGenerator_t* rng) override { myRNG = rng; }
+  void setRandomGenerator(RandomGenerator* rng) override { myRNG = rng; }
 
   void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
@@ -138,7 +146,7 @@ public:
 
 protected:
   ///random number generator
-  RandomGenerator_t* myRNG;
+  RandomGenerator* myRNG;
   ///the set of local-potentials (one for each ion)
   std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
@@ -170,7 +178,7 @@ private:
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///Pulay force vector
-  ParticleSet::ParticlePos_t PulayTerm;
+  ParticleSet::ParticlePos PulayTerm;
   // Tmove data
   std::vector<NonLocalData> tmove_xy_;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -203,8 +211,8 @@ private:
   void evalIonDerivsImpl(ParticleSet& P,
                          ParticleSet& ions,
                          TrialWaveFunction& psi,
-                         ParticleSet::ParticlePos_t& hf_terms,
-                         ParticleSet::ParticlePos_t& pulay_terms,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
                          bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated

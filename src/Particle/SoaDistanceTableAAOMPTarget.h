@@ -21,6 +21,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -48,8 +49,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     ///dist displ for temporary and old pairs
     Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
 
-    Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list;
-
     DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
 
     DTAAMultiWalkerMem(const DTAAMultiWalkerMem&) : DTAAMultiWalkerMem() {}
@@ -60,20 +59,16 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   std::unique_ptr<DTAAMultiWalkerMem> mw_mem_;
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
-      : DTD_BConds<T, D, SC>(target.Lattice),
+      : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
-        offload_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
-                                                   timer_level_fine)),
-        move_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + name_, timer_level_fine)),
-        update_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") + name_, timer_level_fine))
+        offload_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::offload_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::evaluate_") + name_, timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(*timer_manager.createTimer(std::string("DTAAOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
@@ -212,7 +207,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   /** evaluate the temporary pair relations when a move is proposed
    * this implementation is asynchronous and the synchronization is managed at ParticleSet.
-   * Transfering results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
+   * Transferring results to host depends on DTModes::NEED_TEMP_DATA_ON_HOST.
    * If the temporary pair distance are consumed on the device directly, the device to host data transfer can be
    * skipped as an optimization.
    */
@@ -234,8 +229,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const size_t stride_size = num_targets_padded_ * (D + 1);
 
     auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
-    auto& rsoa_dev_list         = mw_mem.rsoa_dev_list;
-    rsoa_dev_list.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
@@ -244,7 +237,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt.old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif
       auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
-      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;
@@ -252,10 +244,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
-    const auto activePtcl_local  = pset_leader.activePtcl;
+    const auto activePtcl_local  = pset_leader.getActivePtcl();
     const auto num_sources_local = num_targets_;
     const auto num_padded        = num_targets_padded_;
-    auto* rsoa_dev_list_ptr      = rsoa_dev_list.data();
+    auto* rsoa_dev_list_ptr      = coordinates_leader.getMultiWalkerRSoADevicePtrs().data();
     auto* r_dr_ptr               = nw_new_old_dist_displ.data();
     auto* new_pos_ptr            = coordinates_leader.getFusedNewPosBuffer().data();
     const size_t new_pos_stride  = coordinates_leader.getFusedNewPosBuffer().capacity();
@@ -263,15 +255,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
-                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
                         nowait depend(out: r_dr_ptr[:nw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
           auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
-          const int first      = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const size_t first   = ChunkSizePerTeam * team_id;
+          const size_t last    = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           { // temp
             auto* r_iw_ptr  = r_dr_ptr + iw * stride_size;

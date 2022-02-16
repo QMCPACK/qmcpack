@@ -27,8 +27,8 @@ class TrialWaveFunction;
 
 struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
 {
-  typedef LocalECPotential::RadialPotentialType RadialPotentialType;
-  typedef LocalECPotential::GridType GridType;
+  using RadialPotentialType = LocalECPotential::RadialPotentialType;
+  using GridType            = LocalECPotential::GridType;
   bool hasLocalPot;
   bool hasNonLocalPot;
   bool hasSOPot;

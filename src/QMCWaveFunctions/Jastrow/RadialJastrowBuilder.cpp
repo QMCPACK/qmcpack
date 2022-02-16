@@ -25,7 +25,6 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
 #endif
 
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
@@ -54,7 +53,6 @@ public:
   using J1Type     = J1OrbitalSoA<RadFuncType>;
   using J1SpinType = J1Spin<RadFuncType>;
   using J2Type     = J2OrbitalSoA<RadFuncType>;
-  using DiffJ2Type = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 
 #if defined(QMC_CUDA)
@@ -66,7 +64,6 @@ public:
   using J1Type      = OneBodyJastrowOrbitalBspline<RadFuncType>;
   using J1SpinType  = void;
   using J2Type      = TwoBodyJastrowOrbitalBspline<RadFuncType>;
-  using DiffJ2Type  = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 #endif
 
@@ -77,7 +74,6 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
   using J2Type      = J2OMPTarget<RadFuncType>;
-  using DiffJ2Type  = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 #endif
 
@@ -104,7 +100,7 @@ RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& targe
 // helper method for dealing with functor incompatible with Open Boundaries
 void RadialJastrowBuilder::guardAgainstOBC()
 {
-  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+  if (targetPtcl.getLattice().SuperCellEnum == SUPERCELL_OPEN)
   {
     app_error() << Jastfunction << " relies on the total density for its form\n";
     app_error() << "but open boundary conditions are requested.  Please choose other forms of Jastrow\n";
@@ -114,7 +110,7 @@ void RadialJastrowBuilder::guardAgainstOBC()
 // helper method for dealing with functor incompatible with PBC
 void RadialJastrowBuilder::guardAgainstPBC()
 {
-  if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (targetPtcl.getLattice().SuperCellEnum != SUPERCELL_OPEN)
   {
     app_error() << Jastfunction << " does not support a cutoff, but is requested with\n";
     app_error() << "periodic boundary conditions, please choose other forms of Jastrow\n";
@@ -128,7 +124,7 @@ void RadialJastrowBuilder::initTwoBodyFunctor(RadFuncType& functor, double fac)
 template<>
 void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RealType>& bfunc, double fac)
 {
-  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN) // for open systems, do nothing
+  if (targetPtcl.getLattice().SuperCellEnum == SUPERCELL_OPEN) // for open systems, do nothing
   {
     return;
   }
@@ -162,13 +158,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   ReportEngine PRE(ClassName, "createJ2(xmlNodePtr)");
   using Real       = typename RadFuncType::real_type;
   using J2Type     = typename JastrowTypeHelper<RadFuncType, Implementation>::J2Type;
-  using DiffJ2Type = typename JastrowTypeHelper<RadFuncType, Implementation>::DiffJ2Type;
 
-  XMLAttrString input_name(cur, "name");
+  std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2  = std::make_unique<J2Type>(j2name, targetPtcl);
-  auto dJ2 = std::make_unique<DiffJ2Type>(targetPtcl);
 
   std::string init_mode("0");
   {
@@ -243,8 +237,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       auto functor = std::make_unique<RadFuncType>();
       functor->setCusp(cusp);
-      functor->setPeriodic(targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      functor->cutoff_radius   = targetPtcl.Lattice.WignerSeitzRadius;
+      functor->setPeriodic(targetPtcl.getLattice().SuperCellEnum != SUPERCELL_OPEN);
+      functor->cutoff_radius   = targetPtcl.getLattice().WignerSeitzRadius;
       bool functor_initialized = functor->put(cur);
       if (!functor_initialized && init_mode == "rpa")
       {
@@ -261,20 +255,17 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
         print(*functor, os);
       }
 
-      auto functor_2 = std::unique_ptr<RadFuncType>{dynamic_cast<RadFuncType*>(functor->makeClone())};
-      J2->addFunc(ia, ib, std::move(functor_2));
-      dJ2->addFunc(ia, ib, std::move(functor));
+      J2->addFunc(ia, ib, std::move(functor));
     }
     cur = cur->next;
   }
-  J2->dPsi = std::move(dJ2);
   J2->setOptimizable(true);
 
   // compute Chiesa Correction based on the current J2 parameters
   J2->ChiesaKEcorrection();
 
   // Ye: actually don't know what uk.dat is used for
-  if (targetPtcl.Lattice.SuperCellEnum)
+  if (targetPtcl.getLattice().SuperCellEnum)
     computeJ2uk(J2->getPairFunctions());
 
   return J2;
@@ -285,7 +276,7 @@ template<class RadFuncType>
 void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors)
 {
   const int numPoints = 1000;
-  RealType vol        = targetPtcl.Lattice.Volume;
+  RealType vol        = targetPtcl.getLattice().Volume;
   int nsp             = targetPtcl.groups();
   FILE* fout          = 0;
   if (is_manager())
@@ -294,9 +285,9 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
     sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
     fout = fopen(fname, "w");
   }
-  for (int iG = 0; iG < targetPtcl.SK->getKLists().ksq.size(); iG++)
+  for (int iG = 0; iG < targetPtcl.getSimulationCell().getKLists().ksq.size(); iG++)
   {
-    RealType Gmag = std::sqrt(targetPtcl.SK->getKLists().ksq[iG]);
+    RealType Gmag = std::sqrt(targetPtcl.getSimulationCell().getKLists().ksq[iG]);
     RealType sum  = 0.0;
     RealType uk   = 0.0;
     for (int i = 0; i < targetPtcl.groups(); i++)
@@ -348,7 +339,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   using TH     = JastrowTypeHelper<RadFuncType, Implementation>;
   using J1Type = typename std::conditional<SPIN, typename TH::J1SpinType, typename TH::J1Type>::type;
 
-  XMLAttrString input_name(cur, "name");
+  std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string jname = input_name.empty() ? Jastfunction : input_name;
 
   auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl);
@@ -362,8 +353,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   bool Opt(true);
   while (kids != NULL)
   {
-    std::string kidsname = (char*)kids->name;
-    tolower(kidsname);
+    std::string kidsname(lowerCase(castXMLCharToChar(kids->name)));
     if (kidsname == "correlation")
     {
       std::string speciesA;
@@ -376,8 +366,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       rAttrib.add(cusp, "cusp");
       rAttrib.put(kids);
       auto functor = std::make_unique<RadFuncType>();
-      functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+      functor->setPeriodic(SourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN);
+      functor->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
       functor->setCusp(cusp);
       const int ig = sSet.findSpecies(speciesA);
       const int jg = speciesB.size() ? tSet.findSpecies(speciesB) : -1;
@@ -464,7 +454,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   HandlerType* myHandler = nullptr;
   if (Rs < 0)
   {
-    Rs = std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
+    Rs = std::pow(3.0 / 4.0 / M_PI * targetPtcl.getLattice().Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
                   1.0 / 3.0);
   }
   if (Kc < 0)
@@ -520,10 +510,10 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
   aAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
   aAttrib.put(cur);
-  tolower(NameOpt);
-  tolower(TypeOpt);
-  tolower(Jastfunction);
-  tolower(SpinOpt);
+  NameOpt = lowerCase(NameOpt);
+  TypeOpt = lowerCase(TypeOpt);
+  Jastfunction = lowerCase(Jastfunction);
+  SpinOpt = lowerCase(SpinOpt);
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int chargeInd = species.addAttribute("charge");

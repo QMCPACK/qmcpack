@@ -44,9 +44,9 @@ class LRHandlerSRCoulomb : public LRHandlerBase
 {
 public:
   //Typedef for the lattice-type.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  typedef BreakupBasis BreakupBasisType;
-  typedef LinearGrid<mRealType> GridType;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
+  using BreakupBasisType = BreakupBasis;
+  using GridType         = LinearGrid<mRealType>;
 
   bool FirstTime;
   mRealType rs;
@@ -57,7 +57,8 @@ public:
 
 
   //Constructor
-  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.LRBox)
+  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in = -1.0)
+      : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLRBox())
 
   {
     LRHandlerBase::ClassName = "LRHandlerSRCoulomb";
@@ -74,7 +75,7 @@ public:
    * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRHandlerSRCoulomb(const LRHandlerSRCoulomb& aLR, ParticleSet& ref)
-      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
+      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLRBox())
   {}
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -86,11 +87,11 @@ public:
 
   void initBreakup(ParticleSet& ref) override
   {
-    InitBreakup(ref.LRBox, 1);
-    //    fillYk(ref.SK->getKLists());
-    fillYkg(ref.SK->getKLists());
+    InitBreakup(ref.getLRBox(), 1);
+    //    fillYk(ref.getSimulationCell().getKLists());
+    fillYkg(ref.getSimulationCell().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.SK->getKLists());
+    //filldFk_dk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -98,11 +99,11 @@ public:
   {
     rs = rs_ext;
     myFunc.reset(ref, rs);
-    InitBreakup(ref.LRBox, 1);
-    //    fillYk(ref.SK->getKLists());
-    fillYkg(ref.SK->getKLists());
+    InitBreakup(ref.getLRBox(), 1);
+    //    fillYk(ref.getSimulationCell().getKLists());
+    fillYkg(ref.getSimulationCell().getKLists());
     //This is expensive to calculate.  Deprecating stresses for now.
-    //filldFk_dk(ref.SK->getKLists());
+    //filldFk_dk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -169,7 +170,8 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag) const override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k,
+                                                            pRealType kmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -185,7 +187,8 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag) const override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r,
+                                                            pRealType rmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -271,7 +274,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);

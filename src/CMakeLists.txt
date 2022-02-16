@@ -104,8 +104,6 @@ if(IS_GIT_PROJECT)
   message("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 endif()
 
-include_directories("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
-
 # For unit tests, enable use for the fake RNG
 function(USE_FAKE_RNG TARGET)
   target_compile_definitions(${TARGET} PRIVATE "USE_FAKE_RNG")

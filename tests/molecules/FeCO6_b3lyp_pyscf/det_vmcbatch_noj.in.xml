@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="det_vmcbatch_noj" series="0"/>
+  <include href="FeCO6.structure.xml"/>
+  <include href="FeCO6.wfnoj.xml"/>
+  <random seed="17"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="PseudoPot" type="pseudo" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml"/>
+      <pseudo elementType="Fe" href="Fe.BFD.xml"/>
+      <pseudo elementType="O" href="O.BFD.xml"/>
+    </pairpot>
+  </hamiltonian>
+  <qmc method="vmc_batch" move="pbyp">
+      <parameter name="total_walkers"       >    1              </parameter>
+      <parameter name="blocks"              >    3               </parameter>
+      <parameter name="steps"               >    3               </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.4             </parameter>
+      <parameter name="warmupSteps"         >    3               </parameter>
+   </qmc>
+</simulation>

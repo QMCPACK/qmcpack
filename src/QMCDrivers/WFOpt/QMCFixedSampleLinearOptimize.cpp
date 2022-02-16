@@ -319,7 +319,7 @@ bool QMCFixedSampleLinearOptimize::run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      Lambda   = getNonLinearRescale(currentParameterDirections, S);
+      Lambda = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -514,11 +514,11 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
                                                  bool useGPU)
 {
   m_param.put(opt_xml);
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
 
-  tolower(block_lmStr);
-  block_lm = (block_lmStr == "yes");
+  block_lmStr = lowerCase(block_lmStr);
+  block_lm    = (block_lmStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
@@ -545,7 +545,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
       current_optimizer_type_ != OptimizerType::DESCENT)
     myComm->barrier_and_abort("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
-#ifdef ENABLE_OPENMP
+#ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");

@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 struct PolynomialFunctor3D : public OptimizableFunctorBase
 {
-  typedef real_type value_type;
+  using value_type = real_type;
   int N_eI, N_ee;
   Array<real_type, 3> gamma;
   // Permutation vector, used when we need to pivot
@@ -361,7 +361,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     const real_type L = chalf * cutoff_radius;
     real_type val_tot = czero;
 
-#pragma omp simd aligned(r_12_array, r_1I_array, r_2I_array: QMC_SIMD_ALIGNMENT) reduction(+ : val_tot)
+#pragma omp simd aligned(r_12_array, r_1I_array, r_2I_array : QMC_SIMD_ALIGNMENT) reduction(+ : val_tot)
     for (int ptcl = 0; ptcl < Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
@@ -429,17 +429,17 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
           const real_type g01x = g * r2l * r2m_1;
           const real_type gxx0 = g * r2n;
 
-          val        += g00x * r2n;
-          grad[0]    += g00x * r2n_1;
-          grad[1]    += g10x * r2n;
-          grad[2]    += g01x * r2n;
+          val += g00x * r2n;
+          grad[0] += g00x * r2n_1;
+          grad[1] += g10x * r2n;
+          grad[2] += g01x * r2n;
           hess(0, 0) += g00x * r2n_2;
           hess(0, 1) += g10x * r2n_1;
           hess(0, 2) += g01x * r2n_1;
           hess(1, 1) += gxx0 * r2l_2 * r2m;
           hess(1, 2) += gxx0 * r2l_1 * r2m_1;
           hess(2, 2) += gxx0 * r2l * r2m_2;
-          nf         += cone;
+          nf += cone;
           r2n_2 = r2n_1 * nf;
           r2n_1 = r2n * nf;
           r2n *= r_12;
@@ -498,18 +498,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     constexpr real_type ctwo(2);
 
     const real_type L = chalf * cutoff_radius;
-#pragma omp simd aligned(r_12_array,   \
-                         r_1I_array,   \
-                         r_2I_array,   \
-                         val_array,    \
-                         grad0_array,  \
-                         grad1_array,  \
-                         grad2_array,  \
-                         hess00_array, \
-                         hess11_array, \
-                         hess22_array, \
-                         hess01_array, \
-                         hess02_array: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(r_12_array, r_1I_array, r_2I_array, val_array, grad0_array, grad1_array, grad2_array, \
+                         hess00_array, hess11_array, hess22_array, hess01_array, hess02_array                  \
+                         : QMC_SIMD_ALIGNMENT)
     for (int ptcl = 0; ptcl < Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
@@ -541,16 +532,16 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
             const real_type g01x = g * r2l * r2m_1;
             const real_type gxx0 = g * r2n;
 
-            val    += g00x * r2n;
-            grad0  += g00x * r2n_1;
-            grad1  += g10x * r2n;
-            grad2  += g01x * r2n;
+            val += g00x * r2n;
+            grad0 += g00x * r2n_1;
+            grad1 += g10x * r2n;
+            grad2 += g01x * r2n;
             hess00 += g00x * r2n_2;
             hess01 += g10x * r2n_1;
             hess02 += g01x * r2n_1;
             hess11 += gxx0 * r2l_2 * r2m;
             hess22 += gxx0 * r2l * r2m_2;
-            nf     += cone;
+            nf += cone;
             r2n_2 = r2n_1 * nf;
             r2n_1 = r2n * nf;
             r2n *= r_12;
@@ -619,16 +610,16 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         for (int n = 0; n <= N_ee; n++)
         {
           real_type g = gamma(l, m, n);
-          val         += g * r2l * r2m * r2n;
-          grad[0]     += nf * g * r2l * r2m * r2n_1;
-          grad[1]     += lf * g * r2l_1 * r2m * r2n;
-          grad[2]     += mf * g * r2l * r2m_1 * r2n;
-          hess(0, 0)  += nf * (nf - 1.0) * g * r2l * r2m * r2n_2;
-          hess(0, 1)  += nf * lf * g * r2l_1 * r2m * r2n_1;
-          hess(0, 2)  += nf * mf * g * r2l * r2m_1 * r2n_1;
-          hess(1, 1)  += lf * (lf - 1.0) * g * r2l_2 * r2m * r2n;
-          hess(1, 2)  += lf * mf * g * r2l_1 * r2m_1 * r2n;
-          hess(2, 2)  += mf * (mf - 1.0) * g * r2l * r2m_2 * r2n;
+          val += g * r2l * r2m * r2n;
+          grad[0] += nf * g * r2l * r2m * r2n_1;
+          grad[1] += lf * g * r2l_1 * r2m * r2n;
+          grad[2] += mf * g * r2l * r2m_1 * r2n;
+          hess(0, 0) += nf * (nf - 1.0) * g * r2l * r2m * r2n_2;
+          hess(0, 1) += nf * lf * g * r2l_1 * r2m * r2n_1;
+          hess(0, 2) += nf * mf * g * r2l * r2m_1 * r2n_1;
+          hess(1, 1) += lf * (lf - 1.0) * g * r2l_2 * r2m * r2n;
+          hess(1, 2) += lf * mf * g * r2l_1 * r2m_1 * r2n;
+          hess(2, 2) += mf * (mf - 1.0) * g * r2l * r2m_2 * r2n;
           d3[0](0, 0) += nf * (nf - 1.0) * (nf - 2.0) * g * r2l * r2m * r2n_3;
           d3[0](0, 1) += nf * (nf - 1.0) * lf * g * r2l_1 * r2m * r2n_2;
           d3[0](0, 2) += nf * (nf - 1.0) * mf * g * r2l * r2m_1 * r2n_2;
@@ -817,7 +808,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
           dval_Vec[num] += scale * dval_dgamma;
           for (int i = 0; i < 3; i++)
           {
-            dgrad_Vec[num][i]    += scale * dgrad_dgamma[i];
+            dgrad_Vec[num][i] += scale * dgrad_dgamma[i];
             dhess_Vec[num](i, i) += scale * dhess_dgamma(i, i);
             for (int j = i + 1; j < 3; j++)
             {
@@ -865,9 +856,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         for (int j = 0; j < NumGamma; j++)
           if (IndepVar[j])
           {
-            d_vals[indep_var]  -= ConstraintMatrix(constraint, j) * dval_Vec[i];
+            d_vals[indep_var] -= ConstraintMatrix(constraint, j) * dval_Vec[i];
             d_grads[indep_var] -= ConstraintMatrix(constraint, j) * dgrad_Vec[i];
-            d_hess[indep_var]  -= ConstraintMatrix(constraint, j) * dhess_Vec[i];
+            d_hess[indep_var] -= ConstraintMatrix(constraint, j) * dhess_Vec[i];
             indep_var++;
           }
           else if (i != j)
@@ -883,26 +874,13 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       fprintf(stderr, "  %3d  %12.6e  %12.6e\n", ip, d_vals[ip], d_valsFD[ip]);
     fprintf(stderr, "Param   Analytic   Finite diffference\n");
     for (int ip = 0; ip < Parameters.size(); ip++)
-      fprintf(stderr,
-              "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n",
-              ip,
-              d_grads[ip][0],
-              d_gradsFD[ip][0],
-              d_grads[ip][1],
-              d_gradsFD[ip][1],
-              d_grads[ip][2],
-              d_gradsFD[ip][2]);
+      fprintf(stderr, "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n", ip, d_grads[ip][0], d_gradsFD[ip][0],
+              d_grads[ip][1], d_gradsFD[ip][1], d_grads[ip][2], d_gradsFD[ip][2]);
     fprintf(stderr, "Param   Analytic   Finite diffference\n");
     for (int ip = 0; ip < Parameters.size(); ip++)
       for (int dim = 0; dim < 3; dim++)
-        fprintf(stderr,
-                "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n",
-                ip,
-                d_hess[ip](0, dim),
-                d_hessFD[ip](0, dim),
-                d_hess[ip](1, dim),
-                d_hessFD[ip](1, dim),
-                d_hess[ip](2, dim),
+        fprintf(stderr, "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n", ip, d_hess[ip](0, dim),
+                d_hessFD[ip](0, dim), d_hess[ip](1, dim), d_hessFD[ip](1, dim), d_hess[ip](2, dim),
                 d_hessFD[ip](2, dim));
 #endif
   }
@@ -925,7 +903,8 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       PRE.error("You must specify a positive number for \"isize\"", true);
     if (N_ee == 0)
       PRE.error("You must specify a positive number for \"esize\"", true);
-    app_summary() << "     Ion: " << iSpecies << "   electron-electron: " << eSpecies1 << " - " << eSpecies2 << std::endl;
+    app_summary() << "     Ion: " << iSpecies << "   electron-electron: " << eSpecies1 << " - " << eSpecies2
+                  << std::endl;
     app_summary() << "      Number of parameters for e-e: " << N_ee << ", for e-I: " << N_eI << std::endl;
     app_summary() << "      Cutoff radius: " << cutoff_radius << std::endl;
     app_summary() << std::endl;
@@ -999,8 +978,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     for (int i = 0; i < Parameters.size(); ++i)
     {
       int loc = myVars.where(i);
-      if (loc >= 0) {
-        Parameters[i] = std::real( myVars[i] = active[loc] );
+      if (loc >= 0)
+      {
+        Parameters[i] = std::real(myVars[i] = active[loc]);
       }
     }
 

@@ -48,8 +48,8 @@ static const std::complex<double> zzero = std::complex<double>(0.0, 0.0);
 
 /*
 #if defined(HAVE_MKL)
-typedef enum {CblasRowMajor=101, CblasColMajor=102} CBLAS_LAYOUT;
-typedef enum {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113} CBLAS_TRANSPOSE;
+using CBLAS_LAYOUT = enum {CblasRowMajor=101, CblasColMajor=102};
+using CBLAS_TRANSPOSE = enum {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113};
 #endif
 */
 

@@ -113,6 +113,7 @@ void SimpleFixedNodeBranch::registerParameters()
   m_param.add(sParam[USETAUOPT], "useBareTau");
   m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration");
   m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme");
+  m_param.add(debug_disable_branching_, "debug_disable_branching", {"no", "yes"});
 }
 
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
@@ -208,6 +209,8 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   app_log() << "  Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS]
             << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
+  if (debug_disable_branching_ == "yes")
+    app_log() << "  Disable branching for debugging as the user input request." << std::endl;
 
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
@@ -282,7 +285,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
 
   FullPrecRealType pop_now;
-  if (BranchMode[B_DMCSTAGE] || iter)
+  if (debug_disable_branching_ == "no" && (BranchMode[B_DMCSTAGE] || iter))
     pop_now = WalkerController->branch(iter, walkers, 0.1);
   else
     pop_now = WalkerController->doNotBranch(iter, walkers); //do not branch for the first step of a warmup
@@ -565,9 +568,10 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     if (reconfig != "no" && reconfig != "runwhileincorrect")
     {
       // remove this once bug is fixed
-      APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove "
-                "the reconfiguration option from the DMC input section. To run performance tests, please set "
-                "reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+      throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
+                               "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
+                               "option from the DMC input section. If accessing the broken reconfiguration code path "
+                               "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
     }
     same_wc = (reconfig == reconfig_prev);
   }

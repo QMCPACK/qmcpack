@@ -267,7 +267,7 @@ public:
   }
 
 
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector& Bmat, HessMatrix& Amat)
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
     //RealType du, d2u, temp;
@@ -306,7 +306,7 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat) override
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix& Bmat_full, HessMatrix& Amat) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
     //RealType du, d2u;
@@ -346,7 +346,7 @@ public:
   /** calculate quasi-particle coordinates after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
   {
     evaluatePbyP(P, index[0], newQP);
@@ -355,7 +355,7 @@ public:
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) override
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
@@ -377,17 +377,14 @@ public:
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
-                           HessMatrix_t& Amat) override
+                           HessMatrix& Amat) override
   {
     evaluatePbyP(P, index[0], newQP, Amat);
   }
 
-  inline void evaluatePbyP(const ParticleSet& P,
-                           int iat,
-                           ParticleSet::ParticlePos_t& newQP,
-                           HessMatrix_t& Amat) override
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
@@ -416,19 +413,19 @@ public:
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
-                           GradMatrix_t& Bmat_full,
-                           HessMatrix_t& Amat) override
+                           GradMatrix& Bmat_full,
+                           HessMatrix& Amat) override
   {
     evaluatePbyP(P, index[0], newQP, Bmat_full, Amat);
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
-                           GradMatrix_t& Bmat_full,
-                           HessMatrix_t& Amat) override
+                           ParticleSet::ParticlePos& newQP,
+                           GradMatrix& Bmat_full,
+                           HessMatrix& Amat) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
     //RealType du, d2u;
@@ -461,7 +458,7 @@ public:
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) override
+  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix& Bmat_full) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluateBmatOnly")
     //RealType du, d2u;
@@ -492,11 +489,11 @@ public:
    */
   inline void evaluateWithDerivatives(const ParticleSet& P,
                                       ParticleSet& QP,
-                                      GradMatrix_t& Bmat_full,
-                                      HessMatrix_t& Amat,
-                                      GradMatrix_t& Cmat,
-                                      GradMatrix_t& Ymat,
-                                      HessArray_t& Xmat) override
+                                      GradMatrix& Bmat_full,
+                                      HessMatrix& Amat,
+                                      GradMatrix& Cmat,
+                                      GradMatrix& Ymat,
+                                      HessArray& Xmat) override
   {
     APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluateWithDerivatives")
     //RealType du, d2u;

@@ -96,11 +96,11 @@ struct bspline_engine_traits<multi_UBspline_3d_d>
   {
     DIM = 3
   };
-  typedef multi_UBspline_3d_d SplineType;
-  typedef UBspline_3d_d SingleSplineType;
-  typedef BCtype_d BCType;
-  typedef double real_type;
-  typedef double value_type;
+  using SplineType       = multi_UBspline_3d_d;
+  using SingleSplineType = UBspline_3d_d;
+  using BCType           = BCtype_d;
+  using real_type        = double;
+  using value_type       = double;
 };
 
 ///specialization with multi_UBspline_3d_z
@@ -111,11 +111,11 @@ struct bspline_engine_traits<multi_UBspline_3d_z>
   {
     DIM = 3
   };
-  typedef multi_UBspline_3d_z SplineType;
-  typedef UBspline_3d_z SingleSplineType;
-  typedef BCtype_z BCType;
-  typedef std::complex<double> value_type;
-  typedef UBspline_3d_z single_spline_type;
+  using SplineType         = multi_UBspline_3d_z;
+  using SingleSplineType   = UBspline_3d_z;
+  using BCType             = BCtype_z;
+  using value_type         = std::complex<double>;
+  using single_spline_type = UBspline_3d_z;
 };
 
 /** specialization with multi_UBspline_3d_s
@@ -127,11 +127,11 @@ struct bspline_engine_traits<multi_UBspline_3d_s>
   {
     DIM = 3
   };
-  typedef multi_UBspline_3d_s SplineType;
-  typedef UBspline_3d_s SingleSplineType;
-  typedef BCtype_s BCType;
-  typedef float real_type;
-  typedef float value_type;
+  using SplineType       = multi_UBspline_3d_s;
+  using SingleSplineType = UBspline_3d_s;
+  using BCType           = BCtype_s;
+  using real_type        = float;
+  using value_type       = float;
 };
 
 ///specialization with multi_UBspline_3d_c
@@ -142,11 +142,11 @@ struct bspline_engine_traits<multi_UBspline_3d_c>
   {
     DIM = 3
   };
-  typedef multi_UBspline_3d_c SplineType;
-  typedef UBspline_3d_c SingleSplineType;
-  typedef BCtype_c BCType;
-  typedef float real_type;
-  typedef std::complex<float> value_type;
+  using SplineType       = multi_UBspline_3d_c;
+  using SingleSplineType = UBspline_3d_c;
+  using BCType           = BCtype_c;
+  using real_type        = float;
+  using value_type       = std::complex<float>;
 };
 
 #else
@@ -159,8 +159,8 @@ struct bspline_engine_traits<multi_UBspline_2d_d>
   {
     DIM = 2
   };
-  typedef double real_type;
-  typedef double value_type;
+  using real_type  = double;
+  using value_type = double;
 };
 
 ///specialization with multi_UBspline_3d_z
@@ -171,8 +171,8 @@ struct bspline_engine_traits<multi_UBspline_2d_z>
   {
     DIM = 2
   };
-  typedef double real_type;
-  typedef std::complex<double> value_type;
+  using real_type  = double;
+  using value_type = std::complex<double>;
 };
 
 /** specialization with multi_UBspline_3d_d
@@ -184,8 +184,8 @@ struct bspline_engine_traits<multi_UBspline_2d_s>
   {
     DIM = 2
   };
-  typedef float real_type;
-  typedef float value_type;
+  using real_type  = float;
+  using value_type = float;
 };
 
 ///specialization with multi_UBspline_3d_z
@@ -196,8 +196,8 @@ struct bspline_engine_traits<multi_UBspline_2d_c>
   {
     DIM = 2
   };
-  typedef float real_type;
-  typedef std::complex<float> value_type;
+  using real_type  = float;
+  using value_type = std::complex<float>;
 };
 #endif
 
@@ -210,11 +210,11 @@ struct bspline_engine_traits<multi_UBspline_1d_d>
   {
     DIM = 1
   };
-  typedef multi_UBspline_1d_d SplineType;
-  typedef UBspline_1d_d SingleSplineType;
-  typedef BCtype_d BCType;
-  typedef double real_type;
-  typedef double value_type;
+  using SplineType       = multi_UBspline_1d_d;
+  using SingleSplineType = UBspline_1d_d;
+  using BCType           = BCtype_d;
+  using real_type        = double;
+  using value_type       = double;
 };
 
 /** specialization with multi_UBspline_3d_s
@@ -226,11 +226,11 @@ struct bspline_engine_traits<multi_UBspline_1d_s>
   {
     DIM = 1
   };
-  typedef multi_UBspline_1d_s SplineType;
-  typedef UBspline_1d_s SingleSplineType;
-  typedef BCtype_s BCType;
-  typedef float real_type;
-  typedef float value_type;
+  using SplineType       = multi_UBspline_1d_s;
+  using SingleSplineType = UBspline_1d_s;
+  using BCType           = BCtype_s;
+  using real_type        = float;
+  using value_type       = float;
 };
 
 } // namespace qmcplusplus

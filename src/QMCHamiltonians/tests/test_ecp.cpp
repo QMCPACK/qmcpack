@@ -165,26 +165,26 @@ void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m = sopp.sg
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(20);
-  Lattice.LR_dim_cutoff = 15;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(20);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -192,18 +192,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   ions.R[1][1] = 0.0;
   ions.R[1][2] = 0.0;
 
-
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("Na");
   int pChargeIdx                = ion_species.addAttribute("charge");
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
-
-  elec.Lattice = Lattice;
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
@@ -283,6 +279,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   NonLocalECPComponent* nlpp = ecp.pp_nonloc.get();
 
+  REQUIRE(nlpp != nullptr);
+
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
   //quadrature Lattice instead...
@@ -300,18 +298,28 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   double logpsi = psi.evaluateLog(elec);
   REQUIRE(logpsi == Approx(5.1497823982));
 
-  double Value1(0.0);
-  //Using SoA distance tables, hence the guard.
-  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  auto test_evaluateOne = [&]()
   {
-    const auto& dist  = myTable.getDistRow(jel);
-    const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+    double Value1(0.0);
+    //Using SoA distance tables, hence the guard.
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
+    {
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+    }
+    //These numbers are validated against an alternate code path via wavefunction tester.
+    CHECK(Value1 == Approx(6.9015710211e-02));
+  };
+
+  {
+    nlpp->initVirtualParticle(elec);
+    test_evaluateOne();
+    nlpp->deleteVirtualParticle();
+    test_evaluateOne();
   }
-  //These numbers are validated against an alternate code path via wavefunction tester.
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
 
   opt_variables_type optvars;
   std::vector<ValueType> dlogpsi;
@@ -321,43 +329,53 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
-  dlogpsi.resize(NumOptimizables, ValueType(0));
-  dhpsioverpsi.resize(NumOptimizables, ValueType(0));
-  psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
-  REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
-  REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
-  REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
-  REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
-  REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
-
-  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
-  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
-  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
-  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
-
-  Value1 = 0.0;
-  //Using SoA distance tables, hence the guard.
-  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  auto test_evaluateValueAndDerivatives = [&]()
   {
-    const auto& dist  = myTable.getDistRow(jel);
-    const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                    dhpsioverpsi);
-  }
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
+    dlogpsi.resize(NumOptimizables, ValueType(0));
+    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+    psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+    REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
+    REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
+    REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
+    REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
+    REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
 
-  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
-  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
-  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
-  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+    REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
+    REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
+    REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
+    REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
+
+    double Value1 = 0.0;
+    //Using SoA distance tables, hence the guard.
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
+    {
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+          Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                      dhpsioverpsi);
+    }
+    CHECK(Value1 == Approx(6.9015710211e-02));
+
+    CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
+    CHECK(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
+    CHECK(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
+    CHECK(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    CHECK(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+  };
+
+  {
+    nlpp->initVirtualParticle(elec);
+    test_evaluateValueAndDerivatives();
+    nlpp->deleteVirtualParticle();
+    test_evaluateValueAndDerivatives();
+  }
 
   double Value2(0.0);
   double Value3(0.0);
-  ParticleSet::ParticlePos_t PulayTerm, HFTerm, HFTerm2;
+  ParticleSet::ParticlePos PulayTerm, HFTerm, HFTerm2;
   HFTerm.resize(ions.getTotalNum());
   HFTerm2.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
@@ -430,27 +448,28 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   app_log() << "!!!! Evaluate SOECPComponent !!!!\n";
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = false; // periodic
-  Lattice.R.diagonal(20);
-  Lattice.LR_dim_cutoff = 15;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = false; // periodic
+  lattice.R.diagonal(20);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  const SimulationCell simulation_cell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions(*ions_uptr);
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion0");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -462,13 +481,11 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 0;
   ion_species(iatnumber, pIdx)  = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
-  elec.Lattice = Lattice;
   elec.setName("e");
-  elec.create(1);
+  elec.create({1});
   elec.R[0][0]  = 0.138;
   elec.R[0][1]  = -0.24;
   elec.R[0][2]  = 0.216;

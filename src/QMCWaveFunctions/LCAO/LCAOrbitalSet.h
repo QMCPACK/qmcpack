@@ -30,15 +30,15 @@ namespace qmcplusplus
 struct LCAOrbitalSet : public SPOSet
 {
 public:
-  typedef SoaBasisSetBase<ValueType> basis_type;
-  typedef basis_type::vgl_type vgl_type;
-  typedef basis_type::vgh_type vgh_type;
-  typedef basis_type::vghgh_type vghgh_type;
+  using basis_type = SoaBasisSetBase<ValueType>;
+  using vgl_type   = basis_type::vgl_type;
+  using vgh_type   = basis_type::vgh_type;
+  using vghgh_type = basis_type::vghgh_type;
 
   ///pointer to the basis set
   std::unique_ptr<basis_type> myBasisSet;
   /// pointer to matrix containing the coefficients
-  std::shared_ptr<ValueMatrix_t> C;
+  std::shared_ptr<ValueMatrix> C;
 
   /** constructor
      * @param bs pointer to the BasisSet
@@ -51,7 +51,7 @@ public:
 
   void storeParamsBeforeRotation() override { C_copy = *C; }
 
-  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy) override;
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   void checkInVariables(opt_variables_type& active) override
   {
@@ -84,53 +84,49 @@ public:
     */
   void checkObject() const override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateVGL(const ParticleSet& P,
-                   int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
-                         ValueVector_t& psi,
-                         const ValueVector_t& psiinv,
+                         ValueVector& psi,
+                         const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,
-                   ValueVector_t& psi,
-                   GradVector_t& dpsi,
-                   HessVector_t& grad_grad_psi) override;
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override;
 
   void evaluateVGHGH(const ParticleSet& P,
                      int iat,
-                     ValueVector_t& psi,
-                     GradVector_t& dpsi,
-                     HessVector_t& grad_grad_psi,
-                     GGGVector_t& grad_grad_grad_psi) override;
+                     ValueVector& psi,
+                     GradVector& dpsi,
+                     HessVector& grad_grad_psi,
+                     GGGVector& grad_grad_grad_psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet) override;
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet,
+                            GGGMatrix& grad_grad_grad_logdet) override;
 
   //NOTE:  The data types get complicated here, so here's an overview of the
   //       data types associated with ionic derivatives, and how to get their data.
@@ -138,13 +134,13 @@ public:
   //NOTE:  These data structures hold the data for one particular ion, and so the ID is implicit.
   //       It's up to the user to keep track of which ion these derivatives refer to.
   //
-  // 1.) GradMatrix_t grad_phi:  Holds the ionic derivatives of each SPO for each electron.
+  // 1.) GradMatrix grad_phi:  Holds the ionic derivatives of each SPO for each electron.
   //            Example:  grad_phi[iel][iorb][idim].  iel  -- electron index.
   //                                                iorb -- orbital index.
   //                                                idim  -- cartesian index of ionic derivative.
   //                                                        X=0, Y=1, Z=2.
   //
-  // 2.) HessMatrix_t grad_grad_phi:  Holds the ionic derivatives of the electron gradient components
+  // 2.) HessMatrix grad_grad_phi:  Holds the ionic derivatives of the electron gradient components
   //                                   for each SPO and each electron.
   //            Example:  grad_grad_phi[iel][iorb](idim,edim)  iel  -- electron index.
   //                                                           iorb -- orbital index.
@@ -153,7 +149,7 @@ public:
   //                                                           edim -- electron derivative's cartesian index.
   //                                                              x=0, y=1, z=2.
   //
-  // 3.) GradMatrix_t grad_lapl_phi:  Holds the ionic derivatives of the electron laplacian for each SPO and each electron.
+  // 3.) GradMatrix grad_lapl_phi:  Holds the ionic derivatives of the electron laplacian for each SPO and each electron.
   //            Example:  grad_lapl_phi[iel][iorb][idim].  iel  -- electron index.
   //                                                       iorb -- orbital index.
   //                                                       idim -- cartesian index of ionic derivative.
@@ -174,7 +170,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& grad_phi) override;
+                          GradMatrix& grad_phi) override;
 
   /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
@@ -193,17 +189,23 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& grad_phi,
-                          HessMatrix_t& grad_grad_phi,
-                          GradMatrix_t& grad_lapl_phi) override;
+                          GradMatrix& grad_phi,
+                          HessMatrix& grad_grad_phi,
+                          GradMatrix& grad_lapl_phi) override;
 
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet) override;
+  void evaluateGradSourceRow(const ParticleSet& P,
+                             int iel,
+                             const ParticleSet& source,
+                             int iat_src,
+                             GradVector& grad_phi) override;
+
+  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet) override;
 
 protected:
   ///number of Single-particle orbitals
   const IndexType BasisSetSize;
   /// a copy of the original C before orbital rotation is applied;
-  ValueMatrix_t C_copy;
+  ValueMatrix C_copy;
 
   ///true if C is an identity matrix
   bool Identity;
@@ -212,65 +214,68 @@ protected:
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
   vgl_type Tempv;
 
-  //These are temporary VectorSoAContainers to hold value, gradient, and hessian for
-  //all basis or SPO functions evaluated at a given point.
-  //Nbasis x [1(value)+3(gradient)+6(hessian)]
+  ///These are temporary VectorSoAContainers to hold value, gradient, and hessian for
+  ///all basis or SPO functions evaluated at a given point.
+  ///Nbasis x [1(value)+3(gradient)+6(hessian)]
   vgh_type Temph;
-  //Norbitals x [1(value)+3(gradient)+6(hessian)]
+  ///Norbitals x [1(value)+3(gradient)+6(hessian)]
   vgh_type Temphv;
 
-  //These are temporary VectorSoAContainers to hold value, gradient, hessian, and
-  // gradient hessian for all basis or SPO functions evaluated at a given point.
-  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
+  ///These are temporary VectorSoAContainers to hold value, gradient, hessian, and
+  /// gradient hessian for all basis or SPO functions evaluated at a given point.
+  ///Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempgh;
-  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
+  ///Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempghv;
 
 private:
-  //helper functions to handl Identity
-  void evaluate_vgl_impl(const vgl_type& temp, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
+  ///helper functions to handl Identity
+  void evaluate_vgl_impl(const vgl_type& temp, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) const;
 
   void evaluate_vgl_impl(const vgl_type& temp,
                          int i,
-                         ValueMatrix_t& logdet,
-                         GradMatrix_t& dlogdet,
-                         ValueMatrix_t& d2logdet) const;
-  //These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
-  //This unpacks temp into vectors psi, dpsi, and d2psi.
-  void evaluate_vgh_impl(const vgh_type& temp, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi) const;
+                         ValueMatrix& logdet,
+                         GradMatrix& dlogdet,
+                         ValueMatrix& d2logdet) const;
+  ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
+  ///This unpacks temp into vectors psi, dpsi, and d2psi.
+  void evaluate_vgh_impl(const vgh_type& temp, ValueVector& psi, GradVector& dpsi, HessVector& d2psi) const;
 
-  //Unpacks temp into the ith row (or electron index) of logdet, dlogdet, dhlogdet.
+  ///Unpacks temp into the ith row (or electron index) of logdet, dlogdet, dhlogdet.
   void evaluate_vgh_impl(const vgh_type& temp,
                          int i,
-                         ValueMatrix_t& logdet,
-                         GradMatrix_t& dlogdet,
-                         HessMatrix_t& dhlogdet) const;
-  //Unpacks data in vghgh_type temp object into wavefunction friendly data structures for value, gradient, hessian
-  //and gradient hessian.
+                         ValueMatrix& logdet,
+                         GradMatrix& dlogdet,
+                         HessMatrix& dhlogdet) const;
+  ///Unpacks data in vghgh_type temp object into wavefunction friendly data structures for value, gradient, hessian
+  ///and gradient hessian.
   void evaluate_vghgh_impl(const vghgh_type& temp,
-                           ValueVector_t& psi,
-                           GradVector_t& dpsi,
-                           HessVector_t& d2psi,
-                           GGGVector_t& dghpsi) const;
+                           ValueVector& psi,
+                           GradVector& dpsi,
+                           HessVector& d2psi,
+                           GGGVector& dghpsi) const;
 
   void evaluate_vghgh_impl(const vghgh_type& temp,
                            int i,
-                           ValueMatrix_t& logdet,
-                           GradMatrix_t& dlogdet,
-                           HessMatrix_t& dhlogdet,
-                           GGGMatrix_t& dghlogdet) const;
+                           ValueMatrix& logdet,
+                           GradMatrix& dlogdet,
+                           HessMatrix& dhlogdet,
+                           GGGMatrix& dghlogdet) const;
 
 
-  //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.
-  void evaluate_ionderiv_v_impl(const vgl_type& temp, int i, GradMatrix_t& dlogdet) const;
+  ///Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.
+  void evaluate_ionderiv_v_impl(const vgl_type& temp, int i, GradMatrix& dlogdet) const;
 
-  //Unpacks data in vgl object and calculates/places ionic gradient of value,
-  //  electron gradient, and electron laplacian result into dlogdet, dglogdet, and dllogdet respectively.
+  ///Unpacks data in vgl object and calculates/places ionic gradient of value,
+  ///  electron gradient, and electron laplacian result into dlogdet, dglogdet, and dllogdet respectively.
   void evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
                                   int i,
-                                  GradMatrix_t& dlogdet,
-                                  HessMatrix_t& dglogdet,
-                                  GradMatrix_t& dllogdet) const;
+                                  GradMatrix& dlogdet,
+                                  HessMatrix& dglogdet,
+                                  GradMatrix& dllogdet) const;
+
+  ///Unpacks data in vgl object and calculates/places ionic gradient of a single row (phi_j(r)) into dlogdet.
+  void evaluate_ionderiv_v_row_impl(const vgl_type& temp, GradVector& dlogdet) const;
 };
 } // namespace qmcplusplus
 #endif

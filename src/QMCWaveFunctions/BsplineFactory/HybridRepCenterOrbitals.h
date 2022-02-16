@@ -542,7 +542,7 @@ public:
   inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -618,7 +618,7 @@ public:
   inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -637,7 +637,7 @@ public:
   inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];

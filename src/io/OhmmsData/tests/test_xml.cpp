@@ -47,8 +47,7 @@ TEST_CASE("parseString", "[xml]")
 
   REQUIRE((char*)root->name == string("simulation"));
 
-  string root_name;
-  getNodeName(root_name, root);
+  std::string root_name(getNodeName(root));
 
   REQUIRE(root_name == "simulation");
 }
@@ -70,8 +69,11 @@ aa \
   const XMLNodeString node_string(root);
   REQUIRE(node_string == " aa ");
 
-  const XMLAttrString attr_string(root, "name");
+  const std::string attr_string(getXMLAttributeValue(root, "name"));
   REQUIRE(attr_string == "qmc");
+
+  const std::string attr_string_missing(getXMLAttributeValue(root, "not_here"));
+  REQUIRE(attr_string_missing.empty());
 }
 
 TEST_CASE("putContent", "[xml]")

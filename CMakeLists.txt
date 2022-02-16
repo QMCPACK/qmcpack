@@ -16,7 +16,7 @@ cmake_policy(SET CMP0075 NEW)
 ######################################################################
 project(
   qmcpack
-  VERSION 3.12.0
+  VERSION 3.13.0
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -217,7 +217,7 @@ endif()
 #--------------------------------------------------------------------
 option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 if(INSTALL_NEXUS)
-  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)")
 endif()
 
 ######################################################################
@@ -227,7 +227,6 @@ if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Trying to figure out compiler options ....")
-  set(ENABLE_OPENMP 0)
 
   #------------------------
   # On Cray's machine
@@ -730,6 +729,11 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(CMAKE_CUDA_EXTENSIONS OFF)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
+    if(NOT TARGET CUDA::cublas)
+      message(FATAL_ERROR "Found an incomplete CUDA toolkit installation. "
+                          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
+                          "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
+    endif()
     # Automatically set the default NVCC flags
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
     if(QMC_COMPLEX)
@@ -899,7 +903,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 #-------------------------------------------------------------------
 # add definitions DO NOT EXPAND
 #-------------------------------------------------------------------
-add_definitions(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
+add_definitions(-DHAVE_CONFIG_H -DADD_)
 
 #-------------------------------------------------------------------
 # qmcpack.settings
@@ -1011,11 +1015,23 @@ include(python)
 # Check if PySCF is available
 #-------------------------------------------------------------------
 if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(pyscf HAVE_PYSCF)
-  if(NOT HAVE_PYSCF)
+  check_python_reqs(pyscf "" HAVE_PYSCF)
+  if(NOT ${HAVE_PYSCF})
     message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
   else()
     message(STATUS "Successfully imported PySCF python module.")
+  endif()
+endif()
+
+#-------------------------------------------------------------------
+# Check if GPAW is available
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  check_python_reqs(gpaw "" HAVE_GPAW)
+  if(NOT ${HAVE_GPAW})
+    message(STATUS "Unable to import GPAW python module. GPAW converter tests will not be run.")
+  else()
+    message(STATUS "Successfully imported GPAW python modules.")
   endif()
 endif()
 
@@ -1045,10 +1061,28 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   endif(RMG_FOUND)
 endif()
 
+#-------------------------------------------------------------------
+# If the timestamp of test_labels.py changes, unset any cached values
+#-------------------------------------------------------------------
+
+file(TIMESTAMP ${qmcpack_SOURCE_DIR}/tests/scripts/test_labels.py TIMESTAMP_TEST_LABELS)
+if(NOT DEFINED CACHE_TIMESTAMP_TEST_LABELS)
+  set(CACHE_TIMESTAMP_TEST_LABELS ${TIMESTAMP_TEST_LABELS} CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables")
+endif()
+if(NOT ${TIMESTAMP_TEST_LABELS} STREQUAL ${CACHE_TIMESTAMP_TEST_LABELS})
+  get_cmake_property(_variableNames VARIABLES)
+  list(FILTER _variableNames INCLUDE REGEX "^TEST_LABELS_*")
+  foreach(_variableName ${_variableNames})
+    unset(${_variableName} CACHE)
+  endforeach()
+  set(CACHE_TIMESTAMP_TEST_LABELS ${TIMESTAMP_TEST_LABELS} CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables" FORCE)
+endif()
+
 ######################################################################
 message(STATUS "Ready to parse QMCPACK source tree")
 ######################################################################
 
+add_subdirectory(external_codes)
 add_subdirectory(src)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)

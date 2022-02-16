@@ -65,13 +65,31 @@ void SoaLocalizedBasisSet<COT, ORBT>::setBasisSetSize(int nbs)
   if (BasisSetSize > 0 && nbs == BasisSetSize)
     return;
 
-  //evaluate the total basis dimension and offset for each center
-  BasisOffset[0] = 0;
-  for (int c = 0; c < NumCenters; c++)
+  if (auto& mapping = ions_.get_map_storage_to_input(); mapping.empty())
   {
-    BasisOffset[c + 1] = BasisOffset[c] + LOBasisSet[IonID[c]]->getBasisSetSize();
+    //evaluate the total basis dimension and offset for each center
+    BasisOffset[0] = 0;
+    for (int c = 0; c < NumCenters; c++)
+      BasisOffset[c + 1] = BasisOffset[c] + LOBasisSet[IonID[c]]->getBasisSetSize();
+    BasisSetSize = BasisOffset[NumCenters];
   }
-  BasisSetSize = BasisOffset[NumCenters];
+  else
+  {
+    // when particles are reordered due to grouping, AOs need to restore the input order to match MOs.
+    std::vector<int> map_input_to_storage(mapping.size());
+    for (int c = 0; c < NumCenters; c++)
+      map_input_to_storage[mapping[c]] = c;
+
+    std::vector<size_t> basis_offset_input_order(BasisOffset.size(), 0);
+    for (int c = 0; c < NumCenters; c++)
+      basis_offset_input_order[c + 1] =
+          basis_offset_input_order[c] + LOBasisSet[IonID[map_input_to_storage[c]]]->getBasisSetSize();
+
+    for (int c = 0; c < NumCenters; c++)
+      BasisOffset[c] = basis_offset_input_order[mapping[c]];
+
+    BasisSetSize = basis_offset_input_order[NumCenters];
+  }
 }
 
 template<class COT, typename ORBT>
@@ -105,8 +123,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
   const auto& IonID(ions_.GroupID);
   const auto& coordR  = P.activeR(iat);
   const auto& d_table = P.getDistTableAB(myTableIndex);
-  const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
-  const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
   PosType Tv;
   for (int c = 0; c < NumCenters; c++)
@@ -114,7 +132,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
     Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
     Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
     Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
-    LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl, Tv);
+    LOBasisSet[IonID[c]]->evaluateVGL(P.getLattice(), dist[c], displ[c], BasisOffset[c], vgl, Tv);
   }
 }
 
@@ -123,11 +141,11 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat,
 {
   const auto& IonID(ions_.GroupID);
   const auto& d_table = P.getDistTableAB(myTableIndex);
-  const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
-  const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
   {
-    LOBasisSet[IonID[c]]->evaluateVGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vgh);
+    LOBasisSet[IonID[c]]->evaluateVGH(P.getLattice(), dist[c], displ[c], BasisOffset[c], vgh);
   }
 }
 
@@ -138,11 +156,11 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 
   const auto& IonID(ions_.GroupID);
   const auto& d_table = P.getDistTableAB(myTableIndex);
-  const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
-  const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
   {
-    LOBasisSet[IonID[c]]->evaluateVGHGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vghgh);
+    LOBasisSet[IonID[c]]->evaluateVGHGH(P.getLattice(), dist[c], displ[c], BasisOffset[c], vghgh);
   }
 }
 
@@ -152,8 +170,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
   const auto& IonID(ions_.GroupID);
   const auto& coordR  = P.activeR(iat);
   const auto& d_table = P.getDistTableAB(myTableIndex);
-  const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
-  const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
   PosType Tv;
   for (int c = 0; c < NumCenters; c++)
@@ -161,7 +179,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
     Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
     Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
     Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
-    LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c], Tv);
+    LOBasisSet[IonID[c]]->evaluateV(P.getLattice(), dist[c], displ[c], vals + BasisOffset[c], Tv);
   }
 }
 
@@ -186,8 +204,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
 
   const auto& IonID(ions_.GroupID);
   const auto& d_table = P.getDistTableAB(myTableIndex);
-  const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
-  const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
 
   PosType Tv;
@@ -195,7 +213,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceV(const ParticleSet& P,
   //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
   //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
   //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
-  LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl, Tv);
+  LOBasisSet[IonID[jion]]->evaluateVGL(P.getLattice(), dist[jion], displ[jion], BasisOffset[jion], vgl, Tv);
 }
 
 template<class COT, typename ORBT>
@@ -258,14 +276,14 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceVGL(const ParticleSet& P
   // ions_ and ions is extremely important.
   const auto& IonID(ions.GroupID);
   const auto& d_table = P.getDistTableAB(myTableIndex);
-  const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
-  const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
   //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
   //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
   //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
 
-  LOBasisSet[IonID[jion]]->evaluateVGHGH(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vghgh);
+  LOBasisSet[IonID[jion]]->evaluateVGHGH(P.getLattice(), dist[jion], displ[jion], BasisOffset[jion], vghgh);
 }
 
 template<class COT, typename ORBT>

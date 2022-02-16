@@ -19,27 +19,25 @@
 #include "ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/InitMolecularSystem.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include <Message/UniformCommunicateError.h>
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), simulation_cell_(std::make_unique<SimulationCell>())
 {
-  TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
 
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
-    : MPIObjectBase(other.myComm),
-      SimulationCell(std::move(other.SimulationCell)),
-      TileMatrix(other.TileMatrix),
-      myPool(std::move(other.myPool))
+    : MPIObjectBase(other.myComm), simulation_cell_(std::move(other.simulation_cell_)), myPool(std::move(other.myPool))
 {
   ClassName = other.ClassName;
   myName    = other.myName;
@@ -77,62 +75,40 @@ MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
     mc = getParticleSet(pname);
   if (mc == 0)
   {
-    APP_ABORT("ParticleSePool::getWalkerSet missing " + pname);
+    throw std::runtime_error("ParticleSePool::getWalkerSet missing " + pname);
   }
   return dynamic_cast<MCWalkerConfiguration*>(mc);
 }
 
 void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
 {
-  PoolType::iterator pit(myPool.find(p->getName()));
+  const auto pit(myPool.find(p->getName()));
   if (pit == myPool.end())
   {
     auto& pname = p->getName();
     LOGMSG("  Adding " << pname << " ParticleSet to the pool")
+    if (&p->getSimulationCell() != simulation_cell_.get())
+      throw std::runtime_error("bug mandate");
     myPool[pname] = p.release();
   }
   else
-  {
-    WARNMSG("  " << p->getName() << " exists. Ignore addition")
-  }
+    throw std::runtime_error(p->getName() + " exists. Cannot be added again.");
 }
 
-bool ParticleSetPool::putTileMatrix(xmlNodePtr cur)
-{
-  TileMatrix = 0;
-  TileMatrix.diagonal(1);
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(TileMatrix, "tilematrix");
-  pAttrib.put(cur);
-  return true;
-}
-
-bool ParticleSetPool::putLattice(xmlNodePtr cur)
+bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
-  bool printcell = false;
-  if (!SimulationCell)
-  {
-    app_debug() << "  Creating global supercell " << std::endl;
-    SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
-    printcell      = true;
-  }
-  else
+
+  LatticeParser a(simulation_cell_->lattice_);
+  bool lattice_defined = a.put(cur);
+  if (lattice_defined)
   {
     app_log() << "  Overwriting global supercell " << std::endl;
-  }
-  LatticeParser a(*SimulationCell);
-  bool lattice_defined = a.put(cur);
-  if (printcell && lattice_defined)
-  {
+    simulation_cell_->resetLRBox();
     if (outputManager.isHighActive())
-    {
-      SimulationCell->print(app_log(), 2);
-    }
+      simulation_cell_->lattice_.print(app_log(), 2);
     else
-    {
-      SimulationCell->print(app_summary(), 1);
-    }
+      simulation_cell_->lattice_.print(app_summary(), 1);
   }
   return lattice_defined;
 }
@@ -147,8 +123,6 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
 bool ParticleSetPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "put");
-  //const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
-  //ParticleSet::ParticleLayout_t* sc=0;
   std::string id("e");
   std::string role("none");
   std::string randomR("no");
@@ -181,21 +155,22 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 
     // select OpenMP offload implementation in ParticleSet.
     if (useGPU == "yes")
-      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS_OFFLOAD);
+      pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS_OFFLOAD);
     else
-      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS);
-    //if(role == "MC")
-    //  pTemp = new MCWalkerConfiguration;
-    //else
-    //  pTemp = new ParticleSet;
-    if (SimulationCell)
-    {
-      app_log() << "  Initializing the lattice by the global supercell" << std::endl;
-      pTemp->Lattice = *SimulationCell;
-    }
+      pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);
+
     myPool[id] = pTemp;
-    XMLParticleParser pread(*pTemp, TileMatrix);
-    bool success = pread.put(cur);
+
+    try
+    {
+      XMLParticleParser pread(*pTemp);
+      pread.readXML(cur);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
+
     //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())
     {
@@ -205,10 +180,10 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
-    pTemp->is_spinor_ = spinor == "yes";
-    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
+    pTemp->setSpinor(spinor == "yes");
+    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << "   Groups : " << pTemp->groups() << std::endl;
     app_summary() << std::endl;
-    return success;
+    return true;
   }
   else
   {
@@ -231,7 +206,7 @@ void ParticleSetPool::randomize()
   }
   randomize_nodes.clear();
   if (!success)
-    APP_ABORT("ParticleSePool::randomize failed to randomize some Particlesets!");
+    throw std::runtime_error("ParticleSePool::randomize failed to randomize some Particlesets!");
 }
 
 bool ParticleSetPool::get(std::ostream& os) const

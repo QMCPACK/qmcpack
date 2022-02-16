@@ -615,7 +615,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "optimize")
     {
-      const XMLAttrString att(element, "method");
+      const std::string att(getXMLAttributeValue(element, "method"));
       if (!att.empty() && att == "gradient_test")
       {
         GradientTestInput test_grad_input;
@@ -661,11 +661,11 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
                                                         bool useGPU)
 {
   m_param.put(opt_xml);
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
 
-  tolower(block_lmStr);
-  block_lm = (block_lmStr == "yes");
+  block_lmStr = lowerCase(block_lmStr);
+  block_lm    = (block_lmStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
@@ -680,7 +680,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
     APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
 
-#ifdef ENABLE_OPENMP
+#ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");

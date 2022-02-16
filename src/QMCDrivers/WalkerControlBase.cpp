@@ -132,8 +132,6 @@ void WalkerControlBase::measureProperties(int iter)
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
   {
-    //boost::archive::text_oarchive oa(*dmcStream);
-    //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
     (*dmcStream) << std::setw(10) << iter << std::setw(20) << ensemble_property_.Energy << std::setw(20)
                  << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
                  << ensemble_property_.NumSamples << std::setw(20)

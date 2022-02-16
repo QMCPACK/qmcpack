@@ -2,6 +2,41 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [3.13.0] - 2022-02-16
+
+### Notes
+
+This release incorporates support for trial wavefunctions from Quantum ESPRESSO 7.0 and adds GPAW support for the first
+time. Non-local pseudopotential derivatives are fully supported in the optimizer and recommended in standard calculations.  
+Numerous minor bug fixes, test and installation improvements have been made. Behind the scenes updates include
+maturation of the OpenMP target offload implementation and the batched drivers, a partial implementation of fast force
+calculations, and ongoing modernization of the code. This is a recommended release for all users.
+
+* Support for Quantum ESPRESSO (QE) 7.0 [\#3683](https://github.com/QMCPACK/qmcpack/pull/3683)
+* Support for GPAW and GPAW to QMCPACK converter [\#3490](https://github.com/QMCPACK/qmcpack/issues/3490)
+* use_nonlocalpp_deriv is fully supported and preferred in optimization [\#3785](https://github.com/QMCPACK/qmcpack/pull/3785) and others.
+* Save and restore of variational parameters during optimization [\#3640](https://github.com/QMCPACK/qmcpack/pull/3640)
+* Twist attribute takes precedence over twistnum. Twist is preferred specification. [\#3799](https://github.com/QMCPACK/qmcpack/pull/3799)
+* Fixed inconsistent twist directions between electron gas and spline wavefunctions [\#1386](https://github.com/QMCPACK/qmcpack/issues/1386)
+* Fixed reported Madelung constant in CoulombPBCAA [\#3806](https://github.com/QMCPACK/qmcpack/pull/3806)
+* More robust computation of reference ion-ion Coulomb energy [\#3763](https://github.com/QMCPACK/qmcpack/pull/3763)
+* Expanded test set, including more coverage of plane-wave basis sets and complex molecules [\#3105](https://github.com/QMCPACK/qmcpack/issues/3105), [\#3822](https://github.com/QMCPACK/qmcpack/issues/3822)
+* More consistent python invocations [\#3680](https://github.com/QMCPACK/qmcpack/issues/3680)
+* Builds with OpenMP disabled (QMC\_OMP=0) again supported [\#3723](https://github.com/QMCPACK/qmcpack/pull/3723)
+* Modernization of HDF5 usage e.g. [\#3705](https://github.com/QMCPACK/qmcpack/pull/3705)
+* Minimum supported Intel classic compiler version is 19.1. [\#3747](https://github.com/QMCPACK/qmcpack/pull/3747)
+* Various minor bug fixes and ongoing code cleanup. 
+
+### NEXUS
+
+* Nexus: Add --user $USER to squeue command [\#3796](https://github.com/QMCPACK/qmcpack/pull/3796) 
+* Nexus: Add Example and tests for qdens-radial tool [\#3676](https://github.com/QMCPACK/qmcpack/pull/3676)
+* Nexus: Add Lowdin example [\#3666](https://github.com/QMCPACK/qmcpack/pull/3666)
+* Nexus: Fixed Nexus 'install' target [\#3720](https://github.com/QMCPACK/qmcpack/issues/3720)
+* Nexus: Harden Nexus excitation checks [\#3729](https://github.com/QMCPACK/qmcpack/pull/3729)
+* Nexus: Small fix to excitation checks [\#3701](https://github.com/QMCPACK/qmcpack/pull/3701)
+* Nexus: Faster configuration time [\#3706](https://github.com/QMCPACK/qmcpack/pull/3706)
+
 ## [3.12.0] - 2021-12-08
 
 ### Notes

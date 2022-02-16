@@ -25,7 +25,7 @@
 #include "QMCDrivers/QMCDriver.h"
 //#include "QMCDrivers/CMC/DummyIonMove.h"
 #include "Message/Communicate.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Utilities/qmc_common.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -56,7 +56,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   //dummy.run();
 
   int nat = ions->getTotalNum();
-  ParticleSet::ParticlePos_t deltaR(nat);
+  ParticleSet::ParticlePos deltaR(nat);
 
   makeGaussRandomWithEngine(deltaR, Random); //generate random displaement
 

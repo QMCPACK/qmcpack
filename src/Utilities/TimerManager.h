@@ -72,10 +72,7 @@ public:
   __itt_domain* task_domain;
 #endif
 
-  TimerManager()
-      : timer_threshold(timer_level_coarse),
-        max_timer_id(1),
-        max_timers_exceeded(false)
+  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");
@@ -107,10 +104,10 @@ public:
   void reset();
   void print(Communicate* comm);
 
-  typedef std::map<std::string, int> nameList_t;
-  typedef std::vector<double> timeList_t;
-  typedef std::vector<long> callList_t;
-  typedef std::vector<std::string> names_t;
+  using nameList_t = std::map<std::string, int>;
+  using timeList_t = std::vector<double>;
+  using callList_t = std::vector<long>;
+  using names_t    = std::vector<std::string>;
 
   struct FlatProfileData
   {

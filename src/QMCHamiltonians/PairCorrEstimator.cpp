@@ -33,10 +33,10 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   N_e = elns.getTotalNum();
 
   // use the simulation cell radius if any direction is periodic
-  if (elns.Lattice.SuperCellEnum)
+  if (elns.getLattice().SuperCellEnum)
   {
-    Dmax   = elns.Lattice.WignerSeitzRadius;
-    Volume = elns.Lattice.Volume;
+    Dmax   = elns.getLattice().WignerSeitzRadius;
+    Volume = elns.getLattice().Volume;
   }
   else // Open BC's
     Volume = 1.0;
@@ -134,7 +134,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   for (int k = 0; k < other_ids.size(); ++k)
   {
     const auto& d1(P.getDistTableAB(other_ids[k]));
-    const ParticleSet::ParticleIndex_t& gid(d1.get_origin().GroupID);
+    const ParticleSet::ParticleIndex& gid(d1.get_origin().GroupID);
     int koff        = other_offsets[k];
     RealType overNI = 1.0 / d1.centers();
     for (int iat = 0; iat < d1.targets(); ++iat)

@@ -24,8 +24,8 @@ namespace qmcplusplus
 {
 TEST_CASE("vector", "[OhmmsSoA]")
 {
-  typedef Vector<TinyVector<double, 3>> vec_t;
-  typedef VectorSoaContainer<double, 3> vec_soa_t;
+  using vec_t     = Vector<TinyVector<double, 3>>;
+  using vec_soa_t = VectorSoaContainer<double, 3>;
 
   vec_t R(4);
   vec_soa_t RSoA(4);
@@ -69,11 +69,11 @@ TEST_CASE("VectorSoaContainer copy constructor", "[OhmmsSoA]")
   VectorSoaContainer<double, 3> rsoa_copy(RSoA);
 
   // more importantly this test shall not leak memory
-  
+
   //check out value
   REQUIRE(rsoa_copy[1][0] == Approx(1.68658058));
   REQUIRE(rsoa_copy[1][1] == Approx(1.68658058));
-  REQUIRE(rsoa_copy[1][2] == Approx(1.68658058));  
+  REQUIRE(rsoa_copy[1][2] == Approx(1.68658058));
 }
 
 TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
@@ -91,15 +91,15 @@ TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
   VectorSoaContainer<double, 3> rsoa_move(std::move(RSoA));
 
   // more importantly this test shall not leak memory
-  
+
   //check out value
   REQUIRE(rsoa_move[1][0] == Approx(1.68658058));
   REQUIRE(rsoa_move[1][1] == Approx(1.68658058));
   REQUIRE(rsoa_move[1][2] == Approx(1.68658058));
 }
 
-  TEST_CASE("VectorSoaContainer assignment", "[OhmmsSoA]")
-  {
+TEST_CASE("VectorSoaContainer assignment", "[OhmmsSoA]")
+{
   Vector<TinyVector<double, 3>> R(4);
   VectorSoaContainer<double, 3> RSoA(4);
 
@@ -129,7 +129,6 @@ TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
   rsoa_assign = r_soa_big;
   REQUIRE(rsoa_assign[4][0] == Approx(3.37316115));
   REQUIRE(rsoa_assign[4][2] == Approx(0.00000000));
-  
-  }
+}
 
 } // namespace qmcplusplus

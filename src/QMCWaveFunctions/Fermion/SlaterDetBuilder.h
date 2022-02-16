@@ -18,19 +18,17 @@
 
 #include <vector>
 #include "Configuration.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/ci_configuration.h"
-#include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
+#include "WaveFunctionComponentBuilder.h"
+#include <hdf/hdf_archive.h>
 
 namespace qmcplusplus
 {
 class TrialWaveFunction;
 class BackflowTransformation;
+class DiracDeterminantBase;
+class MultiDiracDeterminant;
+class SPOSetBuilderFactory;
+struct ci_configuration;
 
 /** derived class from WaveFunctionComponentBuilder
  *
@@ -39,7 +37,6 @@ class BackflowTransformation;
 class SlaterDetBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
@@ -73,8 +70,6 @@ private:
   std::unique_ptr<DiracDeterminantBase> putDeterminant(xmlNodePtr cur,
                                                        int spin_group,
                                                        const std::unique_ptr<BackflowTransformation>& BFTrans);
-
-  bool createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur, BackflowTransformation* const BFTrans) const;
 
   bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
                      std::vector<std::vector<size_t>>& C2node,
@@ -124,7 +119,7 @@ private:
       extVar = "Coeff_" + std::to_string(ext_level);
 
     if (!hin.readEntry(ci_coeff, extVar))
-      APP_ABORT("Could not read CI coefficients from HDF5");
+      throw std::runtime_error("Could not read CI coefficients from HDF5");
   }
 
   template<typename VT,
@@ -151,7 +146,7 @@ private:
 
 
     if (!hin.readEntry(CIcoeff_real, extVar))
-      APP_ABORT("Could not read CI coefficients from HDF5")
+      throw std::runtime_error("Could not read CI coefficients from HDF5");
 
     extVar = extVar + "_imag";
     if (!hin.readEntry(CIcoeff_imag, extVar))

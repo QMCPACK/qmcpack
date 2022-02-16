@@ -22,7 +22,7 @@
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/SOVMCUpdateAll.h"
 #include "RandomNumberControl.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/qmc_common.h"
@@ -31,7 +31,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 namespace qmcplusplus
@@ -136,7 +136,7 @@ bool VMC::run()
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = W.dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
@@ -177,10 +177,10 @@ void VMC::resetRun()
 #ifdef USE_FAKE_RNG
       Rng[ip] = std::make_unique<FakeRandom>();
 #else
-      Rng[ip] = std::make_unique<RandomGenerator_t>(*RandomNumberControl::Children[ip]);
+      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip].get());
-      if (W.is_spinor_)
+      if (W.isSpinor())
       {
         spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])

@@ -31,7 +31,8 @@ void test_He(bool transform)
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
+    const SimulationCell simulation_cell;
+    ParticleSet elec(simulation_cell);
     std::vector<int> agroup(2);
     agroup[0] = 1;
     agroup[1] = 1;
@@ -46,9 +47,9 @@ void test_He(bool transform)
     tspecies(massIdx, upIdx)   = 1.0;
     tspecies(massIdx, downIdx) = 1.0;
 
-    ParticleSet ions;
+    ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int heIdx            = ispecies.addSpecies("He");
@@ -90,15 +91,15 @@ void test_He(bool transform)
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSet::ValueVector_t values;
-    SPOSet::GradVector_t dpsi;
-    SPOSet::ValueVector_t d2psi;
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
     values.resize(1);
     dpsi.resize(1);
     d2psi.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
+    ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -116,7 +117,7 @@ void test_He(bool transform)
     REQUIRE(d2psi[0] == Approx(-20.03410564));
 
 
-    ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
@@ -143,8 +144,9 @@ void test_Ne(bool transform)
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
-    ;
+    const SimulationCell simulation_cell;
+    ParticleSet elec(simulation_cell);
+
     std::vector<int> agroup(2);
     agroup[0] = 1;
     agroup[1] = 1;
@@ -159,9 +161,9 @@ void test_Ne(bool transform)
     tspecies(massIdx, upIdx)   = 1.0;
     tspecies(massIdx, downIdx) = 1.0;
 
-    ParticleSet ions;
+    ParticleSet ions(simulation_cell);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0][0]         = 0.0;
     ions.R[0][1]         = 0.0;
     ions.R[0][2]         = 0.0;
@@ -206,14 +208,14 @@ void test_Ne(bool transform)
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSet::ValueVector_t values;
-    SPOSet::GradVector_t dpsi;
-    SPOSet::ValueVector_t d2psi;
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
     values.resize(5);
     dpsi.resize(5);
     d2psi.resize(5);
 
-    ParticleSet::SingleParticlePos_t newpos(0.00001, 0.0, 0.0);
+    ParticleSet::SingleParticlePos newpos(0.00001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -234,7 +236,7 @@ void test_Ne(bool transform)
     REQUIRE(dpsi[0][2] == Approx(0));
 
 
-    ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+    ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
     sposet->evaluateValue(elec, 0, values);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
@@ -270,26 +272,23 @@ void test_HCN(bool transform)
     bool okay = doc.parse("hcn.structure.xml");
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
-    Tensor<int, 3> tmat;
-    tmat(0, 0) = 1;
-    tmat(1, 1) = 1;
-    tmat(2, 2) = 1;
 
-    ParticleSet ions;
-    XMLParticleParser parse_ions(ions, tmat);
+    const SimulationCell simulation_cell;
+    ParticleSet ions(simulation_cell);
+    XMLParticleParser parse_ions(ions);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
-    parse_ions.put(particleset_ion[0]);
+    parse_ions.readXML(particleset_ion[0]);
 
     REQUIRE(ions.groups() == 3);
     REQUIRE(ions.R.size() == 3);
     ions.update();
 
-    ParticleSet elec;
-    XMLParticleParser parse_elec(elec, tmat);
+    ParticleSet elec(simulation_cell);
+    XMLParticleParser parse_elec(elec);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
-    parse_elec.put(particleset_elec[0]);
+    parse_elec.readXML(particleset_elec[0]);
 
     REQUIRE(elec.groups() == 2);
     REQUIRE(elec.R.size() == 14);
@@ -330,14 +329,14 @@ void test_HCN(bool transform)
     SPOSet* sposet = bb.createSPOSet(slater_base[0]);
 
 
-    SPOSet::ValueVector_t values;
-    SPOSet::GradVector_t dpsi;
-    SPOSet::ValueVector_t d2psi;
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
     values.resize(7);
     dpsi.resize(7);
     d2psi.resize(7);
 
-    ParticleSet::SingleParticlePos_t newpos;
+    ParticleSet::SingleParticlePos newpos;
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -397,7 +396,7 @@ void test_HCN(bool transform)
     REQUIRE(d2psi[6] == Approx(0));
 
     //==========Hessian and Grad Hessian Test==========
-    SPOSet::HessVector_t dhpsi;
+    SPOSet::HessVector dhpsi;
     dhpsi.resize(7);
 
     sposet->evaluateVGH(elec, 0, values, dpsi, dhpsi);
@@ -418,10 +417,10 @@ void test_HCN(bool transform)
     /////////////////////////////////////////////////////////////////////////////
     //Now we're going to test the API's called by SPOSet for higher derivatives//
     /////////////////////////////////////////////////////////////////////////////
-    SPOSet::ValueMatrix_t psiM(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::GradMatrix_t dpsiM(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::HessMatrix_t hesspsiV(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::GGGMatrix_t d3psiV(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::ValueMatrix psiM(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix dpsiM(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::HessMatrix hesspsiV(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GGGMatrix d3psiV(elec.R.size(), sposet->getOrbitalSetSize());
 
     sposet->evaluate_notranspose(elec, 0, elec.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
 
@@ -501,13 +500,13 @@ void test_HCN(bool transform)
 
 
     //Move electron 0 to some nontrivial position:
-    ParticleSet::SingleParticlePos_t disp(0.02, -0.1, 0.05);
+    ParticleSet::SingleParticlePos disp(0.02, -0.1, 0.05);
     elec.makeMove(0, disp);
 
 
-    SPOSet::GradMatrix_t dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
-    SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::HessMatrix diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 0, dionpsi, diongradpsi, dionlaplpsi);
 
@@ -658,7 +657,44 @@ void test_HCN(bool transform)
     REQUIRE(dionpsi[0][4][2] == Approx(-7.300043903e-05));
     REQUIRE(dionpsi[0][5][2] == Approx(2.910525987e-06));
     REQUIRE(dionpsi[0][6][2] == Approx(-1.56074936e-05));
+
+
+    //Finally, going to test evaluateGradSourceRow.  Same template and reference
+    //values as above.  
+    SPOSet::GradVector dionpsivec;
+    dionpsivec.resize(7);
+
+    sposet->evaluateGradSourceRow(elec,0,ions,0,dionpsivec);
+    //============== Ion  0  Component  0 ===================
+    CHECK(dionpsivec[0][0] == Approx(0.0453112082));
+    CHECK(dionpsivec[1][0] == Approx(-0.0006473819623));
+    CHECK(dionpsivec[2][0] == Approx(0.265578336));
+    CHECK(dionpsivec[3][0] == Approx(-0.06444305979));
+    CHECK(dionpsivec[4][0] == Approx(0.1454357726));
+    CHECK(dionpsivec[5][0] == Approx(-0.04329985085));
+    CHECK(dionpsivec[6][0] == Approx(0.01207541177));
+
+    sposet->evaluateGradSourceRow(elec,0,ions,1,dionpsivec);
+    //============== Ion  1  Component  1 ===================
+    CHECK(dionpsivec[0][1] == Approx(0.0001412373768));
+    CHECK(dionpsivec[1][1] == Approx(-0.01029290716));
+    CHECK(dionpsivec[2][1] == Approx(-0.0230872583));
+    CHECK(dionpsivec[3][1] == Approx(0.01850231814));
+    CHECK(dionpsivec[4][1] == Approx(-0.02136209962));
+    CHECK(dionpsivec[5][1] == Approx(-0.1942343714));
+    CHECK(dionpsivec[6][1] == Approx(-0.03930992259));
+    
+    sposet->evaluateGradSourceRow(elec,0,ions,2,dionpsivec);
+    //============== Ion  2  Component  2 ===================
+    CHECK(dionpsivec[0][2] == Approx(1.302648961e-06));
+    CHECK(dionpsivec[1][2] == Approx(3.248738084e-07));
+    CHECK(dionpsivec[2][2] == Approx(3.264249981e-06));
+    CHECK(dionpsivec[3][2] == Approx(0.0001288974413));
+    CHECK(dionpsivec[4][2] == Approx(-7.300043903e-05));
+    CHECK(dionpsivec[5][2] == Approx(2.910525987e-06));
+    CHECK(dionpsivec[6][2] == Approx(-1.56074936e-05));
   }
+  
 }
 
 TEST_CASE("ReadMolecularOrbital GTO HCN", "[wavefunction]") { test_HCN(false); }

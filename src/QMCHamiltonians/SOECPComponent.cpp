@@ -210,7 +210,7 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   return pairpot;
 }
 
-void SOECPComponent::randomize_grid(RandomGenerator_t& myRNG)
+void SOECPComponent::randomize_grid(RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -222,7 +222,7 @@ void SOECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 }
 
 template<typename T>
-void SOECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG)
+void SOECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -244,6 +244,6 @@ void SOECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& m
       sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
 }
 
-template void SOECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
-template void SOECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
+template void SOECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator& myRNG);
+template void SOECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator& myRNG);
 } // namespace qmcplusplus

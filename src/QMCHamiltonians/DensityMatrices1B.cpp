@@ -31,7 +31,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
                                      TrialWaveFunction& psi,
                                      ParticleSet* Pcl,
                                      const WaveFunctionFactory& factory)
-    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
+    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
 {
   reset();
 }
@@ -40,7 +40,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
       basis_functions(master.basis_functions),
-      Lattice(P.Lattice),
+      lattice_(P.getLattice()),
       Psi(psi),
       Pq(P),
       Pc(master.Pc),
@@ -155,7 +155,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "basis")
         putContent(sposets, element);
       else if (name == "energy_matrix")
@@ -205,12 +205,11 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     APP_ABORT("DensityMatrices1B::put  scale must be greater than zero");
 
   // get volume and cell information
-  Lattice.reset();
   if (!center_defined)
-    center = Lattice.Center;
-  volume   = Lattice.Volume * std::exp(DIM * std::log(scale));
-  periodic = Lattice.SuperCellEnum != SUPERCELL_OPEN;
-  rcorner  = center - scale * Lattice.Center;
+    center = lattice_.Center;
+  volume   = lattice_.Volume * std::exp(DIM * std::log(scale));
+  periodic = lattice_.SuperCellEnum != SUPERCELL_OPEN;
+  rcorner  = center - scale * lattice_.Center;
 
   energy_mat = emstr == "yes";
   if (igstr == "uniform_grid")
@@ -303,11 +302,8 @@ void DensityMatrices1B::initialize()
   nparticles          = Pq.getTotalNum();
   nspecies            = species.size();
   int natt            = species.numAttributes();
-  int isize           = species.addAttribute("membersize");
-  if (isize == natt)
-    APP_ABORT("DensityMatrices1B::set_state  Species set does not have the required attribute 'membersize'");
   for (int s = 0; s < nspecies; ++s)
-    species_size.push_back(species(isize, s));
+    species_size.push_back(Pq.groupsize(s));
   for (int s = 0; s < nspecies; ++s)
     species_name.push_back(species.speciesName[s]);
 
@@ -437,7 +433,7 @@ void DensityMatrices1B::report(const std::string& pad)
   out << pad << "  periodic      = " << periodic << std::endl;
   if (sampling == volume_based)
   {
-    PosType rmax = rcorner + 2 * scale * Lattice.Center;
+    PosType rmax = rcorner + 2 * scale * lattice_.Center;
     out << pad << "  points        = " << points << std::endl;
     out << pad << "  scale         = " << scale << std::endl;
     out << pad << "  center        = " << center << std::endl;
@@ -508,7 +504,7 @@ void DensityMatrices1B::getRequiredTraces(TraceManager& tm)
 }
 
 
-void DensityMatrices1B::setRandomGenerator(RandomGenerator_t* rng) { uniform_random = rng; }
+void DensityMatrices1B::setRandomGenerator(RandomGenerator* rng) { uniform_random = rng; }
 
 
 void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -547,10 +543,10 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
 #endif
 
   std::string dname = name_;
-  hid_t dgid        = H5Gcreate(gid, dname.c_str(), 0);
+  hid_t dgid        = H5Gcreate2(gid, dname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate(dgid, nname.c_str(), 0);
+  hid_t ngid        = H5Gcreate2(dgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   for (int s = 0; s < nspecies; ++s)
   {
     h5desc.emplace_back(species_name[s]);
@@ -562,7 +558,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   if (energy_mat)
   {
     std::string ename = "energy_matrix";
-    hid_t egid        = H5Gcreate(dgid, ename.c_str(), 0);
+    hid_t egid        = H5Gcreate2(dgid, ename.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     for (int s = 0; s < nspecies; ++s)
     {
       h5desc.emplace_back(species_name[s]);
@@ -726,7 +722,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   //{
   //  app_log()<<" species "<<s<< std::endl;
   //  for(int ps=0;ps<species_size[s];++ps,++p)
-  //    app_log()<<"  "<<p<<"  "<<P.R[p]-P.Lattice.Center<< std::endl;
+  //    app_log()<<"  "<<p<<"  "<<P.R[p]-P.getLattice().Center<< std::endl;
   //}
   //
   ////app_log()<<"basis_values"<< std::endl;
@@ -901,8 +897,8 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
 inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 {
   ScopedTimer t(timers[DM_gen_samples]);
-  RandomGenerator_t& rng = *uniform_random;
-  bool save              = false;
+  RandomGenerator& rng = *uniform_random;
+  bool save            = false;
   if (steps == 0)
   {
     save  = true;
@@ -957,7 +953,7 @@ inline void DensityMatrices1B::generate_samples(RealType weight, int steps)
 }
 
 
-inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator& rng)
 {
   PosType rp;
   PosType ushift = 0.0;
@@ -974,24 +970,24 @@ inline void DensityMatrices1B::generate_uniform_grid(RandomGenerator_t& rng)
       nrem -= ind * ind_dims[d];
     }
     rp[DIM - 1] = nrem * du + ushift[DIM - 1];
-    rsamples[s] = Lattice.toCart(rp) + rcorner;
+    rsamples[s] = lattice_.toCart(rp) + rcorner;
   }
 }
 
 
-inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_uniform_samples(RandomGenerator& rng)
 {
   PosType rp;
   for (int s = 0; s < samples; ++s)
   {
     for (int d = 0; d < DIM; ++d)
       rp[d] = scale * rng();
-    rsamples[s] = Lattice.toCart(rp) + rcorner;
+    rsamples[s] = lattice_.toCart(rp) + rcorner;
   }
 }
 
 
-inline void DensityMatrices1B::generate_density_samples(bool save, int steps, RandomGenerator_t& rng)
+inline void DensityMatrices1B::generate_density_samples(bool save, int steps, RandomGenerator& rng)
 {
   RealType sqt = std::sqrt(timestep);
   RealType ot  = 1.0 / timestep;
@@ -1082,8 +1078,8 @@ inline void DensityMatrices1B::density_drift(const PosType& r, RealType& dens, P
 }
 
 
-typedef DensityMatrices1B::RealType RealType;
-typedef DensityMatrices1B::Value_t Value_t;
+using RealType = DensityMatrices1B::RealType;
+using Value_t  = DensityMatrices1B::Value_t;
 
 
 inline RealType accum_constant(CombinedTraceSample<TraceReal>* etrace, RealType weight = 1.0)
@@ -1254,7 +1250,7 @@ inline void DensityMatrices1B::normalize()
   RealType du = scale / ngrid;
   RealType dV = volume / ngtot;
   PosType rp;
-  ValueVector_t bnorms;
+  ValueVector bnorms;
   int gdims[DIM];
   gdims[0] = pow(ngrid, DIM - 1);
   for (int d = 1; d < DIM; ++d)
@@ -1273,7 +1269,7 @@ inline void DensityMatrices1B::normalize()
       nrem -= ind * gdims[d];
     }
     rp[DIM - 1] = nrem * du + du / 2;
-    rp          = Lattice.toCart(rp) + rcorner;
+    rp          = lattice_.toCart(rp) + rcorner;
     update_basis(rp);
     for (int i = 0; i < basis_size; ++i)
       bnorms[i] += qmcplusplus::conj(basis_values[i]) * basis_values[i] * dV;
@@ -1317,7 +1313,7 @@ inline void DensityMatrices1B::test_overlap()
       nrem -= ind * gdims[d];
     }
     rp[DIM - 1] = nrem * du + du / 2;
-    rp          = Lattice.toCart(rp) + rcorner;
+    rp          = lattice_.toCart(rp) + rcorner;
     update_basis(rp);
     for (int i = 0; i < basis_size; ++i)
       for (int j = 0; j < basis_size; ++j)
