@@ -21,6 +21,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -47,8 +48,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   {
     ///dist displ for temporary and old pairs
     Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
-
-    Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list;
 
     DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
 
@@ -230,8 +229,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const size_t stride_size = num_targets_padded_ * (D + 1);
 
     auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
-    auto& rsoa_dev_list         = mw_mem.rsoa_dev_list;
-    rsoa_dev_list.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
@@ -240,7 +237,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt.old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif
       auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
-      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;
@@ -251,7 +247,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const auto activePtcl_local  = pset_leader.getActivePtcl();
     const auto num_sources_local = num_targets_;
     const auto num_padded        = num_targets_padded_;
-    auto* rsoa_dev_list_ptr      = rsoa_dev_list.data();
+    auto* rsoa_dev_list_ptr      = coordinates_leader.getMultiWalkerRSoADevicePtrs().data();
     auto* r_dr_ptr               = nw_new_old_dist_displ.data();
     auto* new_pos_ptr            = coordinates_leader.getFusedNewPosBuffer().data();
     const size_t new_pos_stride  = coordinates_leader.getFusedNewPosBuffer().capacity();
@@ -259,15 +255,13 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
-                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
                         nowait depend(out: r_dr_ptr[:nw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
           auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
-          const int first      = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const size_t first   = ChunkSizePerTeam * team_id;
+          const size_t last    = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           { // temp
             auto* r_iw_ptr  = r_dr_ptr + iw * stride_size;

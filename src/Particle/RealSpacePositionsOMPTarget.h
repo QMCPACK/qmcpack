@@ -111,10 +111,11 @@ public:
                             const std::vector<bool>& isAccepted) const override
   {
     assert(this == &coords_list.getLeader());
-    auto& coords_leader        = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
-    auto& mw_new_pos           = coords_leader.mw_mem_->mw_new_pos;
-    auto& nw_accept_index_ptrs = coords_leader.mw_mem_->nw_accept_index_ptrs;
-    const size_t nw            = coords_list.size();
+    auto& coords_leader     = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    auto& mw_new_pos        = coords_leader.mw_mem_->mw_new_pos;
+    auto& mw_rsoa_ptrs      = coords_leader.mw_mem_->mw_rsoa_ptrs;
+    auto& mw_accept_indices = coords_leader.mw_mem_->mw_accept_indices;
+    const size_t nw         = coords_list.size();
 
     if (!is_nw_new_pos_prepared)
     {
@@ -124,34 +125,36 @@ public:
 
     coords_leader.is_nw_new_pos_prepared = false;
 
-    nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
-    auto* RSoA_ptr_array = reinterpret_cast<RealType**>(nw_accept_index_ptrs.data());
-    auto* id_array       = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
+    mw_accept_indices.resize(nw);
+    auto* restrict id_array = mw_accept_indices.data();
 
     size_t num_accepted = 0;
     for (int iw = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
-        auto& coords                 = coords_list.getCastedElement<RealSpacePositionsOMPTarget>(iw);
-        RSoA_ptr_array[num_accepted] = coords.RSoA.device_data();
-        id_array[num_accepted]       = iw;
+        auto& coords           = coords_list.getCastedElement<RealSpacePositionsOMPTarget>(iw);
+        id_array[num_accepted] = iw;
         // save new coordinates on host copy
         coords.RSoA_hostview(iat) = mw_new_pos[iw];
         num_accepted++;
       }
 
+    // early return to avoid OpenMP runtime mishandling of size 0 in transfer/compute.
+    if (num_accepted == 0)
+      return;
+
     //offload to GPU
-    auto* restrict w_accept_buffer_ptr = nw_accept_index_ptrs.data();
-    auto* restrict mw_pos_ptr          = mw_new_pos.data();
-    const size_t rsoa_stride           = RSoA.capacity();
-    const size_t mw_pos_stride         = mw_new_pos.capacity();
+    auto* restrict mw_pos_ptr  = mw_new_pos.data();
+    auto* restrict mw_rosa_ptr = mw_rsoa_ptrs.data();
+    const size_t rsoa_stride   = RSoA.capacity();
+    const size_t mw_pos_stride = mw_new_pos.capacity();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(always, to : w_accept_buffer_ptr[:nw_accept_index_ptrs.size()])")
+                    map(always, to : id_array[:num_accepted])")
     for (int i = 0; i < num_accepted; i++)
     {
-      const int iw           = reinterpret_cast<int*>(w_accept_buffer_ptr + sizeof(RealType*) * nw)[i];
-      RealType* RSoA_dev_ptr = reinterpret_cast<RealType**>(w_accept_buffer_ptr)[i];
+      const int iw           = id_array[i];
+      RealType* RSoA_dev_ptr = mw_rosa_ptr[iw];
       for (int id = 0; id < QMCTraits::DIM; id++)
         RSoA_dev_ptr[iat + rsoa_stride * id] = mw_pos_ptr[iw + mw_pos_stride * id];
     }
@@ -185,7 +188,18 @@ public:
     auto res_ptr = dynamic_cast<MultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("RealSpacePositionsOMPTarget::acquireResource dynamic_cast failed");
-    coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_.reset(res_ptr);
+    auto& mw_mem = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_;
+    mw_mem.reset(res_ptr);
+
+    auto& mw_rsoa_ptrs(mw_mem->mw_rsoa_ptrs);
+    const auto nw = coords_list.size();
+    mw_rsoa_ptrs.resize(nw);
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& coords     = coords_list.getCastedElement<RealSpacePositionsOMPTarget>(iw);
+      mw_rsoa_ptrs[iw] = coords.RSoA.device_data();
+    }
+    mw_rsoa_ptrs.updateTo();
   }
 
   void releaseResource(ResourceCollection& collection,
@@ -193,6 +207,8 @@ public:
   {
     collection.takebackResource(std::move(coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_));
   }
+
+  const auto& getMultiWalkerRSoADevicePtrs() const { return mw_mem_->mw_rsoa_ptrs; }
 
 private:
   ///particle positions in SoA layout
@@ -205,7 +221,10 @@ private:
     VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_pos;
 
     /// accept list
-    Vector<char, OMPallocator<char, PinnedAlignedAllocator<char>>> nw_accept_index_ptrs;
+    Vector<int, OMPallocator<int, PinnedAlignedAllocator<int>>> mw_accept_indices;
+
+    /// RSoA device ptr list
+    Vector<RealType*, OMPallocator<RealType*, PinnedAlignedAllocator<RealType*>>> mw_rsoa_ptrs;
 
     MultiWalkerMem() : Resource("MultiWalkerMem") {}
 

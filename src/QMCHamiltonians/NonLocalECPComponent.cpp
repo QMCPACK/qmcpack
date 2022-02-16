@@ -77,7 +77,9 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   vgrad.resize(m);
   wvec.resize(n);
   lpol.resize(l + 1, 1.0);
-  dlpol.resize(l + 1, 0.0);
+  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.  
+  //This +2 guards against l=0 case.
+  dlpol.resize(l + 2, 0.0);
   rrotsgrid_m.resize(n);
   nchannel = nlpp_m.size();
   nknot    = sgridxyz_m.size();
@@ -595,6 +597,243 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   }
 
   return pairpot;
+}
+
+void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+                                                               const int iat,
+                                                               const TWFFastDerivWrapper& psi,
+                                                               const int iel,
+                                                               const RealType r,
+                                                               const PosType& dr,
+                                                               std::vector<ValueMatrix>& B)
+
+{
+  using ValueVector = SPOSet::ValueVector;
+  //Some initial computation to find out the species and row number of electron.
+  IndexType gid        = W.getGroupID(iel);
+  IndexType sid        = psi.getTWFGroupIndex(gid);
+  IndexType firstIndex = W.first(gid);
+  IndexType thisIndex  = iel - firstIndex;
+
+  IndexType numOrbs = psi.numOrbitals(sid);
+  ValueVector phi_row; //phi_0(r), phi_1(r), ...
+  ValueVector temp_row;
+
+  phi_row.resize(numOrbs);
+  temp_row.resize(numOrbs);
+
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
+
+
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  const RealType rinv = cone / r;
+
+  for (int ip = 0; ip < nchannel; ip++)
+    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
+
+  for (int j = 0; j < nknot; j++)
+  {
+    W.makeMove(iel, deltaV[j], false); //Update distance tables.
+    psi.getRowM(W, iel, phi_row);
+    W.rejectMove(iel);
+
+    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
+    // Forming the Legendre polynomials
+    lpol[0]           = cone;
+    RealType lpolprev = czero;
+    for (int l = 0; l < lmax; l++)
+    {
+      lpol[l + 1] = Lfactor2[l]*(Lfactor1[l] * zz * lpol[l] - l * lpolprev);
+      lpolprev = lpol[l];
+    }
+
+    ValueType lsum = 0.0;
+    for (int l = 0; l < nchannel; l++)
+    {
+      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * phi_row;
+      for (int iorb = 0; iorb < numOrbs; iorb++)
+        B[sid][thisIndex][iorb] += temp_row[iorb];
+    }
+  }
+}
+
+void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
+                                                                 const ParticleSet& ions,
+                                                                 const int iat,
+                                                                 const int iat_src,
+                                                                 const TWFFastDerivWrapper& psi,
+                                                                 const int iel,
+                                                                 const RealType r,
+                                                                 const PosType& dr,
+                                                                 std::vector<std::vector<ValueMatrix>>& dB)
+{
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
+  for (int j = 0; j < nknot; j++)
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) <
+           100 * std::numeric_limits<RealType>::epsilon());
+
+  for (int j = 0; j < nknot; j++)
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
+
+  // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
+  RealType secondderiv(0);
+
+  const RealType rinv = cone / r;
+
+  // Compute radial potential and its derivative times (2l+1)
+  for (int ip = 0; ip < nchannel; ip++)
+  {
+    //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.
+    vrad[ip]  = nlpp_m[ip]->splint(r, dvrad[ip], secondderiv) * wgt_angpp_m[ip];
+    vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
+  }
+
+  IndexType gid        = W.getGroupID(iel);
+  IndexType sid        = psi.getTWFGroupIndex(gid);
+  IndexType thisEIndex = iel - W.first(gid);
+  IndexType numptcls   = W.last(gid) - W.first(gid);
+  IndexType norbs      = psi.numOrbitals(sid);
+  SPOSet& spo(*psi.getSPOSet(sid));
+
+  RealType pairpot = 0;
+  // Compute spherical harmonics on grid
+  GradMatrix iongrad_phimat;
+  GradVector iongrad_phi;
+  ValueVector phi, laplphi;
+  ValueMatrix phimat, laplphimat;
+  GradMatrix gradphimat;
+  GradVector gradphi;
+  GradMatrix wfgradmat;
+
+  wfgradmat.resize(nknot, norbs);
+
+  iongrad_phimat.resize(nknot, norbs);
+  laplphimat.resize(nknot, norbs);
+
+  phimat.resize(nknot, norbs);
+  gradphimat.resize(nknot, norbs);
+  iongrad_phi.resize(norbs);
+  phi.resize(norbs);
+  gradphi.resize(norbs);
+  laplphi.resize(norbs);
+
+  GradVector udotgradpsi, wfgradrow;
+  GradMatrix udotgradpsimat;
+  GradVector gpot, glpoly, gwfn;
+  ValueVector nlpp_prefactor;
+  GradVector dlpoly_prefactor;
+  GradVector dvdr_prefactor;
+
+  nlpp_prefactor.resize(nknot);
+  dlpoly_prefactor.resize(nknot);
+  dvdr_prefactor.resize(nknot);
+
+  udotgradpsimat.resize(nknot, norbs);
+  wfgradrow.resize(norbs);
+  udotgradpsi.resize(norbs);
+  gpot.resize(norbs);
+  glpoly.resize(norbs);
+  gwfn.resize(norbs);
+
+
+  for (int j = 0; j < nknot; j++)
+  {
+    ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
+    W.makeMove(iel, deltaV[j], false);
+    iongrad_phi = 0.0;
+    spo.evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
+    for (int iorb = 0; iorb < norbs; iorb++)
+      iongrad_phimat[j][iorb] = iongrad_phi[iorb];
+    
+    if (iat == iat_src)
+    {
+      ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
+      spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
+      for (int iorb = 0; iorb < norbs; iorb++)
+      {
+        phimat[j][iorb]     = phi[iorb];
+        gradphimat[j][iorb] = gradphi[iorb];
+        laplphimat[j][iorb] = laplphi[iorb];
+      }
+    }
+    W.rejectMove(iel);
+  }
+
+  for (int j = 0; j < nknot; j++)
+  {
+    ScopedTimer prefactortimer(*timer_manager.createTimer("NLPP::dB::prefactors"));
+
+    RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
+    PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
+
+    cosgrad[j] = rinv * uminusrvec;
+
+    // Forming the Legendre polynomials
+    //P_0(x)=1; P'_0(x)=0.
+    lpol[0]  = cone;
+    dlpol[0] = czero;
+    dlpol[1] = cone;
+
+    RealType lpolprev  = czero;
+    RealType dlpolprev = czero;
+
+    for (int l = 0; l < lmax; l++)
+    {
+      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
+      //Legendre polynomial recursion formula.
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+
+      //and for the derivative...
+      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
+      dlpol[l + 1] *= Lfactor2[l];
+
+      lpolprev  = lpol[l];
+      dlpolprev = dlpol[l];
+    }
+
+    for (int l = 0; l < nchannel; l++)
+    {
+      ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
+      //Note.  Because we are computing "forces", there's a -1 difference between this and
+      //direct finite difference calculations.
+
+      nlpp_prefactor[j] += sgridweight_m[j] * vrad[l] * lpol[angpp_m[l]];
+
+      dvdr_prefactor[j] += sgridweight_m[j] * vgrad[l] * lpol[angpp_m[l]];
+      dlpoly_prefactor[j] += sgridweight_m[j] * vrad[l] * dlpol[angpp_m[l]] * cosgrad[j];
+    }
+  }
+
+
+  for (int j = 0; j < nknot; j++)
+    for (int iorb = 0; iorb < norbs; iorb++)
+      gwfn[iorb] += nlpp_prefactor[j] * (iongrad_phimat[j][iorb]);
+
+  if (iat == iat_src)
+  {
+    for (int j = 0; j < nknot; j++)
+      for (int iorb = 0; iorb < norbs; iorb++)
+      {
+        //this is for diagonal case.
+        udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], rrotsgrid_m[j]);
+        wfgradmat[j][iorb]      = gradphimat[j][iorb] - dr * (udotgradpsimat[j][iorb] * rinv);
+        gpot[iorb] += dvdr_prefactor[j] * phimat[j][iorb];
+        glpoly[iorb] += dlpoly_prefactor[j] * phimat[j][iorb];
+        gwfn[iorb] += nlpp_prefactor[j] * (wfgradmat[j][iorb]);
+      }
+  }
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+      for (int iorb = 0; iorb < norbs; iorb++)
+        dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
 }
 
 ///Randomly rotate sgrid_m

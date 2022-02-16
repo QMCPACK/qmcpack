@@ -69,7 +69,7 @@ public:
    *  @param[in] gid. ParticleSet group ID to look up.  
    *  @return The corresponding internal groupID.  
    */
-  IndexType getTWFGroupIndex(const IndexType gid);
+  IndexType getTWFGroupIndex(const IndexType gid) const;
 
   /** @ingroup Query functions
    * @{
@@ -80,9 +80,9 @@ public:
    *   Source of truth for orbital sizes will be the individual SPOSets.  Particle group sizes
    *   will be ParticleSet in conjunction with groupID maps.  
    */
-  inline IndexType numGroups() { return spos_.size(); };
-  SPOSet* getSPOSet(const IndexType sid) { return spos_[sid]; };
-  inline IndexType numOrbitals(const IndexType sid) { return spos_[sid]->size(); };
+  inline IndexType numGroups() const { return spos_.size(); };
+  SPOSet* getSPOSet(const IndexType sid) const { return spos_[sid]; };
+  inline IndexType numOrbitals(const IndexType sid) const { return spos_[sid]->size(); };
   /** @} */
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ public:
    *  @param[in,out] mmat Output vector of slater matrices.  Each vector entry corresponds to a different particle group.
    *  @return Void
    */
-  void getM(const ParticleSet& P, std::vector<ValueMatrix>& mmat);
+  void getM(const ParticleSet& P, std::vector<ValueMatrix>& mmat) const;
 
   /** @brief Returns value of all orbitals (relevant to given species/group) at a particular particle coordinate.
    *
@@ -106,7 +106,7 @@ public:
    *  @param[in,out] val Vector of phi_i(r_iel) for all i=0,Norbs.
    *  @return Void
    */
-  IndexType getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val);
+  IndexType getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val) const;
 
 
   /** @brief Returns value, gradient, and laplacian matrices for all orbitals and all particles, species by species. 
@@ -120,7 +120,7 @@ public:
   void getEGradELaplM(const ParticleSet& P,
                       std::vector<ValueMatrix>& mvec,
                       std::vector<GradMatrix>& gmat,
-                      std::vector<ValueMatrix>& lmat);
+                      std::vector<ValueMatrix>& lmat) const;
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices.
    *
@@ -133,7 +133,7 @@ public:
   void getIonGradM(const ParticleSet& P,
                    const ParticleSet& source,
                    const int iat,
-                   std::vector<std::vector<ValueMatrix>>& dmvec);
+                   std::vector<std::vector<ValueMatrix>>& dmvec) const;
 
   /** @brief Returns x,y,z components of ion gradient of slater matrices and their laplacians..
    *
@@ -150,7 +150,7 @@ public:
                                const ParticleSet& source,
                                int iat,
                                std::vector<std::vector<ValueMatrix>>& dmvec,
-                               std::vector<std::vector<ValueMatrix>>& dlmat);
+                               std::vector<std::vector<ValueMatrix>>& dlmat) const;
 
 
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
@@ -160,7 +160,7 @@ public:
    *  @param[in,out] Aslice square matrices consistent with a ground state occupation.
    *  @return Void
    */
-  void getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice);
+  void getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice) const;
 
   /** @brief Calculates derivative of observable via Tr[M^{-1} dB - X * dM ].  Consistent with ground state occupation.
    *
@@ -173,7 +173,7 @@ public:
   ValueType computeGSDerivative(const std::vector<ValueMatrix>& Minv,
                                 const std::vector<ValueMatrix>& X,
                                 const std::vector<ValueMatrix>& dM,
-                                const std::vector<ValueMatrix>& dB);
+                                const std::vector<ValueMatrix>& dB) const;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
