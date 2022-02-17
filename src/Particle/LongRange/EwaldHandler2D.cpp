@@ -17,13 +17,6 @@ EwaldHandler2D::EwaldHandler2D(ParticleSet& ref, mRealType kc_in)
   fillFk(ref.getSimulationCell().getKLists());
 }
 
-EwaldHandler2D::EwaldHandler2D(const EwaldHandler2D& aLR)
-  : LRHandlerBase(aLR),
-    alpha(aLR.alpha),
-    area(aLR.area)
-{
-}
-
 void EwaldHandler2D::fillFk(const KContainer& KList)
 {
   const mRealType knorm = 2.0*M_PI / area;

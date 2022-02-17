@@ -16,7 +16,6 @@ public:
   EwaldHandler2D(ParticleSet& ref, mRealType kc_in=-1.0);
 
   // copy constructor
-  EwaldHandler2D(const EwaldHandler2D& aLR);
   LRHandlerBase* makeClone(ParticleSet& ref) const override { return new EwaldHandler2D(*this); }
 
   // short-range part
