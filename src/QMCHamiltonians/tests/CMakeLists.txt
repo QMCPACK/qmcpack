@@ -15,7 +15,7 @@ set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
+                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp test_ewald2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
@@ -27,6 +27,7 @@ set(HAM_SRCS
     test_SkAllEstimator.cpp
     test_QMCHamiltonian.cpp
     test_ObservableHelper.cpp)
+    
 
 if(QMC_CUDA)
   set(COULOMB_SRCS ${COULOMB_SRCS} test_coulomb_CUDA.cpp)
