@@ -414,7 +414,8 @@ public:
    * @param P particle set
    * @param G Gradients, \f$\nabla\ln\Psi\f$
    * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   * @param fromscratch if true, all the internal data are recomputed from scratch
+   * @param fromscratch if true and this WFC is sensitive to numeical error accumulation,
+   *        all the internal data are recomputed from scratch.
    * @return log(psi)
    */
   virtual LogValueType evaluateGL(const ParticleSet& P,
@@ -427,7 +428,8 @@ public:
    * @param p_list the list of ParticleSet pointers in a walker batch
    * @param G_list the list of Gradients pointers in a walker batch, \f$\nabla\ln\Psi\f$
    * @param L_list the list of Laplacians pointers in a walker batch, \f$\nabla^2\ln\Psi\f$
-   * @param fromscratch if true, all the internal data are recomputed from scratch
+   * @param fromscratch if true and this WFC is sensitive to numerical error accumulation,
+   *        all the internal data are recomputed from scratch.
    */
   virtual void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,

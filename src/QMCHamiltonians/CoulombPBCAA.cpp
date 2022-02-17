@@ -14,11 +14,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "EwaldRef.h"
 #include "CoulombPBCAA.h"
+#include <numeric>
+#include "EwaldRef.h"
 #include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
-#include <numeric>
+#include "Numerics/OneDimCubicSplineLinearGrid.h"
 
 namespace qmcplusplus
 {
@@ -301,6 +302,8 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 
   if (rVs == nullptr)
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut);
+
+  rVs_offload = std::make_shared<const OffloadSpline>(*rVs);
 
   if (ComputeForces)
   {
