@@ -53,9 +53,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   double LogOverlapFactor(wset.getLogOverlapFactor());
   // resize shm structures if needed
   if (Ovmsd.shape() != std::make_tuple(long(nspins), long(maxn_unique_confg), long(nwalk)))
-    Ovmsd.reextent({nspins, maxn_unique_confg, nwalk});
+    Ovmsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk});
   if (Emsd.shape() != std::make_tuple(long(nspins), long(maxn_unique_confg), long(nwalk), 3l))
-    Emsd.reextent({nspins, maxn_unique_confg, nwalk, 3});
+    Emsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk, 3});
   // resize Alpha here, if beta is needed resize below
   if (GrefA.shape() != std::make_tuple(nwalk, dm_dims(false, Alpha).first, dm_dims(false, Alpha).second))
     GrefA.reextent({nwalk, dm_dims(false, Alpha).first, dm_dims(false, Alpha).second});
@@ -92,9 +92,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
     if (GrefB.shape() != std::make_tuple(nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second))
       GrefB.reextent({nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second});
     if (QQ0A.shape() != std::make_tuple(nwalk, long(OrbMats[0].size(0)), NAEA))
-      QQ0A.reextent({nwalk, OrbMats[0].size(0), NAEA});
+      QQ0A.reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats[0].size(0)), NAEA});
     if (QQ0B.shape() != std::make_tuple(nwalk, long(OrbMats.back().size(0)), NAEB))
-      QQ0B.reextent({nwalk, OrbMats.back().size(0), NAEB});
+      QQ0B.reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats.back().size(0)), NAEB});
 
     for (int iw = 0, nc = 0; iw < nwalk; iw++)
     {
@@ -137,9 +137,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     ComplexType ov0;
     if (KEright.shape() != std::make_tuple(long(abij.number_of_unique_excitations()[0]), long(nwalk), long(nkev)))
-      KEright.reextent({abij.number_of_unique_excitations()[0], nwalk, nkev});
+      KEright.reextent({static_cast<boost::multi::size_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::size_t>(nkev)});
     if (KEleft.shape() != std::make_tuple(long(nwalk), long(nkev)))
-      KEleft.reextent({nwalk, nkev});
+      KEleft.reextent({nwalk, static_cast<boost::multi::size_t>(nkev)});
     for (int spin = 0; spin < nspins; ++spin)
     {
       int orb_spin_indx = (OrbMats.size() == 2) ? spin : 0;
@@ -601,15 +601,15 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().size()));
         // this probably does not work!!!
         {
-          shmCMatrix unique_overlaps_({2, maxn_unique_confg}, shared_allocator<ComplexType>{local_group_comm});
+          shmCMatrix unique_overlaps_({2, static_cast<shmCMatrix::size_type>(maxn_unique_confg)}, shared_allocator<ComplexType>{local_group_comm});
           unique_overlaps.swap(unique_overlaps_);
         }
         {
-          shmCMatrix QQ0inv0_({OrbMats[0].size(0), NAEA}, shared_allocator<ComplexType>{local_group_comm});
+          shmCMatrix QQ0inv0_({static_cast<shmCMatrix::size_type>(OrbMats[0].size(0)), NAEA}, shared_allocator<ComplexType>{local_group_comm});
           QQ0inv0.swap(QQ0inv0_);
         }
         {
-          shmCMatrix QQ0inv1_({OrbMats.back().size(0), NAEB}, shared_allocator<ComplexType>{local_group_comm});
+          shmCMatrix QQ0inv1_({static_cast<shmCMatrix::size_type>(OrbMats.back().size(0)), NAEB}, shared_allocator<ComplexType>{local_group_comm});
           QQ0inv1.swap(QQ0inv1_);
         }
         {
@@ -1064,15 +1064,15 @@ void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
         auto GAdims0     = dm_dims_ref(false, Alpha);
         auto GBdims0     = dm_dims_ref(false, Beta);
         {
-          shmCMatrix unique_overlaps_({2, maxn_unique_confg}, shared_allocator<ComplexType>{local_group_comm});
+          shmCMatrix unique_overlaps_({2, static_cast<shmCMatrix::size_type>(maxn_unique_confg)}, shared_allocator<ComplexType>{local_group_comm});
           unique_overlaps.swap(unique_overlaps_);
         }
         {
-          shmCMatrix QQ0inv0_({OrbMats[0].size(0), NAEA}, shared_allocator<ComplexType>{local_group_comm});
+          shmCMatrix QQ0inv0_({static_cast<shmCMatrix::size_type>(OrbMats[0].size(0)), NAEA}, shared_allocator<ComplexType>{local_group_comm});
           QQ0inv0.swap(QQ0inv0_);
         }
         {
-          shmCMatrix QQ0inv1_({OrbMats.back().size(0), NAEB}, shared_allocator<ComplexType>{local_group_comm});
+          shmCMatrix QQ0inv1_({static_cast<shmCMatrix::size_type>(OrbMats.back().size(0)), NAEB}, shared_allocator<ComplexType>{local_group_comm});
           QQ0inv1.swap(QQ0inv1_);
         }
         // don't need them here, but allocate anyway to avoid dimension check every time
@@ -1263,7 +1263,7 @@ void PHMSD::vMF(Vec&& v)
 
   //shmCMatrix ovlps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.Node()});
   //boost::multi::array<ComplexType,2> ovlps({2,maxn_unique_confg});
-  boost::multi::array<ComplexType, 2> ovlps({2, maxn_unique_confg});
+  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::size_t>(maxn_unique_confg)});
   //if(TG.Node().root())
   std::fill_n(to_address(ovlps.origin()), 2 * maxn_unique_confg, ComplexType(0.0));
 

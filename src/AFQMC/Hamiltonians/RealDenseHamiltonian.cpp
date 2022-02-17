@@ -202,7 +202,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   std::vector<shmSp3Tensor> Lank;
   Lank.reserve(PsiT.size());
   for (int nd = 0; nd < PsiT.size(); nd++)
-    Lank.emplace_back(shmSp3Tensor({PsiT[nd].size(0), local_ncv, NMO}, shared_allocator<SPComplexType>{distNode}));
+    Lank.emplace_back(shmSp3Tensor({static_cast<boost::multi::size_t>(PsiT[nd].size(0)), local_ncv, NMO}, shared_allocator<SPComplexType>{distNode}));
   int nrow = NEL;
   if (ndet > 1)
     nrow = 0; // not used if ndet>1
