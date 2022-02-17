@@ -103,6 +103,10 @@ bool LatticeParser::put(xmlNodePtr cur)
       {
         putContent(ref_.VacuumScale, cur);
       }
+      else if (aname == "ndim")
+      {
+        putContent(ref_.ndim, cur);
+      }
       else if (aname == "LR_dim_cutoff")
       {
         putContent(ref_.LR_dim_cutoff, cur);
