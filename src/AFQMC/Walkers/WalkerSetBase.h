@@ -128,7 +128,7 @@ public:
   /*
    * Returns the maximum number of walkers in the set that can be stored without reallocation.
    */
-  int capacity() const { return int(walker_buffer.size(0)); }
+  int capacity() const { return int(std::get<0>(walker_buffer.sizes())); }
 
   /*
    * Returns the maximum number of fields in the set that can be stored without reallocation. 
@@ -163,7 +163,7 @@ public:
    */
   iterator begin()
   {
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     return iterator(0, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ, wlk_desc);
   }
 
@@ -172,7 +172,7 @@ public:
    */
   const_iterator begin() const
   {
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     return const_iterator(0, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ, wlk_desc);
   }
 
@@ -182,7 +182,7 @@ public:
    */
   iterator end()
   {
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     return iterator(tot_num_walkers, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ,
                     wlk_desc);
   }
@@ -194,7 +194,7 @@ public:
   {
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i], data_displ, wlk_desc);
   }
 
@@ -205,7 +205,7 @@ public:
   {
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i], data_displ, wlk_desc);
   }
 
@@ -240,12 +240,12 @@ public:
   template<class MatA, class MatB>
   void resize(int n, MatA&& A, MatB&& B)
   {
-    assert(A.size(0) == wlk_desc[0]);
-    assert(A.size(1) == wlk_desc[1]);
+    assert(std::get<0>(A.sizes()) == wlk_desc[0]);
+    assert(std::get<1>(A.sizes()) == wlk_desc[1]);
     if (walkerType == COLLINEAR)
     {
-      assert(B.size(0) == wlk_desc[0]);
-      assert(B.size(1) == wlk_desc[2]);
+      assert(std::get<0>(B.sizes()) == wlk_desc[0]);
+      assert(std::get<1>(B.sizes()) == wlk_desc[2]);
     }
     reserve(n);
     if (n > tot_num_walkers)
@@ -258,7 +258,7 @@ public:
         while (pos < n)
         {
           using std::fill_n;
-          fill_n(W[pos].origin(), W[pos].size(0), ComplexType(0, 0));
+          fill_n(W[pos].origin(), W[pos].size(), ComplexType(0, 0));
           reference w0(W[pos], data_displ, wlk_desc);
           //w0.SlaterMatrix(Alpha) = A;
           auto&& SM_(*w0.SlaterMatrix(Alpha));
@@ -293,9 +293,9 @@ public:
 
   void resize_bp(int nbp, int nCV, int nref)
   {
-    assert(walker_buffer.size(1) == walker_size);
-    assert(bp_buffer.size(0) == bp_walker_size);
-    assert(walker_buffer.size(0) == bp_buffer.size(1));
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
+    assert(std::get<0>(bp_buffer.sizes()) == bp_walker_size);
+    assert(std::get<0>(walker_buffer.sizes()) == std::get<1>(bp_buffer.sizes()));
     // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs, nHist}
     wlk_desc[3] = nbp;
     wlk_desc[4] = nCV;
@@ -329,11 +329,11 @@ public:
     data_displ[WEIGHT_HISTORY] = cnt;
     cnt += wlk_desc[6];
     bp_walker_size = cnt;
-    if (bp_buffer.size(0) != bp_walker_size)
+    if (bp_buffer.size() != bp_walker_size)
     {
-      bp_buffer.reextent({bp_walker_size, walker_buffer.size(0)});
+      bp_buffer.reextent({bp_walker_size, walker_buffer.size()});
       using std::fill_n;
-      fill_n(bp_buffer.origin() + data_displ[WEIGHT_FAC] * bp_buffer.size(1), wlk_desc[6] * bp_buffer.size(1),
+      fill_n(bp_buffer.origin() + data_displ[WEIGHT_FAC] * std::get<1>(bp_buffer.sizes()), wlk_desc[6] * std::get<1>(bp_buffer.sizes()),
              bp_element(1.0));
     }
     if (nbp > 0 && (data_displ[SMN] < 0 || data_displ[SM_AUX] < 0))
@@ -343,7 +343,7 @@ public:
       walker_size += nrow * ncol;
       data_displ[SM_AUX] = walker_size;
       walker_size += nrow * ncol;
-      CMatrix wb({walker_buffer.size(0), walker_size}, walker_buffer.get_allocator());
+      CMatrix wb({walker_buffer.size(), walker_size}, walker_buffer.get_allocator());
       ma::copy(walker_buffer, wb(wb.extension(0), {0, sz}));
       walker_buffer = std::move(wb);
     }
@@ -360,7 +360,7 @@ public:
   int GlobalPopulation() const
   {
     int res = 0;
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     if (TG.TG_local().root())
       res += tot_num_walkers;
     return (TG.Global() += res);
@@ -640,7 +640,7 @@ public:
   {
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     using std::copy_n;
     copy_n(x.origin(), walkerSizeIO(), W[n].origin());
@@ -688,8 +688,8 @@ public:
 
   stdCTensor_ptr getFields()
   {
-    return stdCTensor_ptr(to_address(bp_buffer.origin()) + data_displ[FIELDS] * bp_buffer.size(1),
-                          {wlk_desc[3], wlk_desc[4], bp_buffer.size(1)});
+    return stdCTensor_ptr(to_address(bp_buffer.origin()) + data_displ[FIELDS] * std::get<1>(bp_buffer.sizes()),
+                          {wlk_desc[3], wlk_desc[4], std::get<1>(bp_buffer.sizes())});
   }
 
   template<class Mat>
@@ -708,8 +708,8 @@ public:
 
   stdCMatrix_ptr getWeightFactors()
   {
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_FAC] * bp_buffer.size(1),
-                          {wlk_desc[6], bp_buffer.size(1)});
+    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_FAC] * std::get<1>(bp_buffer.sizes()),
+                          {wlk_desc[6], std::get<1>(bp_buffer.sizes())});
   }
 
   stdCMatrix_ptr getWeightHistory()

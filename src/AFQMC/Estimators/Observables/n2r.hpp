@@ -213,11 +213,11 @@ public:
     using std::copy_n;
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
@@ -230,11 +230,11 @@ public:
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (std::get<0>(denom.sizes()) != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -243,8 +243,8 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork.size(0) != nw || DMWork.size(1) != dm_size || DMAverage.size(0) != nave ||
-          DMAverage.size(1) != dm_size)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size || std::get<0>(DMAverage.sizes()) != nave ||
+          std::get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -274,8 +274,8 @@ public:
       auto&& T0N(T(T.extension(0), {i0, iN}));
       ma::product(Gu, Orb0N, T0N);
       using ma::batched_dot;
-      batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(0),
-                  ma::pointer_dispatch(T0N.origin()), T0N.stride(0), ComplexType(0.0),
+      batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(),
+                  ma::pointer_dispatch(T0N.origin()), T0N.stride(), ComplexType(0.0),
                   ma::pointer_dispatch(Gr.origin()) + i0, 1);
       /*
       fill_n(Gr.origin(),dm_size,ComplexType(0.0,0.0));
@@ -302,8 +302,8 @@ public:
       {
         auto&& Gd = G[iw][1];
         ma::product(Gd, Orb0N, T0N);
-        batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(0),
-                    ma::pointer_dispatch(T0N.origin()), T0N.stride(0), ComplexType(0.0),
+        batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(),
+                    ma::pointer_dispatch(T0N.origin()), T0N.stride(), ComplexType(0.0),
                     ma::pointer_dispatch(Gr.origin()) + i0, 1);
         using std::copy_n;
         copy_n(ma::pointer_dispatch(Gr.origin()) + i0, (iN - i0), Gr_[1].origin());
@@ -326,7 +326,7 @@ public:
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp)
   {
-    int nw(denom.size(0));
+    int nw(denom.size());
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), dm_size, TG.TG_local().size());
     TG.TG_local().barrier();

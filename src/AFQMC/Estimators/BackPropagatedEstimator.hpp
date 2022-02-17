@@ -188,14 +188,14 @@ public:
       int nx((walker_type == COLLINEAR) ? 2 : 1);
 
       // 1. check structures
-      if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
+      if (std::get<0>(Refs.sizes()) != wset.size() || std::get<1>(Refs.sizes()) != nrefs || std::get<2>(Refs.sizes()) != nrow * ncol)
         Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
       DeviceBufferManager buffer_manager;
       StaticMatrix detR({wset.size(), nrefs * nx},
                         buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       int n0, n1;
-      std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(Refs.size(2)), TG.getNCoresPerTG());
+      std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(std::get<2>(Refs.sizes())), TG.getNCoresPerTG());
       boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
 
       // 2. setup back propagated references

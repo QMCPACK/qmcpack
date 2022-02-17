@@ -51,11 +51,11 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 void adotpby(T const alpha, MultiArray2Dx const& x, MultiArray2Dy const& y, Q const beta, MultiArray1D res)
 {
-  if (x.size(0) != y.size(0) || x.size(0) != res.size(0) || x.size(1) != y.size(1) || x.stride(1) != 1 ||
-      y.stride(1) != 1)
+  if (std::get<0>(x.sizes()) != std::get<0>(y.sizes()) || std::get<0>(x.sizes()) != std::get<0>(res.sizes()) || std::get<1>(x.sizes()) != std::get<1>(y.sizes()) || std::get<1>(x.strides()) != 1 ||
+      std::get<1>(y.strides()) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in adotpby(2D).\n");
-  strided_adotpby(x.size(0), x.size(1), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()),
-                  y.stride(0), beta, to_address(res.origin()), res.stride(0));
+  strided_adotpby(std::get<0>(x.sizes()), std::get<1>(x.sizes()), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()),
+                  y.stride(), beta, to_address(res.origin()), res.stride());
 }
 
 template<class T,
@@ -124,7 +124,7 @@ template<class MultiArray1D,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 auto sum(MultiArray1D const& y)
 {
-  return sum(y.size(), pointer_dispatch(y.origin()), y.stride(0));
+  return sum(y.size(), pointer_dispatch(y.origin()), y.stride());
 }
 
 template<class MultiArray2D,
@@ -134,7 +134,7 @@ auto sum(MultiArray2D const& A)
 {
   assert(A.stride(1) == 1);
   // blas call assumes fortran ordering
-  return sum(A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride(0));
+  return sum(A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride());
 }
 
 template<class MultiArray3D,
@@ -144,9 +144,9 @@ template<class MultiArray3D,
 auto sum(MultiArray3D const& A)
 {
   // only arrays and array_refs for now
-  assert(A.stride(0) == A.size(1) * A.size(2));
-  assert(A.stride(1) == A.size(2));
-  assert(A.stride(2) == 1);
+  assert(std::get<0>(A.strides()) == std::get<1>(A.sizes()) * std::get<2>(A.sizes()));
+  assert(std::get<1>(A.strides()) == std::get<2>(A.sizes()));
+  assert(std::get<2>(A.strides()) == 1);
   return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
 }
 
@@ -158,10 +158,10 @@ template<class MultiArray4D,
 auto sum(MultiArray4D const& A)
 {
   // only arrays and array_refs for now
-  assert(A.stride(0) == A.size(1) * A.size(2) * A.size(3));
-  assert(A.stride(1) == A.size(2) * A.size(3));
-  assert(A.stride(2) == A.size(3));
-  assert(A.stride(3) == 1);
+  assert(std::get<0>(A.strides()) == std::get<1>(A.sizes()) * std::get<2>(A.sizes()) * std::get<3>(A.sizes()));
+  assert(std::get<1>(A.strides()) == std::get<2>(A.sizes()) * std::get<3>(A.sizes()));
+  assert(std::get<2>(A.strides()) == std::get<3>(A.sizes()));
+  assert(std::get<3>(A.strides()) == 1);
   return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
 }
 
@@ -192,7 +192,7 @@ template<class MultiArray3D,
          typename = void>
 MultiArray3D&& set_identity(MultiArray3D&& m)
 {
-  set_identity_strided(m.size(0), m.stride(0), m.size(2), m.size(1), pointer_dispatch(m.origin()), m.stride(1));
+  set_identity_strided(std::get<0>(m.sizes()), std::get<0>(m.strides()), std::get<2>(m.sizes()), std::get<1>(m.sizes()), pointer_dispatch(m.origin()), std::get<1>(m.strides()));
   return std::forward<MultiArray3D>(m);
 }
 
@@ -202,7 +202,7 @@ template<class T,
 MultiArray2D&& fill(MultiArray2D&& m, T const& value)
 {
   using qmcplusplus::afqmc::fill2D;
-  fill2D(m.size(0), m.size(1), pointer_dispatch(m.origin()), m.stride(0), value);
+  fill2D(std::get<0>(m.sizes()), std::get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), value);
   return std::forward<MultiArray2D>(m);
 }
 
@@ -213,11 +213,11 @@ template<class MultiArray3D,
          typename = typename std::enable_if<std::decay<MultiArray2D>::type::dimensionality == 2>>
 void get_diagonal_strided(MultiArray3D const& B, MultiArray2D&& A)
 {
-  if (A.size(0) != B.size(0) || A.size(1) != B.size(1) || A.size(1) != B.size(2) || A.stride(1) != 1 ||
-      B.stride(2) != 1)
+  if (std::get<0>(A.sizes()) != std::get<0>(B.sizes()) || std::get<1>(A.sizes()) != std::get<1>(B.sizes()) || std::get<1>(A.sizes()) != std::get<2>(B.sizes()) || std::get<1>(A.strides()) != 1 ||
+      std::get<2>(B.strides()) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in get_diagonal_strided.\n");
-  get_diagonal_strided(A.size(0), A.size(1), pointer_dispatch(B.origin()), B.stride(1), B.stride(0),
-                       pointer_dispatch(A.origin()), A.stride(0));
+  get_diagonal_strided(std::get<0>(A.sizes()), std::get<1>(A.sizes()), pointer_dispatch(B.origin()), std::get<1>(B.strides()), std::get<0>(B.strides()),
+                       pointer_dispatch(A.origin()), A.stride());
 }
 
 template<class CSR,
@@ -231,12 +231,12 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M)
   assert(TA == 'N' || TA == 'H' || TA == 'T' || TA == 'Z');
   if (TA == 'N' || TA == 'Z')
   {
-    if (M.size(0) != A.size(0) or M.size(1) != A.size(1))
+    if (std::get<0>(M.sizes()) != A.size(0) or std::get<1>(M.sizes()) != A.size(1) )
       M.reextent({static_cast<typename MultiArray2D::size_type>(A.size(0)), static_cast<typename MultiArray2D::size_type>(A.size(1))});
   }
   else if (TA == 'T' || TA == 'H')
   {
-    if (M.size(0) != A.size(1) or M.size(1) != A.size(0))
+    if (std::get<0>(M.sizes()) != A.size(1) or std::get<1>(M.sizes()) != A.size(0))
       M.reextent({static_cast<typename MultiArray2D::size_type>(A.size(1)), static_cast<typename MultiArray2D::size_type>(A.size(0))});
   }
   else
@@ -257,25 +257,25 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M)
   //#endif
   if (TA == 'N')
   {
-    for (int i = 0; i < A.size(0); i++)
+    for (int i = 0; i < A.size(); i++)
       for (int_type ip = pbegin[i], ipend = pend[i]; ip < ipend; ip++)
         M[i][c0[ip - p0]] = Type(v0[ip - p0]);
   }
   else if (TA == 'Z')
   {
-    for (int i = 0; i < A.size(0); i++)
+    for (int i = 0; i < A.size(); i++)
       for (int_type ip = pbegin[i], ipend = pend[i]; ip < ipend; ip++)
         M[i][c0[ip - p0]] = ma::conj(Type(v0[ip - p0]));
   }
   else if (TA == 'T')
   {
-    for (int i = 0; i < A.size(0); i++)
+    for (int i = 0; i < A.size(); i++)
       for (int_type ip = pbegin[i], ipend = pend[i]; ip < ipend; ip++)
         M[c0[ip - p0]][i] = Type(v0[ip - p0]);
   }
   else if (TA == 'H')
   {
-    for (int i = 0; i < A.size(0); i++)
+    for (int i = 0; i < A.size(); i++)
       for (int_type ip = pbegin[i], ipend = pend[i]; ip < ipend; ip++)
         M[c0[ip - p0]][i] = ma::conj(Type(v0[ip - p0]));
   }
@@ -290,9 +290,9 @@ void Matrix2MAREF(char TA, CSR const& A, MultiArray2D& M)
   using Type     = typename MultiArray2D::element;
   using int_type = typename CSR::int_type;
   assert(TA == 'N' || TA == 'H' || TA == 'T' || TA == 'Z');
-  if ((TA == 'N' || TA == 'Z') && ((M.size(0) != A.size(0)) || (M.size(1) != A.size(1))))
+  if ((TA == 'N' || TA == 'Z') && ((std::get<0>(M.sizes()) != A.size(0)) || (std::get<1>(M.sizes()) != A.size(1))))
     throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
-  else if ((TA == 'T' || TA == 'H') && ((M.size(0) != A.size(1)) || (M.size(1) != A.size(0))))
+  else if ((TA == 'T' || TA == 'H') && ((std::get<0>(M.sizes()) != A.size(1)) || (std::get<1>(M.sizes()) != A.size(0))))
     throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   using std::fill_n;
   fill_n(M.origin(), M.num_elements(), Type(0));
@@ -439,35 +439,35 @@ void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
     TA = 'C';
   if (TA == 'Z')
   {
-    for (int i = 0; i < M.size(0); i++)
-      for (int j = 0; j < M.size(1); j++)
+    for (int i = 0; i < std::get<0>(M.sizes()); i++)
+      for (int j = 0; j < std::get<1>(M.sizes()); j++)
         M[i][j] = ma::conj(A[i][j]);
   }
   else if (not std::is_same<ptrA, ptrM>::value)
   {
     if (TA == 'N')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[i][j];
     }
     else if (TA == 'T')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[j][i];
     }
     else if (TA == 'C')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = ma::conj(A[j][i]);
     }
   }
   else
   {
-    geam(TA, TA, M.size(1), M.size(0), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
-         pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(M.origin()), M.stride(0));
+    geam(TA, TA, std::get<1>(M.sizes()), M.size(0), Type2(1.0), pointer_dispatch(A.origin()), A.stride(), Type2(0.0),
+         pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(M.origin()), M.stride());
   }
 }
 
@@ -483,12 +483,12 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
   assert(TA == 'N' || TA == 'H' || TA == 'T' || TA == 'Z');
   if (TA == 'N' || TA == 'Z')
   {
-    if (M.size(0) != A.size(0) or M.size(1) != A.size(1))
+    if (std::get<0>(M.sizes()) != std::get<0>(A.sizes()) or std::get<1>(M.sizes()) != std::get<1>(A.sizes()))
       throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   }
   else if (TA == 'T' || TA == 'H')
   {
-    if (M.size(0) != A.size(1) or M.size(1) != A.size(0))
+    if (std::get<0>(M.sizes()) != std::get<1>(A.sizes()) or std::get<1>(M.sizes()) != std::get<0>(A.sizes()))
       throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   }
   else
@@ -504,35 +504,35 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
   if (TA == 'Z')
   {
     // bad i gpu's
-    for (int i = 0; i < M.size(0); i++)
-      for (int j = 0; j < M.size(1); j++)
+    for (int i = 0; i < std::get<0>(M.sizes()); i++)
+      for (int j = 0; j < std::get<1>(M.sizes()); j++)
         M[i][j] = ma::conj(A[i][j]);
   }
   else if (not std::is_same<ptrA, ptrM>::value)
   {
     if (TA == 'N')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[i][j];
     }
     else if (TA == 'T')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[j][i];
     }
     else if (TA == 'C')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = ma::conj(A[j][i]);
     }
   }
   else
   {
-    geam(TA, TA, M.size(1), M.size(0), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
-         pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(M.origin()), M.stride(0));
+    geam(TA, TA, std::get<1>(M.sizes()), std::get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(), Type2(0.0),
+         pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(M.origin()), M.stride());
   }
 }
 

@@ -124,11 +124,11 @@ public:
     static_assert(std::decay<MatG_host>::type::dimensionality == 4, "Wrong dimensionality");
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
     assert(G[0].num_elements() == dm_size);
@@ -136,11 +136,11 @@ public:
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (denom.size() != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != 3 || DMWork.size(1) != nw || DMWork.size(2) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != 3 || std::get<1>(DMWork.sizes()) != nw || std::get<2>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -149,8 +149,8 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork.size(0) != 2 || DMWork.size(1) != nw || DMWork.size(2) != dm_size ||
-          DMAverage.size(0) != 2 || DMAverage.size(1) != nave || DMAverage.size(2) != dm_size)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != 2 || std::get<1>(DMWork.sizes()) != nw || std::get<2>(DMWork.sizes()) != dm_size ||
+          std::get<0>(DMAverage.sizes()) != 2 || std::get<1>(DMAverage.sizes()) != nave || std::get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -179,7 +179,7 @@ public:
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp)
   {
-    int nw(denom.size(0));
+    int nw(denom.size());
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), dm_size, TG.TG_local().size());
 

@@ -133,43 +133,43 @@ public:
         vn0(std::move(v0_)),
         E0(e0_)
   {
-    gnmu    = Luv.size(1);
-    grotnmu = rotMuv.size(1);
+    gnmu    = std::get<1>(Luv.sizes());
+    grotnmu = std::get<1>(rotMuv.sizes());
     if (haj.size() > 1)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     assert(comm);
     // current partition over 'u' for L/Piu
-    assert(Luv.size(0) == Piu.size(1));
+    assert( std::get<0>(Luv.sizes()) == std::get<1>(Piu.sizes()) );
     for (int i = 0; i < rotcPua.size(); i++)
     {
       // rot Ps are not yet distributed
-      assert(rotcPua[i].size(0) == rotPiu.size(1));
+      assert(std::get<0>(rotcPua[i].sizes()) == std::get<1>(rotPiu.sizes()));
       if (walker_type == CLOSED)
-        assert(rotcPua[i].size(1) == nup);
+        assert( std::get<1>(rotcPua[i].sizes()) == nup);
       else if (walker_type == COLLINEAR)
-        assert(rotcPua[i].size(1) == nup + ndown);
+        assert( std::get<1>(rotcPua[i].sizes()) == nup + ndown);
       else if (walker_type == NONCOLLINEAR)
-        assert(rotcPua[i].size(1) == nup + ndown);
+        assert( std::get<1>(rotcPua[i].sizes()) == nup + ndown);
     }
     for (int i = 0; i < cPua.size(); i++)
     {
-      assert(cPua[i].size(0) == Luv.size(0));
+      assert(cPua[i].size() == Luv.size());
       if (walker_type == CLOSED)
-        assert(cPua[i].size(1) == nup);
+        assert(std::get<1>(cPua[i].sizes()) == nup);
       else if (walker_type == COLLINEAR)
-        assert(cPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(cPua[i].sizes()) == nup + ndown);
       else if (walker_type == NONCOLLINEAR)
-        assert(cPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(cPua[i].sizes()) == nup + ndown);
     }
     if (walker_type == NONCOLLINEAR)
     {
-      assert(Piu.size(0) == 2 * NMO);
-      assert(rotPiu.size(0) == 2 * NMO);
+      assert(Piu.size() == 2 * NMO);
+      assert(rotPiu.size() == 2 * NMO);
     }
     else
     {
-      assert(Piu.size(0) == NMO);
-      assert(rotPiu.size(0) == NMO);
+      assert(Piu.size() == NMO);
+      assert(rotPiu.size() == NMO);
     }
   }
 
@@ -186,7 +186,7 @@ public:
   {
     using std::copy_n;
     using std::fill_n;
-    int NMO = hij.size(0);
+    int NMO = hij.size();
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
 
@@ -257,9 +257,9 @@ public:
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     // G[nel][nmo]
-    assert(E.size(0) == G.size(0));
-    assert(E.size(1) == 3);
-    int nwalk = G.size(0);
+    assert(std::get<0>(E.sizes()) == std::get<0>(G.sizes()));
+    assert(std::get<1>(E.sizes()) == 3);
+    int nwalk = std::get<0>(G.sizes());
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
 
@@ -274,17 +274,17 @@ public:
     if (not(addEJ || addEXX))
       return;
 
-    int nmo_  = rotPiu.size(0);
-    int nu    = rotMuv.size(0);
+    int nmo_  = std::get<0>(rotPiu.sizes());
+    int nu    = std::get<0>(rotMuv.sizes());
     int nu0   = rotnmu0;
-    int nv    = rotMuv.size(1);
-    int nel_  = rotcPua[0].size(1);
+    int nv    = std::get<1>(rotMuv.sizes());
+    int nel_  = std::get<1>(rotcPua[0].sizes());
     int nspin = (walker_type == COLLINEAR) ? 2 : 1;
-    assert(G.size(1) == nel_ * nmo_);
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
     if (addEJ and getKl)
-      assert(Kl->size(0) == nwalk && Kl->size(1) == nu);
+      assert(std::get<0>(Kl->sizes()) == nwalk && std::get<1>(Kl->sizes()) == nu);
     if (addEJ and getKr)
-      assert(Kr->size(0) == nwalk && Kr->size(1) == nu);
+      assert(std::get<0>(Kr->sizes()) == nwalk && std::get<1>(Kr->sizes()) == nu);
     using ma::T;
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
@@ -667,8 +667,8 @@ public:
   {
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size(0)});
-    boost::multi::array_ref<XType const, 2, decltype(X.origin())> X_(X.origin(), {X.size(0), 1});
+    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {1, v.size()});
+    boost::multi::array_ref<XType const, 2, decltype(X.origin())> X_(X.origin(), {X.size(), 1});
     vHS(X_, v_, a, c);
   }
 
@@ -681,18 +681,18 @@ public:
     using ma::T;
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    int nwalk   = X.size(1);
+    int nwalk   = std::get<1>(X.sizes());
 #if defined(QMC_COMPLEX)
-    int nchol = 2 * Luv.size(1);
+    int nchol = 2 * std::get<1>(Luv.sizes());
 #else
-    int nchol = Luv.size(1);
+    int nchol = std::get<1>(Luv.sizes());
 #endif
-    int nmo_ = Piu.size(0);
-    int nu   = Piu.size(1);
-    assert(Luv.size(0) == nu);
-    assert(X.size(0) == nchol);
-    assert(v.size(0) == nwalk);
-    assert(v.size(1) == nmo_ * nmo_);
+    int nmo_ = std::get<0>(Piu.sizes());
+    int nu   = std::get<1>(Piu.sizes());
+    assert(std::get<0>(Luv.sizes()) == nu);
+    assert(std::get<0>(X.sizes()) == nchol);
+    assert(std::get<0>(v.sizes()) == nwalk);
+    assert(std::get<1>(v.sizes()) == nmo_ * nmo_);
 
     size_t memory_needs = nu * nwalk;
     if (not std::is_same<XType, SPComplexType>::value)
@@ -939,13 +939,13 @@ public:
   }
 
   bool distribution_over_cholesky_vectors() const { return false; }
-  int number_of_ke_vectors() const { return rotMuv.size(0); }
+  int number_of_ke_vectors() const { return rotMuv.size(); }
 #if defined(QMC_COMPLEX)
-  int local_number_of_cholesky_vectors() const { return 2 * Luv.size(1); }
-  int global_number_of_cholesky_vectors() const { return 2 * Luv.size(1); }
+  int local_number_of_cholesky_vectors() const { return 2 * std::get<1>(Luv.sizes()); }
+  int global_number_of_cholesky_vectors() const { return 2 * std::get<1>(Luv.sizes()); }
 #else
-  int local_number_of_cholesky_vectors() const { return Luv.size(1); }
-  int global_number_of_cholesky_vectors() const { return Luv.size(1); }
+  int local_number_of_cholesky_vectors() const { return std::get<1>(Luv.sizes()); }
+  int global_number_of_cholesky_vectors() const { return std::get<1>(Luv.sizes()); }
 #endif
   int global_origin_cholesky_vector() const { return 0; }
 
@@ -1058,11 +1058,11 @@ protected:
     static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatD>::type::dimensionality == 3, "Wrong dimensionality");
-    int nmo_ = int(rotPiu.size(0));
-    int nu   = int(rotMuv.size(0)); // potentially distributed over nodes
-    int nv   = int(rotMuv.size(1)); // not distributed over nodes
-    int nw   = int(G.size(0));
-    assert(rotPiu.size(1) == nv);
+    int nmo_ = int(std::get<0>(rotPiu.sizes()));
+    int nu   = int(std::get<0>(rotMuv.sizes())); // potentially distributed over nodes
+    int nv   = int(std::get<1>(rotMuv.sizes())); // not distributed over nodes
+    int nw   = int(std::get<0>(G.sizes()));
+    assert(std::get<1>(rotPiu.sizes()) == nv);
     int v0, vN;
     std::tie(v0, vN) = FairDivideBoundary(comm->rank(), nv, comm->size());
     int k0, kN;
@@ -1134,11 +1134,11 @@ protected:
       // dispatch these through ma_blas_extensions!!!
       // Gwv = sum_a Twav Pva
       if (nu0 > 0) // calculate Guu from u={0,nu0}
-        Aijk_Bkj_Cik(nw, nelec[ispin], nu0, make_device_ptr(Tav.origin()), Tav.stride(1), Tav.stride(0),
-                     make_device_ptr(rotcPua[k].origin()), rotcPua[k].stride(0), make_device_ptr(Guu.origin()), nv);
+        Aijk_Bkj_Cik(nw, nelec[ispin], nu0, make_device_ptr(Tav.origin()), std::get<1>(Tav.strides()), std::get<0>(Tav.strides()),
+                     make_device_ptr(rotcPua[k].origin()), rotcPua[k].stride(), make_device_ptr(Guu.origin()), nv);
       if (nu0 + nu < nv) // calculate Guu from u={nu0+nu,nv}
-        Aijk_Bkj_Cik(nw, nelec[ispin], nv - nu0 - nu, make_device_ptr(Tav.origin()) + nu0 + nu, Tav.stride(1),
-                     Tav.stride(0), make_device_ptr(rotcPua[k][nu0 + nu].origin()), rotcPua[k].stride(0),
+        Aijk_Bkj_Cik(nw, nelec[ispin], nv - nu0 - nu, make_device_ptr(Tav.origin()) + nu0 + nu, std::get<1>(Tav.strides()),
+                     std::get<0>(Tav.strides()), make_device_ptr(rotcPua[k][nu0 + nu].origin()), rotcPua[k].stride(),
                      make_device_ptr(Guu.origin()) + nu0 + nu, nv);
     }
     comm->barrier();

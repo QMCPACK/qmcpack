@@ -152,7 +152,7 @@ public:
   boost::multi::array<ComplexType, 2> getOneBodyPropagatorMatrix(TaskGroup_& TG,
                                                                  boost::multi::array<ComplexType, 1> const& vMF)
   {
-    int NMO = hij.size(0);
+    int NMO = hij.size();
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
 
@@ -210,7 +210,7 @@ public:
               bool addEJ  = true,
               bool addEXX = true)
   {
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0);
     assert(nd < haj.size());
     if (walker_type == COLLINEAR)
@@ -218,24 +218,24 @@ public:
     else
       assert(nd < Lnak.size());
 
-    int nwalk = Gc.size(0);
+    int nwalk = Gc.size();
     int nspin = (walker_type == COLLINEAR ? 2 : 1);
-    int NMO   = hij.size(0);
+    int NMO   = hij.size();
     int nel[2];
-    nel[0] = Lnak[nspin * nd].size(1);
-    nel[1] = ((nspin == 2) ? Lnak[nspin * nd + 1].size(1) : 0);
-    assert(Lnak[nspin * nd].size(0) == local_nCV);
-    assert(Lnak[nspin * nd].size(2) == NMO);
+    nel[0] = std::get<1>(Lnak[nspin * nd].sizes());
+    nel[1] = ((nspin == 2) ? std::get<1>(Lnak[nspin * nd + 1].sizes()) : 0);
+    assert(std::get<0>(Lnak[nspin * nd].sizes()) == local_nCV);
+    assert(std::get<2>(Lnak[nspin * nd].sizes()) == NMO);
     if (nspin == 2)
     {
-      assert(Lnak[nspin * nd + 1].size(0) == local_nCV);
-      assert(Lnak[nspin * nd + 1].size(2) == NMO);
+      assert(std::get<0>(Lnak[nspin * nd + 1].sizes()) == local_nCV);
+      assert(std::get<2>(Lnak[nspin * nd + 1].sizes()) == NMO);
     }
     assert(Gc.num_elements() == nwalk * (nel[0] + nel[1]) * NMO);
 
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/Real3IndexFactorization_batched_v2::energy(...). Incorrect "
                 "matrix dimensions \n");
 
@@ -255,13 +255,13 @@ public:
       Knc = local_nCV;
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(std::get<0>(KEright->strides()) == std::get<1>(KEright->sizes()));
       }
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(std::get<0>(KEleft->strides()) == std::get<1>(KEleft->sizes()));
       }
     }
     else if (getKr or getKl)
@@ -340,7 +340,7 @@ public:
 
           using ma::dot_wanb;
           dot_wanb(nwalk, nel[ispin], nvecs, SPComplexType(-0.5 * scl), Twbna.origin(), to_address(E[0].origin()) + 1,
-                   E.stride(0));
+                   E.stride());
 
           if (addEJ)
           {
@@ -387,8 +387,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(0), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
+    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(), 1});
     return vHS(X_, v_, a, c);
   }
 
@@ -400,9 +400,9 @@ public:
   {
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    assert(Likn.size(1) == X.size(0));
-    assert(Likn.size(0) == v.size(0));
-    assert(X.size(1) == v.size(1));
+    assert(std::get<1>(Likn.sizes()) == std::get<0>(X.sizes()));
+    assert(std::get<0>(Likn.sizes()) == std::get<0>(v.sizes()));
+    assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
     // setup buffer space if changing precision in X or v
     size_t vmem(0), Xmem(0);
     if (not std::is_same<XType, SPComplexType>::value)
@@ -557,12 +557,12 @@ public:
   template<class Mat, class MatB>
   void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
   {
-    int nwalk = G.size(0);
+    int nwalk = std::get<0>(G.sizes());
     int nspin = (walker_type == COLLINEAR ? 2 : 1);
-    int NMO   = hij.size(0);
+    int NMO   = std::get<0>(hij.sizes());
     int nel[2];
-    assert(Fp.size(0) == nwalk);
-    assert(Fm.size(0) == nwalk);
+    assert(std::get<0>(Fp.sizes()) == nwalk);
+    assert(std::get<0>(Fm.sizes()) == nwalk);
     assert(G[0].num_elements() == nspin * NMO * NMO);
     assert(Fp[0].num_elements() == nspin * NMO * NMO);
     assert(Fm[0].num_elements() == nspin * NMO * NMO);

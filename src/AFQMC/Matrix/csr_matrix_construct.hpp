@@ -60,8 +60,8 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
   {
     if (TA == 'N')
     {
-      nr = M.size(0);
-      nc = M.size(1);
+      nr = std::get<0>(M.sizes());
+      nc = std::get<1>(M.sizes());
       counts.resize(nr);
       for (int_type i = 0; i < nr; i++)
         for (int_type j = 0; j < nc; j++)
@@ -70,11 +70,11 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     }
     else
     {
-      nr = M.size(1);
-      nc = M.size(0);
+      nr = std::get<1>(M.sizes());
+      nc = std::get<0>(M.sizes());
       counts.resize(nr);
-      for (int_type i = 0; i < M.size(0); i++)
-        for (int_type j = 0; j < M.size(1); j++)
+      for (int_type i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int_type j = 0; j < std::get<1>(M.sizes()); j++)
           if (std::abs(M[i][j]) > cutoff)
             ++counts[j];
     }
@@ -99,15 +99,15 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     }
     else if (TA == 'T')
     {
-      for (int_type i = 0; i < M.size(1); i++)
-        for (int_type j = 0; j < M.size(0); j++)
+      for (int_type i = 0; i < std::get<1>(M.sizes()); i++)
+        for (int_type j = 0; j < std::get<0>(M.sizes()); j++)
           if (std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i, j}, static_cast<typename CSR::value_type>(M[j][i]));
     }
     else if (TA == 'H')
     {
-      for (int_type i = 0; i < M.size(1); i++)
-        for (int_type j = 0; j < M.size(0); j++)
+      for (int_type i = 0; i < std::get<1>(M.sizes()); i++)
+        for (int_type j = 0; j < std::get<0>(M.sizes()); j++)
           if (std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i, j}, static_cast<typename CSR::value_type>(ma::conj(M[j][i])));
     }

@@ -46,9 +46,9 @@ P_Type generate1BodyPropagator(TaskGroup_& TG,
                                bool printP1eV = false)
 {
   assert(H1.dimensionality == 2);
-  assert(H1.size(0) == H1.size(1));
-  assert(H1.stride(1) == 1);
-  int NMO = H1.size(0);
+  assert( std::get<0>(H1.sizes()) == std::get<1>(H1.sizes()));
+  assert( std::get<1>(H1.strides()) == 1);
+  int NMO = H1.size();
   if (TG.TG_local().root())
   {
     boost::multi::array<ComplexType, 2> v({NMO, NMO});
@@ -84,13 +84,13 @@ P_Type generate1BodyPropagator(TaskGroup_& TG,
                                bool printP1eV = false)
 {
   assert(H1.dimensionality == 2);
-  assert(H1.size(0) == H1.size(1));
-  assert(H1.stride(1) == 1);
+  assert(std::get<0>(H1.sizes()) == std::get<1>(H1.sizes()));
+  assert(std::get<1>(H1.strides()) == 1);
   assert(H1ext.dimensionality == 2);
-  assert(H1ext.size(0) == H1ext.size(1));
-  assert(H1ext.stride(1) == 1);
-  assert(H1.size(0) == H1ext.size(1));
-  int NMO = H1.size(0);
+  assert(std::get<0>(H1ext.sizes()) == std::get<1>(H1ext.sizes()));
+  assert(std::get<1>(H1ext.strides()) == 1);
+  assert(std::get<0>(H1.sizes()) == std::get<1>(H1ext.sizes()));
+  int NMO = H1.size();
   if (TG.TG_local().root())
   {
     //      boost::multi::array<ComplexType,2> v({NMO,NMO});

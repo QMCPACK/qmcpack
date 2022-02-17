@@ -131,9 +131,9 @@ public:
         stdCMatrix R;
         if (!dump.readEntry(R, "RotationMatrix"))
           APP_ABORT("Error reading RotationMatrix.\n");
-        if (R.size(1) != NMO)
+        if (std::get<1>(R.sizes()) != NMO)
           APP_ABORT("Error Wrong dimensions in RotationMatrix.\n");
-        dim[0] = R.size(0);
+        dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
         std::transform(R.origin(), R.origin() + R.num_elements(), R.origin(),
@@ -143,9 +143,9 @@ public:
         {
           if (!dump.readEntry(I, "Indices"))
             APP_ABORT("Error reading Indices.\n");
-          if (I.size(1) != 2)
+          if (std::get<1>(I.sizes()) != 2)
             APP_ABORT("Error Wrong dimensions in Indices.\n");
-          dim[1] = I.size(0);
+          dim[1] = I.size();
         }
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
@@ -179,9 +179,9 @@ public:
       TG.Node().barrier();
 
       if (print_from_list)
-        dm_size = index_list.size(0);
+        dm_size = index_list.size();
       else
-        dm_size = XRot.size(0) * XRot.size(0);
+        dm_size = XRot.size() * XRot.size();
     }
     else
     {
@@ -236,22 +236,22 @@ public:
     static_assert(std::decay<MatG_host>::type::dimensionality == 4, "Wrong dimensionality");
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (denom.size() != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -260,8 +260,8 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork.size(0) != nw || DMWork.size(1) != dm_size || DMAverage.size(0) != nave ||
-          DMAverage.size(1) != dm_size)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size || std::get<0>(DMAverage.sizes()) != nave ||
+          std::get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -275,7 +275,7 @@ public:
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp)
   {
-    int nw(denom.size(0));
+    int nw(denom.size());
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), dm_size, TG.TG_local().size());
 
@@ -403,7 +403,7 @@ private:
   template<class MatG, class CVec>
   void acc_no_rotation(MatG&& G, CVec&& Xw)
   {
-    int nw(G.size(0));
+    int nw(G.size());
     assert(G[0].num_elements() == dm_size);
 
     int i0, iN;
@@ -427,19 +427,19 @@ private:
   template<class MatG, class CVec>
   void acc_with_rotation(MatG&& G, CVec&& Xw)
   {
-    int nw(G.size(0));
-    assert(G.size(2) == G.size(3));
-    assert(G.size(2) == XRot.size(1));
+    int nw(std::get<0>(G.sizes()));
+    assert(std::get<2>(G.sizes()) == std::get<3>(G.sizes()));
+    assert(std::get<2>(G.sizes()) == std::get<1>(XRot.sizes()));
 
     if (walker_type == NONCOLLINEAR)
       APP_ABORT("Error: Not yet implemented: acc_with_rotation && noncollinear.\n");
 
     int i0, iN;
-    std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(XRot.size(0)), TG.TG_local().size());
+    std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(XRot.size()), TG.TG_local().size());
 
     // can batch in the future if too slow
     // Grot = Xc * G * H(Xc)
-    int nX   = XRot.size(0);
+    int nX   = XRot.size();
     int npts = (iN - i0) * nX;
     DeviceBufferManager buffer_manager;
     StaticMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -451,7 +451,7 @@ private:
     int cnt = 0;
     for (int iw = 0; iw < nw; iw++)
     {
-      if (i0 == iN || i0 == XRot.size(0))
+      if (i0 == iN || i0 == XRot.size())
         break;
       if (TG.TG_local().root())
         denom[iw] += Xw[iw];
@@ -460,7 +460,7 @@ private:
       copy_n(T2.origin(), T2.num_elements(), Grot.origin());
       if (print_from_list)
       {
-        for (int i = 0; i < index_list.size(0); i++)
+        for (int i = 0; i < index_list.size(); i++)
         {
           if (index_list[i][0] >= i0 && index_list[i][0] < iN)
           {
@@ -478,7 +478,7 @@ private:
         copy_n(T2.origin(), T2.num_elements(), Grot.origin());
         if (print_from_list)
         {
-          for (int i = 0, ie = index_list.size(0); i < ie; i++)
+          for (int i = 0, ie = index_list.size(); i < ie; i++)
           {
             if (index_list[i][0] >= i0 && index_list[i][0] < iN)
             {

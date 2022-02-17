@@ -43,9 +43,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   size_t nkev = HamOp.number_of_ke_vectors();
   assert(E.dimensionality == 2);
   assert(Ov.dimensionality == 1);
-  assert(E.size(0) == wset.size());
-  assert(Ov.size(0) == wset.size());
-  assert(E.size(1) == 3);
+  assert(E.size() == wset.size());
+  assert(Ov.size() == wset.size());
+  assert(std::get<1>(E.sizes()) == 3);
 
   ComplexType zero(0.0);
   auto Gsize = dm_size(false);
@@ -65,7 +65,7 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
     opSpinEJ.reextent(iextensions<1u>{nwalk});
   if (localGbuff.size() < 2 * Gsize)
     localGbuff.reextent(iextensions<1u>{2 * Gsize});
-  if (eloc2.size(0) != nwalk || eloc2.size(1) != 3)
+  if (std::get<0>(eloc2.sizes()) != nwalk || std::get<1>(eloc2.sizes()) != 3)
     eloc2.reextent({nwalk, 3});
 
   std::fill_n(Ov.origin(), nwalk, zero);

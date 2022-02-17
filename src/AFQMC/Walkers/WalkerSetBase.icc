@@ -221,9 +221,9 @@ bool WalkerSetBase<Alloc, Ptr>::clean()
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc, Ptr>::reserve(int n)
 {
-  if (walker_buffer.size(0) < n || walker_buffer.size(1) != walker_size)
+  if (std::get<0>(walker_buffer.sizes()) < n || std::get<1>(walker_buffer.sizes()) != walker_size)
     walker_buffer.reextent({n, walker_size});
-  if (bp_buffer.size(1) < n || bp_buffer.size(0) != bp_walker_size)
+  if (std::get<1>(bp_buffer.sizes()) < n || std::get<0>(bp_buffer.sizes()) != bp_walker_size)
   {
     bp_buffer.reextent({bp_walker_size, n});
     using std::fill_n;

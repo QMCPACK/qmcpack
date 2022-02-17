@@ -188,25 +188,25 @@ public:
               bool addEJ  = true,
               bool addEXX = true)
   {
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(k >= 0 && k < haj.size());
     assert(k >= 0 && k < Vakbl_view.size());
-    if (Gcloc.num_elements() < Gc.size(1) * Vakbl_view[k].size(0))
-      Gcloc.reextent(iextensions<1u>(Vakbl_view[k].size(0) * Gc.size(1)));
-    boost::multi::array_ref<SPComplexType, 2> buff(Gcloc.data(), {long(Vakbl_view[k].size(0)), long(Gc.size(1))});
+    if (Gcloc.num_elements() < std::get<1>(Gc.sizes()) * Vakbl_view[k].size(0))
+      Gcloc.reextent(iextensions<1u>(Vakbl_view[k].size(0) * std::get<1>(Gc.sizes())));
+    boost::multi::array_ref<SPComplexType, 2> buff(Gcloc.data(), {long(Vakbl_view[k].size(0)), long(std::get<1>(Gc.sizes()))});
 
-    int nwalk = Gc.size(1);
+    int nwalk = std::get<1>(Gc.sizes());
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
     for (int n = 0; n < nwalk; n++)
       std::fill_n(E[n].origin(), 3, ComplexType(0.));
     if (addEJ and getKl)
-      assert(Kl->size(0) == nwalk && Kl->size(1) == SpvnT[k].size(0));
+      assert(std::get<0>(Kl->sizes()) == nwalk && std::get<1>(Kl->sizes()) == SpvnT[k].size(0));
     if (addEJ and getKr)
-      assert(Kr->size(0) == nwalk && Kr->size(1) == SpvnT[k].size(0));
+      assert(std::get<0>(Kr->sizes()) == nwalk && std::get<1>(Kr->sizes()) == SpvnT[k].size(0));
 
 #if defined(MIXED_PRECISION)
     size_t mem_needs = Gc.num_elements();
@@ -239,17 +239,17 @@ public:
     if (separateEJ && addEJ)
     {
       using ma::T;
-      if (Gcloc.num_elements() < SpvnT[k].size(0) * Gc.size(1))
-        Gcloc.reextent(iextensions<1u>(SpvnT[k].size(0) * Gc.size(1)));
-      assert(SpvnT_view[k].size(1) == Gc.size(0));
+      if (Gcloc.num_elements() < SpvnT[k].size(0) * std::get<1>(Gc.sizes()))
+        Gcloc.reextent(iextensions<1u>(SpvnT[k].size(0) * std::get<1>(Gc.sizes())));
+      assert(SpvnT_view[k].size(1) == std::get<0>(Gc.sizes()));
       RealType scl = (walker_type == CLOSED ? 4.0 : 1.0);
       // SpvnT*G
-      boost::multi::array_ref<SPComplexType, 2> v_(Gcloc.origin() + SpvnT_view[k].local_origin()[0] * Gc.size(1),
-                                                   {long(SpvnT_view[k].size(0)), long(Gc.size(1))});
+      boost::multi::array_ref<SPComplexType, 2> v_(Gcloc.origin() + SpvnT_view[k].local_origin()[0] * std::get<1>(Gc.sizes()),
+                                                   {long(SpvnT_view[k].size(0)), long(std::get<1>(Gc.sizes()))});
       ma::product(SpvnT_view[k], Gsp, v_);
       if (getKl || getKr)
       {
-        for (int wi = 0; wi < Gc.size(1); wi++)
+        for (int wi = 0; wi < std::get<1>(Gc.sizes()); wi++)
         {
           auto _v_ = v_(v_.extension(0), wi);
           if (getKl)
@@ -266,7 +266,7 @@ public:
           }
         }
       }
-      for (int wi = 0; wi < Gc.size(1); wi++)
+      for (int wi = 0; wi < std::get<1>(Gc.sizes()); wi++)
         E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(v_.extension(0), wi), v_(v_.extension(0), wi)));
     }
 #if defined(MIXED_PRECISION)
@@ -301,9 +301,9 @@ public:
   {
     using vType = typename std::decay<MatB>::type::element;
     using XType = typename std::decay_t<typename MatA::element>;
-    assert(Spvn.size(1) == X.size(0));
-    assert(Spvn.size(0) == v.size(0));
-    assert(X.size(1) == v.size(1));
+    assert(Spvn.size(1) == X.size());
+    assert(Spvn.size(0) == v.size());
+    assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
 
     // setup buffer space if changing precision in X or v
     size_t vmem(0), Xmem(0);
@@ -345,7 +345,7 @@ public:
     comm->barrier();
 
     boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[Spvn_view.local_origin()[0]].origin()),
-                                                 {long(Spvn_view.size(0)), long(vsp.size(1))});
+                                                 {long(Spvn_view.size(0)), long(std::get<1>(vsp.sizes()))});
     ma::product(SPValueType(a), Spvn_view, Xsp, SPValueType(c), v_);
 
     // copy data back if changing precision

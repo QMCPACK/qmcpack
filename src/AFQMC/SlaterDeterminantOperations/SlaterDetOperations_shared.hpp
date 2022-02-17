@@ -140,10 +140,10 @@ public:
                        communicator& comm)
   {
     int Nact = hermA.size(0);
-    int NEL  = B.size(1);
-    assert(hermA.size(1) == B.size(0));
-    assert(QQ0.size(0) == Nact);
-    assert(QQ0.size(1) == NEL);
+    int NEL  = std::get<1>(B.sizes());
+    assert(hermA.size(1) == std::get<0>(B.sizes()));
+    assert(std::get<0>(QQ0.sizes()) == Nact);
+    assert(std::get<1>(QQ0.sizes()) == NEL);
     set_shm_buffer(comm, NEL * (Nact + NEL));
     assert(SM_TMats->num_elements() >= NEL * (Nact + NEL));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NEL, NEL});
@@ -164,14 +164,14 @@ public:
                  bool noncollinear = false)
   {
     int npol = noncollinear ? 2 : 1;
-    int NMO  = A.size(0);
-    int NAEA = A.size(1);
+    int NMO  = std::get<0>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     int M    = NMO / npol;
     assert(NMO % npol == 0);
     assert(P1.size(0) == NMO);
     assert(P1.size(1) == NMO);
-    assert(V.size(0) == M);
-    assert(V.size(1) == M);
+    assert(std::get<0>(V.sizes()) == M);
+    assert(std::get<1>(V.sizes()) == M);
     set_shm_buffer(comm, NAEA * (NMO + 2 * M));
     assert(SM_TMats->num_elements() >= NAEA * (NMO + 2 * M));
     boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});

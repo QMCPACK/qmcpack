@@ -43,10 +43,10 @@ template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::d
 bool is_hermitian(MultiArray2D const& A)
 {
   using ma::conj;
-  if (A.size(0) != A.size(1))
+  if (std::get<0>(A.sizes()) != std::get<1>(A.sizes()))
     return false;
-  for (int i = 0; i != A.size(0); ++i)
-    for (int j = i + 1; j != A.size(1); ++j)
+  for (int i = 0; i != std::get<0>(A.sizes()); ++i)
+    for (int j = i + 1; j != std::get<1>(A.sizes()); ++j)
       if (std::abs(A[i][j] - ma::conj(A[j][i])) > 1e-12)
         return false;
   return true;
@@ -55,10 +55,10 @@ bool is_hermitian(MultiArray2D const& A)
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_symmetric(MultiArray2D const& A)
 {
-  if (A.size(0) != A.size(1))
+  if (std::get<0>(A.sizes()) != std::get<1>(A.sizes()))
     return false;
-  for (int i = 0; i != A.size(0); ++i)
-    for (int j = i + 1; j != A.size(1); ++j)
+  for (int i = 0; i != std::get<0>(A.sizes()); ++i)
+    for (int j = i + 1; j != std::get<1>(A.sizes()); ++j)
       if (std::abs(A[i][j] - A[j][i]) > 1e-12)
         return false;
   return true;
@@ -77,7 +77,7 @@ template<class MultiArray2D,
          typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality > 1)>::type>
 MultiArray2D&& transpose(MultiArray2D&& A)
 {
-  assert(A.size(0) == A.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
   typename std::decay<MultiArray2D>::type::element one(1.0);
   return ma::geam<'T'>(one, arg(A), std::forward<MultiArray2D>(A));
 }
@@ -86,7 +86,7 @@ template<class MultiArray2D,
          typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality == 2)>::type>
 void transform(MultiArray2D&& A)
 {
-  assert(arg(A).size(0) == arg(A).size(1));
+  assert(std::get<0>(arg(A).sizes()) == std::get<1>(arg(A).sizes()));
   typename std::decay<MultiArray2D>::type::element one(1.0);
   ma::geam<op_tag<typename std::decay<MultiArray2D>::type>::value>(one, arg(A), arg(A));
 }
@@ -255,25 +255,25 @@ MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B,
   assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T' ||
          op_tag<SparseMatrixA>::value == 'C' || op_tag<SparseMatrixA>::value == 'H');
   assert(op_tag<MultiArray2DB>::value == 'N');
-  assert(arg(B).stride(1) == 1);
-  assert(std::forward<MultiArray2DC>(C).stride(1) == 1);
+  assert(std::get<1>(arg(B).strides()) == 1);
+  assert(std::get<1>(std::forward<MultiArray2DC>(C).strides()) == 1);
   if (op_tag<SparseMatrixA>::value == 'N')
   {
-    assert(arg(A).size(0) == std::forward<MultiArray2DC>(C).size(0));
-    assert(arg(A).size(1) == arg(B).size(0));
-    assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
+    assert(arg(A).size(0) == std::get<0>(std::forward<MultiArray2DC>(C).sizes()));
+    assert(arg(A).size(1) == std::get<0>(arg(B).sizes()));
+    assert(std::get<1>(arg(B).sizes()) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()));
   }
   else
   {
-    assert(arg(A).size(0) == arg(B).size(0));
-    assert(arg(A).size(1) == std::forward<MultiArray2DC>(C).size(0));
-    assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
+    assert(arg(A).size(0) == std::get<0>(arg(B).sizes()));
+    assert(arg(A).size(1) == std::get<0>(std::forward<MultiArray2DC>(C).sizes()));
+    assert(std::get<1>(arg(B).sizes()) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()));
   }
 
-  csrmm(op_tag<SparseMatrixA>::value, arg(A).size(0), arg(B).size(1), arg(A).size(1), elementA(alpha), "GxxCxx",
+  csrmm(op_tag<SparseMatrixA>::value, arg(A).size(0), std::get<1>(arg(B).sizes()), arg(A).size(1), elementA(alpha), "GxxCxx",
         pointer_dispatch(arg(A).non_zero_values_data()), pointer_dispatch(arg(A).non_zero_indices2_data()),
         pointer_dispatch(arg(A).pointers_begin()), pointer_dispatch(arg(A).pointers_end()),
-        pointer_dispatch(arg(B).origin()), arg(B).stride(0), elementA(beta), pointer_dispatch(C.origin()), C.stride(0));
+        pointer_dispatch(arg(B).origin()), arg(B).stride(), elementA(beta), pointer_dispatch(C.origin()), C.stride());
 
   return std::forward<MultiArray2DC>(C);
 }
@@ -337,16 +337,16 @@ void BatchedProduct(char TA,
   using pointerC = decltype(pointer_dispatch((*C[0]).origin()));
   using element  = typename pointedType<MultiArrayPtr2DA>::element;
 
-  int M = (*C[0]).size(1);
-  int N = (*C[0]).size(0);
+  int M = std::get<1>((*C[0]).sizes());
+  int N = std::get<0>((*C[0]).sizes());
   int K;
   if (TB == 'N')
-    K = (*B[0]).size(0);
+    K = std::get<0>((*B[0]).sizes());
   else
-    K = (*B[0]).size(1);
-  int lda = (*A[0]).stride(0);
-  int ldb = (*B[0]).stride(0);
-  int ldc = (*C[0]).stride(0);
+    K = std::get<1>((*B[0]).sizes());
+  int lda = (*A[0]).stride();
+  int ldb = (*B[0]).stride();
+  int ldc = (*C[0]).stride();
   std::vector<pointerA> Ai;
   std::vector<pointerB> Bi;
   std::vector<pointerC> Ci;
@@ -355,30 +355,30 @@ void BatchedProduct(char TA,
   Ci.reserve(nbatch);
   for (int i = 0; i < nbatch; i++)
   {
-    assert(lda == (*A[i]).stride(0));
-    assert(ldb == (*B[i]).stride(0));
-    assert(ldc == (*C[i]).stride(0));
-    assert(M == (*C[i]).size(1));
-    assert(N == (*C[i]).size(0));
+    assert(lda == std::get<0>((*A[i]).strides()));
+    assert(ldb == std::get<0>((*B[i]).strides()));
+    assert(ldc == std::get<0>((*C[i]).strides()));
+    assert(M == std::get<1>((*C[i]).sizes()));
+    assert(N == std::get<0>((*C[i]).sizes()));
     if (TB == 'N')
     {
-      assert(K == (*B[i]).size(0));
-      assert(M == (*B[i]).size(1));
+      assert(K == std::get<0>((*B[i]).sizes()));
+      assert(M == std::get<1>((*B[i]).sizes()));
     }
     else
     {
-      assert(K == (*B[i]).size(1));
-      assert(M == (*B[i]).size(0));
+      assert(K == std::get<1>((*B[i]).sizes()));
+      assert(M == std::get<0>((*B[i]).sizes()));
     }
     if (TA == 'N')
     {
-      assert(K == (*A[i]).size(1));
-      assert(N == (*A[i]).size(0));
+      assert(K == std::get<1>((*A[i]).sizes()));
+      assert(N == std::get<0>((*A[i]).sizes()));
     }
     else
     {
-      assert(K == (*A[i]).size(0));
-      assert(N == (*A[i]).size(1));
+      assert(K == std::get<0>((*A[i]).sizes()));
+      assert(N == std::get<1>((*A[i]).sizes()));
     }
     Ai.emplace_back(pointer_dispatch((*A[i]).origin()));
     Bi.emplace_back(pointer_dispatch((*B[i]).origin()));
@@ -429,11 +429,11 @@ void BatchedProduct(char TA,
 
   for (int i = 0; i < nbatch; i++)
   {
-    csrmm(TA, (*A[i]).size(0), (*B[i]).size(1), (*A[i]).size(1), elementA(alpha), "GxxCxx",
+    csrmm(TA, (*A[i]).size(0), std::get<1>((*B[i]).sizes()), (*A[i]).size(1), elementA(alpha), "GxxCxx",
           pointer_dispatch((*A[i]).non_zero_values_data()), pointer_dispatch((*A[i]).non_zero_indices2_data()),
           pointer_dispatch((*A[i]).pointers_begin()), pointer_dispatch((*A[i]).pointers_end()),
-          pointer_dispatch((*B[i]).origin()), (*B[i]).stride(0), elementA(beta), pointer_dispatch((*C[i]).origin()),
-          (*C[i]).stride(0));
+          pointer_dispatch((*B[i]).origin()), (*B[i]).stride(), elementA(beta), pointer_dispatch((*C[i]).origin()),
+          (*C[i]).stride());
   }
 }
 
@@ -588,13 +588,13 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
   using qmcplusplus::afqmc::fill2D;
   auto bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
   boost::multi::array<element, 1, allocator_type> WORK(extensions{bufferSize}, m.get_allocator());
-  boost::multi::array<int, 1, iallocator_type> pivot(extensions{m.size(0) + 1}, iallocator_type{m.get_allocator()});
+  boost::multi::array<int, 1, iallocator_type> pivot(extensions{m.size() + 1}, iallocator_type{m.get_allocator()});
 
   getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-  T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0),
+  T detvalue = determinant_from_getrf<T>(m.size(), pointer_dispatch(m.origin()), m.stride(),
                                          pointer_dispatch(pivot.data()), LogOverlapFactor);
   if (std::abs(detvalue) == 0.0)
-    fill2D(m.size(0), m.size(1), pointer_dispatch(m.origin()), m.stride(0), element(0.0));
+    fill2D(std::get<0>(m.sizes()), std::get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), element(0.0));
   else
     getri(std::forward<MultiArray2D>(m), pivot, WORK);
   return detvalue;
@@ -603,16 +603,16 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
 template<class T, class MultiArray2D, class MultiArray1D, class Buffer>
 T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapFactor)
 {
-  assert(m.size(0) == m.size(1));
-  assert(pivot.size() >= m.size(0) + 1);
+  assert(std::get<0>(m.sizes()) == std::get<1>(m.sizes()));
+  assert(pivot.size() >= m.size() + 1);
   using element = typename std::decay<MultiArray2D>::type::element;
   using qmcplusplus::afqmc::fill2D;
 
   getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-  T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0),
+  T detvalue = determinant_from_getrf<T>(m.size(), pointer_dispatch(m.origin()), m.stride(),
                                          pointer_dispatch(pivot.data()), LogOverlapFactor);
   if (std::abs(detvalue) == 0.0)
-    fill2D(m.size(0), m.size(1), pointer_dispatch(m.origin()), m.stride(0), element(0.0));
+    fill2D(std::get<0>(m.sizes()), std::get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), element(0.0));
   else
     getri(std::forward<MultiArray2D>(m), pivot, WORK);
   return detvalue;
@@ -647,11 +647,11 @@ void invert_withSVD(MultiArray2D&& m, MultiArray1DS&& S, MultiArray2DU&& U, Mult
 template<class T, class MultiArray2D, class MultiArray1D, class Buffer>
 T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapFactor)
 {
-  assert(m.size(0) == m.size(1));
-  assert(pivot.size() >= m.size(0));
+  assert(std::get<0>(m.sizes()) == std::get<1>(m.sizes()));
+  assert(pivot.size() >= std::get<0>(m.sizes()));
 
   getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-  return determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()),
+  return determinant_from_getrf<T>(m.size(), pointer_dispatch(m.origin()), m.stride(), pointer_dispatch(pivot.data()),
                                    LogOverlapFactor);
 }
 
@@ -663,8 +663,8 @@ MultiArray2D exp(MultiArray2D const& A, bool printeV = false)
   using TVec     = boost::multi::array<RealType, 1>;
   using TMat     = boost::multi::array<Type, 2>;
   using eigSys   = std::pair<TVec, TMat>;
-  assert(A.size(0) == A.size(1));
-  typename MultiArray2D::size_type N = A.size(0);
+  assert( std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
+  typename MultiArray2D::size_type N = A.size();
 
   MultiArray2D ExpA({N, N});
   std::fill_n(pointer_dispatch(ExpA.origin()), N * N, Type(0));

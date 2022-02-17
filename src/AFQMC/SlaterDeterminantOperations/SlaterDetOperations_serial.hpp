@@ -153,17 +153,17 @@ public:
     static_assert(std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3");
     if (Ai.size() == 0)
       return;
-    assert(Ai.size() == V.size(0));
+    assert(Ai.size() == std::get<0>(V.sizes()));
     int nbatch = Ai.size();
     int npol   = noncollinear ? 2 : 1;
-    int NMO    = (*Ai[0]).size(0);
-    int NAEA   = (*Ai[0]).size(1);
+    int NMO    = std::get<0>((*Ai[0]).sizes());
+    int NAEA   = std::get<1>((*Ai[0]).sizes());
     int M      = NMO / npol;
     assert(NMO % npol == 0);
     assert(P1.size(0) == NMO);
     assert(P1.size(1) == NMO);
-    assert(V.size(1) == M);
-    assert(V.size(2) == M);
+    assert(std::get<1>(V.sizes()) == M);
+    assert(std::get<2>(V.sizes()) == M);
     TTensor TMN({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor T1({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor T2({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
@@ -233,10 +233,10 @@ public:
     static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-    int NMO    = (herm ? (*hermA[0]).size(1) : (*hermA[0]).size(0));
-    int NAEA   = (herm ? (*hermA[0]).size(0) : (*hermA[0]).size(1));
+    int NMO    = (herm ? size_aux<1>(*hermA[0]) : size_aux<0>(*hermA[0]));
+    int NAEA   = (herm ? size_aux<0>(*hermA[0]) : size_aux<1>(*hermA[0]));
     int nbatch = Bi.size();
-    assert(C.size(0) == nbatch);
+    assert(C.size() == nbatch);
     assert(ovlp.size() == nbatch);
     int n1 = nbatch, n2 = NAEA, n3 = NMO;
     if (compact)
@@ -269,8 +269,8 @@ public:
     static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality");
     static_assert(pointedType<MatC>::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-    int NMO    = (herm ? (*Left[0]).size(1) : (*Left[0]).size(0));
-    int NAEA   = (herm ? (*Left[0]).size(0) : (*Left[0]).size(1));
+    int NMO    = (herm ? std::get<1>((*Left[0]).sizes()) : std::get<0>((*Left[0]).sizes()));
+    int NAEA   = (herm ? std::get<0>((*Left[0]).sizes()) : std::get<0>((*Left[0]).sizes()));
     int nbatch = Left.size();
     assert(Right.size() == nbatch);
     assert(G.size() == nbatch);

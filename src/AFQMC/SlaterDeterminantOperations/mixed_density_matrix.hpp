@@ -28,6 +28,23 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
+
+template<class T, class = decltype(std::declval<T const&>().strides())> 
+static auto has_strides_aux(T const&) -> std::true_type ;
+static auto has_strides_aux(...     ) -> std::false_type;
+
+template<class T> struct has_strides : decltype(has_strides_aux(std::declval<T const&>())) {};
+
+template<std::size_t N, class Matrix, class = std::enable_if_t<not has_strides<Matrix>{}> >
+auto size_aux(Matrix const& m)
+->decltype(m.size(N)) {
+    return m.size(N); }
+
+template<std::size_t N, class Matrix, class = decltype(std::declval<Matrix const&>().sizes()) >
+auto size_aux(Matrix const& m)
+->decltype(std::get<N>(m.sizes())) {
+    return std::get<N>(m.sizes()); }
+
 namespace SlaterDeterminantOperations
 {
 namespace base
@@ -63,23 +80,23 @@ Tp MixedDensityMatrix(const MatA& hermA,
                       bool herm    = true)
 {
   // check dimensions are consistent
-  int NMO = (herm ? hermA.size(1) : hermA.size(0));
-  int NEL = (herm ? hermA.size(0) : hermA.size(1));
-  assert(NMO == B.size(0));
-  assert(NEL == B.size(1));
-  assert(NEL == T1.size(0));
-  assert(B.size(1) == T1.size(1));
+  int NMO = (herm ? size_aux<1>(hermA) : size_aux<0>(hermA));
+  int NEL = (herm ? size_aux<0>(hermA) : size_aux<1>(hermA));
+  assert(NMO == std::get<0>(B.sizes()));
+  assert(NEL == std::get<1>(B.sizes()));
+  assert(NEL == std::get<0>(T1.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
   if (compact)
   {
-    assert(C.size(0) == T1.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(T1.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
-    assert(T2.size(1) == B.size(0));
-    assert(T2.size(0) == T1.size(1));
-    assert(C.size(0) == NMO);
-    assert(C.size(1) == T2.size(1));
+    assert(std::get<1>(T2.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(T2.sizes()) == std::get<1>(T1.sizes()));
+    assert(std::get<0>(C.sizes()) == NMO);
+    assert(std::get<1>(C.sizes()) == std::get<1>(T2.sizes()));
   }
 
   using ma::H;
@@ -153,25 +170,25 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
                                  bool compact = true)
 {
   // check dimensions are consistent
-  int NEL = B.size(1);
-  assert(hermA.size(1) == B.size(0));
-  assert(hermA.size(0) == TAB.size(0));
-  assert(B.size(1) == TAB.size(1));
-  assert(B.size(1) == TNN.size(0));
-  assert(B.size(1) == TNN.size(1));
-  assert(hermA.size(0) == QQ0.size(0));
-  assert(B.size(1) == QQ0.size(1));
+  int NEL = std::get<1>(B.sizes());
+  assert(hermA.size(1) == std::get<0>(B.sizes()));
+  assert(hermA.size(0) == std::get<0>(TAB.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TAB.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
+  assert(hermA.size(0) == std::get<0>(QQ0.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
   if (compact)
   {
-    assert(C.size(0) == TNN.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(TNN.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
-    assert(TNM.size(1) == B.size(0));
-    assert(TNM.size(0) == TNN.size(1));
-    assert(C.size(0) == hermA.size(1));
-    assert(C.size(1) == TNM.size(1));
+    assert(std::get<1>(TNM.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(TNM.sizes()) == std::get<1>(TNN.sizes()));
+    assert(std::get<0>(C.sizes()) == hermA.size(1));
+    assert(std::get<1>(C.sizes()) == std::get<1>(TNM.sizes()));
   }
 
   using ma::T;
@@ -234,23 +251,23 @@ Tp MixedDensityMatrixFromConfiguration(const MatA& hermA,
                                        bool compact = true)
 {
   // check dimensions are consistent
-  int NEL = B.size(1);
-  assert(hermA.size(1) == B.size(0));
-  assert(hermA.size(0) == TAB.size(0));
-  assert(B.size(1) == TAB.size(1));
-  assert(B.size(1) == TNN.size(0));
-  assert(B.size(1) == TNN.size(1));
+  int NEL = std::get<1>(B.sizes());
+  assert(hermA.size(1) == std::get<0>(B.sizes()));
+  assert(hermA.size(0) == std::get<0>(TAB.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TAB.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
   if (compact)
   {
-    assert(C.size(0) == TNN.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(TNN.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
-    assert(TNM.size(1) == B.size(0));
-    assert(TNM.size(0) == TNN.size(1));
-    assert(C.size(0) == hermA.size(1));
-    assert(C.size(1) == TNM.size(1));
+    assert(std::get<1>(TNM.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(TNM.sizes()) == std::get<1>(TNN.sizes()));
+    assert(std::get<0>(C.sizes()) == hermA.size(1));
+    assert(std::get<1>(C.sizes()) == std::get<1>(TNM.sizes()));
   }
 
   using ma::T;
@@ -317,21 +334,21 @@ Tp MixedDensityMatrix_noHerm(const MatA& A,
                              bool compact = true)
 {
   // check dimensions are consistent
-  assert(A.size(0) == B.size(0));
-  assert(A.size(1) == B.size(1));
-  assert(A.size(1) == T1.size(0));
-  assert(B.size(1) == T1.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<0>(T1.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
   if (compact)
   {
-    assert(C.size(0) == T1.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(T1.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
-    assert(T2.size(1) == B.size(0));
-    assert(T2.size(0) == T1.size(1));
-    assert(C.size(0) == A.size(0));
-    assert(C.size(1) == T2.size(1));
+    assert(std::get<1>(T2.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(T2.sizes()) == std::get<1>(T1.sizes()));
+    assert(std::get<0>(C.sizes()) == std::get<0>(A.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<1>(T2.sizes()));
   }
 
   using ma::H;
@@ -381,26 +398,26 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
                                   bool compact = true)
 {
   // check dimensions are consistent
-  assert(A.size(0) == B.size(0));
-  assert(A.size(1) == B.size(1));
-  assert(A.size(1) == U.size(0)); // [U] = [NxN]
-  assert(A.size(1) == U.size(1));
-  assert(A.size(1) == VT.size(0)); // [V] = [NxN]
-  assert(A.size(1) == VT.size(1));
-  assert(A.size(1) <= (6 * S.size(0) + 1)); // [S] = [N+1]
-  assert(A.size(1) == UA.size(0));          // [UA] = [NxM]
-  assert(A.size(0) == UA.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<0>(U.sizes())); // [U] = [NxN]
+  assert(std::get<1>(A.sizes()) == std::get<1>(U.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<0>(VT.sizes())); // [V] = [NxN]
+  assert(std::get<1>(A.sizes()) == std::get<1>(VT.sizes()));
+  assert(std::get<1>(A.sizes()) <= (6 * std::get<0>(S.sizes()) + 1)); // [S] = [N+1]
+  assert(std::get<1>(A.sizes()) == std::get<0>(UA.sizes()));          // [UA] = [NxM]
+  assert(std::get<0>(A.sizes()) == std::get<1>(UA.sizes()));
   if (compact)
   {
-    assert(C.size(0) == B.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(B.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
-    assert(A.size(0) == BV.size(0)); // [BV] = [MxN]
-    assert(A.size(1) == BV.size(1));
-    assert(C.size(0) == A.size(0));
-    assert(C.size(1) == A.size(0));
+    assert(std::get<0>(A.sizes()) == std::get<0>(BV.sizes())); // [BV] = [MxN]
+    assert(std::get<1>(A.sizes()) == std::get<1>(BV.sizes()));
+    assert(std::get<0>(C.sizes()) == std::get<0>(A.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(A.sizes()));
   }
 
   using ma::determinant_from_geqrf;
@@ -409,7 +426,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
   using ma::T;
   using ma::term_by_term_matrix_vector;
 
-  int N(U.size(0));
+  int N(U.size());
 
   // T1 = H(A)*B
   ma::product(H(A), B, U);
@@ -453,7 +470,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
 
 
     // VT = VT * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 0, VT.size(0), VT.size(1), ma::pointer_dispatch(VT.origin()), VT.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 0, std::get<0>(VT.sizes()), std::get<1>(VT.sizes()), ma::pointer_dispatch(VT.origin()), VT.stride(),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // BV = H(VT) * H(U)
@@ -473,7 +490,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
     ma::product(B, H(VT), BV);
 
     // BV = BV * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, BV.size(0), BV.size(1), ma::pointer_dispatch(BV.origin()), BV.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, std::get<0>(BV.sizes()), std::get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // UA = H(U) * H(A)
@@ -993,35 +1010,35 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   using ma::T;
 
   int nbatch = Bi.size();
-  int NMO    = (herm ? (*hermA[0]).size(1) : (*hermA[0]).size(0));
-  int NEL    = (herm ? (*hermA[0]).size(0) : (*hermA[0]).size(1));
+  int NMO    = (herm ? size_aux<1>(*hermA[0]) : size_aux<0>(*hermA[0]));
+  int NEL    = (herm ? size_aux<0>(*hermA[0]) : size_aux<1>(*hermA[0]));
 
-  assert((*Bi[0]).size(0) == NMO);
-  assert((*Bi[0]).size(1) == NEL);
-  assert(C.size(0) == nbatch);
-  assert(C.size(2) == NMO);
+  assert(std::get<0>((*Bi[0]).sizes()) == NMO);
+  assert(std::get<1>((*Bi[0]).sizes()) == NEL);
+  assert(std::get<0>(C.sizes()) == nbatch);
+  assert(std::get<2>(C.sizes()) == NMO);
   if (compact)
-    assert(C.size(1) == NEL);
+    assert(std::get<1>(C.sizes()) == NEL);
   else
-    assert(C.size(1) == NMO);
+    assert(std::get<1>(C.sizes()) == NMO);
   assert(ovlp.size() == nbatch);
-  assert(TNN3D.size(1) == NEL);
-  assert(TNN3D.size(2) == NEL);
+  assert(std::get<1>(TNN3D.sizes()) == NEL);
+  assert(std::get<2>(TNN3D.sizes()) == NEL);
   if (not compact)
   {
-    assert(TNM3D.size(0) == nbatch);
-    assert(TNM3D.size(1) == NEL);
-    assert(TNM3D.size(2) == NMO);
+    assert(std::get<0>(TNM3D.sizes()) == nbatch);
+    assert(std::get<1>(TNM3D.sizes()) == NEL);
+    assert(std::get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
-  assert(TNN3D.stride(1) == NEL); // needed by getriBatched
+  assert(std::get<1>(TNN3D.strides()) == NEL); // needed by getriBatched
 
   using element = typename std::decay<MatC>::type::element;
   using pointer = typename std::decay<MatC>::type::element_ptr;
 
-  int ldw = (*Bi[0]).stride(0);
-  int ldN = TNN3D.stride(1);
-  int ldC = C.stride(1);
+  int ldw = std::get<0>((*Bi[0]).strides());
+  int ldN = std::get<1>(TNN3D.strides());
+  int ldC = std::get<1>(C.strides());
   std::vector<pointer> Carray;
   std::vector<pointer> Warray;
   std::vector<pointer> NNarray;
@@ -1058,7 +1075,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
                ma::pointer_dispatch(IWORK.origin()) + nbatch * NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Carray[0]), ldC, C.stride(0),
+  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Carray[0]), ldC, C.stride(),
                                  ma::pointer_dispatch(IWORK.origin()), NEL, LogOverlapFactor, to_address(ovlp.origin()),
                                  nbatch);
 
@@ -1075,7 +1092,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   {
     if (herm)
     {
-      int ldM = TNM3D.stride(1);
+      int ldM = std::get<1>(TNM3D.strides());
       std::vector<pointer> NMarray;
       std::vector<decltype(&TNM3D[0])> TNMi;
       NMarray.reserve(nbatch);
@@ -1106,7 +1123,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
       for (int b = 0; b < nbatch; ++b)
         ma::product(TNN3D[b], H(*hermA[b]), TNM3D[b]);
 
-      int ldM = TNM3D.stride(1);
+      int ldM = std::get<1>(TNM3D.strides());
       std::vector<pointer> NMarray;
       NMarray.reserve(nbatch);
       for (int i = 0; i < nbatch; i++)
@@ -1149,34 +1166,34 @@ void DensityMatrices(std::vector<MatA> const& Left,
   using ma::T;
 
   int nbatch = Right.size();
-  int NMO    = (herm ? (*Left[0]).size(1) : (*Left[0]).size(0));
-  int NEL    = (herm ? (*Left[0]).size(0) : (*Left[0]).size(1));
+  int NMO    = (herm ? std::get<1>((*Left[0]).sizes()) : std::get<0>((*Left[0]).sizes()));
+  int NEL    = (herm ? std::get<0>((*Left[0]).sizes()) : std::get<1>((*Left[0]).sizes()));
 
-  assert((*Right[0]).size(0) == NMO);
-  assert((*Right[0]).size(1) == NEL);
+  assert(std::get<0>((*Right[0]).sizes()) == NMO);
+  assert(std::get<1>((*Right[0]).sizes()) == NEL);
   assert(G.size() == nbatch);
-  assert((*G[0]).size(1) == NMO);
+  assert(std::get<1>((*G[0]).sizes()) == NMO);
   if (compact)
-    assert((*G[0]).size(0) == NEL);
+    assert((*G[0]).size() == NEL);
   else
-    assert((*G[0]).size(0) == NMO);
+    assert((*G[0]).size() == NMO);
   assert(ovlp.size() == nbatch);
-  assert(TNN3D.size(1) == NEL);
-  assert(TNN3D.size(2) == NEL);
+  assert(std::get<1>(TNN3D.sizes()) == NEL);
+  assert(std::get<2>(TNN3D.sizes()) == NEL);
   if (not compact)
   {
-    assert(TNM3D.size(0) == nbatch);
-    assert(TNM3D.size(1) == NEL);
-    assert(TNM3D.size(2) == NMO);
+    assert(std::get<0>(TNM3D.sizes()) == nbatch);
+    assert(std::get<1>(TNM3D.sizes()) == NEL);
+    assert(std::get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
 
   using pointer = typename pointedType<MatC>::element_ptr;
 
-  int ldR = (*Right[0]).stride(0);
-  int ldL = (*Left[0]).stride(0);
-  int ldN = TNN3D.stride(1);
-  int ldG = (*G[0]).stride(0);
+  int ldR = (*Right[0]).stride();
+  int ldL = (*Left[0]).stride();
+  int ldN = std::get<1>(TNN3D.strides());
+  int ldG = (*G[0]).stride();
   std::vector<pointer> Garray;
   std::vector<pointer> Rarray;
   std::vector<pointer> Larray;
@@ -1187,8 +1204,8 @@ void DensityMatrices(std::vector<MatA> const& Left,
   NNarray.reserve(nbatch);
   for (int i = 0; i < nbatch; i++)
   {
-    assert((*Right[i]).stride(0) == ldR);
-    assert((*Left[i]).stride(0) == ldL);
+    assert((*Right[i]).stride() == ldR);
+    assert((*Left[i]).stride() == ldL);
     NNarray.emplace_back(TNN3D[i].origin());
     Garray.emplace_back((*G[i]).origin());
     Rarray.emplace_back((*Right[i]).origin());
@@ -1223,7 +1240,7 @@ void DensityMatrices(std::vector<MatA> const& Left,
   }
   else
   {
-    int ldM = TNM3D.stride(1);
+    int ldM = std::get<1>(TNM3D.strides());
     std::vector<pointer> NMarray;
     NMarray.reserve(nbatch);
     for (int i = 0; i < nbatch; i++)
