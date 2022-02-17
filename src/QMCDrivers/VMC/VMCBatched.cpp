@@ -18,6 +18,8 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
 #include "MemoryUsage.h"
+#include "QMCWaveFunctions/TWFGrads.hpp"
+#include "TauParams.hpp"
 
 namespace qmcplusplus
 {
@@ -35,6 +37,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
+template<CoordsType CT>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
@@ -61,16 +64,14 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     checkLogAndGL(crowd, "checkGL_after_load");
 
   timers.movepbyp_timer.start();
-  const int num_walkers = crowd.size();
+  const int num_walkers   = crowd.size();
+  const int num_particles = sft.population.get_num_particles();
   // Note std::vector<bool> is not like the rest of stl.
   std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
   const bool use_drift = sft.vmcdrv_input.get_use_drift();
-  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
-  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
 
-  std::vector<PosType> drifts(num_walkers);
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
   std::vector<RealType> log_gf(num_walkers);
   std::vector<RealType> log_gb(num_walkers);
   std::vector<RealType> prob(num_walkers);
@@ -80,17 +81,23 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
+  MCCoords<CT> drifts, walker_deltas;
+  TWFGrads<CT> grads_now, grads_new;
+  drifts.resize(num_walkers);
+  walker_deltas.resize(num_walkers * num_particles);
+  grads_now.resize(num_walkers);
+  grads_new.resize(num_walkers);
+
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
     //This generates an entire steps worth of deltas.
-    step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
+    makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
     {
-      RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
-      RealType oneover2tau = 0.5 / (tauovermass);
-      RealType sqrttau     = std::sqrt(tauovermass);
+      TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+                                   sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
@@ -98,25 +105,45 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       int end_index   = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
-        // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
-        // fastest in walkers then particles
-        auto delta_r_start = step_context.deltaRsBegin() + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
-
         if (use_drift)
         {
           twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-          sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
-
-          std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
-                         [sqrttau](const PosType& drift, const PosType& delta_r) {
-                           return drift + (sqrttau * delta_r);
+          sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+          auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
+          auto delta_r_end   = delta_r_start + num_walkers;
+          std::transform(drifts.positions.begin(), drifts.positions.end(), delta_r_start, drifts.positions.begin(),
+                         [st = taus.sqrttau](const PosType& drift, const PosType& delta_r) {
+                           return drift + (st * delta_r);
                          });
+          //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
+          if constexpr (CT == CoordsType::POS_SPIN)
+          {
+            auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
+            auto delta_spin_end   = delta_spin_start + num_walkers;
+            std::transform(drifts.spins.begin(), drifts.spins.end(), delta_spin_start, drifts.spins.begin(),
+                           [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& spindrift,
+                                                    const ParticleSet::Scalar_t& delta_spin) {
+                             return spindrift + (st * delta_spin);
+                           });
+          }
         }
         else
         {
-          std::transform(delta_r_start, delta_r_end, drifts.begin(),
-                         [sqrttau](const PosType& delta_r) { return sqrttau * delta_r; });
+          auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
+          auto delta_r_end   = delta_r_start + num_walkers;
+          std::transform(delta_r_start, delta_r_end, drifts.positions.begin(),
+                         [st = taus.sqrttau](const PosType& delta_r) { return st * delta_r; });
+
+          //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
+          if constexpr (CT == CoordsType::POS_SPIN)
+          {
+            auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
+            auto delta_spin_end   = delta_spin_start + num_walkers;
+            std::transform(delta_spin_start, delta_spin_end, drifts.spins.begin(),
+                           [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& delta_spin) {
+                             return st * delta_spin;
+                           });
+          }
         }
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
@@ -125,23 +152,50 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         if (use_drift)
         {
           twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
-          std::transform(delta_r_start, delta_r_end, log_gf.begin(),
-                         [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
-          sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
+          auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
+          auto delta_r_end   = delta_r_start + num_walkers;
 
-          std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                         [iat](const ParticleSet& elecs, const PosType& drift) {
-                           return elecs.R[iat] - elecs.getActivePos() - drift;
+          std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const PosType& delta_r) {
+            constexpr RealType mhalf(-0.5);
+            return mhalf * dot(delta_r, delta_r);
+          });
+
+          sft.drift_modifier.getDrifts(taus, grads_new, drifts);
+
+          std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.positions.begin(), drifts.positions.begin(),
+                         [iat](const ParticleSet& ps, const PosType& drift) {
+                           return ps.R[iat] - ps.getActivePos() - drift;
                          });
 
-          std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
-                         [oneover2tau](const PosType& drift) { return -oneover2tau * dot(drift, drift); });
+          std::transform(drifts.positions.begin(), drifts.positions.end(), log_gb.begin(),
+                         [halfovertau = taus.oneover2tau](const PosType& drift) {
+                           return -halfovertau * dot(drift, drift);
+                         });
+
+          //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
+          if constexpr (CT == CoordsType::POS_SPIN)
+          {
+            auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
+            auto delta_spin_end   = delta_spin_start + num_walkers;
+            std::transform(delta_spin_start, delta_spin_end, log_gf.begin(), log_gf.begin(),
+                           [](const ParticleSet::Scalar_t& delta_spin, const RealType& loggf) {
+                             constexpr RealType mhalf(-0.5);
+                             return loggf + mhalf * delta_spin * delta_spin;
+                           });
+            std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.spins.begin(), drifts.spins.begin(),
+                           [iat](const ParticleSet& ps, const ParticleSet::Scalar_t& spindrift) {
+                             return ps.spins[iat] - ps.getActiveSpinVal() - spindrift;
+                           });
+            std::transform(drifts.spins.begin(), drifts.spins.end(), log_gb.begin(), log_gb.begin(),
+                           [halfovertau = taus.spin_oneover2tau](const ParticleSet::Scalar_t& spindrift,
+                                                                 const RealType& loggb) {
+                             return loggb - halfovertau * spindrift * spindrift;
+                           });
+          }
         }
         else
-        {
           twf_dispatcher.flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);
-        }
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 
@@ -162,7 +216,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-        ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
+        ps_dispatcher.flex_accept_rejectMove<CT>(walker_elecs, iat, isAccepted);
       }
     }
     twf_dispatcher.flex_completeUpdates(walker_twfs);
@@ -215,6 +269,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   //  check if all moves failed
 }
 
+template void VMCBatched::advanceWalkers<CoordsType::POS>(const StateForThread& sft,
+                                                          Crowd& crowd,
+                                                          QMCDriverNew::DriverTimers& timers,
+                                                          ContextForSteps& step_context,
+                                                          bool recompute,
+                                                          bool accumulate_this_step);
+
+template void VMCBatched::advanceWalkers<CoordsType::POS_SPIN>(const StateForThread& sft,
+                                                               Crowd& crowd,
+                                                               QMCDriverNew::DriverTimers& timers,
+                                                               ContextForSteps& step_context,
+                                                               bool recompute,
+                                                               bool accumulate_this_step);
 
 /** Thread body for VMC step
  *
@@ -233,7 +300,13 @@ void VMCBatched::runVMCStep(int crowd_id,
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
-  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step, accumulate_this_step);
+  const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+  if (spin_move)
+    advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                                         accumulate_this_step);
+  else
+    advanceWalkers<CoordsType::POS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
+                                    accumulate_this_step);
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -304,7 +377,13 @@ bool VMCBatched::run()
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
-      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute, accumulate_this_step);
+      const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+      if (spin_move)
+        advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
+                                             accumulate_this_step);
+      else
+        advanceWalkers<CoordsType::POS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
+                                        accumulate_this_step);
     };
 
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)

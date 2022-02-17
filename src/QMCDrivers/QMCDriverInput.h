@@ -71,6 +71,7 @@ protected:
   IndexType steps_between_samples_ = 1;
   IndexType samples_per_thread_    = 0;
   RealType tau_                    = 0.1;
+  RealType spin_mass_              = 1.0;
   // call recompute at the end of each block in the full/mixed precision case.
   IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
@@ -113,6 +114,7 @@ public:
   IndexType get_steps_between_samples() const { return steps_between_samples_; }
   IndexType get_samples_per_thread() const { return samples_per_thread_; }
   RealType get_tau() const { return tau_; }
+  RealType get_spin_mass() const { return spin_mass_; }
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
   bool get_append_run() const { return append_run_; }
   input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
