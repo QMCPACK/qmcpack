@@ -64,10 +64,6 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 
   // nmo = Number of electrons = size of Slater Det
   const size_t nmo = Phi->getOrbitalSetSize();
-  //const size_t nb  = Phi->getBasisSetSize();
-  //JPT DEBUG
-  //std::cerr << "  Phi = " << Phi->getName() << "\n";
-  //std::cerr << "  nmo = " << nmo << "\n";
   
   // create active rotations
   m_act_rot_inds = rotations;
@@ -127,7 +123,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     param[i] = myVars[i];
 
   //Printing the parameters
-  const bool print_myvars = true; // JPT Set this to false once everything works...
+  bool print_myvars = false;
   if ( print_myvars )
   {
     app_log() << std::string(16, ' ') << "Parameter name" << std::string(15, ' ') << "Value\n";
@@ -149,6 +145,8 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 }
 
 
+  // THis is the high-level rotation handler. The actual rotations
+  // are handled at the SPOSet type, e.g. LCAO, SplineR2R, & etc.
 void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
 {
   assert(param.size() == m_act_rot_inds.size());
@@ -168,32 +166,7 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     rot_mat[p][q] = -x;
   }
 
-  // // JPT Look at the kappa matrix
-  // std::cerr << " JPT TEST: Kappa = \n";
-  // for ( auto i=0; i<nmo; i++ )
-  //   {
-  //     for ( auto j=0; j<nmo; j++ )
-  // 	{
-  // 	  std::cerr << std::fixed;
-  // 	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
-  // 	}
-  //     std::cerr << "\n";
-  //   }
-  
   exponentiate_antisym_matrix(rot_mat);
-
-  // // JPT Look at the kappa matrix
-  // std::cerr << " JPT TEST: U = exp(-Kappa) = \n";
-  // for ( auto i=0; i<nmo; i++ )
-  //   {
-  //     for ( auto j=0; j<nmo; j++ )
-  // 	{
-  // 	  std::cerr << std::fixed;
-  // 	  std::cerr << "  " << std::setw(12) << std::setprecision(6) << rot_mat[i][j];
-  // 	}
-  //     std::cerr << "\n";
-  //   }
-
   Phi->applyRotation(rot_mat, use_stored_copy);
 }
 
@@ -455,10 +428,9 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                       B_grad, B_lapl, detData_up, N1, N2, NP1, NP2, lookup_tbl);
   }
 
-  // JPT See contents of dlogpsi and dhpsioverpsi
-  // Looks like they are fine.
+  // Debug: Inspect the derivatives
   /*
-  app_log() << "*** JPT inside RotatedSPOs::evaluateDerivatives...\n";
+  app_log() << "*** Inside RotatedSPOs::evaluateDerivatives \n";
   app_log() << "dlogpsi= \n";
   for ( auto i=0; i<dlogpsi.size(); i++ )
     {

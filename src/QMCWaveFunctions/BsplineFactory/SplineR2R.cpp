@@ -46,7 +46,9 @@ namespace qmcplusplus
   // End function
 
   /* 
-     The implementation here follow that described in [1,2]
+     This is called by RotatedSPOs::apply_rotation()...
+
+     The implementation here follows that described in [1,2]
      in each "rotated" orbital, \psi, is composed of a linear combination
      of SPO's \phi:
 
@@ -61,8 +63,7 @@ namespace qmcplusplus
      Note that this implementation requires that NSPOs > Nelec. In other words,
      if you want to run a orbopt wfn, you must include some virtual orbitals!
 
-     Some results from this implementation (Berkeley branch) were published 
-     in [3].
+     Some results (using older Berkeley branch) were published in [3].
 
      [1] Filippi & Fahy, JCP 112, (2000)
      [2] Toulouse & Umrigar, JCP 126, (2007)
@@ -71,7 +72,6 @@ namespace qmcplusplus
   template <typename ST>
   void SplineR2R<ST>::applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy)
 {
-  // Get the underlying spline coefs via pointer.
   // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
   auto spline_ptr = SplineInst->getSplinePtr();
   if ( spline_ptr == nullptr )
@@ -79,7 +79,7 @@ namespace qmcplusplus
       APP_ABORT("ERROR in SplineR2R::applyRotation()! spline_ptr is nullptr.");
     }
 
-  /* @DEBUG (JPT) 12.10.2021 
+  /* 
      ~~ Spline stuff ~~
      num_splines = Total number of SPOs per spin channel (determinant)
      coefs_size  = Size of the coefs = N_x_coefs * N_y_coefs * N_z_coefs * N_orbs
@@ -100,7 +100,14 @@ namespace qmcplusplus
 
      You can think of spl_coefs as pointing to a matrix of size
      (Nx*Ny*Nz) x Nsplines, with the spline index adjacent in memory.     
+
+     Due to SIMD alignment, rot_mat may be smaller than BasisSetSize
+     so we put rot_mat inside bigger matrix. Padding is at the end, 
+     so put rot_mat at top left corner of tmpU. 
   
+     // This stuff is not needed, but I want to keep here just in case
+     // someone needs to see how the splines are laid out in memory
+     // in the future...
      const auto x_stride = spline_ptr->x_stride;
      const auto y_stride = spline_ptr->y_stride;
      const auto z_stride = spline_ptr->z_stride;
@@ -115,33 +122,23 @@ namespace qmcplusplus
      const auto ny_pad = x_stride / y_stride;
      const auto nx_pad = coefs_tot_size / ny_pad / nz_pad / z_stride;
   */
-
-  // Figure out the size of the matrix of spline coefficients to rotate
   const auto spl_coefs      = spline_ptr->coefs;
   const auto num_splines    = spline_ptr->num_splines;
   const auto coefs_tot_size = spline_ptr->coefs_size;
   const auto OrbitalSetSize = coefs_tot_size / num_splines;
   const auto BasisSetSize   = num_splines;
-
-  // NOw there is a problem: The spline index above is >= the true
-  // number of orbitals because of padding. So rot_mat is too small!
-  // Easy fix: Make a new matrix, fill it with rot_mat, and zero otherwise.    
   ValueMatrix_t tmpU;
   tmpU.resize(BasisSetSize, BasisSetSize);
   std::fill(tmpU.begin(), tmpU.end(), 0.0);
-  app_log() << "\n\nJPT Rotation Matrix= \n";
   for ( auto i=0; i<rot_mat.size1(); i++ )
     {
       for ( auto j=0; j<rot_mat.size2(); j++ )
 	{
 	  tmpU[i][j] = rot_mat[i][j];
-  	  app_log() << " " << std::fixed << std::setw(12) << std::setprecision(6) << tmpU[i][j];
 	}
-      app_log() << "\n";
     }
-  app_log() << "\n";
   
-  // Apply rotation the dumb way b/c I can't get BLAS::gemm to work
+  // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
   for ( auto i=0; i<OrbitalSetSize; i++ )
     {
       for ( auto j=0; j<BasisSetSize; j++ )
@@ -158,11 +155,9 @@ namespace qmcplusplus
     }
   
   /*
-    Here is my attempt to use gemm... but it doesn't work!?
+    // Here is my attempt to use gemm but it doesn't work...
     int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
     int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
-    std::cerr << "  smaller_BasisSetSize = " <<   smaller_BasisSetSize << "\n";
-    std::cerr << "smaller_OrbitalSetSize = " << smaller_OrbitalSetSize << "\n";
     BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
   */  
 }

@@ -1218,7 +1218,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // generate samples and compute weights, local energies, and derivative vectors
   start();
-
+  
   // get number of optimizable parameters
   numParams = optTarget->getNumParams();
 
@@ -1241,7 +1241,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 #else
   const RealType initCost = optTarget->computedCost();
 #endif
-
+  
   // say what we are doing
   app_log() << std::endl
             << "*****************************************" << std::endl
@@ -1261,8 +1261,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // build the overlap and hamiltonian matrices
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
-
-  // JPT 02.02.2022: This is supposed to print the
+  
+  // DEBUG: This is supposed to print the
   // hamiltonian and overlap matrices, but doesn't seem to work
   if (do_output_matrices_)
   {
@@ -1298,11 +1298,12 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
-
-  // scale the update by the scaling constant
+  // and then scale the parameter updates
+  Lambda = getNonLinearRescale(parameterDirections, ovlMat);  
   for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= Lambda;
+    {
+      parameterDirections.at(i + 1) *= Lambda;
+    }
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
@@ -1310,13 +1311,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // prepare to use the middle shift's update as the guiding function for a new sample
   if (!freeze_parameters_)
   {
-    app_log() << "JPT: currentParameters:\n";
     for (int i = 0; i < numParams; i++)
       {
 	optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
-	app_log() << "  p[ " << i << "]= " << std::fixed << std::setw(16) << std::setprecision(8) << optTarget->Params(i) << "\n";
       }
-    app_log() << std::endl;
   }
 
   RealType largestChange(0);
@@ -1334,7 +1332,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // compute the new cost
   optTarget->IsValid     = true;
   const RealType newCost = optTarget->Cost(false);
-
+  
   app_log() << std::endl
             << "******************************************************************************" << std::endl
             << "Init Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4) << initCost
@@ -1375,7 +1373,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // perform some finishing touches for this linear method iteration
   finish();
-
+  
   // return whether the cost function's report counter is positive
   return (optTarget->getReportCounter() > 0);
 }

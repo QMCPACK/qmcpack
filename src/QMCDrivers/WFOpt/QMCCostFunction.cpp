@@ -236,11 +236,6 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
 }
 
 /** evaluate everything before optimization */
-/*
-  JPT 12.01.2022
-  Current problem is that the hamiltonian and overlap matrices contain NaN's.
-  I suspect orbopt derivs are to blame.
- */
 void QMCCostFunction::checkConfigurations()
 {
   RealType et_tot = 0.0;
@@ -304,24 +299,16 @@ void QMCCostFunction::checkConfigurations()
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
 	
 
-        //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
-
-	// @JPT Print out the derivative results to the output file.
-	// Seems to be ok as of 12.01.2022
-	// @JPT Dsaved = "dlogpsi", HDsaved = "dhpsioverpsi"
-	// app_log() << "JPT DEBUG\n";
-	// app_log() << "rDsaved   rHDsaved\n";
-        // for (int i = 0; i < NumOptimizables; i++)
-        // {
-        //   rDsaved[i]  = std::real(Dsaved[i]);
-        //   rHDsaved[i] = std::real(HDsaved[i]);
-	//   app_log() << std::scientific << std::setw(12) << std::setprecision(8) << rDsaved[i]
-	// 	    << "  " << std::scientific << std::setw(12) << std::setprecision(8) << rHDsaved[i]
-	// 	    << "\n";
-        // }
-	// app_log() << "JPT DEBUG\n";
-	// app_log() << "\n";
-		
+	/*
+	  Currently not compatible with complex coefficients
+	  NB: Dsaved = "dlogpsi", HDsaved = "dhpsioverpsi"
+	*/
+        for (int i = 0; i < NumOptimizables; i++)
+        {
+          rDsaved[i]  = std::real(Dsaved[i]);
+          rHDsaved[i] = std::real(HDsaved[i]);
+        }
+	
         copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
         copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
       }
@@ -734,8 +721,8 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
     }
   }
 
-  myComm->allreduce(D_avg);
-
+  myComm->allreduce(D_avg);  
+  
   for (int ip = 0; ip < NumThreads; ip++)
   {
     int nw = wClones[ip]->numSamples();
