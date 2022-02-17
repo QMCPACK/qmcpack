@@ -72,7 +72,7 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere = true);
+  void updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim=3, bool useSphere = true);
 
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
 private:
@@ -81,7 +81,7 @@ private:
    */
   void FindApproxMMax(const ParticleLayout& lattice);
   /** construct the container for k-vectors */
-  void BuildKLists(const ParticleLayout& lattice, bool useSphere);
+  void BuildKLists(const ParticleLayout& lattice, unsigned ndim, bool useSphere);
 
   /** K-vector in Cartesian coordinates in SoA layout
    */
