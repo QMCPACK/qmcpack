@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_TWFDISPATCH_H
 
 #include "TrialWaveFunction.h"
+#include "TWFGrads.hpp"
 
 namespace qmcplusplus
 {
@@ -49,29 +50,18 @@ public:
                          const RefVectorWithLeader<ParticleSet>& p_list,
                          int ig) const;
 
+  template<CoordsType CT>
   void flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
                      int iat,
-                     std::vector<GradType>& grad_now) const;
+                     TWFGrads<CT>& grads) const;
 
-  void flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                             const RefVectorWithLeader<ParticleSet>& p_list,
-                             int iat,
-                             std::vector<GradType>& grad_now,
-                             std::vector<Complex>& spingrad_now) const;
-
+  template<CoordsType CT>
   void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                           const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           std::vector<PsiValueType>& ratios,
-                          std::vector<GradType>& grad_new) const;
-
-  void flex_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                  const RefVectorWithLeader<ParticleSet>& p_list,
-                                  int iat,
-                                  std::vector<PsiValueType>& ratios,
-                                  std::vector<GradType>& grad_new,
-                                  std::vector<Complex>& spingrad_new) const;
+                          TWFGrads<CT>& grads) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,

@@ -277,7 +277,7 @@ typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::updateBuffer(ParticleSet
                                                                      WFBufferType& buf,
                                                                      bool fromscratch)
 {
-  evaluateGL(P, P.G, P.L, false);
+  log_value_ = computeGL(P.G, P.L);
   buf.forward(Bytes_in_WFBuffer);
   return log_value_;
 }
@@ -730,7 +730,8 @@ typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const Partic
                                                                     ParticleSet::ParticleGradient& G,
                                                                     ParticleSet::ParticleLaplacian& L)
 {
-  return evaluateGL(P, G, L, true);
+  recompute(P);
+  return log_value_ = computeGL(G, L);
 }
 
 template<typename FT>
@@ -740,7 +741,15 @@ void J2OMPTarget<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionCompo
                                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 
 {
-  mw_evaluateGL(wfc_list, p_list, G_list, L_list, true);
+  assert(this == &wfc_list.getLeader());
+  const std::vector<bool> recompute_all(wfc_list.size(), true);
+  mw_recompute(wfc_list, p_list, recompute_all);
+
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    auto& wfc      = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    wfc.log_value_ = wfc.computeGL(G_list[iw], L_list[iw]);
+  }
 }
 
 
@@ -748,14 +757,12 @@ template<typename FT>
 typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSet::ParticleGradient& G,
                                                                       ParticleSet::ParticleLaplacian& L) const
 {
-  QTFull::RealType log_val(0);
   for (int iat = 0; iat < N; ++iat)
   {
-    log_val += Uat[iat];
     G[iat] += dUat[iat];
     L[iat] += d2Uat[iat];
   }
-  return -0.5 * log_val;
+  return -0.5 * simd::accumulate_n(Uat.data(), N, QTFull::RealType());
 }
 
 template<typename FT>
@@ -764,8 +771,6 @@ WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSe
                                                                 ParticleSet::ParticleLaplacian& L,
                                                                 bool fromscratch)
 {
-  if (fromscratch)
-    recompute(P);
   return log_value_ = computeGL(G, L);
 }
 
@@ -777,12 +782,6 @@ void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCompon
                                     bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
-  if (fromscratch)
-  {
-    const std::vector<bool> recompute_all(wfc_list.size(), true);
-    mw_recompute(wfc_list, p_list, recompute_all);
-  }
-
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& wfc      = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
