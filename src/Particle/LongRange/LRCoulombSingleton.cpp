@@ -22,6 +22,7 @@
 #include "LongRange/LRHandlerSRCoulomb.h"
 #include "LongRange/EwaldHandlerQuasi2D.h"
 #include "LongRange/EwaldHandler3D.h"
+#include "LongRange/EwaldHandler2D.h"
 #include <numeric>
 namespace qmcplusplus
 {
@@ -60,7 +61,12 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
 {
   if (CoulombHandler == 0)
   {
-    if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
+    if (ref.getLattice().ndim == 2)
+    {
+      app_log() << "\n  Creating CoulombHandler with the 2D Ewald Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<EwaldHandler2D>(ref);
+    }
+    else if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
       CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
