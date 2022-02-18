@@ -123,9 +123,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   log_value_ref_det_ = logValueRef;
   InverseTimer.stop();
   const RealType detsign               = (*DetSigns)[ReferenceDeterminant];
-  ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
-                                     *uniquePairs, *DetSigns);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData,
+                                     *uniquePairs, *DetSigns, dotProducts, ratios_to_ref_);
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -200,9 +199,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   log_value_ref_det_ = logValueRef;
   InverseTimer.stop();
   const RealType detsign               = (*DetSigns)[ReferenceDeterminant];
-  ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
-                                     *uniquePairs, *DetSigns);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData,
+                                     *uniquePairs, *DetSigns, dotProducts, ratios_to_ref_);
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();

@@ -295,14 +295,14 @@ public:
     return 0.0;
   }
 
-  /**Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105   
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
-   *@param ref ID of the reference determinant 
-   *@param det0_list 
-   *@param ratio_list 
+   *@param ref ID of the reference determinant
+   *@param det0_list
+   *@param ratio_list
    *@param psiinv_list
-   *@param psi_list 
-   *@param dotProducts_list stores all the dot products between 2 determinants (I,J) 
+   *@param psi_list
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
    *@param data  (Shared by all determinants)
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
@@ -318,13 +318,13 @@ public:
                                                   const std::vector<std::pair<int, int>>& pairs,
                                                   const std::vector<RealType>& sign);
 
-  /**Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105   
-   *@param ref ID of the reference determinant 
-   *@param det0 
-   *@param ratio 
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param ref ID of the reference determinant
+   *@param det0
+   *@param ratio
    *@param psiinv
-   *@param psi 
-   *@param dotProducts stores dot product between 2 determinants (I,J) 
+   *@param psi
+   *@param dotProducts stores dot product between 2 determinants (I,J)
    *@param data  (Shared by all determinants)
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
@@ -339,14 +339,17 @@ public:
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign);
 
+  /** compute the ratio of the excited determinants to the reference determinant
+   * @param ratios the output.
+   */
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          ValueVector& ratios,
                                           const ValueMatrix& psiinv,
                                           const ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
-                                          const std::vector<RealType>& sign);
+                                          const std::vector<RealType>& sign,
+                                          ValueMatrix& dotProducts,
+                                          ValueVector& ratios);
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
                                              int ref,

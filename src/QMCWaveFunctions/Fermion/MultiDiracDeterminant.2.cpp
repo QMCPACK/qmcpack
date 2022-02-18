@@ -111,42 +111,15 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(int nw,
 
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
-                                                               ValueVector& ratios,
                                                                const ValueMatrix& psiinv,
                                                                const ValueMatrix& psi,
-                                                               ValueMatrix& dotProducts,
                                                                const std::vector<int>& data,
                                                                const std::vector<std::pair<int, int>>& pairs,
-                                                               const std::vector<RealType>& sign)
+                                                               const std::vector<RealType>& sign,
+                                                               ValueMatrix& dotProducts,
+                                                               ValueVector& ratios)
 {
-  BuildDotProductsAndCalculateRatios_impl(ref, ratios[ref], ratios.data(), psiinv, psi, dotProducts, data, pairs, sign);
-#if 0
-    buildTableTimer.start();
-    ValueType det0 = ratios[ref];
-    int num=psi.extent(1);
-    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
-    while(it != last)
-    {
-      dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
-      it++;
-    }
-    std::vector<int>::iterator it2 = data.begin();
-    int count= 0;  // number of determinants processed
-    while(it2 != data.end())
-    {
-      const int n = *it2; // number of excitations
-      if(count == ref)
-      {
-        it2+=3*n+1;  // number of integers used to encode the current excitation
-        count++;
-        continue;
-      }
-      ratios[count] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
-      count++;
-      it2+=3*n+1;
-    }
-    readMatTimer.stop();
-#endif
+  BuildDotProductsAndCalculateRatios_impl(ref, ValueType(1), ratios.data(), psiinv, psi, dotProducts, data, pairs, sign);
 }
 
 void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(int nw,
@@ -401,13 +374,12 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
     psiV_temp[i] = psiV[*(it++)];
   auto ratio_old_ref_det                   = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
   curRatio                                 = ratio_old_ref_det;
-  new_ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, ratio_old_ref_det);
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM, dotProducts,
-                                     *detData, *uniquePairs, *DetSigns);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM,
+                                     *detData, *uniquePairs, *DetSigns, dotProducts, new_ratios_to_ref_);
   // check comment above
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
@@ -438,13 +410,12 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   }
   curRatio                                      = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
   new_grads(ReferenceDeterminant, WorkingIndex) = ratioGradRef / curRatio;
-  new_ratios_to_ref_[ReferenceDeterminant]      = ValueType(1);
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM, dotProducts,
-                                     *detData, *uniquePairs, *DetSigns);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM,
+                                     *detData, *uniquePairs, *DetSigns, dotProducts, new_ratios_to_ref_);
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
     ExtraStuffTimer.start();
@@ -492,13 +463,12 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   curRatio                                          = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
   new_grads(ReferenceDeterminant, WorkingIndex)     = ratioGradRef / curRatio;
   new_spingrads(ReferenceDeterminant, WorkingIndex) = ratioSpinGradRef / curRatio;
-  new_ratios_to_ref_[ReferenceDeterminant]          = 1.0;
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM, dotProducts,
-                                     *detData, *uniquePairs, *DetSigns);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM,
+                                     *detData, *uniquePairs, *DetSigns, dotProducts, new_ratios_to_ref_);
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
     ExtraStuffTimer.start();
