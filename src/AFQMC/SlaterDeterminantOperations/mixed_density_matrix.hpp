@@ -1304,8 +1304,8 @@ void Overlap(std::vector<MatA>& hermA,
 
   using pointer = typename std::decay<Mat>::type::element_ptr;
 
-  int ldw = (*Bi[0]).stride(0);
-  int ldN = TNN3D.stride(1);
+  int ldw = (*Bi[0]).stride();
+  int ldN = std::get<1>(TNN3D.strides());
   std::vector<pointer> Warray;
   std::vector<pointer> NNarray;
   std::vector<decltype(&TNN3D[0])> Ci;
@@ -1334,7 +1334,7 @@ void Overlap(std::vector<MatA>& hermA,
   getrfBatched(NEL, NNarray.data(), ldN, IWORK.origin(), IWORK.origin() + nbatch * NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(0), IWORK.origin(), NEL, LogOverlapFactor,
+  strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(), IWORK.origin(), NEL, LogOverlapFactor,
                                  to_address(ovlp.origin()), nbatch);
 }
 

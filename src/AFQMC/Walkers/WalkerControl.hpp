@@ -52,7 +52,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if (wlk_size != Wexcess.size(1))
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
-  if (1 != Wexcess.stride(1))
+  if (1 != std::get<1>(Wexcess.strides()))
     throw std::runtime_error("Array shape error in swapWalkersSimple().");
   if (CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
@@ -119,7 +119,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if (wlk_size != Wexcess.size(1))
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if (1 != Wexcess.stride(1) || (Wexcess.size(0) > 0 && Wexcess.size(1) != Wexcess.stride(0)))
+  if (1 != std::get<1>(Wexcess.strides()) || (Wexcess.size(0) > 0 && Wexcess.size(1) != std::get<0>(Wexcess.strides())))
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if (CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");

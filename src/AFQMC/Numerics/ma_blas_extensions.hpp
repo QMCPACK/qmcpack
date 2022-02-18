@@ -183,7 +183,7 @@ void zero_complex_part(MultiArray1D&& a)
 template<class MultiArray2D, typename = std::enable_if_t<std::decay<MultiArray2D>::type::dimensionality == 2>>
 MultiArray2D&& set_identity(MultiArray2D&& m)
 {
-  set_identity(m.size(1), m.size(0), pointer_dispatch(m.origin()), m.stride(0));
+  set_identity(std::get<1>(m.sizes()), std::get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride());
   return std::forward<MultiArray2D>(m);
 }
 

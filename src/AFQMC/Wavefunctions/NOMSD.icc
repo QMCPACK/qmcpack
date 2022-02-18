@@ -794,8 +794,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
     auto dev_ptr(make_device_ptr(G.origin()));
   }
 
-  assert(G.stride(1) == 1);
-  assert(Ov.stride(0) == 1);
+  assert(std::get<1>(G.strides()) == 1);
+  assert(Ov.stride() == 1);
   if (transpose)
     assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
   else
@@ -806,7 +806,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
   assert(Ov.size() >= nw);
   fill_n(Ov.origin(), nw, 0);
   // need strided fill_n????
-  if (G.size(1) != G.stride(0))
+  if (std::get<1>(G.sizes()) != std::get<0>(G.strides()))
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
   TG.local_barrier();
@@ -1033,8 +1033,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
     int ik0, ikN;
     std::tie(ik0, ikN) = FairDivideBoundary(TG.TG_local().rank(), int(G.size(0)), TG.TG_local().size());
     using ma::term_by_term_matrix_vector;
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, ikN - ik0, G.size(1), make_device_ptr(G[ik0].origin()), G.stride(0),
-                               make_device_ptr(Ov.origin()), Ov.stride(0));
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, ikN - ik0, G.size(1), make_device_ptr(G[ik0].origin()), G.stride(),
+                               make_device_ptr(Ov.origin()), Ov.stride());
   }
   TG.local_barrier();
 }
@@ -1054,8 +1054,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
     auto dev_ptr(make_device_ptr(G.origin()));
   }
 
-  assert(G.stride(1) == 1);
-  assert(Ov.stride(0) == 1);
+  assert(std::get<1>(G.strides()) == 1);
+  assert(Ov.stride() == 1);
   if (transpose)
     assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
   else
@@ -1071,7 +1071,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
                      buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
   // need strided fill_n????
-  if (G.size(1) != G.stride(0))
+  if (std::get<1>(G.sizes()) != G.stride())
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
   stdCVector hvec(iextensions<1u>{2 * nbatch__});
@@ -1222,8 +1222,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   else
   {
     using ma::term_by_term_matrix_vector;
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, G.size(0), G.size(1), make_device_ptr(G.origin()), G.stride(0),
-                               make_device_ptr(Ov.origin()), Ov.stride(0));
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, G.size(), G.size(), make_device_ptr(G.origin()), G.stride(),
+                               make_device_ptr(Ov.origin()), Ov.stride());
   }
   TG.local_barrier();
 }
@@ -1243,7 +1243,7 @@ void NOMSD<devPsiT>::Overlap_batched(const WlkSet& wset, TVec&& Ov)
   }
 
   // since the memory usage is low, all walkers are always done together
-  assert(Ov.stride(0) == 1);
+  assert(Ov.stride() == 1);
   const int nw   = wset.size();
   const int ndet = ci.size();
   double LogOverlapFactor(wset.getLogOverlapFactor());

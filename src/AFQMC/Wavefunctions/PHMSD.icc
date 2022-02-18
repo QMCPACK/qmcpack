@@ -418,8 +418,8 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
 {
   // if not compact, calculate compact on temporary storage and multiply by OrbMat[] on the left at the end.
   using ma::T;
-  assert(G.stride(1) == 1);
-  assert(Ov.stride(0) == 1);
+  assert(std::get<1>(G.strides()) == 1);
+  assert(Ov.stride() == 1);
   if (transpose)
     assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
   else

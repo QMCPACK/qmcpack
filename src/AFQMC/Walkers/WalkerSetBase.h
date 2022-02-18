@@ -391,7 +391,7 @@ public:
       APP_ABORT("Insufficient capacity");
     if (single_walker_size() + single_walker_bp_size() != M.size(1))
       APP_ABORT("Incorrect dimensions.");
-    if (M.stride(1) != 1)
+    if (std::get<1>(M.strides()) != 1)
       APP_ABORT("Incorrect strides.");
     if (!TG.TG_local().root())
     {

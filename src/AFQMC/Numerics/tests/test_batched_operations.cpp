@@ -340,8 +340,8 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
     Tensor2D<ComplexType> A({ni, nj}, ComplexType(0.0, -3.0), alloc);
     Tensor2D<ComplexType> B({nj, nk}, ComplexType(1.0, 2.0), alloc);
     Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
-    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), C.size(1),
-                              C.size(2));
+    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk, A.origin(), A.stride(), B.origin(), B.stride(), C.origin(), std::get<1>(C.sizes()),
+                              std::get<2>(C.sizes()));
     Tensor3D<ComplexType> ref({nk, ni, nj}, ComplexType(-6.0, 3.0), alloc);
     verify_approx(C, ref);
   }
@@ -359,8 +359,8 @@ void test_Aij_Bjk_Ckji()
   Tensor2D<T1> A({ni, nj}, -3.0, alloc_a);
   Tensor2D<T2> B({nj, nk}, T2(1.0, 2.0), alloc_b);
   Tensor3D<T2> C({nk, nj, ni}, 0.0, alloc_b);
-  element_wise_Aij_Bjk_Ckji(ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), C.size(2),
-                            C.stride(0));
+  element_wise_Aij_Bjk_Ckji(ni, nj, nk, A.origin(), std::get<0>(A.strides()), B.origin(), std::get<0>(B.strides()), C.origin(), std::get<2>(C.sizes()),
+                            C.stride());
   Tensor3D<T2> ref({nk, nj, ni}, T2(-3.0, -6.0), alloc_b);
   verify_approx(C, ref);
 }

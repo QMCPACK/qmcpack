@@ -317,10 +317,10 @@ std::pair<MultiArray1D, MultiArray2D> symEigSelect(MultiArray2DA& A, int neig)
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
   assert(A.size(0) == A.size(1));
-  assert(A.stride(1) == 1);
+  assert(std::get<1>(A.strides()) == 1);
   assert(A.size(0) > 0);
   int N   = A.size(0);
-  int LDA = A.stride(0);
+  int LDA = A.stride();
 
   MultiArray1D eigVal(extensions{neig});
   MultiArray2D eigVec({neig, N});
@@ -397,13 +397,13 @@ std::pair<MultiArray1D, MultiArray2D> genEigSelect(MultiArray2DA& A, MultiArray2
   assert(A.size(0) == A.size(1));
   assert(A.size(0) == S.size(0));
   assert(S.size(0) == S.size(1));
-  assert(A.stride(1) == 1);
+  assert(std::get<1>(A.strides()) == 1);
   assert(A.size(0) > 0);
-  assert(S.stride(1) == 1);
+  assert(std::get<1>(S.strides()) == 1);
   assert(S.size(0) > 0);
   int N   = A.size(0);
-  int LDA = A.stride(0);
-  int LDS = S.stride(0);
+  int LDA = A.stride();
+  int LDS = S.stride();
 
   MultiArray1D eigVal(extensions{neig});
   MultiArray2D eigVec({neig, N});
