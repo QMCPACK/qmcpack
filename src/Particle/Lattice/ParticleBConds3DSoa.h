@@ -82,6 +82,11 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
     dz[iat]     = pz[iat] - z0;
     temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+  }
 };
 
 /** specialization for a periodic 3D, orthorombic cell
@@ -161,6 +166,17 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
     dy[iat]     = L1 * (y - round(y));
     dz[iat]     = L2 * (z - round(z));
     temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
+  }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    T x = dx * Linv0;
+    T y = dy * Linv1;
+    T z = dz * Linv2;
+    dx = L0 * (x - round(x));
+    dy = L1 * (y - round(y));
+    dz = L2 * (z - round(z));
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
   }
 };
 
@@ -280,6 +296,25 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
     dz[iat] = ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
 
     temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
+  }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    T ar_0 = dx * g00 + dy * g10 + dz * g20;
+    T ar_1 = dx * g01 + dy * g11 + dz * g21;
+    T ar_2 = dx * g02 + dy * g12 + dz * g22;
+
+    //put them in the box
+    ar_0 -= round(ar_0);
+    ar_1 -= round(ar_1);
+    ar_2 -= round(ar_2);
+
+    //unit2cart
+    dx = ar_0 * r00 + ar_1 * r10 + ar_2 * r20;
+    dy = ar_0 * r01 + ar_1 * r11 + ar_2 * r21;
+    dz = ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
+
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
   }
 };
 
@@ -470,6 +505,34 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
     dy[iat]     = flip * (dely + celly[ic]);
     dz[iat]     = flip * (delz + cellz[ic]);
   }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    const auto& cellx = corners[0];
+    const auto& celly = corners[1];
+    const auto& cellz = corners[2];
+
+    const T ar_0 = -std::floor(dx * g00 + dy * g10 + dz * g20);
+    const T ar_1 = -std::floor(dx * g01 + dy * g11 + dz * g21);
+    const T ar_2 = -std::floor(dx * g02 + dy * g12 + dz * g22);
+
+    const T delx = dx + ar_0 * r00 + ar_1 * r10 + ar_2 * r20;
+    const T dely = dy + ar_0 * r01 + ar_1 * r11 + ar_2 * r21;
+    const T delz = dz + ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
+
+    T rmin = delx * delx + dely * dely + delz * delz;
+#pragma unroll(7)
+    for (int c = 1; c < 8; ++c)
+    {
+      const T x  = delx + cellx[c];
+      const T y  = dely + celly[c];
+      const T z  = delz + cellz[c];
+      const T r2 = x * x + y * y + z * z;
+      rmin       = (r2 < rmin) ? r2 : rmin;
+    }
+
+    return std::sqrt(rmin);
+  }
 };
 
 
@@ -623,6 +686,30 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
     dy[iat]     = flip * (dely + celly[ic]);
     dz[iat]     = delz;
   }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    const auto& cellx = corners[0];
+    const auto& celly = corners[1];
+
+    const T ar_0 = -std::floor(dx * g00 + dy * g10);
+    const T ar_1 = -std::floor(dx * g01 + dy * g11);
+
+    const T delx = dx + ar_0 * r00 + ar_1 * r10;
+    const T dely = dy + ar_0 * r01 + ar_1 * r11;
+
+    T rmin = delx * delx + dely * dely;
+#pragma unroll(3)
+    for (int c = 1; c < 4; ++c)
+    {
+      const T x  = delx + cellx[c];
+      const T y  = dely + celly[c];
+      const T r2 = x * x + y * y;
+      rmin       = (r2 < rmin) ? r2 : rmin;
+    }
+
+    return std::sqrt(rmin + dz * dz);
+  }
 };
 
 /** specialization for a slab, orthorombic cell
@@ -694,6 +781,15 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
     dy[iat]     = L1 * (y - round(y));
     dz[iat]     = pz[iat] - z0;
     temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
+  }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    T x = dx * Linv0;
+    T y = dy * Linv1;
+    dx = L0 * (x - round(x));
+    dy = L1 * (y - round(y));
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
   }
 };
 
@@ -796,6 +892,22 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
 
     temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    T ar_0 = dx * g00 + dy * g10;
+    T ar_1 = dx * g01 + dy * g11;
+
+    //put them in the box
+    ar_0 -= round(ar_0);
+    ar_1 -= round(ar_1);
+
+    //unit2cart
+    dx = ar_0 * r00 + ar_1 * r10;
+    dy = ar_0 * r01 + ar_1 * r11;
+
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+  }
 };
 
 
@@ -865,6 +977,13 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
     dy[iat]     = py[iat] - y0;
     dz[iat]     = pz[iat] - z0;
     temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
+  }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    T x         = dx * Linv0;
+    dx     = L0 * (x - round(x));
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
   }
 };
 
@@ -942,6 +1061,11 @@ struct DTD_BConds<T, 3, PPPX + SOA_OFFSET>
   {
     //APP_ABORT("DTD_BConds<T, 3, PPPX + SOA_OFFSET>::computeDistancesOffload not implemented");
   }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    //APP_ABORT("DTD_BConds<T, 3, PPPX + SOA_OFFSET>::computeDist not implemented");
+  }
 };
 
 /** specialization for a slab, general cell
@@ -1004,6 +1128,11 @@ struct DTD_BConds<T, 3, PPNX + SOA_OFFSET>
                                int flip_ind = 0) const
   {
     //APP_ABORT("DTD_BConds<T, 3, PPNX + SOA_OFFSET>::computeDistancesOffload not implemented");
+  }
+
+  T computeDist(T dx, T dy, T dz) const
+  {
+    //APP_ABORT("DTD_BConds<T, 3, PPNX + SOA_OFFSET>::computeDist not implemented");
   }
 };
 

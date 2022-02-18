@@ -51,7 +51,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
 
 
-  CoulombPBCAA caa = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa(ions, false, false, false);
   // Background charge term
   double consts = caa.evalConsts();
   REQUIRE(consts == Approx(-3.142553)); // not validated
@@ -91,7 +91,7 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
 
-  CoulombPBCAA caa = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa(ions, false, false, false);
 
   // Background charge term
   double consts = caa.evalConsts();
@@ -132,7 +132,7 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(elec);
   LRCoulombSingleton::CoulombHandler->initBreakup(elec);
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();

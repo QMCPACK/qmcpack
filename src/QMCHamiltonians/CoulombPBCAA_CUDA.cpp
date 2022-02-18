@@ -24,7 +24,7 @@ namespace qmcplusplus
 using WP = WalkerProperties::Indexes;
 
 CoulombPBCAA_CUDA::CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning)
-    : CoulombPBCAA(ref, active, cloning),
+    : CoulombPBCAA(ref, active, false, false),
       PtclRef(ref),
       SumGPU("CoulombPBCAATemp::SumGPU"),
       L("CoulombPBCAATemp::L"),

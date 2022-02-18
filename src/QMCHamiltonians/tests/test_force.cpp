@@ -207,7 +207,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   REQUIRE(force.forces_IonIon[1][2] == Approx(0.0));
 
   // Let's test CoulombPBCAA and CoulombPBCAB forces, too; Unvalidated externally
-  CoulombPBCAA ionForce(ions, false, true);
+  CoulombPBCAA ionForce(ions, false, true, false);
   REQUIRE(ionForce.forces[0][0] == Approx(-0.1478626893));
   REQUIRE(ionForce.forces[1][0] == Approx(0.1478626893));
 
@@ -239,9 +239,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // Namely, sending in incompatible force arrays to evaluateWithIonDerivs is not
   // supposed to do harm, IF
   // 1) forces are not enabled
-  CoulombPBCAA noIonForce(ions3, false, false);
+  CoulombPBCAA noIonForce(ions3, false, false, false);
   // 2) The species is active
-  CoulombPBCAA noElecForce(elec, true, true);
+  CoulombPBCAA noElecForce(elec, true, true, false);
 
   TrialWaveFunction psi;
   noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForce.forces, noElecForce.forces);
