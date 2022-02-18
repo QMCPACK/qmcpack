@@ -34,8 +34,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D square", "[hamiltonian]")
   elec.createSK();
   elec.update();
 
-  bool is_active = true;
-  CoulombPBCAA caa = CoulombPBCAA(elec, is_active);
+  CoulombPBCAA caa = CoulombPBCAA(elec, true);
 
   double val = caa.evaluate(elec);
   CHECK(val == Approx(vmad_sq));
@@ -74,8 +73,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D triangular", "[hamiltonian]")
   elec.createSK();
   elec.update();
 
-  bool is_active = true;
-  CoulombPBCAA caa = CoulombPBCAA(elec, is_active);
+  CoulombPBCAA caa = CoulombPBCAA(elec, true);
 
   double val = caa.evaluate(elec);
   CHECK(val == Approx(vmad_tri));
@@ -117,8 +115,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
   elec.update();
   app_log() << elec.R << std::endl;
 
-  bool is_active = true;
-  CoulombPBCAA caa = CoulombPBCAA(elec, is_active);
+  CoulombPBCAA caa = CoulombPBCAA(elec, true);
 
   double val = caa.evaluate(elec)/elec.getTotalNum();
   CHECK(val == Approx(vmad_tri));
