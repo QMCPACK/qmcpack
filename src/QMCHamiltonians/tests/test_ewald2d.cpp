@@ -43,7 +43,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D square", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A Ewald2D triangular", "[hamiltonian]")
 {
-  LRCoulombSingleton::CoulombHandler = 0; // this is crutial!
+  LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   const double vmad_tri = -1.1061025865191676;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
@@ -78,6 +78,49 @@ TEST_CASE("Coulomb PBC A-A Ewald2D triangular", "[hamiltonian]")
   CoulombPBCAA caa = CoulombPBCAA(elec, is_active);
 
   double val = caa.evaluate(elec);
+  CHECK(val == Approx(vmad_tri));
+}
+
+TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
+{
+  LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
+  const double vmad_tri = -1.1061025865191676;
+  const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.ndim = 2;
+  lattice.R = 0.0;
+  lattice.R(0, 0) = alat;
+  lattice.R(1, 1) = std::sqrt(3)*alat;
+  lattice.R(2, 2) = 4.0;
+  lattice.LR_dim_cutoff = 30.0;
+  lattice.reset();
+  lattice.print(app_log());
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet elec(simulation_cell);
+  elec.setName("e");
+  elec.create({2});
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {alat/2, std::sqrt(3)*alat/2, 0.0};
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.createSK();
+  elec.addTable(elec); // !!!! crucial with more than 1 particle
+  elec.update();
+  app_log() << elec.R << std::endl;
+
+  bool is_active = true;
+  CoulombPBCAA caa = CoulombPBCAA(elec, is_active);
+
+  double val = caa.evaluate(elec)/elec.getTotalNum();
   CHECK(val == Approx(vmad_tri));
 }
 } // qmcplusplus
