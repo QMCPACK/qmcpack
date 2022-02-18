@@ -369,7 +369,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
-    det.curRatio=curRatio_list[iw];
+    det.curRatio               = curRatio_list[iw];
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
   }
@@ -628,9 +628,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    new_grads_list[iw].get()(det_leader.ReferenceDeterminant, WorkingIndex) =
-        ratioGradRef_list[iw] / curRatio_list[iw];
-    new_ratios_to_ref_list[iw].get()[det_leader.ReferenceDeterminant] = ValueType(1);
+    new_grads_list[iw].get()(det_leader.ReferenceDeterminant, WorkingIndex) = ratioGradRef_list[iw] / curRatio_list[iw];
+    new_ratios_to_ref_list[iw].get()[det_leader.ReferenceDeterminant]       = ValueType(1);
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
   }
@@ -676,7 +675,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
-    det.curRatio=curRatio_list[iw];
+    det.curRatio               = curRatio_list[iw];
   }
 }
 
