@@ -361,16 +361,17 @@ public:
                                              const std::vector<std::pair<int, int>>& pairs,
                                              const std::vector<RealType>& sign);
 
-  void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
-                                          GradMatrix& ratios,
-                                          ValueMatrix& psiinv,
-                                          ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign,
-                                          int dx);
+  void BuildDotProductsAndCalculateRatiosGrads(int ref,
+                                               const ValueMatrix& psiinv,
+                                               const ValueMatrix& psi,
+                                               const std::vector<int>& data,
+                                               const std::vector<std::pair<int, int>>& pairs,
+                                               const std::vector<RealType>& sign,
+                                               const ValueType& det0_grad,
+                                               ValueMatrix& dotProducts,
+                                               int dx,
+                                               int iat,
+                                               GradMatrix& ratios);
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
                                              int ref,
@@ -386,16 +387,15 @@ public:
                                              RefVector<ValueVector>& WorkSpace_list,
                                              int getNumDets);
 
-  ///Called by evaluateGradsWithSpin and evaluateDetsAndGradsForPtclMoveWithSpin
-  void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
-                                          ValueMatrix& ratios,
-                                          ValueMatrix& psiinv,
-                                          ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign);
+  void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
+                                                                const ValueMatrix& psiinv,
+                                                                const ValueMatrix& psi,
+                                                                const std::vector<int>& data,
+                                                                const std::vector<std::pair<int, int>>& pairs,
+                                                                const std::vector<RealType>& sign,
+                                                                ValueMatrix& dotProducts,
+                                                                int iat,
+                                                                ValueMatrix& ratios);
 
   //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
@@ -413,19 +413,6 @@ public:
     BLAS::copy(m, Minv.data() + colchanged, m, rvecinv.data(), 1);
     BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
-  /*
-      inline void InverseUpdateByColumn(ValueMatrix& Minv
-            , GradVector& dM, ValueVector& rvec
-            , ValueVector& rvecinv, int colchanged
-            , ValueType c_ratio, std::vector<int>::iterator& it)
-      {
-            ValueType c_ratio=1.0/ratioLapl;
-            BLAS::gemv('N', NumPtcls, NumPtcls, c_ratio, dpsiMinv.data(), NumPtcls, tv, 1, T(), workV1, 1);
-            workV1[colchanged]=1.0-c_ratio;
-            BLAS::copy(m,pinv+colchanged,m,workV2,1);
-            BLAS::ger(m,m,-1.0,workV1,1,workV2,1,dpsiMinv.data(),m);
-      }
-  */
 
   /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
    *@param P particle set which provides the positions
