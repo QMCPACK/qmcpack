@@ -27,6 +27,10 @@ public:
 
   void getDrift(RealType tau, const GradType& qf, PosType& drift) const final;
 
+  void getDrifts(RealType tau,
+                 const std::vector<ComplexType>& qf,
+                 std::vector<ParticleSet::Scalar_t>& drift) const final;
+
   void getDrift(RealType tau, const ComplexType& qf, ParticleSet::Scalar_t& drift) const final;
 
   bool parseXML(xmlNodePtr cur) final;

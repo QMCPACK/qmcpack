@@ -72,79 +72,47 @@ void TWFdispatcher::flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunctio
       wf_list[iw].prepareGroup(p_list[iw], ig);
 }
 
+template<CoordsType CT>
 void TWFdispatcher::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                   const RefVectorWithLeader<ParticleSet>& p_list,
                                   int iat,
-                                  std::vector<GradType>& grad_now) const
+                                  TWFGrads<CT>& grads) const
 {
   assert(wf_list.size() == p_list.size());
   if (use_batch_)
-    TrialWaveFunction::mw_evalGrad(wf_list, p_list, iat, grad_now);
+    TrialWaveFunction::mw_evalGrad(wf_list, p_list, iat, grads);
   else
   {
     const int num_wf = wf_list.size();
-    grad_now.resize(num_wf);
+    grads.resize(num_wf);
     for (size_t iw = 0; iw < num_wf; iw++)
-      grad_now[iw] = wf_list[iw].evalGrad(p_list[iw], iat);
+      if constexpr (CT == CoordsType::POS_SPIN)
+        grads.grads_positions[iw] = wf_list[iw].evalGradWithSpin(p_list[iw], iat, grads.grads_spins[iw]);
+      else
+        grads.grads_positions[iw] = wf_list[iw].evalGrad(p_list[iw], iat);
   }
 }
 
-void TWFdispatcher::flex_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                          const RefVectorWithLeader<ParticleSet>& p_list,
-                                          int iat,
-                                          std::vector<GradType>& grad_now,
-                                          std::vector<Complex>& spingrad_now) const
-{
-  assert(wf_list.size() == p_list.size());
-  if (use_batch_)
-    TrialWaveFunction::mw_evalGradWithSpin(wf_list, p_list, iat, grad_now, spingrad_now);
-  else
-  {
-    const int num_wf = wf_list.size();
-    grad_now.resize(num_wf);
-    spingrad_now.resize(num_wf);
-    for (size_t iw = 0; iw < num_wf; iw++)
-      grad_now[iw] = wf_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
-  }
-}
-
+template<CoordsType CT>
 void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                        int iat,
                                        std::vector<PsiValueType>& ratios,
-                                       std::vector<GradType>& grad_new) const
+                                       TWFGrads<CT>& grads) const
 {
   assert(wf_list.size() == p_list.size());
   if (use_batch_)
-    TrialWaveFunction::mw_calcRatioGrad(wf_list, p_list, iat, ratios, grad_new);
+    TrialWaveFunction::mw_calcRatioGrad(wf_list, p_list, iat, ratios, grads);
   else
   {
     const int num_wf = wf_list.size();
     ratios.resize(num_wf);
-    grad_new.resize(num_wf);
+    grads.resize(num_wf);
     for (size_t iw = 0; iw < num_wf; iw++)
-      ratios[iw] = wf_list[iw].calcRatioGrad(p_list[iw], iat, grad_new[iw]);
-  }
-}
-
-void TWFdispatcher::flex_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                               const RefVectorWithLeader<ParticleSet>& p_list,
-                                               int iat,
-                                               std::vector<PsiValueType>& ratios,
-                                               std::vector<GradType>& grad_new,
-                                               std::vector<Complex>& spingrad_new) const
-{
-  assert(wf_list.size() == p_list.size());
-  if (use_batch_)
-    TrialWaveFunction::mw_calcRatioGradWithSpin(wf_list, p_list, iat, ratios, grad_new, spingrad_new);
-  else
-  {
-    const int num_wf = wf_list.size();
-    ratios.resize(num_wf);
-    grad_new.resize(num_wf);
-    spingrad_new.resize(num_wf);
-    for (size_t iw = 0; iw < num_wf; iw++)
-      ratios[iw] = wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
+      if constexpr (CT == CoordsType::POS_SPIN)
+        ratios[iw] = wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grads.grads_positions[iw], grads.grads_spins[iw]);
+      else
+        ratios[iw] = wf_list[iw].calcRatioGrad(p_list[iw], iat, grads.grads_positions[iw]);
   }
 }
 
@@ -199,5 +167,25 @@ void TWFdispatcher::flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunct
     for (size_t iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].evaluateRatios(vp_list[iw], ratios_list[iw], ct);
 }
+
+template void TWFdispatcher::flex_evalGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                                            int iat,
+                                                            TWFGrads<CoordsType::POS>& grads) const;
+template void TWFdispatcher::flex_evalGrad<CoordsType::POS_SPIN>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 int iat,
+                                                                 TWFGrads<CoordsType::POS_SPIN>& grads) const;
+template void TWFdispatcher::flex_calcRatioGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 int iat,
+                                                                 std::vector<PsiValueType>& ratios,
+                                                                 TWFGrads<CoordsType::POS>& grads) const;
+template void TWFdispatcher::flex_calcRatioGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS_SPIN>& grads) const;
 
 } // namespace qmcplusplus
