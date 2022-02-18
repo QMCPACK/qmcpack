@@ -296,7 +296,7 @@ TEST_CASE("Aijk_Bkj_Cik", "[Numerics][batched_operations]")
   Tensor2D<ComplexType> C({ni, nk}, 0.0, alloc);
   // C = alpha * numpy.einsum('wnu,nu->uw', A, B)
   using ma::Aijk_Bkj_Cik;
-  Aijk_Bkj_Cik(ni, nj, nk, A.origin(), A.size(1), A.stride(0), B.origin(), B.stride(0), C.origin(), C.stride(0));
+  Aijk_Bkj_Cik(ni, nj, nk, A.origin(), std::get<1>(A.sizes()), A.stride(), B.origin(), B.stride(), C.origin(), C.stride());
   Tensor2D<ComplexType> ref({ni, nk}, 4.0, alloc);
   ref[0][0] = 2.0;
   ref[1][0] = 2.0;
@@ -331,7 +331,7 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
     Tensor2D<ComplexType> A({ni, nj}, 3.0, alloc);
     Tensor2D<ComplexType> B({nj, nk}, 2.0, alloc);
     Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
-    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), C.size(1),
+    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk, A.origin(), A.stride(), B.origin(), B.stride(), C.origin(), C.size(1),
                               C.size(2));
     Tensor3D<ComplexType> ref({nk, ni, nj}, 6.0, alloc);
     verify_approx(C, ref);

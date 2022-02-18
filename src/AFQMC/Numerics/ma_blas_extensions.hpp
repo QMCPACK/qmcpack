@@ -36,7 +36,7 @@ template<class T,
 void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res)
 {
   assert(x.size() == y.size());
-  adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0), beta,
+  adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride(), beta,
           to_address(res));
 }
 
@@ -66,7 +66,7 @@ template<class T,
 MultiArray1Dy&& axty(T const alpha, MultiArray1Dx const& x, MultiArray1Dy&& y)
 {
   assert(x.size() == y.size());
-  axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
+  axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
   return y;
 }
 
@@ -79,10 +79,10 @@ template<class T,
 MultiArray2DB&& axty(T const alpha, MultiArray2DA const& A, MultiArray2DB&& B)
 {
   assert(A.num_elements() == B.num_elements());
-  assert(A.stride(1) == 1);
-  assert(A.stride(0) == A.size(1));
-  assert(B.stride(1) == 1);
-  assert(B.stride(0) == B.size(1));
+  assert(std::get<1>(A.strides()) == 1);
+  assert(std::get<0>(A.strides()) == A.size(1));
+  assert(std::get<1>(B.strides()) == 1);
+  assert(std::get<0>(B.strides()) == B.size(1));
   axty(A.num_elements(), alpha, pointer_dispatch(A.origin()), 1, pointer_dispatch(B.origin()), 1);
   return B;
 }
@@ -102,8 +102,8 @@ MultiArray2DB&& acAxpbB(T const alpha, MultiArray2DA const& A, MultiArray1D cons
   assert(A.size(0) == B.size(0));
   assert(A.size(1) == B.size(1));
   assert(A.size(1) == x.size(0));
-  acAxpbB(A.size(1), A.size(0), alpha, pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(x.origin()),
-          x.stride(0), beta, pointer_dispatch(B.origin()), B.stride(0));
+  acAxpbB(std::get<1>(A.sizes()), std::get<0>(A.sizes()), alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(x.origin()),
+          x.stride(), beta, pointer_dispatch(B.origin()), B.stride());
   return B;
 }
 
@@ -116,7 +116,7 @@ MultiArray1Dy&& adiagApy(T const alpha, MultiArray2DA const& A, MultiArray1Dy&& 
 {
   assert(A.size(0) == A.size(1));
   assert(A.size(0) == y.size());
-  adiagApy(y.size(), alpha, pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(y.origin()), y.stride(0));
+  adiagApy(y.size(), alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(y.origin()), y.stride());
   return y;
 }
 
