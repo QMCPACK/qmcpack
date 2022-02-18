@@ -106,6 +106,8 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if (aname == "ndim")
       {
         putContent(ref_.ndim, cur);
+        if ((ref_.ndim != 2) and (ref_.ndim != 3))
+          throw std::runtime_error("invalid ndim input");
       }
       else if (aname == "LR_dim_cutoff")
       {
