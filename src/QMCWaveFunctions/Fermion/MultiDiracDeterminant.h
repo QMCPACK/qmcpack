@@ -371,7 +371,7 @@ public:
                                                ValueMatrix& dotProducts,
                                                int dx,
                                                int iat,
-                                               GradMatrix& ratios);
+                                               GradMatrix& grads);
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
                                              int ref,

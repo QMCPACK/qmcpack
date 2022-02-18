@@ -153,12 +153,12 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                                     ValueMatrix& dotProducts,
                                                                     int dx,
                                                                     int iat,
-                                                                    GradMatrix& ratios)
+                                                                    GradMatrix& grads)
 {
   BuildDotProductsAndCalculateRatios_impl(ref, det0_grad, WorkSpace.data(), psiinv, psi, dotProducts, data, pairs,
                                           sign);
   for (size_t count = 0; count < getNumDets(); ++count)
-    ratios(count, iat)[dx] = WorkSpace[count];
+    grads(count, iat)[dx] = WorkSpace[count];
 }
 
 void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(int nw,
