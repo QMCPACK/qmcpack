@@ -204,6 +204,8 @@ attributes:
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
   | ``physical``:math:`^o`  | boolean      | yes/no               | yes                    | Hamiltonian(yes)/Observable(no) |
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
+  | ``gpu``                 | boolean      | yes/no               | depend                 | Offload computation to GPU      |
+  +-------------------------+--------------+----------------------+------------------------+---------------------------------+
   | ``forces``              | boolean      | yes/no               | no                     | *Deprecated*                    |
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
 
@@ -232,6 +234,8 @@ Additional information:
    outputted ``LocalEnergy``. Regardless of the value of ``physical``
    output data will appear in ``scalar.dat`` in a column headed by
    ``name``.
+
+-  **gpu**: When not specified, use the ``gpu`` attribute of ``particleset``.
 
 .. code-block::
   :caption: QMCPXML element for Coulomb interaction between electrons.
