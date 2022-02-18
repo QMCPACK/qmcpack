@@ -653,7 +653,7 @@ private:
   void set_shm_buffer(size_t N)
   {
     if (SM_TMats.num_elements() < N)
-      SM_TMats.reextent({N, 1});
+      SM_TMats.reextent({static_cast<shmSpCMatrix::size_type>(N), 1});
   }
 };
 

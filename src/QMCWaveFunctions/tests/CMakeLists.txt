@@ -75,7 +75,8 @@ set(TRIALWF_SRC
     test_TrialWaveFunction_He.cpp
     test_wavefunction_pool.cpp
     test_example_he.cpp
-    test_lattice_gaussian.cpp)
+    test_lattice_gaussian.cpp
+    test_TWFGrads.cpp)
 set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp

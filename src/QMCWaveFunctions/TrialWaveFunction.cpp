@@ -150,12 +150,12 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   const int num_particles = p_leader.getTotalNum();
   auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
                                           ParticleSet::ParticleLaplacian& lapl) {
-             grad.resize(num_particles);
-             lapl.resize(num_particles);
-             grad           = czero;
-             lapl           = czero;
-             twf.log_real_  = czero;
-             twf.PhaseValue = czero;
+    grad.resize(num_particles);
+    lapl.resize(num_particles);
+    grad           = czero;
+    lapl           = czero;
+    twf.log_real_  = czero;
+    twf.PhaseValue = czero;
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
     initGandL(wf_list[iw], g_list[iw], l_list[iw]);
@@ -527,6 +527,18 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, 
   return grad_iat;
 }
 
+template<CoordsType CT>
+void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int iat,
+                                    TWFGrads<CT>& grads)
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_evalGradWithSpin(wf_list, p_list, iat, grads.grads_positions, grads.grads_spins);
+  else
+    mw_evalGrad(wf_list, p_list, iat, grads.grads_positions);
+}
+
 void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
                                     int iat,
@@ -666,6 +678,19 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
   LogValueType logratio = convertValueToLog(r);
   PhaseDiff             = std::imag(logratio);
   return static_cast<ValueType>(r);
+}
+
+template<CoordsType CT>
+void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         TWFGrads<CT>& grads)
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_calcRatioGradWithSpin(wf_list, p_list, iat, ratios, grads.grads_positions, grads.grads_spins);
+  else
+    mw_calcRatioGrad(wf_list, p_list, iat, ratios, grads.grads_positions);
 }
 
 void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -1331,5 +1356,28 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
     {}
   }
 }
+
+//explicit instantiations
+template void TrialWaveFunction::mw_evalGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                                              int iat,
+                                                              TWFGrads<CoordsType::POS>& grads);
+template void TrialWaveFunction::mw_evalGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    TWFGrads<CoordsType::POS_SPIN>& grads);
+template void TrialWaveFunction::mw_calcRatioGrad<CoordsType::POS>(
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS>& grads);
+template void TrialWaveFunction::mw_calcRatioGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS_SPIN>& grads);
 
 } // namespace qmcplusplus

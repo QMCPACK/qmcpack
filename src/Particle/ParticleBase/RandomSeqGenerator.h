@@ -79,14 +79,6 @@ inline void makeGaussRandomWithEngine(std::vector<TinyVector<T, D>>& a, RG& rng)
   assignGaussRand(&(a[0][0]), a.size() * D, rng);
 }
 
-template<CoordsType CT, class RG>
-inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
-{
-  makeGaussRandomWithEngine(a.positions, rng);
-  if constexpr (std::is_same<MCCoords<CT>, MCCoords<CoordsType::POS_SPIN>>::value)
-    makeGaussRandomWithEngine(a.spins, rng);
-}
-
 template<typename T, class RG>
 inline void makeGaussRandomWithEngine(std::vector<T>& a, RG& rng)
 {
@@ -99,6 +91,14 @@ template<typename T, class RG>
 inline void makeGaussRandomWithEngine(ParticleAttrib<T>& a, RG& rng)
 {
   assignGaussRand(&(a[0]), a.size(), rng);
+}
+
+template<CoordsType CT, class RG>
+inline void makeGaussRandomWithEngine(MCCoords<CT>& a, RG& rng)
+{
+  makeGaussRandomWithEngine(a.positions, rng);
+  if constexpr (CT == CoordsType::POS_SPIN)
+    makeGaussRandomWithEngine(a.spins, rng);
 }
 
 } // namespace qmcplusplus

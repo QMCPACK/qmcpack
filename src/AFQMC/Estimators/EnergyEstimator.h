@@ -59,11 +59,11 @@ public:
     ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
     if (eloc.size(0) != nwalk || eloc.size(1) != 3)
-      eloc.reextent({nwalk, 3});
+      eloc.reextent({static_cast<boost::multi::size_t>(nwalk), 3});
     if (ovlp.size(0) != nwalk)
       ovlp.reextent(iextensions<1u>(nwalk));
     if (wprop.size(0) != 4 || wprop.size(1) != nwalk)
-      wprop.reextent({4, nwalk});
+      wprop.reextent({4, static_cast<boost::multi::size_t>(nwalk)});
 
     ComplexType dum, et;
     wfn0.Energy(wset, eloc, ovlp);

@@ -165,6 +165,7 @@ set(FERMION_SRCS
     TrialWaveFunction.cpp
     TWFdispatcher.cpp
     TWFFastDerivWrapper.cpp
+    TWFGrads.cpp
     WaveFunctionFactory.cpp)
 
 if(ENABLE_CUDA)
