@@ -323,62 +323,74 @@ gpu-cuda (GCC8-NoMPI-Legacy-CUDA-Complex)
 
 cpu-intel64 (GCC8-NoMPI-MKL-Real-Mixed)
 """""""""""""""""""""""""""""""""""""""
-+---------------+--------------------------------------------------------------------------------------------------+
-| Compiler      | gcc-8                                                                                            |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 ..` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Objective     | Build for Intel MKL (Real) with mixed single/double floating point precision                     |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Duration      | ~2 Minutes                                                                                       |
-+---------------+--------------------------------------------------------------------------------------------------+
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | gcc-8                                                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 ..`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Intel MKL (Real) with mixed single/double floating point precision                                           |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~2 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 
 
 cpu-intel64 (GCC8-NoMPI-MKL-Complex-Mixed)
 """"""""""""""""""""""""""""""""""""""""""
-+---------------+--------------------------------------------------------------------------------------------------+
-| Compiler      | GCC                                                                                              |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 ..` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Objective     | Build for Intel MKL (Complex) with mixed single/double floating point precision                  |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Duration      | ~2 Minutes                                                                                       |
-+---------------+--------------------------------------------------------------------------------------------------+
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                                                    |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 ..`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Intel MKL (Complex) with mixed single/double floating point precision                                        |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~2 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 
 
 cpu-intel64 (GCC8-NoMPI-MKL-Real)
 """""""""""""""""""""""""""""""""
-+---------------+--------------------------------------------------------------------------------------------------+
-| Compiler      | GCC                                                                                              |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 ..` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Objective     | Build for Intel MKL (Real) with full double floating point precision                             |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Duration      | ~2 Minutes                                                                                       |
-+---------------+--------------------------------------------------------------------------------------------------+
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                                                    |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 ..`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Intel MKL (Real) with full double floating point precision                                                   |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~2 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 
 
 cpu-intel64 (GCC8-NoMPI-MKL-Complex)
 """"""""""""""""""""""""""""""""""""
-+---------------+--------------------------------------------------------------------------------------------------+
-| Compiler      | GCC                                                                                              |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 ..` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic` |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Objective     | Build for Intel MKL (Complex) with full double floating point precision                          |
-+---------------+--------------------------------------------------------------------------------------------------+
-| Duration      | ~2 Minutes                                                                                       |
-+---------------+--------------------------------------------------------------------------------------------------+
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | GCC                                                                                                                    |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `cmake -GNinja -DBLA_VENDOR=Intel10_64lp -DQMC_MPI=0 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 ..`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `source /opt/intel2020/mkl/bin/mklvars.sh intel64 && ctest --output-on-failure -L deterministic`                       |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Intel MKL (Complex) with full double floating point precision                                                |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~2 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 
 
 gpu-cuda (GCC8-MPI-CUDA-AFQMC-Real-Mixed)
@@ -548,6 +560,9 @@ gpu-cuda (Clang14Dev-MPI-CUDA-AFQMC-Offload-Real)
 gpu-cuda (Intel19-MPI-CUDA-AFQMC-Real-Mixed)
 """"""""""""""""""""""""""""""""""""""""""""
 +---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | Intel                                                                                                                  |
 +---------------+------------------------------------------------------------------------------------------------------------------------+
 | Build Command | `export OMPI_CC=icc && \                                                                                               |
@@ -576,6 +591,9 @@ gpu-cuda (Intel19-MPI-CUDA-AFQMC-Real-Mixed)
 
 gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex-Mixed)
 """""""""""""""""""""""""""""""""""""""""""""""
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
 +---------------+---------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | Intel                                                                                                                     |
 +---------------+---------------------------------------------------------------------------------------------------------------------------+
@@ -605,60 +623,66 @@ gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex-Mixed)
 
 gpu-cuda (Intel19-MPI-CUDA-AFQMC-Real)
 """"""""""""""""""""""""""""""""""""""
-+---------------+----------------------------------------------------------------------------------------------------------------+
-| Compiler      | Intel                                                                                                          |
-+---------------+----------------------------------------------------------------------------------------------------------------+
-| Build Command | `export OMPI_CC=icc && \                                                                                       |
-|               | export OMPI_CXX=icpc && \                                                                                      |
-|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                |
-|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                           |
-|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                           |
-|               | -DBUILD_AFQMC=ON \                                                                                             |
-|               | -DENABLE_CUDA=ON \                                                                                             |
-|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                     |
-|               | -DQMC_COMPLEX=0 \                                                                                              |
-|               | -DQMC_MIXED_PRECISION=0 \                                                                                      |
-|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                          |
-+---------------+----------------------------------------------------------------------------------------------------------------+
-| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                       |
-|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \               |
-|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                    |
-|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \              |
-|               | && ctest --output-on-failure -L deterministic -j 16`                                                           |
-+---------------+----------------------------------------------------------------------------------------------------------------+
-| Objective     | Build for Nvidia (Real) with full double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled |
-+---------------+----------------------------------------------------------------------------------------------------------------+
-| Duration      | ~6 Minutes                                                                                                     |
-+---------------+----------------------------------------------------------------------------------------------------------------+
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | Intel                                                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `export OMPI_CC=icc && \                                                                                               |
+|               | export OMPI_CXX=icpc && \                                                                                              |
+|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                        |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                                   |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                                   |
+|               | -DBUILD_AFQMC=ON \                                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                                     |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                             |
+|               | -DQMC_COMPLEX=0 \                                                                                                      |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                                              |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                               |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \                       |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                            |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \                      |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                                                   |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Real) with full double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled         |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 
 
 gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex)
 """""""""""""""""""""""""""""""""""""""""
-+---------------+-------------------------------------------------------------------------------------------------------------------+
-| Compiler      | Intel                                                                                                             |
-+---------------+-------------------------------------------------------------------------------------------------------------------+
-| Build Command | `export OMPI_CC=icc && \                                                                                          |
-|               | export OMPI_CXX=icpc && \                                                                                         |
-|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                   |
-|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                              |
-|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                              |
-|               | -DBUILD_AFQMC=ON \                                                                                                |
-|               | -DENABLE_CUDA=ON \                                                                                                |
-|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                        |
-|               | -DQMC_COMPLEX=1 \                                                                                                 |
-|               | -DQMC_MIXED_PRECISION=0 \                                                                                         |
-|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                             |
-+---------------+-------------------------------------------------------------------------------------------------------------------+
-| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                          |
-|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \                  |
-|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                       |
-|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \                 |
-|               | && ctest --output-on-failure -L deterministic -j 16`                                                              |
-+---------------+-------------------------------------------------------------------------------------------------------------------+
-| Objective     | Build for Nvidia (Complex) with full double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled |
-+---------------+-------------------------------------------------------------------------------------------------------------------+
-| Duration      | ~6 Minutes                                                                                                        |
-+---------------+-------------------------------------------------------------------------------------------------------------------+
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Compiler      | Intel                                                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Build Command | `export OMPI_CC=icc && \                                                                                               |
+|               | export OMPI_CXX=icpc && \                                                                                              |
+|               | cmake -GNinja -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \                                                        |
+|               | -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \                                                                   |
+|               | -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \                                                                   |
+|               | -DBUILD_AFQMC=ON \                                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                                                     |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                                             |
+|               | -DQMC_COMPLEX=1 \                                                                                                      |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                                              |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                                                  |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \                               |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \                       |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                                            |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \                      |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                                                   |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Objective     | Build for Nvidia (Complex) with full double floating point precision, Auxiliary-Field Quantum Monte Carlo enabled      |
++---------------+------------------------------------------------------------------------------------------------------------------------+
+| Duration      | ~6 Minutes                                                                                                             |
++---------------+------------------------------------------------------------------------------------------------------------------------+
 
 
 gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed)
