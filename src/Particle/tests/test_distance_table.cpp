@@ -541,7 +541,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 
   // calculate particle distances
   ions.update();
-  const int ee_tid = electrons.addTable(electrons);
+  const int ee_tid = electrons.addTable(electrons, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP);
   // get target particle set's distance table data
   const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
