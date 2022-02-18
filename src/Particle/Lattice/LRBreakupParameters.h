@@ -31,6 +31,7 @@ public:
   T LR_rc;
   T LR_kc;
   T LR_tol;
+  // number of periodic spatial dimensions
   unsigned ndim;
 
   ///default constructor
