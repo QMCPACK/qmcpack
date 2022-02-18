@@ -430,7 +430,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       else
 #endif
       {
-        app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
+        app_summary() << "      Running OpenMP offload code path. Only SM1 update is supported. "
                          "delay_rank is ignored."
                       << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
