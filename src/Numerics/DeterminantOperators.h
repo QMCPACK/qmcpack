@@ -28,7 +28,7 @@
 #include "CPU/math.hpp"
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -239,17 +239,17 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
  * @param colchanged column index to be replaced
  * @return \f$ M^{new}/M\f$
  */
-template<typename MatA, typename VecB>
+template<typename T>
 inline void mw_DetRatioByColumn(const int nw,
                                 int colchanged,
-                                const RefVector<MatA>& Minv_list,
-                                const RefVector<VecB>& newv_list,
-                                RefVector<typename MatA::value_type>& curRatio_list)
+                                const RefVector<Matrix<T>>& Minv_list,
+                                const RefVector<Vector<T>>& newv_list,
+                                std::vector<T>& curRatio_list)
 
 {
   //use BLAS dot since the stride is not uniform
   for (size_t iw = 0; iw < nw; iw++)
-    curRatio_list[iw].get() = simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged,
+    curRatio_list[iw] = simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged,
                                         Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
 }
 
@@ -304,35 +304,18 @@ inline void InverseUpdateByColumn(MatA& Minv,
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
 
-template<typename MatA, typename VecT>
+template<typename T>
 inline void mw_InverseUpdateByColumn(const int nw,
-                                     RefVector<MatA>& Minv_list,
-                                     RefVector<VecT>& newcol_list,
-                                     RefVector<VecT>& rvec_list,
-                                     RefVector<VecT>& rvecinv_list,
+                                     const RefVector<Matrix<T>>& Minv_list,
+                                     const RefVector<Vector<T>>& newcol_list,
+                                     const RefVector<Vector<T>>& rvec_list,
+                                     const RefVector<Vector<T>>& rvecinv_list,
                                      int colchanged,
-                                     RefVector<typename MatA::value_type> c_ratio_list)
+                                     std::vector<T> ratiolist)
 {
-#pragma omp parallel for
   for (size_t iw = 0; iw < nw; iw++)
     det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,
-                   c_ratio_list[iw].get(), rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
-}
-
-
-template<typename MatA, typename VecT>
-inline void mw_InverseUpdateByColumn(const int nw,
-                                     RefVector<MatA>& Minv_list,
-                                     RefVector<VecT>& newcol_list,
-                                     RefVector<VecT>& rvec_list,
-                                     RefVector<VecT>& rvecinv_list,
-                                     int colchanged,
-                                     std::vector<typename MatA::value_type> ratioGradReflistIdim)
-{
-#pragma omp parallel for
-  for (size_t iw = 0; iw < nw; iw++)
-    det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,
-                   ratioGradReflistIdim[iw], rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
+                   ratiolist[iw], rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
 }
 } // namespace qmcplusplus
 #endif
