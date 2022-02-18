@@ -27,8 +27,8 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsign
   {
     APP_ABORT("  Illegal cutoff for KContainer");
   }
-  FindApproxMMax(lattice);
-  BuildKLists(lattice, ndim, useSphere);
+  FindApproxMMax(lattice, ndim);
+  BuildKLists(lattice, useSphere);
 
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
   app_log() << "   # of K-shell  = " << kshell.size() << std::endl;
@@ -36,7 +36,7 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsign
   app_log() << std::endl;
 }
 
-void KContainer::FindApproxMMax(const ParticleLayout& lattice)
+void KContainer::FindApproxMMax(const ParticleLayout& lattice, unsigned ndim)
 {
   //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
@@ -90,9 +90,11 @@ void KContainer::FindApproxMMax(const ParticleLayout& lattice)
   mmax[DIM] = mmax[0];
   for (int i = 1; i < DIM; ++i)
     mmax[DIM] = std::max(mmax[i], mmax[DIM]);
+  if (ndim < 3) mmax[2] = 0;
+  if (ndim < 2) mmax[1] = 0;
 }
 
-void KContainer::BuildKLists(const ParticleLayout& lattice, unsigned ndim, bool useSphere)
+void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;
@@ -111,11 +113,9 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, unsigned ndim, bool 
       kvec[0] = i;
       for (int j = -mmax[1]; j <= mmax[1]; j++)
       {
-        if ((ndim <= 1) and (j != 0)) continue;
         kvec[1] = j;
         for (int k = -mmax[2]; k <= mmax[2]; k++)
         {
-          if ((ndim <= 2) and (k != 0)) continue;
           kvec[2] = k;
           //Do not include k=0 in evaluations.
           if (i == 0 && j == 0 && k == 0)
@@ -154,13 +154,11 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, unsigned ndim, bool 
         kvec[0] -= idimsize;
       for (int j = 0; j < jdimsize; j++)
       {
-        if ((ndim <= 1) and (j != 0)) break;
         kvec[1] = j;
         if (kvec[1] > mmax[1])
           kvec[1] -= jdimsize;
         for (int k = 0; k < kdimsize; k++)
         {
-          if ((ndim <= 2) and (k != 0)) break;
           kvec[2] = k;
           if (kvec[2] > mmax[2])
             kvec[2] -= kdimsize;

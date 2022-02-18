@@ -79,9 +79,9 @@ private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(const ParticleLayout& lattice);
+  void FindApproxMMax(const ParticleLayout& lattice, unsigned ndim);
   /** construct the container for k-vectors */
-  void BuildKLists(const ParticleLayout& lattice, unsigned ndim, bool useSphere);
+  void BuildKLists(const ParticleLayout& lattice, bool useSphere);
 
   /** K-vector in Cartesian coordinates in SoA layout
    */
