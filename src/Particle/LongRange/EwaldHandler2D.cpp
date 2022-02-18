@@ -18,7 +18,7 @@ EwaldHandler2D::EwaldHandler2D(ParticleSet& ref, mRealType kc_in)
   : LRHandlerBase(kc_in)
 {
   if (ref.getLattice().ndim != 2)
-    APP_ABORT("2D Ewald requires 2D Lattice");
+    throw std::runtime_error("2D Ewald requires 2D Lattice");
   LR_rc = ref.getLattice().LR_rc; // CoulombPBC needs get_rc() to createSpline4RbyVs
   LR_kc = ref.getLattice().LR_kc; // get_kc() is used in QMCFiniteSize
   alpha = std::sqrt(LR_kc/2.0/LR_rc);
