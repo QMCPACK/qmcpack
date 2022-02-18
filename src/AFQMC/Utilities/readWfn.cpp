@@ -287,9 +287,6 @@ void read_general_wavefunction(std::ifstream& in,
   bool Cstyle      = true;
   int wfn_type     = 0;
   int ndet_in_file = -1;
-  int NEL          = NAEA;
-  if (walker_type != CLOSED)
-    NEL += NAEB;
 
   /*
    * type:
@@ -451,11 +448,8 @@ ph_excitations<int, ComplexType> read_ph_wavefunction(std::ifstream& in,
   bool Cstyle      = true;
   int wfn_type     = 0;
   int ndet_in_file = -1;
-  int NEL          = NAEA;
   bool mixed       = false;
   std::string type;
-  if (walker_type != CLOSED)
-    NEL += NAEB;
 
   /*
    * Expected order of inputs and tags:
@@ -711,10 +705,7 @@ void read_ph_wavefunction_hdf(hdf_archive& dump,
   using Alloc = shared_allocator<ComplexType>;
   assert(walker_type != UNDEFINED_WALKER_TYPE);
   int wfn_type = 0;
-  int NEL      = NAEA;
   bool mixed   = false;
-  if (walker_type != CLOSED)
-    NEL += NAEB;
 
   /*
    * Expected order of inputs and tags:
@@ -752,10 +743,7 @@ void read_ph_wavefunction_hdf(hdf_archive& dump,
     mixed = true;
 
   if (mixed)
-  { // read reference
-    int nmo_ = (walker_type == NONCOLLINEAR ? 2 * NMO : NMO);
-    if (not comm.root())
-      nmo_ = 0; // only root reads matrices
+  {
     PsiT.reserve((wfn_type != 1) ? 1 : 2);
 
     if (!dump.push(std::string("PsiT_") + std::to_string(0), false))

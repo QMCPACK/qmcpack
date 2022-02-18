@@ -81,8 +81,8 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   double val_ei = cab.evaluate(elec);
   REQUIRE(val_ei == Approx(-0.005314032183 + 2 * 0.0506238028)); // not validated
 
-  CoulombPBCAA caa_elec = CoulombPBCAA(elec, false);
-  CoulombPBCAA caa_ion  = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa_elec(elec, true, false, false);
+  CoulombPBCAA caa_ion (ions, false, false, false);
   double val_ee         = caa_elec.evaluate(elec);
   double val_ii         = caa_ion.evaluate(ions);
   double sum            = val_ee + val_ii + val_ei;
@@ -151,8 +151,8 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   REQUIRE(val_ei == Approx(-2.219665062 + 0.0267892759 * 4)); // not validated
 
 
-  CoulombPBCAA caa_elec = CoulombPBCAA(elec, false);
-  CoulombPBCAA caa_ion  = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa_elec(elec, false, false, false);
+  CoulombPBCAA caa_ion(ions, false, false, false);
   double val_ee         = caa_elec.evaluate(elec);
   double val_ii         = caa_ion.evaluate(ions);
   double sum            = val_ee + val_ii + val_ei;

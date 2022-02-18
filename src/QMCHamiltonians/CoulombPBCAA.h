@@ -62,7 +62,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
+
   std::vector<RealType> Zat, Zspec;
+  std::shared_ptr<Vector<RealType, OffloadPinnedAllocator<RealType>>> Zat_offload;
+
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
 
@@ -83,13 +86,17 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
 
   /** constructor */
-  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
+  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload);
 
   ~CoulombPBCAA() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
+
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -119,6 +126,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 #endif
 
   Return_t evalSR(ParticleSet& P);
+
+  static std::vector<Return_t> mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list);
+
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
@@ -141,12 +152,16 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   }
 
 private:
-  // AA table ID
+  /// if true use offload
+  const bool use_offload_;
+  /// AA table ID
   const int d_aa_ID;
-  // Timer for long range
+  /// Timer for long range
   NewTimer& evalLR_timer_;
-  // Timer for long range
+  /// Timer for long range
   NewTimer& evalSR_timer_;
+  /// Timer for offload part
+  NewTimer& offload_timer_;
 };
 
 } // namespace qmcplusplus

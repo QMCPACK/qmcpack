@@ -76,6 +76,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string sourceInp(targetPtcl.getName());
   std::string title("ElecElec"), pbc("yes");
   std::string forces("no");
+  std::string use_gpu;
   bool physical = true;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title, "id");
@@ -85,10 +86,11 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   hAttrib.add(pbc, "pbc");
   hAttrib.add(physical, "physical");
   hAttrib.add(forces, "forces");
+  hAttrib.add(use_gpu, "gpu", {"", "yes", "no"});
   hAttrib.put(cur);
-  bool applyPBC      = (PBCType && pbc == "yes");
-  bool doForces      = (forces == "yes") || (forces == "true");
-  ParticleSet* ptclA = &targetPtcl;
+  const bool applyPBC = (PBCType && pbc == "yes");
+  const bool doForces = (forces == "yes") || (forces == "true");
+  ParticleSet* ptclA  = &targetPtcl;
   if (sourceInp != targetPtcl.getName())
   {
     //renameProperty(sourceInp);
@@ -122,7 +124,15 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     }
 #else
     if (applyPBC)
-      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces), title, physical);
+    {
+      if (use_gpu.empty())
+        use_gpu = ptclA->getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
+
+      if (use_gpu == "yes" && ptclA->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+        throw std::runtime_error("Requested gpu=yes in CoulombPBCAA but the particle set has gpu=no.");
+
+      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces, use_gpu == "yes"), title, physical);
+    }
     else
     {
       targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
