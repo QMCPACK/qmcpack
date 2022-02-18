@@ -132,7 +132,7 @@ template<class MultiArray2D,
          typename = void>
 auto sum(MultiArray2D const& A)
 {
-  assert(A.stride(1) == 1);
+  assert(std::get<1>(A.strides()) == 1);
   // blas call assumes fortran ordering
   return sum(A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride());
 }
