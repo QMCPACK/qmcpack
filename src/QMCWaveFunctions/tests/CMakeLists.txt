@@ -105,7 +105,7 @@ set(DETERMINANT_SRC
     test_DiracDeterminant.cpp
     test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
-    test_dirac_matrix.cpp
+    test_DiracMatrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
