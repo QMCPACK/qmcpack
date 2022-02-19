@@ -54,42 +54,26 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
 
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
-  if(qp == nullptr)
+  if (qp == nullptr)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
-  std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
-  WaveFunctionFactory* psiFactory = 0;
-  bool isPrimary                  = true;
-  if (pit == myPool.end())
-  {
-    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
-    isPrimary  = (myPool.empty() || role == "primary");
-    myPool[id] = psiFactory;
-  }
-  else
-  {
-    psiFactory = (*pit).second;
-  }
+  WaveFunctionFactory* psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
+  addFactory(psiFactory, myPool.empty() || role == "primary");
+
   bool success = psiFactory->put(cur);
-  if (success && isPrimary)
-  {
-    primary_psi_ = psiFactory->getTWF();
-  }
   return success;
 }
 
-void WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
+void WaveFunctionPool::addFactory(WaveFunctionFactory* psifac, bool primary)
 {
-  PoolType::iterator oit(myPool.find(psifac->getName()));
-  if (oit == myPool.end())
-  {
-    app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
-    myPool[psifac->getName()] = psifac;
-  }
-  else
-  {
-    app_warning() << "  " << psifac->getName() << " exists. Ignore addition" << std::endl;
-  }
+  if (myPool.find(psifac->getName()) != myPool.end())
+    throw std::runtime_error("  " + psifac->getName() + " exists. Cannot be added.");
+
+  app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
+
+  myPool[psifac->getName()] = psifac;
+  if (primary)
+    primary_psi_ = psifac->getTWF();
 }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)

@@ -29,9 +29,8 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  auto& pset       = *particle_pool.getParticleSet("e");
-  auto& wf_factory = *wavefunction_pool.getWaveFunctionFactory("wavefunction");
+  auto& pset             = *particle_pool.getParticleSet("e");
+  auto& wf_factory       = *wavefunction_pool.getWaveFunctionFactory("wavefunction");
 
   CompositeSPOSet comp_sposet;
 
