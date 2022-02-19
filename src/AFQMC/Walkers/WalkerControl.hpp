@@ -78,7 +78,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   int nsend = 0;
   if (deltaN <= 0 && wset.size() != CurrNumPerNode[MyContext])
     throw std::runtime_error("error in swapWalkersSimple().");
-  if (deltaN > 0 && (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size(0)) != deltaN))
+  if (deltaN > 0 && (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size()) != deltaN))
     throw std::runtime_error("error in swapWalkersSimple().");
   std::vector<ComplexType> buff;
   if (deltaN < 0)

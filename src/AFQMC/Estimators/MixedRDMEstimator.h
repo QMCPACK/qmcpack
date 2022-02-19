@@ -94,7 +94,7 @@ public:
     int nx((wset.getWalkerType() == COLLINEAR) ? 2 : 1);
     if (std::get<0>(wDMsum.sizes()) != wset.size() || std::get<1>(wDMsum.sizes()) != nx)
       wDMsum.reextent({wset.size(), nx});
-    if (wOvlp.size(0) != wset.size() || std::get<1>(wOvlp.sizes()) != nx)
+    if (wOvlp.size() != wset.size() || std::get<1>(wOvlp.sizes()) != nx)
       wOvlp.reextent({wset.size(), nx});
 
     if (!importanceSampling)

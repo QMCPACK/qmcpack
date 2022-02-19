@@ -369,7 +369,7 @@ public:
   RealType GlobalWeight() const
   {
     RealType res = 0;
-    assert(walker_buffer.size(1) == walker_size);
+    assert( std::get<1>(walker_buffer.sizes()) == walker_size);
     if (TG.TG_local().root())
     {
       boost::multi::array<ComplexType, 1> buff(iextensions<1u>{tot_num_walkers});
@@ -457,13 +457,13 @@ public:
     int nW = 0;
     for (auto it = itbegin; it != itend; ++it)
       nW += it->second;
-    if (int(M.size(0)) < std::max(0, nW - targetN_per_TG))
+    if (int(M.size()) < std::max(0, nW - targetN_per_TG))
     {
       std::cout << " Error in WalkerSetBase::branch(): Not enough space in excess matrix. \n"
-                << M.size(0) << " " << nW << " " << targetN_per_TG << std::endl;
+                << M.size() << " " << nW << " " << targetN_per_TG << std::endl;
       APP_ABORT("Error in WalkerSetBase::branch(): Not enough space in excess matrix.\n");
     }
-    if (int(M.size(1)) < walker_size + ((wlk_desc[3] > 0) ? bp_walker_size : 0))
+    if (int(std::get<1>(M.sizes())) < walker_size + ((wlk_desc[3] > 0) ? bp_walker_size : 0))
       APP_ABORT("Error in WalkerSetBase::branch(): Wrong dimensions in excess matrix.\n");
 
     // if all walkers are dead, don't bother with routine, reset tot_num_walkers and return
@@ -573,7 +573,7 @@ public:
   {
     if (!TG.TG_local().root())
       return;
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     ma::scal(ComplexType(w0), W({0, tot_num_walkers}, data_displ[WEIGHT]));
     if (scale_last_history)
@@ -726,7 +726,7 @@ public:
   // LogOverlapFactor_new = LogOverlapFactor + f/nx
   void adjustLogOverlapFactor(const double f)
   {
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     double nx = (walkerType == NONCOLLINEAR ? 1.0 : 2.0);
     if (TG.TG_local().root())
     {
