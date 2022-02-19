@@ -824,8 +824,8 @@ public:
   {
     using GType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
+    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
+    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size()});
     vbias(G_, v_, a, c, k);
   }
 

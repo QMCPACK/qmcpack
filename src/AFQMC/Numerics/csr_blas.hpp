@@ -42,19 +42,19 @@ template<class T,
 MultiArray1D axpy(char TA, T a, SparseArray1D&& x, MultiArray1D&& y)
 {
   using ma::conj;
-  assert(x.size(0) == y.size(0));
+  assert(x.size(0) == y.size());
   auto vals = x.non_zero_values_data();
   auto cols = x.non_zero_indices2_data();
   if (TA == 'C')
     for (std::size_t i = 0, iend = x.num_non_zero_elements(); i < iend; ++i, ++vals, ++cols)
     {
-      assert(*cols >= 0 && *cols < y.size(0));
+      assert(*cols >= 0 && *cols < y.size());
       y[*cols] += ma::conj(*vals) * a;
     }
   else
     for (std::size_t i = 0, iend = x.num_non_zero_elements(); i < iend; ++i, ++vals, ++cols)
     {
-      assert(*cols >= 0 && *cols < y.size(0));
+      assert(*cols >= 0 && *cols < y.size());
       y[*cols] += (*vals) * a;
     }
   return std::forward<MultiArray1D>(y);

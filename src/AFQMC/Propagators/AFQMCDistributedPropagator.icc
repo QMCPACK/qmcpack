@@ -65,7 +65,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   if (hybrid_weight.size(1) != nsteps || hybrid_weight.size(2) != nwalk)
     hybrid_weight = C3Tensor({2, nsteps, nwalk});
 
-  if (new_overlaps.size(0) != nwalk)
+  if (new_overlaps.size() != nwalk)
     new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
     new_energies = CMatrix({nwalk, 3});
