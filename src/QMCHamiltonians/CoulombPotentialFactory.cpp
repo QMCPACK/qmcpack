@@ -94,7 +94,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   if (sourceInp != targetPtcl.getName())
   {
     //renameProperty(sourceInp);
-    PtclPoolType::iterator pit(ptclPool.find(sourceInp));
+    auto pit(ptclPool.find(sourceInp));
     if (pit == ptclPool.end())
     {
       ERRORMSG("Missing source ParticleSet" << sourceInp);
@@ -175,7 +175,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   bool quantum = (a == targetPtcl.getName());
 
   renameProperty(a);
-  PtclPoolType::iterator pit(ptclPool.find(a));
+  auto pit(ptclPool.find(a));
   if (pit == ptclPool.end())
   {
     ERRORMSG("Missing source ParticleSet" << a)
@@ -214,7 +214,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   else if (mode == "acforce")
   {
     app_log() << "Adding Assaraf-Caffarel total force.\n";
-    PsiPoolType::iterator psi_it(psiPool.find(PsiName));
+    auto psi_it(psiPool.find(PsiName));
     if (psi_it == psiPool.end())
     {
       APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
@@ -247,14 +247,14 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   }
   renameProperty(src);
   renameProperty(wfname);
-  PtclPoolType::iterator pit(ptclPool.find(src));
+  auto pit(ptclPool.find(src));
   if (pit == ptclPool.end())
   {
     ERRORMSG("Missing source ParticleSet" << src)
     return;
   }
   ParticleSet* ion = (*pit).second;
-  PsiPoolType::iterator oit(psiPool.find(wfname));
+  auto oit(psiPool.find(wfname));
   TrialWaveFunction* psi = 0;
   if (oit == psiPool.end())
   {

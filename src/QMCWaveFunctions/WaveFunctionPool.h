@@ -88,7 +88,7 @@ public:
 
   /** get the Pool object
    */
-  inline PoolType& getPool() { return myPool; }
+  inline const PoolType& getPool() const { return myPool; }
 
   /** add a WaveFunctionFactory* to myPool
    */

@@ -26,13 +26,13 @@ class OrbitalConstraintsBase;
 class JastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
+  JastrowBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
   ///index for the jastrow type: 1, 2, 3
   int JastrowType;
   /// \xmla{jastrow,name}

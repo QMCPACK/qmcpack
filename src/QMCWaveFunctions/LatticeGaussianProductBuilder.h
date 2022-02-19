@@ -23,13 +23,13 @@ namespace qmcplusplus
 class LatticeGaussianProductBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
+  LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
   ///index for the jastrow type: 1, 2, 3
   int LatticeGaussianProductType;
   ///name
