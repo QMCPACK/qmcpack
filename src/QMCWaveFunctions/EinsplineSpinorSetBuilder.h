@@ -28,7 +28,7 @@ namespace qmcplusplus
 
 class EinsplineSpinorSetBuilder : public EinsplineSetBuilder
 {
-  using PSetMap = std::map<std::string, ParticleSet*>;
+  using PSetMap = std::map<std::string, std::unique_ptr<ParticleSet>>;
 
 public:
   ///constructor

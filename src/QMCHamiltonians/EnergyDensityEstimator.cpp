@@ -200,7 +200,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
     app_log() << "  ParticleSet " << psname << " does not exist" << std::endl;
     APP_ABORT("EnergyDensityEstimator::put");
   }
-  return pit->second;
+  return pit->second.get();
 }
 
 

@@ -135,7 +135,7 @@ std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNode
     if (pit == ptclPool.end())
       PRE.error("Missing basisset/@source.", true);
     else
-      ions = (*pit).second;
+      ions = pit->second.get();
     if (targetPtcl.isSpinor())
 #ifdef QMC_COMPLEX
       bb = std::make_unique<LCAOSpinorBuilder>(targetPtcl, *ions, myComm, rootNode);

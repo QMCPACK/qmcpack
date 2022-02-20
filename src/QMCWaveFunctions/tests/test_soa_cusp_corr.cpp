@@ -72,7 +72,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& ions(*ions_ptr);
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
@@ -82,7 +83,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(ions.R.size() == 3);
   ions.update();
 
-  ParticleSet elec(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
@@ -102,8 +104,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
   SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
@@ -240,7 +242,8 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& ions(*ions_ptr);
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
@@ -250,7 +253,8 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(ions.R.size() == 3);
   ions.update();
 
-  ParticleSet elec(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
@@ -270,8 +274,8 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
   SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
@@ -413,7 +417,8 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& ions(*ions_ptr);
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
@@ -423,7 +428,8 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(ions.R.size() == 9);
   ions.update();
 
-  ParticleSet elec(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
@@ -443,8 +449,8 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
   SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
