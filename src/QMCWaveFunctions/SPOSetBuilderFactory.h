@@ -36,7 +36,7 @@ public:
 
   ~SPOSetBuilderFactory();
 
-  SPOSetBuilder& createSPOSetBuilder(xmlNodePtr rootNode);
+  std::unique_ptr<SPOSetBuilder> createSPOSetBuilder(xmlNodePtr rootNode);
 
   /** returns a named sposet from the pool
    *  only use in serial portion of execution
@@ -44,24 +44,24 @@ public:
    */
   SPOSet* getSPOSet(const std::string& name) const;
 
-  SPOSetBuilder& getLastBuilder();
-
   void buildSPOSetCollection(xmlNodePtr cur);
 
-  bool empty() const { return sposet_builders_.size() == 0; }
+  bool empty() const { return sposets.empty(); }
+
+  /** add an SPOSet to sposets map.
+   * This is only used to handle legacy SPOSet input styles without using sposet_collection
+   */
+  void addSPOSet(std::unique_ptr<SPOSet>);
 
 private:
-  ///writes info about contained sposets to stdout
-  void write_sposet_builders_(const std::string& pad = "") const;
-
-  ///set of basis set builders resolved by type
-  UPtrVector<SPOSetBuilder> sposet_builders_;
-
   ///reference to the target particle
   ParticleSet& targetPtcl;
 
   ///reference to the particle pool
   const PtclPoolType& ptclPool;
+
+  /// list of all sposets created by the builders of this factory
+  std::map<std::string, std::unique_ptr<SPOSet>> sposets;
 
   static std::string basisset_tag;
 };
