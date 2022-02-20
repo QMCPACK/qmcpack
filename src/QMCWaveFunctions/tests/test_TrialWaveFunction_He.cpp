@@ -30,7 +30,7 @@ void setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
                            std::unique_ptr<WaveFunctionFactory>& wff,
-                           WaveFunctionFactory::PtclPoolType& particle_set_map)
+                           WaveFunctionFactory::PSetMap& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
@@ -129,7 +129,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   ParticleSet elec(simulation_cell);
   ParticleSet ions(simulation_cell);
   std::unique_ptr<WaveFunctionFactory> wff;
-  WaveFunctionFactory::PtclPoolType particle_set_map;
+  WaveFunctionFactory::PSetMap particle_set_map;
   setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*wff->getTWF());
 
@@ -228,7 +228,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec1(simulation_cell);
   ParticleSet ions(simulation_cell);
   std::unique_ptr<WaveFunctionFactory> wff;
-  WaveFunctionFactory::PtclPoolType particle_set_map;
+  WaveFunctionFactory::PSetMap particle_set_map;
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.

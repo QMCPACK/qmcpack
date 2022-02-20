@@ -291,7 +291,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 //
 //    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << std::endl;
 //    renameProperty(nuclei);
-//    PtclPoolType::iterator pit(ptclPool.find(nuclei));
+//    PSetMap::iterator pit(ptclPool.find(nuclei));
 //    if(pit != ptclPool.end()) {
 //      ParticleSet* ion=(*pit).second;
 //      if(PBCType)

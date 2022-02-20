@@ -127,7 +127,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -296,7 +296,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -464,7 +464,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -603,7 +603,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -752,7 +752,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
   particle_set_map["e"]    = &elec;
   particle_set_map["ion0"] = &ions;
@@ -1004,7 +1004,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1189,7 +1189,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1344,7 +1344,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;

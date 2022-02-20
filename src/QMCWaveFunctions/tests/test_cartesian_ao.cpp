@@ -60,7 +60,7 @@ void test_cartesian_ao()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -128,7 +128,7 @@ void test_dirac_ao()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 

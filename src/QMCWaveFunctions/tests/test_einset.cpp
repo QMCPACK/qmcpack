@@ -447,7 +447,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   elec->R[1][1] = 1.0;
   elec->R[1][2] = 0.0;
 
-  EinsplineSetBuilder::PtclPoolType ptcl_map;
+  EinsplineSetBuilder::PSetMap ptcl_map;
   ptcl_map["e"] = elec.get();
 
   xmlNodePtr cur = NULL;

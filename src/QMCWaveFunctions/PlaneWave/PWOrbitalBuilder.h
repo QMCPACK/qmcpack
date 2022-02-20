@@ -40,7 +40,7 @@ private:
 #endif
 
   std::map<std::string, SPOSetPtr> spomap;
-  const PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
 
   ///Read routine for HDF wavefunction file version 0.10
   void ReadHDFWavefunction(hid_t hfile);
@@ -59,7 +59,7 @@ private:
   //std::map<std::string,SPOSetPtr> PWOSet;
 public:
   ///constructor
-  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PtclPoolType& psets);
+  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets);
   ~PWOrbitalBuilder() override;
 
   ///implement vritual function

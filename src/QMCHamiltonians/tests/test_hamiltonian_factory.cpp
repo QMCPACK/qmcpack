@@ -50,7 +50,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   ions.setName("ion0");
   ions.create({1});
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = qp.get();
@@ -103,7 +103,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   tspecies(atomicNumberIdx, idx) = 6;
 
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = qp.get();

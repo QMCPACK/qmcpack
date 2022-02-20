@@ -40,7 +40,7 @@ public:
   using ValueType    = WaveFunctionComponent::ValueType;
   using PosType      = WaveFunctionComponent::PosType;
   using GradType     = WaveFunctionComponent::GradType;
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using PSetMap = std::map<std::string, ParticleSet*>;
 
   /** \ingroup XMLTags
    *@{

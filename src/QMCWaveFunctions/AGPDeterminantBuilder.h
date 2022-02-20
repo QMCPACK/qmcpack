@@ -31,14 +31,14 @@ namespace qmcplusplus
 class AGPDeterminantBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, const PtclPoolType& pset);
+  AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, const PSetMap& pset);
 
   /// process a xml node at cur
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 protected:
-  ///reference to a PtclPoolType
-  const PtclPoolType& ptclPool;
+  ///reference to a PSetMap
+  const PSetMap& ptclPool;
   ///basiset Factory
   std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
   ///AGPDeterminant

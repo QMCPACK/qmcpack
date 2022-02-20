@@ -43,7 +43,7 @@ namespace qmcplusplus
 {
 WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
                                          ParticleSet& qp,
-                                         const PtclPoolType& pset,
+                                         const PSetMap& pset,
                                          Communicate* c,
                                          bool tasking)
     : MPIObjectBase(c),

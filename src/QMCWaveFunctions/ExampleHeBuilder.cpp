@@ -20,7 +20,7 @@
 
 namespace qmcplusplus
 {
-ExampleHeBuilder::ExampleHeBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets)
+ExampleHeBuilder::ExampleHeBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets), els(p)
 {}
 

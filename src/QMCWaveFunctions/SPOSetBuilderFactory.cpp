@@ -59,7 +59,7 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PtclPoolType& psets)
+SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets)
     : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";

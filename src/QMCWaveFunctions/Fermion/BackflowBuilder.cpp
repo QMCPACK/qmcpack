@@ -38,7 +38,7 @@
 
 namespace qmcplusplus
 {
-BackflowBuilder::BackflowBuilder(ParticleSet& els, const PtclPoolType& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool) {}
+BackflowBuilder::BackflowBuilder(ParticleSet& els, const PSetMap& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool) {}
 
 std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {

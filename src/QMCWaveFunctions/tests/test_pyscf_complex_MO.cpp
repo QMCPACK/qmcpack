@@ -87,7 +87,7 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 

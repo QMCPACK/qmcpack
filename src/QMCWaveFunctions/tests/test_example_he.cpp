@@ -52,7 +52,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   tspecies(massIdx, downIdx) = 1.0;
 
 
-  WaveFunctionFactory::PtclPoolType particle_set_map;
+  WaveFunctionFactory::PSetMap particle_set_map;
   particle_set_map["e"] = elec.get();
 
   auto ions = std::make_unique<ParticleSet>(simulation_cell);

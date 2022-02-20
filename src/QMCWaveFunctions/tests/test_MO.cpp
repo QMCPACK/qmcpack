@@ -64,7 +64,7 @@ void test_He(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -181,7 +181,7 @@ void test_Ne(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -305,7 +305,7 @@ void test_HCN(bool transform)
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 

@@ -60,7 +60,7 @@ namespace qmcplusplus
 {
 HamiltonianFactory::HamiltonianFactory(const std::string& hName,
                                        ParticleSet& qp,
-                                       const PtclPoolType& pset,
+                                       const PSetMap& pset,
                                        const PsiPoolType& oset,
                                        Communicate* c)
     : MPIObjectBase(c),

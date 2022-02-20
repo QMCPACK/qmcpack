@@ -40,7 +40,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 
   qp->update();
 
-  WaveFunctionFactory::PtclPoolType particle_set_map;
+  WaveFunctionFactory::PSetMap particle_set_map;
   particle_set_map["e"] = qp.get();
 
 
