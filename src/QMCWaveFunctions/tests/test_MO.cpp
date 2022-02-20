@@ -84,10 +84,11 @@ void test_He(bool transform)
       xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
     }
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
@@ -201,10 +202,11 @@ void test_Ne(bool transform)
       xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
     }
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
@@ -323,10 +325,11 @@ void test_HCN(bool transform)
       xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
     }
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
 
     SPOSet::ValueVector values;
