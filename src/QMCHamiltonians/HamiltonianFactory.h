@@ -33,7 +33,7 @@ public:
   using PsiPoolType  = std::map<std::string, WaveFunctionFactory*>;
 
   ///constructor
-  HamiltonianFactory(const std::string& hName, ParticleSet& qp, PtclPoolType& pset, PsiPoolType& oset, Communicate* c);
+  HamiltonianFactory(const std::string& hName, ParticleSet& qp, const PtclPoolType& pset, const PsiPoolType& oset, Communicate* c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -71,9 +71,9 @@ private:
   ///target ParticleSet
   ParticleSet& targetPtcl;
   ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
   ///reference to the WaveFunctionFactory Pool
-  PsiPoolType& psiPool;
+  const PsiPoolType& psiPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
 

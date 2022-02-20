@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets)
+LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {}
 
@@ -36,7 +36,8 @@ std::unique_ptr<WaveFunctionComponent> LatticeGaussianProductBuilder::buildCompo
   {
     app_warning() << "  LatticeGaussianProductBuilder::put does not have name " << std::endl;
   }
-  std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+
+  auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
   {
     app_error() << "Could not file source ParticleSet " << sourceOpt << " for ion wave function.\n";

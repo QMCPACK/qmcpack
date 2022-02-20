@@ -39,7 +39,7 @@ class BackflowBuilder
   using PtclPoolType = std::map<std::string, ParticleSet*>;
 
 public:
-  BackflowBuilder(ParticleSet& p, PtclPoolType& pool);
+  BackflowBuilder(ParticleSet& p, const PtclPoolType& pool);
 
   std::unique_ptr<BackflowTransformation> buildBackflowTransformation(xmlNodePtr cur);
 
@@ -47,7 +47,7 @@ public:
 
 private:
   ParticleSet& targetPtcl;
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
   bool IgnoreSpin;
   RealType Rs;
   RealType Kc;

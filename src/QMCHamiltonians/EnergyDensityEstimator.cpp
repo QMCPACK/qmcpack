@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
+EnergyDensityEstimator::EnergyDensityEstimator(const PSPool& PSP, const std::string& defaultKE)
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
   update_mode_.set(COLLECTABLE, 1);
@@ -194,12 +194,13 @@ void EnergyDensityEstimator::unset_ptcl()
 
 ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 {
-  if (psetpool.find(psname) == psetpool.end())
+  auto pit(psetpool.find(psname));
+  if (pit == psetpool.end())
   {
     app_log() << "  ParticleSet " << psname << " does not exist" << std::endl;
     APP_ABORT("EnergyDensityEstimator::put");
   }
-  return psetpool[psname];
+  return pit->second;
 }
 
 

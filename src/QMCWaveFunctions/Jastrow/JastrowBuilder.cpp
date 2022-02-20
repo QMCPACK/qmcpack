@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets)
+JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {
   resetOptions();
@@ -88,7 +88,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildCounting(xmlNodePtr 
 {
   ReportEngine PRE(ClassName, "addCounting(xmlNodePtr)");
   std::unique_ptr<CountingJastrowBuilder> cjb;
-  std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it != ptclPool.end() && sourceOpt != targetPtcl.getName()) // source is not target
   {
     ParticleSet* sourcePtcl = (*pa_it).second;
@@ -102,7 +102,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildCounting(xmlNodePtr 
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildkSpace(xmlNodePtr cur)
 {
   app_log() << "  JastrowBuilder::buildkSpace(xmlNodePtr)" << std::endl;
-  std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
   {
     app_warning() << "  JastrowBuilder::buildkSpace failed. " << sourceOpt << " does not exist" << std::endl;
@@ -123,7 +123,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildOneBody(xmlNodePtr c
               "\nExit JastrowBuilder::buildOneBody.\n");
     return nullptr;
   }
-  std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
   {
     PRE.error("JastrowBuilder::buildOneBody failed. " + sourceOpt + " does not exist.");
@@ -139,7 +139,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::build_eeI(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
   ReportEngine PRE(ClassName, "add_eeI(xmlNodePtr)");
-  PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+  auto pit(ptclPool.find(sourceOpt));
   if (pit == ptclPool.end())
   {
     app_error() << "     JastrowBuilder::build_eeI requires a source attribute. " << sourceOpt << " is invalid "

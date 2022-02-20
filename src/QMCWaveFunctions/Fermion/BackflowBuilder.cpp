@@ -38,7 +38,7 @@
 
 namespace qmcplusplus
 {
-BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool) {}
+BackflowBuilder::BackflowBuilder(ParticleSet& els, const PtclPoolType& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool) {}
 
 std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
@@ -105,7 +105,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
   spoAttrib.add(spin, "spin");
   spoAttrib.put(cur);
   ParticleSet* ions = 0;
-  PtclPoolType::iterator pit(ptclPool.find(source));
+  auto pit(ptclPool.find(source));
   if (pit == ptclPool.end())
   {
     APP_ABORT("Missing backflow/@source.");

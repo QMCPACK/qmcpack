@@ -143,7 +143,7 @@ public:
   };
 
   ///at put() ion particleset is obtained from ParticleSetPool
-  PSPool& psetpool;
+  const PSPool& psetpool;
 
   ///electron particleset
   ParticleSet* Peln;
@@ -216,7 +216,7 @@ public:
   std::vector<ValueType> orbital;
 
   //constructors
-  OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
+  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
   OrbitalImages(const OrbitalImages& other);
 
   //standard interface

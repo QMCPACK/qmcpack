@@ -41,7 +41,7 @@ public:
    */
   WaveFunctionFactory(const std::string& psiName,
                       ParticleSet& qp,
-                      PtclPoolType& pset,
+                      const PtclPoolType& pset,
                       Communicate* c,
                       bool tasking = false);
 
@@ -77,7 +77,7 @@ private:
   ///target ParticleSet
   ParticleSet& targetPtcl;
   ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
   ///builder tree

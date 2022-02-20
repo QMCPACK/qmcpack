@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
+AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, const PtclPoolType& pset)
     : WaveFunctionComponentBuilder(comm, els), ptclPool(pset)
 {}
 

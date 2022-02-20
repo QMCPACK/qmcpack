@@ -27,12 +27,12 @@ namespace qmcplusplus
 class ExampleHeBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  ExampleHeBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
+  ExampleHeBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
-  PtclPoolType& ptclPool;
+  const PtclPoolType& ptclPool;
   ParticleSet& els;
 };
 
