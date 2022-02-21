@@ -24,31 +24,31 @@ namespace qmcplusplus
 TEST_CASE("cuSolverInverter_bench", "[wavefunction][benchmark]")
 {
 #ifdef QMC_COMPLEX
-  using FullPrecValueType = std::complex<double>;
+  using FullPrecValue = std::complex<double>;
 #else
-  using FullPrecValueType = double;
+  using FullPrecValue = double;
 #endif
 
-  cuSolverInverter<FullPrecValueType> solver;
+  cuSolverInverter<FullPrecValue> solver;
 
-  int N = 1024;
+  const int N = 1024;
 
-  Matrix<FullPrecValueType> m(N, N);
-  Matrix<FullPrecValueType> m_invT(N, N);
-  Matrix<FullPrecValueType> m_invT_CPU(N, N);
-  Matrix<FullPrecValueType, CUDAAllocator<FullPrecValueType>> m_invGPU;
+  Matrix<FullPrecValue> m(N, N);
+  Matrix<FullPrecValue> m_invT(N, N);
+  Matrix<FullPrecValue> m_invT_CPU(N, N);
+  Matrix<FullPrecValue, CUDAAllocator<FullPrecValue>> m_invGPU;
   std::complex<double> log_value;
   m.resize(N, N);
   m_invT.resize(N, N);
   m_invT_CPU.resize(N, N);
   m_invGPU.resize(N, N);
 
-  testing::MakeRngSpdMatrix<FullPrecValueType> makeRngSpdMatrix{};
+  testing::MakeRngSpdMatrix<FullPrecValue> makeRngSpdMatrix{};
   makeRngSpdMatrix(m);
 
   BENCHMARK("cuSolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value); };
 
-  DiracMatrix<FullPrecValueType> dmat;
+  DiracMatrix<FullPrecValue> dmat;
   BENCHMARK("CPU") { dmat.invert_transpose(m, m_invT_CPU, log_value); };
 
   auto check_matrix_result = checkMatrix(m_invT, m_invT_CPU);
