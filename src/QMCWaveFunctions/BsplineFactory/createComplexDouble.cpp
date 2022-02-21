@@ -52,7 +52,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     }
     else
     {
-      app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
       aReader = std::make_unique<SplineSetReader<SplineC2COMPTarget<double>>>(e);
     }
   }
@@ -82,7 +82,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     }
     else
     {
-      app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
       aReader = std::make_unique<SplineSetReader<SplineC2ROMPTarget<double>>>(e);
     }
   }

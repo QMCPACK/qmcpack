@@ -119,20 +119,20 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
+
   HamiltonianFactory::PsiPoolType psi_map;
-
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
@@ -288,24 +288,24 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
-
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  HamiltonianFactory::PsiPoolType psi_map;
   psi_map["psi0"] = &wff;
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfj.xml");
@@ -456,24 +456,25 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
-
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+
+  HamiltonianFactory::PsiPoolType psi_map;
   psi_map["psi0"] = &wff;
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
@@ -595,24 +596,25 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
-
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+
+  HamiltonianFactory::PsiPoolType psi_map;
   psi_map["psi0"] = &wff;
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
@@ -739,8 +741,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   //Build a CN test molecule.
   create_CN_particlesets(elec, ions);
@@ -752,12 +755,13 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+
+  HamiltonianFactory::PsiPoolType psi_map;
   psi_map["psi0"] = &wff;
 
   wff.put(root2);
@@ -1004,7 +1008,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1189,7 +1193,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1344,7 +1348,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
