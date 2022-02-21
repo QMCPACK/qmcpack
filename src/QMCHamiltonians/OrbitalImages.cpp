@@ -19,7 +19,10 @@
 
 namespace qmcplusplus
 {
-OrbitalImages::OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory)
+OrbitalImages::OrbitalImages(ParticleSet& P,
+                             const PSPool& PSP,
+                             Communicate* mpicomm,
+                             const WaveFunctionFactory& factory)
     : psetpool(PSP), wf_factory_(factory)
 {
   //keep the electron particle to get the cell later, if necessary
@@ -202,7 +205,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     APP_ABORT("OrbitalImages::put  ParticleSet " + ion_psname + " does not exist");
   }
   else
-    Pion = pit->second;
+    Pion = pit->second.get();
 
   app_log() << "  getting sposets" << std::endl;
 
@@ -499,9 +502,8 @@ void OrbitalImages::write_orbital_xsf(const std::string& sponame,
 
   //get the cell containing the ion positions
   //  assume the evaluation cell if any boundaries are open
-  ParticleSet& Pc = *Pion;
-  const Lattice_t& Lbox = Peln->getLattice().SuperCellEnum == SUPERCELL_BULK ?
-                         Peln->getLattice() : cell;
+  ParticleSet& Pc       = *Pion;
+  const Lattice_t& Lbox = Peln->getLattice().SuperCellEnum == SUPERCELL_BULK ? Peln->getLattice() : cell;
 
   //open the file
   std::ofstream file;

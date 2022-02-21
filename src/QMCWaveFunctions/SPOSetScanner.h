@@ -25,7 +25,7 @@ namespace qmcplusplus
 class SPOSetScanner
 {
 public:
-  using PtclPool    = std::map<std::string, ParticleSet*>;
+  using PtclPool    = std::map<std::string, std::unique_ptr<ParticleSet>>;
   using SPOSetMap   = std::map<std::string, std::unique_ptr<SPOSet>>;
   using RealType    = QMCTraits::RealType;
   using ValueType   = QMCTraits::ValueType;
@@ -68,7 +68,7 @@ public:
     if (pit == ptcl_pool_.end())
       app_log() << "Source particle set not found. Can not be used as reference point." << std::endl;
     else
-      ions = (*pit).second;
+      ions = pit->second.get();
 
     // scanning the SPO sets
     xmlNodePtr cur_save = cur;

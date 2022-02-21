@@ -46,7 +46,7 @@ SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
                                    SPOSetBuilderFactory& factory,
                                    ParticleSet& els,
                                    TrialWaveFunction& psi,
-                                   const PtclPoolType& psets)
+                                   const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, els), sposet_builder_factory_(factory), targetPsi(psi), ptclPool(psets)
 {
   ClassName = "SlaterDetBuilder";

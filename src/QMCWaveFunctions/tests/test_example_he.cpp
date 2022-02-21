@@ -31,46 +31,49 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  auto elec = std::make_unique<ParticleSet>(simulation_cell);
+
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
+
   std::vector<int> agroup(1);
   int nelec = 2;
   agroup[0] = nelec;
-  elec->setName("e");
-  elec->create(agroup);
-  elec->R[0][0] = 1.0;
-  elec->R[0][1] = 2.0;
-  elec->R[0][2] = 3.0;
-  elec->R[1][0] = 0.0;
-  elec->R[1][1] = 1.1;
-  elec->R[1][2] = 2.2;
+  elec.setName("e");
+  elec.create(agroup);
+  elec.R[0][0] = 1.0;
+  elec.R[0][1] = 2.0;
+  elec.R[0][2] = 3.0;
+  elec.R[1][0] = 0.0;
+  elec.R[1][1] = 1.1;
+  elec.R[1][2] = 2.2;
 
-  SpeciesSet& tspecies       = elec->getSpeciesSet();
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int downIdx                = tspecies.addSpecies("d");
   int massIdx                = tspecies.addAttribute("mass");
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& ions(*ions_ptr);
 
-  WaveFunctionFactory::PtclPoolType particle_set_map;
-  particle_set_map["e"] = elec.get();
+  ions.setName("ion0");
+  ions.create({1});
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
 
-  auto ions = std::make_unique<ParticleSet>(simulation_cell);
-  ions->setName("ion0");
-  ions->create({1});
-  ions->R[0][0] = 0.0;
-  ions->R[0][1] = 0.0;
-  ions->R[0][2] = 0.0;
-
-  SpeciesSet& he_species      = ions->getSpeciesSet();
+  SpeciesSet& he_species      = ions.getSpeciesSet();
   int He_Idx                  = he_species.addSpecies("He");
   int chargeIdx               = he_species.addAttribute("charge");
   tspecies(chargeIdx, He_Idx) = 2.0;
   tspecies(massIdx, upIdx)    = 1.0;
-  particle_set_map["ion0"]    = ions.get();
 
+  WaveFunctionFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", *elec, particle_set_map, c);
+  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
   <example_he name=\"mine\" source=\"ion0\"> \
@@ -93,8 +96,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   ExampleHeComponent* example_he = dynamic_cast<ExampleHeComponent*>(base_example_he.get());
   REQUIRE(example_he != nullptr);
 
-  ions->update();
-  elec->update();
+  ions.update();
+  elec.update();
 
   ParticleSet::ParticleGradient all_grad;
   ParticleSet::ParticleLaplacian all_lap;
@@ -102,7 +105,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   all_lap.resize(nelec);
 
   // Set the base expectations for wavefunction value and derivatives
-  LogValueType logpsi = example_he->evaluateLog(*elec, all_grad, all_lap);
+  LogValueType logpsi = example_he->evaluateLog(elec, all_grad, all_lap);
 
 
   // Comparisons are performed at a single set of electron coordinates.  This should be expanded.
@@ -111,7 +114,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   ParticleSet::GradType grad0;
   int iat = 0;
-  grad0   = example_he->evalGrad(*elec, iat);
+  grad0   = example_he->evalGrad(elec, iat);
 
   REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
   REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
@@ -119,7 +122,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   ParticleSet::GradType grad1;
   iat   = 1;
-  grad1 = example_he->evalGrad(*elec, iat);
+  grad1 = example_he->evalGrad(elec, iat);
 
   REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
   REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
@@ -129,13 +132,13 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   // Compare ratio and ratioGrad with a zero displacement
   ParticleSet::SingleParticlePos zero_displ(0.0, 0.0, 0.0);
   iat = 0;
-  elec->makeMove(iat, zero_displ);
+  elec.makeMove(iat, zero_displ);
 
 
-  PsiValueType ratio = example_he->ratio(*elec, iat);
+  PsiValueType ratio = example_he->ratio(elec, iat);
   REQUIRE(std::real(ratio) == Approx(1.0));
 
-  ratio = example_he->ratioGrad(*elec, iat, grad0);
+  ratio = example_he->ratioGrad(elec, iat, grad0);
 
   REQUIRE(std::real(ratio) == Approx(1.0));
 
@@ -144,12 +147,12 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
 
   iat = 1;
-  elec->makeMove(iat, zero_displ);
-  ratio = example_he->ratio(*elec, iat);
+  elec.makeMove(iat, zero_displ);
+  ratio = example_he->ratio(elec, iat);
   REQUIRE(std::real(ratio) == Approx(1.0));
 
 
-  ratio = example_he->ratioGrad(*elec, iat, grad1);
+  ratio = example_he->ratioGrad(elec, iat, grad1);
 
   REQUIRE(std::real(ratio) == Approx(1.0));
   REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
@@ -158,27 +161,27 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   // Compare ratio and ratioGrad with a non-zero displacement
   // Should compare more displacements
-  ParticleSet::SingleParticlePos oldpos = elec->R[0];
+  ParticleSet::SingleParticlePos oldpos = elec.R[0];
   ParticleSet::SingleParticlePos displ(0.15, 0.10, 0.21);
-  elec->R[0] = oldpos + displ;
-  elec->update();
+  elec.R[0] = oldpos + displ;
+  elec.update();
   ParticleSet::ParticleGradient new_grad;
   ParticleSet::ParticleLaplacian new_lap;
   new_grad.resize(nelec);
   new_lap.resize(nelec);
 
   // wavefunction value and derivatives at new position
-  LogValueType new_logpsi = example_he->evaluateLog(*elec, new_grad, new_lap);
-  elec->R[0]              = oldpos;
-  elec->update();
+  LogValueType new_logpsi = example_he->evaluateLog(elec, new_grad, new_lap);
+  elec.R[0]               = oldpos;
+  elec.update();
 
   iat = 0;
-  elec->makeMove(iat, displ);
+  elec.makeMove(iat, displ);
 
-  ratio = example_he->ratio(*elec, iat);
+  ratio = example_he->ratio(elec, iat);
   REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
-  ratio = example_he->ratioGrad(*elec, iat, grad0);
+  ratio = example_he->ratioGrad(elec, iat, grad0);
 
   REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
@@ -209,7 +212,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   grad_plus_h.resize(nelec);
   lap_plus_h.resize(nelec);
 
-  LogValueType logpsi_plus_h = example_he->evaluateLog(*elec, grad_plus_h, lap_plus_h);
+  LogValueType logpsi_plus_h = example_he->evaluateLog(elec, grad_plus_h, lap_plus_h);
 
   //phase change is not allowed in finite difference
   REQUIRE(std::imag(logpsi_plus_h) == std::imag(logpsi));
@@ -219,7 +222,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   std::vector<ValueType> dlogpsi(nparam);
   std::vector<ValueType> dhpsioverpsi(nparam);
-  example_he->evaluateDerivatives(*elec, var_param, dlogpsi, dhpsioverpsi);
+  example_he->evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
   REQUIRE(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));
 

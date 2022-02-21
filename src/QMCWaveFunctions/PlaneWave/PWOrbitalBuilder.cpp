@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PtclPoolType& psets)
+PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, els), ptclPool(psets), hfileID(-1), rootNode(NULL)
 {
   myParam = new PWParameterSet(myComm);

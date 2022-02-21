@@ -47,7 +47,7 @@ public:
                    SPOSetBuilderFactory& factory,
                    ParticleSet& els,
                    TrialWaveFunction& psi,
-                   const PtclPoolType& psets);
+                   const PSetMap& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
@@ -60,8 +60,8 @@ private:
   SPOSetBuilderFactory& sposet_builder_factory_;
   ///reference to TrialWaveFunction, should go away as the CUDA code.
   TrialWaveFunction& targetPsi;
-  ///reference to a PtclPoolType
-  const PtclPoolType& ptclPool;
+  ///reference to a PSetMap
+  const PSetMap& ptclPool;
 
   /** process a determinant element
    * @param cur xml node

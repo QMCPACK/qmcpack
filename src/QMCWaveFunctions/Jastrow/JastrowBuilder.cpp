@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets)
+JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {
   resetOptions();
@@ -90,10 +90,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildCounting(xmlNodePtr 
   std::unique_ptr<CountingJastrowBuilder> cjb;
   auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it != ptclPool.end() && sourceOpt != targetPtcl.getName()) // source is not target
-  {
-    ParticleSet* sourcePtcl = (*pa_it).second;
-    cjb                     = std::make_unique<CountingJastrowBuilder>(myComm, targetPtcl, *sourcePtcl);
-  }
+    cjb = std::make_unique<CountingJastrowBuilder>(myComm, targetPtcl, *pa_it->second);
   else
     cjb = std::make_unique<CountingJastrowBuilder>(myComm, targetPtcl);
   return cjb->buildComponent(cur);
@@ -108,9 +105,8 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildkSpace(xmlNodePtr cu
     app_warning() << "  JastrowBuilder::buildkSpace failed. " << sourceOpt << " does not exist" << std::endl;
     return nullptr;
   }
-  ParticleSet* sourcePtcl = (*pa_it).second;
   app_log() << "\n  Using kSpaceJastrowBuilder for reciprocal-space Jastrows" << std::endl;
-  kSpaceJastrowBuilder sBuilder(myComm, targetPtcl, *sourcePtcl);
+  kSpaceJastrowBuilder sBuilder(myComm, targetPtcl, *pa_it->second);
   return sBuilder.buildComponent(cur);
 }
 
@@ -129,9 +125,8 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildOneBody(xmlNodePtr c
     PRE.error("JastrowBuilder::buildOneBody failed. " + sourceOpt + " does not exist.");
     return nullptr;
   }
-  ParticleSet* sourcePtcl = (*pa_it).second;
   //use lowercase, to be handled by parser later
-  RadialJastrowBuilder rb(myComm, targetPtcl, *sourcePtcl);
+  RadialJastrowBuilder rb(myComm, targetPtcl, *pa_it->second);
   return rb.buildComponent(cur);
 }
 

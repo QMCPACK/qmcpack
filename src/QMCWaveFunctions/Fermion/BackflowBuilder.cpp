@@ -38,13 +38,14 @@
 
 namespace qmcplusplus
 {
-BackflowBuilder::BackflowBuilder(ParticleSet& els, const PtclPoolType& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool) {}
+BackflowBuilder::BackflowBuilder(ParticleSet& els, const PSetMap& pool) : cutOff(1.0), targetPtcl(els), ptclPool(pool)
+{}
 
 std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransformation(xmlNodePtr cur)
 {
   xmlNodePtr curRoot = cur;
-  auto BFTrans = std::make_unique<BackflowTransformation>(targetPtcl);
-  cur          = curRoot->children;
+  auto BFTrans       = std::make_unique<BackflowTransformation>(targetPtcl);
+  cur                = curRoot->children;
   while (cur != NULL)
   {
     std::string cname(getNodeName(cur));
@@ -111,9 +112,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
     APP_ABORT("Missing backflow/@source.");
   }
   else
-  {
-    ions = (*pit).second;
-  }
+    ions = pit->second.get();
   app_log() << "Adding electron-Ion backflow for source:" << source << " \n";
   std::unique_ptr<BackflowFunctionBase> tbf;
   int nIons        = ions->getTotalNum();
@@ -202,7 +201,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
         if (unique == "yes") // look for <index> block, and map based on that
         {
           xmlNodePtr kids = cur;
-          kids = cur->children;
+          kids            = cur->children;
           while (kids != NULL)
           {
             std::string aname(getNodeName(kids));
@@ -569,8 +568,11 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* 
         fout << "# Backflow longrange  \n";
         for (int i = 0; i < tbfks->NumKShells; i++)
         {
-          fout << std::pow(targetPtcl.getSimulationCell().getKLists().ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]], 0.5) << " " << yk[i]
-               << std::endl;
+          fout << std::pow(targetPtcl.getSimulationCell()
+                               .getKLists()
+                               .ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]],
+                           0.5)
+               << " " << yk[i] << std::endl;
         }
         fout.close();
       }

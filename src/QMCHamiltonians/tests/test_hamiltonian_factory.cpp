@@ -44,22 +44,24 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  auto qp = createElectronParticleSet(simulation_cell);
+  auto elec_ptr = createElectronParticleSet(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
 
-  ParticleSet ions(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+
   ions.setName("ion0");
   ions.create({1});
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+
+  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+
   HamiltonianFactory::PsiPoolType psi_map;
-
-  particle_set_map["e"]    = qp.get();
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", *qp, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
   psi_map["psi0"] = &wff;
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -88,9 +90,11 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  auto qp = createElectronParticleSet(simulation_cell);
+  auto elec_ptr = createElectronParticleSet(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
 
-  ParticleSet ions(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+
   ions.setName("ion0");
   std::vector<int> agroup({1});
   ions.create(agroup);
@@ -102,18 +106,16 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   tspecies(chargeIdx, idx)       = 4;
   tspecies(atomicNumberIdx, idx) = 6;
 
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+
   HamiltonianFactory::PsiPoolType psi_map;
-
-  particle_set_map["e"]    = qp.get();
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", *qp, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   const char* hamilonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
     <pairpot type=\"pseudo\" name=\"PseudoPot\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\"> \

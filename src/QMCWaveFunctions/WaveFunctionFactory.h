@@ -30,7 +30,7 @@ namespace qmcplusplus
 class WaveFunctionFactory : public MPIObjectBase
 {
 public:
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using PSetMap = std::map<std::string, std::unique_ptr<ParticleSet>>;
 
   /** constructor
    * @param psiName name for both the factory and psi
@@ -41,7 +41,7 @@ public:
    */
   WaveFunctionFactory(const std::string& psiName,
                       ParticleSet& qp,
-                      const PtclPoolType& pset,
+                      const PSetMap& pset,
                       Communicate* c,
                       bool tasking = false);
 
@@ -76,8 +76,8 @@ private:
   std::unique_ptr<TrialWaveFunction> targetPsi;
   ///target ParticleSet
   ParticleSet& targetPtcl;
-  ///reference to the PtclPoolType
-  const PtclPoolType& ptclPool;
+  ///reference to the PSetMap
+  const PSetMap& ptclPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
   ///builder tree

@@ -101,7 +101,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       APP_ABORT("HamiltonianFactory::addCoulombPotential");
       return;
     }
-    ptclA = (*pit).second;
+    ptclA = pit->second.get();
   }
   if (sourceInp == targetInp) // AA type
   {
@@ -131,7 +131,8 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       if (use_gpu == "yes" && ptclA->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
         throw std::runtime_error("Requested gpu=yes in CoulombPBCAA but the particle set has gpu=no.");
 
-      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces, use_gpu == "yes"), title, physical);
+      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces, use_gpu == "yes"), title,
+                           physical);
     }
     else
     {
@@ -181,14 +182,14 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     ERRORMSG("Missing source ParticleSet" << a)
     return;
   }
-  ParticleSet* source = (*pit).second;
+  ParticleSet* source = pit->second.get();
   pit                 = ptclPool.find(targetName);
   if (pit == ptclPool.end())
   {
     ERRORMSG("Missing target ParticleSet" << targetName)
     return;
   }
-  ParticleSet* target = (*pit).second;
+  ParticleSet* target = pit->second.get();
   //bool applyPBC= (PBCType && pbc=="yes");
   if (mode == "bare")
   {
@@ -253,7 +254,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
     ERRORMSG("Missing source ParticleSet" << src)
     return;
   }
-  ParticleSet* ion = (*pit).second;
+  ParticleSet* ion = pit->second.get();
   auto oit(psiPool.find(wfname));
   TrialWaveFunction* psi = 0;
   if (oit == psiPool.end())
@@ -291,7 +292,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 //
 //    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << std::endl;
 //    renameProperty(nuclei);
-//    PtclPoolType::iterator pit(ptclPool.find(nuclei));
+//    PSetMap::iterator pit(ptclPool.find(nuclei));
 //    if(pit != ptclPool.end()) {
 //      ParticleSet* ion=(*pit).second;
 //      if(PBCType)

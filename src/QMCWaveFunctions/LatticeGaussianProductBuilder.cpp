@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PtclPoolType& psets)
+LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {}
 
@@ -40,10 +40,10 @@ std::unique_ptr<WaveFunctionComponent> LatticeGaussianProductBuilder::buildCompo
   auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
   {
-    app_error() << "Could not file source ParticleSet " << sourceOpt << " for ion wave function.\n";
+    app_error() << "Could not find source ParticleSet " << sourceOpt << " for ion wave function.\n";
   }
-  ParticleSet* sourcePtcl = (*pa_it).second;
-  auto orb                = std::make_unique<LatticeGaussianProduct>(*sourcePtcl, targetPtcl);
+  auto& sourcePtcl = *pa_it->second;
+  auto orb         = std::make_unique<LatticeGaussianProduct>(sourcePtcl, targetPtcl);
   orb->ParticleAlpha.resize(targetPtcl.getTotalNum());
   orb->ParticleCenter.resize(targetPtcl.getTotalNum());
   int num_nonzero = 0;
@@ -61,13 +61,13 @@ std::unique_ptr<WaveFunctionComponent> LatticeGaussianProductBuilder::buildCompo
       orb->ParticleAlpha[iat]  = 0.0;
     }
   }
-  if (num_nonzero != sourcePtcl->getTotalNum())
+  if (num_nonzero != sourcePtcl.getTotalNum())
   {
     app_error() << "  The number of nonzero widths should be the same as the number of\n"
                 << "  centers for the ionwf.\n";
     abort();
   }
-  assert(num_nonzero == sourcePtcl->getTotalNum());
+  assert(num_nonzero == sourcePtcl.getTotalNum());
   return orb;
 }
 

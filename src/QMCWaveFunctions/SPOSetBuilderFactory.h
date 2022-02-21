@@ -25,14 +25,14 @@ namespace qmcplusplus
 class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using PSetMap = std::map<std::string, std::unique_ptr<ParticleSet>>;
 
   /** constructor
    * \param comm communicator
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PtclPoolType& psets);
+  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets);
 
   ~SPOSetBuilderFactory();
 
@@ -58,7 +58,7 @@ private:
   ParticleSet& targetPtcl;
 
   ///reference to the particle pool
-  const PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
 
   /// list of all sposets created by the builders of this factory
   std::map<std::string, std::unique_ptr<SPOSet>> sposets;
