@@ -105,12 +105,15 @@ set(DETERMINANT_SRC
     test_DiracDeterminant.cpp
     test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
-    test_dirac_matrix.cpp
+    test_DiracMatrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)
+  if(NOT QMC_CUDA2HIP)
+    set(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuSolverInverter.cpp)
+  endif()
 endif(ENABLE_CUDA)
 if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
@@ -151,6 +154,9 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
+  if (NOT QMC_CUDA2HIP)
+    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_cuSolverInverter.cpp)
+  endif()
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
   target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
                         utilities_for_test container_testing)
