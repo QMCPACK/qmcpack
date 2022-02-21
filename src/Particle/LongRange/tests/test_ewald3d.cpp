@@ -47,7 +47,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 124 && handler.MaxKshell <= 126 ));
+     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
   CHECK(handler.LR_rc == Approx(2.5));
   CHECK(handler.LR_kc == Approx(12));
 
@@ -96,7 +96,7 @@ TEST_CASE("ewald3d df", "[lrhandler]")
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 124 && handler.MaxKshell <= 126 ));
+     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
   CHECK(handler.LR_rc == Approx(2.5));
   CHECK(handler.LR_kc == Approx(12));
 
