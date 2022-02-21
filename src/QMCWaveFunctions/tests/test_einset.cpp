@@ -433,25 +433,26 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   lattice.R(2, 2) = 1.0;
 
   const SimulationCell simulation_cell(lattice);
-  auto elec = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
 
-  elec->setName("elec");
+  elec.setName("elec");
   std::vector<int> agroup(2);
   agroup[0] = 1;
   agroup[1] = 1;
-  elec->create(agroup);
-  elec->R[0][0] = 0.00;
-  elec->R[0][1] = 0.0;
-  elec->R[0][2] = 0.0;
-  elec->R[1][0] = 0.0;
-  elec->R[1][1] = 1.0;
-  elec->R[1][2] = 0.0;
+  elec.create(agroup);
+  elec.R[0][0] = 0.00;
+  elec.R[0][1] = 0.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 0.0;
+  elec.R[1][1] = 1.0;
+  elec.R[1][2] = 0.0;
 
-  EinsplineSetBuilder::PtclPoolType ptcl_map;
-  ptcl_map["e"] = elec.get();
+  EinsplineSetBuilder::PSetMap ptcl_map;
+  ptcl_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   xmlNodePtr cur = NULL;
-  EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);
+  EinsplineSetBuilder esb(elec, ptcl_map, c, cur);
 
   esb.SuperLattice       = 0.0;
   esb.SuperLattice(0, 0) = 1.0;

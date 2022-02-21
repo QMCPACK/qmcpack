@@ -27,6 +27,7 @@ class TrialWaveFunction;
 class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiDiracDeterminant;
+class SPOSetBuilder;
 class SPOSetBuilderFactory;
 struct ci_configuration;
 
@@ -46,7 +47,7 @@ public:
                    SPOSetBuilderFactory& factory,
                    ParticleSet& els,
                    TrialWaveFunction& psi,
-                   PtclPoolType& psets);
+                   const PSetMap& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
@@ -59,17 +60,20 @@ private:
   SPOSetBuilderFactory& sposet_builder_factory_;
   ///reference to TrialWaveFunction, should go away as the CUDA code.
   TrialWaveFunction& targetPsi;
-  ///reference to a PtclPoolType
-  PtclPoolType& ptclPool;
+  ///reference to a PSetMap
+  const PSetMap& ptclPool;
 
   /** process a determinant element
    * @param cur xml node
-   * @param firstIndex index of the determinant
-   * @return firstIndex+number of orbitals
+   * @param spin_group the spin group of the created determinant
+   * @return legacy_input_sposet_builder an sposet builder to handle legacy input
+   * @return BFTrans backflow transformations
    */
-  std::unique_ptr<DiracDeterminantBase> putDeterminant(xmlNodePtr cur,
-                                                       int spin_group,
-                                                       const std::unique_ptr<BackflowTransformation>& BFTrans);
+  std::unique_ptr<DiracDeterminantBase> putDeterminant(
+      xmlNodePtr cur,
+      int spin_group,
+      const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
+      const std::unique_ptr<BackflowTransformation>& BFTrans);
 
   bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
                      std::vector<std::vector<size_t>>& C2node,
