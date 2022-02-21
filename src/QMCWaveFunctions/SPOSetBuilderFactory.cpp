@@ -44,50 +44,15 @@ namespace qmcplusplus
 {
 SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
-  int nfound  = 0;
-  SPOSet* spo = nullptr;
-  for (const auto& sposet_builder : sposet_builders_)
+  if (auto spoit = sposets.find(name); spoit == sposets.end())
   {
-    auto& sposets = sposet_builder->sposets;
-    for (auto& sposet : sposets)
-      if (sposet->getName() == name)
-      {
-        spo = sposet.get();
-        nfound++;
-      }
+    // keep this commented until legacy input styles are moved.
+    // In legacy input styles, this look up may fail and need to build SPOSet on the fly.
+    return nullptr;
   }
-  if (nfound > 1)
-  {
-    write_sposet_builders_();
-    throw std::runtime_error("getSPOSet: requested sposet " + name + " is not unique!");
-  }
-  // keep this commented until legacy input styles are moved.
-  // In legacy input styles, this look up may fail and need to build SPOSet on the fly.
-  //else if (nfound == 0)
-  //  throw std::runtime_error("getSPOSet: requested sposet " + name + " is not found!");
-  return spo;
+  else
+    return spoit->second.get();
 }
-
-
-void SPOSetBuilderFactory::write_sposet_builders_(const std::string& pad) const
-{
-  std::string pad2 = pad + "  ";
-  for (const auto& sposet_builder : sposet_builders_)
-  {
-    auto& sposets = sposet_builder->sposets;
-    app_log() << pad << "sposets for SPOSetBuilder of type " << sposet_builder->getTypeName() << std::endl;
-    for (int i = 0; i < sposets.size(); ++i)
-      app_log() << pad2 << "sposet " << sposets[i]->getName() << std::endl;
-  }
-}
-
-SPOSetBuilder& SPOSetBuilderFactory::getLastBuilder()
-{
-  if (sposet_builders_.empty())
-    myComm->barrier_and_abort("SPOSetBuilderFactory::getLastBuilder BUG! No SPOSetBuilder has been created.");
-  return *sposet_builders_.back();
-}
-
 
 /** constructor
  * \param els reference to the electrons
@@ -102,7 +67,7 @@ SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, 
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
 
-SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
+std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
   ReportEngine PRE(ClassName, "createSPOSetBuilder");
   std::string sourceOpt("ion0");
@@ -117,7 +82,7 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     aAttrib.put(rootNode);
 
   std::string type_in = type;
-  type = lowerCase(type);
+  type                = lowerCase(type);
 
   //when name is missing, type becomes the input
   if (name.empty())
@@ -183,13 +148,11 @@ SPOSetBuilder& SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 #endif //OHMMS_DIM==3
   PRE.flush();
 
-  if (bb == 0)
+  if (!bb)
     myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
 
   app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
-  sposet_builders_.push_back(std::move(bb));
-
-  return *sposet_builders_.back();
+  return bb;
 }
 
 
@@ -213,14 +176,14 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
   app_summary() << std::endl;
 
   // create the SPOSet builder
-  auto& bb = createSPOSetBuilder(cur);
+  auto bb = createSPOSetBuilder(cur);
 
   // going through a list of sposet entries
   int nsposets = 0;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
     {
-      SPOSet* spo = bb.createSPOSet(element);
+      addSPOSet(std::unique_ptr<SPOSet>(bb->createSPOSet(element)));
       nsposets++;
     }
   });
@@ -233,10 +196,21 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
     if (cname == "spo_scanner")
       if (myComm->rank() == 0)
       {
-        SPOSetScanner ascanner(bb.sposets, targetPtcl, ptclPool);
+        SPOSetScanner ascanner(sposets, targetPtcl, ptclPool);
         ascanner.put(element);
       }
   });
+}
+
+void SPOSetBuilderFactory::addSPOSet(std::unique_ptr<SPOSet> spo)
+{
+  if (spo->getName().empty())
+    myComm->barrier_and_abort("sposet created in sposet_collection must have a name!");
+
+  if (sposets.find(spo->getName()) != sposets.end())
+    myComm->barrier_and_abort("The name of each sposet must be unique! '" + spo->getName() + "' exists.");
+  else
+    sposets.emplace(spo->getName(), std::move(spo));
 }
 
 std::string SPOSetBuilderFactory::basisset_tag = "basisset";

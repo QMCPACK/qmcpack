@@ -110,23 +110,22 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
 
-  auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+  const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+  auto& bb(*bb_ptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+  auto sposet = bb.createSPOSet(slater_base[0]);
 
-  LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
-  REQUIRE(lcob != nullptr);
+  LCAOrbitalSet& lcob = dynamic_cast<LCAOrbitalSet&>(*sposet);
 
+  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob.myBasisSet->makeClone()), lcob.isOptimizable());
+  phi.setOrbitalSetSize(lcob.getOrbitalSetSize());
 
-  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob->myBasisSet->makeClone()), lcob->isOptimizable());
-  phi.setOrbitalSetSize(lcob->getOrbitalSetSize());
+  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob.myBasisSet->makeClone()), lcob.isOptimizable());
+  eta.setOrbitalSetSize(lcob.getOrbitalSetSize());
 
-  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob->myBasisSet->makeClone()), lcob->isOptimizable());
-  eta.setOrbitalSetSize(lcob->getOrbitalSetSize());
-
-  *(eta.C) = *(lcob->C);
-  *(phi.C) = *(lcob->C);
+  *(eta.C) = *(lcob.C);
+  *(phi.C) = *(lcob.C);
 
 
   int num_center = 3;
@@ -195,8 +194,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   // Reset the MO matrices for another center
 
-  *(eta.C) = *(lcob->C);
-  *(phi.C) = *(lcob->C);
+  *(eta.C) = *(lcob.C);
+  *(phi.C) = *(lcob.C);
 
 
   // C is second atom
@@ -223,12 +222,12 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(rad_orb[9] == Approx(0.0010837868)); // x = 0.12
 
 
-  removeSTypeOrbitals(corrCenter, *lcob);
+  removeSTypeOrbitals(corrCenter, lcob);
 
-  CHECK((*lcob->C)(0, 0) == Approx(0.0));
-  CHECK((*lcob->C)(0, 1) == Approx(0.0));
-  CHECK((*lcob->C)(0, 2) == Approx(0.0));
-  CHECK((*lcob->C)(0, 3) != 0.0);
+  CHECK((*lcob.C)(0, 0) == Approx(0.0));
+  CHECK((*lcob.C)(0, 1) == Approx(0.0));
+  CHECK((*lcob.C)(0, 2) == Approx(0.0));
+  CHECK((*lcob.C)(0, 3) != 0.0);
 }
 
 TEST_CASE("HCN MO with cusp", "[wavefunction]")
@@ -281,10 +280,11 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
 
-  auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+  const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+  auto& bb(*bb_ptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+  auto sposet = bb.createSPOSet(slater_base[0]);
 
   SPOSet::ValueVector values;
   SPOSet::GradVector dpsi;
@@ -453,10 +453,11 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
 
-  auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+  const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+  auto& bb(*bb_ptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+  auto sposet = bb.createSPOSet(slater_base[0]);
 
   SPOSet::ValueVector values;
   SPOSet::GradVector dpsi;

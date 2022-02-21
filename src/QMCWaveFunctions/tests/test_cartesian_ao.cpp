@@ -70,10 +70,11 @@ void test_cartesian_ao()
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector values;
     values.resize(1);
@@ -137,10 +138,11 @@ void test_dirac_ao()
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector values;
     values.resize(1);

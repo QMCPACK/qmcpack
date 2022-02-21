@@ -66,18 +66,19 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
   xmlNodePtr curRoot = cur;
-  std::map<std::string, SPOSetPtr> spomap;
-  bool multiDet = false;
+  bool multiDet      = false;
   std::string msd_algorithm;
 
   std::unique_ptr<WaveFunctionComponent> built_singledet_or_multidets;
+
+  std::unique_ptr<SPOSetBuilder> legacy_input_sposet_builder;
 
   if (sposet_builder_factory_.empty())
   { //always create one, using singleton and just to access the member functions
     app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
                      "will soon be removed. SPO sets should be built outside using sposet_collection."
                   << std::endl;
-    sposet_builder_factory_.createSPOSetBuilder(curRoot);
+    legacy_input_sposet_builder = sposet_builder_factory_.createSPOSetBuilder(curRoot);
   }
 
   //check the basis set and backflow transformation
@@ -92,20 +93,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
                        "will soon be removed. SPO sets should be built outside using sposet_collection."
                     << std::endl;
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
-      std::string spo_name;
-      OhmmsAttributeSet spoAttrib;
-      spoAttrib.add(spo_name, "name");
-      spoAttrib.put(cur);
-      app_log() << "spo_name = " << spo_name << std::endl;
-      SPOSetPtr spo = sposet_builder_factory_.getLastBuilder().createSPOSet(cur);
-      if (spomap.find(spo_name) != spomap.end())
-      {
-        app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
-        abort();
-      }
-      spomap[spo_name] = spo;
-      spo->setName(spo_name);
-      assert(spomap.find(spo_name) != spomap.end());
+      assert(legacy_input_sposet_builder);
+      sposet_builder_factory_.addSPOSet(legacy_input_sposet_builder->createSPOSet(cur));
     }
     else if (cname == backflow_tag)
     {
@@ -150,7 +139,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
             err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more." << std::endl;
             throw std::runtime_error(err_msg.str());
           }
-          dirac_dets.push_back(putDeterminant(tcur, spin_group, BFTrans));
+          dirac_dets.push_back(putDeterminant(tcur, spin_group, legacy_input_sposet_builder, BFTrans));
           spin_group++;
         }
         tcur = tcur->next;
@@ -218,40 +207,40 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         spo_clones.emplace_back(spo_tmp->makeClone());
       }
 
-        app_summary() << "    Using Bryan's table method." << std::endl;
-        if (BFTrans)
-          myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
+      app_summary() << "    Using Bryan's table method." << std::endl;
+      if (BFTrans)
+        myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
-        const bool spinor = targetPtcl.isSpinor();
-        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
-        for (int grp = 0; grp < nGroups; grp++)
-        {
-          app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
-        }
+      const bool spinor = targetPtcl.isSpinor();
+      std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
+      for (int grp = 0; grp < nGroups; grp++)
+      {
+        app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
+        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
+      }
 
-        std::unique_ptr<MultiSlaterDetTableMethod> msd_fast;
-        if (msd_algorithm == "precomputed_table_method")
-        {
-          app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
-          msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), true);
-        }
-        else
-        {
-          app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
-          msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), false);
-        }
+      std::unique_ptr<MultiSlaterDetTableMethod> msd_fast;
+      if (msd_algorithm == "precomputed_table_method")
+      {
+        app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
+        msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), true);
+      }
+      else
+      {
+        app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
+        msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), false);
+      }
 
-        msd_fast->initialize();
-        createMSDFast(msd_fast->Dets, *msd_fast->C2node, *msd_fast->C, *msd_fast->CSFcoeff, *msd_fast->DetsPerCSF,
-                      *msd_fast->CSFexpansion, msd_fast->usingCSF, *msd_fast->myVars, msd_fast->Optimizable,
-                      msd_fast->CI_Optimizable, cur);
+      msd_fast->initialize();
+      createMSDFast(msd_fast->Dets, *msd_fast->C2node, *msd_fast->C, *msd_fast->CSFcoeff, *msd_fast->DetsPerCSF,
+                    *msd_fast->CSFexpansion, msd_fast->usingCSF, *msd_fast->myVars, msd_fast->Optimizable,
+                    msd_fast->CI_Optimizable, cur);
 
-        // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
-        // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
-        // and then remove the orbital rotation parameters
-        msd_fast->buildOptVariables();
-        built_singledet_or_multidets = std::move(msd_fast);
+      // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
+      // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+      // and then remove the orbital rotation parameters
+      msd_fast->buildOptVariables();
+      built_singledet_or_multidets = std::move(msd_fast);
     }
     cur = cur->next;
   }
@@ -280,6 +269,7 @@ magnetic system
 std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     xmlNodePtr cur,
     int spin_group,
+    const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
     const std::unique_ptr<BackflowTransformation>& BFTrans)
 {
   ReportEngine PRE(ClassName, "putDeterminant(xmlNodePtr,int)");
@@ -364,13 +354,17 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                      "will soon be removed. SPO sets should be built outside using sposet_collection."
                   << std::endl;
     app_log() << "      Create a new SPO set " << sposet_name << std::endl;
-    psi = sposet_builder_factory_.getLastBuilder().createSPOSet(cur);
+    assert(legacy_input_sposet_builder);
+    auto sposet = legacy_input_sposet_builder->createSPOSet(cur);
+    psi         = sposet.get();
+    sposet_builder_factory_.addSPOSet(std::move(sposet));
   }
-  psi->checkObject();
-  std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
 
-  int firstIndex = targetPtcl.first(spin_group);
-  int lastIndex  = targetPtcl.last(spin_group);
+  std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
+  psi_clone->checkObject();
+
+  const int firstIndex = targetPtcl.first(spin_group);
+  const int lastIndex  = targetPtcl.last(spin_group);
 
   if (delay_rank < 0 || delay_rank > lastIndex - firstIndex)
   {

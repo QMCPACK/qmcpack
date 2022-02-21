@@ -96,10 +96,11 @@ void test_C_diamond()
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto sposet_builder_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb                      = *sposet_builder_ptr;
 
     OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector values;
     values.resize(26);

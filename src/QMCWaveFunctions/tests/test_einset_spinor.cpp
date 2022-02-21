@@ -116,9 +116,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  auto& builder = fac.createSPOSetBuilder(ein1);
+  const auto spo_builder_ptr = fac.createSPOSetBuilder(ein1);
+  auto& builder              = *spo_builder_ptr;
 
-  SPOSet* spo = builder.createSPOSet(ein1);
+  auto spo = builder.createSPOSet(ein1);
   CHECK(spo);
 
   SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -534,7 +535,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   {
     MCCoords<CoordsType::POS_SPIN> displs;
     displs.positions = {dR[iat], dR[iat]};
-    displs.spins = {dS[iat], dS[iat]};
+    displs.spins     = {dS[iat], dS[iat]};
 
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
@@ -566,7 +567,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     MCCoords<CoordsType::POS_SPIN> displs;
     displs.positions = {-dR[iat], -dR[iat]};
-    displs.spins = {-dS[iat], -dS[iat]};
+    displs.spins     = {-dS[iat], -dS[iat]};
 
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
