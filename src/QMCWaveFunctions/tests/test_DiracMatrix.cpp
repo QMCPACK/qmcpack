@@ -65,16 +65,16 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
 
-  fillTestMatrix1_Input(a);
+  TestMatrix1::fillInput(a);
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
   dm.invert_transpose(a_T, a_inv, log_value);
-  REQUIRE(log_value == LogComplexApprox(testMatrix1_logDet()));
+  REQUIRE(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
 
-  fillTestMatrix1_Inverse(b);
+  TestMatrix1::fillInverse(b);
 
   auto check_matrix_result = checkMatrix(a_inv, b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }

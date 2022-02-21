@@ -22,24 +22,25 @@
 namespace qmcplusplus
 {
 
-using LogValueType = std::complex<double>;
+using LogValue = std::complex<double>;
 
 TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
 {
+  // TestType is defined by Catch. It is the type in each instantiation of the templated test case.
 #ifdef QMC_COMPLEX
-  using FullPrecValueType = std::complex<double>;
-  using ValueType         = std::complex<TestType>;
+  using FullPrecValue = std::complex<double>;
+  using Value         = std::complex<TestType>;
 #else
-  using FullPrecValueType = double;
-  using ValueType         = TestType;
+  using FullPrecValue = double;
+  using Value         = TestType;
 #endif
-  cuSolverInverter<FullPrecValueType> solver;
+  cuSolverInverter<FullPrecValue> solver;
   const int N = 3;
 
-  Matrix<ValueType> m(N, N);
-  Matrix<ValueType> m_invT(N, N);
-  Matrix<ValueType, CUDAAllocator<ValueType>> m_invGPU(N, N);
-  LogValueType log_value;
+  Matrix<Value> m(N, N);
+  Matrix<Value> m_invT(N, N);
+  Matrix<Value, CUDAAllocator<Value>> m_invGPU(N, N);
+  LogValue log_value;
 
   SECTION("identity")
   {
@@ -48,7 +49,7 @@ TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
     solver.invert_transpose(m, m_invT, m_invGPU, log_value);
     REQUIRE(log_value == LogComplexApprox(0.0));
 
-    Matrix<ValueType> eye;
+    Matrix<Value> eye;
     eye.resize(3, 3);
     fillIdentityMatrix(eye);
 
@@ -58,17 +59,17 @@ TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
 
   SECTION("3x3 matrix")
   {
-    Matrix<ValueType> a(N, N);
-    Matrix<ValueType> a_T(N, N);
-    fillTestMatrix1_Input(a);
+    Matrix<Value> a(N, N);
+    Matrix<Value> a_T(N, N);
+    TestMatrix1::fillInput(a);
 
     simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
     solver.invert_transpose(a_T, m_invT, m_invGPU, log_value);
-    REQUIRE(log_value == LogComplexApprox(testMatrix1_logDet()));
+    REQUIRE(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
-    Matrix<ValueType> b(3, 3);
+    Matrix<Value> b(3, 3);
 
-    fillTestMatrix1_Inverse(b);
+    TestMatrix1::fillInverse(b);
 
     auto check_matrix_result = checkMatrix(m_invT, b);
     CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }

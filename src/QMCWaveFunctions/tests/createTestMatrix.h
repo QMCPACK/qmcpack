@@ -33,8 +33,9 @@ void fillIdentityMatrix(Matrix<T>& m)
 
 // Inverse test 1
 // Assumes input matrix is 3x3
+struct TestMatrix1 {
 template<typename T>
-void fillTestMatrix1_Input(Matrix<T>& a)
+static void fillInput(Matrix<T>& a)
 {
   a(0, 0) = 2.3;
   a(0, 1) = 4.5;
@@ -49,7 +50,7 @@ void fillTestMatrix1_Input(Matrix<T>& a)
 
 // Inverse of test matrix 1
 template<typename T>
-void fillTestMatrix1_Inverse(Matrix<T>& b)
+static void fillInverse(Matrix<T>& b)
 {
   b(0, 0) = 0.6159749342;
   b(0, 1) = -0.2408954682;
@@ -63,7 +64,8 @@ void fillTestMatrix1_Inverse(Matrix<T>& b)
 }
 
 // Log of determinant of test matrix 1
-inline double testMatrix1_logDet() { return 3.78518913425; }
+inline static double logDet() { return 3.78518913425; }
+};
 
 } // namespace qmcplusplus
 #endif
