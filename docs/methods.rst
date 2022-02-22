@@ -302,6 +302,9 @@ The following is an example of VMC section storing configurations (walker sample
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+
 
 Additional information:
 
@@ -356,6 +359,9 @@ Additional information:
   introduces a performance penalty dependent on system size.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
+
+- ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 An example VMC section for a simple ``vmc_batch`` run:
 
@@ -1550,6 +1556,9 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
 
@@ -1565,6 +1574,9 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   ``walkers_per_rank`` times the number MPI ranks.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
+
+- ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver

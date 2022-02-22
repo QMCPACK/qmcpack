@@ -31,6 +31,7 @@
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
 #include "SimulationCell.h"
+#include "MCCoords.hpp"
 #include "DTModes.h"
 
 namespace qmcplusplus
@@ -283,15 +284,17 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
+  template<CoordsType CT>
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs);
+
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           const std::vector<SingleParticlePos>& displs);
 
-  /// batched version of makeMoveWithSpin
-  static void mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
-                                  int iat,
-                                  const std::vector<SingleParticlePos>& displs,
-                                  const std::vector<Scalar_t>& sdispls);
+  /// batched version makeMove for spin variable only
+  static void mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                              int iat,
+                              const std::vector<Scalar_t>& sdispls);
 
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
@@ -375,11 +378,29 @@ public:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMove(Index_t iat);
+
+  /// batched version of acceptMove and rejectMove fused, templated on CoordsType
+  template<CoordsType CT>
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
+
   /// batched version of acceptMove and rejectMove fused
   static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                    Index_t iat,
                                    const std::vector<bool>& isAccepted,
                                    bool forward_mode = true);
+
+  /** batched version  of acceptMove and reject Move fused, but only for spins
+   *
+   * note: should be called BEFORE mw_accept_rejectMove since the active_ptcl_ gets reset to -1
+   * This would cause the assertion that we have the right particle index to fail if done in the 
+   * wrong order
+   */
+  static void mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                       Index_t iat,
+                                       const std::vector<bool>& isAccepted);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }

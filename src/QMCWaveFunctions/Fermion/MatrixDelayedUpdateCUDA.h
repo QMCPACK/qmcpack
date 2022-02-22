@@ -58,6 +58,8 @@ public:
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
@@ -819,6 +821,7 @@ public:
     return row_ptr_list;
   }
 
+  /// transfer Ainv to the host
   static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
   {
     auto& engine_leader = engines.getLeader();
@@ -829,6 +832,50 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(engine.get_ref_psiMinv().data(), engine.get_ref_psiMinv().device_data(),
                                      engine.get_psiMinv().size() * sizeof(Value), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync Ainv failed!");
+    engine_leader.waitStream();
+  }
+
+  /** transfer psiM_vgl to the host. psiM_vgl has 5 rows, V(1) G(3) L(1)
+   * @param engine_leader for accessing shared resource
+   * @param psiM_vgl_list list of psiM_vgl
+   * @param row_begin first row to copy
+   * @param row_size the number of rows to be copied
+   */
+  static void mw_transferVGL_D2H(This_t& engine_leader,
+                                 const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
+                                 size_t row_begin,
+                                 size_t row_size)
+  {
+    auto& hstream = engine_leader.cuda_handles_->hstream;
+    for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
+    {
+      const size_t stride = psiM_vgl.capacity();
+      cudaErrorCheck(cudaMemcpyAsync(psiM_vgl.data() + row_begin * stride, psiM_vgl.device_data() + row_begin * stride,
+                                     row_size * stride * sizeof(Value), cudaMemcpyDeviceToHost, hstream),
+                     "cudaMemcpyAsync psiM_vgl D2H failed!");
+    }
+    engine_leader.waitStream();
+  }
+
+  /** transfer psiM_vgl to the device. psiM_vgl has 5 rows, V(1) G(3) L(1)
+   * @param engine_leader for accessing shared resource
+   * @param psiM_vgl_list list of psiM_vgl
+   * @param row_begin first row to copy
+   * @param row_size the number of rows to be copied
+   */
+  static void mw_transferVGL_H2D(This_t& engine_leader,
+                                 const RefVector<DualVGLVector<Value>>& psiM_vgl_list,
+                                 size_t row_begin,
+                                 size_t row_size)
+  {
+    auto& hstream = engine_leader.cuda_handles_->hstream;
+    for (DualVGLVector<Value>& psiM_vgl : psiM_vgl_list)
+    {
+      const size_t stride = psiM_vgl.capacity();
+      cudaErrorCheck(cudaMemcpyAsync(psiM_vgl.device_data() + row_begin * stride, psiM_vgl.data() + row_begin * stride,
+                                     row_size * stride * sizeof(Value), cudaMemcpyHostToDevice, hstream),
+                     "cudaMemcpyAsync psiM_vgl D2H failed!");
+    }
     engine_leader.waitStream();
   }
 

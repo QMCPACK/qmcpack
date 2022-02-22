@@ -57,7 +57,8 @@ void test_C_diamond()
     lattice.reset();
 
     const SimulationCell simulation_cell(lattice);
-    ParticleSet ions(simulation_cell);
+    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& ions(*ions_ptr);
     XMLParticleParser parse_ions(ions);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
@@ -67,7 +68,8 @@ void test_C_diamond()
     REQUIRE(ions.R.size() == 2);
     ions.update();
 
-    ParticleSet elec(simulation_cell);
+    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& elec(*elec_ptr);
     XMLParticleParser parse_elec(elec);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
@@ -87,19 +89,20 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
-    particle_set_map["e"]    = &elec;
-    particle_set_map["ion0"] = &ions;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
+    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
     SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto sposet_builder_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb                      = *sposet_builder_ptr;
 
     OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector values;
     values.resize(26);

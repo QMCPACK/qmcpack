@@ -53,8 +53,7 @@ public:
 
     auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-    wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-    auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   }
 
 private:

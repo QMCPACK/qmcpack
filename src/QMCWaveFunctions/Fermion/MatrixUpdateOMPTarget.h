@@ -52,6 +52,8 @@ public:
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
+  template<typename DT>
+  using OffloadVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, OffloadPinnedAllocator<DT>>;
 
   struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
   {
@@ -378,6 +380,7 @@ public:
     return row_ptr_list;
   }
 
+  /// transfer Ainv to the host
   static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
   {
     for (This_t& engine : engines)
@@ -385,6 +388,50 @@ public:
       auto* ptr = engine.get_psiMinv().data();
       PRAGMA_OFFLOAD("omp target update from(ptr[:engine.get_psiMinv().size()])")
     }
+  }
+
+  /** transfer psiM_vgl to the host. psiM_vgl has 5 rows, V(1) G(3) L(1)
+   * @param engine_leader for accessing shared resource
+   * @param psiM_vgl_list list of psiM_vgl
+   * @param row_begin first row to copy
+   * @param row_size the number of rows to be copied
+   */
+  static void mw_transferVGL_D2H(This_t& engine_leader,
+                                 const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
+                                 size_t row_begin,
+                                 size_t row_size)
+  {
+    for (OffloadVGLVector<Value>& psiM_vgl : psiM_vgl_list)
+    {
+      auto* psiM_vgl_ptr  = psiM_vgl.data();
+      const size_t stride = psiM_vgl.capacity();
+      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[row_begin * stride: row_size * stride]) nowait")
+    }
+
+    // The only tasks being waited on here are the psiM_vgl updates
+    PRAGMA_OFFLOAD("omp taskwait")
+  }
+
+  /** transfer psiM_vgl to the device. psiM_vgl has 5 rows, V(1) G(3) L(1)
+   * @param engine_leader for accessing shared resource
+   * @param psiM_vgl_list list of psiM_vgl
+   * @param row_begin first row to copy
+   * @param row_size the number of rows to be copied
+   */
+  static void mw_transferVGL_H2D(This_t& engine_leader,
+                                 const RefVector<OffloadVGLVector<Value>>& psiM_vgl_list,
+                                 size_t row_begin,
+                                 size_t row_size)
+  {
+    for (OffloadVGLVector<Value>& psiM_vgl : psiM_vgl_list)
+    {
+      auto* psiM_vgl_ptr  = psiM_vgl.data();
+      const size_t stride = psiM_vgl.capacity();
+      PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[row_begin * stride: row_size * stride]) nowait")
+    }
+
+    // The only tasks being waited on here are the psiM_vgl updates
+    PRAGMA_OFFLOAD("omp taskwait")
   }
 
   auto& getLAhandles() { return dummy; }

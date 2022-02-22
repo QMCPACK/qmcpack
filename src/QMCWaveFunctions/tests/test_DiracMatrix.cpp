@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #include "CPU/SIMD/simd.hpp"
 #include "checkMatrix.hpp"
+#include "createTestMatrix.h"
 
 #include <stdio.h>
 #include <string>
@@ -41,18 +42,14 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   m.resize(3, 3);
   m_invT.resize(3, 3);
 
-  m(0, 0) = 1.0;
-  m(1, 1) = 1.0;
-  m(2, 2) = 1.0;
+  fillIdentityMatrix(m);
 
   dm.invert_transpose(m, m_invT, log_value);
   REQUIRE(log_value == LogComplexApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
-  eye(0, 0) = 1.0;
-  eye(1, 1) = 1.0;
-  eye(2, 2) = 1.0;
+  fillIdentityMatrix(eye);
 
   CheckMatrixResult check_matrix_result = checkMatrix(m_invT, eye);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -68,32 +65,16 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
 
-  a(0, 0) = 2.3;
-  a(0, 1) = 4.5;
-  a(0, 2) = 2.6;
-  a(1, 0) = 0.5;
-  a(1, 1) = 8.5;
-  a(1, 2) = 3.3;
-  a(2, 0) = 1.8;
-  a(2, 1) = 4.4;
-  a(2, 2) = 4.9;
+  TestMatrix1::fillInput(a);
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
   dm.invert_transpose(a_T, a_inv, log_value);
-  REQUIRE(log_value == LogComplexApprox(3.78518913425));
+  REQUIRE(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
 
-  b(0, 0) = 0.6159749342;
-  b(0, 1) = -0.2408954682;
-  b(0, 2) = -0.1646081192;
-  b(1, 0) = 0.07923894288;
-  b(1, 1) = 0.1496231042;
-  b(1, 2) = -0.1428117337;
-  b(2, 0) = -0.2974298429;
-  b(2, 1) = -0.04586322768;
-  b(2, 2) = 0.3927890292;
+  TestMatrix1::fillInverse(b);
 
   auto check_matrix_result = checkMatrix(a_inv, b);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }

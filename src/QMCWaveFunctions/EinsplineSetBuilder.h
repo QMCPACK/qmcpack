@@ -116,11 +116,11 @@ struct H5OrbSet
 class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using PSetMap      = std::map<std::string, std::unique_ptr<ParticleSet>>;
   using UnitCellType = CrystalLattice<ParticleSet::Scalar_t, DIM>;
 
   ///reference to the particleset pool
-  const PtclPoolType& ParticleSets;
+  const PSetMap& ParticleSets;
   ///quantum particle set
   ParticleSet& TargetPtcl;
   ///ionic system
@@ -141,7 +141,7 @@ public:
   std::map<H5OrbSet, SPOSet*, H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur);
 
   ///destructor
   ~EinsplineSetBuilder() override;

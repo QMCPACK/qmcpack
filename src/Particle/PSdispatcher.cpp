@@ -42,36 +42,29 @@ void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, b
       pset.update(skipSK);
 }
 
+template<CoordsType CT>
 void PSdispatcher::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                  int iat,
-                                 const std::vector<SingleParticlePos>& displs) const
+                                 const MCCoords<CT>& displs) const
 {
   if (use_batch_)
     ParticleSet::mw_makeMove(p_list, iat, displs);
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
-      p_list[iw].makeMove(iat, displs[iw]);
+      if constexpr (CT == CoordsType::POS_SPIN)
+        p_list[iw].makeMoveWithSpin(iat, displs.positions[iw], displs.spins[iw]);
+      else
+        p_list[iw].makeMove(iat, displs.positions[iw]);
 }
 
-void PSdispatcher::flex_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
-                                         int iat,
-                                         const std::vector<SingleParticlePos>& displs,
-                                         const std::vector<Scalar_t>& sdispls) const
-{
-  if (use_batch_)
-    ParticleSet::mw_makeMoveWithSpin(p_list, iat, displs, sdispls);
-  else
-    for (size_t iw = 0; iw < p_list.size(); iw++)
-      p_list[iw].makeMoveWithSpin(iat, displs[iw], sdispls[iw]);
-}
-
+template<CoordsType CT>
 void PSdispatcher::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                           int iat,
                                           const std::vector<bool>& isAccepted,
                                           bool forward_mode) const
 {
   if (use_batch_)
-    ParticleSet::mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
+    ParticleSet::mw_accept_rejectMove<CT>(p_list, iat, isAccepted, forward_mode);
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
       p_list[iw].accept_rejectMove(iat, isAccepted[iw], forward_mode);
@@ -96,4 +89,18 @@ void PSdispatcher::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_lis
       p_list[iw].saveWalker(walkers[iw]);
 }
 
+template void PSdispatcher::flex_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                           int iat,
+                                                           const MCCoords<CoordsType::POS>& displs) const;
+template void PSdispatcher::flex_makeMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                int iat,
+                                                                const MCCoords<CoordsType::POS_SPIN>& displs) const;
+template void PSdispatcher::flex_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                    int iat,
+                                                                    const std::vector<bool>& isAccepted,
+                                                                    bool forward_mode) const;
+template void PSdispatcher::flex_accept_rejectMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                         int iat,
+                                                                         const std::vector<bool>& isAccepted,
+                                                                         bool forward_mode) const;
 } // namespace qmcplusplus

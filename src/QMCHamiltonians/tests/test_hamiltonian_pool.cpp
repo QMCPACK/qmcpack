@@ -52,9 +52,8 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   WaveFunctionPool wfp(pp, c);
 
-  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *pp.getPool()["e"], pp.getPool(), c);
-  wfp.getPool()["psi0"] = wf_factory;
-  wfp.setPrimary(wf_factory->getTWF());
+  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *pp.getParticleSet("e"), pp.getPool(), c);
+  wfp.addFactory(wf_factory, true);
 
   HamiltonianPool hpool(pp, wfp, c);
 

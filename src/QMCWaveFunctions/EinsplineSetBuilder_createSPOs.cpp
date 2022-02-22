@@ -110,8 +110,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   int numOrbs = 0;
   int sortBands(1);
-  int spinSet     = 0;
-  bool skipChecks = false;
+  int spinSet       = 0;
+  bool skipChecks   = false;
   int twist_num_inp = TWISTNUM_NO_INPUT;
   TinyVector<double, OHMMS_DIM> twist_inp(TWIST_NO_INPUT);
 
@@ -170,7 +170,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (pit == ParticleSets.end())
     myComm->barrier_and_abort("Einspline needs the source particleset");
   else
-    SourcePtcl = pit->second;
+    SourcePtcl = pit->second.get();
 
   ///////////////////////////////////////////////
   // Read occupation information from XML file //

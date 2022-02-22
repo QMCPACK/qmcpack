@@ -20,7 +20,7 @@ namespace qmcplusplus
 enum class DTModes : uint_fast8_t
 {
   ALL_OFF = 0x0,
-  /** whether full table needs to be ready at anytime or not
+  /** whether full table needs to be ready at anytime or not during PbyP
    * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
    * DT consumers should know if full table is needed or not and request via addTable.
    */
@@ -34,7 +34,12 @@ enum class DTModes : uint_fast8_t
   /** skip data transfer back to host after mw_evalaute full distance table.
    * this optimization can be used for distance table consumed directly on the device without copying back to the host.
    */
-  MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST = 0x4
+  MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST = 0x4,
+  /** whether full table needs to be ready at anytime or not after donePbyP
+   * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
+   * DT consumers should know if full table is needed or not and request via addTable.
+   */
+  NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP = 0x8,
 };
 
 constexpr bool operator&(DTModes x, DTModes y)

@@ -36,11 +36,11 @@ namespace qmcplusplus
 class WaveFunctionComponentBuilder : public MPIObjectBase
 {
 public:
-  using RealType     = WaveFunctionComponent::RealType;
-  using ValueType    = WaveFunctionComponent::ValueType;
-  using PosType      = WaveFunctionComponent::PosType;
-  using GradType     = WaveFunctionComponent::GradType;
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using RealType  = WaveFunctionComponent::RealType;
+  using ValueType = WaveFunctionComponent::ValueType;
+  using PosType   = WaveFunctionComponent::PosType;
+  using GradType  = WaveFunctionComponent::GradType;
+  using PSetMap   = std::map<std::string, std::unique_ptr<ParticleSet>>;
 
   /** \ingroup XMLTags
    *@{

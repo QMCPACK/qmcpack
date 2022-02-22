@@ -41,7 +41,7 @@ struct container_traits<boost::multi::array<T, D, Alloc>>
     std::array<I, 2> shape;
     for (int i = 0; i < d; ++i)
       shape[i] = n[i];
-    ref.reextent({shape[0], shape[1]});
+    ref.reextent({static_cast<boost::multi::size_t>(shape[0]), static_cast<boost::multi::size_t>(shape[1])});
   }
 
   inline static size_t getSize(const CT& ref) { return ref.num_elements(); }

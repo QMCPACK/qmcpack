@@ -29,11 +29,15 @@ namespace qmcplusplus
 class HamiltonianFactory : public MPIObjectBase
 {
 public:
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
-  using PsiPoolType  = std::map<std::string, WaveFunctionFactory*>;
+  using PSetMap     = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PsiPoolType = std::map<std::string, WaveFunctionFactory*>;
 
   ///constructor
-  HamiltonianFactory(const std::string& hName, ParticleSet& qp, PtclPoolType& pset, PsiPoolType& oset, Communicate* c);
+  HamiltonianFactory(const std::string& hName,
+                     ParticleSet& qp,
+                     const PSetMap& pset,
+                     const PsiPoolType& oset,
+                     Communicate* c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -70,10 +74,10 @@ private:
   std::unique_ptr<QMCHamiltonian> targetH;
   ///target ParticleSet
   ParticleSet& targetPtcl;
-  ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
+  ///reference to the PSetMap
+  const PSetMap& ptclPool;
   ///reference to the WaveFunctionFactory Pool
-  PsiPoolType& psiPool;
+  const PsiPoolType& psiPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
 

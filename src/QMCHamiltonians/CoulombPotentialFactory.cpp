@@ -76,6 +76,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string sourceInp(targetPtcl.getName());
   std::string title("ElecElec"), pbc("yes");
   std::string forces("no");
+  std::string use_gpu;
   bool physical = true;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title, "id");
@@ -85,21 +86,22 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   hAttrib.add(pbc, "pbc");
   hAttrib.add(physical, "physical");
   hAttrib.add(forces, "forces");
+  hAttrib.add(use_gpu, "gpu", {"", "yes", "no"});
   hAttrib.put(cur);
-  bool applyPBC      = (PBCType && pbc == "yes");
-  bool doForces      = (forces == "yes") || (forces == "true");
-  ParticleSet* ptclA = &targetPtcl;
+  const bool applyPBC = (PBCType && pbc == "yes");
+  const bool doForces = (forces == "yes") || (forces == "true");
+  ParticleSet* ptclA  = &targetPtcl;
   if (sourceInp != targetPtcl.getName())
   {
     //renameProperty(sourceInp);
-    PtclPoolType::iterator pit(ptclPool.find(sourceInp));
+    auto pit(ptclPool.find(sourceInp));
     if (pit == ptclPool.end())
     {
       ERRORMSG("Missing source ParticleSet" << sourceInp);
       APP_ABORT("HamiltonianFactory::addCoulombPotential");
       return;
     }
-    ptclA = (*pit).second;
+    ptclA = pit->second.get();
   }
   if (sourceInp == targetInp) // AA type
   {
@@ -122,7 +124,16 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     }
 #else
     if (applyPBC)
-      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces), title, physical);
+    {
+      if (use_gpu.empty())
+        use_gpu = ptclA->getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
+
+      if (use_gpu == "yes" && ptclA->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+        throw std::runtime_error("Requested gpu=yes in CoulombPBCAA but the particle set has gpu=no.");
+
+      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces, use_gpu == "yes"), title,
+                           physical);
+    }
     else
     {
       targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
@@ -165,20 +176,20 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   bool quantum = (a == targetPtcl.getName());
 
   renameProperty(a);
-  PtclPoolType::iterator pit(ptclPool.find(a));
+  auto pit(ptclPool.find(a));
   if (pit == ptclPool.end())
   {
     ERRORMSG("Missing source ParticleSet" << a)
     return;
   }
-  ParticleSet* source = (*pit).second;
+  ParticleSet* source = pit->second.get();
   pit                 = ptclPool.find(targetName);
   if (pit == ptclPool.end())
   {
     ERRORMSG("Missing target ParticleSet" << targetName)
     return;
   }
-  ParticleSet* target = (*pit).second;
+  ParticleSet* target = pit->second.get();
   //bool applyPBC= (PBCType && pbc=="yes");
   if (mode == "bare")
   {
@@ -204,7 +215,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   else if (mode == "acforce")
   {
     app_log() << "Adding Assaraf-Caffarel total force.\n";
-    PsiPoolType::iterator psi_it(psiPool.find(PsiName));
+    auto psi_it(psiPool.find(PsiName));
     if (psi_it == psiPool.end())
     {
       APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
@@ -237,14 +248,14 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   }
   renameProperty(src);
   renameProperty(wfname);
-  PtclPoolType::iterator pit(ptclPool.find(src));
+  auto pit(ptclPool.find(src));
   if (pit == ptclPool.end())
   {
     ERRORMSG("Missing source ParticleSet" << src)
     return;
   }
-  ParticleSet* ion = (*pit).second;
-  PsiPoolType::iterator oit(psiPool.find(wfname));
+  ParticleSet* ion = pit->second.get();
+  auto oit(psiPool.find(wfname));
   TrialWaveFunction* psi = 0;
   if (oit == psiPool.end())
   {
@@ -281,7 +292,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 //
 //    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << std::endl;
 //    renameProperty(nuclei);
-//    PtclPoolType::iterator pit(ptclPool.find(nuclei));
+//    PSetMap::iterator pit(ptclPool.find(nuclei));
 //    if(pit != ptclPool.end()) {
 //      ParticleSet* ion=(*pit).second;
 //      if(PBCType)
