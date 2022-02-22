@@ -296,6 +296,10 @@ public:
                               int iat,
                               const std::vector<Scalar_t>& sdispls);
 
+  /// get current displacement for particle iat for multiple walkers. return as MCCoords
+  template<CoordsType CT>
+  static MCCoords<CT> mw_getDisplacements(const RefVectorWithLeader<ParticleSet>& p_list, const int iat);
+
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ random displacement of the iat-th particle

@@ -81,6 +81,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
+  auto& walker_leader = walker_elecs.getLeader();
   timers.resource_timer.start();
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
@@ -159,7 +160,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
         sft.drift_modifier.getDrifts(taus, grads_now, drifts);
 
-        walker_deltas.getSubset(iat, num_walkers, deltas); //get deltas for this particle for all walkers
+        //get deltas for this particle for all walkers
+        walker_deltas.getSubset(iat, num_walkers, deltas); 
         drifts = drifts + scaleBySqrtTau(taus, deltas);
 
         // only DMC does this
@@ -186,42 +188,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const PosType& delta_r) {
-          constexpr RealType mhalf(-0.5);
-          return mhalf * dot(delta_r, delta_r);
-        });
+        updateForwardLogGreensFunction(deltas, log_gf);
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts);
-        std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.positions.begin(), drifts.positions.begin(),
-                       [iat](const ParticleSet& ps, const PosType& drift) {
-                         return ps.R[iat] - ps.getActivePos() - drift;
-                       });
 
-        std::transform(drifts.positions.begin(), drifts.positions.end(), log_gb.begin(),
-                       [halfovertau = taus.oneover2tau](const PosType& drift) {
-                         return -halfovertau * dot(drift, drift);
-                       });
+        drifts = walker_leader.mw_getDisplacements<CT>(walker_elecs, iat) - drifts;
 
-        //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-        if constexpr (CT == CoordsType::POS_SPIN)
-        {
-          auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-          auto delta_spin_end   = delta_spin_start + num_walkers;
-          std::transform(delta_spin_start, delta_spin_end, log_gf.begin(), log_gf.begin(),
-                         [](const ParticleSet::Scalar_t& delta_spin, const RealType& loggf) {
-                           constexpr RealType mhalf(-0.5);
-                           return loggf + mhalf * delta_spin * delta_spin;
-                         });
-          std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.spins.begin(), drifts.spins.begin(),
-                         [iat](const ParticleSet& ps, const ParticleSet::Scalar_t& spindrift) {
-                           return ps.spins[iat] - ps.getActiveSpinVal() - spindrift;
-                         });
-          std::transform(drifts.spins.begin(), drifts.spins.end(), log_gb.begin(), log_gb.begin(),
-                         [halfovertau = taus.spin_oneover2tau](const ParticleSet::Scalar_t& spindrift,
-                                                               const RealType& loggb) {
-                           return loggb - halfovertau * spindrift * spindrift;
-                         });
-        }
+        updateReverseLogGreensFunction(drifts, taus, log_gb);
 
         auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
           if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))

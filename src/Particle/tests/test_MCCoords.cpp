@@ -47,12 +47,23 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.positions[2][1]) == -0.2);
     CHECK(Approx(mc_coords.positions[2][2]) == -0.1);
 
+    mc_coords = mc_coords - shift_coords;
+    CHECK(Approx(mc_coords.positions[0][0]) == 0.1);
+    CHECK(Approx(mc_coords.positions[0][1]) == 0.2);
+    CHECK(Approx(mc_coords.positions[0][2]) == 0.3);
+    CHECK(Approx(mc_coords.positions[1][0]) == 0.4);
+    CHECK(Approx(mc_coords.positions[1][1]) == 0.5);
+    CHECK(Approx(mc_coords.positions[1][2]) == 0.6);
+    CHECK(Approx(mc_coords.positions[2][0]) == 0.7);
+    CHECK(Approx(mc_coords.positions[2][1]) == 0.8);
+    CHECK(Approx(mc_coords.positions[2][2]) == 0.9);
+
     auto subset = MCCoords<mct>();
     subset.resize(1);
     mc_coords.getSubset(1, 1, subset);
-    CHECK(Approx(subset.positions[0][0]) == -0.6);
-    CHECK(Approx(subset.positions[0][1]) == -0.5);
-    CHECK(Approx(subset.positions[0][2]) == -0.4);
+    CHECK(Approx(subset.positions[0][0]) == 0.4);
+    CHECK(Approx(subset.positions[0][1]) == 0.5);
+    CHECK(Approx(subset.positions[0][2]) == 0.6);
   }
   {
     constexpr auto mct = CoordsType::POS_SPIN;
@@ -71,10 +82,15 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.spins[1]) == 1.2);
     CHECK(Approx(mc_coords.spins[2]) == 1.3);
 
+    mc_coords          = mc_coords - shift_coords;
+    CHECK(Approx(mc_coords.spins[0]) == 0.1);
+    CHECK(Approx(mc_coords.spins[1]) == 0.2);
+    CHECK(Approx(mc_coords.spins[2]) == 0.3);
+
     auto subset = MCCoords<mct>();
     subset.resize(1);
     mc_coords.getSubset(2, 1, subset);
-    CHECK(Approx(subset.spins[0]) == 1.3);
+    CHECK(Approx(subset.spins[0]) == 0.3);
   }
 }
 

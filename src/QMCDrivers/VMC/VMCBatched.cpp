@@ -54,6 +54,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walkers        = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+
+  auto& walker_leader = walker_elecs.getLeader();
   // This is really a waste the resources can be acquired outside of the run steps loop in VMCD!
   // I don't see an  easy way to measure the release without putting the weight of tons of timer_manager calls in
   // ResourceCollectionTeamLock's constructor.
@@ -107,19 +109,17 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       int end_index   = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
+        //get deltas for this particle (iat) for all walkers
+        walker_deltas.getSubset(iat, num_walkers, deltas); 
+
         if (use_drift)
         {
           twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-
-          walker_deltas.getSubset(iat, num_walkers, deltas); //get deltas for this particle for all walkers
           drifts = drifts + scaleBySqrtTau(taus, deltas);
         }
         else
-        {
-          walker_deltas.getSubset(iat, num_walkers, deltas);
           drifts = scaleBySqrtTau(taus, deltas);
-        }
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
 
@@ -128,46 +128,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         {
           twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-          auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
-          auto delta_r_end   = delta_r_start + num_walkers;
-
-          std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const PosType& delta_r) {
-            constexpr RealType mhalf(-0.5);
-            return mhalf * dot(delta_r, delta_r);
-          });
+          updateForwardLogGreensFunction(deltas, log_gf);
 
           sft.drift_modifier.getDrifts(taus, grads_new, drifts);
 
-          std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.positions.begin(), drifts.positions.begin(),
-                         [iat](const ParticleSet& ps, const PosType& drift) {
-                           return ps.R[iat] - ps.getActivePos() - drift;
-                         });
+          drifts = walker_leader.mw_getDisplacements<CT>(walker_elecs, iat) - drifts;
 
-          std::transform(drifts.positions.begin(), drifts.positions.end(), log_gb.begin(),
-                         [halfovertau = taus.oneover2tau](const PosType& drift) {
-                           return -halfovertau * dot(drift, drift);
-                         });
-
-          //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-          if constexpr (CT == CoordsType::POS_SPIN)
-          {
-            auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-            auto delta_spin_end   = delta_spin_start + num_walkers;
-            std::transform(delta_spin_start, delta_spin_end, log_gf.begin(), log_gf.begin(),
-                           [](const ParticleSet::Scalar_t& delta_spin, const RealType& loggf) {
-                             constexpr RealType mhalf(-0.5);
-                             return loggf + mhalf * delta_spin * delta_spin;
-                           });
-            std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.spins.begin(), drifts.spins.begin(),
-                           [iat](const ParticleSet& ps, const ParticleSet::Scalar_t& spindrift) {
-                             return ps.spins[iat] - ps.getActiveSpinVal() - spindrift;
-                           });
-            std::transform(drifts.spins.begin(), drifts.spins.end(), log_gb.begin(), log_gb.begin(),
-                           [halfovertau = taus.spin_oneover2tau](const ParticleSet::Scalar_t& spindrift,
-                                                                 const RealType& loggb) {
-                             return loggb - halfovertau * spindrift * spindrift;
-                           });
-          }
+          updateReverseLogGreensFunction(drifts, taus, log_gb);
         }
         else
           twf_dispatcher.flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);

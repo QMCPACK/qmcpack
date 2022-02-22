@@ -72,6 +72,20 @@ MCCoords<CT> operator+(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
   return out;
 }
 
+template<CoordsType CT>
+MCCoords<CT> operator-(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
+{
+  MCCoords<CT> out;
+  assert(lhs.positions.size() == rhs.positions.size());
+  out.resize(lhs.positions.size());
+  std::transform(lhs.positions.begin(), lhs.positions.end(), rhs.positions.begin(), out.positions.begin(),
+                 [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x - y; });
+  if constexpr (CT == CoordsType::POS_SPIN)
+    std::transform(lhs.spins.begin(), lhs.spins.end(), rhs.spins.begin(), out.spins.begin(),
+                   [](const QMCTraits::FullPrecRealType& x, const QMCTraits::FullPrecRealType& y) { return x - y; });
+  return out;
+}
+
 } // namespace qmcplusplus
 
 #endif
