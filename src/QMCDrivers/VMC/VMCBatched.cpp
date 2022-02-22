@@ -309,15 +309,17 @@ void VMCBatched::runVMCStep(int crowd_id,
                                     accumulate_this_step);
 }
 
-void VMCBatched::process(xmlNodePtr node)
+void VMCBatched::process(xmlNodePtr node) { process1(node); }
+
+QMCDriverNew::AdjustedWalkerCounts VMCBatched::process1(xmlNodePtr node)
 {
   print_mem("VMCBatched before initialization", app_log());
   // \todo get total walkers should be coming from VMCDriverInpu
+  QMCDriverNew::AdjustedWalkerCounts awc;
   try
   {
-    QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+    awc = adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                                  qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
     Base::startup(node, awc);
   }
@@ -325,6 +327,8 @@ void VMCBatched::process(xmlNodePtr node)
   {
     myComm->barrier_and_abort(ue.what());
   }
+
+  return awc;
 }
 
 int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)

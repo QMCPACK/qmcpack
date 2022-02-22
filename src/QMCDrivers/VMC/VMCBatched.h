@@ -73,6 +73,9 @@ public:
 
   void process(xmlNodePtr node) override;
 
+  /// Process xml input and return adjusted walker counts
+  AdjustedWalkerCounts process1(xmlNodePtr node);
+
   bool run() override;
 
   /** Refactor of VMCUpdatePbyP in crowd context
