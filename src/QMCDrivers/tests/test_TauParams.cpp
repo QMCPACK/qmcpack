@@ -26,19 +26,10 @@ TEST_CASE("Taus", "[Particle]")
   CHECK(Approx(taus_rs.oneover2tau) == 2.5);
   CHECK(Approx(taus_rs.sqrttau) == 0.447213595499957927703605);
 
-  //check arithmetic on taus, multiplication on each side
-  CHECK(Approx((0.5 * taus_rs).tauovermass) == 0.1);
-  CHECK(Approx((taus_rs * 0.5).oneover2tau) == 1.25);
-  CHECK(Approx((0.5 * taus_rs).sqrttau) == 0.31622776601683794);
-
   TauParams<QMCTraits::RealType, CoordsType::POS_SPIN> taus_rsspins(tau, invmass, spin_mass);
   CHECK(Approx(taus_rsspins.spin_tauovermass) == 0.4);
   CHECK(Approx(taus_rsspins.spin_oneover2tau) == 1.25);
   CHECK(Approx(taus_rsspins.spin_sqrttau) == 0.632455532033675882352952);
-
-  CHECK(Approx((2.0 * taus_rsspins).spin_tauovermass) == 0.8);
-  CHECK(Approx((taus_rsspins * 2.0).spin_oneover2tau) == 2.5);
-  CHECK(Approx((2.0 * taus_rsspins).spin_sqrttau) == 0.894427190999916);
 }
 
 } // namespace qmcplusplus
