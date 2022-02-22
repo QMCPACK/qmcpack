@@ -309,14 +309,14 @@ public:
    */
   void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                   int ref,
-                                                  RefVector<ValueType> det0_list,
-                                                  const RefVector<ValueVector>& ratios_list,
+                                                  const std::vector<ValueType> det0_list,
                                                   const RefVector<ValueMatrix>& psiinv_list,
                                                   const RefVector<ValueMatrix>& psi_list,
-                                                  RefVector<ValueMatrix>& dotProducts_list,
                                                   const std::vector<int>& data,
                                                   const std::vector<std::pair<int, int>>& pairs,
-                                                  const std::vector<RealType>& sign);
+                                                  const std::vector<RealType>& sign,
+                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                  const RefVector<ValueVector>& ratios_list);
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
@@ -353,13 +353,14 @@ public:
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
                                              int ref,
-                                             RefVector<ValueVector>& ratios_list,
+                                             const std::vector<ValueType>& det0_list,
                                              const RefVector<ValueMatrix>& psiinv_list,
                                              const RefVector<ValueMatrix>& psi_list,
-                                             RefVector<ValueMatrix>& dotProducts_list,
                                              const std::vector<int>& data,
                                              const std::vector<std::pair<int, int>>& pairs,
-                                             const std::vector<RealType>& sign);
+                                             const std::vector<RealType>& sign,
+                                             const RefVector<ValueMatrix>& dotProducts_list,
+                                             const RefVector<ValueVector>& ratios_list);
 
   void BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                const ValueMatrix& psiinv,
@@ -373,19 +374,20 @@ public:
                                                int iat,
                                                GradMatrix& grads);
 
-  void mw_BuildDotProductsAndCalculateRatios(int nw,
-                                             int ref,
-                                             int iat,
-                                             RefVector<GradMatrix>& ratios_list,
-                                             RefVector<ValueMatrix>& psiinv_list,
-                                             RefVector<ValueMatrix>& psi_list,
-                                             RefVector<ValueMatrix>& dotProducts_list,
-                                             std::vector<int>& data,
-                                             std::vector<std::pair<int, int>>& pairs,
-                                             std::vector<RealType>& sign,
-                                             int dx,
-                                             RefVector<ValueVector>& WorkSpace_list,
-                                             int getNumDets);
+  void mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
+                                                  int ref,
+                                                  int iat,
+                                                  int dx,
+                                                  int getNumDets,
+                                                  const std::vector<ValueType>& det0_grad_list,
+                                                  const RefVector<ValueMatrix>& psiinv_list,
+                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const std::vector<int>& data,
+                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const std::vector<RealType>& sign,
+                                                  const RefVector<ValueVector>& WorkSpace_list,
+                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                  const RefVector<GradMatrix>& ratios_list);
 
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
                                                                 const ValueMatrix& psiinv,

@@ -63,14 +63,14 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
 
 void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                                        int ref,
-                                                                       RefVector<ValueType> det0_list,
-                                                                       const RefVector<ValueVector>& ratios_list,
+                                                                       const std::vector<ValueType> det0_list,
                                                                        const RefVector<ValueMatrix>& psiinv_list,
                                                                        const RefVector<ValueMatrix>& psi_list,
-                                                                       RefVector<ValueMatrix>& dotProducts_list,
                                                                        const std::vector<int>& data,
                                                                        const std::vector<std::pair<int, int>>& pairs,
-                                                                       const std::vector<RealType>& sign)
+                                                                       const std::vector<RealType>& sign,
+                                                                       const RefVector<ValueMatrix>& dotProducts_list,
+                                                                       const RefVector<ValueVector>& ratios_list)
 {
   const size_t npairs = pairs.size();
   //This is not sure but I think it is the case dur to the use of a const...
@@ -99,12 +99,12 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(int nw,
       //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
       if (count != ref)
       {
-        ratios_list[iw].get()[count] = sign[count] * det0_list[iw].get() *
-            CalculateRatioFromMatrixElements(n, dotProducts_list[iw].get(), it2 + 1);
+        ratios_list[iw].get()[count] =
+            sign[count] * det0_list[iw] * CalculateRatioFromMatrixElements(n, dotProducts_list[iw].get(), it2 + 1);
       }
       it2 += 3 * n + 1;
     }
-    ratios_list[iw].get()[ref] = det0_list[iw].get();
+    ratios_list[iw].get()[ref] = det0_list[iw];
   }
   readMatTimer.stop();
 }
@@ -125,22 +125,17 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
 
 void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(int nw,
                                                                   int ref,
-                                                                  RefVector<ValueVector>& ratios_list,
+                                                                  const std::vector<ValueType>& det0_list,
                                                                   const RefVector<ValueMatrix>& psiinv_list,
                                                                   const RefVector<ValueMatrix>& psi_list,
-                                                                  RefVector<ValueMatrix>& dotProducts_list,
                                                                   const std::vector<int>& data,
                                                                   const std::vector<std::pair<int, int>>& pairs,
-                                                                  const std::vector<RealType>& sign)
+                                                                  const std::vector<RealType>& sign,
+                                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                                  const RefVector<ValueVector>& ratios_list)
 {
-  RefVector<ValueType> det0_list;
-  det0_list.reserve(nw);
-
-  for (size_t iw = 0; iw < nw; iw++)
-    det0_list.push_back(ratios_list[iw].get()[ref]);
-
-  mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, ratios_list, psiinv_list, psi_list, dotProducts_list,
-                                             data, pairs, sign);
+  mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, psiinv_list, psi_list, data, pairs, sign,
+                                             dotProducts_list, ratios_list);
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(int ref,
@@ -161,31 +156,27 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(int ref,
     grads(count, iat)[dx] = WorkSpace[count];
 }
 
-void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(int nw,
-                                                                  int ref,
-                                                                  int iat,
-                                                                  RefVector<GradMatrix>& ratios_list,
-                                                                  RefVector<ValueMatrix>& psiinv_list,
-                                                                  RefVector<ValueMatrix>& psi_list,
-                                                                  RefVector<ValueMatrix>& dotProducts_list,
-                                                                  std::vector<int>& data,
-                                                                  std::vector<std::pair<int, int>>& pairs,
-                                                                  std::vector<RealType>& sign,
-                                                                  int dx,
-                                                                  RefVector<ValueVector>& WorkSpace_list,
-                                                                  int getNumDets)
+void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
+                                                                       int ref,
+                                                                       int iat,
+                                                                       int dx,
+                                                                       int getNumDets,
+                                                                       const std::vector<ValueType>& det0_grad_list,
+                                                                       const RefVector<ValueMatrix>& psiinv_list,
+                                                                       const RefVector<ValueMatrix>& psi_list,
+                                                                       const std::vector<int>& data,
+                                                                       const std::vector<std::pair<int, int>>& pairs,
+                                                                       const std::vector<RealType>& sign,
+                                                                       const RefVector<ValueVector>& WorkSpace_list,
+                                                                       const RefVector<ValueMatrix>& dotProducts_list,
+                                                                       const RefVector<GradMatrix>& grads_list)
+
 {
-  RefVector<ValueType> det0_list;
-  det0_list.reserve(nw);
-  for (size_t iw = 0; iw < nw; iw++)
-    det0_list.push_back(ratios_list[iw].get()(ref, iat)[dx]);
-
-  mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, WorkSpace_list, psiinv_list, psi_list,
-                                             dotProducts_list, data, pairs, sign);
-
+  mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_grad_list, psiinv_list, psi_list, data, pairs, sign,
+                                             dotProducts_list, WorkSpace_list);
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t count = 0; count < getNumDets; ++count)
-      ratios_list[iw].get()(count, iat)[dx] = WorkSpace_list[iw].get()[count];
+      grads_list[iw].get()(count, iat)[dx] = WorkSpace_list[iw].get()[count];
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
@@ -241,6 +232,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   det_leader.RatioTimer.start();
 
   std::vector<ValueType> curRatio_list;
+  std::vector<ValueType> det0_list(nw, 1.0);
 
 
   RefVector<ValueVector> psiV_list, psiV_temp_list, new_ratios_to_ref_list, workV1_list, workV2_list;
@@ -257,9 +249,10 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   workV2_list.reserve(nw);
   TpsiM_list.reserve(nw);
   psiM_list.reserve(nw);
+  new_ratios_to_ref_list.reserve(nw);
 
   curRatio_list.resize(nw);
-  new_ratios_to_ref_list.reserve(nw);
+
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -308,9 +301,9 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
 
 
-  det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, new_ratios_to_ref_list,
-                                                   psiMinv_temp_list, TpsiM_list, dotProducts_list, *det_leader.detData,
-                                                   *det_leader.uniquePairs, *det_leader.DetSigns);
+  det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
+                                                   TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
+                                                   *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
 
   det_leader.ExtraStuffTimer.stop();
   for (size_t iw = 0; iw < nw; iw++)
@@ -490,7 +483,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list, dpsiMinv_list, TpsiM_list, dotProducts_list, psiM_list;
   RefVector<ValueVector> WorkSpace_list;
 
-  std::vector<ValueType> curRatio_list;
+  std::vector<ValueType> curRatio_list, det0_grad_list;
+  std::vector<ValueType> det0_list(nw, 1.0);
   std::vector<GradType> ratioGradRef_list;
   std::vector<ValueType> ratioGradReflistIdim;
 
@@ -516,7 +510,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   curRatio_list.resize(nw);
   ratioGradReflistIdim.resize(nw);
   ratioGradRef_list.resize(nw);
-
+  det0_grad_list.resize(nw);
 
   det_leader.UpdateMode  = ORB_PBYP_PARTIAL;
   const int WorkingIndex = iat - det_leader.FirstIndex;
@@ -580,9 +574,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
-  det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, new_ratios_to_ref_list,
-                                                   psiMinv_temp_list, TpsiM_list, dotProducts_list, *det_leader.detData,
-                                                   *det_leader.uniquePairs, *det_leader.DetSigns);
+  det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
+                                                   TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
+                                                   *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
 
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
@@ -601,13 +595,16 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     mw_InverseUpdateByColumn(nw, dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                              ratioGradReflistIdim);
     for (size_t iw = 0; iw < nw; iw++)
+    {
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiV_list[iw].get()[i][idim];
-
-    det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, WorkingIndex, new_grads_list,
-                                                     dpsiMinv_list, TpsiM_list, dotProducts_list, *det_leader.detData,
-                                                     *det_leader.uniquePairs, *det_leader.DetSigns, idim,
-                                                     WorkSpace_list, det_leader.getNumDets());
+      det0_grad_list[iw] = ratioGradReflistIdim[iw] / curRatio_list[iw];
+    }
+    det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
+                                                          det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
+                                                          TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
+                                                          *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
+                                                          new_grads_list);
 
     for (size_t iw = 0; iw < nw; iw++)
       for (int i = 0; i < det_leader.NumOrbitals; i++)
@@ -772,11 +769,11 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiM_list[iw].get()(WorkingIndex, i)[idim];
-
-    det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, WorkingIndex, grads_list,
-                                                     dpsiMinv_list, TpsiM_list, dotProducts_list, *det_leader.detData,
-                                                     *det_leader.uniquePairs, *det_leader.DetSigns, idim,
-                                                     WorkSpace_list, det_leader.getNumDets());
+    det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
+                                                          det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
+                                                          TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
+                                                          *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
+                                                          grads_list);
 
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
