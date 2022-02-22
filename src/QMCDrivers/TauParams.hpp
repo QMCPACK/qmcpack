@@ -61,7 +61,6 @@ struct TauParams<RT, CoordsType::POS_SPIN>
     spin_sqrttau     = std::sqrt(spin_tauovermass);
   }
 };
-
 } // namespace qmcplusplus
 
 #endif

@@ -88,7 +88,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   TWFGrads<CT> grads_now, grads_new;
   drifts.resize(num_walkers);
   walker_deltas.resize(num_walkers * num_particles);
-  walker_deltas.resize(num_walkers);
+  deltas.resize(num_walkers);
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
 
