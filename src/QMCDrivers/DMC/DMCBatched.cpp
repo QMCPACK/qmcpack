@@ -106,10 +106,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers   = crowd.size();
   const int num_particles = sft.population.get_num_particles();
 
-  MCCoords<CT> drifts, walker_deltas;
+  MCCoords<CT> drifts, walker_deltas, deltas;
   TWFGrads<CT> grads_now, grads_new;
   drifts.resize(num_walkers);
   walker_deltas.resize(num_walkers * num_particles);
+  deltas.resize(num_walkers);
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
 
@@ -157,27 +158,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
         sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-        //need to abstract this next bit of code
-        auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
-        std::transform(drifts.positions.begin(), drifts.positions.end(), delta_r_start, drifts.positions.begin(),
-                       [st = taus.sqrttau](const PosType& drift, const PosType& delta_r) {
-                         return drift + (st * delta_r);
-                       });
-        //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-        if constexpr (CT == CoordsType::POS_SPIN)
-        {
-          auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-          auto delta_spin_end   = delta_spin_start + num_walkers;
-          std::transform(drifts.spins.begin(), drifts.spins.end(), delta_spin_start, drifts.spins.begin(),
-                         [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& spindrift,
-                                                  const ParticleSet::Scalar_t& delta_spin) {
-                           return spindrift + (st * delta_spin);
-                         });
-        }
-        
+
+        walker_deltas.getSubset(iat, num_walkers, deltas); //get deltas for this particle for all walkers
+        drifts = drifts + scaleBySqrtTau(taus, deltas);
+
         // only DMC does this
         // TODO: rr needs a real name
+        auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
+        auto delta_r_end   = delta_r_start + num_walkers;
         std::vector<RealType> rr(num_walkers, 0.0);
         assert(rr.size() == delta_r_end - delta_r_start);
         std::transform(delta_r_start, delta_r_end, rr.begin(),

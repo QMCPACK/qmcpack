@@ -20,6 +20,7 @@
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
+#include "DriverOperations.hpp"
 
 namespace qmcplusplus
 {
@@ -81,10 +82,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  MCCoords<CT> drifts, walker_deltas;
+  MCCoords<CT> drifts, walker_deltas, deltas;
   TWFGrads<CT> grads_now, grads_new;
   drifts.resize(num_walkers);
   walker_deltas.resize(num_walkers * num_particles);
+  walker_deltas.resize(num_walkers);
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
 
@@ -109,41 +111,14 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         {
           twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-          auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
-          auto delta_r_end   = delta_r_start + num_walkers;
-          std::transform(drifts.positions.begin(), drifts.positions.end(), delta_r_start, drifts.positions.begin(),
-                         [st = taus.sqrttau](const PosType& drift, const PosType& delta_r) {
-                           return drift + (st * delta_r);
-                         });
-          //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-          if constexpr (CT == CoordsType::POS_SPIN)
-          {
-            auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-            auto delta_spin_end   = delta_spin_start + num_walkers;
-            std::transform(drifts.spins.begin(), drifts.spins.end(), delta_spin_start, drifts.spins.begin(),
-                           [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& spindrift,
-                                                    const ParticleSet::Scalar_t& delta_spin) {
-                             return spindrift + (st * delta_spin);
-                           });
-          }
+
+          walker_deltas.getSubset(iat, num_walkers, deltas); //get deltas for this particle for all walkers
+          drifts = drifts + scaleBySqrtTau(taus, deltas);
         }
         else
         {
-          auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
-          auto delta_r_end   = delta_r_start + num_walkers;
-          std::transform(delta_r_start, delta_r_end, drifts.positions.begin(),
-                         [st = taus.sqrttau](const PosType& delta_r) { return st * delta_r; });
-
-          //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-          if constexpr (CT == CoordsType::POS_SPIN)
-          {
-            auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-            auto delta_spin_end   = delta_spin_start + num_walkers;
-            std::transform(delta_spin_start, delta_spin_end, drifts.spins.begin(),
-                           [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& delta_spin) {
-                             return st * delta_spin;
-                           });
-          }
+          walker_deltas.getSubset(iat, num_walkers, deltas);
+          drifts = scaleBySqrtTau(taus, deltas);
         }
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);

@@ -34,6 +34,10 @@ template<>
 struct MCCoords<CoordsType::POS>
 {
   void resize(const std::size_t size);
+  /** get subset of MCCoords
+   * [param,out] out
+   */
+  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS>& out);
 
   std::vector<QMCTraits::PosType> positions;
 };
@@ -42,6 +46,10 @@ template<>
 struct MCCoords<CoordsType::POS_SPIN>
 {
   void resize(const std::size_t size);
+  /** get subset of MCCoords
+   * [param,out] out
+   */
+  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS_SPIN>& out);
 
   std::vector<QMCTraits::PosType> positions;
   std::vector<QMCTraits::FullPrecRealType> spins;
