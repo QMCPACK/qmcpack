@@ -60,8 +60,8 @@ namespace qmcplusplus
 {
 HamiltonianFactory::HamiltonianFactory(const std::string& hName,
                                        ParticleSet& qp,
-                                       PtclPoolType& pset,
-                                       PsiPoolType& oset,
+                                       const PSetMap& pset,
+                                       const PsiPoolType& oset,
                                        Communicate* c)
     : MPIObjectBase(c),
       targetH(std::make_unique<QMCHamiltonian>(hName)),
@@ -129,7 +129,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       attach2Node = true;
     }
   }
-  PsiPoolType::iterator psi_it(psiPool.find(psiName));
+  auto psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
   TrialWaveFunction* targetPsi = psi_it->second->getTWF();
@@ -216,20 +216,18 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "latticedeviation")
       {
         // find target particle set
-        PtclPoolType::iterator pit(ptclPool.find(targetInp));
+        auto pit(ptclPool.find(targetInp));
         if (pit == ptclPool.end())
         {
           APP_ABORT("Unknown target \"" + targetInp + "\" for LatticeDeviation.");
         }
-        ParticleSet* target_particle_set = (*pit).second;
 
         // find source particle set
-        PtclPoolType::iterator spit(ptclPool.find(sourceInp));
+        auto spit(ptclPool.find(sourceInp));
         if (spit == ptclPool.end())
         {
           APP_ABORT("Unknown source \"" + sourceInp + "\" for LatticeDeviation.");
         }
-        ParticleSet* source_particle_set = (*spit).second;
 
         // read xml node
         OhmmsAttributeSet local_attrib;
@@ -239,8 +237,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         local_attrib.put(cur);
 
         std::unique_ptr<LatticeDeviationEstimator> apot =
-            std::make_unique<LatticeDeviationEstimator>(*target_particle_set, *source_particle_set, target_group,
-                                                        source_group);
+            std::make_unique<LatticeDeviationEstimator>(*pit->second, *spit->second, target_group, source_group);
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
       }
@@ -300,12 +297,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         OhmmsAttributeSet attrib;
         attrib.add(source, "source");
         attrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(source));
+        auto pit(ptclPool.find(source));
         ParticleSet* Pc = nullptr;
         if (source == "")
           Pc = nullptr;
         else if (pit != ptclPool.end())
-          Pc = pit->second;
+          Pc = pit->second.get();
         else
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
@@ -339,13 +336,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         hAttrib.add(PsiName, "psi");
         hAttrib.add(SourceName, "source");
         hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
+        auto pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
         {
           APP_ABORT("Unknown source \"" + SourceName + "\" for Chiesa correction.");
         }
         ParticleSet& source = *pit->second;
-        PsiPoolType::iterator psi_it(psiPool.find(PsiName));
+        auto psi_it(psiPool.find(PsiName));
         if (psi_it == psiPool.end())
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
@@ -361,16 +358,15 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         attrib.add(SourceName, "source");
         attrib.put(cur);
 
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
+        auto pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
         {
           APP_ABORT("Unknown source \"" + SourceName + "\" for SkAll.");
         }
-        ParticleSet* source = (*pit).second;
 
         if (PBCType)
         {
-          std::unique_ptr<SkAllEstimator> apot = std::make_unique<SkAllEstimator>(*source, targetPtcl);
+          std::unique_ptr<SkAllEstimator> apot = std::make_unique<SkAllEstimator>(*pit->second, targetPtcl);
           apot->put(cur);
           targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) ALL estimator" << std::endl;
@@ -399,7 +395,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         OhmmsAttributeSet hAttrib;
         hAttrib.add(PsiName, "wavefunction");
         hAttrib.put(cur);
-        PsiPoolType::iterator psi_it(psiPool.find(PsiName));
+        auto psi_it(psiPool.find(PsiName));
         if (psi_it == psiPool.end())
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");

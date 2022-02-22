@@ -25,12 +25,13 @@ namespace qmcplusplus
 class SPOSetScanner
 {
 public:
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
-  using RealType     = QMCTraits::RealType;
-  using ValueType    = QMCTraits::ValueType;
-  using ValueVector  = OrbitalSetTraits<ValueType>::ValueVector;
-  using GradVector   = OrbitalSetTraits<ValueType>::GradVector;
-  using HessVector   = OrbitalSetTraits<ValueType>::HessVector;
+  using PtclPool    = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using SPOSetMap   = std::map<std::string, std::unique_ptr<SPOSet>>;
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
+  using HessVector  = OrbitalSetTraits<ValueType>::HessVector;
 
   RealType myfabs(RealType s) { return std::fabs(s); }
   template<typename T>
@@ -44,14 +45,14 @@ public:
     return TinyVector<T, OHMMS_DIM>(myfabs(s[0]), myfabs(s[1]), myfabs(s[2]));
   }
 
-  std::vector<std::unique_ptr<SPOSet>>& sposets;
+  const SPOSetMap& sposets;
   ParticleSet& target;
-  const PtclPoolType& PtclPool;
+  const PtclPool& ptcl_pool_;
   ParticleSet* ions;
 
   // construction/destruction
-  SPOSetScanner(std::vector<std::unique_ptr<SPOSet>>& sposets_in, ParticleSet& targetPtcl, const PtclPoolType& psets)
-      : sposets(sposets_in), target(targetPtcl), PtclPool(psets), ions(0){};
+  SPOSetScanner(const SPOSetMap& sposets_in, ParticleSet& targetPtcl, const PtclPool& psets)
+      : sposets(sposets_in), target(targetPtcl), ptcl_pool_(psets), ions(0){};
   //~SPOSetScanner(){};
 
   // processing scanning
@@ -63,15 +64,15 @@ public:
     OhmmsAttributeSet aAttrib;
     aAttrib.add(sourcePtcl, "source");
     aAttrib.put(cur);
-    auto pit(PtclPool.find(sourcePtcl));
-    if (pit == PtclPool.end())
+    auto pit(ptcl_pool_.find(sourcePtcl));
+    if (pit == ptcl_pool_.end())
       app_log() << "Source particle set not found. Can not be used as reference point." << std::endl;
     else
-      ions = (*pit).second;
+      ions = pit->second.get();
 
     // scanning the SPO sets
     xmlNodePtr cur_save = cur;
-    for (auto& sposet : sposets)
+    for (const auto& [name, sposet] : sposets)
     {
       app_log() << "  Processing SPO " << sposet->getName() << std::endl;
       // scanning the paths

@@ -43,34 +43,21 @@ ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
   myName    = other.myName;
 }
 
-ParticleSetPool::~ParticleSetPool()
-{
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while (it != it_end)
-  {
-    delete (*it).second;
-    it++;
-  }
-}
+ParticleSetPool::~ParticleSetPool() = default;
 
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {
-  std::map<std::string, ParticleSet*>::iterator pit(myPool.find(pname));
-  if (pit == myPool.end())
-  {
-    return 0;
-  }
+  if (auto pit = myPool.find(pname); pit == myPool.end())
+    return nullptr;
   else
-  {
-    return (*pit).second;
-  }
+    return pit->second.get();
 }
 
 MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
 {
   ParticleSet* mc = 0;
   if (myPool.size() == 1)
-    mc = (*myPool.begin()).second;
+    mc = myPool.begin()->second.get();
   else
     mc = getParticleSet(pname);
   if (mc == 0)
@@ -89,7 +76,7 @@ void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
     LOGMSG("  Adding " << pname << " ParticleSet to the pool")
     if (&p->getSimulationCell() != simulation_cell_.get())
       throw std::runtime_error("bug mandate");
-    myPool[pname] = p.release();
+    myPool.emplace(pname, std::move(p));
   }
   else
     throw std::runtime_error(p->getName() + " exists. Cannot be added again.");
@@ -159,7 +146,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     else
       pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);
 
-    myPool[id] = pTemp;
+    myPool.emplace(id, pTemp);
 
     try
     {
@@ -240,13 +227,8 @@ void ParticleSetPool::output_particleset_info(Libxml2Document& doc, xmlNodePtr r
  */
 void ParticleSetPool::reset()
 {
-  PoolType::iterator it(myPool.begin()), it_end(myPool.end());
-  while (it != it_end)
-  {
-    ParticleSet* pt((*it).second);
-    pt->update();
-    ++it;
-  }
+  for (const auto& [key, pset] : myPool)
+    pset->update();
 }
 
 } // namespace qmcplusplus

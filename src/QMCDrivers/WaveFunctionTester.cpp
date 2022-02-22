@@ -202,11 +202,10 @@ void WaveFunctionTester::runCloneTest()
 void WaveFunctionTester::printEloc()
 {
   app_log() << " ===== printEloc =====\n";
-  ParticleSetPool::PoolType::iterator p;
-  for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << std::endl;
+  for (auto& [key, value] : PtclPool.getPool())
+    app_log() << "ParticelSet = " << key << std::endl;
   // Find source ParticleSet
-  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  auto pit(PtclPool.getPool().find(sourceName));
   if (pit == PtclPool.getPool().end())
     APP_ABORT("Unknown source \"" + sourceName + "\" in printEloc in WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
@@ -1413,11 +1412,10 @@ void WaveFunctionTester::runRatioV()
 void WaveFunctionTester::runGradSourceTest()
 {
   app_log() << " ===== runGradSourceTest =====\n";
-  ParticleSetPool::PoolType::iterator p;
-  for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << std::endl;
+  for (auto& [key, value] : PtclPool.getPool())
+    app_log() << "ParticelSet = " << key << std::endl;
   // Find source ParticleSet
-  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  auto pit(PtclPool.getPool().find(sourceName));
   app_log() << pit->first << std::endl;
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
@@ -1564,11 +1562,10 @@ void WaveFunctionTester::runGradSourceTest()
 void WaveFunctionTester::runZeroVarianceTest()
 {
   app_log() << " ===== runZeroVarianceTest =====\n";
-  ParticleSetPool::PoolType::iterator p;
-  for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << std::endl;
+  for (auto& [key, value] : PtclPool.getPool())
+    app_log() << "ParticelSet = " << key << std::endl;
   // Find source ParticleSet
-  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  auto pit(PtclPool.getPool().find(sourceName));
   app_log() << pit->first << std::endl;
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");

@@ -23,18 +23,22 @@
 
 namespace qmcplusplus
 {
-CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
+CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload)
     : ForceBase(ref, ref),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
       Ps(ref),
-      d_aa_ID(ref.addTable(ref)),
+      use_offload_(active && !computeForces && use_offload),
+      d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
       evalLR_timer_(*timer_manager.createTimer("CoulombPBCAA::LongRange", timer_level_fine)),
-      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine))
-
+      evalSR_timer_(*timer_manager.createTimer("CoulombPBCAA::ShortRange", timer_level_fine)),
+      offload_timer_(*timer_manager.createTimer("CoulombPBCAA::offload", timer_level_fine))
 {
+  if (use_offload_)
+    assert(ref.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);
+
   ReportEngine PRE("CoulombPBCAA", "CoulombPBCAA");
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
@@ -99,7 +103,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =" << std::setprecision(8) << MC0 << "\n    Vtot     =" << value_ << std::endl;
+  app_log() << "\n    e-e Madelung Const. =" << std::setprecision(8) << MC0 << "\n    Vtot     =" << value_
+            << std::endl;
 }
 
 CoulombPBCAA::~CoulombPBCAA() = default;
@@ -175,6 +180,35 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
   return value_;
 }
 
+void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list) const
+{
+  auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
+  auto& p_leader = p_list.getLeader();
+  assert(this == &o_list.getLeader());
+
+  if (!o_leader.is_active)
+    return;
+
+  if (use_offload_)
+  {
+    if (o_leader.streaming_particles_)
+      throw std::runtime_error("Streaming particles is not supported when offloading in CoulombPBCAA");
+
+    auto short_range_results = mw_evalSR_offload(o_list, p_list);
+
+    for (int iw = 0; iw < o_list.size(); iw++)
+    {
+      auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
+      coulomb_aa.value_ = coulomb_aa.evalLR(p_list[iw]) + short_range_results[iw] + myConst;
+    }
+  }
+  else
+    for (int iw = 0; iw < o_list.size(); iw++)
+      o_list[iw].evaluate(p_list[iw]);
+}
+
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet& ions,
                                                            TrialWaveFunction& psi,
@@ -232,8 +266,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpecies; ++s)
           v1 += z * Zspec[s] *
-              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i],
-                           PtclRhoK.eikr_i[i]);
+              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+                           PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
         V_samp(i) += v1;
         Vlr += v1;
       }
@@ -281,7 +315,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   V_const.resize(NumCenters);
 #endif
 
-  Zat.resize(NumCenters);
   Zspec.resize(NumSpecies);
   NofSpecies.resize(NumSpecies);
   for (int spec = 0; spec < NumSpecies; spec++)
@@ -289,12 +322,19 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
     Zspec[spec]      = tspecies(ChargeAttribIndx, spec);
     NofSpecies[spec] = P.groupsize(spec);
   }
+
   SpeciesID.resize(NumCenters);
+  Zat.resize(NumCenters);
+  Zat_offload = std::make_shared<Vector<RealType, OffloadPinnedAllocator<RealType>>>(NumCenters);
+  auto& Zat_ref(*Zat_offload);
   for (int iat = 0; iat < NumCenters; iat++)
   {
     SpeciesID[iat] = P.GroupID[iat];
     Zat[iat]       = Zspec[P.GroupID[iat]];
+    Zat_ref[iat]   = Zat[iat];
   }
+  Zat_ref.updateTo();
+
   AA = LRCoulombSingleton::getHandler(P);
   //AA->initBreakup(*PtclRef);
   myConst = evalConsts();
@@ -462,13 +502,95 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
   return SR;
 }
 
+std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                                    const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  const size_t nw = o_list.size();
+  std::vector<Return_t> values(nw);
+  Vector<Return_t, OffloadPinnedAllocator<Return_t>> values_offload(nw);
+  auto& p_leader   = p_list.getLeader();
+  auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
+
+  ScopedTimer local_timer(caa_leader.evalSR_timer_);
+
+  RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(caa_leader.d_aa_ID));
+  dt_list.reserve(p_list.size());
+  for (ParticleSet& p : p_list)
+    dt_list.push_back(p.getDistTable(caa_leader.d_aa_ID));
+
+  auto& dtaa_leader = dynamic_cast<DistanceTableAA&>(p_leader.getDistTable(caa_leader.d_aa_ID));
+
+  const size_t chunk_size = dtaa_leader.get_num_particls_stored();
+  if (chunk_size == 0)
+    throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
+
+  const size_t total_num      = p_leader.getTotalNum();
+  const size_t total_num_half = (total_num + 1) / 2;
+  const size_t num_padded     = getAlignedSize<RealType>(total_num);
+  const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
+
+  const auto m_Y         = caa_leader.rVs_offload->get_m_Y().data();
+  const auto m_Y2        = caa_leader.rVs_offload->get_m_Y2().data();
+  const auto first_deriv = caa_leader.rVs_offload->get_first_deriv();
+  const auto const_value = caa_leader.rVs_offload->get_const_value();
+  const auto r_min       = caa_leader.rVs_offload->get_r_min();
+  const auto r_max       = caa_leader.rVs_offload->get_r_max();
+  const auto X           = caa_leader.rVs_offload->get_X().data();
+  const auto delta_inv   = caa_leader.rVs_offload->get_delta_inv();
+  const auto Zat         = caa_leader.Zat_offload->data();
+
+  auto value_ptr = values_offload.data();
+
+  {
+    values_offload.updateTo();
+    for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
+    {
+      const size_t first           = ichunk * chunk_size;
+      const size_t last            = std::min(first + chunk_size, total_num_half);
+      const size_t this_chunk_size = last - first;
+
+      auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
+
+      ScopedTimer offload_scope(caa_leader.offload_timer_);
+
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
+      for (size_t iw = 0; iw < nw; iw++)
+      {
+        mRealType SR = 0.0;
+        PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
+        for (size_t jcol = 0; jcol < total_num; jcol++)
+          for (size_t irow = first; irow < last; irow++)
+          {
+            const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
+            if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
+              continue;
+
+            const size_t i = irow > jcol ? irow : total_num - 1 - irow;
+            const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
+
+            SR += Zat[i] * Zat[j] *
+                OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
+          }
+        value_ptr[iw] += SR;
+      }
+    }
+
+    values_offload.updateFrom();
+    for (int iw = 0; iw < nw; iw++)
+      values[iw] = values_offload[iw];
+  }
+  return values;
+}
+
 CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
 {
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
-    throw std::runtime_error("CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an implementation with complex-valued storage that may be resurrected using real-valued storage.");
+    throw std::runtime_error(
+        "CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an "
+        "implementation with complex-valued storage that may be resurrected using real-valued storage.");
   else
   {
     for (int spec1 = 0; spec1 < NumSpecies; spec1++)
@@ -476,8 +598,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       mRealType Z1 = Zspec[spec1];
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
-        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
-                                      PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
+        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1],
+                                      PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
         if (spec2 == spec1)
           temp *= 0.5;
         res += Z1 * Zspec[spec2] * temp;

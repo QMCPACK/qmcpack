@@ -63,31 +63,33 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   lp.put(part1);
   lattice.print(app_log(), 0);
   const SimulationCell simulation_cell(lattice);
-  ParticleSet ions_(simulation_cell);
-  ParticleSet elec_(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
-  ions_.setName("ion");
-  ions_.create({2});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 0.0;
-  ions_.R[1][1] = 0.0;
-  ions_.R[1][2] = 0.0;
+  ions.setName("ion");
+  ions.create({2});
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+  ions.R[1][0] = 0.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
 
-  elec_.setName("elec");
-  elec_.create({2,0});
-  elec_.R[0][0] = -0.28;
-  elec_.R[0][1] = 0.0225;
-  elec_.R[0][2] = -2.709;
-  elec_.R[1][0] = -1.08389;
-  elec_.R[1][1] = 1.9679;
-  elec_.R[1][2] = -0.0128914;
+  elec.setName("elec");
+  elec.create({2, 0});
+  elec.R[0][0] = -0.28;
+  elec.R[0][1] = 0.0225;
+  elec.R[0][2] = -2.709;
+  elec.R[1][0] = -1.08389;
+  elec.R[1][1] = 1.9679;
+  elec.R[1][2] = -0.0128914;
 
-  std::map<string, ParticleSet*> pp;
-  pp["ion"] = &ions_;
+  std::map<string, std::unique_ptr<ParticleSet>> pp;
+  pp.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  pp.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
@@ -95,7 +97,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
 
   // initialize SK
-  elec_.createSK();
+  elec.createSK();
 
   const char* particles = "<tmp> \
   <ionwf name=\"ionwf\" source=\"ion\" width=\"0.5 0.5\"/> \
@@ -108,7 +110,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  LatticeGaussianProductBuilder jastrow(c, elec_, pp);
+  LatticeGaussianProductBuilder jastrow(c, elec, pp);
   auto LGP_uptr = jastrow.buildComponent(jas1);
   auto LGP      = dynamic_cast<LatticeGaussianProduct*>(LGP_uptr.get());
   double width  = 0.5;
@@ -120,12 +122,12 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   }
 
   // update all distance tables
-  ions_.update();
-  elec_.update();
+  ions.update();
+  elec.update();
 
-  LogValueType logpsi = LGP->evaluateLog(elec_, elec_.G, elec_.L);
+  LogValueType logpsi = LGP->evaluateLog(elec, elec.G, elec.L);
   // check answer
-  RealType r2  = Dot(elec_.R, elec_.R);
+  RealType r2  = Dot(elec.R, elec.R);
   double wfval = std::exp(-alpha * r2);
   REQUIRE(logpsi == ComplexApprox(std::log(wfval)));
 }

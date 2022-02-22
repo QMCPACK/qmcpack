@@ -57,9 +57,6 @@ public:
   /// state info of all possible states available in the basis
   std::vector<std::unique_ptr<SPOSetInfo>> states;
 
-  /// list of all sposets created by this builder
-  std::vector<std::unique_ptr<SPOSet>> sposets;
-
   SPOSetBuilder(const std::string& type_name, Communicate* comm);
   virtual ~SPOSetBuilder() {}
 
@@ -73,7 +70,7 @@ public:
   inline void clear_states(int index = 0) { states[index]->clear(); }
 
   /// create an sposet from xml and save the resulting SPOSet
-  SPOSet* createSPOSet(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur);
 
   const std::string& getTypeName() const { return type_name_; }
 

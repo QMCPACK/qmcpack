@@ -47,7 +47,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   struct DTAAMultiWalkerMem : public Resource
   {
     ///dist displ for temporary and old pairs
-    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
+    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_old_dist_displ;
+
+    /** distances from a range of indics to the source.
+     * for original particle index i (row) and source particle id j (col)
+     * j < i,  the element data is dist(r_i - r_j)
+     * j > i,  the element data is dist(r_(n - 1 - i) - r_(n - 1 - j))
+     */
+    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_distances_subset;
 
     DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
 
@@ -112,7 +119,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   {
     if (!mw_mem_)
       throw std::runtime_error("SoaDistanceTableAAOMPTarget mw_mem_ is nullptr");
-    return mw_mem_->nw_new_old_dist_displ.data();
+    return mw_mem_->mw_new_old_dist_displ.data();
   }
 
   void createResource(ResourceCollection& collection) const override
@@ -141,17 +148,17 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt.old_dr_.free();
     }
 
-    auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
-    nw_new_old_dist_displ.resize(nw * 2 * stride_size);
+    auto& mw_new_old_dist_displ = mw_mem.mw_new_old_dist_displ;
+    mw_new_old_dist_displ.resize(nw * 2 * stride_size);
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
-      dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, num_targets_padded_);
+      dt.temp_r_.attachReference(mw_new_old_dist_displ.data() + stride_size * iw, num_targets_padded_);
       dt.temp_dr_.attachReference(num_targets_, num_targets_padded_,
-                                  nw_new_old_dist_displ.data() + stride_size * iw + num_targets_padded_);
-      dt.old_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * (iw + nw), num_targets_padded_);
+                                  mw_new_old_dist_displ.data() + stride_size * iw + num_targets_padded_);
+      dt.old_r_.attachReference(mw_new_old_dist_displ.data() + stride_size * (iw + nw), num_targets_padded_);
       dt.old_dr_.attachReference(num_targets_, num_targets_padded_,
-                                 nw_new_old_dist_displ.data() + stride_size * (iw + nw) + num_targets_padded_);
+                                 mw_new_old_dist_displ.data() + stride_size * (iw + nw) + num_targets_padded_);
     }
   }
 
@@ -177,6 +184,80 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     for (int iat = 1; iat < num_targets_; ++iat)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
                                              displacements_[iat], 0, iat, iat);
+  }
+
+  /** compute distances from particles in [range_begin, range_end) to all the particles.
+   * Although [range_begin, range_end) and be any particle [0, num_sources), it is only necessary to compute
+   * half of the table due to the symmetry of AA table. See note of the output data object mw_distances_subset
+   * To keep resident memory minimal on the device, range_end - range_begin < num_particls_stored is required.
+   */
+  const RealType* mw_evaluate_range(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    size_t range_begin,
+                                    size_t range_end) const override
+  {
+    auto& dt_leader          = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    const size_t subset_size = range_end - range_begin;
+    if (subset_size > dt_leader.num_particls_stored)
+      throw std::runtime_error("not enough internal buffer");
+
+    ScopedTimer local_timer(dt_leader.evaluate_timer_);
+
+    auto& mw_mem      = *dt_leader.mw_mem_;
+    auto& pset_leader = p_list.getLeader();
+
+    const size_t nw              = dt_list.size();
+    const auto num_sources_local = dt_leader.num_targets_;
+    const auto num_padded        = dt_leader.num_targets_padded_;
+    mw_mem.mw_distances_subset.resize(nw * subset_size * num_padded);
+
+    const int ChunkSizePerTeam = 256;
+    const size_t num_teams     = (num_sources_local + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+
+    auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
+
+    auto* rsoa_dev_list_ptr = coordinates_leader.getMultiWalkerRSoADevicePtrs().data();
+    auto* dist_ranged       = mw_mem.mw_distances_subset.data();
+    {
+      ScopedTimer offload(dt_leader.offload_timer_);
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams)")
+      for (int iw = 0; iw < nw; ++iw)
+        for (int team_id = 0; team_id < num_teams; team_id++)
+        {
+          auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
+          const size_t first   = ChunkSizePerTeam * team_id;
+          const size_t last    = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
+
+          PRAGMA_OFFLOAD("omp parallel for")
+          for (int iel = first; iel < last; iel++)
+          {
+            for (int irow = 0; irow < subset_size; irow++)
+            {
+              T* dist          = dist_ranged + (irow + subset_size * iw) * num_padded;
+              size_t id_target = irow + range_begin;
+
+              T dx, dy, dz;
+              if (id_target < iel)
+              {
+                dx = source_pos_ptr[id_target] - source_pos_ptr[iel];
+                dy = source_pos_ptr[id_target + num_padded] - source_pos_ptr[iel + num_padded];
+                dz = source_pos_ptr[id_target + num_padded * 2] - source_pos_ptr[iel + num_padded * 2];
+              }
+              else
+              {
+                const size_t id_target_reverse = num_sources_local - 1 - id_target;
+                const size_t iel_reverse       = num_sources_local - 1 - iel;
+                dx                             = source_pos_ptr[id_target_reverse] - source_pos_ptr[iel_reverse];
+                dy = source_pos_ptr[id_target_reverse + num_padded] - source_pos_ptr[iel_reverse + num_padded];
+                dz = source_pos_ptr[id_target_reverse + num_padded * 2] - source_pos_ptr[iel_reverse + num_padded * 2];
+              }
+
+              dist[iel] = DTD_BConds<T, D, SC>::computeDist(dx, dy, dz);
+            }
+          }
+        }
+    }
+    return mw_mem.mw_distances_subset.data();
   }
 
   ///evaluate the temporary pair relations
@@ -228,7 +309,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const size_t nw          = dt_list.size();
     const size_t stride_size = num_targets_padded_ * (D + 1);
 
-    auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
+    auto& mw_new_old_dist_displ = mw_mem.mw_new_old_dist_displ;
 
     for (int iw = 0; iw < nw; iw++)
     {
@@ -248,14 +329,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const auto num_sources_local = num_targets_;
     const auto num_padded        = num_targets_padded_;
     auto* rsoa_dev_list_ptr      = coordinates_leader.getMultiWalkerRSoADevicePtrs().data();
-    auto* r_dr_ptr               = nw_new_old_dist_displ.data();
+    auto* r_dr_ptr               = mw_new_old_dist_displ.data();
     auto* new_pos_ptr            = coordinates_leader.getFusedNewPosBuffer().data();
     const size_t new_pos_stride  = coordinates_leader.getFusedNewPosBuffer().capacity();
 
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
-                        nowait depend(out: r_dr_ptr[:nw_new_old_dist_displ.size()])")
+                        nowait depend(out: r_dr_ptr[:mw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -297,8 +378,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     if (modes_ & DTModes::NEED_TEMP_DATA_ON_HOST)
     {
-      PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:nw_new_old_dist_displ.size()]) \
-                      from(r_dr_ptr[:nw_new_old_dist_displ.size()])")
+      PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:mw_new_old_dist_displ.size()]) \
+                      from(r_dr_ptr[:mw_new_old_dist_displ.size()])")
     }
   }
 
@@ -406,10 +487,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                        const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     // if the distance table is not updated by mw_move during p-by-p, needs to recompute the whole table
-    // before being used by Hamiltonian.
-    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
+    // before being used by Hamiltonian if requested
+    if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST) && (modes_ & DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP))
       mw_evaluate(dt_list, p_list);
   }
+
+  size_t get_num_particls_stored() const override { return num_particls_stored; }
 
 private:
   ///number of targets with padding
@@ -428,6 +511,8 @@ private:
   NewTimer& move_timer_;
   /// timer for update()
   NewTimer& update_timer_;
+  /// the particle count of the internal stored distances.
+  const size_t num_particls_stored = 64;
 };
 } // namespace qmcplusplus
 #endif

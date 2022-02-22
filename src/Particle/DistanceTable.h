@@ -289,10 +289,20 @@ public:
    */
   const DisplRow& getOldDispls() const { return old_dr_; }
 
+  virtual size_t get_num_particls_stored() const { return 0; }
+
   /// return multi walker temporary pair distance table data pointer
   virtual const RealType* getMultiWalkerTempDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  virtual const RealType* mw_evaluate_range(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                            size_t range_begin,
+                                            size_t range_end) const
+  {
     return nullptr;
   }
 };
