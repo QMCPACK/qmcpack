@@ -298,18 +298,18 @@ public:
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
    *@param ref ID of the reference determinant
-   *@param det0_list
-   *@param ratio_list
+   *@param det0_list takes lists of ValueType(1) for the value or RatioGrad/curRatio for the gradients
    *@param psiinv_list
    *@param psi_list
-   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
    *@param data  (Shared by all determinants)
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param ratio_list returned computed ratios
    */
   void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                   int ref,
-                                                  const std::vector<ValueType> det0_list,
+                                                  const std::vector<ValueType>& det0_list,
                                                   const RefVector<ValueMatrix>& psiinv_list,
                                                   const RefVector<ValueMatrix>& psi_list,
                                                   const std::vector<int>& data,
@@ -320,11 +320,11 @@ public:
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
-   *@param det0
-   *@param ratio
+   *@param det0 take ValueType(1) for the value or RatioGrad/curRatio for the gradients
+   *@param ratios returned computed ratios
    *@param psiinv
    *@param psi
-   *@param dotProducts stores dot product between 2 determinants (I,J)
+   *@param dotProducts stores all the dot products between 2 determinants (I,J)
    *@param data  (Shared by all determinants)
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
@@ -362,6 +362,19 @@ public:
                                              const RefVector<ValueMatrix>& dotProducts_list,
                                              const RefVector<ValueVector>& ratios_list);
 
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param ref ID of the reference determinant
+   *@param psiinv
+   *@param psi
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param det0_grad gradient value taking RatioGrad/curRatio 
+   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param dx dimension (OHMMS_DIM)
+   *@param iat atom ID 
+   *@param grads returned computed gradients
+   */
   void BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                const ValueMatrix& psiinv,
                                                const ValueMatrix& psi,
@@ -374,6 +387,21 @@ public:
                                                int iat,
                                                GradMatrix& grads);
 
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param nw Number of walkers in the batch
+   *@param ref ID of the reference determinant
+   *@param iat atom ID 
+   *@param dx dimension (OHMMS_DIM)
+   *@param getNumDets Number of determinants
+   *@param psiinv_list
+   *@param psi_list
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param WorkSpace_list list refering to det.WorkSpace  
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param ratios_list returned computed list of gradients
+   */
   void mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
                                                   int ref,
                                                   int iat,

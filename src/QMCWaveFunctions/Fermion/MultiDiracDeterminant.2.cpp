@@ -63,7 +63,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
 
 void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                                        int ref,
-                                                                       const std::vector<ValueType> det0_list,
+                                                                       const std::vector<ValueType>& det0_list,
                                                                        const RefVector<ValueMatrix>& psiinv_list,
                                                                        const RefVector<ValueMatrix>& psi_list,
                                                                        const std::vector<int>& data,
@@ -564,12 +564,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
 
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    new_grads_list[iw].get()(det_leader.ReferenceDeterminant, WorkingIndex) = ratioGradRef_list[iw] / curRatio_list[iw];
-    new_ratios_to_ref_list[iw].get()[det_leader.ReferenceDeterminant]       = ValueType(1);
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
-  }
 
 
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
@@ -761,7 +757,6 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
         ratioG_list[iw] += psiMinv_list[iw].get()(i, WorkingIndex) * dpsiM_list[iw].get()(WorkingIndex, *it)[idim];
         it++;
       }
-      grads_list[iw].get()(det_leader.ReferenceDeterminant, WorkingIndex)[idim] = ratioG_list[iw];
     }
 
     mw_InverseUpdateByColumn(nw, dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex, ratioG_list);
