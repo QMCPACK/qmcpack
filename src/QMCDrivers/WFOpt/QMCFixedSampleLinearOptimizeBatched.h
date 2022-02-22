@@ -72,7 +72,7 @@ public:
   ///preprocess xml node
   void process(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
-  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
+  AdjustedWalkerCounts processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
   RealType costFunc(RealType dl);
 

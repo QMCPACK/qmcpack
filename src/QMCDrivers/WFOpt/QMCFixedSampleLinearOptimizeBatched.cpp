@@ -92,7 +92,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       block_first(true),
       block_second(false),
       block_third(false),
-      crowd_size_(1),
+      crowd_size_(0),
       opt_num_crowds_(0),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
@@ -572,7 +572,6 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
 /** Parses the xml input file for parameter definitions for the wavefunction
 * optimization.
 * @param q current xmlNode
-* @return true if successful
 */
 void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 {
@@ -637,28 +636,27 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 
   doHybrid = false;
 
+  QMCDriverNew::AdjustedWalkerCounts awc;
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    awc = processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
   }
   else
-    processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    awc = processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 
-  // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
-  QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+  // This may not need to be called.  Checkif any of the objects that get set up and allocated are used.
+  // Objects that are used (such as the RNG) are taken from the VMC driver (vmcEngine)
   QMCDriverNew::startup(q, awc);
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
-                                                        const std::string& vmcMove,
-                                                        bool reportH5,
-                                                        bool useGPU)
+QMCDriverNew::AdjustedWalkerCounts QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
+                                                                                      const std::string& vmcMove,
+                                                                                      bool reportH5,
+                                                                                      bool useGPU)
 {
   m_param.put(opt_xml);
   targetExcitedStr = lowerCase(targetExcitedStr);
@@ -746,28 +744,33 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   bool AppendRun = false;
   vmcEngine->setStatus(get_root_name(), h5_file_root_, AppendRun);
-  vmcEngine->process(qsave);
+  QMCDriverNew::AdjustedWalkerCounts awc = vmcEngine->process1(qsave);
 
   vmcEngine->enable_sample_collection();
 
-  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
-  checkNumCrowdsLTNumThreads(opt_num_crowds_);
   if (opt_num_crowds_ == 0)
-    opt_num_crowds_ = Concurrency::maxCapacity<>();
+    opt_num_crowds_ = awc.walkers_per_crowd.size();
 
-  app_log() << " Number of crowds for optimizer: " << opt_num_crowds_ << std::endl;
+  if (crowd_size_ == 0)
+    crowd_size_ = awc.walkers_per_crowd[0];
 
-  bool success = true;
-  //allways reset optTarget
+  app_log() << std::endl;
+  app_log() << "  Optimizer settings that affect performance" << std::endl;
+  app_log() << "    Number of crowds (threads) : " << opt_num_crowds_ << std::endl;
+  app_log() << "    Crowd size (items processed in one batch - important for GPU offload) : " << crowd_size_
+            << std::endl;
+  app_log() << std::endl;
+
+  //always reset optTarget
   optTarget =
       std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
                                                samples_, opt_num_crowds_, crowd_size_, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;
-  success = optTarget->put(qsave);
+  optTarget->put(qsave);
 
-  return success;
+  return awc;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
