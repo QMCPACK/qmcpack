@@ -27,6 +27,7 @@
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
+#include "DriverOperations.hpp"
 
 namespace qmcplusplus
 {
@@ -174,7 +175,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                            return spindrift + (st * delta_spin);
                          });
         }
-
+        
         // only DMC does this
         // TODO: rr needs a real name
         std::vector<RealType> rr(num_walkers, 0.0);
