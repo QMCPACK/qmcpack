@@ -39,13 +39,13 @@ class LinearMethodTestSupport;
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
 public:
+  using Index = QMCTraits::IndexType;
   ///Constructor.
   QMCCostFunctionBatched(MCWalkerConfiguration& w,
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
-                         int opt_num_crowds,
-                         int crowd_size,
+                         std::vector<Index>& walkers_per_crowd,
                          Communicate* comm);
 
   ///Destructor
@@ -82,8 +82,7 @@ protected:
   // Number of samples local to each MPI rank
   int rank_local_num_samples_;
 
-  int opt_batch_size_;
-  int opt_num_crowds_;
+  std::vector<Index> walkers_per_crowd_;
 
   std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
 
