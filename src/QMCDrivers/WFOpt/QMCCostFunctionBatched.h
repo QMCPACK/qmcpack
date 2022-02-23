@@ -82,6 +82,7 @@ protected:
   // Number of samples local to each MPI rank
   int rank_local_num_samples_;
 
+  // Number of walkers per crowd. Size of vector is number of crowds.
   std::vector<Index> walkers_per_crowd_;
 
   std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
