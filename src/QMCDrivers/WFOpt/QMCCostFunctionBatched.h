@@ -45,7 +45,7 @@ public:
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
-                         std::vector<Index>& walkers_per_crowd,
+                         const std::vector<Index>& walkers_per_crowd,
                          Communicate* comm);
 
   ///Destructor

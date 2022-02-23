@@ -31,7 +31,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
-                                               std::vector<Index>& walkers_per_crowd,
+                                               const std::vector<Index>& walkers_per_crowd,
                                                Communicate* comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),

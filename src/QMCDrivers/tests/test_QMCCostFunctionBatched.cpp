@@ -56,7 +56,7 @@ public:
   TrialWaveFunction psi;
   QMCCostFunctionBatched costFn;
 
-  LinearMethodTestSupport(std::vector<Index> walkers_per_crowd, Communicate* comm)
+  LinearMethodTestSupport(const std::vector<Index>& walkers_per_crowd, Communicate* comm)
       : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, comm)
   {}
 
