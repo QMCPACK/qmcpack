@@ -17,7 +17,7 @@ namespace qmcplusplus
 {
 namespace estimatorinput
 {
-  
+
 void checkCenterCorner(InputSection& input_section, const std::string& error_tag)
 {
   if (input_section.has("center") && input_section.has("corner"))

@@ -332,7 +332,6 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
-  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& pset_source = *(particle_pool.getParticleSet("ion"));
   auto& species_set = pset_target.getSpeciesSet();
@@ -433,7 +432,6 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
     auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
-    wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();
     OneBodyDensityMatrices obdm(obdmi, pset_target.getLattice(), species_set, wf_factory, pset_target);
