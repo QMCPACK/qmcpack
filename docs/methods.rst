@@ -114,6 +114,39 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
+.. _transition_guide:
+
+Transition guide for batched drivers
+------------------------------------
+Under the Exascale Computing Project effort, we developed a new set of QMC drivers, called "batched drivers",
+with a unique feature of batching walkers on demand. Available drivers are ``vmc_batch``, ``dmc_batch`` and ``linear_batch``.
+A new concept "crowd" is introduced as a suborganization of walker population in batched drivers.
+Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
+Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
+With this batching capability, new drivers enable feature implementations potentially to maximize the performance of a given hardware.
+For OpenMP GPU offload users, batched drivers are musts to effectively use GPUs.
+Keep in mind that batched drivers are GPU agnostic even though they incorporate the need of GPU computing.
+In addition, the batched drivers allow mixing and matching CPU-only and GPU accellerated features
+which is not feasible with the legacy CUDA implementation.
+
+There are notable changes in the driver input section when moving from classic drivers to batched drivers:
+
+  - ``walkers`` is not supported in any batched driver inputs.
+    Instead, ``walkers_per_rank`` and ``total_walkers`` allow to specify the population at the start of a driver run.
+
+  - ``crowds`` is added in batched drivers to specify the number of crowds.
+
+  - If a classic driver input section contains ``walkers`` equals 1. To achieve the same effect,
+    just avoid specifying ``walkers_per_rank``, ``total_walkers`` or ``crowds`` in batched drivers.
+
+  - None of ``walkers_per_rank``, ``total_walkers`` or ``crowds`` is mandatory.
+    See driver-specific parameter additional information below about default values.
+
+  - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is likely needed to maximize GPU throughput
+    just like tuning ``walkers`` in classic drivers.
+
+  - Only particle-by-particle move is supported. No all-particle move support.
+
 .. _vmc:
 
 Variational Monte Carlo
@@ -265,6 +298,8 @@ The following is an example of VMC section storing configurations (walker sample
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
+
+.. _vmc_batch:
 
 ``vmc_batch`` driver (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1511,6 +1546,8 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
     <parameter name="steps">100</parameter>
     <parameter name="timestep">0.005</parameter>
   </qmc>
+
+.. _dmc_batch:
 
 ``dmc_batch`` driver (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
