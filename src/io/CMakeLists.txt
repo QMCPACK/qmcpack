@@ -11,7 +11,7 @@
 
 add_subdirectory(hdf)
 add_subdirectory(OhmmsData)
-
+add_subdirectory(tests)
 # qmcio is intended to be an interface library servicing codes outside src/io.
 # header files inclusion from outside src/io needs to treat src/io being the root for
 # the header file inclusion.
