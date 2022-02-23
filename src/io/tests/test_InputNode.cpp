@@ -19,9 +19,12 @@
 namespace qmcplusplus
 {
 
-struct InputA : public InputNode {
+struct InputA : public InputNode
+{
   InputA() = default;
-  InputA(const std::string_view in_name, double in_dA, double in_dB, double in_dC, const std::string_view in_prop) : name(in_name), dA(in_dA), dB(in_dB), dC(in_dC), property(in_prop) {}
+  InputA(const std::string_view in_name, double in_dA, double in_dB, double in_dC, const std::string_view in_prop)
+      : name(in_name), dA(in_dA), dB(in_dB), dC(in_dC), property(in_prop)
+  {}
   std::string name{"inputA"};
   double dA{1.1};
   double dB{1.2};
@@ -29,7 +32,8 @@ struct InputA : public InputNode {
   std::string property{"some prop"};
 };
 
-struct InputB : public InputNode {
+struct InputB : public InputNode
+{
   InputB() = default;
   InputB(const std::string& in_name, short in_sA) : name(in_name), sA(in_sA) {}
   std::string name{"inputB"};
@@ -49,4 +53,4 @@ TEST_CASE("InputNode_BasicUse", "[io]")
   CHECK(has<InputB>(inputs[1]));
 }
 
-}
+} // namespace qmcplusplus

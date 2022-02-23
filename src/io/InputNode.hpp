@@ -17,19 +17,20 @@
 namespace qmcplusplus
 {
 
-/** Interface to allow input nodes to be type erased for the purposes of ownership
+/** Interface to a class to be type erased for the purposes of ownership
+ *  To allow a vector of unique_ptr to InputNode to contain a heterolist of dynamic objects
  */
 struct InputNode
 {
   virtual ~InputNode(){};
   template<typename T, typename VOWN, typename VINPUT, typename... Args>
-  static void append(VOWN& vown, VINPUT& vinput, Args&&... args) {
+  static void append(VOWN& vown, VINPUT& vinput, Args&&... args)
+  {
     vown.push_back(std::make_unique<T>(std::forward<Args>(args)...));
     vinput.push_back(static_cast<T&>(*vown.back()));
   }
 };
 
 
-  
 } // namespace qmcplusplus
 #endif
