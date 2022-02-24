@@ -104,16 +104,13 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
   }
   assert(det_idx_order.size() == nci);
 
-  // make reverse mapping (old to new)
-  for (size_t i = 0; i < nci; i++)
-    det_idx_reverse[det_idx_order[i]] = i;
-
-  // reorder confgList by exc. lvl.
+  // make reverse mapping (old to new) and reorder confgList by exc. lvl.
   std::shared_ptr<std::vector<ci_configuration2>> tmp_confgList = std::make_shared<std::vector<ci_configuration2>>(nci);
-  for (int i = 0; i < nci; i++)
+  for (size_t i = 0; i < nci; i++)
   {
-    (*tmp_confgList)[i] = confgList[det_idx_order[i]];
-    sign[i]             = tmp_sign[det_idx_order[i]];
+    det_idx_reverse[det_idx_order[i]] = i;
+    (*tmp_confgList)[i]               = confgList[det_idx_order[i]];
+    sign[i]                           = tmp_sign[det_idx_order[i]];
   }
   tmp_confgList.swap(ciConfigList);
 
