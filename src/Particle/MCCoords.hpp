@@ -33,11 +33,11 @@ struct MCCoords;
 template<>
 struct MCCoords<CoordsType::POS>
 {
-  void resize(const std::size_t size);
+  MCCoords(const std::size_t size) : positions(size) {}
   /** get subset of MCCoords
    * [param,out] out
    */
-  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS>& out);
+  MCCoords<CoordsType::POS> getSubset(const std::size_t offset, const std::size_t size);
 
   std::vector<QMCTraits::PosType> positions;
 };
@@ -45,11 +45,11 @@ struct MCCoords<CoordsType::POS>
 template<>
 struct MCCoords<CoordsType::POS_SPIN>
 {
-  void resize(const std::size_t size);
+  MCCoords(const std::size_t size) : positions(size), spins(size) {}
   /** get subset of MCCoords
    * [param,out] out
    */
-  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS_SPIN>& out);
+  MCCoords<CoordsType::POS_SPIN> getSubset(const std::size_t offset, const std::size_t size);
 
   std::vector<QMCTraits::PosType> positions;
   std::vector<QMCTraits::FullPrecRealType> spins;
@@ -61,9 +61,8 @@ extern template struct MCCoords<CoordsType::POS_SPIN>;
 template<CoordsType CT>
 MCCoords<CT> operator+(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
 {
-  MCCoords<CT> out;
   assert(lhs.positions.size() == rhs.positions.size());
-  out.resize(lhs.positions.size());
+  MCCoords<CT> out(lhs.positions.size());
   std::transform(lhs.positions.begin(), lhs.positions.end(), rhs.positions.begin(), out.positions.begin(),
                  [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x + y; });
   if constexpr (CT == CoordsType::POS_SPIN)
@@ -75,9 +74,8 @@ MCCoords<CT> operator+(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
 template<CoordsType CT>
 MCCoords<CT> operator-(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
 {
-  MCCoords<CT> out;
   assert(lhs.positions.size() == rhs.positions.size());
-  out.resize(lhs.positions.size());
+  MCCoords<CT> out(lhs.positions.size());
   std::transform(lhs.positions.begin(), lhs.positions.end(), rhs.positions.begin(), out.positions.begin(),
                  [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x - y; });
   if constexpr (CT == CoordsType::POS_SPIN)

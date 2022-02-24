@@ -107,11 +107,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers   = crowd.size();
   const int num_particles = sft.population.get_num_particles();
 
-  MCCoords<CT> drifts, walker_deltas, deltas;
+  MCCoords<CT> drifts(num_walkers), walker_deltas(num_walkers * num_particles), deltas(num_walkers);
   TWFGrads<CT> grads_now, grads_new;
-  drifts.resize(num_walkers);
-  walker_deltas.resize(num_walkers * num_particles);
-  deltas.resize(num_walkers);
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
 
@@ -161,7 +158,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         sft.drift_modifier.getDrifts(taus, grads_now, drifts);
 
         //get deltas for this particle for all walkers
-        walker_deltas.getSubset(iat, num_walkers, deltas); 
+        deltas = walker_deltas.getSubset(iat, num_walkers);
         drifts = drifts + scaleBySqrtTau(taus, deltas);
 
         // only DMC does this

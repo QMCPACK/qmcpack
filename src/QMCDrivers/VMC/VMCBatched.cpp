@@ -84,11 +84,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  MCCoords<CT> drifts, walker_deltas, deltas;
+  MCCoords<CT> drifts(num_walkers), walker_deltas(num_walkers * num_particles), deltas(num_walkers);
   TWFGrads<CT> grads_now, grads_new;
-  drifts.resize(num_walkers);
-  walker_deltas.resize(num_walkers * num_particles);
-  deltas.resize(num_walkers);
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
 
@@ -110,7 +107,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       for (int iat = start_index; iat < end_index; ++iat)
       {
         //get deltas for this particle (iat) for all walkers
-        walker_deltas.getSubset(iat, num_walkers, deltas); 
+        deltas = walker_deltas.getSubset(iat, num_walkers);
 
         if (use_drift)
         {

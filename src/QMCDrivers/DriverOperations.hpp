@@ -23,8 +23,7 @@ namespace qmcplusplus
 template<typename RT, CoordsType CT>
 MCCoords<CT> scaleBySqrtTau(const TauParams<RT, CT>& taus, const MCCoords<CT>& coords)
 {
-  MCCoords<CT> out;
-  out.resize(coords.positions.size());
+  MCCoords<CT> out(coords.positions.size());
   std::transform(coords.positions.begin(), coords.positions.end(), out.positions.begin(),
                  [st = taus.sqrttau](const QMCTraits::PosType& pos) { return st * pos; });
   if constexpr (CT == CoordsType::POS_SPIN)

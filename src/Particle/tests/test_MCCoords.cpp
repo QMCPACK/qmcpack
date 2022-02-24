@@ -22,9 +22,7 @@ TEST_CASE("MCCoords", "[Particle]")
 {
   {
     constexpr auto mct = CoordsType::POS;
-    auto mc_coords     = MCCoords<mct>();
-    REQUIRE(mc_coords.positions.size() == 0);
-    mc_coords.resize(3);
+    auto mc_coords     = MCCoords<mct>(3);
     REQUIRE(mc_coords.positions.size() == 3);
 
     QMCTraits::PosType p1({0.1, 0.2, 0.3});
@@ -33,8 +31,7 @@ TEST_CASE("MCCoords", "[Particle]")
     QMCTraits::PosType p4({-1.0, -1.0, -1.0});
 
     mc_coords.positions = {p1, p2, p3};
-    auto shift_coords   = MCCoords<mct>();
-    shift_coords.resize(3);
+    auto shift_coords   = MCCoords<mct>(3);
     shift_coords.positions = {p4, p4, p4};
     mc_coords              = mc_coords + shift_coords;
     CHECK(Approx(mc_coords.positions[0][0]) == -0.9);
@@ -58,24 +55,20 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.positions[2][1]) == 0.8);
     CHECK(Approx(mc_coords.positions[2][2]) == 0.9);
 
-    auto subset = MCCoords<mct>();
-    subset.resize(1);
-    mc_coords.getSubset(1, 1, subset);
+    auto subset = mc_coords.getSubset(1, 1);
+    REQUIRE(subset.positions.size() == 1);
     CHECK(Approx(subset.positions[0][0]) == 0.4);
     CHECK(Approx(subset.positions[0][1]) == 0.5);
     CHECK(Approx(subset.positions[0][2]) == 0.6);
   }
   {
     constexpr auto mct = CoordsType::POS_SPIN;
-    auto mc_coords     = MCCoords<mct>();
-    REQUIRE(mc_coords.spins.size() == 0);
-    mc_coords.resize(3);
+    auto mc_coords     = MCCoords<mct>(3);
     REQUIRE(mc_coords.positions.size() == 3);
     REQUIRE(mc_coords.spins.size() == 3);
 
     mc_coords.spins   = {0.1, 0.2, 0.3};
-    auto shift_coords = MCCoords<mct>();
-    shift_coords.resize(3);
+    auto shift_coords = MCCoords<mct>(3);
     shift_coords.spins = {1.0, 1.0, 1.0};
     mc_coords          = mc_coords + shift_coords;
     CHECK(Approx(mc_coords.spins[0]) == 1.1);
@@ -87,9 +80,8 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.spins[1]) == 0.2);
     CHECK(Approx(mc_coords.spins[2]) == 0.3);
 
-    auto subset = MCCoords<mct>();
-    subset.resize(1);
-    mc_coords.getSubset(2, 1, subset);
+    auto subset = mc_coords.getSubset(2, 1);
+    REQUIRE(subset.spins.size() == 1);
     CHECK(Approx(subset.spins[0]) == 0.3);
   }
 }

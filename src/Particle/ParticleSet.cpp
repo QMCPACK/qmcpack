@@ -444,8 +444,7 @@ void ParticleSet::mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list
 template<CoordsType CT>
 MCCoords<CT> ParticleSet::mw_getDisplacements(const RefVectorWithLeader<ParticleSet>& p_list, const int iat)
 {
-  MCCoords<CT> mccoords;
-  mccoords.resize(p_list.size());
+  MCCoords<CT> mccoords(p_list.size());
   std::transform(p_list.begin(), p_list.end(), mccoords.positions.begin(),
                  [iat](const ParticleSet& ps) { return ps.R[iat] - ps.getActivePos(); });
   if constexpr (CT == CoordsType::POS_SPIN)

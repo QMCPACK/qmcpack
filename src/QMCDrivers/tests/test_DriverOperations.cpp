@@ -22,8 +22,7 @@ TEST_CASE("DriverOperations", "[QMCDrivers]")
   {
     TauParams<QMCTraits::RealType, CoordsType::POS> taus(tau, invmass, spin_mass);
     constexpr auto mct = CoordsType::POS;
-    auto mc_coords     = MCCoords<mct>();
-    mc_coords.resize(3);
+    auto mc_coords     = MCCoords<mct>(3);
     QMCTraits::PosType p1({0.1, 0.2, 0.3});
     QMCTraits::PosType p2({0.4, 0.5, 0.6});
     QMCTraits::PosType p3({0.7, 0.8, 0.9});
@@ -40,9 +39,7 @@ TEST_CASE("DriverOperations", "[QMCDrivers]")
     CHECK(Approx(mc_coords.positions[2][1]) == 1.15777087640);
     CHECK(Approx(mc_coords.positions[2][2]) == 1.30249223595);
 
-    std::vector<QMCTraits::RealType> loggf, loggb;
-    loggf.resize(3);
-    loggb.resize(3);
+    std::vector<QMCTraits::RealType> loggf(3), loggb(3);
 
     updateForwardLogGreensFunction(mc_coords, loggf);
     CHECK(Approx(loggf[0]) == -0.146609903370);
@@ -58,8 +55,7 @@ TEST_CASE("DriverOperations", "[QMCDrivers]")
   {
     TauParams<QMCTraits::RealType, CoordsType::POS_SPIN> taus(tau, invmass, spin_mass);
     constexpr auto mct = CoordsType::POS_SPIN;
-    auto mc_coords     = MCCoords<mct>();
-    mc_coords.resize(3);
+    auto mc_coords     = MCCoords<mct>(3);
     QMCTraits::PosType p1({-0.1, -0.2, -0.3});
     QMCTraits::PosType p2({-0.4, -0.5, -0.6});
     QMCTraits::PosType p3({-0.7, -0.8, -0.9});
@@ -81,9 +77,7 @@ TEST_CASE("DriverOperations", "[QMCDrivers]")
     CHECK(Approx(mc_coords.spins[1]) == 0.326491106407);
     CHECK(Approx(mc_coords.spins[2]) == 0.489736659610);
 
-    std::vector<QMCTraits::RealType> loggf, loggb;
-    loggf.resize(3);
-    loggb.resize(3);
+    std::vector<QMCTraits::RealType> loggf(3), loggb(3);
 
     updateForwardLogGreensFunction(mc_coords, loggf);
     CHECK(Approx(loggf[0]) == -0.159934458690);
