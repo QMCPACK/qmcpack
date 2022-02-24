@@ -49,7 +49,7 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
 {
   const auto& confgList = *ciConfigList;
 
-  size_t nci = confgList.size(), nex;
+  size_t nci     = confgList.size(), nex;
   size_t nex_max = 0;
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
@@ -496,10 +496,10 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
-  ciConfigList = std::make_shared<std::vector<ci_configuration2>>();
-  detData      = std::make_shared<std::vector<int>>();
-  uniquePairs  = std::make_shared<std::vector<std::pair<int, int>>>();
-  DetSigns     = std::make_shared<std::vector<RealType>>();
+  ciConfigList     = std::make_shared<std::vector<ci_configuration2>>();
+  detData          = std::make_shared<std::vector<int>>();
+  uniquePairs      = std::make_shared<std::vector<std::pair<int, int>>>();
+  DetSigns         = std::make_shared<std::vector<RealType>>();
   ndet_per_exc_lvl = std::make_shared<std::vector<int>>();
 
   registerTimers();
