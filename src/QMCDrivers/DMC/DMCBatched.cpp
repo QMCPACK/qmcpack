@@ -27,7 +27,6 @@
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
-#include "DriverOperations.hpp"
 
 namespace qmcplusplus
 {

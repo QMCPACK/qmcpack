@@ -22,7 +22,6 @@ maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 set(DRIVER_TEST_SRC
     test_TauParams.cpp
-    test_DriverOperations.cpp
     test_vmc.cpp
     test_dmc.cpp
     test_drift.cpp
