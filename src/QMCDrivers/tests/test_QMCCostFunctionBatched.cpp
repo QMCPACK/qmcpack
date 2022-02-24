@@ -46,7 +46,6 @@ namespace testing
 class LinearMethodTestSupport
 {
 public:
-  using Index = QMCTraits::IndexType;
   int numSamples;
   int numParam;
   SampleStack samples;
@@ -56,7 +55,7 @@ public:
   TrialWaveFunction psi;
   QMCCostFunctionBatched costFn;
 
-  LinearMethodTestSupport(const std::vector<Index>& walkers_per_crowd, Communicate* comm)
+  LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)
       : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, comm)
   {}
 
@@ -90,8 +89,7 @@ public:
 
 TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 {
-  using Index = QMCTraits::IndexType;
-  std::vector<Index> walkers_per_crowd{1};
+  std::vector<int> walkers_per_crowd{1};
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
@@ -141,8 +139,7 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 // the input/gold data (from a file created by convert_hdf_to_cpp.py)
 void fill_from_text(int num_opt_crowds, FillData& fd)
 {
-  using Index = QMCTraits::IndexType;
-  std::vector<Index> walkers_per_crowd(num_opt_crowds, 1);
+  std::vector<int> walkers_per_crowd(num_opt_crowds, 1);
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 

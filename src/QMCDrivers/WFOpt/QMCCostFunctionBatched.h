@@ -39,13 +39,12 @@ class LinearMethodTestSupport;
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
 public:
-  using Index = QMCTraits::IndexType;
   ///Constructor.
   QMCCostFunctionBatched(MCWalkerConfiguration& w,
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
-                         const std::vector<Index>& walkers_per_crowd,
+                         const std::vector<int>& walkers_per_crowd,
                          Communicate* comm);
 
   ///Destructor
@@ -83,7 +82,7 @@ protected:
   int rank_local_num_samples_;
 
   // Number of walkers per crowd. Size of vector is number of crowds.
-  std::vector<Index> walkers_per_crowd_;
+  std::vector<int> walkers_per_crowd_;
 
   std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
 

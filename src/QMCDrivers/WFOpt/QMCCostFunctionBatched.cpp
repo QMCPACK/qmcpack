@@ -31,7 +31,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
-                                               const std::vector<Index>& walkers_per_crowd,
+                                               const std::vector<int>& walkers_per_crowd,
                                                Communicate* comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),
@@ -284,7 +284,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                          std::vector<int>& samples_per_crowd, std::vector<Index>& walkers_per_crowd,
+                          std::vector<int>& samples_per_crowd, std::vector<int>& walkers_per_crowd,
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
@@ -518,7 +518,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   // lambda to execute on each crowd
   auto evalOptCorrelated = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                              const std::vector<int>& samples_per_crowd, std::vector<Index> walkers_per_crowd,
+                              const std::vector<int>& samples_per_crowd, std::vector<int> walkers_per_crowd,
                               std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                               Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                               Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
