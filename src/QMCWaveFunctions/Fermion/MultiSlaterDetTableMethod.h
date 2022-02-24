@@ -75,8 +75,8 @@ public:
 
   ///constructor
   MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
-                             std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
-                             bool use_pre_computing);
+                            std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
+                            bool use_pre_computing);
 
   ///destructor
   ~MultiSlaterDetTableMethod() override;

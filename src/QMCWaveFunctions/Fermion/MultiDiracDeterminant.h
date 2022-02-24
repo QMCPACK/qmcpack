@@ -295,6 +295,40 @@ public:
     return 0.0;
   }
 
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param nw Number of walkers in the batch
+   *@param ref ID of the reference determinant
+   *@param det0_list takes lists of ValueType(1) for the value or RatioGrad/curRatio for the gradients
+   *@param psiinv_list
+   *@param psi_list
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param ratio_list returned computed ratios
+   */
+  void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
+                                                  int ref,
+                                                  const std::vector<ValueType>& det0_list,
+                                                  const RefVector<ValueMatrix>& psiinv_list,
+                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const std::vector<int>& data,
+                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const std::vector<RealType>& sign,
+                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                  const RefVector<ValueVector>& ratios_list);
+
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param ref ID of the reference determinant
+   *@param det0 take ValueType(1) for the value or RatioGrad/curRatio for the gradients
+   *@param ratios returned computed ratios
+   *@param psiinv
+   *@param psi
+   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   */
   void BuildDotProductsAndCalculateRatios_impl(int ref,
                                                ValueType det0,
                                                ValueType* restrict ratios,
@@ -305,35 +339,93 @@ public:
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign);
 
+  /** compute the ratio of the excited determinants to the reference determinant
+   * @param ratios the output.
+   */
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          ValueVector& ratios,
                                           const ValueMatrix& psiinv,
                                           const ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
-                                          const std::vector<RealType>& sign);
-
-  void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
-                                          GradMatrix& ratios,
-                                          ValueMatrix& psiinv,
-                                          ValueMatrix& psi,
+                                          const std::vector<RealType>& sign,
                                           ValueMatrix& dotProducts,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign,
-                                          int dx);
+                                          ValueVector& ratios);
 
-  void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
-                                          ValueMatrix& ratios,
-                                          ValueMatrix& psiinv,
-                                          ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign);
+  void mw_BuildDotProductsAndCalculateRatios(int nw,
+                                             int ref,
+                                             const std::vector<ValueType>& det0_list,
+                                             const RefVector<ValueMatrix>& psiinv_list,
+                                             const RefVector<ValueMatrix>& psi_list,
+                                             const std::vector<int>& data,
+                                             const std::vector<std::pair<int, int>>& pairs,
+                                             const std::vector<RealType>& sign,
+                                             const RefVector<ValueMatrix>& dotProducts_list,
+                                             const RefVector<ValueVector>& ratios_list);
+
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param ref ID of the reference determinant
+   *@param psiinv
+   *@param psi
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param det0_grad gradient value taking RatioGrad/curRatio 
+   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param dx dimension (OHMMS_DIM)
+   *@param iat atom ID 
+   *@param grads returned computed gradients
+   */
+  void BuildDotProductsAndCalculateRatiosGrads(int ref,
+                                               const ValueMatrix& psiinv,
+                                               const ValueMatrix& psi,
+                                               const std::vector<int>& data,
+                                               const std::vector<std::pair<int, int>>& pairs,
+                                               const std::vector<RealType>& sign,
+                                               const ValueType& det0_grad,
+                                               ValueMatrix& dotProducts,
+                                               int dx,
+                                               int iat,
+                                               GradMatrix& grads);
+
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param nw Number of walkers in the batch
+   *@param ref ID of the reference determinant
+   *@param iat atom ID 
+   *@param dx dimension (OHMMS_DIM)
+   *@param getNumDets Number of determinants
+   *@param psiinv_list
+   *@param psi_list
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param WorkSpace_list list refering to det.WorkSpace  
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param ratios_list returned computed list of gradients
+   */
+  void mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
+                                                  int ref,
+                                                  int iat,
+                                                  int dx,
+                                                  int getNumDets,
+                                                  const std::vector<ValueType>& det0_grad_list,
+                                                  const RefVector<ValueMatrix>& psiinv_list,
+                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const std::vector<int>& data,
+                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const std::vector<RealType>& sign,
+                                                  const RefVector<ValueVector>& WorkSpace_list,
+                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                  const RefVector<GradMatrix>& ratios_list);
+
+  void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
+                                                                const ValueMatrix& psiinv,
+                                                                const ValueMatrix& psi,
+                                                                const std::vector<int>& data,
+                                                                const std::vector<std::pair<int, int>>& pairs,
+                                                                const std::vector<RealType>& sign,
+                                                                ValueMatrix& dotProducts,
+                                                                int iat,
+                                                                ValueMatrix& ratios);
 
   //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
@@ -351,19 +443,6 @@ public:
     BLAS::copy(m, Minv.data() + colchanged, m, rvecinv.data(), 1);
     BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
-  /*
-      inline void InverseUpdateByColumn(ValueMatrix& Minv
-            , GradVector& dM, ValueVector& rvec
-            , ValueVector& rvecinv, int colchanged
-            , ValueType c_ratio, std::vector<int>::iterator& it)
-      {
-            ValueType c_ratio=1.0/ratioLapl;
-            BLAS::gemv('N', NumPtcls, NumPtcls, c_ratio, dpsiMinv.data(), NumPtcls, tv, 1, T(), workV1, 1);
-            workV1[colchanged]=1.0-c_ratio;
-            BLAS::copy(m,pinv+colchanged,m,workV2,1);
-            BLAS::ger(m,m,-1.0,workV1,1,workV2,1,dpsiMinv.data(),m);
-      }
-  */
 
   /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
    *@param P particle set which provides the positions
