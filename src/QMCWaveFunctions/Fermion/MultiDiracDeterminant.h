@@ -83,7 +83,7 @@ public:
    *
    * Note: ciConfigList should have been populated when calling this function
    */
-  void set(int first, int nel, int ref_det_id);
+  void set(int first, int nel, int ref_det_id, std::vector<size_t>& C2nodes_ptcl);
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
@@ -227,7 +227,8 @@ public:
   void createDetData(const ci_configuration2& ref,
                      std::vector<int>& data,
                      std::vector<std::pair<int, int>>& pairs,
-                     std::vector<RealType>& sign);
+                     std::vector<RealType>& sign,
+                     std::vector<size_t>& C2nodes_ptcl);
 
   template<typename ITER>
   inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix& dotProducts, ITER it)
@@ -581,6 +582,7 @@ private:
   std::shared_ptr<std::vector<int>> detData;
   std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
   std::shared_ptr<std::vector<RealType>> DetSigns;
+  std::shared_ptr<std::vector<int>> ndet_per_exc_lvl;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 

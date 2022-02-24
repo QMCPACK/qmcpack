@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-void MultiDiracDeterminant::set(int first, int nel, int ref_det_id)
+void MultiDiracDeterminant::set(int first, int nel, int ref_det_id, std::vector<size_t>& C2nodes_ptcl)
 {
   assert(ciConfigList);
   assert(ciConfigList->size() > 0);
@@ -38,33 +38,41 @@ void MultiDiracDeterminant::set(int first, int nel, int ref_det_id)
   FirstIndex           = first;
   ReferenceDeterminant = ref_det_id;
   resize(nel);
-  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
+  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns, C2nodes_ptcl);
 }
 
 void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
                                           std::vector<int>& data,
                                           std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign)
+                                          std::vector<RealType>& sign,
+                                          std::vector<size_t>& C2nodes_ptcl)
 {
   const auto& confgList = *ciConfigList;
 
   size_t nci = confgList.size(), nex;
+  size_t nex_max = 0;
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
   std::vector<size_t> uno(NumPtcls);
+  // map key is exc. lvl
+  std::map<int, std::vector<int>> dataMap;
+  std::map<int, std::vector<int>> sortMap;
+  std::vector<RealType> tmp_sign(nci, 0);
   data.clear();
   sign.resize(nci);
   pairs.clear();
   for (size_t i = 0; i < nci; i++)
   {
-    sign[i] = ref.calculateExcitations(confgList[i], nex, pos, ocp, uno);
-    data.push_back(nex);
+    tmp_sign[i] = ref.calculateExcitations(confgList[i], nex, pos, ocp, uno);
+    nex_max     = std::max(nex, nex_max);
+    dataMap[nex].push_back(nex);
+    sortMap[nex].push_back(i);
     for (int k = 0; k < nex; k++)
-      data.push_back(pos[k]);
+      dataMap[nex].push_back(pos[k]);
     for (int k = 0; k < nex; k++)
-      data.push_back(uno[k]);
+      dataMap[nex].push_back(uno[k]);
     for (int k = 0; k < nex; k++)
-      data.push_back(ocp[k]);
+      dataMap[nex].push_back(ocp[k]);
     // determine unique pairs, to avoid redundant calculation of matrix elements
     // if storing the entire MOxMO matrix is too much, then make an array and a mapping to it.
     // is there an easier way??
@@ -78,6 +86,41 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
       }
   }
   app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
+  (*ndet_per_exc_lvl).clear();
+  (*ndet_per_exc_lvl).resize(nex_max + 1, 0);
+  //reorder configs and det data
+  std::vector<size_t> det_idx_order;           // old indices in new order
+  std::vector<size_t> det_idx_reverse(nci, 0); // new indices in old order
+
+  // populate data, ordered by exc. lvl.
+  // make mapping from new to old det idx
+  for (std::map<int, std::vector<int>>::const_iterator iter = sortMap.begin(); iter != sortMap.end(); ++iter)
+  {
+    nex                          = iter->first;
+    std::vector<int> det_idx_old = iter->second;
+    data.insert(data.end(), dataMap[nex].begin(), dataMap[nex].end());
+    det_idx_order.insert(det_idx_order.end(), det_idx_old.begin(), det_idx_old.end());
+    (*ndet_per_exc_lvl)[nex] = det_idx_old.size();
+  }
+  assert(det_idx_order.size() == nci);
+
+  // make reverse mapping (old to new)
+  for (size_t i = 0; i < nci; i++)
+    det_idx_reverse[det_idx_order[i]] = i;
+
+  // reorder confgList by exc. lvl.
+  std::shared_ptr<std::vector<ci_configuration2>> tmp_confgList = std::make_shared<std::vector<ci_configuration2>>(nci);
+  for (int i = 0; i < nci; i++)
+  {
+    (*tmp_confgList)[i] = confgList[det_idx_order[i]];
+    sign[i]             = tmp_sign[det_idx_order[i]];
+  }
+  tmp_confgList.swap(ciConfigList);
+
+  // update C2nodes for new det ordering
+  for (int i = 0; i < C2nodes_ptcl.size(); i++)
+    C2nodes_ptcl[i] = det_idx_reverse[C2nodes_ptcl[i]];
+
   /*
        std::cout <<"ref: " <<ref << std::endl;
        std::cout <<"list: " << std::endl;
@@ -409,7 +452,8 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
-      DetSigns(s.DetSigns)
+      DetSigns(s.DetSigns),
+      ndet_per_exc_lvl(s.ndet_per_exc_lvl)
 {
   Optimizable = s.Optimizable;
 
@@ -456,6 +500,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
   detData      = std::make_shared<std::vector<int>>();
   uniquePairs  = std::make_shared<std::vector<std::pair<int, int>>>();
   DetSigns     = std::make_shared<std::vector<RealType>>();
+  ndet_per_exc_lvl = std::make_shared<std::vector<int>>();
 
   registerTimers();
 }
