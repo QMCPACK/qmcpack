@@ -270,7 +270,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
   // Create crowd-local storage for evaluation
   outputManager.pause();
-  size_t opt_num_crowds = walkers_per_crowd_.size();
+  const size_t opt_num_crowds = walkers_per_crowd_.size();
   opt_eval_.resize(opt_num_crowds);
   for (int i = 0; i < opt_num_crowds; i++)
     opt_eval_[i] =
@@ -511,7 +511,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
   bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
 
-  size_t opt_num_crowds = walkers_per_crowd_.size();
+  const size_t opt_num_crowds = walkers_per_crowd_.size();
   // Divide samples among crowds
   std::vector<int> samples_per_crowd(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd);
