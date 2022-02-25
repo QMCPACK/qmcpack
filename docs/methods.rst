@@ -114,21 +114,39 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
-.. _transition_guide:
+.. _batched_drivers:
 
-Transition guide for batched drivers
-------------------------------------
+Batched drivers
+---------------
+
 Under the Exascale Computing Project effort, we developed a new set of QMC drivers, called "batched drivers",
-with a unique feature of batching walkers on demand. Available drivers are ``vmc_batch``, ``dmc_batch`` and ``linear_batch``.
-A new concept "crowd" is introduced as a suborganization of walker population in batched drivers.
+to eliminate the divergence of CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
+The divergence came from the the fact that the CPU code path favors executing all the compute tasks, within a step,
+of one walker and advances walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
+In this way, walkers are not synchornized with each other and maximal throughout can be achieved on CPU.
+The GPU code path favors executing the same compute task of all the walkers together to maximize GPU thorughput.
+This GPU code path choice also minimizes the overhead on dispatching computation and host-device data transfer due to the GPU nature.
+However, there is only one host thread responisible for handling all the interaction between the host and GPUs.
+In brief, CPU code path handles computation in walker batch size 1 with many batches.
+The GPU code path uses only one batch with all the walkres in it.
+Thus we need to introduce a flexible batching scheme in the new drivers.
+
+A new concept "crowd" is introduced as a suborganization of walker population referring to a walker batch.
 Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
 Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
-With this batching capability, new drivers enable feature implementations potentially to maximize the performance of a given hardware.
-For OpenMP GPU offload users, batched drivers are musts to effectively use GPUs.
-Keep in mind that batched drivers are GPU agnostic even though they incorporate the need of GPU computing.
-In addition, the batched drivers allow mixing and matching CPU-only and GPU accellerated features
-which is not feasible with the legacy CUDA implementation.
+With this flexible batching capability, new drivers are capable of delivering maxmimal performance of given hardwares.
+In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
+Thus batched drivers are feature complete as they allow mixing and matching CPU-only and GPU accellerated features
+that is not feasible with the legacy GPU implementation.
 
+For OpenMP GPU offload users, batched drivers are musts to effectively use GPUs.
+
+.. _transition_guide:
+
+Transition from classic drivers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Available drivers are ``vmc_batch``, ``dmc_batch`` and ``linear_batch``.
 There are notable changes in the driver input section when moving from classic drivers to batched drivers:
 
   - ``walkers`` is not supported in any batched driver inputs.
