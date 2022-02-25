@@ -98,7 +98,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure

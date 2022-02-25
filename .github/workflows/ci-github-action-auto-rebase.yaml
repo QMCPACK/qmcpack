@@ -1,0 +1,24 @@
+on:
+  pull_request_target:
+    types: [synchronize]
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  rebase:
+    if: contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Action
+      uses: actions/checkout@v2
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+    - name: Automatic Rebase
+      uses: cirrus-actions/rebase@1.5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
