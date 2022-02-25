@@ -278,6 +278,9 @@ void QMCCostFunctionBatched::checkConfigurations()
   outputManager.resume();
 
 
+  // TODO - walkers per crowd may not be evenly divided, so the samples per crowd
+  //        might need to be divided differently for better load balancing.
+
   // Divide samples among the crowds
   std::vector<int> samples_per_crowd(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd);
