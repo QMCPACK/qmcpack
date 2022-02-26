@@ -55,7 +55,8 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.positions[2][1]) == 0.8);
     CHECK(Approx(mc_coords.positions[2][2]) == 0.9);
 
-    auto subset = mc_coords.getSubset(1, 1);
+    MCCoords<mct> subset(1);
+    mc_coords.getSubset(1, 1, subset);
     REQUIRE(subset.positions.size() == 1);
     CHECK(Approx(subset.positions[0][0]) == 0.4);
     CHECK(Approx(subset.positions[0][1]) == 0.5);
@@ -80,7 +81,8 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.spins[1]) == 0.2);
     CHECK(Approx(mc_coords.spins[2]) == 0.3);
 
-    auto subset = mc_coords.getSubset(2, 1);
+    MCCoords<mct> subset(1);
+    mc_coords.getSubset(2, 1, subset);
     REQUIRE(subset.spins.size() == 1);
     CHECK(Approx(subset.spins[0]) == 0.3);
   }

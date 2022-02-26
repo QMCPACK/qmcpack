@@ -37,7 +37,7 @@ struct MCCoords<CoordsType::POS>
   /** get subset of MCCoords
    * [param,out] out
    */
-  MCCoords<CoordsType::POS> getSubset(const std::size_t offset, const std::size_t size);
+  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS>& out) const;
 
   std::vector<QMCTraits::PosType> positions;
 };
@@ -49,7 +49,7 @@ struct MCCoords<CoordsType::POS_SPIN>
   /** get subset of MCCoords
    * [param,out] out
    */
-  MCCoords<CoordsType::POS_SPIN> getSubset(const std::size_t offset, const std::size_t size);
+  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS_SPIN>& out) const;
 
   std::vector<QMCTraits::PosType> positions;
   std::vector<QMCTraits::FullPrecRealType> spins;

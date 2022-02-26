@@ -106,7 +106,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       for (int iat = start_index; iat < end_index; ++iat)
       {
         //get deltas for this particle (iat) for all walkers
-        deltas = walker_deltas.getSubset(iat, num_walkers);
+        walker_deltas.getSubset(iat * num_walkers, num_walkers, deltas);
 
         if (use_drift)
         {

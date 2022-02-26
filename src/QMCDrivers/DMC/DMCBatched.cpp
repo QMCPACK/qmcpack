@@ -157,7 +157,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         sft.drift_modifier.getDrifts(taus, grads_now, drifts);
 
         //get deltas for this particle for all walkers
-        deltas = walker_deltas.getSubset(iat, num_walkers);
+        walker_deltas.getSubset(iat * num_walkers, num_walkers, deltas);
         drifts = drifts + scaleBySqrtTau(taus, deltas);
 
         // only DMC does this
