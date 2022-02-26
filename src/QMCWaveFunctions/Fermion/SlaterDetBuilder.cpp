@@ -196,7 +196,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
 
       for (int grp = 0; grp < nGroups; grp++)
       {
-        SPOSetPtr spo_tmp = sposet_builder_factory_.getSPOSet(spoNames[grp]);
+        const SPOSet* spo_tmp = sposet_builder_factory_.getSPOSet(spoNames[grp]);
         if (spo_tmp == nullptr)
         {
           std::stringstream err_msg;
@@ -346,7 +346,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                 << std::endl;
   app_summary() << std::endl;
 
-  SPOSetPtr psi = sposet_builder_factory_.getSPOSet(sposet_name);
+  const SPOSet* psi = sposet_builder_factory_.getSPOSet(sposet_name);
   //check if the named sposet exists
   if (psi == 0)
   {

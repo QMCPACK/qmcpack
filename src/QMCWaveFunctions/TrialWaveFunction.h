@@ -545,15 +545,18 @@ public:
 
   void storeSPOMap(SPOMap&& spomap) { *spomap_ = std::move(spomap); }
 
-  SPOSet& getSPOSet(const std::string& name) const;
+  const SPOSet& getSPOSet(const std::string& name) const;
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
-  ///input node for a many-body wavefunction
+  /** XML input node for a many-body wavefunction. Copied from the original one.
+   * WFOpt driver needs to look it up and make its own copies.
+   * YL: updating parameters in an XML file is extremely messy. Better to make WFOpt using h5 only.
+   */
   xmlNodePtr myNode_;
 
-  ///Owned SPOSets
+  /// Owned SPOSets. Once a TWF is fully built, SPOSet lookup should be done via TWF.
   const std::shared_ptr<SPOMap> spomap_;
 
   ///getName is in the way

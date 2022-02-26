@@ -60,7 +60,7 @@ void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool p
 
   if (primary)
     primary_psi_ = psi.get();
-  myPool[psi->getName()] = std::move(psi);
+  myPool.emplace(psi->getName(), std::move(psi));
 }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)

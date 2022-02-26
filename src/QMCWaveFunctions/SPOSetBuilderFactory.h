@@ -43,7 +43,7 @@ public:
    *  only use in serial portion of execution
    *  ie during initialization prior to threaded code
    */
-  SPOSet* getSPOSet(const std::string& name) const;
+  const SPOSet* getSPOSet(const std::string& name) const;
 
   void buildSPOSetCollection(xmlNodePtr cur);
 

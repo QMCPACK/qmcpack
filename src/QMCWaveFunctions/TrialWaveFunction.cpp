@@ -107,7 +107,7 @@ void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& at
   Z.emplace_back(std::move(aterm));
 }
 
-SPOSet& TrialWaveFunction::getSPOSet(const std::string& name) const
+const SPOSet& TrialWaveFunction::getSPOSet(const std::string& name) const
 {
   auto spoit = spomap_->find(name);
   if (spoit == spomap_->end())
