@@ -54,7 +54,6 @@ private:
 
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
-  IndexType num_particles_      = 0;
   IndexType num_groups_         = 0;
   IndexType max_samples_        = 0;
   IndexType target_population_  = 0;
@@ -178,7 +177,6 @@ public:
   int get_rank() const { return rank_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
   IndexType get_num_local_walkers() const { return num_local_walkers_; }
-  IndexType get_num_particles() const { return num_particles_; }
   IndexType get_max_samples() const { return max_samples_; }
   IndexType get_target_population() const { return target_population_; }
   IndexType get_target_samples() const { return target_samples_; }

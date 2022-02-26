@@ -37,7 +37,6 @@ MCPopulation::MCPopulation(int num_ranks,
 {
   num_global_walkers_ = mcwc.getGlobalNumWalkers();
   num_local_walkers_  = mcwc.getActiveWalkers();
-  num_particles_      = elecs->getTotalNum();
 
   // MCWalkerConfiguration doesn't give actual number of groups
   num_groups_ = elecs->groups();
@@ -53,7 +52,7 @@ MCPopulation::MCPopulation(int num_ranks,
   ptclgrp_inv_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
-  ptcl_inv_mass_.resize(num_particles_);
+  ptcl_inv_mass_.resize(elecs->getTotalNum());
   for (int ig = 0; ig < num_groups_; ++ig)
   {
     for (int iat = particle_group_indexes_[ig].first; iat < particle_group_indexes_[ig].second; ++iat)
@@ -92,7 +91,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 #pragma omp parallel for
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
-    walkers_[iw]             = std::make_unique<MCPWalker>(num_particles_);
+    walkers_[iw]             = std::make_unique<MCPWalker>(elec_particle_set_->getTotalNum());
     walkers_[iw]->R          = elec_particle_set_->R;
     walkers_[iw]->spins      = elec_particle_set_->spins;
     walkers_[iw]->Properties = elec_particle_set_->Properties;

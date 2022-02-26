@@ -470,7 +470,7 @@ bool DMCBatched::run()
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
         const int population_now = walker_controller_->branch(iter, population_, iter == 0);
         branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
-                                                   population_.get_num_particles());
+                                                   population_.get_golden_electrons()->getTotalNum());
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }
 
