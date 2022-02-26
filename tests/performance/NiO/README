@@ -118,7 +118,7 @@ affinity, please read the next section.
 To activate the ctest route, add the following option in your cmake
 command line before building your binary:
 
--DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1
+-DQMC_DATA=YOUR_DATA_FOLDER
 
 YOUR_DATA_FOLDER contains a folder called NiO with the h5 files in it.
 Run tests with command "ctest -R performance-NiO" after building
