@@ -29,7 +29,7 @@ class HamiltonianFactory : public MPIObjectBase
 {
 public:
   using PSetMap     = std::map<std::string, std::unique_ptr<ParticleSet>>;
-  using PsiPoolType = std::map<std::string, std::unique_ptr<TrialWaveFunction>>;
+  using PsiPoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName,

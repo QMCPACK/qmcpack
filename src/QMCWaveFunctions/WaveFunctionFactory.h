@@ -39,9 +39,7 @@ public:
    * @param c  communicator
    * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(ParticleSet& qp,
-                      const PSetMap& pset,
-                      Communicate* c);
+  WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c);
 
   ///destructor
   ~WaveFunctionFactory();
@@ -50,7 +48,10 @@ public:
   std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur);
 
   /// create an empty TrialWaveFunction for testing use.
-  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting() { return std::make_unique<TrialWaveFunction>("psi0"); }
+  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const std::string_view name)
+  {
+    return std::make_unique<TrialWaveFunction>(name);
+  }
 
 private:
   /** add Fermion wavefunction term */

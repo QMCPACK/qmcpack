@@ -74,7 +74,7 @@ public:
   using LogValueType     = WaveFunctionComponent::LogValueType;
   using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
-  using SPOMap = std::map<std::string, std::unique_ptr<SPOSet>>;
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
 
 #ifdef QMC_CUDA
   using CTS          = CUDAGlobalTypes;
@@ -97,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
+  TrialWaveFunction(const std::string_view aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;

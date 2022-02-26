@@ -58,7 +58,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = WaveFunctionFactory::buildEmptyTWFForTesting();
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting("psi0"));
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
@@ -110,7 +110,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = WaveFunctionFactory::buildEmptyTWFForTesting();
+  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting("psi0"));
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 

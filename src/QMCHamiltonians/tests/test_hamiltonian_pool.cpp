@@ -52,7 +52,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   WaveFunctionPool wfp(pp, c);
 
-  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting(), true);
+  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting("psi0"), true);
 
   HamiltonianPool hpool(pp, wfp, c);
 

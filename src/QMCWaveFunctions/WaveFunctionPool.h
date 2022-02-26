@@ -37,7 +37,7 @@ class ParticleSet;
 class WaveFunctionPool : public MPIObjectBase
 {
 public:
-  using PoolType = std::map<std::string, std::unique_ptr<TrialWaveFunction>>;
+  using PoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
   WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
   WaveFunctionPool(const WaveFunctionPool&)            = delete;

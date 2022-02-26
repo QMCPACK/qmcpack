@@ -42,7 +42,7 @@ typedef enum
 static const std::vector<std::string> suffixes{"V",         "VGL",    "accept", "NLratio",
                                                "recompute", "buffer", "derivs", "preparegroup"};
 
-TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
+TrialWaveFunction::TrialWaveFunction(const std::string_view aname, bool tasking)
     : myNode_(NULL),
       spomap_(std::make_shared<SPOMap>()),
       myName(aname),

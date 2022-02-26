@@ -26,7 +26,7 @@ class SPOSetScanner
 {
 public:
   using PtclPool    = std::map<std::string, std::unique_ptr<ParticleSet>>;
-  using SPOSetMap   = std::map<std::string, std::unique_ptr<SPOSet>>;
+  using SPOSetMap   = std::map<std::string, const std::unique_ptr<const SPOSet>>;
   using RealType    = QMCTraits::RealType;
   using ValueType   = QMCTraits::ValueType;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
@@ -89,7 +89,8 @@ public:
         {
           app_log() << "    Scanning a " << cname << " called " << trace_name << " and writing to "
                     << prefix + "_v/g/l/report.dat" << std::endl;
-          scan_path(cur, *sposet, prefix);
+          auto spo = sposet->makeClone();
+          scan_path(cur, *spo, prefix);
         }
         else
         {

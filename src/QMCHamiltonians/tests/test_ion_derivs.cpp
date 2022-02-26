@@ -140,7 +140,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = wff.buildTWF(wfroot);
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -308,7 +308,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = wff.buildTWF(wfroot);
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -475,7 +475,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = wff.buildTWF(wfroot);
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -613,7 +613,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = wff.buildTWF(wfroot);
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -755,7 +755,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map["psi0"] = wff.buildTWF(root2);
+  psi_map.emplace("psi0", wff.buildTWF(root2));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
