@@ -54,7 +54,6 @@ private:
 
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
-  IndexType num_groups_         = 0;
   IndexType max_samples_        = 0;
   IndexType target_population_  = 0;
   IndexType target_samples_     = 0;

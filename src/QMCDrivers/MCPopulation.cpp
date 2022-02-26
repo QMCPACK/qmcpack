@@ -39,21 +39,21 @@ MCPopulation::MCPopulation(int num_ranks,
   num_local_walkers_  = mcwc.getActiveWalkers();
 
   // MCWalkerConfiguration doesn't give actual number of groups
-  num_groups_ = elecs->groups();
-  particle_group_indexes_.resize(num_groups_);
-  for (int i = 0; i < num_groups_; ++i)
+  const auto num_groups = elecs->groups();
+  particle_group_indexes_.resize(num_groups);
+  for (int i = 0; i < num_groups; ++i)
   {
     particle_group_indexes_[i].first  = elecs->first(i);
     particle_group_indexes_[i].second = elecs->last(i);
   }
-  ptclgrp_mass_.resize(num_groups_);
-  for (int ig = 0; ig < num_groups_; ++ig)
+  ptclgrp_mass_.resize(num_groups);
+  for (int ig = 0; ig < num_groups; ++ig)
     ptclgrp_mass_[ig] = elecs->Mass[ig];
-  ptclgrp_inv_mass_.resize(num_groups_);
-  for (int ig = 0; ig < num_groups_; ++ig)
+  ptclgrp_inv_mass_.resize(num_groups);
+  for (int ig = 0; ig < num_groups; ++ig)
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
   ptcl_inv_mass_.resize(elecs->getTotalNum());
-  for (int ig = 0; ig < num_groups_; ++ig)
+  for (int ig = 0; ig < num_groups; ++ig)
   {
     for (int iat = particle_group_indexes_[ig].first; iat < particle_group_indexes_[ig].second; ++iat)
       ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
