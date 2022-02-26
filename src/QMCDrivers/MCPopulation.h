@@ -62,7 +62,6 @@ private:
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
-  std::vector<std::pair<int, int>> particle_group_indexes_;
   std::vector<RealType> ptclgrp_mass_;
   ///1/Mass per species
   std::vector<RealType> ptclgrp_inv_mass_;
@@ -230,7 +229,6 @@ public:
    */
   std::vector<WalkerElementsRef> get_walker_elements();
 
-  const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
