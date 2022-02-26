@@ -80,7 +80,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
-  auto& walker_leader = walker_elecs.getLeader();
   timers.resource_timer.start();
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
@@ -104,7 +103,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   const int num_walkers   = crowd.size();
-  const int num_particles = sft.population.get_num_particles();
+  auto& pset_leader = walker_elecs.getLeader();
+  const int num_particles = pset_leader.getTotalNum();
 
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
   MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
@@ -134,16 +134,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
-    for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
+    for (int ig = 0; ig < pset_leader.groups(); ++ig)
     {
       TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
                                    sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
-      int start_index = step_context.getPtclGroupStart(ig);
-      int end_index   = step_context.getPtclGroupEnd(ig);
-      for (int iat = start_index; iat < end_index; ++iat)
+      for (int iat = pset_leader.first(ig); iat < pset_leader.last(ig); ++iat)
       {
         //This is very useful thing to be able to look at in the debugger
 #ifndef NDEBUG

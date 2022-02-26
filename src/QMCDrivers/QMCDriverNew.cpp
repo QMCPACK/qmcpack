@@ -294,8 +294,7 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
-                                                          population_.get_particle_group_indexes(), *(Rng[i]));
+    step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
   }
 }
 

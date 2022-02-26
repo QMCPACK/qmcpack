@@ -33,29 +33,11 @@ namespace qmcplusplus
 class ContextForSteps
 {
 public:
-  using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
-  using PosType           = QMCTraits::PosType;
-  using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType          = QMCTraits::RealType;
+  ContextForSteps(RandomGenerator& random_gen);
 
-  ContextForSteps(int num_walkers,
-                  int num_particles,
-                  std::vector<std::pair<int, int>> particle_group_indexes,
-                  RandomGenerator& random_gen);
-
-  int get_num_groups() const { return particle_group_indexes_.size(); }
   RandomGenerator& get_random_gen() { return random_gen_; }
 
-  int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
-  int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
-
 protected:
-  /** indexes of start and stop of each particle group;
-   *
-   *  Seems like these should be iterators but haven't thought through the implications.
-   */
-  std::vector<std::pair<int, int>> particle_group_indexes_;
-
   RandomGenerator& random_gen_;
 };
 
