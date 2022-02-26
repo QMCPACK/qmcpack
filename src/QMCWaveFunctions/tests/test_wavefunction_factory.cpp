@@ -43,7 +43,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   WaveFunctionFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(qp));
 
-  WaveFunctionFactory wff("psi0", *particle_set_map["e"], particle_set_map, c);
+  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
          <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\" gpu=\"no\"> \

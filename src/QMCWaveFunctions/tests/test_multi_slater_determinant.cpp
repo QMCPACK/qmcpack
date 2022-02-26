@@ -80,7 +80,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
   auto& spo = twf_ptr->getSPOSet(check_sponame);
@@ -371,7 +371,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
   auto& spo = twf_ptr->getSPOSet(check_sponame);

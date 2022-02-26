@@ -33,13 +33,10 @@ WaveFunctionPool::~WaveFunctionPool() = default;
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra"), tasking;
+  std::string target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(id, "id");
-  pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
-  pAttrib.add(tasking, "tasking", {"no", "yes"});
   pAttrib.add(role, "role");
   pAttrib.put(cur);
 
@@ -48,7 +45,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   if (qp == nullptr)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
-  WaveFunctionFactory psiFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
+  WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
   auto psi = psiFactory.buildTWF(cur);
   addFactory(std::move(psi), myPool.empty() || role == "primary");
   return true;

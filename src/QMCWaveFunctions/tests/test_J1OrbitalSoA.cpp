@@ -79,7 +79,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
@@ -179,7 +179,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
@@ -276,7 +276,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
 
   // update all distance tables
   elec_.update();
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);

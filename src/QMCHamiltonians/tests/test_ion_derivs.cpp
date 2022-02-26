@@ -132,7 +132,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfnoj.xml");
@@ -300,7 +300,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfj.xml");
@@ -467,7 +467,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
@@ -605,7 +605,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
@@ -753,7 +753,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   HamiltonianFactory::PsiPoolType psi_map;
   psi_map["psi0"] = wff.buildTWF(root2);
 
@@ -1007,7 +1007,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1192,7 +1192,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1347,7 +1347,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \

@@ -39,11 +39,9 @@ public:
    * @param c  communicator
    * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(const std::string& psiName,
-                      ParticleSet& qp,
+  WaveFunctionFactory(ParticleSet& qp,
                       const PSetMap& pset,
-                      Communicate* c,
-                      bool tasking = false);
+                      Communicate* c);
 
   ///destructor
   ~WaveFunctionFactory();
@@ -51,35 +49,18 @@ public:
   ///read from xmlNode
   std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur);
 
+  /// create an empty TrialWaveFunction for testing use.
   std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting() { return std::make_unique<TrialWaveFunction>("psi0"); }
-
-  ///get xmlNode
-  xmlNodePtr getNode() const { return myNode; }
 
 private:
   /** add Fermion wavefunction term */
-  bool addFermionTerm(xmlNodePtr cur);
-
-  /** add an OrbitalBuilder and the matching xml node
-   * @param b WaveFunctionComponentBuilder*
-   * @oaram cur xmlNode for b
-   * @return true if successful
-   */
-  bool addNode(std::unique_ptr<WaveFunctionComponentBuilder> b, xmlNodePtr cur);
+  bool addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur);
 
   ///many-body wavefunction object
-  std::unique_ptr<TrialWaveFunction> targetPsi;
   ///target ParticleSet
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
-  ///input node for a many-body wavefunction
-  xmlNodePtr myNode;
-  ///builder tree
-  UPtrVector<WaveFunctionComponentBuilder> psiBuilder;
-
-  /// factory for all the sposet builders in this WF
-  SPOSetBuilderFactory sposet_builder_factory_;
 };
 
 } // namespace qmcplusplus

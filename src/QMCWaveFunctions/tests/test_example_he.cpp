@@ -73,7 +73,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
   <example_he name=\"mine\" source=\"ion0\"> \

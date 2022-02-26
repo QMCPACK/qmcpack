@@ -41,26 +41,17 @@
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
-WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
-                                         ParticleSet& qp,
+WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp,
                                          const PSetMap& pset,
-                                         Communicate* c,
-                                         bool tasking)
+                                         Communicate* c)
     : MPIObjectBase(c),
       targetPtcl(qp),
-      ptclPool(pset),
-      myNode(NULL),
-      sposet_builder_factory_(c, qp, pset)
+      ptclPool(pset)
 {
   ClassName = "WaveFunctionFactory";
-  myName    = psiName;
 }
 
-WaveFunctionFactory::~WaveFunctionFactory()
-{
-  if (myNode != NULL)
-    xmlFreeNode(myNode);
-}
+WaveFunctionFactory::~WaveFunctionFactory() = default;
 
 std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
 {
@@ -83,9 +74,11 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   app_summary() << "  Name: " << psiName << "   Tasking: " << (tasking == "yes" ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
-  targetPsi = std::make_unique<TrialWaveFunction>(psiName, tasking == "yes");
+  auto targetPsi = std::make_unique<TrialWaveFunction>(psiName, tasking == "yes");
   targetPsi->setMassTerm(targetPtcl);
   targetPsi->storeXMLNode(cur);
+
+  SPOSetBuilderFactory sposet_builder_factory(myComm, targetPtcl, ptclPool);
 
   std::string vp_file_to_load;
   cur          = cur->children;
@@ -94,10 +87,10 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "sposet_builder" || cname == "sposet_collection")
-      sposet_builder_factory_.buildSPOSetCollection(cur);
+      sposet_builder_factory.buildSPOSetCollection(cur);
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
-      success = addFermionTerm(cur);
+      success = addFermionTerm(*targetPsi, sposet_builder_factory, cur);
       bool foundtwist(false);
       xmlNodePtr kcur = cur->children;
       while (kcur != NULL)
@@ -130,7 +123,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
       auto jbuilder = std::make_unique<JastrowBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(jbuilder->buildComponent(cur));
       success = true;
-      addNode(std::move(jbuilder), cur);
     }
     else if (cname == "fdlrwfn")
     {
@@ -141,7 +133,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
       auto builder = std::make_unique<LatticeGaussianProductBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(builder->buildComponent(cur));
       success = true;
-      addNode(std::move(builder), cur);
     }
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
@@ -153,7 +144,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
       auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
       success = true;
-      addNode(std::move(exampleHe_builder), cur);
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
@@ -161,7 +151,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
       auto agpbuilder = std::make_unique<AGPDeterminantBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(agpbuilder->buildComponent(cur));
       success = true;
-      addNode(std::move(agpbuilder), cur);
     }
 #endif
     else if (cname == "override_variational_parameters")
@@ -190,11 +179,11 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   }
 
   targetPsi->resetParameters(dummy);
-  targetPsi->storeSPOMap(sposet_builder_factory_.exportSPOSets());
+  targetPsi->storeSPOMap(sposet_builder_factory.exportSPOSets());
   return std::move(targetPsi);
 }
 
-bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
+bool WaveFunctionFactory::addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "addFermionTerm");
   std::string orbtype("MolecularOrbital");
@@ -217,20 +206,8 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
     detbuilder = std::make_unique<PWOrbitalBuilder>(myComm, targetPtcl, ptclPool);
   }
   else
-    detbuilder = std::make_unique<SlaterDetBuilder>(myComm, sposet_builder_factory_, targetPtcl, *targetPsi, ptclPool);
-  targetPsi->addComponent(detbuilder->buildComponent(cur));
-  addNode(std::move(detbuilder), cur);
-  return true;
-}
-
-
-bool WaveFunctionFactory::addNode(std::unique_ptr<WaveFunctionComponentBuilder> b, xmlNodePtr cur)
-{
-  psiBuilder.push_back(std::move(b));
-  ///if(myNode != NULL) {
-  ///  std::cout << ">>>> Adding " << (const char*)cur->name << std::endl;
-  ///  xmlAddChild(myNode,xmlCopyNode(cur,1));
-  ///}
+    detbuilder = std::make_unique<SlaterDetBuilder>(myComm, spo_factory, targetPtcl, psi, ptclPool);
+  psi.addComponent(detbuilder->buildComponent(cur));
   return true;
 }
 

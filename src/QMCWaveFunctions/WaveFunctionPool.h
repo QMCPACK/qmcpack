@@ -66,21 +66,6 @@ public:
       return pit->second.get();
   }
 
-/*
-  WaveFunctionFactory* getWaveFunctionFactory(const std::string& pname)
-  {
-    if (auto pit(myPool.find(pname)); pit == myPool.end())
-    {
-      if (myPool.empty())
-        return nullptr;
-      else
-        return (*(myPool.begin())).second;
-    }
-    else
-      return (*pit).second;
-  }
-*/
-
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
    *
